@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:35.183Z"
-updated_at: "2026-10-03T15:10:13.302Z"
-closed_at: "2026-10-03T15:10:12.575Z"
-completed_at: "2026-10-03T15:10:12.575Z"
+updated_at: "2026-10-03T15:54:38.256Z"
+closed_at: "2026-10-03T15:54:36.794Z"
+completed_at: "2026-10-03T15:54:36.794Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Real filesystem regression retains distinct root and nested dependency versions without flattening; Snapshot and ordinary linked runs preserve PM_PATH and PM_GLOBAL_PATH isolation; Dependency write/isolation behavior is documented and tested; Current built and packed artifacts pass the reporter contract
 parent: pm-u9d0
 risk: medium
 confidence: medium
-resolution: "Preserve original root/nested installations and admitted aliases, isolate copied source aliases, and refuse excluded/overlapping snapshot targets. Snapshot target metadata now handles only ENOENT as absence through the common supported stat API, retaining cycles and structural/permission errors on Node22, older Node24 and current runtimes."
-expected_result: "Node and Bun linked snapshots resolve each installed dependency context while original source bytes remain unchanged; excluded entries are absent and unsafe destinations fail before copying. All hosted required checks, including native Windows, must pass on the reviewed head before merge."
-actual_result: "Final round-four corrected-source isolated suite on CI-supported current Node24.21/npm11: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66550/66550 statements, 50902/50902 branches, 13749/13749 functions, 63451/63451 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 67 clean packed Node/Bun manual commands with history verification and four public snapshot backend/linked-command combinations, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 32 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.41 percent finish error rate and 0 missing error-code rows. Cross-runtime snapshot contracts pass unchanged on Node22.21.1, Node24.12, Node24.21 and Node26.9. Earlier failed Node26/old-Node24 coverage and performance observations remain recorded, and their unrelated timeout/warning causes are not claimed fixed. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
+resolution: "Preserve root/nested installation identity and copied-source isolation; use ENOENT-only target probes on supported runtimes. Extend the existing required Node22 job and its exact workflow contract without changing thresholds, exclusions or runtime assertions."
+expected_result: "Snapshot targets behave consistently on supported Node and Bun runtimes, source writes remain disposable, and the required Node22 and native Windows checks must execute the real regression before merge."
+actual_result: "Ten unchanged real filesystem/CLI cases pass on four Node profiles; 67 packed Node/Bun commands and nine packed npx/bunx/typed-SDK workflows pass. Round-five owner-linked verification passes 26 filesystem/CLI/workflow cases, lint, four TypeScript targets and docs links. The unchanged production source retains measured 100/100/100/100 coverage across 66550 statements, 50902 branches, 13749 functions and 63451 lines. Hosted exact-head coverage and reviews are required before merge; the prior failed workflow shard is retained."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-efkvdy,discovered_from,"2026-09-30T06:48:35.183Z","harness:codex","cli:create:dep",detected
   pm-efkvdy,verifies,"2026-10-02T17:04:50.022Z","harness:codex","cli:update:dep",detected
-comments[33]:
+comments[35]:
   - created_at: "2026-09-30T06:48:35.183Z"
     author: "harness:codex"
     text: "Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-efkvdy and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
@@ -122,22 +122,38 @@ comments[33]:
   - created_at: "2026-10-03T15:10:11.348Z"
     author: "harness:codex"
     text: "Final round-four corrected-source isolated suite on CI-supported current Node24.21/npm11: 9638 passed and two Windows-only cases skipped on Linux; exact coverage 100/100/100/100 with zero uncovered counts (66550/66550 statements, 50902/50902 branches, 13749/13749 functions, 63451/63451 lines). Full type checking, every static-quality stage including unchanged performance ceilings, graph/history and mutation controls (329 killed, seven reviewed equivalent, zero failures), native deduplicated linked tests, 67 clean packed Node/Bun manual commands with history verification and four public snapshot backend/linked-command combinations, and nine npx/bunx packed package workflows plus typed SDK consumers passed. All 32 touched source functions have behavior-specific documentation. Required Sentry/telemetry gate passed with zero blocking issues, 1.41 percent finish error rate and 0 missing error-code rows. Cross-runtime snapshot contracts pass unchanged on Node22.21.1, Node24.12, Node24.21 and Node26.9. Earlier failed Node26/old-Node24 coverage and performance observations remain recorded, and their unrelated timeout/warning causes are not claimed fixed. Exact-head hosted checks/reviews and merge follow through PR1376; this batch is separate from the earlier v2026.10.3 publication and four pre-existing-main nightly alerts."
-learnings[6]{created_at,author,text}:
+  - created_at: "2026-10-03T15:49:35.467Z"
+    author: "harness:codex"
+    text: "Hosted round-four failure retained: coverage shard 1/4 on PR head 870fcb60c failed the existing CI workflow contract at line 482 because adding the required snapshot step introduced an eleventh PM_RUN_TESTS_SKIP_BUILD declaration while its exact assertion still expected ten. The source runtime suite passed locally before that later CI addition; the focused Node22 workflow test missed this general contract. Reopen only this existing snapshot owner for the test correction, strengthen the existing contract to inspect the actual Node22 snapshot job/runner, and preserve the exact count, pinned actions, required name and no-suppression controls. CodeRabbit full review and Greptile reviewed 870fcb60c with no actionable findings; all threads are resolved. The broad intake-record scope warning remains a documented, intentional part of the human-requested combined delivery."
+  - created_at: "2026-10-03T15:54:34.918Z"
+    author: "harness:codex"
+    text: "Round-five regression proof: the unchanged workflow suite reproduced the hosted exact-count failure locally (14 pass, 1 fail). Updating the existing exact count to eleven and extending the same test now verifies the unchanged required Node22 job name, foundation dependency, actual Node22 runtime, one exact snapshot command, sandbox environment and absence of conditional/suppressed execution. The two owner-linked commands pass 26 tests across four files, including ten real filesystem/CLI and sixteen workflow cases. Focused lint, all four TypeScript targets and docs links pass. No production source changed after the measured 100/100/100/100 source report; its denominator and all coverage/runtime assertions remain intact. Fresh hosted complete coverage remains required on the next reviewed head."
+learnings[7]{created_at,author,text}:
   "2026-10-02T18:32:24.044Z","harness:codex",Snapshot dependency preservation must retain each nested installation at its original relative path. Positive direct execution plus a real copied-workspace write distinguishes correct dependency resolution from a no-op isolation assertion. Directory junctions retain Windows support; dependency writes still require an independent install or stronger sandbox.
   "2026-10-02T20:36:49.004Z","harness:codex",A disposable workspace must also rebase ordinary source aliases and resolve an aliased workspace root. Blind dereferencing can import excluded tracker data or external files. Preserve included source link topology inside the copy and refuse outside or excluded targets; dependency links are a separate deliberately shared contract.
   "2026-10-02T22:27:25.230Z","harness:codex","Canonical containment must be checked in both directions for shared dependency roots: an ancestor that looks external can still expose the original workspace. Admit disjoint external installations or internal node_modules subtrees, normalize reserved segments consistently, and resolve missing targets through existing ancestors before rebasing. Real root, parent, case-variant, cyclic and dangling controls verify distinct failure modes without mocks."
   "2026-10-03T00:12:17.999Z","harness:codex","Canonicalizing an alias can leave the workspace even when its lexical namespace is an admitted shared installation. Resolve source links after collecting all dependency roots; preserve dependency namespace ancestry, including linked packages, while rebasing ordinary physical source targets. Validate physical destination disjointness before copying and propagate real resolution errors. Real pre-fix and post-fix controls, CLI imports and Node/Bun package acceptance prove these distinct contracts."
   "2026-10-03T00:43:56.974Z","harness:codex","Filesystem absence assertions must distinguish an absent directory entry from a dangling target. lstat plus ENOENT proves omission; retained dangling links require lstat.isSymbolicLink and readFile ENOENT before testing write-through behavior. Windows access can return success for a dangling link, so it cannot establish that target unreadability contract. Keep these independent observations in the existing real filesystem fixture."
   "2026-10-03T15:08:23.831Z","harness:codex","Latest Node declarations can accept APIs absent from the package runtime floor. Verify versioned primary API history and reuse real filesystem controls on the minimum major before trusting successful current-runtime coverage. For optional snapshot targets, catch only ENOENT through the supported stat API; preserve permission, structural and cyclic failures. Keep the minimum-runtime slice inside an existing required per-PR job, alongside native Windows, rather than relying on nightly detection."
-files[5]{path,scope}:
-  .github/workflows/ci.yml,project
-  src/sdk/test/execution.ts,project
-  src/sdk/test/workspace-snapshot.ts,project
-  tests/integration/linked-test-context-trust.integration.spec.ts,project
-  tests/unit/sdk/test/workspace-snapshot.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "2026-10-03T15:54:35.845Z","harness:codex","After adding a required runtime slice, run both its focused job contract and the general workflow contract before push. Preserve exact declaration assertions and verify the actual runtime, runner, foundation dependency and unconditional unsuppressed execution; changing YAML spelling to evade a stale lexical count would hide the admission gap. Keep earlier local source coverage separate from a later workflow edit and from hosted complete coverage."
+files[6]:
+  - path: .github/workflows/ci.yml
+    scope: project
+  - path: src/sdk/test/execution.ts
+    scope: project
+  - path: src/sdk/test/workspace-snapshot.ts
+    scope: project
+  - path: tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    note: "Preserve exact sandbox declarations and verify the required Node22 snapshot step, runtime and unsuppressed runner"
+  - path: tests/integration/linked-test-context-trust.integration.spec.ts
+    scope: project
+  - path: tests/unit/sdk/test/workspace-snapshot.spec.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,project,240,"harness:codex","2026-10-02T17:04:05.377Z",local_mutation,codex/codspeed-dependency-security-snapshot-resolution
-test_runs[7]:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/node22-telemetry-workflow.spec.ts,project,240,"harness:codex","2026-10-03T15:51:16.825Z",local_mutation,codex/agent-refusals-context-recovery-claim-receipts
+test_runs[8]:
   - run_id: test-local-murayhq7-j2tsuz
     kind: test
     status: passed
@@ -215,9 +231,21 @@ test_runs[7]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-muskmdn8-1llnga
+    kind: test
+    status: passed
+    started_at: "2026-10-03T15:52:36.290Z"
+    finished_at: "2026-10-03T15:52:49.556Z"
+    recorded_at: "2026-10-03T15:52:49.556Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/node22-telemetry-workflow.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/TESTING.md,project
-close_reason: "Implemented the shared refusal contract and all review corrections and the verified snapshot-runtime compatibility recurrence, with exact coverage and packed validation."
+close_reason: Completed supported-runtime snapshot repair and exact required-workflow contract correction
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
