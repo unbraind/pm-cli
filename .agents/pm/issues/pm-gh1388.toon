@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-04T11:45:35.406Z"
-updated_at: "2026-10-04T13:02:31.164Z"
+updated_at: "2026-10-04T13:20:24.933Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f529e0ba704de883c96d689c"
 author: "harness:codex"
@@ -25,14 +25,18 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-q6gx,discovered_from,"2026-10-04T11:45:35.406Z","harness:codex","cli:create:dep",detected
   pm-q6gx,verifies,"2026-10-04T11:45:35.406Z","harness:codex","cli:create:dep",detected
   pm-gh1389,verifies,"2026-10-04T12:52:12.953Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-04T11:45:35.406Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1388 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
   "2026-10-04T11:49:35.855Z","harness:codex","TDD: the pre-fix current SDK read lacks the declared blocker summary. The real disposable fixture covers two open prerequisites one closed prerequisite a missing reference and an external locator with a duplicated scalar/edge reference. The intended first assertion fails before implementation; no mocked blocker resolution is used."
   "2026-10-04T12:12:30.385Z","harness:codex","Boundary TDD: a real copied item outside the typed tracker folders was incorrectly resolved through a ../../ legacy blocker scalar before the filename guard. The same disposable regression now preserves that reference as unresolved. The guard follows the existing portable stream filename rule; malformed references never cause an out-of-folder lookup. No production or unrelated data was accessed."
   "2026-10-04T12:39:38.815Z","harness:codex","Identity-boundary TDD: replacing an open prerequisite file with a different closed item produced a false terminal count before the guard. The same real disposable SDK regression now requires the existing item_identity_conflict refusal. Eleven isolated safe/source-mutant controls retain behavioral assertions and unchanged per-mode timeout budgets; no production test hook or mocked resolver was added."
   "2026-10-04T12:58:06.981Z","harness:codex","Compact-read TDD: the new default facet now replaces the misleading last-value scalar while explicit blocked_by and full reads preserve compatibility access. The same real fixture failed before replacement and verifies both restoration paths. No tracker value or provenance is deleted. The blocker omission receipt uses the shorter executable --full recovery; --fields blockers remains the narrower opt-in command. Existing output ceilings remain unchanged."
   "2026-10-04T13:02:31.164Z","harness:codex","Final local acceptance: 40 functional tests plus three executable-controller cases pass. All eleven safe controls pass and all eleven real source mutants fail behavioral assertions; timeout and coverage ceilings are unchanged. Fresh npm-packed consumer passes 12 CLI commands and two public SDK reads under each of Node and Bun, explicit scalar compatibility, actionable blocker projection, schedule receipts, historical refusal, npx/bunx and strict history. npm pack remains within the 20 MB artifact ceiling. Full hosted all-source coverage and bot review remain required before closure."
-files[9]:
+  "2026-10-04T13:15:27.528Z","harness:codex","Greptile P1 reproduced: a completed short-reference prerequisite remained falsely open while its canonical dependency was counted closed. The real pre-fix SDK assertion fails on that exact outcome. Resolution must index declared lookup aliases and then deduplicate verified physical identities, rather than merely count both forms. Open and closed short-reference fixtures are added to the existing public regression owner, plus a twelfth real source-defect control. No storage or provenance rewrite is required."
+  "2026-10-04T13:20:24.933Z","harness:codex","Review correction verification: 42 focused query/receipt tests pass including the short-ID P1 and deadline-selector control. The compact-output gate passes all 32 surfaces with original byte/token ceilings; omission controls and infeasible-budget controls remain intact. The hosted bulk-update failure checks persistence through a changed default presentation, so its unchanged five metadata assertions now use the retained --full compatibility read. No source denominator, timeout or assertion is relaxed."
+learnings[1]{created_at,author,text}:
+  "2026-10-04T13:07:23.119Z","harness:codex","A single-item actionability facet must name its declared edge scope rather than imply a corpus-wide or historical snapshot. Resolve only portable forward references, retain unknown/external blockers, and refuse mismatched physical identity before trusting terminal status. Replacing the partial default scalar can pay for richer evidence without raising token ceilings; preserve explicit/full scalar access."
+files[10]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
   - path: scripts/release/agent-evidence-consistency-control.mjs
@@ -49,13 +53,17 @@ files[9]:
     note: Discoverable blocker projection
   - path: tests/fixtures/contracts/full.json
     scope: project
+  - path: tests/unit/commands/lifecycle/update-many-command.spec.ts
+    scope: project
+    note: Retain scalar persistence proof through full compatibility reads
   - path: tests/unit/regressions/actionable-get-receipts.spec.ts
     scope: project
     note: Real declared blocker and alias receipt regressions
   - path: tests/unit/scripts/agent-evidence-consistency-control.spec.ts
     scope: project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,300,"harness:codex","2026-10-04T11:58:34.334Z",local_mutation,fix/actionable-blocker-and-schedule-read-receipts
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-many-command.spec.ts,project,300,"harness:codex","2026-10-04T13:20:23.064Z",local_mutation,fix/actionable-blocker-and-schedule-read-receipts
 test_runs[2]:
   - run_id: test-local-mutrwgwu-058sff
     kind: test

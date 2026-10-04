@@ -1717,10 +1717,10 @@ describe("runUpdateMany", () => {
       expect(updateJson.updated_count).toBe(2);
       expect(updateJson.failed_count).toBe(0);
 
-      const first = context.runCli(["get", firstId, "--json"], {
+      const first = context.runCli(["get", firstId, "--full", "--json"], {
         expectJson: true,
       });
-      const second = context.runCli(["get", secondId, "--json"], {
+      const second = context.runCli(["get", secondId, "--full", "--json"], {
         expectJson: true,
       });
       expect(first.code).toBe(0);

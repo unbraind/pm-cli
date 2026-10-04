@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-04T11:45:44.554Z"
-updated_at: "2026-10-04T13:02:32.428Z"
+updated_at: "2026-10-04T13:07:24.187Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f529e0ba704de883c96d689c"
 author: "harness:codex"
@@ -30,6 +30,8 @@ comments[4]{created_at,author,text}:
   "2026-10-04T11:49:37.383Z","harness:codex","TDD: the pre-fix SDK receipt calls rendered reminders/events omitted at default and narrow schedule projections. The same real reminder/event fixture proves the unselected material member remains omitted. Explicit metadata restoration is retained. No receipt implementation is mocked."
   "2026-10-04T12:58:08.879Z","harness:codex","Quality correction: rendered-alias inclusion is a documented nonlinear predicate so the receipt owner stays within the unchanged CodeFactor complexity ceiling. Eleven real source-defect controls pass safe code and fail behavioral assertions; the portable filename control now explicitly asserts successful resolution so the independent identity guard cannot hide a boundary failure behind a setup exception. All four TypeScript targets pass; packed temporary Node/Bun SDK and 11 CLI commands each plus npx/bunx and strict history passed before the final compact-output change."
   "2026-10-04T13:02:32.427Z","harness:codex","Shared final acceptance: all 43 focused tests pass, including eleven safe and eleven real source-mutant behavioral controls. Fresh installed-package Node/Bun probes pass normalized schedule emission and narrow omission behavior, brief/full recovery, historical separation, public SDK reads, npx/bunx and strict history. Dependency audit reports no known vulnerabilities; live GitHub Dependabot, code-scanning and secret-scanning alert inventories are empty. Full hosted all-source coverage and review remain pending; no global or published-source completion is claimed."
+learnings[1]{created_at,author,text}:
+  "2026-10-04T13:07:24.187Z","harness:codex","Omission receipts must inspect emitted aliases rather than only original metadata keys. An empty unselected linked placeholder proves envelope shape, not returned content. Mutation controls should assert the entire public outcome so an independent defensive exception cannot accidentally substitute for the intended behavioral failure."
 files[4]:
   - path: scripts/release/agent-evidence-consistency-control.mjs
     scope: project

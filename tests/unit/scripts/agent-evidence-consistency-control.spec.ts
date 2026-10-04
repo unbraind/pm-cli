@@ -22,7 +22,7 @@ describe("agent evidence consistency controls", () => {
       expect(process.exitCode).toBe(expectedCode);
       const receipts = write.mock.calls.map(([body]) => JSON.parse(String(body)) as { negative_control: boolean; controls: Array<{ name: string; exit_code: number }> });
       expect(receipts.map((receipt) => ({ negative_control: receipt.negative_control, codes: receipt.controls.map((control) => control.exit_code) }))).toEqual([
-        { negative_control: negativeControl, codes: Array.from({ length: 11 }, () => expectedCode) },
+        { negative_control: negativeControl, codes: Array.from({ length: 12 }, () => expectedCode) },
       ]);
     } finally {
       process.exitCode = previousExitCode;

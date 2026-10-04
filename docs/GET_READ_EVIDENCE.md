@@ -11,6 +11,9 @@ edges. `blockers.open` supplies each nonterminal target's ID, title and status;
 Repeated scalar/edge references are deduplicated by the shared actionability
 primitive. Missing targets and external references remain unresolved, with null
 status, so they cannot silently authorize work.
+Short local references resolve to their verified full IDs and count once even
+when both forms are stored. Rows under `open` are unresolved by definition;
+they omit the redundant `resolved: false` flag while retaining resolver context.
 Legacy text that is not a portable filename remains unresolved and never causes
 a lookup outside the registered item folders.
 A target file with a different embedded item identity refuses the read with an

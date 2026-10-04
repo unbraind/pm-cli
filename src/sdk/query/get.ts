@@ -132,7 +132,7 @@ export interface GetResult {
     /** Explicit scope: scalar and blocked_by edges declared by this item. */
     scope: "declared";
     /** Nonterminal, missing and external references that still gate declared prerequisites. */
-    open: ResolvedBlocker[];
+    open: Omit<ResolvedBlocker, "resolved">[];
     /** Declared references whose targets have terminal runtime statuses. */
     closed_count: number;
   };
@@ -708,6 +708,19 @@ async function buildGetChildrenRollup(
   );
 }
 
+/** Collapse local short/full aliases onto verified physical identities while preserving exact external locator identity and unresolved references. */
+function canonicalizeDeclaredBlockers(
+  blockers: readonly ResolvedBlocker[],
+  targets: ReadonlyMap<string, ItemMetadata>,
+): ResolvedBlocker[] {
+  const canonical = new Map<string, ResolvedBlocker>();
+  for (const blocker of blockers) {
+    const id = blocker.external ? blocker.id : (targets.get(blocker.id.toLowerCase())?.id ?? blocker.id);
+    canonical.set(blocker.external ? `external:${id}` : `local:${id.toLowerCase()}`, { ...blocker, id });
+  }
+  return [...canonical.values()];
+}
+
 /** Attach current forward-declared targets only when requested, retaining unsafe/unknown/external references as unresolved and avoiding unrelated item scans or historical status claims. */
 async function attachGetBlockers(
   result: GetResult,
@@ -746,10 +759,10 @@ async function attachGetBlockers(
           required: "Restore the canonical blocker identity and validate storage integrity before retrying the item read.",
         });
       }
-      targets.set(located.id.toLowerCase(), loaded.document.metadata);
+      targets.set(id.toLowerCase(), loaded.document.metadata);
     }
   }
-  const resolved = resolveItemBlockers(
+  const resolved = canonicalizeDeclaredBlockers(resolveItemBlockers(
     {
       blocked_by: context.metadata.blocked_by,
       dependencies: context.metadata.dependencies,
@@ -757,10 +770,10 @@ async function attachGetBlockers(
     },
     targets,
     resolveRuntimeStatusRegistry(context.settings.schema),
-  );
+  ), targets);
   result.blockers = {
     scope: "declared",
-    open: resolved.filter((blocker) => !blocker.resolved),
+    open: resolved.filter((blocker) => !blocker.resolved).map(({ resolved: _resolved, ...blocker }) => blocker),
     closed_count: resolved.filter((blocker) => blocker.resolved).length,
   };
   if (!projection.fieldProjection && !projection.full) delete result.item.blocked_by;
