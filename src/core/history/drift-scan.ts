@@ -69,6 +69,8 @@ export type DriftCacheHitVerification = "content_hash" | "metadata";
 export interface DriftScanOptions {
   /** Value that configures or reports cache hit verification for this contract. */
   cacheHitVerification?: DriftCacheHitVerification;
+  /** Disable cache writes for a selective verification that must preserve the full-corpus cache. */
+  persistCache?: boolean;
 }
 
 interface DriftCacheEntry {
@@ -534,8 +536,9 @@ export async function scanHistoryDrift(
   await scanWorkspaceStateAgreement(pmRoot, accumulator);
 
   if (
-    cacheDirty ||
-    Object.keys(previousEntries).length !== Object.keys(nextEntries).length
+    options.persistCache !== false &&
+    (cacheDirty ||
+      Object.keys(previousEntries).length !== Object.keys(nextEntries).length)
   ) {
     const cachePath = getDriftCachePath(pmRoot);
     try {

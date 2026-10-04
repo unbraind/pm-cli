@@ -1545,7 +1545,7 @@ describe("error-guidance helper edge branches", () => {
       "Task|Issue",
       2,
     );
-    expect(unknownFallback.examples).toContain("pm <command> --help");
+    expect(unknownFallback.examples).toContain("pm --help --all");
 
     const invalidUsageFallback = formatCommanderErrorForJson(
       "error: random usage failure",

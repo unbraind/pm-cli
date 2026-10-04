@@ -22759,7 +22759,8 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
-        "core/telemetry/observability.ts"
+        "core/telemetry/observability.ts",
+        "sdk/governance/validate-history-drift.ts"
       ],
       "stability": "stable"
     },

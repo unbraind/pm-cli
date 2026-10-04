@@ -1,0 +1,112 @@
+id: pm-gh1385
+title: "GH-1385: preserve literal annotation prefixes across comment input transports"
+description: "Positional comments lose a literal TDD: prefix while explicit add preserves it. Preserve exact evidence text across positional, flag, file and stdin transports and retain explicit structured text input."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,context-management,evidence-integrity,github-intake
+created_at: "2026-10-04T03:29:32.435Z"
+updated_at: "2026-10-04T08:10:22.732Z"
+closed_at: "2026-10-04T08:10:21.621Z"
+completed_at: "2026-10-04T08:10:21.621Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Comments, notes and learnings retain literal annotation prefixes across positional, add, file, stdin, add-from-stdin and file-from-stdin transports; Explicit SDK text-prefixed structured input and other commands retain supported option normalization; Disposable source mutation rejects the original prefix-loss defect with a behavior assertion and the recorded historical lineage remains registered; Exact all-source coverage, strict static gates and isolated Node and Bun acceptance pass with unchanged thresholds"
+goal: context-management
+objective: Preserve trustworthy recursive self-improvement evidence
+value: Agents can retain exact evidence text across all supported annotation transports
+parent: pm-f05lsg
+risk: medium
+confidence: high
+resolution: "Public bootstrap normalization preserves literal annotation prefixes across comments, notes and learnings without changing explicit SDK structured input syntax."
+expected_result: "Every literal positional, flag, file and stdin annotation transport must preserve evidence bytes."
+actual_result: "All 18 real transports per runtime passed on Node and Bun; the public normalizer and unsafe-source controller prove prefix preservation and reject the original defect. Complete source suite: 9686 passed, 2 Windows-only Linux skips and exact 100/100/100/100 coverage."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,implements,"2026-10-04T03:29:32.435Z","harness:codex","cli:create:dep",detected
+  pm-gh1383,discovered_from,"2026-10-04T03:29:32.435Z","harness:codex","cli:create:dep",detected
+  pm-k0mr,verifies,"2026-10-04T03:29:32.435Z","harness:codex","cli:create:dep",detected
+  pm-cvwi,recurs_from,"2026-10-04T03:38:13.437Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-04T03:29:32.435Z","harness:codex","Duplicate check October 4: strict full all-status corpus read includes 2869/2869 records, complete with no omissions or unreadable records. Exact issue 1385, TDD prefix, positional prefix and comment shorthand searches plus full live pm-cvwi and pm-k0mr metadata show no existing leaf for literal prefix loss. Closed compatibility work remains completed; this new recurrence preserves its contract."
+  "2026-10-04T03:34:14.850Z","harness:codex","TDD baseline reproduced in a fresh isolated tracker: positional TDD: prefix proof stored prefix proof, while explicit --add preserved TDD: prefix proof. SDK bootstrap bare-key normalization fuzzily matches TDD to add. Preserve literal annotation bodies while retaining documented explicit structured input and option spelling compatibility."
+  "2026-10-04T03:51:26.897Z","harness:codex","TDD: 137 focused tests pass, including real annotation CLI transports, declared help recovery, stable history corruption, cache preservation and lock contention. All three isolated safe controls pass; restoring each unsafe invariant fails its selected behavior assertion. No source coverage exclusions or threshold changes. Full-source coverage and static release gates are now running before closure."
+  "2026-10-04T04:03:25.773Z","harness:codex","Linked-test configuration correction: the none PM-context mode correctly refused source-workspace execution before invoking the command. Retained that immutable refusal evidence and replaced the link through the CLI with schema isolation. The regression controller itself copies source into a disposable workspace and runs the canonical isolated test runner. No trust, isolation or failure gate was relaxed."
+  "2026-10-04T06:12:14.826Z","harness:codex","Pre-closure recurrence gate caught two unregistered members in the truthful pm-cvwi -> pm-gh1385 recurrence lineage. The typed edge is retained. Existing families were read completely; none owns literal annotation bootstrap normalization. Register this specific recurrence with the actual regression and disposable source-mutant controller, unchanged zero escape budget, required static/coverage/Windows checks, and the fully read historical predecessor. Earlier failed gate remains a failed receipt; registration proof will be rerun before closure."
+  "2026-10-04T06:27:13.480Z","harness:codex","Whole staged-fixture coverage completed with all 9686 cases passing and two Windows-only skips, but correctly failed exact coverage at branches50966/50967. The uncovered fallback was unreachable: normalizeBootstrapTokens has one call site, always supplied the string returned by resolvePmCommandOperation (including the empty-string root operation). Narrowed this private parameter to its actual string contract and removed the redundant nullish fallback; no source exclusion or test-only private injection is used. The source-mutant selector is updated to the actual condition, and whole coverage will be measured again."
+  "2026-10-04T08:10:20.412Z","harness:codex","TDD: final all-source coverage passed unchanged exact gates: 9686 tests passed, 2 Windows-only skips on Linux; lines=63515/63515, statements=66625/66625, functions=13761/13761, branches=50965/50965. Zero uncovered counts across every measured source file. Focused real regressions, unsafe-source controls, linked execution and temporary Node/Bun/npm/npx/bunx acceptance passed. Implementation, closure and package-owned changelog are carried on the same delivery branch; published 2026.10.4 predates this change."
+learnings[1]{created_at,author,text}:
+  "2026-10-04T04:08:58.576Z","harness:codex","Evidence text must not be treated as option syntax merely because a colon prefix resembles a flag or fuzzy alias. Public bootstrap normalization and real CLI input transports carry distinct risks, so the regression owner proves both while retaining explicit SDK text-prefix syntax."
+files[6]:
+  - path: config/defect-recurrence-policy.json
+    scope: project
+  - path: scripts/release/agent-evidence-consistency-control.mjs
+    scope: project
+    note: Disposable assertion-sensitive source mutation controls
+  - path: scripts/release/docstring-quality-baseline.json
+    scope: project
+    note: Decrease filler ceiling after meaningful recovery documentation
+  - path: src/sdk/cli-bootstrap.ts
+    scope: project
+  - path: tests/unit/regressions/agent-evidence-consistency.spec.ts
+    scope: project
+    note: Real persistence and public boundary regressions
+  - path: tests/unit/scripts/agent-evidence-consistency-control.spec.ts
+    scope: project
+    note: Actual controller pass/fail verdicts in mandatory coverage
+tests[1]{command,scope,timeout_seconds,pm_context_mode,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/agent-evidence-consistency-control.mjs,project,240,schema,"harness:codex","2026-10-04T04:22:40.074Z",local_mutation,fix/consistent-history-evidence-and-agent-recovery
+test_runs[3]:
+  - run_id: test-local-mutaogfb-9g7t3m
+    kind: test
+    status: failed
+    started_at: "2026-10-04T04:02:15.908Z"
+    finished_at: "2026-10-04T04:02:16.487Z"
+    recorded_at: "2026-10-04T04:02:16.487Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/agent-evidence-consistency-gate.mjs,none,none,source,local_source_ref
+  - run_id: test-local-mutawbxm-xrghef
+    kind: test
+    status: passed
+    started_at: "2026-10-04T04:07:36.899Z"
+    finished_at: "2026-10-04T04:08:23.914Z"
+    recorded_at: "2026-10-04T04:08:23.914Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/agent-evidence-consistency-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-all-local-muti6i30-l1aw5w
+    kind: test-all
+    status: passed
+    started_at: "2026-10-04T07:32:15.708Z"
+    finished_at: "2026-10-04T07:33:25.349Z"
+    recorded_at: "2026-10-04T07:33:25.349Z"
+    passed: 0
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 1
+    executions[1]{command}:
+      node scripts/release/agent-evidence-consistency-control.mjs
+docs[3]:
+  - path: CHANGELOG.md
+    scope: project
+  - path: docs/AGENT_EVIDENCE_CONSISTENCY.md
+    scope: project
+    note: Agent evidence consistency contracts and verification
+  - path: docs/README.md
+    scope: project
+    note: Agent evidence consistency contracts and verification
+close_reason: Verified shared CLI/SDK agent-evidence implementation and real consumer acceptance for reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/release/agent-evidence-consistency-control.mjs --negative-control
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/regressions/agent-evidence-consistency.spec.ts tests/unit/scripts/agent-evidence-consistency-control.spec.ts,node scripts/release/agent-evidence-consistency-control.mjs
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: unbrained
+body: ""

@@ -1,0 +1,30 @@
+id: pm-axotea
+title: Prose graph census misses valid item identifiers with multiple hyphens
+description: "The public prose_edge_gap SDK measurement reports one missing pair for a canonical pm-target reference but zero for a canonical pm-2evidence-dist reference under the same two-item context. The census token pattern accepts only one hyphen, undercounting missing links for custom identifiers accepted by the CLI."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-04T07:29:00.577Z"
+updated_at: "2026-10-04T07:29:23.182Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Resolve canonical custom identifiers without prefix collisions or false positive prose matches; Preserve exact counts, deduplication, exemptions, partitions and million-item cost bounds; Add a failing real SDK regression and negative control before changing identifier extraction"
+goal: context-management
+objective: Measure every canonical identifier supported by the workspace
+value: Prevent custom identifiers from hiding prose-only relationship gaps
+parent: pm-96h7
+risk: medium
+confidence: high
+environment: Current branch SDK read-only two-item diagnostic on 2026-10-04
+expected_result: Both resolvable unlinked canonical references produce exactly one gap
+actual_result: Single-hyphen control produces one gap; multi-hyphen target produces zero
+component: sdk/governance/assurance
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2evidence-dist,discovered_from,"2026-10-04T07:29:00.577Z","harness:codex","cli:create:dep",detected
+  pm-96h7,implements,"2026-10-04T07:29:00.577Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-04T07:29:00.577Z","harness:codex","Duplicate check: full all-status metadata corpus and current CLI search reviewed. The original measurement feature is completed; this distinct custom-identifier extraction defect has no existing implementation owner. Read-only public SDK diagnostic reproduced the mismatch without modifying tracker data. Queued open and unclaimed for its own TDD implementation rather than reopening historical delivery."
+files[1]{path,scope}:
+  src/sdk/governance/assurance.ts,project
+body: ""

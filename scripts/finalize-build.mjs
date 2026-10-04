@@ -22,7 +22,7 @@ async function outputExists(filePath) {
   }
 }
 
-/** Compact retained runtime modules without changing identifiers, module boundaries, or declarations. */
+/** Compact redundant runtime syntax without changing identifiers, module boundaries, or declarations. */
 export async function compactRuntimeOutputs(directory) {
   const entryPoints = [];
   for await (const relative of glob("**/*.js", {
@@ -46,7 +46,7 @@ export async function compactRuntimeOutputs(directory) {
     target: "node22",
     minifyWhitespace: true,
     minifyIdentifiers: false,
-    minifySyntax: false,
+    minifySyntax: true,
     sourcemap: true,
     sourcesContent: true,
     legalComments: "inline",

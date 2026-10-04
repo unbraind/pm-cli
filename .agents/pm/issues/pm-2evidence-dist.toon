@@ -1,0 +1,83 @@
+id: pm-2evidence-dist
+title: Compact retained runtime modules and stage packed SDK acceptance efficiently
+description: "The combined literal-annotation, consistent-history and declared-recovery implementation produces a real npm pack receipt of 20,012,917 unpacked bytes, exceeding the unchanged 20,000,000-byte base limit. Existing whitespace compaction is already shipped; preserve all documentation, runtime paths, identifiers, public declarations and original source maps while eliminating redundant emitted syntax."
+type: Issue
+status: closed
+priority: 1
+tags[3]: context-management,distribution,performance
+created_at: "2026-10-04T04:41:29.139Z"
+updated_at: "2026-10-04T08:12:38.128Z"
+closed_at: "2026-10-04T08:10:29.940Z"
+completed_at: "2026-10-04T08:10:29.940Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "Actual npm artifact stays below the unchanged 20 MB base budget;Real Node execution preserves exported names, successful values and exception semantics;Declarations and prebuilt bundles remain byte-identical;Original TypeScript source content remains in composed maps;Repeated finalization is stable;Installed npm npx and bunx acceptance remains green"
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Retained runtime modules compact redundant syntax while preserving identifiers, behavior, declarations, bundles and source maps; packed SDK continuation stages actual publish selectors before real npm packing."
+expected_result: Keep the actual npm artifact within the unchanged 20 MB ceiling and retain all public installed-consumer behavior without weakening packing or test time limits.
+actual_result: "Runtime/negative-control and all eleven packed continuation scenarios passed; npm/npx/bunx smoke passed with nine extension packages and the artifact measured 19,893,321 bytes against 20,000,000. Shared linked execution passed four unique commands with three duplicate links explicitly skipped. Complete source suite: 9686 passed, 2 Windows-only Linux skips and exact 100/100/100/100 coverage."
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+  pm-998juj,verifies,"2026-10-04T04:41:29.139Z","harness:codex","cli:create:dep",detected
+  pm-fx0rcb,recurs_from,"2026-10-04T04:41:29.139Z","harness:codex","cli:create:dep",detected
+  pm-gh1383,discovered_from,"2026-10-04T04:41:29.139Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-10-04T04:41:29.139Z","harness:codex","cli:create:dep",detected
+  pm-gh1371,verifies,"2026-10-04T05:58:22.624Z","harness:codex","cli:update:dep",detected
+  pm-7wzc6f,verifies,"2026-10-04T07:44:05.027Z","harness:codex","cli:update:dep",detected
+  pm-gh1383,verifies,"2026-10-04T07:44:05.027Z","harness:codex","cli:update:dep",detected
+  pm-gh1385,verifies,"2026-10-04T07:44:05.027Z","harness:codex","cli:update:dep",detected
+comments[10]{created_at,author,text}:
+  "2026-10-04T04:41:29.139Z","harness:codex","All-status duplicate check: acquired the complete 2,869-item corpus, searched artifact/unpacked/compaction through the CLI and full corpus, refreshed open and in-progress lists, and read live pm-fx0rcb and pm-998juj closure plus comments and history. Both historical fixes are shipped; no active item owns syntax compaction. This new measured budget failure arises during the combined evidence delivery."
+  "2026-10-04T04:43:49.497Z","harness:codex","TDD: extending the existing real compaction fixture failed twice before the flag change because unreachable syntax remained in emitted JavaScript. Both physical and symlinked root cases pass after enabling esbuild syntax compaction, including real Node exported function names, successful values, RangeError behavior, untouched declarations/bundles, original TypeScript source maps and idempotent finalization. The existing evidence controller now includes this actual unsafe-source mutant; no test-only production seam was added."
+  "2026-10-04T04:45:27.486Z","harness:codex","Actual post-change npm pack receipt passes the unchanged base contract: 19,893,194 unpacked bytes, 1,749 files, no packaged source maps, all required runtime and SDK paths. The pre-change receipt was 20,012,917 bytes. Syntax compaction restores 119,723 bytes while preserving identifiers and declarations; no distribution budget or packlist exclusion changed. Full canonical coverage is running with one worker after all build changes completed."
+  "2026-10-04T05:58:23.795Z","harness:codex","Whole-source verification completed with 9,685 passing tests and one failure: the packed continuation fixture exceeded its existing 30-second npm subprocess limit. Its real tarball test passes alone but remains load-sensitive. Keep the 30-second subprocess and 120-second test budgets; stage the actual package manifest publish-file projection outside the checkout before npm packing so npm does not traverse root development node_modules. Retain every existing SDK continuation assertion and the separate clean production installation gate. No coverage report or 100-percent claim is available from the failed run."
+  "2026-10-04T06:03:46.117Z","harness:codex","Final packed SDK fixture verification: the unchanged 30-second npm subprocess and 120-second test budgets now pass in 24.00 seconds (21.43-second test). The fixture stages the actual positive package files selectors, excludes negative selectors and node_modules, preserves the exact package manifest, produces a real npm tarball, and executes all 11 public SDK list/search/context continuation scenarios. This fixes root development-tree traversal rather than increasing time limits or replacing npm with a mock. Full coverage is being rerun before closure."
+  "2026-10-04T07:04:25.739Z","harness:codex","Escape classification is review_caught_late: integrated prepublication verification found this branch artifact exceeded the existing ceiling after additive SDK changes. No registry consumer failure or published artifact regression is claimed. The unchanged artifact gate and actual unsafe syntax-compaction source control are retained as structured closure evidence; no waiver, threshold increase or classification bypass is used."
+  "2026-10-04T07:45:14.180Z","harness:codex","Verification: real temporary Node and Bun acceptance passed all 18 literal annotation transports per runtime, claim/start/link/close/release, declared recovery, and 152-item overlapping SDK validation/writes with zero hash/chain discrepancies. Nine packaged extensions and npm/npx/bunx installed smoke passed. Actual npm artifact is 19,893,321 bytes against the unchanged 20,000,000-byte ceiling. Static quality components passed, including repository, docstrings, exports, ESLint, duplicate detection, workflow permissions, dependency cooldown, generated surfaces/contracts/error catalog, package boundary, SDK parity, grammar/flags/refusal/token gates, tracker context, registry, SDK surface/costs, graph composition and record integrity. The six-operation CLI timing gate passed with the CI Node 24 runtime; paired base/current control passed unchanged budgets on Node 24 and exposed host/runtime-sensitive Node 26 failures without changing budgets. Mutation control killed 329/336 with seven independently registered equivalent mutants and zero violations. Context-evaluation/token, docs/skills links and defect evidence passed; 24 recurrence families are registered. Raw private receipts remain outside the repository. Full source coverage receipt is recorded separately after completion.\n"
+  "2026-10-04T07:48:44.907Z","harness:codex","Verification interruption 2026-10-04: the final full coverage attempt exited without a JSON coverage report; its output stopped abruptly at a 40,960-byte boundary after widespread fixture/import failures. The shared /tmp tmpfs was heavily occupied (13 GiB used of 16 GiB after cleanup). A fresh disk-backed temporary root outside checkout ancestors reran all six sampled failing fixture suites unchanged: 39/39 tests passed. Repeating full coverage with only TMPDIR redirected to that isolated disk-backed root; no source, coverage exclusions, thresholds or test timeouts were changed, and unrelated temporary data was preserved."
+  "2026-10-04T08:10:29.159Z","harness:codex","TDD: final all-source coverage passed unchanged exact gates: 9686 tests passed, 2 Windows-only skips on Linux; lines=63515/63515, statements=66625/66625, functions=13761/13761, branches=50965/50965. Zero uncovered counts across every measured source file. Focused real regressions, unsafe-source controls, linked execution and temporary Node/Bun/npm/npx/bunx acceptance passed. Implementation, closure and package-owned changelog are carried on the same delivery branch; published 2026.10.4 predates this change."
+  "2026-10-04T08:12:38.128Z","harness:codex","Environment confirmation during package-owned changelog preparation: npm packing in the shared tmpfs returned errno -122 (quota exceeded), confirming that free filesystem capacity alone did not imply writable temporary storage. Re-running package generation and final artifact checks with the same external directory on disk preserves existing temporary data and changes no package source, limits or verification gates. The complete coverage run in that directory passed all 9,686 tests and exact source counts."
+learnings[1]{created_at,author,text}:
+  "2026-10-04T05:30:31.255Z","harness:codex","Artifact limits are contracts on the actual npm packlist, not on a source-file estimate. When additive SDK behavior exhausts headroom, syntax compaction can preserve all shipping paths and public declarations; verify real exported names, exception behavior, original source mappings and repeated finalization before relying on the smaller receipt."
+files[5]{path,scope}:
+  scripts/finalize-build.mjs,project
+  scripts/release/agent-evidence-consistency-control.mjs,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+  tests/unit/scripts/agent-evidence-consistency-control.spec.ts,project
+  tests/unit/scripts/runtime-compaction.spec.ts,project
+tests[4]{command,scope,timeout_seconds,pm_context_mode,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts,project,180,schema,"harness:codex","2026-10-04T04:42:11.641Z",local_mutation,fix/consistent-history-evidence-and-agent-recovery
+  node scripts/release/package-artifact-gate.mjs,project,180,schema,"harness:codex","2026-10-04T04:42:13.476Z",local_mutation,fix/consistent-history-evidence-and-agent-recovery
+  node scripts/release/agent-evidence-consistency-control.mjs,project,240,schema,"harness:codex","2026-10-04T04:45:30.634Z",local_mutation,fix/consistent-history-evidence-and-agent-recovery
+  node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,project,180,schema,"harness:codex","2026-10-04T06:03:45.385Z",local_mutation,fix/consistent-history-evidence-and-agent-recovery
+test_runs[1]:
+  - run_id: test-all-local-muti6i30-l1aw5w
+    kind: test-all
+    status: passed
+    started_at: "2026-10-04T07:32:15.708Z"
+    finished_at: "2026-10-04T07:33:25.239Z"
+    recorded_at: "2026-10-04T07:33:25.239Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 4
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts tests/unit/scripts/finalize-build.spec.ts,schema,schema,source,local_source_ref
+      node scripts/release/package-artifact-gate.mjs,schema,schema,source,local_source_ref
+      node scripts/release/agent-evidence-consistency-control.mjs,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/AGENT_EVIDENCE_CONSISTENCY.md,project
+close_reason: Verified shared CLI/SDK agent-evidence implementation and real consumer acceptance for reviewed delivery.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: package-artifact
+  negative_control: node scripts/release/agent-evidence-consistency-control.mjs --negative-control
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-compaction.spec.ts,node scripts/release/package-artifact-gate.mjs
+  hosted_checks[2]: Gates (coverage),Gates (packaging)
+  owner: unbrained
+body: ""

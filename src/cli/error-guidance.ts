@@ -1708,7 +1708,9 @@ function buildUnknownOptionGuidance(
   }
   const examples = [
     retryCommand,
-    `pm ${commandName ? (resolvePmCommandAlias(commandName)?.canonical ?? commandName) : "<command>"} --help`,
+    commandName
+      ? `pm ${resolvePmCommandAlias(commandName)?.canonical ?? commandName} --help`
+      : "pm --help --all",
   ].filter((entry): entry is string => typeof entry === "string");
   return makeGuidanceMessage({
     code: "unknown_option",
