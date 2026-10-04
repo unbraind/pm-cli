@@ -34,7 +34,8 @@ commands retain their supported bare-key option normalization.
 Validation first scans the captured corpus. An ordinary writer can advance an
 item and its history after that capture. An item-hash discrepancy is therefore
 read again while holding the same item mutation lock used by ordinary writers.
-This fresh source/history pair determines the finding.
+This fresh source/history pair determines the finding. A reread whose declared
+identity differs from the locked identity fails before any finding is replaced.
 
 Clean rows and history-only findings do not incur another item read or lock
 acquisition. Each item-hash discrepancy gets one bounded recheck. Lock contention
@@ -46,8 +47,9 @@ diagnostics remain available to repair workflows even when a writer owns the ite
 Workspace singleton findings retain their own verification semantics.
 
 The core `scanHistoryDrift` API continues to compare the snapshots supplied by
-its caller. Its optional `persistCache: false` option allows selective
-verification without replacing the full-corpus cache with a subset.
+its caller. Its strict `scanItemHistoryDrift` companion shares stream verification
+without loading or writing the corpus cache or rereading workspace history and
+governed documents. Workspace checks run once in the initial corpus scan.
 
 ## Declared recovery help
 
@@ -62,7 +64,7 @@ an equals value retain command-specific recovery help.
 
 The regression owner exercises real isolated tracker persistence, all annotation
 transports, strict corruption cases, writer-lock contention, cache preservation,
-and public bootstrap normalization:
+identity binding, bounded cache reads, and public bootstrap normalization:
 
 ```bash
 node scripts/run-tests.mjs test -- tests/unit/regressions/agent-evidence-consistency.spec.ts

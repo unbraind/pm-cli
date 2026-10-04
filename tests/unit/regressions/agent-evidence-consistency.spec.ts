@@ -6,7 +6,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { listAllItemMetadataWithBody, locateItem } from "../../../src/core/store/item-store.js";
 import { buildValidateHistoryDriftCheck } from "../../../src/sdk/governance/validate-history-drift.js";
 import { runComments } from "../../../src/sdk/comments.js";
@@ -20,6 +20,37 @@ import { createTestItem } from "../../helpers/itemFactory.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("agent evidence consistency", () => {
+  it.each(["existing", "missing"])("rejects a reread redirected to an %s item identity", async (target) => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Captured identity" });
+      const sibling = createTestItem(context, { title: "Other identity" });
+      const captured = await listAllItemMetadataWithBody(context.pmPath);
+      await runComments(created.id, { add: "ordinary writer" }, { path: context.pmPath });
+      const located = await locateItem(context.pmPath, created.id);
+      const source = await fs.readFile(located!.itemPath, "utf8");
+      await fs.writeFile(located!.itemPath, source.replace(created.id, target === "existing" ? sibling.id : "pm-missing"));
+      await expect(buildValidateHistoryDriftCheck(context.pmPath, captured, true)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+      await expect(fs.stat(getLockPath(context.pmPath, created.id))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("reads the corpus cache once while rechecking multiple advanced items", async () => {
+    await withTempPmPath(async (context) => {
+      const ids = [createTestItem(context, { title: "First writer" }).id, createTestItem(context, { title: "Second writer" }).id];
+      const captured = await listAllItemMetadataWithBody(context.pmPath);
+      for (const id of ids) await runComments(id, { add: "ordinary writer" }, { path: context.pmPath });
+      // Observe real reads without replacing their implementation or results.
+      const reads = vi.spyOn(fs, "readFile");
+      try {
+        const result = await buildValidateHistoryDriftCheck(context.pmPath, captured, true);
+        expect(result.check.ok).toBe(true);
+        expect(reads.mock.calls.filter(([file]) => String(file) === path.join(context.pmPath, "runtime", "history-drift-cache.json"))).toHaveLength(1);
+      } finally {
+        reads.mockRestore();
+      }
+    });
+  });
+
   it("rechecks an advanced source snapshot without accepting stable source corruption", async () => {
     await withTempPmPath(async (context) => {
       const created = createTestItem(context, { title: "Concurrent evidence" });

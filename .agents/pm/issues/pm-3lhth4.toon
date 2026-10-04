@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: "area:observability","area:sdk","area:storage",error-taxonomy,gate,recurrence
 created_at: "2026-08-08T08:00:22.880Z"
-updated_at: "2026-09-22T04:59:28.809Z"
+updated_at: "2026-10-04T09:26:00.384Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "One shared primitive translates host filesystem and resource errno faults into declared PmCliError refusals with a bounded operation label, recovery guidance, and no path disclosure; Every awaited filesystem call site in core and sdk either routes through that primitive or carries a recorded waiver naming why the raw fault is correct; A CI gate fails when a new unguarded filesystem call site is added, so the family cannot silently regrow; The declared codes resolve in the generated error catalog, and a negative control proves a non-errno fault still propagates as a defect rather than being swallowed as environment noise"
@@ -14,7 +14,7 @@ parent: pm-o2kc
 risk: medium
 confidence: high
 expected_result: "Every host filesystem fault at any awaited call site becomes a declared refusal with recovery guidance and no path disclosure, and a gate catches a new raw fault before it ships."
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-4odf0c,discovered_from,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
   pm-f05lsg,related,"2026-08-08T08:00:22.880Z","harness:claude-code","cli:create:dep",detected
@@ -25,7 +25,8 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-j668gl,discovered_from,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-y4kovm,verifies,"2026-08-28T17:00:10.791Z","harness:codex","cli:update:dep",detected
   pm-4odf0c,recurs_from,"2026-09-06T04:59:23.511Z","harness:codex","cli:update:dep",detected
-comments[39]:
+  pm-p5u6,related,"2026-10-04T09:25:55.570Z","harness:codex","cli:update:dep",detected
+comments[40]:
   - created_at: "2026-08-08T10:32:51.895Z"
     author: "harness:codex"
     text: "Partial tranche evidence 2026-08-08: added the public path-redacted host errno classifier/translator/async boundary for EACCES, EDQUOT, EMFILE, ENFILE, ENOMEM, ENOSPC, EPERM, and EROFS; snapshot create/restore now consume it while preserving published snapshot error codes. Generated catalog, negative controls, 22/22 linked tests, security scan, and exact full coverage pass. Acceptance is not complete: the remaining awaited filesystem sites still need routing or explicit waivers and a CI recurrence gate. Returning this item to open and releasing the claim rather than claiming whole-repo completion."
@@ -144,30 +145,75 @@ comments[39]:
   - created_at: "2026-09-18T16:58:22.702Z"
     author: "harness:codex"
     text: "Final-code hosted coverage is exactly 100/100/100/100. Local full reruns exposed host constraints rather than new source failures after the cleanup assertion fix: temporary-storage quota, then ancestor tracker discovery when TMPDIR was placed under the user home. All 96 affected CLI/store/agent-UX tests pass with scratch outside tracker ancestry in /var/tmp; all 142 focused extension/host/graph tests also pass. Future scratch acceptance must have both sufficient capacity and no ancestor tracker."
+  - created_at: "2026-10-04T09:26:00.384Z"
+    author: "harness:codex"
+    text: "New confirmed boundary evidence during PR #1387 validation: a delegating observer retained real filesystem behavior and recorded numeric errno -122 (EDQUOT) while writing stale-cleanup owner.json. tryCreateStaleCleanupGate catches the capacity fault and returns null, so the externally reported refusal is lock_conflict after bounded waiting despite no competing owner. The canonical host-fault migration owner is reused; this is a misleading capacity-to-contention classification, not a resolved fault or a lock-force request. Remaining acceptance should require typed path-private capacity/permission failures at acquisition while preserving programmer exceptions, original lock ownership and safe cleanup. The related temp-footprint owner carries the storage-pressure recurrence; no duplicate is created and this umbrella remains unclaimed."
 learnings[2]{created_at,author,text}:
   "2026-08-17T02:30:00.618Z","harness:codex","Node can surface Linux quota exhaustion as code='Unknown system error -122' with errno=-122; portable host-boundary classification must normalize declared numeric node:os.constants.errno values rather than guess numeric literals."
   "2026-08-17T05:06:05.230Z","harness:codex","node:os.constants.errno is platform-specific: EDQUOT is declared on Linux but absent on Windows. Numeric errno tests must choose a locally declared equivalent while retaining the Linux EDQUOT path where available, and lookup tables must filter missing runtime constants before constructing numeric maps."
-files[20]{path,scope,note}:
-  sdk/public-surface.json,project,Reviewed additive SDK surface snapshot
-  src/core/extensions/module-graph-snapshot.ts,project,Typed module verification copy stage
-  src/core/fs/host-environment-errors.ts,project,Shared core implementation with stable SDK reexports
-  src/sdk/environment/host-environment-errors.ts,project,Shared path-redacted host errno classifier translator and async boundary
-  src/sdk/extension/install-runtime.ts,project,Typed installation copy stage
-  src/sdk/extension/install-snapshot.ts,project,Typed backup and rollback stages
-  src/sdk/extension/install-sources.ts,project,Validate registry archives and type missing npm pack artifacts
-  src/sdk/generated-error-code-catalog.ts,project,Generated host fault codes and preserved snapshot aliases
-  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated canonical host-fault source locations after moving the shared boundary
-  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated npm package archive refusal contract
-  src/sdk/index.ts,project,Exports the public host environment primitives
-  src/sdk/test/execution.ts,project,Apply the shared host-environment boundary to linked-test tracker seeding
-  src/sdk/workspace-snapshot.ts,project,Snapshot create and restore stages consume the shared boundary while preserving stable codes
-  tests/fixtures/contracts/full.json,project,Generated CLI contract snapshot for typed archive refusal
-  tests/integration/extension-host-faults.integration.spec.ts,project,Capacity classification and real permission-denied rollback boundaries
-  tests/unit/commands/test/test-command.spec.ts,project,Portable numeric capacity-fault fixture at linked-test sandbox boundary
-  tests/unit/extensions/extension-command.spec.ts,project,Preserve stale lock ownership while expecting typed host permission fault
-  tests/unit/extensions/extension-install-security.spec.ts,project,Registry archive link and missing-artifact negative controls
-  tests/unit/sdk/host-environment-errors.spec.ts,project,All errno classes redaction recovery and non-errno negative controls
-  tests/unit/sdk/workspace-snapshot.spec.ts,project,Snapshot integration coverage for compatible shared-boundary codes
+files[21]:
+  - path: sdk/public-surface.json
+    scope: project
+    note: Reviewed additive SDK surface snapshot
+  - path: src/core/extensions/module-graph-snapshot.ts
+    scope: project
+    note: Typed module verification copy stage
+  - path: src/core/fs/host-environment-errors.ts
+    scope: project
+    note: Shared core implementation with stable SDK reexports
+  - path: src/core/lock/lock.ts
+    scope: project
+  - path: src/sdk/environment/host-environment-errors.ts
+    scope: project
+    note: Shared path-redacted host errno classifier translator and async boundary
+  - path: src/sdk/extension/install-runtime.ts
+    scope: project
+    note: Typed installation copy stage
+  - path: src/sdk/extension/install-snapshot.ts
+    scope: project
+    note: Typed backup and rollback stages
+  - path: src/sdk/extension/install-sources.ts
+    scope: project
+    note: Validate registry archives and type missing npm pack artifacts
+  - path: src/sdk/generated-error-code-catalog.ts
+    scope: project
+    note: Generated host fault codes and preserved snapshot aliases
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+    note: Generated canonical host-fault source locations after moving the shared boundary
+  - path: src/sdk/generated/generated-error-code-catalog-part-2.ts
+    scope: project
+    note: Generated npm package archive refusal contract
+  - path: src/sdk/index.ts
+    scope: project
+    note: Exports the public host environment primitives
+  - path: src/sdk/test/execution.ts
+    scope: project
+    note: Apply the shared host-environment boundary to linked-test tracker seeding
+  - path: src/sdk/workspace-snapshot.ts
+    scope: project
+    note: Snapshot create and restore stages consume the shared boundary while preserving stable codes
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+    note: Generated CLI contract snapshot for typed archive refusal
+  - path: tests/integration/extension-host-faults.integration.spec.ts
+    scope: project
+    note: Capacity classification and real permission-denied rollback boundaries
+  - path: tests/unit/commands/test/test-command.spec.ts
+    scope: project
+    note: Portable numeric capacity-fault fixture at linked-test sandbox boundary
+  - path: tests/unit/extensions/extension-command.spec.ts
+    scope: project
+    note: Preserve stale lock ownership while expecting typed host permission fault
+  - path: tests/unit/extensions/extension-install-security.spec.ts
+    scope: project
+    note: Registry archive link and missing-artifact negative controls
+  - path: tests/unit/sdk/host-environment-errors.spec.ts
+    scope: project
+    note: All errno classes redaction recovery and non-errno negative controls
+  - path: tests/unit/sdk/workspace-snapshot.spec.ts
+    scope: project
+    note: Snapshot integration coverage for compatible shared-boundary codes
 tests[5]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/host-environment-errors.spec.ts tests/unit/sdk/workspace-snapshot.spec.ts
     scope: project

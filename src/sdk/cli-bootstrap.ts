@@ -1037,7 +1037,7 @@ export function mergeLinkedTestTwoTokenEntries(
   return result;
 }
 
-/** Normalize option spellings and bare key-value tokens before list coalescing. */
+/** Normalize declared flags and linked-test entries while preserving literal query and annotation bodies and recording each transformation. */
 function normalizeBootstrapTokens(
   argv: string[],
   lookup: FlagLookup,

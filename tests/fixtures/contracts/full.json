@@ -22724,6 +22724,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
+        "sdk/governance/validate-history-drift.ts",
         "sdk/merge/three-way.ts"
       ],
       "stability": "provisional"

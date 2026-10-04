@@ -2,7 +2,7 @@
 /**
  * @module scripts/release/agent-evidence-consistency-control
  *
- * Proves that the evidence regressions reject four real source defects using
+ * Proves that the evidence regressions reject six real source defects using
  * disposable copies, leaving the checkout and production tracker untouched.
  */
 
@@ -11,6 +11,18 @@ import { fileURLToPath } from "node:url";
 import { runIsolatedRegressionControl } from "./isolated-regression-control.mjs";
 
 const cases = [
+  {
+    sourcePath: "src/sdk/governance/validate-history-drift.ts",
+    testName: "rejects a reread redirected",
+    before: "if (document.metadata.id !== id) {",
+    after: "if (false) {",
+  },
+  {
+    sourcePath: "src/sdk/governance/validate-history-drift.ts",
+    testName: "reads the corpus cache once while rechecking multiple advanced items",
+    before: "const verified = await scanItemHistoryDrift(\n        pmRoot,\n        { ...document.metadata, body: document.body },\n      );",
+    after: "const verified = await scanHistoryDrift(pmRoot, [{ ...document.metadata, body: document.body }]);",
+  },
   {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "rechecks an advanced source snapshot without accepting stable source corruption",

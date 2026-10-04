@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags[3]: context-management,github-intake,read-consistency
 created_at: "2026-10-03T22:14:16.447Z"
-updated_at: "2026-10-04T08:10:18.333Z"
-closed_at: "2026-10-04T08:10:17.655Z"
-completed_at: "2026-10-04T08:10:17.655Z"
+updated_at: "2026-10-04T10:30:25.219Z"
+closed_at: "2026-10-04T10:30:22.191Z"
+completed_at: "2026-10-04T10:30:22.191Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Real isolated overlapping validation and comment append reproduces the old failure;Consistent-read or bounded retry eliminates false item mismatch;Genuine stable corruption remains a strict failure;Source and cache scans retain complete omission and integrity receipts
 parent: pm-o2kc
 risk: medium
 confidence: medium
-resolution: "Consistent SDK item/history reads now recheck item-hash discrepancies under ordinary writer locks, preserve independent corruption/identity/repair diagnostics and preserve the full-corpus cache."
-expected_result: "Ordinary concurrent writers must not cause stale-snapshot corruption findings; actual corruption, contention and missing canonical sources must remain explicit failures."
-actual_result: "Real isolated regressions and Node/Bun 152-item overlapping reads/writes retain zero hash/chain discrepancies; stable tampering, independent identities, missing source and lock contention remain failures. Complete source suite: 9686 passed, 2 Windows-only Linux skips and exact 100/100/100/100 coverage."
+resolution: Consistent SDK history validation binds reread identity to the locked canonical item and uses a strict single-item verifier without corpus cache or workspace rescans.
+expected_result: Ordinary concurrent writers must not cause stale corruption findings; changed canonical identity must fail and rechecks must preserve strict corruption findings while reading the corpus cache once.
+actual_result: Both existing-target and missing-target identity mutations reject with item_identity_conflict and release ownership. Two stale-item rechecks read the real corpus cache once. The linked primary regressions and core scanner pass42/42; the full behavior/controller focus passes43/43 and six real unsafe-source variants are rejected. Node/Bun acceptance preserves18 literal transports per runtime and zero hash/chain discrepancies across152 overlapping items. Local whole-suite timing failures are disclosed; exact-head hosted complete source coverage is enforced before merge.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-eax4y8,discovered_from,"2026-10-03T22:14:16.447Z","harness:codex","cli:create:dep",detected
   pm-hu11,verifies,"2026-10-03T22:14:16.447Z","harness:codex","cli:create:dep",detected
   pm-f05lsg,implements,"2026-10-04T07:27:08.303Z","harness:codex","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-10-03T22:14:16.447Z","harness:codex","Duplicate check: fresh strict all-status full-body corpus 2868/2868 complete with zero unreadable records and zero omissions. Exact GH1383 and concurrent history-validation predicates have no canonical leaf. Closed pm-eax4y8 full metadata/comments and verified full history establish a different authoritative-projection/cache cause. Current open and in_progress inventories were read; this new report stays open and unclaimed."
   "2026-10-04T03:34:10.681Z","harness:codex","Investigation and TDD plan: source item documents are loaded before sequential history verification, so an ordinary writer can advance the stream after the document snapshot. Recheck only discrepant pairs against authoritative storage while holding the existing per-item writer lock; preserve strict corruption verdicts and bound contention. Retain core snapshot semantics for caller-provided documents and do not use history compaction. Regression owners are real SDK persistence and subprocess CLI transport, without test-only exports."
   "2026-10-04T03:51:21.791Z","harness:codex","TDD: 137 focused tests pass, including real annotation CLI transports, declared help recovery, stable history corruption, cache preservation and lock contention. All three isolated safe controls pass; restoring each unsafe invariant fails its selected behavior assertion. No source coverage exclusions or threshold changes. Full-source coverage and static release gates are now running before closure."
@@ -37,6 +37,11 @@ comments[14]{created_at,author,text}:
   "2026-10-04T06:57:36.311Z","harness:codex","Complete current-source static prefix passes dependency audit and embedded bundles, docstring ratchet, dead exports, ESLint, three zero-duplicate gates, permissions/cooldown, generation/contracts, package/surface/grammar/refusal/token/MCP gates, all47 tracker-context assertions, gate registry and unchanged public SDK surface (zero classified changes), plus10 SDK entrypoint import budgets. Node26.9 CLI admission fails get366>362ms, next447>440ms, create414>398ms on unchanged ceilings. The receipt remains failed. Complete pipeline is being verified under installed CI-admission Node24.12.0 without host configuration changes or budget adjustments; no cause or patch-specific attribution is claimed from the Node26 failure."
   "2026-10-04T07:45:15.445Z","harness:codex","Shared linked acceptance 2026-10-04: pm test-all selected four active items and seven links, ran four unique commands successfully, and explicitly skipped three duplicate controller links. The shared controller baseline proved all four real source conditions, and the source coverage suite independently runs all four unsafe-source assertion controls. Complete component-by-component static, manual Node/Bun, packaged-consumer and reliability receipts are recorded on the shared verification owner. Final exact all-source coverage remains pending and is not claimed complete by this comment."
   "2026-10-04T08:10:16.842Z","harness:codex","TDD: final all-source coverage passed unchanged exact gates: 9686 tests passed, 2 Windows-only skips on Linux; lines=63515/63515, statements=66625/66625, functions=13761/13761, branches=50965/50965. Zero uncovered counts across every measured source file. Focused real regressions, unsafe-source controls, linked execution and temporary Node/Bun/npm/npx/bunx acceptance passed. Implementation, closure and package-owned changelog are carried on the same delivery branch; published 2026.10.4 predates this change."
+  "2026-10-04T08:38:04.272Z","harness:codex","PR #1387 round-one TDD evidence: both changed-identity variants returned an incorrectly clean check, and the two-item recheck read the corpus cache three times instead of once. All three new behavior regressions failed on the reviewed head. Fixing identity binding and introducing a strict item-only scan that shares stream verification but never loads/persists the corpus cache or scans workspace state. CodeRabbit scope-removal advice is declined because the user explicitly required release/dependency/telemetry intake and truthful graph linkage in this same substantive delivery. Sourcery detailed review was unavailable due its seven-day quota; its guide was available."
+  "2026-10-04T08:44:00.457Z","harness:codex","PR #1387 review-fix verification: all three new failing regressions now pass, with 43/43 focused tests across real SDK regressions, the core scanner and executable controller. The controller now runs six actual source conditions and proves six safe passes plus six assertion failures for unsafe copies. Changed identities fail with the declared item_identity_conflict code before finding replacement; strict item-only rechecks avoid corpus-cache and workspace reads/writes while retaining the shared verifier. The filesystem-read observer delegates to real reads and measures one corpus cache read for two rechecks. Full source coverage is being rerun after these code changes."
+  "2026-10-04T09:21:54.002Z","harness:codex","Local review verification: unchanged agent-task token gate passed all nine completed tasks at 13837 tokens after a reversible disk relocation of this run's generated 10000-item fixture; all 10014 file SHA-256 values were preserved and the original temporary path remains a symlink. A delegating filesystem observer confirmed errno -122 (EDQUOT) on lock-owner writes. No host quota or gate budget was changed. Local SDK import timing remains environment-sensitive: Node 26 bare floor135>106ms and Node24 merge231>226ms; the unchanged hosted required gate will determine exact-head admission. Tracker assurance47/47, gate registry and public SDK surface pass."
+  "2026-10-04T10:28:25.431Z","harness:codex","Final local full-suite review-fix attempt: 9687 passed, two Windows-only skips and two timing failures, so no final coverage summary was produced. Governance validation measured10130.190682ms against10000ms and the default absence-tolerance test exceeded30000ms under whole-suite load. The unchanged focused execution of both affected files passed20/20. All43 behavior/controller tests and Node/Bun18 literal transports plus152 overlapping items pass. No budget, timeout, source exclusion or mock behavior was changed. The exact-head hosted full-suite and100/100/100/100 coverage gate remain mandatory before merge; local current-source full coverage is not claimed."
+  "2026-10-04T10:30:19.355Z","harness:codex","Review-fix closeout uses verified functional evidence: focused behavior43/43, primary linked SDK/core42/42, six executable source controls, temporary Node/Bun acceptance and20/20 standalone cases from the two local timing-failure files. The whole local current-source run had9687 passes, two timing failures and two Windows-only skips; it produced no valid coverage summary. The hosted exact-head complete source suite and100/100/100/100 gate remain mandatory admission checks before merge. No current-source global coverage claim, waiver, threshold change or timeout change is made. PR #1387 carries this closeout and its package-owned changelog in the same implementation delivery."
 notes[1]{created_at,author,text}:
   "2026-10-04T04:08:57.073Z","harness:codex","SDK validation boundary: preserve the core supplied-snapshot API and its strict corruption semantics. The higher-level validator rechecks only discrepant canonical items under ordinary mutation locks, honoring custom schemas and type folders. Selective verification disables cache writes so full-corpus entries are retained; workspace singleton diagnostics are preserved. Lock conflicts and unreadable source propagate without force or certainty claims."
 learnings[1]{created_at,author,text}:
@@ -65,9 +70,24 @@ files[9]:
   - path: tests/unit/scripts/agent-evidence-consistency-control.spec.ts
     scope: project
     note: Actual controller pass/fail verdicts in mandatory coverage
-tests[1]{command,scope,timeout_seconds,pm_context_mode,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/release/agent-evidence-consistency-control.mjs,project,240,schema,"harness:codex","2026-10-04T04:22:30.971Z",local_mutation,fix/consistent-history-evidence-and-agent-recovery
-test_runs[3]:
+tests[2]:
+  - command: node scripts/release/agent-evidence-consistency-control.mjs
+    scope: project
+    timeout_seconds: 240
+    pm_context_mode: schema
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-04T04:22:30.971Z"
+      source_kind: local_mutation
+      source_ref: fix/consistent-history-evidence-and-agent-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/regressions/agent-evidence-consistency.spec.ts tests/unit/core/history/drift-scan.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-04T10:28:23.435Z"
+      source_kind: local_mutation
+      source_ref: fix/consistent-history-evidence-and-agent-recovery
+test_runs[5]:
   - run_id: test-local-mutamgt0-qaiz54
     kind: test
     status: failed
@@ -103,6 +123,30 @@ test_runs[3]:
     linked_tests: 1
     executions[1]{command}:
       node scripts/release/agent-evidence-consistency-control.mjs
+  - run_id: test-all-local-mutm7u4o-ol8f8d
+    kind: test-all
+    status: passed
+    started_at: "2026-10-04T09:25:16.402Z"
+    finished_at: "2026-10-04T09:26:22.883Z"
+    recorded_at: "2026-10-04T09:26:22.884Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/agent-evidence-consistency-control.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mutoirez-ndoimj
+    kind: test
+    status: passed
+    started_at: "2026-10-04T10:28:27.523Z"
+    finished_at: "2026-10-04T10:29:45.419Z"
+    recorded_at: "2026-10-04T10:29:45.419Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/agent-evidence-consistency.spec.ts tests/unit/core/history/drift-scan.spec.ts,schema,schema,source,local_source_ref
 docs[3]:
   - path: CHANGELOG.md
     scope: project
@@ -112,7 +156,7 @@ docs[3]:
   - path: docs/README.md
     scope: project
     note: Agent evidence consistency contracts and verification
-close_reason: Verified shared CLI/SDK agent-evidence implementation and real consumer acceptance for reviewed delivery.
+close_reason: Verified functional review fixes and real SDK/CLI acceptance; hosted global admission remains enforced on the same reviewed delivery.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

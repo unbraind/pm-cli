@@ -5,7 +5,7 @@
  * check contract without adding history-specific weight to the main validate
  * orchestration module.
  */
-import { scanHistoryDrift, type DriftScanResult } from "../../core/history/drift-scan.js";
+import { scanHistoryDrift, scanItemHistoryDrift, type DriftScanResult } from "../../core/history/drift-scan.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
@@ -54,10 +54,15 @@ async function recheckItemHistoryDrift(
       const { document } = await readLocatedItem(located, {
         schema: settings.schema,
       });
-      const verified = await scanHistoryDrift(
+      if (document.metadata.id !== id) {
+        throw new PmCliError(`Item identity changed while validating ${id}`, EXIT_CODE.CONFLICT, {
+          code: "item_identity_conflict",
+          required: "Restore the canonical item identity and validate storage integrity before retrying history validation.",
+        });
+      }
+      const verified = await scanItemHistoryDrift(
         pmRoot,
-        [{ ...document.metadata, body: document.body }],
-        { persistCache: false },
+        { ...document.metadata, body: document.body },
       );
       for (const key of [
         "missingStreams", "unreadableStreams", "hashMismatches",

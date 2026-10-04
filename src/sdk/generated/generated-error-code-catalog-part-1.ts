@@ -2141,7 +2141,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "conflict",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/merge/three-way.ts"],
+    sources: ["sdk/governance/validate-history-drift.ts", "sdk/merge/three-way.ts"],
     emitting_commands: ["*"],
     canonical_code: "item_identity_conflict",
     aliases: [],
