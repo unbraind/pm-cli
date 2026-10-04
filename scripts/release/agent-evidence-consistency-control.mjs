@@ -77,18 +77,21 @@ const cases = [
   {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "rejects a reread redirected",
+    extraPaths: ["tests/helpers", "dist"],
     before: "if (document.metadata.id !== id) {",
     after: "if (false) {",
   },
   {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "reads the corpus cache once while rechecking multiple advanced items",
+    extraPaths: ["tests/helpers", "dist"],
     before: "const verified = await scanItemHistoryDrift(\n        pmRoot,\n        { ...document.metadata, body: document.body },\n      );",
     after: "const verified = await scanHistoryDrift(pmRoot, [{ ...document.metadata, body: document.body }]);",
   },
   {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "rechecks an advanced source snapshot without accepting stable source corruption",
+    extraPaths: ["tests/helpers", "dist"],
     before: "await recheckItemHistoryDrift(pmRoot, drift);",
     after: "void pmRoot;",
   },
@@ -120,16 +123,17 @@ export async function runIfMain(filename = process.argv[1], args = process.argv.
   const results = [];
   // Each control owns a disposable checkout and lease; bounded pairs avoid repeated startup latency without sharing mutated source.
   for (let index = 0; index < cases.length; index += 2) {
-    const batch = await Promise.all(cases.slice(index, index + 2).map(async (control) => {
+    const pending = cases.slice(index, index + 2).map(async (control) => {
       const result = await runIsolatedRegressionControl({
         testPath: "tests/unit/regressions/agent-evidence-consistency.spec.ts",
+        extraPaths: ["tests/helpers"],
         ...control,
-        extraPaths: ["tests/helpers", "dist"],
       }, negativeControl);
       assert.equal(result.exit_code, negativeControl ? 1 : 0, result.output);
       if (negativeControl) assert.match(result.output, /AssertionError/, "A control must fail a behavior assertion");
       return { name: control.testName, exit_code: result.exit_code };
-    }));
+    });
+    const batch = await Promise.all(pending).finally(() => Promise.allSettled(pending));
     results.push(...batch);
   }
   process.stdout.write(JSON.stringify({ negative_control: negativeControl, controls: results }) + "\n");

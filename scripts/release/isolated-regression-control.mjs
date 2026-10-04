@@ -13,7 +13,23 @@ const repository = fileURLToPath(new URL("../../", import.meta.url));
 /** Execute one real regression against disposable source without blocking other isolated controls; reject infrastructure failures and retain bounded output, timeout and exact source-mutant checks. */
 export async function runIsolatedRegressionControl({ sourcePath, testPath, testName, before, after, extraPaths = [] }, negativeControl) {
   const root = await mkdtemp(path.join(tmpdir(), "pm-regression-control-"));
-  const releaseCleanup = registerTempCleanup(root);
+  let child;
+  let execution = Promise.resolve();
+  /** Wait for the owned runner to stop before disposal; a failed bounded shutdown retains its checkout. */
+  const shutdown = async () => {
+    child?.kill("SIGTERM");
+    let timeout;
+    try {
+      const stopped = await Promise.race([
+        execution.then(() => true, () => true),
+        new Promise((resolve) => { timeout = setTimeout(resolve, 5000, false); }),
+      ]);
+      assert.ok(stopped, "Regression child did not close within 5000ms; workspace retained.");
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+  const releaseCleanup = registerTempCleanup(root, { shutdown });
   try {
     for (const entry of ["src", "scripts", "packages", "config", "package.json", "tsconfig.json", "vitest.config.ts", ...extraPaths]) {
       await cp(path.join(repository, entry), path.join(root, entry), { recursive: true });
@@ -27,8 +43,8 @@ export async function runIsolatedRegressionControl({ sourcePath, testPath, testN
       assert.equal(source.split(before).length, 2, "The source mutant must match exactly once");
       await writeFile(filename, source.replace(before, after));
     }
-    const result = await new Promise((resolve, reject) => {
-      execFile(process.execPath, ["scripts/run-tests.mjs", "test", "--", testPath, "-t", testName, "--reporter=verbose"], {
+    execution = new Promise((resolve, reject) => {
+      child = execFile(process.execPath, ["scripts/run-tests.mjs", "test", "--", testPath, "-t", testName, "--reporter=verbose"], {
         cwd: root,
         // This disposable checkout owns a separate lease from the parent test run.
         env: { ...process.env, PM_BUILD_CONSUMER_LEASE: "", PM_RUN_TESTS_SKIP_BUILD: "1", PM_SENTRY_DISABLED: "1" },
@@ -36,17 +52,22 @@ export async function runIsolatedRegressionControl({ sourcePath, testPath, testN
         timeout: 120_000,
         maxBuffer: 4 * 1024 * 1024,
       }, (error, stdout, stderr) => {
-        if (error && !(error.code === 1 && !error.killed && !error.signal)) {
+        if (error && (error.code !== 1 || error.killed)) {
           reject(error);
           return;
         }
         resolve({ exit_code: error?.code ?? 0, output: stdout + stderr });
       });
     });
+    const result = await execution;
     assert.ok(result.output.includes(testName), "The selected test must run");
     return { negative_control: negativeControl, ...result };
   } finally {
-    await rm(root, { recursive: true, force: true });
-    releaseCleanup();
+    try {
+      await shutdown();
+      await rm(root, { recursive: true, force: true });
+    } finally {
+      releaseCleanup();
+    }
   }
 }
