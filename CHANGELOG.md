@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-1389: Derive get omission receipts from emitted schedule and artifact aliases ([pm-gh1389](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1389.toon))
+- GH-1388: Expose every declared blocker and its live status in default item reads ([pm-gh1388](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1388.toon))
 - Compact retained runtime modules and stage packed SDK acceptance efficiently ([pm-2evidence-dist](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2evidence-dist.toon))
 - GH-1385: preserve literal annotation prefixes across comment input transports ([pm-gh1385](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1385.toon))
 - GH-1383: consistent SDK item/history drift reads during concurrent ordinary mutations ([pm-gh1383](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1383.toon))

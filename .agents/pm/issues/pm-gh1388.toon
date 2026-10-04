@@ -2,13 +2,13 @@ id: pm-gh1388
 title: "GH-1388: Expose every declared blocker and its live status in default item reads"
 description: Default get retains a compatibility scalar but supplies no live status for the complete declared blocker set. Resolve declared references with the shared actionability SDK primitives without enumerating unrelated items.
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T11:45:35.406Z"
-updated_at: "2026-10-04T13:20:24.933Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f529e0ba704de883c96d689c"
+updated_at: "2026-10-04T14:09:13.911Z"
+closed_at: "2026-10-04T14:09:10.729Z"
+completed_at: "2026-10-04T14:09:10.729Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Default current reads expose all unresolved declared blockers plus a resolved count; Unknown and external references remain unresolved; Custom terminal statuses use the runtime registry; Explicit and historical projections remain truthful and recoverable.
@@ -18,14 +18,16 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-mpbb
 risk: medium
 confidence: medium
-expected_result: Default current reads expose all unresolved declared blockers plus a resolved count; Unknown and external references remain unresolved; Custom terminal statuses use the runtime registry; Explicit and historical projections remain truthful and recoverable.
+resolution: "SDK get resolves all declared local blockers, canonicalizes aliases once, retains unknown/external references, refuses unsafe identity paths, omits misleading default scalar and edge attribution, and preserves full/explicit restoration without historical status claims."
+expected_result: "One bounded current read answers which declared prerequisites remain unresolved, while full or selected reads preserve stored compatibility and provenance."
+actual_result: "48 focused query/receipt and 47 persistence tests pass, thirteen safe/source-defect controls are assertion-sensitive, 32 token surfaces retain original limits, and freshly packed Node/Bun consumers each pass 14 CLI operations plus public SDK/npx/bunx and strict history. Exact final-head hosted checks and refreshed bot admission are required before PR1395 merge."
 affected_version: 2026.10.4
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-mpbb,implements,"2026-10-04T11:45:35.406Z","harness:codex","cli:create:dep",detected
   pm-q6gx,discovered_from,"2026-10-04T11:45:35.406Z","harness:codex","cli:create:dep",detected
   pm-q6gx,verifies,"2026-10-04T11:45:35.406Z","harness:codex","cli:create:dep",detected
   pm-gh1389,verifies,"2026-10-04T12:52:12.953Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-10-04T11:45:35.406Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1388 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
   "2026-10-04T11:49:35.855Z","harness:codex","TDD: the pre-fix current SDK read lacks the declared blocker summary. The real disposable fixture covers two open prerequisites one closed prerequisite a missing reference and an external locator with a duplicated scalar/edge reference. The intended first assertion fails before implementation; no mocked blocker resolution is used."
   "2026-10-04T12:12:30.385Z","harness:codex","Boundary TDD: a real copied item outside the typed tracker folders was incorrectly resolved through a ../../ legacy blocker scalar before the filename guard. The same disposable regression now preserves that reference as unresolved. The guard follows the existing portable stream filename rule; malformed references never cause an out-of-folder lookup. No production or unrelated data was accessed."
@@ -34,16 +36,28 @@ comments[8]{created_at,author,text}:
   "2026-10-04T13:02:31.164Z","harness:codex","Final local acceptance: 40 functional tests plus three executable-controller cases pass. All eleven safe controls pass and all eleven real source mutants fail behavioral assertions; timeout and coverage ceilings are unchanged. Fresh npm-packed consumer passes 12 CLI commands and two public SDK reads under each of Node and Bun, explicit scalar compatibility, actionable blocker projection, schedule receipts, historical refusal, npx/bunx and strict history. npm pack remains within the 20 MB artifact ceiling. Full hosted all-source coverage and bot review remain required before closure."
   "2026-10-04T13:15:27.528Z","harness:codex","Greptile P1 reproduced: a completed short-reference prerequisite remained falsely open while its canonical dependency was counted closed. The real pre-fix SDK assertion fails on that exact outcome. Resolution must index declared lookup aliases and then deduplicate verified physical identities, rather than merely count both forms. Open and closed short-reference fixtures are added to the existing public regression owner, plus a twelfth real source-defect control. No storage or provenance rewrite is required."
   "2026-10-04T13:20:24.933Z","harness:codex","Review correction verification: 42 focused query/receipt tests pass including the short-ID P1 and deadline-selector control. The compact-output gate passes all 32 surfaces with original byte/token ceilings; omission controls and infeasible-budget controls remain intact. The hosted bulk-update failure checks persistence through a changed default presentation, so its unchanged five metadata assertions now use the retained --full compatibility read. No source denominator, timeout or assertion is relaxed."
-learnings[1]{created_at,author,text}:
+  "2026-10-04T13:29:22.576Z","harness:codex","Corrected installed-source acceptance: the archive and installed SDK bundle have identical SHA-256 bytes to the current build. After npm installation completed, both Node and Bun pass the real short-reference CLI dependent, deduplicated canonical status, explicit scalar compatibility, historical refusal, strict history, twelve CLI commands and two public SDK reads each plus npx/bunx. The earlier concurrently started probe ran before install completion and is retained as a harness sequencing failure, not a corrected-source acceptance result."
+  "2026-10-04T13:47:57.520Z","harness:codex","Final review acceptance: the original GH-1388 report also requires dependency provenance behind full or explicit dependency reads. The current facet and scalar replacement pass, but the default dependency table still exposes those columns. Extend the existing real fixture to prove lean default edges and unchanged full/explicit persistence, then implement before closure. CodeRabbit linked-issue warning is accepted for this omission; deadline projection already has a real passing case."
+  "2026-10-04T13:52:23.152Z","harness:codex","Local assurance: both linked commands pass with real schema-isolated project/global tracker roots, 42 query/receipt plus 47 bulk persistence tests. Bounded mutation passes with 329 killed of 336 mutants and seven classified equivalent survivors, 97.92 percent; this is the established two-file gate, not a whole-repository mutation claim. The canonical agent-session token gate passes unchanged limits inside a child-only /tmp bind to owned disk-backed scratch, avoiding host tmpfs user quota without altering host mounts or lock settings. Dependency provenance pre-fix regression fails on actual four attribution columns and now passes lean default/full-explicit restoration."
+  "2026-10-04T14:01:32.307Z","harness:codex","Final fresh installed package acceptance: npm tarball is 19910675 unpacked bytes and 1750 files, below the unchanged 20 MB ceiling. After installation completed, Node and Bun each pass 14 real CLI operations, two public SDK reads, npx/bunx and strict history validation. Default dependencies contain only id/kind and disclose dependency_provenance; explicit dependency and full reads preserve identical timestamp/author rows. Short aliases resolve once; unknown/external/historical behavior remains truthful. All four TypeScript target families and repository CodeFactor-parity complexity gates pass after the VCS exemplar consumes the precise GetResult item projection."
+  "2026-10-04T14:03:56.126Z","harness:codex","Final control verification: three controller cases pass; all thirteen safe copies pass and all thirteen source mutants fail actual assertions within unchanged 240-second per-mode budgets. One linked query run was started concurrently and waited behind the controller shared build-consumer lease, reaching its unchanged 300-second limit before execution; the failure is retained in test history. Retry is serialized after controller completion, with no lock override, timeout increase or assertions weakened."
+  "2026-10-04T14:09:06.869Z","harness:codex","Serialized final linked verification completed and is recorded as test-local-mutw7ghh-tf6vqe: 48 query/receipt tests and 47 bulk metadata persistence tests pass, with no failure categories. The earlier lease-wait timeout remains visible. Strict live history validation passes with zero warnings; token budgets pass all 32 surfaces with original limits. Source verification is complete locally, with exact final-head hosted coverage, analyzer provenance and review admission still mandatory before this same PR may merge."
+learnings[2]{created_at,author,text}:
   "2026-10-04T13:07:23.119Z","harness:codex","A single-item actionability facet must name its declared edge scope rather than imply a corpus-wide or historical snapshot. Resolve only portable forward references, retain unknown/external blockers, and refuse mismatched physical identity before trusting terminal status. Replacing the partial default scalar can pay for richer evidence without raising token ceilings; preserve explicit/full scalar access."
-files[10]:
+  "2026-10-04T14:04:47.282Z","harness:codex","Get projections must distinguish graph identity from attribution without asserting that partial dependency rows are complete ItemMetadata. The precise mapped SDK projection preserves custom-field typing while making attribution optional by mode; package consumers should depend on GetResult item fields they actually read. Full/explicit persistence remains independently verified. Shared build-consumer leases serialize runners even for prebuilt validation, so do not launch linked tests concurrently with an executable-controller parent on the same checkout."
+files[13]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
+  - path: packages/pm-vcs/extensions/vcs/index.ts
+    scope: project
+    note: Consume the precise SDK item projection instead of assuming unrelated complete dependency metadata
   - path: scripts/release/agent-evidence-consistency-control.mjs
     scope: project
   - path: sdk/public-surface.json
     scope: project
   - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+  - path: src/sdk/output-projection.ts
     scope: project
   - path: src/sdk/query/get.ts
     scope: project
@@ -61,10 +75,12 @@ files[10]:
     note: Real declared blocker and alias receipt regressions
   - path: tests/unit/scripts/agent-evidence-consistency-control.spec.ts
     scope: project
+  - path: tests/unit/sdk/output-projection.spec.ts
+    scope: project
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,300,"harness:codex","2026-10-04T11:58:34.334Z",local_mutation,fix/actionable-blocker-and-schedule-read-receipts
   node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-many-command.spec.ts,project,300,"harness:codex","2026-10-04T13:20:23.064Z",local_mutation,fix/actionable-blocker-and-schedule-read-receipts
-test_runs[2]:
+test_runs[5]:
   - run_id: test-local-mutrwgwu-058sff
     kind: test
     status: passed
@@ -87,10 +103,47 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mutvh4rz-jpus7b
+    kind: test
+    status: passed
+    started_at: "2026-10-04T13:41:49.129Z"
+    finished_at: "2026-10-04T13:44:26.735Z"
+    recorded_at: "2026-10-04T13:44:26.735Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-many-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mutw5fh0-6a0t8e
+    kind: test
+    status: failed
+    started_at: "2026-10-04T13:57:51.335Z"
+    finished_at: "2026-10-04T14:03:20.339Z"
+    recorded_at: "2026-10-04T14:03:20.339Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-many-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mutw7ghh-tf6vqe
+    kind: test
+    status: passed
+    started_at: "2026-10-04T14:03:57.707Z"
+    finished_at: "2026-10-04T14:04:54.964Z"
+    recorded_at: "2026-10-04T14:04:54.964Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-many-command.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   CHANGELOG.md,project
   docs/GET_READ_EVIDENCE.md,project
   docs/README.md,project
+close_reason: "Implemented actionable current reads with compact edges and recoverable provenance; verified local SDK, CLI and installed consumers."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

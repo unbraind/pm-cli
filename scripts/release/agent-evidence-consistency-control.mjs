@@ -2,7 +2,7 @@
 /**
  * @module scripts/release/agent-evidence-consistency-control
  *
- * Proves that the evidence regressions reject twelve real source defects using
+ * Proves that the evidence regressions reject thirteen real source defects using
  * disposable copies, leaving the checkout and production tracker untouched.
  */
 
@@ -11,6 +11,13 @@ import { fileURLToPath } from "node:url";
 import { runIsolatedRegressionControl } from "./isolated-regression-control.mjs";
 
 const cases = [
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "resolves every declared blocker without certifying missing or external references",
+    before: "if (!full && item.dependencies !== undefined) {",
+    after: "if (false) {",
+  },
   {
     sourcePath: "src/sdk/query/get.ts",
     testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",

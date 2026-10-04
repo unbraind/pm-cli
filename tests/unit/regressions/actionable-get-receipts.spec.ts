@@ -62,6 +62,14 @@ describe("actionable get receipts", () => {
       }, global);
       const result = await runGet(created.item.id, global);
       expect(result.item.blocked_by).toBeUndefined();
+      expect(result.item.dependencies).toEqual(created.item.dependencies!.map(({ id, kind }) => ({ id, kind })));
+      expect(resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!.omitted_field_groups).toContainEqual({ name: "dependency_provenance", restore_with: "--fields dependencies" });
+      for (const depth of ["brief", "deep"]) expect((await runGet(created.item.id, global, { depth })).item.dependencies).toEqual(result.item.dependencies);
+      for (const options of [{ full: true }, { depth: "full" }, { fields: "dependencies" }, { fields: "item.dependencies" }]) {
+        const complete = await runGet(created.item.id, global, options);
+        expect(complete.item.dependencies).toEqual(created.item.dependencies);
+        expect(resolveOutputOmissionReceipt("get", complete as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name)).not.toContain("dependency_provenance");
+      }
       expect((await runGet(created.item.id, global, { fields: "blocked_by" })).item.blocked_by).toBe(second.item.id);
       expect((await runGet(created.item.id, global, { full: true })).item.blocked_by).toBe(second.item.id);
       expect(result).toMatchObject({ blockers: { scope: "declared", closed_count: 1, open: expect.arrayContaining([

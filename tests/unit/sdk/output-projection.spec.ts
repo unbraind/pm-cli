@@ -13,6 +13,24 @@ import { runGet } from "../../../src/sdk/query/get.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("output projection omission contracts", () => {
+  it.each([
+    { dependencies: undefined, included: false },
+    { dependencies: [null], included: false },
+    { dependencies: [{ id: "pm-edge", kind: "implements" }], included: false },
+    { dependencies: [{ id: "pm-edge", kind: "implements", created_at: 42 }], included: false },
+    { dependencies: [{ id: "pm-edge", kind: "implements", created_at: "2026-10-04T12:00:00.000Z" }], included: true },
+    { dependencies: [], included: true },
+  ])("certifies complete dependency provenance only for actual timestamped rows: %j", ({ dependencies, included }) => {
+    const result = { item: { id: "pm-provenance", dependencies } };
+    registerOutputMaterialFieldGroups(result, ["dependency_provenance"]);
+    expect(attachOutputOmissionReceipt("get", result)).toMatchObject({
+      omission_receipt: {
+        has_omissions: !included,
+        omitted_field_groups: included ? [] : [{ name: "dependency_provenance", restore_with: "--fields dependencies" }],
+      },
+    });
+  });
+
   it("rejects undeclared TOON encodings in caller-supplied row contracts", () => {
     expect(
       isReadRowContract({

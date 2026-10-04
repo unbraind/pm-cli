@@ -478,12 +478,20 @@ function resolveContextReceipt(
   return receipt;
 }
 
+/** Require actual persisted timestamps on every edge before certifying that a lean relationship table includes provenance. */
+function hasDependencyProvenance(item: Record<string, unknown>): boolean {
+  return Array.isArray(item.dependencies) && item.dependencies.every((edge) =>
+    isRecord(edge) && typeof edge.created_at === "string",
+  );
+}
+
 /** Recognize metadata and rendered aliases while excluding the stable linked envelope's unselected empty placeholders. */
 function isGetFieldGroupIncluded(
   name: string,
   owner: Record<string, unknown>,
   result: Record<string, unknown>,
 ): boolean {
+  if (name === "dependency_provenance") return hasDependencyProvenance(owner);
   return Object.hasOwn(owner, name) ||
     ((name === "reminders" || name === "events") &&
       isRecord(result.schedule) && Object.hasOwn(result.schedule, name)) ||
@@ -517,11 +525,12 @@ function resolveGetReceipt(
   ];
   const materialGroups = MATERIAL_FIELD_GROUPS_BY_RESULT.get(result);
   const ownerFor = (name: string): Record<string, unknown> =>
-    itemGroups.includes(name) || name === "body" ? item : result;
+    itemGroups.includes(name) || name === "body" || name === "dependency_provenance" ? item : result;
   const groups = [
     "body",
     ...itemGroups,
     ...resultGroups.slice(1),
+    ...(materialGroups?.has("dependency_provenance") ? ["dependency_provenance"] : []),
     ...(materialGroups?.has("blockers") || Object.hasOwn(result, "blockers")
       ? ["blockers"] : []),
   ]
@@ -532,7 +541,7 @@ function resolveGetReceipt(
     )
     .map((name) => ({
       name,
-      restore_with: name === "blockers" ? "--full" : `--fields ${name}`,
+      restore_with: name === "blockers" ? "--full" : name === "dependency_provenance" ? "--fields dependencies" : `--fields ${name}`,
     }));
   return createOutputOmissionReceipt(
     groups,

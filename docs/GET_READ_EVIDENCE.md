@@ -25,6 +25,10 @@ a corpus graph or actionability query. The stored scalar remains a compatibility
 field and identifies only the last scalar value. Standard reads replace that
 partial scalar with the complete declared facet; `--fields blocked_by` and
 `--full` retain access to the stored scalar. Storage and provenance are preserved.
+Ordinary dependency rows retain `id` and `kind`; `--full`, `--depth full`, and
+`--fields dependencies` restore the stored timestamp and author/source columns.
+The `dependency_provenance` omission receipt names `--fields dependencies` as the
+narrow restoration. This presentation change preserves every stored edge.
 
 ```bash
 pm get <id>

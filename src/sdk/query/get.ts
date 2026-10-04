@@ -47,6 +47,7 @@ import { getItemAt, type GetItemAtResult } from "../history-read.js";
 import { parseIntegerLimit } from "./parsers.js";
 import type {
   ItemMetadata,
+  Dependency,
   LinkedDoc,
   LinkedFile,
   LinkedTest,
@@ -86,7 +87,12 @@ interface ClaimStateContext {
 }
 
 /** Depth or field-selected metadata; identity survives every projection. */
-type GetItemProjection = Partial<ItemMetadata> & {
+type GetItemProjection = {
+  /** Metadata remains field-optional; dependency attribution additionally follows the selected detail mode. */
+  [K in keyof ItemMetadata]?: K extends "dependencies"
+    ? (Pick<Dependency, "id" | "kind"> & Partial<Dependency>)[]
+    : ItemMetadata[K];
+} & {
   /** Canonical item identity retained by every depth and field projection. */
   id: string;
   /** Item document body, included inside metadata for CLI/list parity. */
@@ -216,6 +222,7 @@ function itemMaterialFieldGroups(
       : []),
     ...(buildItemSchedule(item) ? ["schedule"] : []),
     ...(currentSnapshot && collectBlockedByIds(item).length > 0 ? ["blockers"] : []),
+    ...(item.dependencies?.length ? ["dependency_provenance"] : []),
   ];
 }
 
@@ -294,15 +301,20 @@ function parseGetDepth(raw: string | undefined): GetDepth {
   );
 }
 
-/** Preserve metadata and collection counts while deep reads additionally retain every stored collection. */
+/** Preserve relationship identities and collection counts; deep reads retain stored collections, while full reads additionally retain edge attribution. */
 function projectItemForDepth(
   item: ItemMetadata,
   depth: GetDepth,
+  full: boolean,
 ): GetItemProjection {
   const collectionCounts = itemCollectionCounts(item);
+  const projectedItem = { ...item } as GetItemProjection;
+  if (!full && item.dependencies !== undefined) {
+    projectedItem.dependencies = item.dependencies.map(({ id, kind }) => ({ id, kind }));
+  }
   if (depth === "deep") {
     return {
-      ...item,
+      ...projectedItem,
       comments: item.comments ?? [],
       notes: item.notes ?? [],
       learnings: item.learnings ?? [],
@@ -326,7 +338,7 @@ function projectItemForDepth(
     reminders: _reminders,
     events: _events,
     ...projected
-  } = item;
+  } = projectedItem;
   return {
     ...projected,
     notes_count: item.notes?.length ?? 0,
@@ -870,7 +882,7 @@ export async function runGet(
   const result: GetResult = {
     item: projection.fieldProjection
       ? projectItemForFields(context.metadata, projection.fields as string[])
-      : projectItemForDepth(context.metadata, projection.depth),
+      : projectItemForDepth(context.metadata, projection.depth, projection.full),
   };
   if (includeBody) {
     result.item.body = context.body;

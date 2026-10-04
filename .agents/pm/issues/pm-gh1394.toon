@@ -6,10 +6,18 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-04T12:45:13.586Z"
-updated_at: "2026-10-04T12:45:13.586Z"
+updated_at: "2026-10-04T13:39:40.367Z"
 author: "harness:codex"
+estimated_minutes: 240
 acceptance_criteria: Owned-subtree replacement intent removes omitted raw keys under the SDK lock/history boundary; Preserve unrelated future fields; Preview accurately describes persisted replacement semantics; Real packed Node and Bun consumers reproduce and verify the intended contract.
+goal: project management = context management
+objective: Trustworthy bounded context and SDK-owned evidence
+value: Extensions can replace owned settings through one truthful audited SDK transaction
+why_now: The newly reported published-SDK reproduction should be triaged before package replacement semantics are expanded
 parent: pm-o2kc
+risk: medium
+confidence: medium
+expected_result: Owned-subtree replacement removes omitted raw keys while preserving unrelated future fields and truthful preview/history
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2sef82,discovered_from,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
   pm-2sef82,verifies,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
