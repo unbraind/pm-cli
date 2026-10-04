@@ -29,6 +29,10 @@ Ordinary dependency rows retain `id` and `kind`; `--full`, `--depth full`, and
 `--fields dependencies` restore the stored timestamp and author/source columns.
 The `dependency_provenance` omission receipt names `--fields dependencies` as the
 narrow restoration. This presentation change preserves every stored edge.
+The receipt describes attribution actually withheld by the selected projection.
+Legacy rows with no timestamp remain complete under full or explicit reads;
+following the restoration never invents a timestamp or repeats a false omission.
+Rows containing only identities and kinds have no attribution to withhold.
 
 ```bash
 pm get <id>

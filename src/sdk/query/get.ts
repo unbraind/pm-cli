@@ -193,12 +193,21 @@ function itemCollectionCounts(
   return lengths as NonNullable<GetItemProjection["collection_counts"]>;
 }
 
+/** Disclose dependency attribution only when the selected projection removes values actually present in stored rows, without inventing timestamps for legacy edges. */
+function hasOmittedDependencyProvenance(item: ItemMetadata, projection: ResolvedGetProjection): boolean {
+  if (projection.full || fieldsInclude(projection.fields, "dependencies")) return false;
+  return item.dependencies?.some(({ id: _id, kind: _kind, ...provenance }) =>
+    Object.values(provenance).some((value) => value !== undefined),
+  ) ?? false;
+}
+
 /** Report children as withheld until a computed rollup proves there are none. */
 function itemMaterialFieldGroups(
   item: ItemMetadata,
   body: string,
   children: ChildRollupContext | undefined,
   currentSnapshot: boolean,
+  projection: ResolvedGetProjection,
 ): string[] {
   const collectionCounts = itemCollectionCounts(item);
   return [
@@ -222,7 +231,7 @@ function itemMaterialFieldGroups(
       : []),
     ...(buildItemSchedule(item) ? ["schedule"] : []),
     ...(currentSnapshot && collectBlockedByIds(item).length > 0 ? ["blockers"] : []),
-    ...(item.dependencies?.length ? ["dependency_provenance"] : []),
+    ...(hasOmittedDependencyProvenance(item, projection) ? ["dependency_provenance"] : []),
   ];
 }
 
@@ -928,7 +937,7 @@ export async function runGet(
   }
   registerOutputMaterialFieldGroups(
     result,
-    itemMaterialFieldGroups(context.metadata, context.body, children, context.historical === undefined),
+    itemMaterialFieldGroups(context.metadata, context.body, children, context.historical === undefined, projection),
   );
   return result;
 }

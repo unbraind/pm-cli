@@ -5,6 +5,7 @@
  * through real SDK mutations and item reads in disposable trackers.
  */
 import { describe, expect, it } from "vitest";
+import { encode } from "@toon-format/toon";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
@@ -13,6 +14,24 @@ import { resolveOutputOmissionReceipt } from "../../../src/sdk/output-projection
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("actionable get receipts", () => {
+  it.each([{}, { author: "legacy-author" }, { source_kind: "import" }])("discloses only actually withheld attribution for timestamp-free legacy rows: %j", async (provenance) => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      const target = await runCreate({ title: "Legacy relationship target", type: "Task" }, global);
+      const created = await runCreate({ title: "Legacy attribution source", type: "Task" }, global);
+      const dependency = { id: target.item.id, kind: "related", ...provenance };
+      await fs.writeFile(path.join(pmPath, "tasks", `${created.item.id}.toon`), encode({ ...created.item, dependencies: [dependency] }) + "\n");
+      const ordinary = await runGet(created.item.id, global);
+      expect(ordinary.item.dependencies).toEqual([{ id: target.item.id, kind: "related" }]);
+      expect(resolveOutputOmissionReceipt("get", ordinary as unknown as Record<string, unknown>)!.omitted_field_groups.some((group) => group.name === "dependency_provenance")).toBe(Object.keys(provenance).length > 0);
+      for (const options of [{ full: true }, { depth: "full" }, { fields: "dependencies" }, { fields: "item.dependencies" }]) {
+        const complete = await runGet(created.item.id, global, options);
+        expect(complete.item.dependencies).toEqual([dependency]);
+        expect(resolveOutputOmissionReceipt("get", complete as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name)).not.toContain("dependency_provenance");
+      }
+    });
+  });
+
   it("canonicalizes short blocker references without double-counting their persisted full-ID edges", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };

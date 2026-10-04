@@ -2,7 +2,7 @@
 /**
  * @module scripts/release/agent-evidence-consistency-control
  *
- * Proves that the evidence regressions reject thirteen real source defects using
+ * Proves that the evidence regressions reject fourteen real source defects using
  * disposable copies, leaving the checkout and production tracker untouched.
  */
 
@@ -11,6 +11,13 @@ import { fileURLToPath } from "node:url";
 import { runIsolatedRegressionControl } from "./isolated-regression-control.mjs";
 
 const cases = [
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "discloses only actually withheld attribution for timestamp-free legacy rows",
+    before: 'if (projection.full || fieldsInclude(projection.fields, "dependencies")) return false;',
+    after: "void projection;",
+  },
   {
     sourcePath: "src/sdk/query/get.ts",
     testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
@@ -104,15 +111,19 @@ export async function runIfMain(filename = process.argv[1], args = process.argv.
   const negativeControl = args.includes("--negative-control");
   assert.ok(args.every((argument) => argument === "--negative-control"), "Only --negative-control is supported");
   const results = [];
-  for (const control of cases) {
-    const result = await runIsolatedRegressionControl({
-      testPath: "tests/unit/regressions/agent-evidence-consistency.spec.ts",
-      ...control,
-      extraPaths: ["tests/helpers", "dist"],
-    }, negativeControl);
-    assert.equal(result.exit_code, negativeControl ? 1 : 0, result.output);
-    if (negativeControl) assert.match(result.output, /AssertionError/, "A control must fail a behavior assertion");
-    results.push({ name: control.testName, exit_code: result.exit_code });
+  // Each control owns a disposable checkout and lease; bounded pairs avoid repeated startup latency without sharing mutated source.
+  for (let index = 0; index < cases.length; index += 2) {
+    const batch = await Promise.all(cases.slice(index, index + 2).map(async (control) => {
+      const result = await runIsolatedRegressionControl({
+        testPath: "tests/unit/regressions/agent-evidence-consistency.spec.ts",
+        ...control,
+        extraPaths: ["tests/helpers", "dist"],
+      }, negativeControl);
+      assert.equal(result.exit_code, negativeControl ? 1 : 0, result.output);
+      if (negativeControl) assert.match(result.output, /AssertionError/, "A control must fail a behavior assertion");
+      return { name: control.testName, exit_code: result.exit_code };
+    }));
+    results.push(...batch);
   }
   process.stdout.write(JSON.stringify({ negative_control: negativeControl, controls: results }) + "\n");
   process.exitCode = negativeControl ? 1 : 0;

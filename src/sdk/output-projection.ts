@@ -478,20 +478,13 @@ function resolveContextReceipt(
   return receipt;
 }
 
-/** Require actual persisted timestamps on every edge before certifying that a lean relationship table includes provenance. */
-function hasDependencyProvenance(item: Record<string, unknown>): boolean {
-  return Array.isArray(item.dependencies) && item.dependencies.every((edge) =>
-    isRecord(edge) && typeof edge.created_at === "string",
-  );
-}
-
 /** Recognize metadata and rendered aliases while excluding the stable linked envelope's unselected empty placeholders. */
 function isGetFieldGroupIncluded(
   name: string,
   owner: Record<string, unknown>,
   result: Record<string, unknown>,
 ): boolean {
-  if (name === "dependency_provenance") return hasDependencyProvenance(owner);
+  if (name === "dependency_provenance") return false;
   return Object.hasOwn(owner, name) ||
     ((name === "reminders" || name === "events") &&
       isRecord(result.schedule) && Object.hasOwn(result.schedule, name)) ||
