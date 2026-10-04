@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[3]: context-management,distribution,performance
 created_at: "2026-10-04T04:41:29.139Z"
-updated_at: "2026-10-04T08:12:38.128Z"
-closed_at: "2026-10-04T08:10:29.940Z"
-completed_at: "2026-10-04T08:10:29.940Z"
+updated_at: "2026-10-04T11:04:18.326Z"
+closed_at: "2026-10-04T11:04:17.315Z"
+completed_at: "2026-10-04T11:04:17.315Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "Actual npm artifact stays below the unchanged 20 MB base budget;Real Node execution preserves exported names, successful values and exception semantics;Declarations and prebuilt bundles remain byte-identical;Original TypeScript source content remains in composed maps;Repeated finalization is stable;Installed npm npx and bunx acceptance remains green"
 parent: pm-u9d0
 risk: medium
 confidence: high
-resolution: "Retained runtime modules compact redundant syntax while preserving identifiers, behavior, declarations, bundles and source maps; packed SDK continuation stages actual publish selectors before real npm packing."
+resolution: "Retained runtime modules compact redundant syntax without changing exported names, behavior, declarations, bundles or original source maps; publish staging uses actual package selectors, and all named build helpers have meaningful JSDoc."
 expected_result: Keep the actual npm artifact within the unchanged 20 MB ceiling and retain all public installed-consumer behavior without weakening packing or test time limits.
-actual_result: "Runtime/negative-control and all eleven packed continuation scenarios passed; npm/npx/bunx smoke passed with nine extension packages and the artifact measured 19,893,321 bytes against 20,000,000. Shared linked execution passed four unique commands with three duplicate links explicitly skipped. Complete source suite: 9686 passed, 2 Windows-only Linux skips and exact 100/100/100/100 coverage."
+actual_result: "Both runtime compaction cases pass; AST verification documents three of three build helper declarations; build and semantic documentation gates pass. The actual npm artifact remains below the unchanged20MB ceiling. Complete hosted coverage on c68931c is63521/63521 lines,66631/66631 statements,13763/13763 functions and50966/50966 branches; the final documentation head receives the same mandatory admission gates."
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,verifies,"2026-10-04T04:41:29.139Z","harness:codex","cli:create:dep",detected
   pm-fx0rcb,recurs_from,"2026-10-04T04:41:29.139Z","harness:codex","cli:create:dep",detected
@@ -27,7 +27,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-7wzc6f,verifies,"2026-10-04T07:44:05.027Z","harness:codex","cli:update:dep",detected
   pm-gh1383,verifies,"2026-10-04T07:44:05.027Z","harness:codex","cli:update:dep",detected
   pm-gh1385,verifies,"2026-10-04T07:44:05.027Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-10-04T04:41:29.139Z","harness:codex","All-status duplicate check: acquired the complete 2,869-item corpus, searched artifact/unpacked/compaction through the CLI and full corpus, refreshed open and in-progress lists, and read live pm-fx0rcb and pm-998juj closure plus comments and history. Both historical fixes are shipped; no active item owns syntax compaction. This new measured budget failure arises during the combined evidence delivery."
   "2026-10-04T04:43:49.497Z","harness:codex","TDD: extending the existing real compaction fixture failed twice before the flag change because unreachable syntax remained in emitted JavaScript. Both physical and symlinked root cases pass after enabling esbuild syntax compaction, including real Node exported function names, successful values, RangeError behavior, untouched declarations/bundles, original TypeScript source maps and idempotent finalization. The existing evidence controller now includes this actual unsafe-source mutant; no test-only production seam was added."
   "2026-10-04T04:45:27.486Z","harness:codex","Actual post-change npm pack receipt passes the unchanged base contract: 19,893,194 unpacked bytes, 1,749 files, no packaged source maps, all required runtime and SDK paths. The pre-change receipt was 20,012,917 bytes. Syntax compaction restores 119,723 bytes while preserving identifiers and declarations; no distribution budget or packlist exclusion changed. Full canonical coverage is running with one worker after all build changes completed."
@@ -38,6 +38,8 @@ comments[10]{created_at,author,text}:
   "2026-10-04T07:48:44.907Z","harness:codex","Verification interruption 2026-10-04: the final full coverage attempt exited without a JSON coverage report; its output stopped abruptly at a 40,960-byte boundary after widespread fixture/import failures. The shared /tmp tmpfs was heavily occupied (13 GiB used of 16 GiB after cleanup). A fresh disk-backed temporary root outside checkout ancestors reran all six sampled failing fixture suites unchanged: 39/39 tests passed. Repeating full coverage with only TMPDIR redirected to that isolated disk-backed root; no source, coverage exclusions, thresholds or test timeouts were changed, and unrelated temporary data was preserved."
   "2026-10-04T08:10:29.159Z","harness:codex","TDD: final all-source coverage passed unchanged exact gates: 9686 tests passed, 2 Windows-only skips on Linux; lines=63515/63515, statements=66625/66625, functions=13761/13761, branches=50965/50965. Zero uncovered counts across every measured source file. Focused real regressions, unsafe-source controls, linked execution and temporary Node/Bun/npm/npx/bunx acceptance passed. Implementation, closure and package-owned changelog are carried on the same delivery branch; published 2026.10.4 predates this change."
   "2026-10-04T08:12:38.128Z","harness:codex","Environment confirmation during package-owned changelog preparation: npm packing in the shared tmpfs returned errno -122 (quota exceeded), confirming that free filesystem capacity alone did not imply writable temporary storage. Re-running package generation and final artifact checks with the same external directory on disk preserves existing temporary data and changes no package source, limits or verification gates. The complete coverage run in that directory passed all 9,686 tests and exact source counts."
+  "2026-10-04T10:58:24.578Z","harness:codex","PR #1387 exact-head hosted evidence c68931ccaefc2f6566983b70bf4d6433da5887bb: every GitHub check completed successfully, including mandatory complete source coverage. Downloaded coverage-node24-ubuntu-latest from CI run37196096570 and verified every source row has zero uncovered counts: lines63521/63521, statements66631/66631, functions13763/13763, branches50966/50966. Greptile confidence5/5 reports both history findings fixed and no new actionable issue; CodeRabbit reports no actionable defect. Sourcery detailed review remains quota-limited, not an approval. Finalizing the existing build helper docstring to satisfy100 percent touched-function documentation; no executable behavior or gate is changed."
+  "2026-10-04T11:04:16.164Z","harness:codex","Final documentation correction: the existing optional-output stat helper now explains that only absent files are optional and other stat failures propagate. A TypeScript AST census verifies all three declared build functions have attached meaningful JSDoc; build,2/2 unchanged runtime compaction cases and the semantic docstring ratchet pass. These cases exercise real exported names, successful/negative behavior, original source maps, declarations, bundle preservation and idempotence through ordinary and aliased roots. This changes one documentation line and no executable behavior, exclusions, test cases, thresholds or budgets. The preceding exact functional head has independently verified complete hosted100/100/100/100 coverage; final-head hosted checks/reviews will run again before merge."
 learnings[1]{created_at,author,text}:
   "2026-10-04T05:30:31.255Z","harness:codex","Artifact limits are contracts on the actual npm packlist, not on a source-file estimate. When additive SDK behavior exhausts headroom, syntax compaction can preserve all shipping paths and public declarations; verify real exported names, exception behavior, original source mappings and repeated finalization before relying on the smaller receipt."
 files[5]{path,scope}:
@@ -71,7 +73,7 @@ test_runs[1]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/AGENT_EVIDENCE_CONSISTENCY.md,project
-close_reason: Verified shared CLI/SDK agent-evidence implementation and real consumer acceptance for reviewed delivery.
+close_reason: "Completed runtime compaction, installed-consumer verification and meaningful documentation for every build helper in the reviewed delivery."
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

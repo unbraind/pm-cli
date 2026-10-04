@@ -5,6 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
+/** Check optional emitted executables before chmod, treating only absent files as optional and propagating other stat failures. */
 async function outputExists(filePath) {
   try {
     await stat(filePath);

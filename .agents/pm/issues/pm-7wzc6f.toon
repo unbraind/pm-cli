@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-09-30T06:48:36.512Z"
-updated_at: "2026-10-04T08:10:26.996Z"
+updated_at: "2026-10-04T10:58:23.728Z"
 closed_at: "2026-10-04T08:10:26.097Z"
 completed_at: "2026-10-04T08:10:26.097Z"
 author: "harness:codex"
@@ -20,12 +20,13 @@ expected_result: Never recommend a nonexistent command inferred from an unknown 
 actual_result: "Seven declared-recovery scenarios and real Node/Bun acceptance passed, including root help, equals values, runtime commands and namespaced aliases; the unsafe-source controller rejects the old inference. Complete source suite: 9686 passed, 2 Windows-only Linux skips and exact 100/100/100/100 coverage."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-fo8g7j,discovered_from,"2026-09-30T06:48:36.512Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-09-30T06:48:36.512Z","harness:codex","Duplicate check: complete strict all-status corpus contained 2843 records with no unreadable directories or items. Exact GitHub ID plus behavior/root-cause searches were complete. Closed prior lineage pm-fo8g7j and its full history were read; this new report requests a distinct unimplemented contract. Relationship reconstructed during current intake rather than asserted as historical knowledge. Queued and unclaimed; source investigation remains pending."
   "2026-10-04T03:34:12.833Z","harness:codex","TDD baseline reproduced: an unknown prefix flag with separate synthetic-value yields pm synthetic-value --help. Recovery must verify the runtime lexicon before publishing a help target and use root discovery for an ambiguous option/value boundary. Known command-first, equals-form, nested and extension targets remain declared and rejection remains exit 2."
   "2026-10-04T03:51:32.569Z","harness:codex","TDD: 137 focused tests pass, including real annotation CLI transports, declared help recovery, stable history corruption, cache preservation and lock contention. All three isolated safe controls pass; restoring each unsafe invariant fails its selected behavior assertion. No source coverage exclusions or threshold changes. Full-source coverage and static release gates are now running before closure."
   "2026-10-04T04:03:31.312Z","harness:codex","Linked-test configuration correction: the none PM-context mode correctly refused source-workspace execution before invoking the command. Retained that immutable refusal evidence and replaced the link through the CLI with schema isolation. The regression controller itself copies source into a disposable workspace and runs the canonical isolated test runner. No trust, isolation or failure gate was relaxed."
   "2026-10-04T08:10:25.138Z","harness:codex","TDD: final all-source coverage passed unchanged exact gates: 9686 tests passed, 2 Windows-only skips on Linux; lines=63515/63515, statements=66625/66625, functions=13761/13761, branches=50965/50965. Zero uncovered counts across every measured source file. Focused real regressions, unsafe-source controls, linked execution and temporary Node/Bun/npm/npx/bunx acceptance passed. Implementation, closure and package-owned changelog are carried on the same delivery branch; published 2026.10.4 predates this change."
+  "2026-10-04T10:58:23.727Z","harness:codex","PR #1387 exact-head hosted evidence c68931ccaefc2f6566983b70bf4d6433da5887bb: every GitHub check completed successfully, including mandatory complete source coverage. Downloaded coverage-node24-ubuntu-latest from CI run37196096570 and verified every source row has zero uncovered counts: lines63521/63521, statements66631/66631, functions13763/13763, branches50966/50966. Greptile confidence5/5 reports both history findings fixed and no new actionable issue; CodeRabbit reports no actionable defect. Sourcery detailed review remains quota-limited, not an approval. Finalizing the existing build helper docstring to satisfy100 percent touched-function documentation; no executable behavior or gate is changed."
 files[7]:
   - path: scripts/release/agent-evidence-consistency-control.mjs
     scope: project
