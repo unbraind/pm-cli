@@ -60,13 +60,13 @@ import * as fixtureFs from 'node:fs';
 const fixtureRoot = process.cwd();
 const fixtureSignals = ${JSON.stringify(signals)};
 console.log(${JSON.stringify(runner.testName)});
-fixtureFs.writeFileSync(fixtureSignals + '/ready.tmp', JSON.stringify({ root: fixtureRoot }));
-fixtureFs.renameSync(fixtureSignals + '/ready.tmp', fixtureSignals + '/ready.json');
 process.on('SIGTERM', () => {
   if (${JSON.stringify(mode)} === 'unresponsive') return;
   fixtureFs.writeFileSync(fixtureSignals + '/stopped.json', JSON.stringify({ phase: 'signal', root_exists: fixtureFs.existsSync(fixtureRoot) }));
   process.exit(${exitCode});
 });
+fixtureFs.writeFileSync(fixtureSignals + '/ready.tmp', JSON.stringify({ root: fixtureRoot }));
+fixtureFs.renameSync(fixtureSignals + '/ready.tmp', fixtureSignals + '/ready.json');
 setTimeout(() => {
   fixtureFs.writeFileSync(fixtureSignals + '/stopped.json', JSON.stringify({ phase: 'fallback', root_exists: fixtureFs.existsSync(fixtureRoot) }));
   process.exit(0);
