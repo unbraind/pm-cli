@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-04T11:04:49.307Z",
+  "updated_at": "2026-10-04T12:15:46.816Z",
   "entries": [
     {
       "name": "pm-changelog",
@@ -68,10 +68,10 @@
         "preflight_ownership": []
       },
       "installed_at": "2026-05-23T20:26:03.509Z",
-      "updated_at": "2026-10-04T10:30:51.920Z",
+      "updated_at": "2026-10-04T12:15:46.086Z",
       "source": {
         "kind": "npm",
-        "input": "npm:pm-changelog",
+        "input": "npm:pm-changelog@2026.10.4",
         "location": "package",
         "package": "pm-changelog",
         "version": "2026.10.4"

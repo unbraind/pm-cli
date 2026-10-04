@@ -1,0 +1,58 @@
+id: pm-gh1389
+title: "GH-1389: Derive get omission receipts from emitted schedule and artifact aliases"
+description: A material reminder or event rendered through the normalized schedule facet is still called omitted because the receipt inspects only top-level metadata keys. Derive inclusion from actual alias paths and preserve recovery for unselected members.
+type: Issue
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-04T11:45:44.554Z"
+updated_at: "2026-10-04T13:02:32.428Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f529e0ba704de883c96d689c"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Rendered reminders and events are never reported omitted; Narrow schedule selectors retain omissions for unselected material fields; Linked artifact aliases are measured independently; Standard brief full and selected field reads agree through SDK CLI and MCP.
+goal: project management = context management
+objective: Trustworthy bounded context and SDK-owned evidence
+value: Agents can act on one truthful context read and preserve durable evidence
+parent: pm-mpbb
+risk: medium
+confidence: medium
+expected_result: Rendered reminders and events are never reported omitted; Narrow schedule selectors retain omissions for unselected material fields; Linked artifact aliases are measured independently; Standard brief full and selected field reads agree through SDK CLI and MCP.
+affected_version: 2026.10.4
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mpbb,implements,"2026-10-04T11:45:44.554Z","harness:codex","cli:create:dep",detected
+  pm-x1g5,discovered_from,"2026-10-04T11:45:44.554Z","harness:codex","cli:create:dep",detected
+  pm-x1g5,verifies,"2026-10-04T11:45:44.554Z","harness:codex","cli:create:dep",detected
+  pm-gh1388,verifies,"2026-10-04T12:52:14.870Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-04T11:45:44.554Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1389 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+  "2026-10-04T11:49:37.383Z","harness:codex","TDD: the pre-fix SDK receipt calls rendered reminders/events omitted at default and narrow schedule projections. The same real reminder/event fixture proves the unselected material member remains omitted. Explicit metadata restoration is retained. No receipt implementation is mocked."
+  "2026-10-04T12:58:08.879Z","harness:codex","Quality correction: rendered-alias inclusion is a documented nonlinear predicate so the receipt owner stays within the unchanged CodeFactor complexity ceiling. Eleven real source-defect controls pass safe code and fail behavioral assertions; the portable filename control now explicitly asserts successful resolution so the independent identity guard cannot hide a boundary failure behind a setup exception. All four TypeScript targets pass; packed temporary Node/Bun SDK and 11 CLI commands each plus npx/bunx and strict history passed before the final compact-output change."
+  "2026-10-04T13:02:32.427Z","harness:codex","Shared final acceptance: all 43 focused tests pass, including eleven safe and eleven real source-mutant behavioral controls. Fresh installed-package Node/Bun probes pass normalized schedule emission and narrow omission behavior, brief/full recovery, historical separation, public SDK reads, npx/bunx and strict history. Dependency audit reports no known vulnerabilities; live GitHub Dependabot, code-scanning and secret-scanning alert inventories are empty. Full hosted all-source coverage and review remain pending; no global or published-source completion is claimed."
+files[4]:
+  - path: scripts/release/agent-evidence-consistency-control.mjs
+    scope: project
+  - path: src/sdk/output-projection.ts
+    scope: project
+    note: Derive inclusion from rendered schedule members
+  - path: tests/unit/regressions/actionable-get-receipts.spec.ts
+    scope: project
+    note: Real emitted and withheld schedule evidence
+  - path: tests/unit/scripts/agent-evidence-consistency-control.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,300,"harness:codex","2026-10-04T11:58:35.799Z",local_mutation,fix/actionable-blocker-and-schedule-read-receipts
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/GET_READ_EVIDENCE.md,project
+  docs/README.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/release/agent-evidence-consistency-control.mjs --negative-control
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts,node scripts/release/agent-evidence-consistency-control.mjs
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: unbrained
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1389\nReported version: 2026.10.4\n\nA material reminder or event rendered through the normalized schedule facet is still called omitted because the receipt inspects only top-level metadata keys. Derive inclusion from actual alias paths and preserve recovery for unselected members.\n\nThe complete public issue and its comments were read. This record is intake; the report is not independently reproduced or fixed yet. The completed predecessor pm-x1g5 remains shipped work and is not represented as an outstanding failure.\n\nAcceptance: Rendered reminders and events are never reported omitted; Narrow schedule selectors retain omissions for unselected material fields; Linked artifact aliases are measured independently; Standard brief full and selected field reads agree through SDK CLI and MCP."

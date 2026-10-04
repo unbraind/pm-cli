@@ -1,0 +1,27 @@
+id: pm-gh1393
+title: "GH-1393: Seed truthful schema-context settings history for linked tests"
+description: The schema seeding path reportedly overwrites audited initializer settings with source settings while retaining incompatible workspace history. This is distinct from the completed tracker-context no-history repair. Preserve schema isolation and real strict drift diagnostics.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-04T11:46:25.377Z"
+updated_at: "2026-10-04T11:46:25.377Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: A schema-context shell command running strict history validation passes after nontrivial source settings changes; Seeded settings and authoritative workspace history agree; Source items are absent from schema context; Real out-of-band settings mutation still fails; No suppression or source-tracker write is introduced.
+goal: project management = context management
+objective: Trustworthy bounded context and SDK-owned evidence
+value: Agents can act on one truthful context read and preserve durable evidence
+parent: pm-ugqx
+risk: medium
+confidence: medium
+expected_result: A schema-context shell command running strict history validation passes after nontrivial source settings changes; Seeded settings and authoritative workspace history agree; Source items are absent from schema context; Real out-of-band settings mutation still fails; No suppression or source-tracker write is introduced.
+affected_version: 2026.10.4
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2ga1g7,discovered_from,"2026-10-04T11:46:25.377Z","harness:codex","cli:create:dep",detected
+  pm-2ga1g7,verifies,"2026-10-04T11:46:25.377Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-10-04T11:46:25.377Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-04T11:46:25.377Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1393 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1393\nReported version: 2026.10.4\n\nThe schema seeding path reportedly overwrites audited initializer settings with source settings while retaining incompatible workspace history. This is distinct from the completed tracker-context no-history repair. Preserve schema isolation and real strict drift diagnostics.\n\nThe complete public issue and its comments were read. This record is intake; the report is not independently reproduced or fixed yet. The completed predecessor pm-2ga1g7 remains shipped work and is not represented as an outstanding failure.\n\nAcceptance: A schema-context shell command running strict history validation passes after nontrivial source settings changes; Seeded settings and authoritative workspace history agree; Source items are absent from schema context; Real out-of-band settings mutation still fails; No suppression or source-tracker write is introduced."

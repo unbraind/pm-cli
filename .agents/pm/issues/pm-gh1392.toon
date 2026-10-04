@@ -1,0 +1,27 @@
+id: pm-gh1392
+title: "GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness"
+description: The report describes extension manage changing the tracked managed-state timestamp/order and skipping npm update checks. It also reports bare-name reinstall failing to reuse the recorded npm source. Existing truthful partial-coverage semantics must remain intact.
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-04T11:46:15.259Z"
+updated_at: "2026-10-04T11:46:15.259Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Listing diagnostics preserve managed-state bytes and timestamp; Install and update own canonical ordering and mutations; Npm freshness uses recorded package identity with an explicit offline option; Bare-name reinstall resolves an already managed npm source; Failed checks retain truthful incomplete coverage.
+goal: project management = context management
+objective: Trustworthy bounded context and SDK-owned evidence
+value: Agents can act on one truthful context read and preserve durable evidence
+parent: pm-ugqx
+risk: medium
+confidence: medium
+expected_result: Listing diagnostics preserve managed-state bytes and timestamp; Install and update own canonical ordering and mutations; Npm freshness uses recorded package identity with an explicit offline option; Bare-name reinstall resolves an already managed npm source; Failed checks retain truthful incomplete coverage.
+affected_version: 2026.10.4
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gf5zw8,discovered_from,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
+  pm-gf5zw8,verifies,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-04T11:46:15.259Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1392 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1392\nReported version: 2026.10.4\n\nThe report describes extension manage changing the tracked managed-state timestamp/order and skipping npm update checks. It also reports bare-name reinstall failing to reuse the recorded npm source. Existing truthful partial-coverage semantics must remain intact.\n\nThe complete public issue and its comments were read. This record is intake; the report is not independently reproduced or fixed yet. The completed predecessor pm-gf5zw8 remains shipped work and is not represented as an outstanding failure.\n\nAcceptance: Listing diagnostics preserve managed-state bytes and timestamp; Install and update own canonical ordering and mutations; Npm freshness uses recorded package identity with an explicit offline option; Bare-name reinstall resolves an already managed npm source; Failed checks retain truthful incomplete coverage."

@@ -2,7 +2,7 @@
 /**
  * @module scripts/release/agent-evidence-consistency-control
  *
- * Proves that the evidence regressions reject six real source defects using
+ * Proves that the evidence regressions reject eleven real source defects using
  * disposable copies, leaving the checkout and production tracker untouched.
  */
 
@@ -11,6 +11,41 @@ import { fileURLToPath } from "node:url";
 import { runIsolatedRegressionControl } from "./isolated-regression-control.mjs";
 
 const cases = [
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "rejects a declared blocker whose file contains another item identity",
+    before: "if (loaded.document.metadata.id !== located.id) {",
+    after: "if (false) {",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "keeps nonportable legacy blocker text unresolved without reading outside item folders",
+    before: '!/^(?!\\.{1,2}$)[^/\\\\:\\0]+$/u.test(id) ||',
+    after: "false ||",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "resolves every declared blocker without certifying missing or external references",
+    before: "targets.set(located.id.toLowerCase(), loaded.document.metadata);",
+    after: "void loaded;",
+  },
+  {
+    sourcePath: "src/sdk/output-projection.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "declares only material schedule members withheld",
+    before: '((name === "reminders" || name === "events") &&\n      isRecord(result.schedule) && Object.hasOwn(result.schedule, name)) ||',
+    after: "false ||",
+  },
+  {
+    sourcePath: "src/sdk/output-projection.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "distinguishes rendered linked artifacts from unselected placeholders",
+    before: '(["files", "tests", "docs"].includes(name) &&\n      isRecord(result.linked) && Array.isArray(result.linked[name]) &&\n      result.linked[name].length > 0)',
+    after: "false",
+  },
   {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "rejects a reread redirected",

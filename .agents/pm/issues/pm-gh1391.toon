@@ -1,0 +1,27 @@
+id: pm-gh1391
+title: "GH-1391: Express faithful self-isolating source package gates without tracker redirects"
+description: The reporter needs source-workspace package acceptance without inherited PM_PATH while current none-mode requires an isolated or snapshot workspace. Existing source-tracker safety and trust rules must remain enforced; no new source bypass is assumed safe.
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-04T11:46:01.044Z"
+updated_at: "2026-10-04T11:46:01.044Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Reproduce the nested disposable SDK-root failure and snapshot identity gap; Define an explicit source-tracker protection contract before permitting source execution without PM_PATH; Preserve PM_GLOBAL_PATH isolation and trust checks; Real package commands match direct CI results without mutating the source tracker.
+goal: project management = context management
+objective: Trustworthy bounded context and SDK-owned evidence
+value: Agents can act on one truthful context read and preserve durable evidence
+parent: pm-ugqx
+risk: medium
+confidence: medium
+expected_result: Reproduce the nested disposable SDK-root failure and snapshot identity gap; Define an explicit source-tracker protection contract before permitting source execution without PM_PATH; Preserve PM_GLOBAL_PATH isolation and trust checks; Real package commands match direct CI results without mutating the source tracker.
+affected_version: 2026.10.4
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-t05d8d,discovered_from,"2026-10-04T11:46:01.044Z","harness:codex","cli:create:dep",detected
+  pm-t05d8d,verifies,"2026-10-04T11:46:01.044Z","harness:codex","cli:create:dep",detected
+  pm-ugqx,implements,"2026-10-04T11:46:01.044Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-04T11:46:01.044Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1391 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1391\nReported version: 2026.10.4\n\nThe reporter needs source-workspace package acceptance without inherited PM_PATH while current none-mode requires an isolated or snapshot workspace. Existing source-tracker safety and trust rules must remain enforced; no new source bypass is assumed safe.\n\nThe complete public issue and its comments were read. This record is intake; the report is not independently reproduced or fixed yet. The completed predecessor pm-t05d8d remains shipped work and is not represented as an outstanding failure.\n\nAcceptance: Reproduce the nested disposable SDK-root failure and snapshot identity gap; Define an explicit source-tracker protection contract before permitting source execution without PM_PATH; Preserve PM_GLOBAL_PATH isolation and trust checks; Real package commands match direct CI results without mutating the source tracker."

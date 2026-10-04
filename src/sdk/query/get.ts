@@ -27,6 +27,15 @@ import { readHistoryEntries } from "../history-read.js";
 import { renderPmCommand } from "../command-line.js";
 import { recordContextUsageTouches } from "../context-usage.js";
 import {
+  collectBlockedByIds,
+  resolveItemBlockers,
+  type ResolvedBlocker,
+} from "../actionability.js";
+import {
+  isExternalDependencyReference,
+  isExternalDependencySourceKind,
+} from "../../core/item/dependency-reference.js";
+import {
   buildItemChildrenRollup,
   type ChildRollupContext,
 } from "../item-children.js";
@@ -118,6 +127,15 @@ export interface GetResult {
   children?: ChildRollupContext;
   /** Normalized scheduling data for scheduled item types and metadata. */
   schedule?: Partial<ItemScheduleContext>;
+  /** Current state of forward-declared blockers; reverse graph edges require a corpus query and historical reads omit this current-state facet. */
+  blockers?: {
+    /** Explicit scope: scalar and blocked_by edges declared by this item. */
+    scope: "declared";
+    /** Nonterminal, missing and external references that still gate declared prerequisites. */
+    open: ResolvedBlocker[];
+    /** Declared references whose targets have terminal runtime statuses. */
+    closed_count: number;
+  };
   /** True when the item was reconstructed from immutable history. */
   reconstructed?: true;
   /** Durable version, or null when legacy compaction lost the numeric mapping. */
@@ -174,6 +192,7 @@ function itemMaterialFieldGroups(
   item: ItemMetadata,
   body: string,
   children: ChildRollupContext | undefined,
+  currentSnapshot: boolean,
 ): string[] {
   const collectionCounts = itemCollectionCounts(item);
   return [
@@ -196,6 +215,7 @@ function itemMaterialFieldGroups(
       ? ["claim_state"]
       : []),
     ...(buildItemSchedule(item) ? ["schedule"] : []),
+    ...(currentSnapshot && collectBlockedByIds(item).length > 0 ? ["blockers"] : []),
   ];
 }
 
@@ -434,7 +454,8 @@ function projectItemForFields(
       normalized === "children" ||
       normalized.startsWith("children.") ||
       normalized === "schedule" ||
-      normalized.startsWith("schedule.")
+      normalized.startsWith("schedule.") ||
+      normalized === "blockers"
     ) {
       continue;
     }
@@ -593,6 +614,12 @@ function validateGetProjectionFields(
       EXIT_CODE.USAGE,
     );
   }
+  if (historical && fieldsIncludeRoot(fields ?? [], "blockers")) {
+    throw new PmCliError(
+      "Get --at cannot project current blocker statuses; read the current item with --fields blockers instead.",
+      EXIT_CODE.USAGE,
+    );
+  }
 }
 
 /** Include explicit facet selectors, or retain ordinary body/link/claim facets above brief depth. */
@@ -679,6 +706,64 @@ async function buildGetChildrenRollup(
     corpus,
     statusRegistry,
   );
+}
+
+/** Attach current forward-declared targets only when requested, retaining unsafe/unknown/external references as unresolved and avoiding unrelated item scans or historical status claims. */
+async function attachGetBlockers(
+  result: GetResult,
+  context: GetItemContext,
+  projection: ResolvedGetProjection,
+): Promise<void> {
+  if (context.historical !== undefined) return;
+  if (!(projection.fieldProjection
+    ? fieldsIncludeRoot(projection.fields as string[], "blockers")
+    : projection.depth !== "brief")) return;
+  const ids = collectBlockedByIds(context.metadata);
+  if (ids.length === 0) return;
+  const targets = new Map<string, ItemMetadata>();
+  for (const id of ids) {
+    if (
+      isExternalDependencyReference(id) ||
+      !/^(?!\.{1,2}$)[^/\\:\0]+$/u.test(id) ||
+      context.metadata.dependencies?.some((dependency) =>
+        dependency.id.trim() === id &&
+        dependency.kind === "blocked_by" &&
+        isExternalDependencySourceKind(dependency.source_kind),
+      )
+    ) continue;
+    const located = await locateItem(
+      context.pmRoot,
+      id,
+      context.settings.id_prefix,
+      context.settings.item_format,
+      context.typeToFolder,
+    );
+    if (located !== null) {
+      const loaded = await readLocatedItem(located, { schema: context.settings.schema });
+      if (loaded.document.metadata.id !== located.id) {
+        throw new PmCliError(`Blocker identity differs from its canonical file: ${located.id}`, EXIT_CODE.CONFLICT, {
+          code: "item_identity_conflict",
+          required: "Restore the canonical blocker identity and validate storage integrity before retrying the item read.",
+        });
+      }
+      targets.set(located.id.toLowerCase(), loaded.document.metadata);
+    }
+  }
+  const resolved = resolveItemBlockers(
+    {
+      blocked_by: context.metadata.blocked_by,
+      dependencies: context.metadata.dependencies,
+      updated_at: context.metadata.updated_at,
+    },
+    targets,
+    resolveRuntimeStatusRegistry(context.settings.schema),
+  );
+  result.blockers = {
+    scope: "declared",
+    open: resolved.filter((blocker) => !blocker.resolved),
+    closed_count: resolved.filter((blocker) => blocker.resolved).length,
+  };
+  if (!projection.fieldProjection && !projection.full) delete result.item.blocked_by;
 }
 
 /** Derive scheduling from the selected snapshot and retain only requested schedule members when field-projected. */
@@ -782,6 +867,7 @@ export async function runGet(
     result.claim_state = claimState;
   }
   attachGetSchedule(result, context, projection.fields, includeSchedule);
+  await attachGetBlockers(result, context, projection);
   const children = await buildGetChildrenRollup(
     context,
     includeChildren,
@@ -817,7 +903,7 @@ export async function runGet(
   }
   registerOutputMaterialFieldGroups(
     result,
-    itemMaterialFieldGroups(context.metadata, context.body, children),
+    itemMaterialFieldGroups(context.metadata, context.body, children, context.historical === undefined),
   );
   return result;
 }
