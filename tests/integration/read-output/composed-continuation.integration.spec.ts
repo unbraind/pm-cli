@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, readdir, symlink } from "node:fs/promises";
+import { cp, glob, lstat, mkdir, readFile, readdir, symlink } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -84,6 +84,24 @@ async function collectReadPages(run: RunRead, base: string[], blocked = false): 
   return { ids, producerCursor, transitions, budgetContinuations, companionRows };
 }
 
+/** Stage the actual publish selectors and unchanged manifest without traversing development dependencies before real npm packing. */
+async function stagePublishSources(repository: string, destination: string): Promise<{ files: string[] }> {
+  const manifest = JSON.parse(await readFile(path.join(repository, "package.json"), "utf8")) as { files: string[] };
+  await mkdir(destination);
+  for await (const relative of glob(
+    ["package.json", ...manifest.files.filter((selector) => !selector.startsWith("!"))],
+    { cwd: repository, exclude: ["**/node_modules/**", ...manifest.files.filter((selector) => selector.startsWith("!")).map((selector) => selector.slice(1))] },
+  )) {
+    const source = path.join(repository, relative);
+    if (!(await lstat(source)).isFile()) continue;
+    const target = path.join(destination, relative);
+    await mkdir(path.dirname(target), { recursive: true });
+    await cp(source, target);
+  }
+  expect(await readdir(destination)).not.toContain("node_modules");
+  return manifest;
+}
+
 describe("composed producer and budget continuation (GH-1371)", () => {
   it("finishes list, search and hierarchical context reads using advertised serialized cursors", { timeout: 120_000 }, async () => {
     await withTempPmPath(async (context) => {
@@ -151,6 +169,11 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       const repository = fileURLToPath(new URL("../../../", import.meta.url));
       const consumer = path.join(context.tempRoot, "packed-consumer");
       await mkdir(consumer);
+      // Preserve the actual publish selectors while avoiding npm's traversal of
+      // the checkout's development dependency tree. This remains a real npm
+      // tarball and public export test, with the original process timeout.
+      const packSource = path.join(context.tempRoot, "publish-source");
+      const sourceManifest = await stagePublishSources(repository, packSource);
       // Invoke npm's Node entry directly so the timeout kills the pack process,
       // including on Windows where a cmd shell would leave its child running.
       let npmPackage: string;
@@ -160,7 +183,7 @@ describe("composed producer and budget continuation (GH-1371)", () => {
         throw new Error("Packed SDK continuation could not resolve npm/package.json. Install npm for this Node runtime or expose its package through NODE_PATH.", { cause });
       }
       const npmCli = path.join(path.dirname(npmPackage), "bin", "npm-cli.js");
-      execFileSync(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: repository, env: context.env, encoding: "utf8", timeout: 30_000 });
+      execFileSync(process.execPath, [npmCli, "pack", "--ignore-scripts", "--json", "--pack-destination", consumer], { cwd: packSource, env: context.env, encoding: "utf8", timeout: 30_000 });
       const tarballs = (await readdir(consumer)).filter((name) => name.endsWith(".tgz"));
       expect(tarballs, "npm pack must produce exactly one tarball in the fresh destination").toHaveLength(1);
       execFileSync("tar", ["-xzf", path.join(consumer, tarballs[0]!), "-C", consumer], { timeout: 10_000 });
@@ -171,6 +194,7 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       const consumerScript = path.join(consumer, "consumer.mjs");
       await cp(new URL("../../fixtures/read-output/packed-continuation-consumer.mjs", import.meta.url), consumerScript);
       const manifest = JSON.parse(await readFile(path.join(packedRoot, "package.json"), "utf8")) as { exports: Record<string, unknown> };
+      expect(manifest).toEqual(sourceManifest);
       expect(manifest.exports["./sdk"]).toBeDefined();
       const evidence = JSON.parse(execFileSync(process.execPath, [consumerScript, context.pmPath, emptyTracker, blockedTracker], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 })) as { publicExport: string; results: { name: string; limit?: number; empty?: boolean; blocked?: boolean; recovery?: boolean; budgetTransitions: number; uniqueRows: number }[] };
       expect(evidence.publicExport).toBe("@unbrained/pm-cli/sdk");

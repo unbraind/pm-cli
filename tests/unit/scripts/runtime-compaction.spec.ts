@@ -7,12 +7,12 @@ import { createScriptHarness } from "../../helpers/scriptModule";
 
 const harness = createScriptHarness();
 
-it.each([false, true])("compacts runtime whitespace while preserving names, declarations, bundles, and original source mappings (aliased root: %s)", async (aliased) => {
+it.each([false, true])("compacts redundant runtime syntax while preserving names, behavior, declarations, bundles, and original source mappings (aliased root: %s)", async (aliased) => {
   const root = await harness.createTempRoot("pm-runtime-compact-");
   const dist = path.join(root, "dist");
   await mkdir(path.join(dist, "cli-bundle"), { recursive: true });
   const source =
-    "/** Original documented source. */\nexport function importantName(value: number): number {\n  if (value < 0) {\n    throw new RangeError('negative');\n  }\n  const adjusted = value + 1;\n  return adjusted;\n}\n";
+    "/** Original documented source. */\nexport function importantName(value: number): number {\n  if (value < 0) {\n    throw new RangeError('negative');\n  }\n  if (false) throw new Error('unreachable fixture branch');\n  const adjusted = value + 1;\n  return adjusted;\n}\n";
   const emitted = await transform(source, {
     loader: "ts",
     sourcefile: "original.ts",
@@ -39,6 +39,7 @@ it.each([false, true])("compacts runtime whitespace while preserving names, decl
   await mod.compactRuntimeOutputs(buildRoot);
   const compact = await readFile(runtime, "utf8");
   expect(compact).toContain("function importantName");
+  expect(compact).not.toContain("unreachable fixture branch");
   expect(compact.length).toBeLessThan(emitted.code.length + 39);
   expect(await readFile(path.join(dist, "example.d.ts"), "utf8")).toBe(
     declaration,
@@ -55,11 +56,11 @@ it.each([false, true])("compacts runtime whitespace while preserving names, decl
   const consumer = path.join(dist, "consumer.mjs");
   await writeFile(
     consumer,
-    'import { importantName } from "./example.js"; console.log(importantName.name, importantName(2));',
+    'import { importantName } from "./example.js"; console.log(importantName.name, importantName(2)); try { importantName(-1); } catch (error) { console.log(error.name, error.message); }',
   );
   expect(
     execFileSync(process.execPath, [consumer], { encoding: "utf8" }).trim(),
-  ).toBe("importantName 3");
+  ).toBe("importantName 3\nRangeError negative");
   await mod.compactRuntimeOutputs(buildRoot);
   expect(await readFile(runtime, "utf8")).toBe(compact);
 });

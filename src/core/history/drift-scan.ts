@@ -162,6 +162,39 @@ interface DriftScanCacheState {
   verifyCacheHitByContent: boolean;
 }
 
+/** Allocate independent finding collections for one corpus or strict item scan. */
+function createDriftScanAccumulator(): DriftScanAccumulator {
+  return {
+    missingStreams: [],
+    unreadableStreams: [],
+    hashMismatches: [],
+    chainMismatches: [],
+    versionSkews: [],
+    workspaceStateMismatches: [],
+    workspaceStateMissing: [],
+    workspaceStateUnreadable: [],
+  };
+}
+
+/** Deduplicate affected identities while retaining every item and workspace finding. */
+function buildDriftScanResult(accumulator: DriftScanAccumulator): DriftScanResult {
+  const driftedItems = [
+    ...new Set([
+      ...accumulator.missingStreams,
+      ...accumulator.unreadableStreams,
+      ...accumulator.hashMismatches,
+      ...accumulator.chainMismatches,
+      ...accumulator.versionSkews,
+      ...(accumulator.workspaceStateMismatches.length > 0 ||
+      accumulator.workspaceStateMissing.length > 0 ||
+      accumulator.workspaceStateUnreadable.length > 0
+        ? [WORKSPACE_HISTORY_ID]
+        : []),
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
+  return { ...accumulator, driftedItems };
+}
+
 /** Verify the optional workspace stream, record its declared digest algorithm in the cache, and accumulate integrity failures. Returns whether cached evidence changed. */
 async function scanWorkspaceHistory(
   pmRoot: string,
@@ -213,10 +246,6 @@ async function scanWorkspaceHistory(
   return resolved.cacheDirty;
 }
 
-function hashContent(raw: string): string {
-  return createHash("sha256").update(raw).digest("hex");
-}
-
 /** Detect unsupported digest labels or canonicalization epochs before comparing anchors. */
 function hasUnsupportedHistoryCapability(entry: HistoryEntry): boolean {
   return !READABLE_HISTORY_HASH_ALGORITHMS.has(entry.hash_algorithm) ||
@@ -229,7 +258,7 @@ async function verifyHistoryStream(
   historyPath: string,
 ): Promise<StreamVerification | null> {
   const raw = await fs.readFile(historyPath, "utf8");
-  const contentHash = hashContent(raw);
+  const contentHash = createHash("sha256").update(raw).digest("hex");
   if (raw.trim().length === 0) {
     return null;
   }
@@ -480,6 +509,16 @@ async function scanWorkspaceStateAgreement(
   }
 }
 
+/** Strictly verify one item using the shared stream verifier without reading or writing the corpus cache or inspecting workspace histories and documents. */
+export async function scanItemHistoryDrift(
+  pmRoot: string,
+  item: ItemMetadata & { body: string },
+): Promise<DriftScanResult> {
+  const accumulator = createDriftScanAccumulator();
+  await scanItemHistory(pmRoot, item, { previousEntries: {}, nextEntries: {}, verifyCacheHitByContent: true }, accumulator);
+  return buildDriftScanResult(accumulator);
+}
+
 /**
  * Scan every item's history stream for drift (missing/unreadable streams, broken
  * hash chains, and item/history hash mismatches).
@@ -495,16 +534,7 @@ export async function scanHistoryDrift(
   items: Array<ItemMetadata & { body: string }>,
   options: DriftScanOptions = {},
 ): Promise<DriftScanResult> {
-  const accumulator: DriftScanAccumulator = {
-    missingStreams: [],
-    unreadableStreams: [],
-    hashMismatches: [],
-    chainMismatches: [],
-    versionSkews: [],
-    workspaceStateMismatches: [],
-    workspaceStateMissing: [],
-    workspaceStateUnreadable: [],
-  };
+  const accumulator = createDriftScanAccumulator();
 
   const cache = await loadDriftCache(pmRoot);
   const previousEntries: Record<string, DriftCacheEntry> = cache?.entries ?? {};
@@ -553,19 +583,5 @@ export async function scanHistoryDrift(
     }
   }
 
-  const driftedItems = [
-    ...new Set([
-      ...accumulator.missingStreams,
-      ...accumulator.unreadableStreams,
-      ...accumulator.hashMismatches,
-      ...accumulator.chainMismatches,
-      ...accumulator.versionSkews,
-      ...(accumulator.workspaceStateMismatches.length > 0 ||
-      accumulator.workspaceStateMissing.length > 0 ||
-      accumulator.workspaceStateUnreadable.length > 0
-        ? [WORKSPACE_HISTORY_ID]
-        : []),
-    ]),
-  ].sort((a, b) => a.localeCompare(b));
-  return { ...accumulator, driftedItems };
+  return buildDriftScanResult(accumulator);
 }

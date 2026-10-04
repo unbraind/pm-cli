@@ -5,11 +5,85 @@
  * check contract without adding history-specific weight to the main validate
  * orchestration module.
  */
-import { scanHistoryDrift } from "../../core/history/drift-scan.js";
+import { scanHistoryDrift, scanItemHistoryDrift, type DriftScanResult } from "../../core/history/drift-scan.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { acquireLock } from "../../core/lock/lock.js";
+import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
+import { readSettings } from "../../core/store/settings.js";
+import { WORKSPACE_HISTORY_ID } from "../../core/history/workspace-history.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import type { ValidateCheck } from "./validate.js";
 import type { ValidateItem } from "./validate-item-reader.js";
 
 const DEFAULT_DIAGNOSTIC_LIMIT = 5;
+
+/**
+ * Recheck item-hash discrepancies under the same lock ordinary writers
+ * hold. The initial corpus read remains cheap; only findings incur a fresh
+ * authoritative read. Contention and source-read failures propagate instead
+ * of certifying corruption or silently accepting an unverified pair.
+ */
+async function recheckItemHistoryDrift(
+  pmRoot: string,
+  drift: DriftScanResult,
+): Promise<void> {
+  const ids = drift.hashMismatches.filter((id) => id !== WORKSPACE_HISTORY_ID);
+  if (ids.length === 0) return;
+  const settings = await readSettings(pmRoot);
+  const registry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  for (const id of ids) {
+    const release = await acquireLock(
+      pmRoot, id, settings.locks.ttl_seconds, "history-drift-read",
+      false, true, settings.locks.wait_ms,
+    );
+    try {
+      const located = await locateItem(
+        pmRoot, id, settings.id_prefix, settings.item_format, registry.type_to_folder,
+      );
+      if (located === null) {
+        throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND, {
+          code: "item_not_found",
+          required: "Repeat validation after writers finish; each item-hash discrepancy requires readable canonical source.",
+        });
+      }
+      const { document } = await readLocatedItem(located, {
+        schema: settings.schema,
+      });
+      if (document.metadata.id !== id) {
+        throw new PmCliError(`Item identity changed while validating ${id}`, EXIT_CODE.CONFLICT, {
+          code: "item_identity_conflict",
+          required: "Restore the canonical item identity and validate storage integrity before retrying history validation.",
+        });
+      }
+      const verified = await scanItemHistoryDrift(
+        pmRoot,
+        { ...document.metadata, body: document.body },
+      );
+      for (const key of [
+        "missingStreams", "unreadableStreams", "hashMismatches",
+        "chainMismatches", "versionSkews", "driftedItems",
+      ] as const) {
+        drift[key] = [
+          ...drift[key].filter((itemId) => itemId !== id),
+          ...verified[key].filter((itemId) => itemId === id),
+        ].sort((left, right) => left.localeCompare(right));
+      }
+      const identities = [
+        ...(drift.identityDiscontinuities ?? []).filter((finding) => finding.item_id !== id),
+        ...(verified.identityDiscontinuities ?? []).filter((finding) => finding.item_id === id),
+      ];
+      if (identities.length > 0) drift.identityDiscontinuities = identities;
+      else delete drift.identityDiscontinuities;
+    } finally {
+      await release();
+    }
+  }
+}
 
 /** Build the validation warning and bounded evidence projection for history drift. */
 export async function buildValidateHistoryDriftCheck(
@@ -18,6 +92,7 @@ export async function buildValidateHistoryDriftCheck(
   verboseDiagnostics: boolean,
 ): Promise<{ check: ValidateCheck; warnings: string[] }> {
   const drift = await scanHistoryDrift(pmRoot, items);
+  await recheckItemHistoryDrift(pmRoot, drift);
   const warningCounts = [
     ["validate_history_drift_missing_streams", drift.missingStreams.length],
     [

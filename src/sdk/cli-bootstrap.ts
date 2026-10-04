@@ -990,16 +990,6 @@ function isLinkedTestTwoTokenValuePosition(
   return keys !== undefined && keys.has(key);
 }
 
-function shouldPreserveBareKeyValueToken(
-  commandName: string | undefined,
-  emittedTokens: readonly string[],
-): boolean {
-  return (
-    commandName === "search" ||
-    isLinkedTestTwoTokenValuePosition(commandName, emittedTokens)
-  );
-}
-
 /** Accept the two-token linked-test form `pm test <id> --add command "npm test -- parser"` by merging the bare key token and its single quoted value into the documented `--add command=...` shape. Without this merge Commander binds the bare key as the option value and treats the quoted command as an excess positional, failing with "too many arguments" (GH-191). The merge only fires when EXACTLY ONE non-flag token follows the bare key, i.e. the value was quoted into one shell token — an unquoted multi-token value stays ambiguous (it may swallow the item id), still fails fast, and is routed to targeted quoting guidance by the commander error classifier instead. */
 export function mergeLinkedTestTwoTokenEntries(
   argv: string[],
@@ -1047,11 +1037,11 @@ export function mergeLinkedTestTwoTokenEntries(
   return result;
 }
 
-/** Normalize option spellings and bare key-value tokens before list coalescing. */
+/** Normalize declared flags and linked-test entries while preserving literal query and annotation bodies and recording each transformation. */
 function normalizeBootstrapTokens(
   argv: string[],
   lookup: FlagLookup,
-  commandName: string | undefined,
+  commandName: string,
   trace: BootstrapNormalizationEvent[],
 ): string[] {
   const normalizedArgv: string[] = [];
@@ -1075,10 +1065,15 @@ function normalizeBootstrapTokens(
       continue;
     }
     const bareKeyValue = parseBareKeyValueToken(token, preserveCurrentToken);
+    // Free-text query and annotation bodies, plus explicitly positioned linked
+    // test values, must survive bare-key option normalization unchanged.
     if (
       bareKeyValue &&
       !(typeof previous === "string" && previous.startsWith("-")) &&
-      !shouldPreserveBareKeyValueToken(commandName, normalizedArgv)
+      !(
+        ["search", "comments", "notes", "learnings"].includes(commandName) ||
+        isLinkedTestTwoTokenValuePosition(commandName, normalizedArgv)
+      )
     ) {
       const resolution = resolveCanonicalFlag(bareKeyValue.key, lookup);
       if (resolution) {

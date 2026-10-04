@@ -963,7 +963,24 @@ function resolveSplitSchemaSubcommand(
   };
 }
 
-/** Implements resolve commander usage context for the public runtime surface of this module. */
+/** Resolve recovery ownership only from declared command paths when a prefix option has unknown arity. */
+function resolveRecoveryCommandName(
+  message: string,
+  invocationArgv: string[],
+  rootProgram: Command,
+  extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+): string | undefined {
+  const commandIndex = findBootstrapCommandTokenIndex(invocationArgv);
+  const inferred = findPmNamespacedCommand(invocationArgv.slice(commandIndex))?.alias ?? parseBootstrapCommandName(invocationArgv);
+  if (!/unknown option /i.test(message) || inferred === undefined) return inferred;
+  const canonical = resolvePmCommandAlias(inferred)?.canonical ?? inferred;
+  return PM_CORE_COMMAND_NAMES.some((name) => name === inferred) ||
+    collectRuntimeCommandPaths(rootProgram, extensionDescriptors).includes(canonical)
+    ? inferred
+    : undefined;
+}
+
+/** Resolve runtime command ownership, workspace types and executable recovery guidance for a parser refusal. */
 export async function resolveCommanderUsageContext(
   error: unknown,
   rootProgram: Command,
@@ -979,8 +996,7 @@ export async function resolveCommanderUsageContext(
     process.argv.slice(2),
   ).argv;
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
-  const commandIndex = findBootstrapCommandTokenIndex(invocationArgv);
-  const commandName = findPmNamespacedCommand(invocationArgv.slice(commandIndex))?.alias ?? parseBootstrapCommandName(invocationArgv);
+  const commandName = resolveRecoveryCommandName(message, invocationArgv, rootProgram, extensionDescriptors);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
   const workspaceUsage = await resolveWorkspaceUsageContext(

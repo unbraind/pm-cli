@@ -1,0 +1,25 @@
+id: pm-gh1386
+title: "GH-1386: remove conflicting global output projection from get recovery retries"
+description: "Reported on installed 2026.10.4: get --full combined with global --output-include emits suggested_retry identical to the rejected invocation. Preserve tracker/JSON scope and unrelated options while removing one conflicting selector or withholding an ambiguous retry. Intake only; this combined delivery has not independently reproduced or implemented this newly arrived report."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,context-management,github-intake
+created_at: "2026-10-04T04:48:35.056Z"
+updated_at: "2026-10-04T04:48:35.056Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Execute emitted recovery argv for full/output-include conflicts with options before and after subcommand and attached values;Projection conflict is removed while tracker and JSON scope remain unchanged;Existing full/fields repair continues to work;Ambiguous corrections do not emit known-invalid retries
+parent: pm-f05lsg
+risk: medium
+confidence: medium
+expected_result: Refusal recovery produces executable argv without repeating a known projection conflict.
+actual_result: Reporter shows unchanged attempted_command and suggested_retry and repeated exit 2; no independent implementation claim.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7wzc6f,related,"2026-10-04T04:48:35.056Z","harness:codex","cli:create:dep",detected
+  pm-f05lsg,implements,"2026-10-04T04:48:35.056Z","harness:codex","cli:create:dep",detected
+  pm-gh1360,discovered_from,"2026-10-04T04:48:35.056Z","harness:codex","cli:create:dep",detected
+  pm-gh1364,verifies,"2026-10-04T04:48:35.056Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-04T04:48:35.056Z","harness:codex","All-status duplicate check: searched the complete 2,869-item corpus for projection conflict, mutually exclusive selectors and output-include recovery, ran request-specific CLI search, and refreshed live open/in-progress lists. Fully read the new GH-1386 report and live pm-gh1360 metadata and history. Closed GH-1364 repairs scope retention; open GH-1360 owns a broader authority invariant. Neither owns this newly reported global projection-selector repair defect. Preserve their lineage and leave this intake owner open and unclaimed."
+body: "GitHub: https://github.com/unbraind/pm-cli/issues/1386\n\nThe current installed `@unbrained/pm-cli` 2026.10.4 emits an unchanged retry for a conflicting get projection when the conflicting selector is the global `--output-include` flag. This reproduces with `--no-extensions`; no custom extension is involved.\n\n```bash\npm --no-extensions get pm-a1b2 --full --output-budget unbounded --output-include item,linked,claim_state\n```\n\nThe command exits 2 before item lookup with `Get projection options are mutually exclusive; remove the extra projection flag and retry.` The recovery is:\n\n```text\nsuggested_retry: pm --no-extensions get pm-a1b2 --full --output-budget unbounded --output-include \"item,linked,claim_state\"\nattempted_command: pm --no-extensions get pm-a1b2 --full --output-budget unbounded --output-include \"item,linked,claim_state\"\n```\n\nExecuting the emitted retry repeats the same failure. As a control, `get pm-a1b2 --full --fields title` repairs its retry by removing `--fields`, so the global projection selector appears to be missed by conflict repair.\n\nExpected: preserve scope and unrelated options while removing one conflicting projection selector, or omit an automatic retry when the choice is ambiguous. The emitted argv should not preserve the known-invalid conflict.\n\nDuplicate check: searched all open and closed issues for projection, mutually exclusive, suggested_retry, full/output-include, and output-include/recovery. Read closed #1364 and open #1360. #1364 addresses dropped tracker/JSON scope; this report concerns a current unchanged conflict retry after that scope fix. #1360 defines authority-preserving recovery rather than this concrete global-selector repair failure.\n\nAcceptance: execute recovery argv for full/output-include conflicts (global option before/after subcommand and attached values), assert the projection conflict is gone and tracker/JSON scope remains unchanged; preserve the working full/fields repair case."
