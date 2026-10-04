@@ -21,10 +21,12 @@ describe("actionable get receipts", () => {
       const created = await runCreate({ title: "Legacy attribution source", type: "Task" }, global);
       const dependency = { id: target.item.id, kind: "related", ...provenance };
       await fs.writeFile(path.join(pmPath, "tasks", `${created.item.id}.toon`), encode({ ...created.item, dependencies: [dependency] }) + "\n");
-      const ordinary = await runGet(created.item.id, global);
-      expect(ordinary.item.dependencies).toEqual([{ id: target.item.id, kind: "related" }]);
-      expect(resolveOutputOmissionReceipt("get", ordinary as unknown as Record<string, unknown>)!.omitted_field_groups.some((group) => group.name === "dependency_provenance")).toBe(Object.keys(provenance).length > 0);
-      for (const options of [{ full: true }, { depth: "full" }, { fields: "dependencies" }, { fields: "item.dependencies" }]) {
+      for (const options of [{}, { depth: "full", fields: "id" }, { depth: "full", fields: "item.id" }]) {
+        const ordinary = await runGet(created.item.id, global, options);
+        expect(ordinary.item.dependencies).toEqual(options.fields === undefined ? [{ id: target.item.id, kind: "related" }] : undefined);
+        expect(resolveOutputOmissionReceipt("get", ordinary as unknown as Record<string, unknown>)!.omitted_field_groups.some((group) => group.name === "dependency_provenance")).toBe(Object.keys(provenance).length > 0);
+      }
+      for (const options of [{ full: true }, { depth: "full" }, { fields: "dependencies" }, { fields: "item.dependencies" }, { depth: "full", fields: "dependencies" }, { depth: "full", fields: "item.dependencies" }]) {
         const complete = await runGet(created.item.id, global, options);
         expect(complete.item.dependencies).toEqual([dependency]);
         expect(resolveOutputOmissionReceipt("get", complete as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name)).not.toContain("dependency_provenance");
@@ -147,6 +149,7 @@ describe("actionable get receipts", () => {
       const result = await runGet(created.item.id, global, { fields });
       if (fields === "schedule.deadline") expect(result.schedule?.deadline).toBe("2026-10-05T12:00:00.000Z");
       const omitted = resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name);
+      if (fields === "schedule.deadline") expect(omitted).not.toContain("schedule");
       expect(omitted.includes("reminders")).toBe(fields !== undefined && fields !== "schedule.reminders" && fields !== "reminders");
       expect(omitted.includes("events")).toBe(fields !== undefined && fields !== "schedule.events");
     });

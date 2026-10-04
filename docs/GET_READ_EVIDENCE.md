@@ -33,6 +33,9 @@ The receipt describes attribution actually withheld by the selected projection.
 Legacy rows with no timestamp remain complete under full or explicit reads;
 following the restoration never invents a timestamp or repeats a false omission.
 Rows containing only identities and kinds have no attribution to withhold.
+Field selection takes precedence when combined with `--depth full`: a narrow
+selector still discloses withheld attribution, while selecting `dependencies`
+restores its complete stored rows.
 
 ```bash
 pm get <id>

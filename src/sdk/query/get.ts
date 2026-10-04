@@ -195,7 +195,7 @@ function itemCollectionCounts(
 
 /** Disclose dependency attribution only when the selected projection removes values actually present in stored rows, without inventing timestamps for legacy edges. */
 function hasOmittedDependencyProvenance(item: ItemMetadata, projection: ResolvedGetProjection): boolean {
-  if (projection.full || fieldsInclude(projection.fields, "dependencies")) return false;
+  if ((!projection.fieldProjection && projection.full) || fieldsInclude(projection.fields, "dependencies")) return false;
   return item.dependencies?.some(({ id: _id, kind: _kind, ...provenance }) =>
     Object.values(provenance).some((value) => value !== undefined),
   ) ?? false;

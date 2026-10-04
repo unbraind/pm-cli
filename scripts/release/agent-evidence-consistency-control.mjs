@@ -2,7 +2,7 @@
 /**
  * @module scripts/release/agent-evidence-consistency-control
  *
- * Proves that the evidence regressions reject fourteen real source defects using
+ * Proves that the evidence regressions reject fifteen real source defects using
  * disposable copies, leaving the checkout and production tracker untouched.
  */
 
@@ -15,8 +15,15 @@ const cases = [
     sourcePath: "src/sdk/query/get.ts",
     testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
     testName: "discloses only actually withheld attribution for timestamp-free legacy rows",
-    before: 'if (projection.full || fieldsInclude(projection.fields, "dependencies")) return false;',
+    before: 'if ((!projection.fieldProjection && projection.full) || fieldsInclude(projection.fields, "dependencies")) return false;',
     after: "void projection;",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "discloses only actually withheld attribution for timestamp-free legacy rows",
+    before: 'if ((!projection.fieldProjection && projection.full) || fieldsInclude(projection.fields, "dependencies")) return false;',
+    after: 'if (projection.full || fieldsInclude(projection.fields, "dependencies")) return false;',
   },
   {
     sourcePath: "src/sdk/query/get.ts",
