@@ -397,6 +397,19 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
 });
 
 describe("normalizeBootstrapInvocation", () => {
+  it.each([
+    { label: "collection discovery", input: ["test", "pm-a1b2", "--add", "--help"], expected: ["item", "test", "pm-a1b2", "--add=", "--help"] },
+    { label: "short body discovery", input: ["create", "-b", "-h"], expected: ["create", "--body=", "-h"] },
+    { label: "explicit bare body value", input: ["create", "body=--help"], expected: ["create", "--body=--help"] },
+    { label: "explicit short help body value", input: ["create", "body=-h"], expected: ["create", "--body=-h"] },
+    { label: "explicit global flag body value", input: ["create", "body=--json"], expected: ["create", "--body=--json"] },
+    { label: "attached body value", input: ["create", "--body=--help"], expected: ["create", "--body=--help"] },
+    { label: "terminated positional value", input: ["test", "pm-a1b2", "--", "--add", "--help"], expected: ["item", "test", "pm-a1b2", "--", "--add", "--help"] },
+    { label: "ordinary discovery", input: ["create", "--help"], expected: ["create", "--help"] },
+  ])("preserves $label intent during help normalization", ({ input, expected }) => {
+    expect(normalizeBootstrapInvocation(input).argv).toEqual(expected);
+  });
+
   it("absorbs package-runner executable aliases without hiding real commands", () => {
     expect(normalizeBootstrapInvocation(["pm", "init"])).toMatchObject({
       argv: ["workspace", "init"],

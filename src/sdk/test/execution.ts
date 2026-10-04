@@ -1741,23 +1741,33 @@ async function copyIntoSandboxIfPresent(
 }
 /* c8 ignore stop */
 
+/** Seed settings and extension configuration, auditing schema-only copies against their own initialized history. */
 async function seedLinkedTestSandbox(
   sandboxPmPath: string,
   sandboxGlobalPath: string,
   sourceRoots: LinkedTestSandboxSourceRoots,
+  auditSettings = false,
 ): Promise<void> {
-  await copyIntoSandboxIfPresent(
-    getSettingsPath(sourceRoots.projectPmRoot),
-    getSettingsPath(sandboxPmPath),
-  );
+  for (const [sourceRoot, sandboxRoot] of [[sourceRoots.projectPmRoot, sandboxPmPath], [sourceRoots.globalPmRoot, sandboxGlobalPath]]) {
+    if (auditSettings) {
+      const raw = await readFileIfExists(getSettingsPath(sourceRoot));
+      if (raw !== null) {
+        const settings = await readSettings(sandboxRoot);
+        await writeWorkspaceJsonWithHistory({
+          pmRoot: sandboxRoot, filePath: getSettingsPath(sandboxRoot), raw,
+          op: "settings:write", author: resolveAuthor(undefined, settings.author_default),
+          lockTtlSeconds: settings.locks.ttl_seconds, lockWaitMs: settings.locks.wait_ms,
+          recordCreation: true, message: "Seed linked-test schema settings history",
+        });
+      }
+    } else {
+      await copyIntoSandboxIfPresent(getSettingsPath(sourceRoot), getSettingsPath(sandboxRoot));
+    }
+  }
   await copyIntoSandboxIfPresent(
     path.join(sourceRoots.projectPmRoot, "extensions"),
     path.join(sandboxPmPath, "extensions"),
     true,
-  );
-  await copyIntoSandboxIfPresent(
-    getSettingsPath(sourceRoots.globalPmRoot),
-    getSettingsPath(sandboxGlobalPath),
   );
   await copyIntoSandboxIfPresent(
     path.join(sourceRoots.globalPmRoot, "extensions"),
@@ -2282,6 +2292,7 @@ async function seedLinkedTestSandboxesFromSource(
     layout.schemaProjectPmPath,
     layout.schemaGlobalPmPath,
     sourceRoots,
+    true,
   );
   if (!includeTrackerData) {
     return;

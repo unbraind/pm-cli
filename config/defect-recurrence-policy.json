@@ -285,7 +285,7 @@
     },
     {
       "id": "history-and-projection-integrity",
-      "version": 2,
+      "version": 3,
       "title": "Immutable history and read-projection integrity regressions",
       "owner_item_id": "pm-h8tpeh",
       "escape_class": "production_defect",
@@ -316,7 +316,9 @@
         "pm-baksix",
         "pm-c3uru0",
         "pm-dn8rwl",
-        "pm-hmpu4p"
+        "pm-hmpu4p",
+        "pm-py7qv2",
+        "pm-jprn58"
       ],
       "budget": {
         "max_escape_rate": 0,

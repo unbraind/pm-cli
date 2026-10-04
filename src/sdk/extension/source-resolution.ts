@@ -12,6 +12,8 @@ import {
   resolveBundledExtensionAliasSource,
   resolveBundledPackageNpmName,
 } from "./bundled-catalog.js";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import type { ManagedExtensionRecord } from "./managed-state.js";
 
 /** Selected install-source identity. */
 export interface ExtensionInstallSourceSelection {
@@ -60,11 +62,21 @@ export interface ResolvedExtensionInstallSource {
   sourceResolution: ExtensionInstallSourceResolution;
 }
 
+/** Reuse recorded registry identity for a missing bare managed name, preserving explicit local and bundled precedence. */
+async function resolveManagedNpmReinstall(source: InstallSource, entries: readonly ManagedExtensionRecord[]): Promise<InstallSource> {
+  if (source.kind !== "local" || source.input.startsWith(".") || source.input.includes("\\") ||
+    (source.input.includes("/") && !/^@[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/u.test(source.input)) || await pathExists(source.absolute_path)) return source;
+  const managed = entries.find((entry) => entry.source.kind === "npm" &&
+    [entry.name, entry.directory, entry.source.package].includes(source.input.trim()));
+  return managed?.source.package === undefined ? source : parseExtensionInstallSource(`npm:${managed.source.package}`, {});
+}
+
 /** Resolve bundled-alias provenance and competing installed npm identity. */
 export async function resolveExtensionInstallSourceIdentity(
   explicitSourceInput: string,
   githubOption: string | undefined,
   ref: string | undefined,
+  managedEntries: readonly ManagedExtensionRecord[] = [],
 ): Promise<ResolvedExtensionInstallSource> {
   const bundledAliasSource =
     typeof githubOption === "string"
@@ -78,10 +90,10 @@ export async function resolveExtensionInstallSourceIdentity(
     bundledAliasName === null
       ? null
       : await resolveBundledPackageNpmName(bundledAliasName);
-  const installSource = parseExtensionInstallSource(
+  const installSource = await resolveManagedNpmReinstall(parseExtensionInstallSource(
     bundledAliasSource ?? explicitSourceInput,
     { forceGithub: typeof githubOption === "string", ref },
-  );
+  ), managedEntries);
   const installedNpmCandidate =
     bundledAliasName === null
       ? null

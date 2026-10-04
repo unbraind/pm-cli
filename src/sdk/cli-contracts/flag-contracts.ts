@@ -682,6 +682,7 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--explore" },
   { flag: "--list" },
   { flag: "--manage" },
+  { flag: "--offline", value_type: "boolean" },
   { flag: "--describe" },
   { flag: "--markdown" },
   { flag: "--output" },
@@ -779,6 +780,7 @@ export const EXTENSION_MIGRATE_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for extension manage flag contracts, shared by SDK and presentation-layer consumers. */
 export const EXTENSION_MANAGE_FLAG_CONTRACTS: CliFlagContract[] = [
   ...EXTENSION_SCOPE_FLAG_CONTRACTS,
+  { flag: "--offline", value_type: "boolean" },
   { flag: "--runtime-probe" },
   { flag: "--fix-managed-state" },
 ];
@@ -1287,7 +1289,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   // occurrences (`--add-tags '["a","b"]' --add-tags c` -> `["a","b"],c`),
   // corrupting the JSON-array value form before parseTags sees it.
   { flag: "--add-tags", aliases: ["--add_tags"] },
-  { short: "-b", flag: "--body" },
+  { short: "-b", flag: "--body", value_name: "value" },
   { flag: "--body-file" },
   { flag: "--deadline" },
   { flag: "--estimate" },

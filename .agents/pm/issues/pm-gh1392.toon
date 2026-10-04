@@ -2,11 +2,13 @@ id: pm-gh1392
 title: "GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness"
 description: The report describes extension manage changing the tracked managed-state timestamp/order and skipping npm update checks. It also reports bare-name reinstall failing to reuse the recorded npm source. Existing truthful partial-coverage semantics must remain intact.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T11:46:15.259Z"
-updated_at: "2026-10-04T11:46:15.259Z"
+updated_at: "2026-10-04T23:59:28.548Z"
+closed_at: "2026-10-04T23:55:30.911Z"
+completed_at: "2026-10-04T23:55:30.911Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Listing diagnostics preserve managed-state bytes and timestamp; Install and update own canonical ordering and mutations; Npm freshness uses recorded package identity with an explicit offline option; Bare-name reinstall resolves an already managed npm source; Failed checks retain truthful incomplete coverage.
@@ -16,12 +18,138 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-ugqx
 risk: medium
 confidence: medium
-expected_result: Listing diagnostics preserve managed-state bytes and timestamp; Install and update own canonical ordering and mutations; Npm freshness uses recorded package identity with an explicit offline option; Bare-name reinstall resolves an already managed npm source; Failed checks retain truthful incomplete coverage.
+resolution: "Managed freshness diagnostics are transient; configured-registry npm latest checks are bounded and sanitized, offline CLI/MCP contracts expose unknown status, and managed bare npm reinstall reuses recorded identity while preserving local paths."
+expected_result: Diagnostics preserve managed bytes and mtime while reporting truthful provider evidence; explicit paths retain local precedence.
+actual_result: "Linked 22-test boundary command and fresh installed Node/Bun acceptance pass, including real registry latest, offline unknown, identical managed bytes/mtime and bare npm reinstall."
 affected_version: 2026.10.4
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-gf5zw8,discovered_from,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
   pm-gf5zw8,verifies,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-do5b,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+  pm-fokyhh,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+  pm-gh1393,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+  pm-gh1394,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+  pm-gh1398,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+  pm-gh1399,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+  pm-ksr40d,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+  pm-t3jxjj,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+comments[16]{created_at,author,text}:
   "2026-10-04T11:46:15.259Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1392 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+  "2026-10-04T18:20:36.463Z","harness:codex","Delivery scope: implement read-only managed diagnostics, provider-aware npm freshness with offline opt-out and managed bare-name source recovery in one SDK package-workflow PR alongside pm-gh1393 and pm-gh1394. Strict all-status intake read 2880/2880 records with no omissions; live GitHub has no open PR/security alert. Preserve truthful partial coverage and installation provenance."
+  "2026-10-04T18:42:02.887Z","harness:codex","TDD evidence: new boundary regressions failed on the pre-change SDK. Implementation is SDK-owned and being verified together in the single owned-settings/schema-history/extension-freshness delivery. No new coverage ignores, denominator exclusions, or test-only production exports were added."
+  "2026-10-04T19:25:03.391Z","harness:codex","Canonical coverage run exposed existing GitHub diagnostic persistence expectations and offline strict-schema reachability gaps. Updated the GitHub regression to assert transient results plus identical managed bytes and modification time; added offline to strict lifecycle contracts and versioned additive strict/provider schemas. The vocabulary ceiling grows by exactly the single reviewed offline option on extension/package/packages, with no spare allowance; future-growth negative controls remain unchanged. Integration regressions moved into existing extensions/workspace/cli folders to preserve the 120-file directory cap. Canonical coverage rerun remains required; no coverage exclusions or thresholds were changed."
+  "2026-10-04T19:37:15.099Z","harness:codex","Dependency and GitHub verification refreshed on October 4: zero open PRs and zero open Dependabot/code/secret-scanning alerts; pnpm audit and embedded-development-bundle admission pass. Every compatible latest candidate is younger than the unchanged seven-day adoption policy: Node types 26.6.4 (Oct 1), SonarJS 4.2.2 (Sep 28), Greptile 3.6.1 (Oct 1), ESLint 10.12 (Oct 2), jscpd 5.4 and Knip 6.39 (Sep 30), typescript-eslint 8.71 (Sep 28). Unicorn 77 and Sentry 11.4 are also too young. Existing canonical migrations own the major boundaries: pm-fokyhh (registry CodSpeed 5.7.1 still excludes Vitest 5), pm-do5b (registry typescript-eslint 8.71 still excludes TypeScript 7), pm-ksr40d (npm-package-arg 14 requires Node 22.22.2 above the supported 22.18 floor), and pm-t3jxjj (Sentry major telemetry acceptance). No aging exclusion, peer override, unsupported runtime-floor change, or duplicate dependency item was introduced. Older Sentry 11 eligibility does not substitute for its required major compatibility campaign."
+  "2026-10-04T19:42:52.566Z","harness:codex","The unchanged static gate rejected growth of the extension lifecycle module above its 3400 logical-line ceiling and the host SDK binding above complexity 16. Moved transient bounded remote comparisons into the existing SDK update-check module and delegated from the lifecycle action. Owned-settings selection now owns its own empty/default ownership early return, keeping the binding at its prior complexity and avoiding serialization for default ownership. No threshold, baseline, suppression, or coverage exclusion changed. This also makes remote freshness projection directly covered outside the pre-existing lifecycle orchestration coverage fence."
+  "2026-10-04T19:52:09.240Z","harness:codex","Additional TDD evidence during full source review: the built source-identity SDK resolves explicit missing directory spelling nested/missing to npm when a managed manifest name matches it. The expected source kind is local. The owned canonical coverage process tree was interrupted before edits, and its partial output is retained without a coverage-pass claim. Add preservation regressions for explicit directory spellings while retaining valid scoped npm package identities; rerun canonical full-source coverage after correcting the boundary."
+  "2026-10-04T20:35:09.073Z","harness:codex","Final local canonical run completed 775 test files: 761 passed, 13 failed, one Windows-only skip; 9733 tests passed and 15 failed. Most failures hit unchanged time/performance limits on a concurrently busy eight-core host; semantic-preview returned one unexpected code and the context transcript reported estimated-token payload drift, so no full-suite or exact-coverage pass is claimed. Preserve this failed receipt. Source review against installed npm-package-arg declarations found a redundant bare-identity parse: resolve(name, version) validates the same package identity, narrows exact versions to RegistryResult with a non-null fetchSpec, and avoids an unreachable registry guard and non-null assertion. Use the typed resolver without changing diagnostics, gates or ignores. Focused context-parity reproduction and one-worker canonical verification remain required."
+  "2026-10-04T20:38:16.061Z","harness:codex",One-worker focused reproduction passed all 56 tests across the unchanged agent-task transcript/negative-control suite and npm freshness unit owner. The prior context estimated-token mismatch did not reproduce; its failed full-run receipt remains recorded. The typed npm resolver validates explicit installed and latest identities and removes the redundant identity guard without additional coverage/test cases. Full static verification is now running before a one-worker canonical coverage rerun with the same source denominator and exact thresholds.
+  "2026-10-04T20:44:54.188Z","harness:codex","Additional TDD security/diagnostic evidence: the built SDK returns raw invalid registry version text in update_error. A synthetic response containing private fixture value produced npm-package-arg Invalid tag name text rather than invalid_npm_registry_version; the expected stable-code assertion failed. This does not assert an actual credential disclosure. Normalize invalid installed/latest version and malformed JSON metadata without reflecting their raw contents, while retaining truthful unknown availability and sanitized real npm execution failures. Extend the existing npm metadata table rather than creating a duplicate suite. Wait for the current static runner to exit before source edits."
+  "2026-10-04T21:02:16.680Z","harness:codex","The strengthened existing metadata table failed four cases before the privacy correction (13 passed, four failed). Invalid installed/latest versions and JSON now produce stable reasons with unknown availability, excluding raw metadata from diagnostics. Kept provider checks in update-check and moved bounded managed-state projection into its own coherent SDK module; the npm provider export now has a real production consumer across that boundary instead of existing only for unit observation. No test-only production wrapper or public SDK export was added. Context assurance intake omissions for pm-gh1398 and pm-gh1399 were filled through audited PM updates; pm-gh1399 remains open and unclaimed."
+  "2026-10-04T21:11:32.031Z","harness:codex","Latest linked test execution passed after the privacy correction and provider/projection separation. The canonical full-source coverage rerun now uses one worker to avoid local oversubscription; reportOnFailure is enabled only to retain diagnostic coverage when a test fails. Source includes/excludes, ignore directives, thresholds, retry policy and exact-count enforcement are unchanged. All claimed items remain in progress until required evidence and delivery closeout are complete."
+  "2026-10-04T22:39:30.118Z","harness:codex","Graph parity remediation: the strict graph gate rejected nine prose-reference gaps above its unchanged ceiling. Added explicit context links for the co-delivered settings/history/help items and the backend intake recorded in this delivery, plus the four canonical dependency-compatibility owners named in the dependency census. These are related edges because they describe parallel delivery or compatibility intake, not prerequisites or claimed implementation of those migrations. Existing implements, discovered_from and verifies lineage is retained. No fabricated ordering, hierarchy, graph-depth target, exemption or ceiling change. The parser complexity gate also rejected an initial nested replacement expression; flattened the existing literal-preservation guards, and the same 112-case SDK/real-CLI test command remained green."
+  "2026-10-04T23:34:08.099Z","harness:codex","Final test-quality review extends the existing registry identity table with independent expected booleans and a latest-channel rollback case, rather than recomputing expectations with the implementation comparison. A flag-looking package-name control proves the installed npm-package-arg rejects the identity before a query can execute. These are distinct channel-policy and argument-boundary risks in the existing external-runner seam, not duplicate end-to-end scenarios or new production hooks. The mandatory canonical source run passed exact 100/100/100/100 and 9760 tests; the updated table receives fresh linked verification and the final hosted full suite."
+  "2026-10-04T23:55:29.521Z","harness:codex","Final local delivery: canonical serial source coverage passed 9760 tests across 774 files (only the existing Windows-only two-test file skipped), with exact statements 66784/66784, branches 51129/51129, functions 13795/13795 and lines 63651/63651. The final independent npm version table passed linked verification after two additional argument/channel controls; production behavior is unchanged since the coverage receipt. Complete static quality and typecheck pass. Fresh separate installed npm/Node and Bun consumers outside checkout ancestors pass owned-settings, strict schema history with genuine drift refusal, help purity, real npm latest, offline diagnostics and bare reinstall. Packed npx/bunx smoke passes. No gate, denominator, ignore, retry or complexity threshold was weakened. Live security has zero open Dependabot/code/secret alerts; required Sentry/telemetry gate passes, consented flush succeeds and recent production start/finish events are present. These are local candidate and current production observations; hosted exact-head review remains required."
+  "2026-10-04T23:59:28.547Z","harness:codex","Final closure gates passed: all 2884 workspace records/history streams validate, tracker-context assurance 47 assertions, graph composition nine assertions, defect recurrence policy, tracked-history-inclusive secret scan and npm artifact composition/size. Latest pm-changelog 2026.10.4 generated and checked exactly four new fixes; its explicit install updates only the generated managed receipt timestamp while retaining the same version/provenance. No hand edit to tracker or changelog data. Zero open GitHub security alerts and recent production telemetry remain independently verified."
+notes[1]{created_at,author,text}:
+  "2026-10-04T18:58:04.373Z","harness:codex","Decision: freshness is transient diagnostic evidence, never an install-state write. Query recorded npm dist-tags.latest with lifecycle scripts disabled, a 10-second request bound and 64 KiB output bound; accept the actual npm single-version JSON array. --offline returns unknown/not_checked and preserves bytes/mtime. Explicit adoption/install/update retain mutation ownership. Managed bare-name reinstall reuses recorded npm identity after existing bundled/local precedence."
+learnings[1]{created_at,author,text}:
+  "2026-10-04T18:58:06.316Z","harness:codex","An extension manifest version is not npm source freshness. Keep installed source.version, latest dist-tag and unavailable provider evidence distinct; do not persist a read-only diagnostic to make a later context appear authoritative."
+files[18]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Latest package-owned changelog install refreshes generated managed receipt
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/cli/register-setup.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-lexicon-contracts.ts
+    scope: project
+    note: Offline discovery parity and exact vocabulary budget
+  - path: src/sdk/cli-contracts/tool-parameter-tables.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-schema.ts
+    scope: project
+    note: Offline discovery parity and exact vocabulary budget
+  - path: src/sdk/extension.ts
+    scope: project
+  - path: src/sdk/extension/managed-state.ts
+    scope: project
+  - path: src/sdk/extension/managed-update-status.ts
+    scope: project
+  - path: src/sdk/extension/source-resolution.ts
+    scope: project
+  - path: src/sdk/extension/update-check.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts
+    scope: project
+  - path: tests/unit/extensions/extension-command.spec.ts
+    scope: project
+  - path: tests/unit/extensions/extension-source-resolution.spec.ts
+    scope: project
+  - path: tests/unit/extensions/npm-update-check.spec.ts
+    scope: project
+  - path: tests/unit/sdk/action-schema-parity.spec.ts
+    scope: project
+    note: Offline discovery parity and exact vocabulary budget
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts tests/unit/extensions/npm-update-check.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,project,600,"harness:codex","2026-10-04T19:24:22.817Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
+test_runs[3]:
+  - run_id: test-local-muu7wbui-36m46u
+    kind: test
+    status: passed
+    started_at: "2026-10-04T19:31:46.009Z"
+    finished_at: "2026-10-04T19:32:11.130Z"
+    recorded_at: "2026-10-04T19:32:11.130Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts tests/unit/extensions/npm-update-check.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muub5eij-ogv5x4
+    kind: test
+    status: passed
+    started_at: "2026-10-04T21:02:18.962Z"
+    finished_at: "2026-10-04T21:03:13.338Z"
+    recorded_at: "2026-10-04T21:03:13.338Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts tests/unit/extensions/npm-update-check.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muugjr5a-8wdh7r
+    kind: test
+    status: passed
+    started_at: "2026-10-04T23:34:08.871Z"
+    finished_at: "2026-10-04T23:34:20.974Z"
+    recorded_at: "2026-10-04T23:34:20.974Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts tests/unit/extensions/npm-update-check.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,schema,schema,source,local_source_ref
+docs[4]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Package-generated reviewed delivery projection
+  - path: docs/generated/FLAG_LEXICON_BUDGETS.md
+    scope: project
+  - path: docs/README.md
+    scope: project
+  - path: docs/SDK_CONFIGURATION_SAFETY.md
+    scope: project
+    note: SDK configuration and diagnostic safety contract
+close_reason: Implemented and locally verified in the combined SDK settings/history/freshness/help delivery; hosted checks and bot review remain the merge gate.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: pm-test-audit
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI,Security & Script Analysis,CodeQL
+  owner: pm-gh1392
 body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1392\nReported version: 2026.10.4\n\nThe report describes extension manage changing the tracked managed-state timestamp/order and skipping npm update checks. It also reports bare-name reinstall failing to reuse the recorded npm source. Existing truthful partial-coverage semantics must remain intact.\n\nThe complete public issue and its comments were read. This record is intake; the report is not independently reproduced or fixed yet. The completed predecessor pm-gf5zw8 remains shipped work and is not represented as an outstanding failure.\n\nAcceptance: Listing diagnostics preserve managed-state bytes and timestamp; Install and update own canonical ordering and mutations; Npm freshness uses recorded package identity with an explicit offline option; Bare-name reinstall resolves an already managed npm source; Failed checks retain truthful incomplete coverage."

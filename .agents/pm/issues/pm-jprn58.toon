@@ -1,0 +1,43 @@
+id: pm-jprn58
+title: Include body-only references in strict workspace assurance context
+description: "Strict assurance runList projection omits includeBody, so prose-edge evaluation misses authoritative body-only references."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-04T22:58:46.398Z"
+updated_at: "2026-10-04T23:43:36.333Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Prove the strict-workspace false green with real persistence before fixing; preserve strict completeness and metadata; include body references exactly once; reconcile newly exposed historical debt without raising ceilings or inventing edges; preserve exact 100/100/100/100 source coverage and negative controls.
+goal: context-management
+objective: Measure all authoritative prose surfaces in workspace assurance
+value: Prevent false-green graph parity and preserve SDK/workspace semantic equivalence
+parent: pm-1jzupz
+risk: medium
+confidence: 95
+expected_result: A resolvable unlinked body-only reference yields exactly one gap through strict workspace context and the pure public evaluator.
+actual_result: "Isolated public SDK reproduction with two temporary items: strict workspace result 0, full item result 1, strict holder has no body field."
+component: sdk/governance/assurance-runtime
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1jzupz,implements,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
+  pm-axotea,related,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
+  pm-gh1392,discovered_from,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
+  pm-ob9z4y,verifies,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
+  pm-py7qv2,recurs_from,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-04T22:58:46.398Z","harness:codex","Duplicate check: strict full all-status 2883-item corpus, live request-specific search and open/in_progress inventories inspected. Closed pm-py7qv2 fixed metadata evidence selectors and remains shipped; closed pm-ob9z4y covers pure prose evaluation rather than this strict adapter boundary. Open pm-axotea concerns multi-hyphen ID tokenization, a distinct defect. Existing pm-1jzupz owns assurance. Public SDK controlled proof: two real synthetic items, body-only reference, strict workspace=0 versus full rows=1. Historical graph repair must retain evidence and unchanged ceilings."
+  "2026-10-04T23:01:22.817Z","harness:codex","Verification receipt: real public SDK PmClient creation/get plus createAssuranceWorkspaceContext(strict_read=true, include_history=false, resolve_tree=false) and evaluateMeasurement(prose_edge_gap) on two synthetic temporary items outside checkout ancestors returned workspace_value=0, full_item_value=1, holder_body_present=false, population=2. Both project/global tracker roots and telemetry were isolated. No test hook, production export, mock, exemption or threshold was introduced. This is a confirmed open intake, not an implemented change."
+  "2026-10-04T23:43:12.793Z","harness:codex","Policy registration: the full live predecessor confirms the same strict assurance adapter projection failure class. Register this open recurrence with the existing history-and-projection-integrity family; preserve all budgets and the predecessor closure. Registration records unresolved scope, not a passing body-only regression or implementation."
+files[4]:
+  - path: config/defect-recurrence-policy.json
+    scope: project
+    note: Register unresolved adapter projection recurrence in the existing integrity family
+  - path: src/sdk/governance/assurance-runtime.ts
+    scope: project
+  - path: src/sdk/governance/assurance.ts
+    scope: project
+  - path: src/sdk/query/list.ts
+    scope: project
+escape_class: production_defect
+body: "Read-only discovery during SDK package/settings delivery. createAssuranceWorkspaceContext strict mode calls runList with full/noTruncate/strictRead but no includeBody. evaluateMeasurement prose_edge_gap inspects bodies when available. Controlled public SDK proof used two real items outside checkout ancestors with isolated project/global roots; only its own temporary workspace was removed. The issue remains open/unclaimed; no assurance code, exemptions, budgets or thresholds are changed in this delivery."

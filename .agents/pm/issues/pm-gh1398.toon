@@ -1,0 +1,95 @@
+id: pm-gh1398
+title: "GH-1398: Preserve help discovery before collection-value mutation"
+description: "Agent safety: 'pm test <id> --add --help' (and 'pm files --add --help') records '--help' as a linked test/file instead of printing help"
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-04T18:22:40.515Z"
+updated_at: "2026-10-04T23:55:45.201Z"
+closed_at: "2026-10-04T23:55:44.374Z"
+completed_at: "2026-10-04T23:55:44.374Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Help discovery after value-taking collection flags never mutates an item or history; equals-attached and end-of-options literal values remain explicit; nested help and JSON help retain existing grammar; real CLI tests cover test and files collection mutation.
+goal: project management = context management
+objective: Universal composable SDK primitives with truthful context and safe agent workflows
+value: Package authors can compose portable workflows while preserving governed evidence
+why_now: New live GitHub report requires canonical duplicate-safe intake
+parent: pm-f05lsg
+risk: medium
+confidence: medium
+resolution: SDK argv normalization protects bare help discovery before collection mutation and preserves attached or explicit bare flag-looking values with canonical short value options.
+expected_result: "Bare help remains a read with identical item/history bytes, while explicit body=--help persists literal content."
+actual_result: "The regression-sensitive 112-case SDK/real-CLI command passes; fresh installed Node/Bun consumers prove help purity, short body help and persisted literal body independently."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,implements,"2026-10-04T18:22:40.515Z","harness:codex","cli:create:dep",detected
+  pm-gh1393,discovered_from,"2026-10-04T18:22:40.515Z","harness:codex","cli:create:dep",detected
+  pm-vcu7,discovered_from,"2026-10-04T19:08:57.041Z","harness:codex","cli:update:dep",detected
+  pm-vcu7,verifies,"2026-10-04T19:08:57.041Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-04T18:22:40.515Z","harness:codex","Duplicate check: strict live all-status corpus read 2880/2880 records, complete=true, no omissions or unreadable records. Exact GitHub URL/id absent; all-status request searches and source metadata reviewed. Reuse existing goal lineage. This intake does not assert the design proposal is implemented."
+  "2026-10-04T18:41:36.080Z","harness:codex","TDD evidence: new boundary regressions failed on the pre-change SDK. Implementation is SDK-owned and being verified together in the single owned-settings/schema-history/extension-freshness delivery. No new coverage ignores, denominator exclusions, or test-only production exports were added."
+  "2026-10-04T22:22:13.613Z","harness:codex","TDD and exact-coverage checkpoint: the complete serial suite passed 9,751 assertions (774 passed files, one Windows-only file skipped), but the run correctly failed exact coverage with two uncovered statements and three branches in SDK help discovery. Extended the existing bootstrap table and real isolated CLI boundary instead of adding a private test seam or an ignore. The same new focused command failed four intended assertions before the fix: three explicit bare flag-looking value boundaries and an actual create invocation that returned help instead of persisting its literal body. Fixed normalization by attaching explicit bare values beginning with a dash to the canonical flag, declared the existing create body value contract, and normalized short value options to canonical long spelling before bare help. The unchanged focused command now passes all 112 cases across both files. Terminators and attached literals retain their meaning; help leaves item/history bytes unchanged; the real create stores body=--help literally. Full-source 100/100/100/100 remains required and has not yet been re-established by this focused run. No denominator, threshold, retry policy, or coverage-ignore change."
+  "2026-10-04T23:34:07.448Z","harness:codex","Canonical serial verification passed 774 test files and 9760 tests, with only the existing Windows-only two-test file skipped on this Linux host. Exact unchanged all-source gate passed: statements 66784/66784, branches 51129/51129, functions 13795/13795, lines 63651/63651; zero uncovered counts. Retained the earlier failed receipts and added meaningful behavior proof without ignores or denominator changes. Replaced the edited public bootstrap declaration filler with alias/list/literal/help semantics; its per-file filler baseline decreases by one. This comment-only source improvement adds no executable behavior. Final packed and hosted exact-head acceptance remain required."
+  "2026-10-04T23:55:42.786Z","harness:codex","Final local delivery: canonical serial source coverage passed 9760 tests across 774 files (only the existing Windows-only two-test file skipped), with exact statements 66784/66784, branches 51129/51129, functions 13795/13795 and lines 63651/63651. The final independent npm version table passed linked verification after two additional argument/channel controls; production behavior is unchanged since the coverage receipt. Complete static quality and typecheck pass. Fresh separate installed npm/Node and Bun consumers outside checkout ancestors pass owned-settings, strict schema history with genuine drift refusal, help purity, real npm latest, offline diagnostics and bare reinstall. Packed npx/bunx smoke passes. No gate, denominator, ignore, retry or complexity threshold was weakened. Live security has zero open Dependabot/code/secret alerts; required Sentry/telemetry gate passes, consented flush succeeds and recent production start/finish events are present. These are local candidate and current production observations; hosted exact-head review remains required."
+notes[1]{created_at,author,text}:
+  "2026-10-04T18:58:25.349Z","harness:codex","Decision: bootstrap protects bare --help/-h from a preceding value-taking collection option before Commander parses it. An equals-attached value remains explicit literal intent; the end-of-options boundary remains respected. Real CLI tests compare both item and history bytes for files, docs and linked tests."
+learnings[2]{created_at,author,text}:
+  "2026-10-04T18:58:27.846Z","harness:codex","Grammar discovery is a read. Regression assertions must compare durable item/history bytes, not just help text or exit status, and preserve the explicit attached-literal escape hatch."
+  "2026-10-04T22:22:14.321Z","harness:codex",Help discovery must operate on argv whose explicit assignment boundaries survive normalization. Checking only raw argv is insufficient because the downstream help parser receives normalized tokens. Commander short-option empty assignments are not equivalent to canonical long-option empty assignments; use the declared canonical value flag. Retain both SDK argv table proof and a real isolated CLI create/persistence test because parsing and durable mutation are distinct regression risks.
+files[5]:
+  - path: scripts/release/docstring-quality-baseline.json
+    scope: project
+    note: Decrease filler inventory after documenting edited bootstrap semantics
+  - path: src/sdk/cli-bootstrap.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: tests/integration/cli/help-discovery-mutation.integration.spec.ts
+    scope: project
+  - path: tests/unit/cli/bootstrap-args.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/integration/cli/help-discovery-mutation.integration.spec.ts --maxWorkers=1,project,600,"harness:codex","2026-10-04T22:22:13.032Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
+test_runs[2]:
+  - run_id: test-local-muu7xirx-lim8xm
+    kind: test
+    status: passed
+    started_at: "2026-10-04T19:32:24.897Z"
+    finished_at: "2026-10-04T19:33:06.764Z"
+    recorded_at: "2026-10-04T19:33:06.764Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/help-discovery-mutation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muuf8zy1-cd9nrk
+    kind: test
+    status: passed
+    started_at: "2026-10-04T22:57:49.474Z"
+    finished_at: "2026-10-04T22:57:59.545Z"
+    recorded_at: "2026-10-04T22:57:59.545Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/integration/cli/help-discovery-mutation.integration.spec.ts --maxWorkers=1,schema,schema,source,local_source_ref
+docs[3]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Package-generated reviewed delivery projection
+  - path: docs/README.md
+    scope: project
+  - path: docs/SDK_CONFIGURATION_SAFETY.md
+    scope: project
+close_reason: Implemented and locally verified in the combined SDK settings/history/freshness/help delivery; hosted checks and bot review remain the merge gate.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: pm-test-audit
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/help-discovery-mutation.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI,Security & Script Analysis,CodeQL
+  owner: pm-gh1398
+body: "## Repro (pm 2026.10.4, fresh workspace)\n```\npm init\nid=$(PM_AUTHOR=x pm create --type Task --title t --description d --create-mode progressive --json | jq -r .id)\nPM_AUTHOR=x pm test  $id --add --help    # ok: true  → tests: [{command: \"--help\", scope: project}]\nPM_AUTHOR=x pm files $id --add --help    # ok: true  → files[1]{path,scope}: \"--help\",project\n```\nBoth commands **mutate the item** (with a history record) instead of printing help, and report `ok: true`.\n\n## Why it matters\nAgents routinely append `--help` to the command they are about to run to discover its grammar. In a real package tracker (unbraind/pm-ops, item ops-zq8c) an agent did exactly this, the bogus `{command: \"--help\"}` test was committed, and a reviewer had to flag it on the PR (\"Recorded test cannot run\"). Because `pm test --run` executes recorded commands, this also turns help discovery into a persisted executable entry.\n\n## Expected\n- `--help`/`-h` anywhere in argv prints the command's help and exits 0 **without mutating**, as for every other command; or\n- a value-taking collection option refuses a value that is itself a known global flag (`--help`, `--json`, `--dry-run`, …) with a recovery hint (`use --add=--help if you really mean the literal`).\n\nRelated: #1337 (unsupported `--dry-run` recovery suggests the real mutation) — same class: discovery flags must never be swallowed as mutation values."

@@ -50,6 +50,7 @@ pm guide release --json
 - [Noun–Verb CLI Grammar](CLI_GRAMMAR.md) - accepted command architecture, exhaustive destination census, hidden aliases, and the surface-growth gate.
 - [SDK Primitive Inventory](SDK_PRIMITIVE_INVENTORY.md) - SDK-first migration map and private-import ratchet for CLI/MCP layering.
 - [Package SDK Contract Conformance](PACKAGE_SDK_CONTRACT_CONFORMANCE.md) - authoritative public types, `typeof` module derivation, and the first-party parity gate.
+- [SDK Configuration and Diagnostic Safety](SDK_CONFIGURATION_SAFETY.md) - explicit settings ownership, transient npm freshness, audited schema sandboxes, and mutation-safe help.
 - [SDK Action and Boundary Conformance](SDK_ACTION_CONFORMANCE.md) - derived CLI/SDK/MCP action vocabulary, public-import ratchets, intent budget diagnostics, and package-runner proof.
 - [MCP 2026-07-28 Protocol Decision](MCP_2026_07_28.md) - stateless request metadata, discovery, result envelopes, explicit legacy boundary, and migration policy.
 - [Progressive Tool Discovery](PROGRESSIVE_TOOL_DISCOVERY.md) - opt-in bounded MCP catalogs, public SDK ranking and pagination, canonical results, and compatibility isolation.

@@ -768,6 +768,8 @@ export interface ExtensionCommandSdk {
     dryRun?: boolean;
     /** Include the canonical inline settings tree; omit by default to bound receipts. */
     includePreview?: boolean;
+    /** Replace these dot-delimited inline object subtrees, removing omitted raw keys while preserving all other source fields. */
+    replaceSubtrees?: readonly string[];
     /** Derive the complete next settings tree from normalized inline settings at lock time. */
     mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>;
   }): Promise<{

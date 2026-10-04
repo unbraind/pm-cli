@@ -5,12 +5,14 @@
  * package runtimes never need private imports or runtime package resolution.
  */
 import { createHash } from "node:crypto";
+import type { PmSettings } from "../types.js";
 import type { ExtensionCommandSdk } from "../core/extensions/extension-types.js";
 import { runActiveOnWriteHooks } from "../core/extensions/index.js";
 import { mutateWorkspaceJsonWithHistory } from "../core/history/workspace-history.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { asRecordOrNull } from "../core/shared/primitives.js";
 import { stableValueEquals } from "../core/shared/serialization.js";
 import { getSettingsPath } from "../core/store/paths.js";
 import { mergeSettings, readSettings, runWithConfigurationOnlySettings, serializeSettings } from "../core/store/settings.js";
@@ -41,6 +43,38 @@ function buildRelationshipKindRegistry(
   const registry = createRelationshipKindRegistry();
   for (const definition of definitions) registry.register(definition);
   return registry;
+}
+
+/** Replace explicitly owned normalized objects without dropping unrelated sparse or future settings. */
+function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: readonly string[] = []): string {
+  if (paths.length === 0) return raw;
+  const persisted = JSON.parse(raw) as Record<string, unknown>;
+  const canonical = JSON.parse(serializeSettings(next)) as Record<string, unknown>;
+  for (const ownedPath of paths) {
+    const segments = ownedPath.split(".");
+    let source: unknown = canonical;
+    for (const segment of segments) {
+      const sourceObject = asRecordOrNull(source);
+      if (!/^[a-zA-Z][a-zA-Z0-9_]*$/u.test(segment) || ["constructor", "prototype", "__proto__"].includes(segment) ||
+        sourceObject === null || !Object.hasOwn(sourceObject, segment)) {
+        throw new PmCliError(`Invalid owned settings subtree: ${ownedPath}. Select a declared inline object path.`, EXIT_CODE.USAGE);
+      }
+      source = sourceObject[segment];
+    }
+    if (asRecordOrNull(source) === null) {
+      throw new PmCliError(`Invalid owned settings subtree: ${ownedPath}. Select a declared inline object path.`, EXIT_CODE.USAGE);
+    }
+    let destination = persisted;
+    let canonicalParent = canonical;
+    for (const segment of segments.slice(0, -1)) {
+      const value = destination[segment];
+      canonicalParent = canonicalParent[segment] as Record<string, unknown>;
+      if (value === undefined) destination[segment] = structuredClone(canonicalParent);
+      destination = destination[segment] as Record<string, unknown>;
+    }
+    destination[segments.at(-1)!] = source;
+  }
+  return stableValueEquals(persisted, JSON.parse(raw)) ? raw : `${JSON.stringify(persisted, null, 2)}\n`;
 }
 
 /** Bind public SDK services to one tracker and one caller-owned client. */
@@ -127,9 +161,10 @@ export function createExtensionCommandSdk(
                 EXIT_CODE.USAGE,
               );
             }
-            const raw = stableValueEquals(currentSettings, next)
+            let raw = stableValueEquals(currentSettings, next)
               ? beforeRaw!
               : serializeSettings(next, { source: { raw: current, validated: validatedCurrent.data } });
+            raw = replaceOwnedSettingsSubtrees(raw, next, options.replaceSubtrees);
             const validatedResult = validateSettings(JSON.parse(raw));
             if (!validatedResult.success) {
               throw new PmCliError(

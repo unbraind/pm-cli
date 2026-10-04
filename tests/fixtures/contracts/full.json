@@ -3622,7 +3622,8 @@
         },
         {
           "flag": "--body",
-          "short": "-b"
+          "short": "-b",
+          "value_name": "value"
         },
         {
           "flag": "--body-file"
@@ -4403,6 +4404,10 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "flag": "--offline",
+          "value_type": "boolean"
         },
         {
           "flag": "--runtime-probe"
@@ -6697,6 +6702,10 @@
           "flag": "--manage"
         },
         {
+          "flag": "--offline",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--describe"
         },
         {
@@ -6998,6 +7007,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--offline",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--runtime-probe"
         },
         {
@@ -7119,6 +7132,10 @@
         },
         {
           "flag": "--manage"
+        },
+        {
+          "flag": "--offline",
+          "value_type": "boolean"
         },
         {
           "flag": "--describe"
@@ -7420,6 +7437,10 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "flag": "--offline",
+          "value_type": "boolean"
         },
         {
           "flag": "--runtime-probe"
@@ -43820,6 +43841,10 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "offline": {
+            "description": "Skip remote GitHub and npm freshness checks during package or extension manage; update availability remains unknown.",
+            "type": "boolean"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -44968,6 +44993,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "offline": {
+            "description": "Skip remote GitHub and npm freshness checks during package or extension manage; update availability remains unknown.",
             "type": "boolean"
           },
           "outputBudget": {
@@ -46263,6 +46292,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "offline": {
+            "description": "Skip remote GitHub and npm freshness checks during package or extension manage; update availability remains unknown.",
             "type": "boolean"
           },
           "output": {
@@ -63285,10 +63318,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.20.0"
+    "x-schema-version": "4.21.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.20.0",
+  "schema_version": "4.21.0",
   "selected": {
     "action": null,
     "availability_only": false,

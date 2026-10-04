@@ -2,11 +2,13 @@ id: pm-gh1394
 title: "GH-1394: Define audited owned-subtree replacement for complete-next settings mutations"
 description: Complete-next normalized settings callbacks cannot see unknown raw subtree keys. Replacing an owned subtree can retain omitted keys while the normalized preview omits them; provide explicit audited replacement without discarding unrelated foreign settings.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T12:45:13.586Z"
-updated_at: "2026-10-04T13:39:40.367Z"
+updated_at: "2026-10-04T23:55:40.282Z"
+closed_at: "2026-10-04T23:55:39.249Z"
+completed_at: "2026-10-04T23:55:39.249Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Owned-subtree replacement intent removes omitted raw keys under the SDK lock/history boundary; Preserve unrelated future fields; Preview accurately describes persisted replacement semantics; Real packed Node and Bun consumers reproduce and verify the intended contract.
@@ -17,11 +19,58 @@ why_now: The newly reported published-SDK reproduction should be triaged before 
 parent: pm-o2kc
 risk: medium
 confidence: medium
-expected_result: Owned-subtree replacement removes omitted raw keys while preserving unrelated future fields and truthful preview/history
+resolution: Host-injected settings transactions support explicit validated canonical object ownership through replaceSubtrees while preserving unrelated future fields and existing audit semantics.
+expected_result: "Default callers preserve unknown fields; owned objects can remove obsolete raw keys without breaking previews, dry runs, lock-scoped writes or replay."
+actual_result: "Focused transaction regression, exact full-source coverage and fresh public-SDK Node/Bun acceptance prove preservation, removal, preview, inert dry-run history and retry callback suppression."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2sef82,discovered_from,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
   pm-2sef82,verifies,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
   pm-wtqltn,implements,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-04T12:45:13.586Z","harness:codex","Duplicate check: strict live all-status corpus contained 2879/2879 records with zero omissions. Exact GH-1394 and URL were absent; settings mutation/unknown-key/subtree searches and open/in-progress inventories were refreshed. Full relevant terminal predecessor metadata was read. This distinct report is open and unclaimed."
+  "2026-10-04T18:20:40.085Z","harness:codex","Delivery scope: add explicit owned-subtree replacement to the host-injected SDK while retaining default preservation of sparse and future settings. Replacement must derive canonical bytes and preview under the existing audit lock, support inert dry runs/idempotent retries, and preserve unrelated settings. Real Node/Bun packed-consumer tests will prove the public contract."
+  "2026-10-04T18:41:18.851Z","harness:codex","TDD evidence: new boundary regressions failed on the pre-change SDK. Implementation is SDK-owned and being verified together in the single owned-settings/schema-history/extension-freshness delivery. No new coverage ignores, denominator exclusions, or test-only production exports were added."
+  "2026-10-04T19:06:30.768Z","harness:codex","Cross-project verification: strict all-status corpus read 2880/2880 items with zero omissions; after canonical GH-1398/1399 intake graph audit covers 2882 nodes and 14379 typed directed edges across ten kinds, zero missing/isolated/sparse subjects, zero ordering contradictions, and 100 percent active and terminal outcome reachability. Two informational legacy hierarchy findings are preserved. Current dependency audit and tracked-history-inclusive secret scan pass. Existing public v2026.10.4 passed the npm/npx/bunx verifier; scheduled run 37189787575 selected successful immutable Release 37172794001 and confirmed publication without another release. Live Sentry 14-day window has zero unresolved issues; telemetry gate reports 1.74 percent finish errors with zero missing error codes and current start/finish timestamps. Recent Sentry trace query is empty, so it is not claimed as new trace evidence."
+  "2026-10-04T19:32:25.937Z","harness:codex","Packed consumer acceptance passed outside checkout ancestors under real npm/Node and Bun installations. Both engines imported only public SDK entrypoints and proved default unknown-field preservation, explicit owned-object replacement, dry-run byte/history purity, retry callback suppression, strict schema-history validation for project and global roots with zero inherited items, real sandbox drift failure, source-byte preservation, bare-help purity for tests/files/docs, real npm latest metadata, offline/read-only managed diagnostics including identical bytes and mtime, and bare managed npm reinstall. Temporary roots were cleaned; no host cache or security settings changed."
+  "2026-10-04T23:55:37.741Z","harness:codex","Final local delivery: canonical serial source coverage passed 9760 tests across 774 files (only the existing Windows-only two-test file skipped), with exact statements 66784/66784, branches 51129/51129, functions 13795/13795 and lines 63651/63651. The final independent npm version table passed linked verification after two additional argument/channel controls; production behavior is unchanged since the coverage receipt. Complete static quality and typecheck pass. Fresh separate installed npm/Node and Bun consumers outside checkout ancestors pass owned-settings, strict schema history with genuine drift refusal, help purity, real npm latest, offline diagnostics and bare reinstall. Packed npx/bunx smoke passes. No gate, denominator, ignore, retry or complexity threshold was weakened. Live security has zero open Dependabot/code/secret alerts; required Sentry/telemetry gate passes, consented flush succeeds and recent production start/finish events are present. These are local candidate and current production observations; hosted exact-head review remains required."
+notes[1]{created_at,author,text}:
+  "2026-10-04T18:58:17.239Z","harness:codex","Decision: mutateWorkspaceSettings adds explicit replaceSubtrees for validated canonical object paths. Derive replacement bytes under the existing lock, preserve unknown fields outside owned objects, and materialize missing canonical ancestors for sparse inputs. Reuse dry-run, preview, replay and hook semantics; default callers retain preservation."
+learnings[1]{created_at,author,text}:
+  "2026-10-04T18:58:21.779Z","harness:codex",A normalized complete-next tree cannot express removal of unknown raw keys. Require explicit subtree ownership; normalized previews describe canonical known settings while persisted unrelated future fields remain intact.
+files[4]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/extensions/extension-types.ts,project
+  src/sdk/extension-command-context.ts,project
+  tests/unit/sdk/transactions/settings-owned-subtrees.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-owned-subtrees.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts,project,600,"harness:codex","2026-10-04T18:41:16.818Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
+test_runs[1]:
+  - run_id: test-local-muu7vvoy-d6s9rf
+    kind: test
+    status: passed
+    started_at: "2026-10-04T19:31:12.072Z"
+    finished_at: "2026-10-04T19:31:50.194Z"
+    recorded_at: "2026-10-04T19:31:50.194Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-owned-subtrees.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts,schema,schema,source,local_source_ref
+docs[3]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Package-generated reviewed delivery projection
+  - path: docs/README.md
+    scope: project
+  - path: docs/SDK_CONFIGURATION_SAFETY.md
+    scope: project
+close_reason: Implemented and locally verified in the combined SDK settings/history/freshness/help delivery; hosted checks and bot review remain the merge gate.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: pm-test-audit
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-owned-subtrees.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI,Security & Script Analysis,CodeQL
+  owner: pm-gh1394
 body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1394\n\nPM CLI/SDK 2026.10.4 returns a complete normalized settings tree to `mutateWorkspaceSettings`, but raw unknown keys are invisible to the callback and survive replacement of an owned subtree. The returned normalized preview also omits the key that remains on disk.\n\nThis breaks pm-presets `--replace`: its unchanged real SDK regression expects an omitted governance key to be removed. Its release gate has 158/159 passing tests, zero skips, and 100% measured line/branch/function coverage; the assertion remains intact.\n\nIndependent reproduction uses only synthetic disposable data and the published SDK, without pm-presets code or upstream source changes. After `npm install --save-exact @unbrained/pm-cli@2026.10.4`, save the following as `repro.mjs` and run `node repro.mjs`:\n\n```js\nimport assert from 'node:assert/strict';\nimport { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { PmClient, createExtensionCommandSdk } from '@unbrained/pm-cli/sdk';\nconst workspace=mkdtempSync(join(tmpdir(),'sdk-owned-settings-'));\nconst pmRoot=join(workspace,'.agents','pm');\ntry {\n const client=new PmClient({cwd:workspace,pmRoot,noExtensions:true});\n await client.init();\n const settingsPath=join(pmRoot,'settings.json');\n const initial=JSON.parse(readFileSync(settingsPath,'utf8'));\n initial.governance={preset:'default',certification_leftover:true};\n writeFileSync(settingsPath,JSON.stringify(initial,null,2)+'\\n');\n const sdk=createExtensionCommandSdk(pmRoot,client,'certification-synthetic');\n let callbackHadLeftover;\n const result=await sdk.mutateWorkspaceSettings({operationId:'replace-owned-governance',includePreview:true,mutate(current){\n  callbackHadLeftover=Object.hasOwn(current.governance,'certification_leftover');\n  return {...current,governance:{preset:'minimal'}};\n }});\n const actual=JSON.parse(readFileSync(settingsPath,'utf8'));\n console.log(JSON.stringify({cli:'2026.10.4',callbackHadLeftover,receiptChanged:result.changed,previewHasLeftover:Object.hasOwn(result.preview.governance,'certification_leftover'),persistedLeftover:actual.governance.certification_leftover}));\n assert.equal(actual.governance.certification_leftover,undefined,'Complete-next-tree mutation must remove an omitted owned-subtree key');\n} finally {rmSync(workspace,{recursive:true,force:true});}\n```\n\nObserved: `callbackHadLeftover=false`, `receiptChanged=true`, `previewHasLeftover=false`, `persistedLeftover=true`, then the assertion fails (exit 1). The complete replacement return sets governance to `{preset: \"minimal\"}`. Temporary workspace is always deleted.\n\nExpected: provide an audited way to replace owned settings subtrees/remove omitted raw keys, without directly writing settings outside the SDK lock/history boundary. The complete-next-tree API should honor that replacement intent; its preview should describe the corresponding persisted result. Preservation of unrelated foreign settings is still required.\n\nThe SDK serializer computes deltas from normalized baseline/current trees and overlays those onto the raw source. Because the unknown key is absent from both normalized trees, no deletion delta is produced. This differs from #1356, which added the preview capability and is closed. Duplicate searches for mutateWorkspaceSettings, unknown settings keys serializer, and preset replace found no matching open issue.\n\n\nIntake boundary: the source report is retained as reported evidence. This distinct complete-next-tree replacement request is not independently reproduced or implemented in this blocker/read-receipt delivery. Closed preview and audited-mutation predecessors remain shipped work."

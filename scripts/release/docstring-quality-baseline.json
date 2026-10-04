@@ -117,7 +117,7 @@
     "src/mcp/server.ts": 5,
     "src/mcp/tool-definitions.ts": 8,
     "src/sdk/annotations.ts": 6,
-    "src/sdk/cli-bootstrap.ts": 25,
+    "src/sdk/cli-bootstrap.ts": 24,
     "src/sdk/cli-contracts/enum-contracts.ts": 5,
     "src/sdk/cli-contracts/flag-contracts.ts": 12,
     "src/sdk/cli-contracts/registration-helpers.ts": 23,

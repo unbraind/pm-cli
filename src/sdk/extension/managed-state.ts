@@ -74,6 +74,8 @@ export interface ManagedExtensionRecord {
   last_update_check_at?: string;
   /** Value that configures or reports last update remote commit for this contract. */
   last_update_remote_commit?: string;
+  /** Latest registry version observed by a diagnostic check; diagnostics never persist this field. */
+  last_update_remote_version?: string;
   /** Value that configures or reports update available for this contract. */
   update_available?: boolean | null;
   /** Value that configures or reports update error for this contract. */
@@ -275,6 +277,7 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
     source,
     last_update_check_at: optionalString(entry.last_update_check_at),
     last_update_remote_commit: optionalString(entry.last_update_remote_commit),
+    last_update_remote_version: optionalString(entry.last_update_remote_version),
     update_available:
       typeof entry.update_available === "boolean" ||
       entry.update_available === null

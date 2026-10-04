@@ -1,0 +1,28 @@
+id: pm-gh1400
+title: Expose typed explicit-ID duplicate creation conflicts to SDK callers
+description: GH-1400 reports that explicit duplicate IDs expose only a generic conflict exit code and English text. SDK callers need a stable error code and existing item identity to implement concurrency-safe create-if-absent without message matching.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-04T19:28:39.241Z"
+updated_at: "2026-10-04T19:28:39.241Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Explicit duplicate-ID creation emits a stable typed public SDK error with the existing item identity; a public guard distinguishes it from claims and policy conflicts; Node and Bun concurrent deterministic-ID acceptance preserves the original item and rereads it safely; generated allocation collision and strict similarity governance retain their established contracts.
+goal: project management = context management
+objective: Make deterministic concurrent creation recoverable through stable SDK contracts
+value: Package authors can converge on canonical items without matching English diagnostics
+why_now: Downstream pm-rl concurrency exposed a fragile create-if-absent recovery boundary
+parent: pm-dj98
+risk: medium
+confidence: high
+expected_result: SDK clients distinguish an occupied explicit ID from unrelated conflicts through typed data
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-35w9l2,verifies,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
+  pm-dj98,implements,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
+  pm-f05lsg,implements,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
+  pm-khdq,discovered_from,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-04T19:28:39.241Z","harness:codex","Duplicate-check evidence: strict full all-status corpus read 2882 of 2882 with zero omissions plus request-specific search and open/in-progress inventories. Historical pm-khdq owns generated allocation overwrite prevention. Historical pm-35w9l2 owns similarity governance. Neither owns the newly reported explicit-ID public typed error contract. GH-1400 source report is retained in full. Remains open and unclaimed; no implementation or live reproduction is claimed."
+body: "## Observed (SDK 2026.10.4)\n`createItem` with an explicit id that already exists throws `PmCliExpectedError(\\`Item \"${id}\" already exists\\`, EXIT_CODE.CONFLICT)` (sdk-core). The error carries only the exit code — the same `CONFLICT` code used for claim conflicts, policy refusals, etc. — and no machine-readable `code`/`context` naming the condition or the existing item id.\n\n## Why it matters (multi-agent concurrency)\nContent-addressed / deterministic ids are the natural way for concurrent agents to converge on one shared item (pm-rl registers environments, seeds and runs by digest so two loops in parallel worktrees share them). The correct pattern is *create, and on \"already exists\" re-read and accept iff identical*. Today the only way to recognise that case is to match the message text:\n\n```ts\nif (!isPmCliExpectedError(error) || error.exitCode !== EXIT_CODE.CONFLICT || !/^Item \"[^\"]+\" already exists$/.test(error.message)) throw error;\n```\n(unbraind/pm-rl#61). Any wording or localisation change silently turns the recovery path into a crash, and the original bug (two simultaneous loops → the loser throws) only showed up as a CI flake on one Node version.\n\n## Proposal\n- Throw with a stable code, e.g. `code: \"item_already_exists\"` plus `context: { id, path }` (like the existing typed refusals), and export a guard `isItemAlreadyExistsError` from the public SDK subpath (cf. #975 for `isAlreadyClaimedError`).\n- Optionally an idempotent primitive: `createItem({ ..., ifExists: \"return-existing\" })` returning `{ created: false, item }` so callers don't need the throw/re-read dance at all."

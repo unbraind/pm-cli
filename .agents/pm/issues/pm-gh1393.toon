@@ -2,11 +2,13 @@ id: pm-gh1393
 title: "GH-1393: Seed truthful schema-context settings history for linked tests"
 description: The schema seeding path reportedly overwrites audited initializer settings with source settings while retaining incompatible workspace history. This is distinct from the completed tracker-context no-history repair. Preserve schema isolation and real strict drift diagnostics.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-04T11:46:25.377Z"
-updated_at: "2026-10-04T11:46:25.377Z"
+updated_at: "2026-10-04T23:55:36.120Z"
+closed_at: "2026-10-04T23:55:34.934Z"
+completed_at: "2026-10-04T23:55:34.934Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: A schema-context shell command running strict history validation passes after nontrivial source settings changes; Seeded settings and authoritative workspace history agree; Source items are absent from schema context; Real out-of-band settings mutation still fails; No suppression or source-tracker write is introduced.
@@ -16,12 +18,56 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-ugqx
 risk: medium
 confidence: medium
-expected_result: A schema-context shell command running strict history validation passes after nontrivial source settings changes; Seeded settings and authoritative workspace history agree; Source items are absent from schema context; Real out-of-band settings mutation still fails; No suppression or source-tracker write is introduced.
+resolution: Schema-only linked execution copies project/global settings through the audited sandbox writer over its initialized history baseline.
+expected_result: "Copied schema policy validates with zero inherited items, genuine out-of-band drift fails, and original settings/history remain unchanged."
+actual_result: "The real nested CLI regression and fresh installed Node/Bun schema acceptance validate both isolated roots, detect deliberate drift and preserve source settings/history bytes."
 affected_version: 2026.10.4
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2ga1g7,discovered_from,"2026-10-04T11:46:25.377Z","harness:codex","cli:create:dep",detected
   pm-2ga1g7,verifies,"2026-10-04T11:46:25.377Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-10-04T11:46:25.377Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-gh1394,related,"2026-10-04T22:39:28.030Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
+comments[4]{created_at,author,text}:
   "2026-10-04T11:46:25.377Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1393 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+  "2026-10-04T18:20:38.203Z","harness:codex","Delivery scope: reproduce schema settings/history drift with a real nested shell command, then seed audited schema settings without source item data or suppression. Combine with pm-gh1394 audited settings ownership and pm-gh1392 package lifecycle in one implementation PR. Test-first controls must retain source/global tracker isolation and genuine drift refusal."
+  "2026-10-04T18:41:27.685Z","harness:codex","TDD evidence: new boundary regressions failed on the pre-change SDK. Implementation is SDK-owned and being verified together in the single owned-settings/schema-history/extension-freshness delivery. No new coverage ignores, denominator exclusions, or test-only production exports were added."
+  "2026-10-04T23:55:33.165Z","harness:codex","Final local delivery: canonical serial source coverage passed 9760 tests across 774 files (only the existing Windows-only two-test file skipped), with exact statements 66784/66784, branches 51129/51129, functions 13795/13795 and lines 63651/63651. The final independent npm version table passed linked verification after two additional argument/channel controls; production behavior is unchanged since the coverage receipt. Complete static quality and typecheck pass. Fresh separate installed npm/Node and Bun consumers outside checkout ancestors pass owned-settings, strict schema history with genuine drift refusal, help purity, real npm latest, offline diagnostics and bare reinstall. Packed npx/bunx smoke passes. No gate, denominator, ignore, retry or complexity threshold was weakened. Live security has zero open Dependabot/code/secret alerts; required Sentry/telemetry gate passes, consented flush succeeds and recent production start/finish events are present. These are local candidate and current production observations; hosted exact-head review remains required."
+notes[1]{created_at,author,text}:
+  "2026-10-04T18:58:09.354Z","harness:codex","Decision: schema seeding writes copied project/global settings through writeWorkspaceJsonWithHistory over the initialized sandbox state. Keep source items absent and leave tracker-context copy/history behavior intact. A real nested Node CLI validates strict drift in both roots, then out-of-band changes fail; source settings/history are byte-preserved."
+learnings[1]{created_at,author,text}:
+  "2026-10-04T18:58:14.432Z","harness:codex",Copying settings into an initialized tracker must preserve the new workspace audit baseline. Seed through the audited SDK writer rather than copying incompatible source history or suppressing drift checks.
+files[2]{path,scope}:
+  src/sdk/test/execution.ts,project
+  tests/integration/workspace/schema-settings-history.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,project,600,"harness:codex","2026-10-04T19:24:34.270Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
+test_runs[1]:
+  - run_id: test-local-muu7x372-c9wgyb
+    kind: test
+    status: passed
+    started_at: "2026-10-04T19:32:01.390Z"
+    finished_at: "2026-10-04T19:32:46.574Z"
+    recorded_at: "2026-10-04T19:32:46.574Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Package-generated reviewed delivery projection
+  - path: docs/README.md
+    scope: project
+  - path: docs/SDK_CONFIGURATION_SAFETY.md
+    scope: project
+close_reason: Implemented and locally verified in the combined SDK settings/history/freshness/help delivery; hosted checks and bot review remain the merge gate.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: pm-test-audit
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workspace/schema-settings-history.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI,Security & Script Analysis,CodeQL
+  owner: pm-gh1393
 body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1393\nReported version: 2026.10.4\n\nThe schema seeding path reportedly overwrites audited initializer settings with source settings while retaining incompatible workspace history. This is distinct from the completed tracker-context no-history repair. Preserve schema isolation and real strict drift diagnostics.\n\nThe complete public issue and its comments were read. This record is intake; the report is not independently reproduced or fixed yet. The completed predecessor pm-2ga1g7 remains shipped work and is not represented as an outstanding failure.\n\nAcceptance: A schema-context shell command running strict history validation passes after nontrivial source settings changes; Seeded settings and authoritative workspace history agree; Source items are absent from schema context; Real out-of-band settings mutation still fails; No suppression or source-tracker write is introduced."
