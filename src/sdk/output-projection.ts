@@ -478,6 +478,22 @@ function resolveContextReceipt(
   return receipt;
 }
 
+/** Recognize metadata and rendered aliases while excluding the stable linked envelope's unselected empty placeholders. */
+function isGetFieldGroupIncluded(
+  name: string,
+  owner: Record<string, unknown>,
+  result: Record<string, unknown>,
+): boolean {
+  if (name === "dependency_provenance") return false;
+  return Object.hasOwn(owner, name) ||
+    ((name === "reminders" || name === "events") &&
+      isRecord(result.schedule) && Object.hasOwn(result.schedule, name)) ||
+    (["files", "tests", "docs"].includes(name) &&
+      isRecord(result.linked) && Array.isArray(result.linked[name]) &&
+      result.linked[name].length > 0);
+}
+
+/** Count material withheld get groups, honoring schedule members, nonempty linked artifacts and current blocker disclosure without certifying unselected empty linked placeholders. */
 function resolveGetReceipt(
   result: Record<string, unknown>,
 ): OutputOmissionReceipt | undefined {
@@ -502,8 +518,15 @@ function resolveGetReceipt(
   ];
   const materialGroups = MATERIAL_FIELD_GROUPS_BY_RESULT.get(result);
   const ownerFor = (name: string): Record<string, unknown> =>
-    itemGroups.includes(name) || name === "body" ? item : result;
-  const groups = ["body", ...itemGroups, ...resultGroups.slice(1)]
+    itemGroups.includes(name) || name === "body" || name === "dependency_provenance" ? item : result;
+  const groups = [
+    "body",
+    ...itemGroups,
+    ...resultGroups.slice(1),
+    ...(materialGroups?.has("dependency_provenance") ? ["dependency_provenance"] : []),
+    ...(materialGroups?.has("blockers") || Object.hasOwn(result, "blockers")
+      ? ["blockers"] : []),
+  ]
     .filter((name) =>
       materialGroups === undefined ||
       materialGroups.has(name) ||
@@ -511,15 +534,13 @@ function resolveGetReceipt(
     )
     .map((name) => ({
       name,
-      restore_with: `--fields ${name}`,
+      restore_with: name === "blockers" ? "--full" : name === "dependency_provenance" ? "--fields dependencies" : `--fields ${name}`,
     }));
   return createOutputOmissionReceipt(
     groups,
     new Set(
       groups.flatMap(({ name }) =>
-        !Object.hasOwn(ownerFor(name), name)
-          ? []
-          : [name],
+        isGetFieldGroupIncluded(name, ownerFor(name), result) ? [name] : [],
       ),
     ),
   );

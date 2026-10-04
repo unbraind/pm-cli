@@ -2167,6 +2167,26 @@
       ],
       "package_version": "2026.10.3",
       "reason": "Additive optional includePreview request and optional preview receipt; existing callers, three-boolean receipts and replay behavior remain compatible. The signature hash classifies all interface edits conservatively."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GetResult",
+        "signature ./sdk/core:GetResult",
+        "signature ./sdk/query:GetResult",
+        "signature ./sdk/runtime:GetResult"
+      ],
+      "package_version": "2026.10.4",
+      "reason": "Add an optional GetResult.blockers facet consistently across four SDK barrels; existing arguments and required result members are unchanged and declared status is explicitly current rather than historical."
+    },
+    {
+      "changes": [
+        "signature ./sdk:GetResult",
+        "signature ./sdk/core:GetResult",
+        "signature ./sdk/query:GetResult",
+        "signature ./sdk/runtime:GetResult"
+      ],
+      "package_version": "2026.10.4",
+      "reason": "The newly introduced blocker facet omits redundant resolved:false from its open rows; IDs, titles, current statuses and external identity are preserved. Existing pre-PR arguments and required result members are unchanged."
     }
   ],
   "entrypoints": {
@@ -8297,7 +8317,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "advanced_export",
@@ -25277,7 +25297,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "supported",
@@ -30587,7 +30607,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "supported",
@@ -32405,7 +32425,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult { item: GetItemProjection; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "advanced_export",

@@ -1,0 +1,150 @@
+id: pm-gh1389
+title: "GH-1389: Derive get omission receipts from emitted schedule and artifact aliases"
+description: A material reminder or event rendered through the normalized schedule facet is still called omitted because the receipt inspects only top-level metadata keys. Derive inclusion from actual alias paths and preserve recovery for unselected members.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-04T11:45:44.554Z"
+updated_at: "2026-10-04T17:05:56.446Z"
+closed_at: "2026-10-04T17:05:54.594Z"
+completed_at: "2026-10-04T17:05:54.594Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Rendered reminders and events are never reported omitted; Narrow schedule selectors retain omissions for unselected material fields; Linked artifact aliases are measured independently; Standard brief full and selected field reads agree through SDK CLI and MCP.
+goal: project management = context management
+objective: Trustworthy bounded context and SDK-owned evidence
+value: Agents can act on one truthful context read and preserve durable evidence
+parent: pm-mpbb
+risk: medium
+confidence: medium
+resolution: "SDK read receipts preserve material omission recovery across full-depth field selection and legacy dependencies. Isolated regression runners stop before checkout disposal, retain live workspaces on bounded shutdown refusal, settle paired failures, and stage compiled CLI artifacts only where used. Signal test readiness is published only after handler registration."
+expected_result: "Truthful SDK and CLI omission recovery, genuine safe/defect verdicts and infrastructure refusal, no live child checkout deletion, deterministic signal fixture readiness, and unchanged mandatory complete-coverage and platform budgets."
+actual_result: "Fifty linked tests and fifteen positive/fifteen real defect controls passed. Three actual signal cases failed before the cleanup fix and then passed; all five real runner tests passed again after the readiness correction. Hosted source head 65dedb748 passed 9715 tests plus two platform skips and all four coverage metrics on every one of 763 executable rows at 100 percent, including release scripts; Windows passed in 7m45s under its unchanged 12-minute ceiling. Node/Bun installed eighteen CLI/five SDK acceptance operations and npx/bunx passed. Fresh final-head hosted admission remains required before merge."
+affected_version: 2026.10.4
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mpbb,implements,"2026-10-04T11:45:44.554Z","harness:codex","cli:create:dep",detected
+  pm-x1g5,discovered_from,"2026-10-04T11:45:44.554Z","harness:codex","cli:create:dep",detected
+  pm-x1g5,verifies,"2026-10-04T11:45:44.554Z","harness:codex","cli:create:dep",detected
+  pm-gh1388,verifies,"2026-10-04T12:52:14.870Z","harness:codex","cli:update:dep",detected
+  pm-dvwm,related,"2026-10-04T14:12:37.867Z","harness:codex","cli:update:dep",detected
+  pm-gh1394,related,"2026-10-04T14:12:37.867Z","harness:codex","cli:update:dep",detected
+comments[18]{created_at,author,text}:
+  "2026-10-04T11:45:44.554Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1389 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+  "2026-10-04T11:49:37.383Z","harness:codex","TDD: the pre-fix SDK receipt calls rendered reminders/events omitted at default and narrow schedule projections. The same real reminder/event fixture proves the unselected material member remains omitted. Explicit metadata restoration is retained. No receipt implementation is mocked."
+  "2026-10-04T12:58:08.879Z","harness:codex","Quality correction: rendered-alias inclusion is a documented nonlinear predicate so the receipt owner stays within the unchanged CodeFactor complexity ceiling. Eleven real source-defect controls pass safe code and fail behavioral assertions; the portable filename control now explicitly asserts successful resolution so the independent identity guard cannot hide a boundary failure behind a setup exception. All four TypeScript targets pass; packed temporary Node/Bun SDK and 11 CLI commands each plus npx/bunx and strict history passed before the final compact-output change."
+  "2026-10-04T13:02:32.427Z","harness:codex","Shared final acceptance: all 43 focused tests pass, including eleven safe and eleven real source-mutant behavioral controls. Fresh installed-package Node/Bun probes pass normalized schedule emission and narrow omission behavior, brief/full recovery, historical separation, public SDK reads, npx/bunx and strict history. Dependency audit reports no known vulnerabilities; live GitHub Dependabot, code-scanning and secret-scanning alert inventories are empty. Full hosted all-source coverage and review remain pending; no global or published-source completion is claimed."
+  "2026-10-04T13:52:20.124Z","harness:codex","Final-head evidence before provenance refinement: CI 37205472336 passed all 9707 tests with two Windows-only cases skipped on Linux. Every metric on all 763 source rows was 100/100/100/100: 63551 lines, 66665 statements, 13770 functions and 51022 branches. Its only static failure was missing planning fields on unclaimed intake pm-gh1394; those were supplied using the CLI and record-integrity now passes. The new provenance refinement requires fresh exact-head hosted admission before merge."
+  "2026-10-04T14:01:33.982Z","harness:codex","Final live reliability: required telemetry/Sentry gate passes with zero critical/high events in the fresh fourteen-day window. The collector query at 2026-10-04T13:57:38Z contains 17373 one-day finish events and 444 failures (2.56 percent), with zero failures missing error codes. This proves recent action logging and coded failures, not complete end-to-end trace coverage. Dependabot, code-scanning and secret-scanning open alerts are all zero; pnpm audit finds no known vulnerabilities."
+  "2026-10-04T14:09:08.530Z","harness:codex","Both final owner-linked test executions are recorded through the CLI; the real schedule.deadline case and schedule/artifact receipt assertions pass. Closure records the implemented behavior and observed local acceptance; exact final-head hosted 100-percent source coverage and all required checks remain merge prerequisites. Historical status, semantic documentation debt, provider quota limits, trace completeness and immutable daily publication are retained as distinct evidence boundaries."
+  "2026-10-04T14:32:15.741Z","harness:codex","Greptile P2 accepted: a legacy dependency can have no created_at, so timestamp presence is not a valid receipt-completeness proof. Add a real timestamp-free persisted-row regression first; receipts must instead disclose only attribution actually removed by the selected projection. Remove the narrow timestamp-helper fixtures, which enforced the wrong premise. No new duplicate owner is needed; the canonical owners are reopened and claimed atomically before implementation."
+  "2026-10-04T14:38:06.056Z","harness:codex","Legacy TDD is red before correction in all three real persisted variants: identity/kind only, author without timestamp, and source kind without timestamp. The same regression reads complete stored rows under full/depth-full/bare and item-prefixed dependency selectors. Correction registers a provenance omission only when the chosen projection actually removes stored attribution; no epoch, synthetic timestamp or provenance normalization is introduced."
+  "2026-10-04T14:56:00.960Z","harness:codex","Fourteen real control variants exceeded the existing safe-mode 240-second ceiling when run serially; the retained timeout also disrupted subsequent stdout capture. Keep that ceiling and all fourteen mutations/assertion checks. Each control already owns an independent disposable source root, tracker sandbox and build lease, so execute bounded pairs and preserve deterministic receipt order. This improves actual harness efficiency rather than lowering or bypassing admission."
+  "2026-10-04T15:10:14.955Z","harness:codex","Final review remediation: reproduced three real persisted legacy dependency variants (identity/kind only, author without timestamp, and source_kind without timestamp) before fixing the omission decision. Default reads announce only attributes actually withheld; --full and explicit dependency selectors retain exact stored rows without a false restoration loop or invented timestamps. Five existing persistence assertions remain unchanged and now explicitly request complete dependency evidence. All fourteen independent source-defect controls pass: safe 213330 ms and negative 193112 ms, with the existing 240-second mode and 120-second child limits unchanged. The packed consumer passes 17 CLI operations and 4 SDK reads on each of Node and Bun plus npx/bunx; strict history validates before the deliberately rewritten legacy fixture. Packed payload is 19911486 bytes, 1750 files, zero source maps; source/tarball/installed CLI and SDK hashes and lockfile integrity agree. Typechecking, ESLint, static quality, structural docstrings, SDK/contract snapshots and 32 token surfaces pass. Final hosted whole-source coverage and bot review remain merge prerequisites, not local claims."
+  "2026-10-04T15:36:38.993Z","harness:codex","Greptile full-depth/fields recurrence reproduced by extending the existing real persisted legacy fixture: untimestamped author and source_kind cases fail before correction, while identity-only rows remain correctly silent. Field selection now takes precedence when deciding whether provenance was actually withheld. The same fixture verifies bare and item-prefixed narrow selectors, and full-depth explicit dependency restoration. Focused 45-case suite passes after the correction; the existing schedule.deadline case now explicitly asserts the schedule facet is not falsely omitted. Fifteen independent source-defect controls are running with original budgets unchanged."
+  "2026-10-04T15:47:03.598Z","harness:codex","Control-budget evidence: fifteen controls with synchronous children exceeded both unchanged 240-second mode budgets (240688 ms safe, 244072 ms negative). Preserve that failed evidence. The shared isolated helper now uses the installed Node execFile contract to run at most two independent child checkouts concurrently; normal exits zero/one remain the only verdicts, infrastructure/timeouts/signals/output overflow reject, and the 120-second child limit, 4 MiB output bound, exact mutant match, selected-test assertion, source isolation and owned cleanup remain intact. Node/Bun packaged acceptance passes 18 CLI operations and five SDK reads, with the original SDK-provided omission receipt asserted directly rather than recomputing materiality on an already projected clone."
+  "2026-10-04T15:53:27.788Z","harness:codex","Final recurrence validation: all fifteen independent safe controls pass (160902 ms), and all fifteen real source-defect controls fail their behavior assertions as required (161411 ms). All three controller tests pass without changing either the 240-second mode or 120-second child budget. Static repository assurance, installed API types, ESLint, TypeScript targets, structural docstrings, public SDK/contract snapshots and canonical token limits pass. Packed Node and Bun each pass 18 CLI operations and five public SDK reads, npx/bunx and strict history before the deliberate legacy fixture; archive is 19911742 bytes, 1750 files, zero maps, and built/archive/installed hashes and integrity agree. Previous hosted head has every one of 763 source rows at 100/100/100/100; fresh final-head coverage and full review remain required before merge."
+  "2026-10-04T16:30:52.736Z","harness:codex","Final CI recurrence: all 9710 executed Linux tests passed, but exact coverage and Codecov identified untested infrastructure-refusal paths in the asynchronous helper. Three real owned-child signal/retention fixtures fail before the cleanup correction; actual runner exit two and invalid source premise prove refusal and registration release. The helper now registers bounded asynchronous shutdown, waits for child closure before disposal, and retains roots on failed shutdown. Paired controls settle every sibling before propagating failure. Windows hit its unchanged 12-minute job timeout rather than a source assertion: all fifteen safe controls eventually printed passing verdicts. Remove redundant dist copies from these source/API and self-created runtime fixtures while retaining all fifteen controls, 240-second modes, 120-second children and original selected assertions."
+  "2026-10-04T16:45:38.739Z","harness:codex","Verification correction: the first artifact-trimming baseline failed because three governance controls invoke createTestItem through the real compiled CLI. Their dist artifacts are now preserved after full caller inspection; the other twelve controls do not need dist. The unchanged fifteen positive controls and fifteen real source-defect controls pass (122959 ms and 125071 ms respectively), with all original assertions and timeouts retained. Five isolated-runner tests also pass after three actual SIGTERM regressions failed before the fix, including a child that ignores shutdown and requires its checkout to remain intact until exit. No source or script coverage denominator was excluded."
+  "2026-10-04T16:46:59.545Z","harness:codex","Final linked verification: both schema-isolated commands passed and their immutable test run was recorded by pm: 45 query/projection/get tests plus 5 real isolated-child ownership tests. The source checkout and global tracker were never exposed to either linked test (zero sandbox items, no context mismatch). The shutdown timeout test intentionally retains the checkout while its child remains alive, then confirms disposal after the child closes; this diagnostic is expected evidence rather than an infrastructure failure."
+  "2026-10-04T17:05:52.190Z","harness:codex","CodeRabbit full review of 65dedb748 identified a valid test-fixture ordering race: ready.json was published before the child installed its SIGTERM handler. The marker is now atomically published after handler registration, so parent permission to signal has a real readiness boundary. All five existing real child-ownership tests passed through the linked schema-isolated command and ESLint passed. Production source and regression-control logic are unchanged. On source head 65dedb748 all mandatory hosted checks passed, Windows completed in 7 minutes 45 seconds within the original 12-minute budget, and all 763 executable coverage rows including release scripts had zero uncovered counts at 100/100/100/100; the suite passed 9715 tests with two Windows-only Linux skips. The final reviewed head must repeat all hosted admission gates; no stale-head result is substituted."
+notes[1]{created_at,author,text}:
+  "2026-10-04T14:04:48.939Z","harness:codex","Acceptance boundaries: schedule.deadline is selected and checked directly in the shared table; reminders/events inclusion is checked independently. Dependency attribution receives its own material omission group and explicit restoration, with unknown-result malformed-row coverage at the generic receipt boundary. Structural/exported/member source documentation gates pass; the pre-existing semantic filler inventory remains 4131 across 204 files under pm-dvwm, and is not claimed remediated by this delivery."
+learnings[3]{created_at,author,text}:
+  "2026-10-04T13:07:24.187Z","harness:codex","Omission receipts must inspect emitted aliases rather than only original metadata keys. An empty unselected linked placeholder proves envelope shape, not returned content. Mutation controls should assert the entire public outcome so an independent defensive exception cannot accidentally substitute for the intended behavioral failure."
+  "2026-10-04T15:52:14.716Z","harness:codex","Projection materiality must follow the final emitted selection: full depth cannot certify attributes that an explicit field list still removes. Extend real persisted fixtures across precedence combinations and assert the SDK-provided receipt after client projection. Independent source-defect controls can share bounded scheduling only when each retains its own checkout, tracker roots and build lease; asynchronous execFile preserves timeout/output/error contracts while allowing the existing pairs to overlap actual child execution."
+  "2026-10-04T16:45:42.956Z","harness:codex","Inspect complete fixture and caller implementations before trimming isolated test artifacts. Preserve dist for real CLI consumers and omit it only for source-only controls; reducing thirty full artifact copies to six cuts this staging work by 80 percent without changing the tested behaviors, assertions, or timeout budgets."
+files[8]:
+  - path: scripts/release/agent-evidence-consistency-control.mjs
+    scope: project
+  - path: scripts/release/isolated-regression-control.mjs
+    scope: project
+  - path: src/sdk/output-projection.ts
+    scope: project
+    note: Derive inclusion from rendered schedule members
+  - path: src/sdk/query/get.ts
+    scope: project
+  - path: tests/unit/regressions/actionable-get-receipts.spec.ts
+    scope: project
+    note: Real emitted and withheld schedule evidence
+  - path: tests/unit/scripts/agent-evidence-consistency-control.spec.ts
+    scope: project
+  - path: tests/unit/scripts/isolated-regression-control.spec.ts
+    scope: project
+  - path: tests/unit/sdk/output-projection.spec.ts
+    scope: project
+    note: Unknown-result provenance receipt boundary with malformed and complete rows
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,300,"harness:codex","2026-10-04T11:58:35.799Z",local_mutation,fix/actionable-blocker-and-schedule-read-receipts
+  node scripts/run-tests.mjs test -- tests/unit/scripts/isolated-regression-control.spec.ts,project,120,"harness:codex","2026-10-04T16:34:45.769Z",local_mutation,fix/actionable-blocker-and-schedule-read-receipts
+test_runs[5]:
+  - run_id: test-local-mutwbjgj-afzttr
+    kind: test
+    status: passed
+    started_at: "2026-10-04T14:07:40.201Z"
+    finished_at: "2026-10-04T14:08:05.443Z"
+    recorded_at: "2026-10-04T14:08:05.443Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mutyjj6i-eug0hk
+    kind: test
+    status: passed
+    started_at: "2026-10-04T15:09:54.053Z"
+    finished_at: "2026-10-04T15:10:17.561Z"
+    recorded_at: "2026-10-04T15:10:17.561Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muu02hev-qdhcai
+    kind: test
+    status: passed
+    started_at: "2026-10-04T15:52:29.820Z"
+    finished_at: "2026-10-04T15:53:01.351Z"
+    recorded_at: "2026-10-04T15:53:01.351Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muu1z9ub-vvj5kl
+    kind: test
+    status: passed
+    started_at: "2026-10-04T16:45:47.467Z"
+    finished_at: "2026-10-04T16:46:30.803Z"
+    recorded_at: "2026-10-04T16:46:30.803Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/isolated-regression-control.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muu2luv3-wbqjth
+    kind: test
+    status: passed
+    started_at: "2026-10-04T17:03:52.906Z"
+    finished_at: "2026-10-04T17:04:04.479Z"
+    recorded_at: "2026-10-04T17:04:04.479Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/isolated-regression-control.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/GET_READ_EVIDENCE.md,project
+  docs/README.md,project
+close_reason: Completed read-receipt and owned-runner fixes with signal-ready fixture ordering in PR #1395.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/release/agent-evidence-consistency-control.mjs --negative-control
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts,node scripts/release/agent-evidence-consistency-control.mjs
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: unbrained
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1389\nReported version: 2026.10.4\n\nA material reminder or event rendered through the normalized schedule facet is still called omitted because the receipt inspects only top-level metadata keys. Derive inclusion from actual alias paths and preserve recovery for unselected members.\n\nThe complete public issue and its comments were read. This record is intake; the report is not independently reproduced or fixed yet. The completed predecessor pm-x1g5 remains shipped work and is not represented as an outstanding failure.\n\nAcceptance: Rendered reminders and events are never reported omitted; Narrow schedule selectors retain omissions for unselected material fields; Linked artifact aliases are measured independently; Standard brief full and selected field reads agree through SDK CLI and MCP."

@@ -134,7 +134,7 @@ describe("exact dependency removal contract", () => {
         },
         { path: context.pmPath },
       );
-      const remaining = await runGet("pm-holder", { path: context.pmPath });
+      const remaining = await runGet("pm-holder", { path: context.pmPath }, { fields: "dependencies" });
       expect(remaining.item.dependencies).toEqual([
         expect.objectContaining({
           id: "pm-target",
@@ -195,7 +195,7 @@ describe("exact dependency removal contract", () => {
       );
 
       expect(
-        (await runGet("pm-holder", { path: context.pmPath })).item.dependencies,
+        (await runGet("pm-holder", { path: context.pmPath }, { fields: "dependencies" })).item.dependencies,
       ).toEqual([
         expect.objectContaining({
           id: "pm-target",

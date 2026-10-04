@@ -2,7 +2,7 @@
 /**
  * @module scripts/release/agent-evidence-consistency-control
  *
- * Proves that the evidence regressions reject six real source defects using
+ * Proves that the evidence regressions reject fifteen real source defects using
  * disposable copies, leaving the checkout and production tracker untouched.
  */
 
@@ -12,20 +12,86 @@ import { runIsolatedRegressionControl } from "./isolated-regression-control.mjs"
 
 const cases = [
   {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "discloses only actually withheld attribution for timestamp-free legacy rows",
+    before: 'if ((!projection.fieldProjection && projection.full) || fieldsInclude(projection.fields, "dependencies")) return false;',
+    after: "void projection;",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "discloses only actually withheld attribution for timestamp-free legacy rows",
+    before: 'if ((!projection.fieldProjection && projection.full) || fieldsInclude(projection.fields, "dependencies")) return false;',
+    after: 'if (projection.full || fieldsInclude(projection.fields, "dependencies")) return false;',
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "resolves every declared blocker without certifying missing or external references",
+    before: "if (!full && item.dependencies !== undefined) {",
+    after: "if (false) {",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "canonicalizes short blocker references without double-counting their persisted full-ID edges",
+    before: "targets.set(id.toLowerCase(), loaded.document.metadata);",
+    after: "targets.set(located.id.toLowerCase(), loaded.document.metadata);",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "rejects a declared blocker whose file contains another item identity",
+    before: "if (loaded.document.metadata.id !== located.id) {",
+    after: "if (false) {",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "keeps nonportable legacy blocker text unresolved without reading outside item folders",
+    before: '!/^(?!\\.{1,2}$)[^/\\\\:\\0]+$/u.test(id) ||',
+    after: "false ||",
+  },
+  {
+    sourcePath: "src/sdk/query/get.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "resolves every declared blocker without certifying missing or external references",
+    before: "targets.set(id.toLowerCase(), loaded.document.metadata);",
+    after: "void loaded;",
+  },
+  {
+    sourcePath: "src/sdk/output-projection.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "declares only material schedule members withheld",
+    before: '((name === "reminders" || name === "events") &&\n      isRecord(result.schedule) && Object.hasOwn(result.schedule, name)) ||',
+    after: "false ||",
+  },
+  {
+    sourcePath: "src/sdk/output-projection.ts",
+    testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
+    testName: "distinguishes rendered linked artifacts from unselected placeholders",
+    before: '(["files", "tests", "docs"].includes(name) &&\n      isRecord(result.linked) && Array.isArray(result.linked[name]) &&\n      result.linked[name].length > 0)',
+    after: "false",
+  },
+  {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "rejects a reread redirected",
+    extraPaths: ["tests/helpers", "dist"],
     before: "if (document.metadata.id !== id) {",
     after: "if (false) {",
   },
   {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "reads the corpus cache once while rechecking multiple advanced items",
+    extraPaths: ["tests/helpers", "dist"],
     before: "const verified = await scanItemHistoryDrift(\n        pmRoot,\n        { ...document.metadata, body: document.body },\n      );",
     after: "const verified = await scanHistoryDrift(pmRoot, [{ ...document.metadata, body: document.body }]);",
   },
   {
     sourcePath: "src/sdk/governance/validate-history-drift.ts",
     testName: "rechecks an advanced source snapshot without accepting stable source corruption",
+    extraPaths: ["tests/helpers", "dist"],
     before: "await recheckItemHistoryDrift(pmRoot, drift);",
     after: "void pmRoot;",
   },
@@ -55,15 +121,20 @@ export async function runIfMain(filename = process.argv[1], args = process.argv.
   const negativeControl = args.includes("--negative-control");
   assert.ok(args.every((argument) => argument === "--negative-control"), "Only --negative-control is supported");
   const results = [];
-  for (const control of cases) {
-    const result = await runIsolatedRegressionControl({
-      testPath: "tests/unit/regressions/agent-evidence-consistency.spec.ts",
-      ...control,
-      extraPaths: ["tests/helpers", "dist"],
-    }, negativeControl);
-    assert.equal(result.exit_code, negativeControl ? 1 : 0, result.output);
-    if (negativeControl) assert.match(result.output, /AssertionError/, "A control must fail a behavior assertion");
-    results.push({ name: control.testName, exit_code: result.exit_code });
+  // Each control owns a disposable checkout and lease; bounded pairs avoid repeated startup latency without sharing mutated source.
+  for (let index = 0; index < cases.length; index += 2) {
+    const pending = cases.slice(index, index + 2).map(async (control) => {
+      const result = await runIsolatedRegressionControl({
+        testPath: "tests/unit/regressions/agent-evidence-consistency.spec.ts",
+        extraPaths: ["tests/helpers"],
+        ...control,
+      }, negativeControl);
+      assert.equal(result.exit_code, negativeControl ? 1 : 0, result.output);
+      if (negativeControl) assert.match(result.output, /AssertionError/, "A control must fail a behavior assertion");
+      return { name: control.testName, exit_code: result.exit_code };
+    });
+    const batch = await Promise.all(pending).finally(() => Promise.allSettled(pending));
+    results.push(...batch);
   }
   process.stdout.write(JSON.stringify({ negative_control: negativeControl, controls: results }) + "\n");
   process.exitCode = negativeControl ? 1 : 0;

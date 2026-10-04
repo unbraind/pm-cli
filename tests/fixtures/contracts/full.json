@@ -22717,7 +22717,8 @@
       "class": "conflict",
       "code": "item_identity_conflict",
       "emitting_commands": [
-        "*"
+        "*",
+        "get"
       ],
       "exit_code": 4,
       "meaning": "Item identity conflict condition.",
@@ -22725,7 +22726,8 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/governance/validate-history-drift.ts",
-        "sdk/merge/three-way.ts"
+        "sdk/merge/three-way.ts",
+        "sdk/query/get.ts"
       ],
       "stability": "provisional"
     },

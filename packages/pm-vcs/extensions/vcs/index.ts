@@ -357,14 +357,16 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && Boolean(value.trim());
 }
 
-function requiredChangesetRef(item: Partial<ItemMetadata>, id: string): string {
+/** Require a changeset reference from the selected SDK item projection without depending on unrelated edge attribution. */
+function requiredChangesetRef(item: GetResult["item"], id: string): string {
   if (!isNonEmptyString(item.vcs_ref))
     throw new TypeError(`vcs Changeset ${id} is missing vcs_ref`);
   return item.vcs_ref.trim();
 }
 
+/** Recognize this merge through its status, resolution and ref fields in any SDK detail projection. */
 function matchesCommittedChangeset(
-  item: Partial<ItemMetadata>,
+  item: GetResult["item"],
   refId: string,
   resolution: string,
 ): boolean {

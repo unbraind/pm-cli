@@ -378,7 +378,7 @@ describe("runBeadsImport", () => {
       expect(secondJson.item.description).toBe("");
       expect(secondJson.item.author).toBe("source-author");
 
-      const ninth = context.runCli(["get", "pm-legacy.9", "--json"], {
+      const ninth = context.runCli(["get", "pm-legacy.9", "--full", "--json"], {
         expectJson: true,
       });
       expect(ninth.code).toBe(0);
@@ -424,7 +424,7 @@ describe("runBeadsImport", () => {
       expect(eleventhJson.item.external_ref).toBe("EXT-ONLY");
       expect(eleventhJson.item.body).toBe("## External Reference\nEXT-ONLY");
 
-      const twelfth = context.runCli(["get", "pm-legacy.12", "--json"], {
+      const twelfth = context.runCli(["get", "pm-legacy.12", "--full", "--json"], {
         expectJson: true,
       });
       expect(twelfth.code).toBe(0);
@@ -446,7 +446,7 @@ describe("runBeadsImport", () => {
         },
       ]);
 
-      const thirteenth = context.runCli(["get", "pm-legacy.13", "--json"], {
+      const thirteenth = context.runCli(["get", "pm-legacy.13", "--full", "--json"], {
         expectJson: true,
       });
       expect(thirteenth.code).toBe(0);
@@ -727,20 +727,20 @@ describe("runBeadsImport", () => {
 
       await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
 
-      const kindlessJson = context.runCli(["get", "pm-kindless", "--json"], {
+      const kindlessJson = context.runCli(["get", "pm-kindless", "--full", "--json"], {
         expectJson: true,
       }).json as BeadsItemJson;
-      const childOfJson = context.runCli(["get", "pm-child-of", "--json"], {
+      const childOfJson = context.runCli(["get", "pm-child-of", "--full", "--json"], {
         expectJson: true,
       }).json as BeadsItemJson;
-      const blockedByJson = context.runCli(["get", "pm-blocked-by", "--json"], {
+      const blockedByJson = context.runCli(["get", "pm-blocked-by", "--full", "--json"], {
         expectJson: true,
       }).json as BeadsItemJson;
       const incidentFromJson = context.runCli(
-        ["get", "pm-incident-from", "--json"],
+        ["get", "pm-incident-from", "--full", "--json"],
         { expectJson: true },
       ).json as BeadsItemJson;
-      const relatedToJson = context.runCli(["get", "pm-related-to", "--json"], {
+      const relatedToJson = context.runCli(["get", "pm-related-to", "--full", "--json"], {
         expectJson: true,
       }).json as BeadsItemJson;
 
@@ -1161,7 +1161,7 @@ describe("runBeadsImport", () => {
       expect(result.ids.slice(0, 2)).toEqual(["clawd-01c8", "clawd-01c8.1"]);
       expect(result.ids).toHaveLength(3);
 
-      const imported = context.runCli(["get", "clawd-01c8", "--json"], {
+      const imported = context.runCli(["get", "clawd-01c8", "--full", "--json"], {
         expectJson: true,
       });
       expect(imported.code).toBe(0);

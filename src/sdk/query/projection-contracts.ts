@@ -70,6 +70,7 @@ const GET_ROOT_PROJECTION_FIELDS = [
   "claim_state",
   "children",
   "schedule",
+  "blockers",
 ] as const;
 const GET_LINKED_PROJECTION_FIELDS = [
   "linked.files",
