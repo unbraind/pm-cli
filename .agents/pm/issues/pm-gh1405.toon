@@ -1,0 +1,36 @@
+id: pm-gh1405
+title: "GH-1405: Settle proven abandoned plain-merge receipts without losing provenance"
+description: Reported plain git merge --abort leaves pending receipts that existing reconciliation cannot classify; reproduce the distinct lifecycle beyond shipped rebase-abort recovery.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-05T07:11:47.420Z"
+updated_at: "2026-10-05T07:11:55.051Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "A real isolated conflicting plain Git merge followed by abort demonstrates the reported lifecycle before any fix; Exact HEAD/index/item/history and inactive-operation proof authorizes explicit audited abandonment without deleting durable provenance; Applied merges, changed origins, active operations, concurrent mutations and interrupted persistence reject false settlement or remain retry-safe; Supported CLI recovery and health guidance distinguish abandoned receipts from unresolved applied merges and preserve public SDK parity"
+parent: pm-dj98
+risk: high
+confidence: medium
+severity: high
+environment: "Reporter: Linux, published 2026.10.5, isolated Git repository with installed PM merge drivers"
+repro_steps: "Follow GH-1405 divergent status branches, conflicting Git merge, git merge --abort, then inspect health and reconcile dry run; use disposable roots and retain before/after item, history, Git and receipt bytes."
+expected_result: "Proven aborted plain merges have safe explicit audited abandonment, while applied or changed operations remain pending and immutable durable evidence survives."
+actual_result: Reporter observes pending health failures and no_receipt_set_proves_snapshot after abort; independent reproduction and implementation remain pending.
+affected_version: 2026.10.5
+component: sdk/merge
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-466m0j,discovered_from,"2026-10-05T07:11:47.420Z","harness:codex","cli:create:dep",detected
+  pm-dj98,implements,"2026-10-05T07:11:47.420Z","harness:codex","cli:create:dep",detected
+  pm-g5sx,verifies,"2026-10-05T07:11:47.420Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-05T07:11:47.420Z","harness:codex","\"text=Duplicate check: complete strict all-status corpus contains 2887 items with zero omissions/unreadable rows; request-specific searches, current orientation/open/in-progress inventories and full live predecessors were read. No GH-1405 owner or plain-merge-abort recovery item exists. Closed pm-466m0j owns verified rebase-abort recovery and pm-g5sx owns the shipped semantic merge foundation. Keep both completed outcomes intact and link this distinct boundary through discovered_from/verifies/implements. Intake stays open and unclaimed; reported reproduction is not independently verified.\""
+files[4]{path,scope,note}:
+  src/sdk/merge/abandoned-receipts.ts,project,Existing restored-origin proof to extend only after real plain-merge reproduction
+  src/sdk/merge/receipt-operation.ts,project,Existing operation provenance boundary
+  src/sdk/merge/reconcile.ts,project,Supported explicit reconciliation boundary
+  tests/integration/receipt-operation-boundaries.integration.spec.ts,project,Existing real Git operation baseline; a new plain-merge regression is not claimed
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Preserve durable privacy-safe evidence and supported recovery contract
+body: "Source: https://github.com/unbraind/pm-cli/issues/1405\n\n## Summary\n\nOn **2026.10.5**, `git merge --abort` after a pm item-driver conflict leaves the repository permanently unhealthy, and the remediation that `pm health` recommends (`pm merge reconcile`) cannot clear it. #1202 fixed the `git rebase --abort` (restored-origin) variant; the plain merge-abort lifecycle still leaves pending receipts for a merge that never landed.\n\nMulti-agent workflows hit this constantly: an agent tries `git merge other-branch`, sees `CONFLICT`, aborts and rebases or asks for help. Afterwards every `pm health` gate in that clone is red.\n\n## Reproduction (fresh scratch repo, pm 2026.10.5, merge drivers installed by `pm init`)\n\n```sh\ngit init -b main && pm init --yes && git add -A && git commit -m init\npm create --title \"Shared item\" --type Task --description x   # -> pm-2rqw\ngit add -A && git commit -m item\ngit switch -c a\nPM_AUTHOR=agent-a pm update pm-2rqw --status in_progress --priority 1\ngit add -A && git commit -m a\ngit switch main && git switch -c b\nPM_AUTHOR=agent-b pm close pm-2rqw \"done in b\"\ngit add -A && git commit -m b\ngit switch main && git merge a && git merge b      # CONFLICT (content) in .agents/pm/tasks/pm-2rqw.toon (status)\ngit merge --abort\n```\n\n## Observed after the abort\n\n- The working tree and `HEAD` are back on `main`, and the item was never merged.\n- `git status` shows an untracked `.agents/pm/merge-receipts/<uuid>.json`; `.git/pm-merge-receipts/` keeps the clone-local copy.\n- `pm health --check-only` reports `ok: false` with `pending_merge_decisions` counting the aborted receipt (it climbs with every retry-and-abort: I reached 2 after one retry), `pending_merge_decision_items: [pm-2rqw]`, and `remediation_map.merge_decisions_unreviewed: \"pm merge reconcile --dry-run\"`.\n- `pm merge reconcile --dry-run` reports `ok: false`, `abandoned: 0`, `reconciled: 0`, and stream `pm-2rqw` `failed`: *\"Merge receipt evidence for pm-2rqw does not prove the exact item snapshot (no_receipt_set_proves_snapshot).\"* No documented command settles the receipt as abandoned.\n\n## Expected\n\nThe same settlement #1208 gives an aborted rebase: when the item at `HEAD` is byte-identical to the receipt's `ours` origin and no merge commit includes `theirs`, classify the receipt as **abandoned**. Health should then be green (or report it as abandoned and safe to discard), and `pm merge reconcile` should settle it. The untracked working-tree copy should be cleaned up, or at least named in the guidance.\n\n## Contrast: the completed merge works\n\nRe-running the same merge to completion (`git add .agents/pm && git commit`, then `pm merge reconcile`) yields `reconciled: 1` and `pm health` `ok: true`, so only the abort lifecycle is affected.\n\nRelated: #1202 (rebase variant, closed via #1208), #1390 (receipt-covered drift reported as unattributed).\n\n\nIntake boundary: this is the reporter's plain git-merge abort observation on published 2026.10.5, not an independently reproduced or fixed defect. The shipped GH-1202 owner pm-466m0j explicitly covers rebase-abort provenance and remains closed. This issue owns the distinct merge-abort lifecycle; preserve durable privacy-safe evidence and require actual isolated Git reproduction before implementation. Do not delete sidecars or force settlement merely to make health green."

@@ -6,10 +6,10 @@ status: open
 priority: 2
 tags[5]: concurrency,identity,merge,multi-agent,story
 created_at: "2026-07-25T12:32:19.634Z"
-updated_at: "2026-09-28T13:36:01.659Z"
+updated_at: "2026-10-05T07:11:59.296Z"
 author: "harness:claude-code"
 estimated_minutes: 300
-acceptance_criteria: "An end-to-end scenario runs multiple agents on divergent branches performing claim, work, evidence, and close, then merges in several orders and asserts the same final state; Every agent's history entries are present after merge with their own author, harness, and model provenance intact and no cross-author loss; Claims are respected while held and correctly released or reported as stale after merge, with no item left claimed by nobody yet unreleasable; Evidence links — files, docs, tests, comments, notes — survive merge with no silent drops, asserted by count and content; Concurrent non-contradictory work from different agents is all present after merge, and contradictory work resolves deterministically with the resolution recorded; The scenario runs at a fleet size large enough to exercise contention rather than as a two-agent illustration; A standalone claim refusal and next-item occupancy view expose the current holder, claim age, and last observed activity without requiring a branch merge; An explicit stale-claim policy defines the inactivity clock and threshold and conditionally permits takeover only when that policy is met, with active or too-recent claims refused without mutation and no implicit force override; A permitted conditional takeover records the previous holder, new holder, evaluated inactivity duration, and policy in immutable history, with real isolated scenarios for active, stale, released, and concurrently renewed claims"
+acceptance_criteria: "An end-to-end scenario runs multiple agents on divergent branches performing claim, work, evidence, and close, then merges in several orders and asserts the same final state; Every agent's history entries are present after merge with their own author, harness, and model provenance intact and no cross-author loss; Claims are respected while held and correctly released or reported as stale after merge, with no item left claimed by nobody yet unreleasable; Evidence links — files, docs, tests, comments, notes — survive merge with no silent drops, asserted by count and content; Concurrent non-contradictory work from different agents is all present after merge, and contradictory work resolves deterministically with the resolution recorded; The scenario runs at a fleet size large enough to exercise contention rather than as a two-agent illustration; A standalone claim refusal and next-item occupancy view expose the current holder, claim age, and last observed activity without requiring a branch merge; An explicit stale-claim policy defines the inactivity clock and threshold and conditionally permits takeover only when that policy is met, with active or too-recent claims refused without mutation and no implicit force override; A permitted conditional takeover records the previous holder, new holder, evaluated inactivity duration, and policy in immutable history, with real isolated scenarios for active, stale, released, and concurrently renewed claims; Cross-branch competing claims use an explicitly defined causal or fenced conflict policy, retain both histories and report typed winner/loser recovery rather than silent generic scalar selection, with both merge orders, release/renewal, equal timestamps and clock-skew controls"
 goal: project management = context management
 objective: State and verify what a single agent in a large fleet is entitled to expect across branch and merge
 value: "Composite guarantees fail at the seams between mechanisms, and no current item owns the seams"
@@ -19,7 +19,7 @@ parent: pm-dj98
 risk: medium
 confidence: 70
 expected_result: "Agents on divergent branches claim, work, record evidence and close, and after merging in any order every agent's history, provenance, claims and evidence links are intact."
-dependencies[15]:
+dependencies[16]:
   - id: pm-03pq3o
     kind: related
     created_at: "2026-07-25T12:32:19.634Z"
@@ -68,7 +68,18 @@ dependencies[15]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+  - id: pm-8t5x
+    kind: discovered_from
+    created_at: "2026-10-05T07:11:57.196Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[3]{created_at,author,text}:
   "2026-09-28T13:20:23.267Z","harness:codex","GitHub intake 2026-09-28: https://github.com/unbraind/pm-cli/issues/1336 reports ended-agent claims across nine repositories and two website items on published 2026.9.28. The requested improvements are claim age and last activity in refusals/next, an explicit conditional stale takeover policy, and auditable previous-holder/idle-duration history. Treat these as reported observations and proposed acceptance, not independently reproduced defects or permission to force ownership. Reuse this existing composite multi-agent story because its acceptance already requires claims to be respected, released, or reported stale without unreleasable ownership. Duplicate check covered the all-status corpus plus claim searches, including closed atomic-claim, conditional-claim, stale-health, and ownership-guidance foundations. No duplicate item or artificial graph edges created; existing implements/verifies/blocked_by lineage remains authoritative. This intake records evidence only; implementation remains open and unclaimed after release."
   "2026-09-28T13:36:00.556Z","harness:codex","PR #1339 Greptile review 4122702062 accepted: the existing merge-composition acceptance alone did not require the standalone behaviors reported in #1336. Added explicit acceptance for holder/age/activity diagnostics, conditional policy and race-safe refusal of active or renewed claims, and auditable previous/new holder plus inactivity/policy evidence. Existing merge-survival criteria remain intact. This changes acceptance ownership only, not runtime behavior or implementation status."
+  "2026-10-05T07:11:56.170Z","harness:codex","GitHub intake 2026-10-05: https://github.com/unbraind/pm-cli/issues/1406 reports divergent branch-local claims being resolved as generic assignee/claim_principal scalar conflicts by later document time, silently superseding the earlier claimant. Reuse this canonical composite claim/merge story: its existing criteria already require claim respect, deterministic recorded resolution and no cross-author loss across branch orders. Closed pm-8t5x proves same-workspace atomic claiming, not cross-branch fleet convergence, and remains shipped. The reporter proposes earliest-claim selection plus typed winner/loser diagnostics; do not assume unsynchronized wall clocks alone establish causal priority. Acceptance must define released/renewed/fenced claims, equal timestamps and clock skew, retain both histories, emit a typed contention receipt and actionable loser recovery, and demonstrate both merge orders with actual isolated Git before any source change. This is reported context, not independently reproduced or implemented work. Complete 2887-item all-status and request-specific duplicate checks found this existing acceptance owner; no duplicate item or force takeover is created. Status stays open and unclaimed."
+files[1]{path,scope,note}:
+  src/sdk/merge/driver.ts,project,Reported cross-branch claim conflict boundary; independent reproduction pending
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Explicit contention provenance and supported recovery
 body: ""
