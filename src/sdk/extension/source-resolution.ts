@@ -3,6 +3,7 @@
  *
  * Resolves install-source identity without executing package code.
  */
+import fs from "node:fs/promises";
 import {
   findInstalledNpmPackageCandidate,
   parseExtensionInstallSource,
@@ -12,7 +13,7 @@ import {
   resolveBundledExtensionAliasSource,
   resolveBundledPackageNpmName,
 } from "./bundled-catalog.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { isFileMissingError } from "../../core/fs/fs-utils.js";
 import type { ManagedExtensionRecord } from "./managed-state.js";
 
 /** Selected install-source identity. */
@@ -65,7 +66,13 @@ export interface ResolvedExtensionInstallSource {
 /** Reuse recorded registry identity for a missing bare managed name, preserving explicit local and bundled precedence. */
 async function resolveManagedNpmReinstall(source: InstallSource, entries: readonly ManagedExtensionRecord[]): Promise<InstallSource> {
   if (source.kind !== "local" || source.input.startsWith(".") || source.input.includes("\\") ||
-    (source.input.includes("/") && !/^@[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/u.test(source.input)) || await pathExists(source.absolute_path)) return source;
+    (source.input.includes("/") && !/^@[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/u.test(source.input))) return source;
+  try {
+    await fs.lstat(source.absolute_path);
+    return source;
+  } catch (error: unknown) {
+    if (!isFileMissingError(error)) throw error;
+  }
   const managed = entries.find((entry) => entry.source.kind === "npm" &&
     [entry.name, entry.directory, entry.source.package].includes(source.input.trim()));
   return managed?.source.package === undefined ? source : parseExtensionInstallSource(`npm:${managed.source.package}`, {});

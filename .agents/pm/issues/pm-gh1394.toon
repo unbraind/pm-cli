@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T12:45:13.586Z"
-updated_at: "2026-10-04T23:55:40.282Z"
-closed_at: "2026-10-04T23:55:39.249Z"
-completed_at: "2026-10-04T23:55:39.249Z"
+updated_at: "2026-10-05T02:26:30.372Z"
+closed_at: "2026-10-05T02:26:29.720Z"
+completed_at: "2026-10-05T02:26:29.720Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Owned-subtree replacement intent removes omitted raw keys under the SDK lock/history boundary; Preserve unrelated future fields; Preview accurately describes persisted replacement semantics; Real packed Node and Bun consumers reproduce and verify the intended contract.
@@ -19,24 +19,28 @@ why_now: The newly reported published-SDK reproduction should be triaged before 
 parent: pm-o2kc
 risk: medium
 confidence: medium
-resolution: Host-injected settings transactions support explicit validated canonical object ownership through replaceSubtrees while preserving unrelated future fields and existing audit semantics.
-expected_result: "Default callers preserve unknown fields; owned objects can remove obsolete raw keys without breaking previews, dry runs, lock-scoped writes or replay."
-actual_result: "Focused transaction regression, exact full-source coverage and fresh public-SDK Node/Bun acceptance prove preservation, removal, preview, inert dry-run history and retry callback suppression."
+resolution: "Expose explicit canonical owned-object replacement in host-injected SDK settings transactions, preserving unrelated sparse/future fields and lock/history/preview/dry-run/replay contracts. Validate every path segment and define own data properties for all selected writes."
+expected_result: "Explicit canonical owned-object replacement removes omitted raw keys while preserving unrelated future settings; previews, locks, dry runs and replay remain truthful; invalid paths fail without writes; all owned-key writes define own data properties."
+actual_result: "Existing 12 owned-replacement and seven preview regressions pass, alongside complete source coverage and fresh public SDK Node/Bun acceptance of raw-key removal, future-field preservation, inert dry-run history, canonical preview and replay callback suppression."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2sef82,discovered_from,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
   pm-2sef82,verifies,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
   pm-wtqltn,implements,"2026-10-04T12:45:13.586Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-04T12:45:13.586Z","harness:codex","Duplicate check: strict live all-status corpus contained 2879/2879 records with zero omissions. Exact GH-1394 and URL were absent; settings mutation/unknown-key/subtree searches and open/in-progress inventories were refreshed. Full relevant terminal predecessor metadata was read. This distinct report is open and unclaimed."
   "2026-10-04T18:20:40.085Z","harness:codex","Delivery scope: add explicit owned-subtree replacement to the host-injected SDK while retaining default preservation of sparse and future settings. Replacement must derive canonical bytes and preview under the existing audit lock, support inert dry runs/idempotent retries, and preserve unrelated settings. Real Node/Bun packed-consumer tests will prove the public contract."
   "2026-10-04T18:41:18.851Z","harness:codex","TDD evidence: new boundary regressions failed on the pre-change SDK. Implementation is SDK-owned and being verified together in the single owned-settings/schema-history/extension-freshness delivery. No new coverage ignores, denominator exclusions, or test-only production exports were added."
   "2026-10-04T19:06:30.768Z","harness:codex","Cross-project verification: strict all-status corpus read 2880/2880 items with zero omissions; after canonical GH-1398/1399 intake graph audit covers 2882 nodes and 14379 typed directed edges across ten kinds, zero missing/isolated/sparse subjects, zero ordering contradictions, and 100 percent active and terminal outcome reachability. Two informational legacy hierarchy findings are preserved. Current dependency audit and tracked-history-inclusive secret scan pass. Existing public v2026.10.4 passed the npm/npx/bunx verifier; scheduled run 37189787575 selected successful immutable Release 37172794001 and confirmed publication without another release. Live Sentry 14-day window has zero unresolved issues; telemetry gate reports 1.74 percent finish errors with zero missing error codes and current start/finish timestamps. Recent Sentry trace query is empty, so it is not claimed as new trace evidence."
   "2026-10-04T19:32:25.937Z","harness:codex","Packed consumer acceptance passed outside checkout ancestors under real npm/Node and Bun installations. Both engines imported only public SDK entrypoints and proved default unknown-field preservation, explicit owned-object replacement, dry-run byte/history purity, retry callback suppression, strict schema-history validation for project and global roots with zero inherited items, real sandbox drift failure, source-byte preservation, bare-help purity for tests/files/docs, real npm latest metadata, offline/read-only managed diagnostics including identical bytes and mtime, and bare managed npm reinstall. Temporary roots were cleaned; no host cache or security settings changed."
   "2026-10-04T23:55:37.741Z","harness:codex","Final local delivery: canonical serial source coverage passed 9760 tests across 774 files (only the existing Windows-only two-test file skipped), with exact statements 66784/66784, branches 51129/51129, functions 13795/13795 and lines 63651/63651. The final independent npm version table passed linked verification after two additional argument/channel controls; production behavior is unchanged since the coverage receipt. Complete static quality and typecheck pass. Fresh separate installed npm/Node and Bun consumers outside checkout ancestors pass owned-settings, strict schema history with genuine drift refusal, help purity, real npm latest, offline diagnostics and bare reinstall. Packed npx/bunx smoke passes. No gate, denominator, ignore, retry or complexity threshold was weakened. Live security has zero open Dependabot/code/secret alerts; required Sentry/telemetry gate passes, consented flush succeeds and recent production start/finish events are present. These are local candidate and current production observations; hosted exact-head review remains required."
+  "2026-10-05T00:22:33.205Z","harness:codex","Review round 1: CodeQL alerts 41/42 report dynamic prototype-setting sinks. Canonical path validation rejects all prototype segments, so no exploit is established by the scanner alone. Replace both dynamic assignments with own enumerable writable configurable data-property definitions, retain validation and existing unsafe-path controls, and require clean scanner re-evaluation rather than dismissal."
+  "2026-10-05T00:37:54.954Z","harness:codex","CodeQL review hardening: both parent and leaf settings writes now use Object.defineProperty with explicit own, enumerable, writable, configurable data descriptors. Existing canonical object/path validation continues to reject constructor, prototype and __proto__ segments. This removes setter-capable dynamic assignment without changing lock, preview, sparse-field ownership or immutable history behavior. Hosted CodeQL reevaluation remains required on the next head."
+  "2026-10-05T02:26:28.997Z","harness:codex","Review delivery verification passed the complete canonical suite: 9766 cases across 775 test files, with only the existing two Windows-only tests skipped locally. Exact source coverage remains 100/100/100/100: statements 66789/66789, branches 51130/51130, functions 13795/13795, lines 63655/63655. The earlier complete run retained the same exact coverage but failed one external npm-module prerequisite; that failed receipt is retained. Restoring actual npm module discovery only for the coverage process passes the unchanged regression and complete suite without source or gate changes. Complete static quality and fresh typecheck pass; separate real installed Node/Bun consumers outside checkout ancestors and nine-package npx/bunx smoke pass in their original clean environments. All four linked delivery test commands pass. No coverage exclusion, ignore, retry, complexity, dependency, docstring or security control was relaxed. First-round bot artifacts have targeted dispositions and usefulness reactions; valid local-entry and structural data-property findings are fixed, while byte-identical default baseline proof rejects the incorrect extra-history-write proposal. Exact-head hosted checks, CodeQL remediation and mandatory provider uploads remain the merge gate, not a claim from local results."
 notes[1]{created_at,author,text}:
   "2026-10-04T18:58:17.239Z","harness:codex","Decision: mutateWorkspaceSettings adds explicit replaceSubtrees for validated canonical object paths. Derive replacement bytes under the existing lock, preserve unknown fields outside owned objects, and materialize missing canonical ancestors for sparse inputs. Reuse dry-run, preview, replay and hook semantics; default callers retain preservation."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-10-04T18:58:21.779Z","harness:codex",A normalized complete-next tree cannot express removal of unknown raw keys. Require explicit subtree ownership; normalized previews describe canonical known settings while persisted unrelated future fields remain intact.
+  "2026-10-05T00:39:39.420Z","harness:codex",Validated dynamic settings keys still benefit from own data-property definitions. Object.defineProperty avoids setter/prototype mutation sinks while retaining canonical object ownership and independent unsafe-path tests.
 files[4]{path,scope}:
   sdk/public-surface.json,project
   src/core/extensions/extension-types.ts,project
@@ -44,13 +48,24 @@ files[4]{path,scope}:
   tests/unit/sdk/transactions/settings-owned-subtrees.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-owned-subtrees.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts,project,600,"harness:codex","2026-10-04T18:41:16.818Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-muu7vvoy-d6s9rf
     kind: test
     status: passed
     started_at: "2026-10-04T19:31:12.072Z"
     finished_at: "2026-10-04T19:31:50.194Z"
     recorded_at: "2026-10-04T19:31:50.194Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/settings-owned-subtrees.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muumo6k1-mw1att
+    kind: test
+    status: passed
+    started_at: "2026-10-05T02:25:33.041Z"
+    finished_at: "2026-10-05T02:25:45.265Z"
+    recorded_at: "2026-10-05T02:25:45.265Z"
     passed: 1
     failed: 0
     skipped: 0
@@ -64,7 +79,7 @@ docs[3]:
     scope: project
   - path: docs/SDK_CONFIGURATION_SAFETY.md
     scope: project
-close_reason: Implemented and locally verified in the combined SDK settings/history/freshness/help delivery; hosted checks and bot review remain the merge gate.
+close_reason: "Implemented and locally verified in the single combined SDK delivery; exact-head hosted review, security scans and mandatory uploads remain required before merge."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

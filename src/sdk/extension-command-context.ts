@@ -69,10 +69,14 @@ function replaceOwnedSettingsSubtrees(raw: string, next: PmSettings, paths: read
     for (const segment of segments.slice(0, -1)) {
       const value = destination[segment];
       canonicalParent = canonicalParent[segment] as Record<string, unknown>;
-      if (value === undefined) destination[segment] = structuredClone(canonicalParent);
+      if (value === undefined) Object.defineProperty(destination, segment, {
+        value: structuredClone(canonicalParent), enumerable: true, writable: true, configurable: true,
+      });
       destination = destination[segment] as Record<string, unknown>;
     }
-    destination[segments.at(-1)!] = source;
+    Object.defineProperty(destination, segments.at(-1)!, {
+      value: source, enumerable: true, writable: true, configurable: true,
+    });
   }
   return stableValueEquals(persisted, JSON.parse(raw)) ? raw : `${JSON.stringify(persisted, null, 2)}\n`;
 }

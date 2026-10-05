@@ -1,7 +1,7 @@
-import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
+import fs, { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { findInstalledNpmPackageCandidate } from "../../../src/sdk/extension/install-sources.js";
 import { resolveExtensionInstallSourceIdentity } from "../../../src/sdk/extension/source-resolution.js";
 import type { ManagedExtensionRecord } from "../../../src/sdk/extension/managed-state.js";
@@ -44,6 +44,16 @@ describe("extension install source identity", () => {
       await mkdir(path.join(tempRoot, entry.name));
       process.chdir(tempRoot);
       expect((await resolveExtensionInstallSourceIdentity(entry.name, undefined, undefined, [entry])).installSource.kind).toBe("local");
+      const danglingName = "dangling-managed-fixture";
+      await symlink(path.join(tempRoot, "absent-target"), path.join(tempRoot, danglingName), "junction");
+      expect((await resolveExtensionInstallSourceIdentity(danglingName, undefined, undefined, [{ ...entry, name: danglingName }])).installSource.kind).toBe("local");
+      const accessFailure = Object.assign(new Error("Local entry cannot be inspected"), { code: "EACCES" });
+      const probe = vi.spyOn(fs, "lstat").mockRejectedValueOnce(accessFailure);
+      try {
+        await expect(resolveExtensionInstallSourceIdentity("inaccessible-managed-fixture", undefined, undefined, [{ ...entry, name: "inaccessible-managed-fixture" }])).rejects.toBe(accessFailure);
+      } finally {
+        probe.mockRestore();
+      }
     } finally {
       process.chdir(previousCwd);
     }

@@ -494,6 +494,18 @@ gh run list --workflow Release --limit 5
 gh run watch <run-id> --exit-status
 ```
 
+## Verified Coverage Uploads
+
+Tracked by [pm-2x67z9](../.agents/pm/issues/pm-2x67z9.toon). CI downloads the
+official Codecov CLI from an immutable GitHub release and checks the reviewed
+SHA-256 before making it executable. Both coverage and test-result uploads
+require that verifier to succeed and retain mandatory upload failures plus
+the exact PR-head identity. Failed tests can still upload diagnostic reports
+after successful verification. Update the release URL and digest together;
+verify the official artifact and its adoption age before changing those pins.
+The shell regression executes the real checksum with approved and corrupt
+download fixtures; a failed check must prevent executable permission and uploads.
+
 ## Post-Release Verification
 
 Use the [rolling reliability report](RELEASE_RELIABILITY.md) as well as the
