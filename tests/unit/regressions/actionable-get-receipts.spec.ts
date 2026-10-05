@@ -4,10 +4,11 @@
  * Verifies current declared blocker state and truthful schedule disclosure
  * through real SDK mutations and item reads in disposable trackers.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { encode } from "@toon-format/toon";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { syncBuiltinESMExports } from "node:module";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
 import { runGet } from "../../../src/sdk/query/get.js";
 import { resolveOutputOmissionReceipt } from "../../../src/sdk/output-projection.js";
@@ -56,8 +57,26 @@ describe("actionable get receipts", () => {
       const unrelated = await runCreate({ title: "Unrelated completed work", type: "Task", status: "closed", closeReason: "Delivered" }, global);
       const created = await runCreate({ title: "Dependent work", type: "Task", blockedBy: blocker.item.id }, global);
       await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id}.toon`));
+      // Native case aliases share one destination; case-sensitive hosts retain colliding leaves.
       await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id.toUpperCase()}.toon`));
+      await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `Pm-${blocker.item.id.slice(3)}.toon`));
+      const itemPath = path.join(pmPath, "tasks", `${created.item.id}.toon`);
+      const historyPath = path.join(pmPath, "history", `${created.item.id}.jsonl`);
+      const before = await Promise.all([fs.readFile(itemPath, "utf8"), fs.readFile(historyPath, "utf8")]);
+      const failure = Object.assign(new Error("Directory access denied"), { code: "EACCES" });
+      const directories = vi.spyOn(fs, "readdir").mockRejectedValueOnce(failure);
+      syncBuiltinESMExports();
+      try {
+        await expect(runGet(created.item.id, global)).rejects.toMatchObject({
+          name: "PmCliError", exitCode: 1, context: { code: "blocker_identity_read_failed" }, cause: failure,
+        });
+        expect(directories).toHaveBeenCalledWith(path.join(pmPath, "tasks"));
+      } finally {
+        directories.mockRestore();
+        syncBuiltinESMExports();
+      }
       await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+      expect(await Promise.all([fs.readFile(itemPath, "utf8"), fs.readFile(historyPath, "utf8")])).toEqual(before);
     });
   });
   it("keeps nonportable legacy blocker text unresolved without reading outside item folders", async () => {

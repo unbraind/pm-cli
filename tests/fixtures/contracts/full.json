@@ -20191,6 +20191,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "blocker_identity_read_failed",
+      "class": "generic_failure",
+      "code": "blocker_identity_read_failed",
+      "emitting_commands": [
+        "get"
+      ],
+      "exit_code": 1,
+      "meaning": "Blocker identity read failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/query/get.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "body_file_conflicts_with_body",
       "class": "usage",
       "code": "body_file_conflicts_with_body",

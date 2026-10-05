@@ -35343,6 +35343,7 @@
     "append_empty_body",
     "assurance_registry_invalid",
     "bare_comma_entry_ambiguous",
+    "blocker_identity_read_failed",
     "body_file_conflicts_with_body",
     "body_file_missing_path",
     "body_file_unreadable",

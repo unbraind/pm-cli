@@ -28,6 +28,7 @@ import {
 import { readHistoryEntries } from "../history-read.js";
 import { renderPmCommand } from "../command-line.js";
 import { recordContextUsageTouches } from "../context-usage.js";
+import { createPmCliExpectedError } from "../errors.js";
 import {
   collectBlockedByIds,
   resolveItemBlockers,
@@ -744,13 +745,19 @@ function canonicalizeDeclaredBlockers(
   return [...canonical.values()];
 }
 
-/** Recover a mismatched filesystem probe's physical leaf casing, preferring an exact filename and leaving embedded identity validation to the caller. */
+/** Recover mismatched probe casing with exact-leaf precedence and stable ties; retain directory failures as typed recovery with their original cause before caller identity validation. */
 async function resolvePhysicalBlockerId(itemPath: string, probedId: string, embeddedId: string): Promise<string> {
   if (probedId === embeddedId) return probedId;
   const filename = path.basename(itemPath);
-  const physicalIds = (await readdir(path.dirname(itemPath)))
+  const physicalIds = (await readdir(path.dirname(itemPath)).catch((error: unknown) => {
+    throw createPmCliExpectedError("Cannot verify the blocker's physical file identity", {
+      exitCode: EXIT_CODE.GENERIC_FAILURE,
+      context: { code: "blocker_identity_read_failed", required: "Restore access to the blocker item directory, then retry the item read." },
+      cause: error,
+    });
+  }))
     .filter((name) => name.toLowerCase() === filename.toLowerCase())
-    .sort((left, right) => Number(right === filename) - Number(left === filename))
+    .sort((left, right) => Number(right === filename) - Number(left === filename) || left.localeCompare(right))
     .map((name) => path.parse(name).name);
   return [...physicalIds, probedId][0]!;
 }
