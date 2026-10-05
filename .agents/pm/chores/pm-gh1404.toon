@@ -1,0 +1,46 @@
+id: pm-gh1404
+title: Adopt CodeQL 4.38.2 and TruffleHog 3.97.9 immutable scanner updates
+description: Integrate newly arrived Dependabot PR 1404 into the existing SDK settings and freshness delivery PR 1402. Update three CodeQL subaction references in lockstep and the TruffleHog scanner pin after independently verifying official tags and more than seven full days of release age. Preserve mandatory scanner behavior and workflow contracts.
+type: Chore
+status: in_progress
+priority: 2
+tags[3]: "area:ci",dependencies,security
+created_at: "2026-10-05T04:50:59.751Z"
+updated_at: "2026-10-05T05:06:08.776Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#741707f79dc42e212a7a9958"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Official tag SHAs and publication times are verified; three CodeQL subactions remain in lockstep; unchanged workflow contracts and static quality pass; new-head hosted security and exact full coverage pass; PR 1404 is linked to this canonical owner and closed as superseded only after the replacement lands
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: The exact upstream immutable scanner pins are adopted together and required CodeQL and TruffleHog scans remain successful without weakening permissions or secret detection.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2x67z9,discovered_from,"2026-10-05T04:50:59.751Z","harness:codex","cli:create:dep",detected
+  pm-mwdout,verifies,"2026-10-05T04:50:59.751Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-10-05T04:50:59.751Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-05T04:50:59.751Z","harness:codex","Duplicate-check receipt: all-status live corpus read returned 2885 of 2885 items with zero omissions and no unreadable records; exact 4.38.2 and 3.97.9 and pull/1404 searches found no existing owner; open and in-progress lists checked before create. Closed historical action-refresh lineage was fully read and remains completed. Official CodeQL v4.38.2 published 2026-09-24T10:27:53Z and TruffleHog v3.97.9 published 2026-09-24T09:11:59Z; both exceed the unchanged seven-day adoption window. GitHub report: https://github.com/unbraind/pm-cli/pull/1404."
+  "2026-10-05T04:53:57.932Z","harness:codex",Official annotated CodeQL tag v4.38.2 dereferences to commit 2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2; the TruffleHog v3.97.9 lightweight tag resolves to 4dd8831c5f12599465d4d45c3c447b4018a34c85. Fully read all three affected workflows before changing exactly four uses lines. All existing action inputs and least-privilege permissions are preserved. The unchanged workflow regression suite and complete static gate verify admission; no artificial pin-specific test or threshold change is added. PR 1404 will be superseded only after replacement PR 1402 lands.
+files[3]{path,scope}:
+  .github/workflows/codeql.yml,project
+  .github/workflows/scorecard.yml,project
+  .github/workflows/security.yml,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,"harness:codex","2026-10-05T04:53:56.477Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
+test_runs[1]:
+  - run_id: test-local-muuseg3l-citksz
+    kind: test
+    status: passed
+    started_at: "2026-10-05T05:05:57.708Z"
+    finished_at: "2026-10-05T05:06:08.769Z"
+    recorded_at: "2026-10-05T05:06:08.769Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+body: ""

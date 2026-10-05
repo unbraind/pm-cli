@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[3]: dependencies,sentry,telemetry
 created_at: "2026-09-27T21:20:34.332Z"
-updated_at: "2026-10-02T20:59:17.260Z"
+updated_at: "2026-10-05T04:51:55.774Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Revalidate the exact upstream publication timestamp and seven-day cooldown before choosing an eligible Sentry 11 version; Demonstrate Node 22/24/26 installed-consumer compatibility, telemetry delivery and expected-error classification with positive and negative controls; Pass static, exact coverage and release gates and document rollback to the prior supported major without losing queued telemetry"
@@ -17,9 +17,10 @@ expected_result: "Adopt an eligible Sentry 11 release only after public SDK, sup
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-u9qqip,discovered_from,"2026-09-27T21:20:34.332Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-09-28T05:51:10.872Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-09-27T21:20:34.332Z","harness:codex","Duplicate check: all-status searches for Sentry 11 major migration and Sentry 11.0.0 found historical closed 10.x refresh and telemetry items but no major-upgrade owner. Registry metadata: @sentry/node latest 11.0.0, released 2026-09-23T12:38:30.858Z; engine range includes supported Node >=22.18.0. This item is open and unclaimed until the seven-day release-age policy allows adoption."
   "2026-10-02T20:59:17.260Z","harness:codex","Live October 2 census: latest Sentry Node is 11.2.0, published October 1 at 11:12:16 UTC and below the seven-day adoption window. The older 11.0 line may now meet release age, but major adoption still needs this owner compatibility, installed-consumer and actual telemetry proof; it is not claimed complete or actively worked in PR 1375. Preserve this canonical open migration rather than importing a new duplicate."
+  "2026-10-05T04:51:55.774Z","harness:codex","New GitHub intake 2026-10-05: https://github.com/unbraind/pm-cli/pull/1403 proposes Sentry Node 11.0.0 from 10.75.1. Reused this canonical open migration after full live metadata and all-status intake. Registry confirms 11.0.0 release 2026-09-23T12:38:30.858Z is old enough; latest 11.4.0 published 2026-10-02T16:37:53.815Z remains below seven days. Age is not the missing acceptance for 11.0.0: its documented breaking instrumentation/configuration and more permissive data-collection defaults still require the owner privacy classification and real Node/Bun/telemetry migration proof. Current production Sentry has zero recent critical/high issues and required telemetry passes. PR 1403 is closed with a canonical PM link as deferred major migration rather than silently installed or falsely claimed incompatible. This owner remains open and unclaimed; no ignore rule or security/cooldown bypass is added."
 notes[1]{created_at,author,text,edited_at}:
   "2026-09-28T05:51:10.872Z","harness:codex","Readiness repair 2026-09-28: the complete active census found this as the sole item lacking acceptance criteria, estimate, risk, confidence and expected result. The 240-minute estimate covers compatibility investigation and verification, not a promised delivery date. Earliest adoption remains seven complete days after the recorded upstream release (2026-09-30T12:38:30.858Z), with live registry revalidation before dependency changes.","2026-09-28T07:22:06.053Z"
 body: ""

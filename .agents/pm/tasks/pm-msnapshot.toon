@@ -1,0 +1,25 @@
+id: pm-msnapshot
+title: Specify atomic managed-package snapshots and reinstall identity revalidation
+description: "Follow up the nonblocking architecture proposal in PR 1402: inspect concurrent managed-state publication and define SDK-owned complete-snapshot reads plus locked reinstall identity revalidation. Current managed-state writes use direct writeFile and readers reject malformed JSON. This is a proposed consistency enhancement; no reproducible security bypass or blocking defect is established."
+type: Task
+status: open
+priority: 3
+tags[4]: architecture,"area:extensions","area:sdk",concurrency
+created_at: "2026-10-05T05:01:07.437Z"
+updated_at: "2026-10-05T05:01:07.437Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: First reproduce and calibrate actual reader/writer and pre-lock identity interleavings using real processes; define atomic publication and bounded failure/refusal contracts through existing SDK owners; retain permissions and unknown-field/schema behavior; prove positive and negative race behavior with efficient real-process tests; preserve offline refusal and managed installation bytes on diagnostics
+parent: pm-doxj
+risk: medium
+confidence: medium
+expected_result: Concurrent package operations expose complete old or new managed-state snapshots and verify the selected recorded reinstall identity at the installation transaction boundary while read-only diagnostics remain inert.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1392,discovered_from,"2026-10-05T05:01:07.437Z","harness:codex","cli:create:dep",detected
+  pm-grst,verifies,"2026-10-05T05:01:07.437Z","harness:codex","cli:create:dep",detected
+  pm-x6jf,implements,"2026-10-05T05:01:07.437Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-05T05:01:07.437Z","harness:codex","Duplicate-check: strict all-status live corpus 2885 of 2885 items with zero omissions contained no atomic managed-state or snapshot/revalidation owner; focused full managed-state concurrency search and refreshed open/in-progress lists were checked; the independently created scanner owner is distinct. Fully read closed SDK lifecycle and managed-state foundation metadata and current managed-state source; those shipped foundations stay closed. CodeRabbit fifth full review found no actionable blocking findings but proposed stronger concurrent publication and reinstall snapshot semantics. Keep this proposed enhancement open and unclaimed; do not misclassify it as a demonstrated vulnerability."
+files[1]{path,scope}:
+  src/sdk/extension/managed-state.ts,project
+body: ""
