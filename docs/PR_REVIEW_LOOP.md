@@ -1,6 +1,6 @@
 # Pull Request Review Loop
 
-Trackers: [pm-hq28](../.agents/pm/tasks/pm-hq28.toon), [pm-cp5pbo](../.agents/pm/tasks/pm-cp5pbo.toon), [pm-8we38i](../.agents/pm/issues/pm-8we38i.toon)
+Trackers: [pm-hq28](../.agents/pm/tasks/pm-hq28.toon), [pm-0fxa](../.agents/pm/tasks/pm-0fxa.toon), [pm-zpwfzy](../.agents/pm/issues/pm-zpwfzy.toon), [pm-cp5pbo](../.agents/pm/tasks/pm-cp5pbo.toon), [pm-8we38i](../.agents/pm/issues/pm-8we38i.toon)
 
 Use `scripts/reviews/pr-review-loop.mjs` to inventory every GitHub pull-request
 conversation surface before deciding that review is complete. The inventory includes
@@ -46,10 +46,27 @@ reply thread. Legacy calls without the flag retain their existing behavior.
 After every push or reviewer retrigger, run `watch`. It delegates waiting to
 `gh pr checks --watch`, because reviewer agents report completion through GitHub
 checks, and only fetches the complete conversation inventory after those checks
-finish. A failed reviewer check is still a completed review signal: `watch` records
+finish. Native watch success covers emitted checks only: a required provider may
+never emit its context. The helper unions classic branch-protection requirements
+with all effective ruleset requirements, compares those names with the complete
+head rollup, and records `mergeReadiness.requiredContexts`, `missingContexts`, and
+GitHub's `mergeStateStatus`. An attempt is `passed` only when no required name is
+missing and GitHub reports `CLEAN`. GitHub's merge state also retains enforcement
+of expected check publishers and other merge requirements; a matching name alone
+does not establish that its expected app passed. Missing contexts and blocked or
+unknown merge state remain `incomplete`; native watch failures remain `failed`.
+Superseded attempts never certify readiness. Unavailable policy or status reads
+fail visibly instead of certifying readiness. Successful
+coverage uploads alone cannot certify a downstream provider's patch status.
+The direct `watch` command emits its complete JSON receipt before exiting `1`
+for `incomplete` or `failed`, and exits `0` only for `passed`. Shell automation
+can therefore stop on the exit status while retaining all findings for triage.
+
+A failed reviewer check is still a completed review signal: `watch` records
 the failed outcome and returns all findings instead of aborting before inventory.
-If the PR head changes while checks are running, the helper automatically watches
-the new head, up to three consecutive attempts, before returning exact-head state.
+If the PR head or target branch changes during the wait or final readiness read,
+the helper watches the new target, up to three consecutive attempts, before
+returning exact-head state. It does not poll an absent required provider status.
 A review pass is complete only when every bot surface in that inventory has been
 handled appropriately, every actionable thread is resolved, and required checks
 have completed successfully.

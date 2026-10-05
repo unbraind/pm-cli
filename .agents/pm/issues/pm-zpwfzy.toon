@@ -1,0 +1,62 @@
+id: pm-zpwfzy
+title: PR watch reports success when a mandatory check never reports
+description: "Native gh pr checks --watch succeeds when all emitted checks finish, even if a mandatory provider never emits its context. The existing helper then reported passed and exited zero while GitHub was BLOCKED. Verify classic/effective-ruleset context presence and authoritative merge readiness, retain every review artifact, retry head/base races, and emit complete JSON before nonzero failed/incomplete exits. This is a distinct October correctness defect beyond the fulfilled July native-watch/thread-reply foundation."
+type: Issue
+status: closed
+priority: 1
+tags[3]: developer-experience,github,review-automation
+created_at: "2026-10-05T09:53:41.483Z"
+updated_at: "2026-10-05T09:56:44.262Z"
+closed_at: "2026-10-05T09:56:43.650Z"
+completed_at: "2026-10-05T09:56:43.650Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Missing mandatory contexts are reported by name and cannot yield passed even after native wait success; Classic and effective-ruleset contexts are unioned without weakening publisher enforcement or GitHub merge requirements; Head/base races invalidate observations and unavailable policy evidence fails visibly; Complete conversation JSON is emitted before exit 1 for incomplete or failed readiness and exit 0 only for passed readiness; Imported entrypoints remain inert and the original July changelog entry remains unchanged
+parent: pm-0fxa
+risk: medium
+confidence: high
+resolution: "Union classic and effective-ruleset requirements, report missing context names, require publisher-aware CLEAN merge state, retry head/base races, preserve failed-check and complete review inventory, and emit complete JSON before nonzero failure/incomplete exits. Preserve import purity and the original historical delivery attribution."
+expected_result: One native wait retains complete exact-head review inventory and can certify readiness only when all mandatory names are present and GitHub is CLEAN. Failure/incomplete receipts stop shell chaining after complete JSON emission.
+actual_result: "Both specific pre-fix TDD controls fail before the corresponding corrections; all 14 original focused cases and canonical linked run test-local-muv2qywe-ukjxe9 pass. Full source coverage passes 9766 cases / 775 files with exact 100/100/100/100. Source-static prefix, corrected nine-assertion graph gate and resumed record/mutation tail pass, with original failures retained; typecheck passes. Real copied Node/Bun commands retain complete JSON then exit 1 for failed/BLOCKED readiness; a real positive Node watch independently verifies all 26 contexts and CLEAN at genuine ninth head 2346f0d. The single-release metadata mistake is corrected through the CLI, leaving the July foundation original and this distinct defect Unreleased. Exact new-head full CI, bot reviews and merge remain separate required steps in the same PR 1402."
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0fxa,implements,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-2x67z9,discovered_from,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-2x67z9,verifies,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-8we38i,verifies,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-gh1392,verifies,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-gh1393,verifies,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-gh1394,verifies,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-gh1398,verifies,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+  pm-gh1404,verifies,"2026-10-05T09:53:41.483Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-05T09:53:41.483Z","harness:codex","text: Duplicate check: request-specific all-status search plus strict full corpus read covered 2888/2888 records with zero omissions; open/in-progress ownership views were also inspected. The only primary matching record was the temporarily broadened July foundation, whose original live release/title/description/resolution are restored before creating this distinct defect. The other matching audit-extraction record is unrelated to protected PR readiness. Earlier review-acknowledgement work and report uploads do not own absent-context certification or direct failure exits. Use this child issue as the sole October defect owner, preserve all earlier investigation history and reuse existing typed lineage. All implementation remains in PR https://github.com/unbraind/pm-cli/pull/1402."
+  "2026-10-05T09:55:40.242Z","harness:codex","Verification transferred to the distinct defect owner without changing the production fix or original test count: both specific TDD controls fail before their respective changes, all 14 original cases pass after correction, and complete local coverage passes 9766 cases / 775 files with exact 100/100/100/100. Real external Node and Bun watches preserve complete JSON before exit 1 for failed/BLOCKED readiness; a real positive Node watch independently certifies all 26 requirements at genuine ninth head 2346f0d. The source-static prefix and transport/import gates pass, five prose-only graph gaps were corrected by factual cohort verifies links, and record integrity / bounded mutation ratchet / typecheck pass in the resumed tail. Earlier failures remain preserved and are not relabeled as successful command exits. New-head complete hosted static/coverage and all bot reviews remain required before merge in the same PR 1402. The original July release record is now restored, so generated history must preserve its old entry and add only this distinct Unreleased fix."
+files[2]{path,scope,note}:
+  scripts/reviews/pr-review-loop.mjs,project,Check watcher and thread-only reply commands
+  tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,Review helper regression coverage
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,240,"harness:codex","2026-10-05T09:53:41.483Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
+test_runs[1]:
+  - run_id: test-local-muv2qywe-ukjxe9
+    kind: test
+    status: passed
+    started_at: "2026-10-05T09:55:40.934Z"
+    finished_at: "2026-10-05T09:55:49.166Z"
+    recorded_at: "2026-10-05T09:55:49.166Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/PR_REVIEW_LOOP.md,project,Document check-watching and GitHub reply-surface rules
+close_reason: "Implemented and locally verified absent-required-context and direct-exit correctness in PR 1402, preserving the original July foundation and changelog history."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: pr-review-required-context-completeness
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts
+  local_checks[3]: "pnpm quality:static",node scripts/run-tests.mjs coverage,pm test pm-zpwfzy --run --progress
+  hosted_checks[3]: Gates (coverage),Gates (static),Docs and Skills
+  owner: maintainer
+body: "The source correction, TDD failures, real Node/Bun acceptance and complete local coverage were initially investigated under the July foundation. Regeneration exposed an ownership mistake: pm-changelog documents one authoritative release window per item, so clearing the foundation release moved a historical entry. The original foundation is restored to its real July release and resolution; its immutable October investigation history remains preserved. This issue owns the new certification/exit defect and its Unreleased delivery in the same PR. No generator workaround or historical changelog edit is introduced. Original foundation and edited-feedback work remain shipped; the report-upload correction is a separate causal input. Exact new-head hosted CI and bot review remain mandatory before merge."

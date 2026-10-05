@@ -7,6 +7,7 @@
 - GH-1394: Define audited owned-subtree replacement for complete-next settings mutations ([pm-gh1394](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1394.toon))
 - GH-1393: Seed truthful schema-context settings history for linked tests ([pm-gh1393](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1393.toon))
 - GH-1398: Preserve help discovery before collection-value mutation ([pm-gh1398](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1398.toon))
+- PR watch reports success when a mandatory check never reports ([pm-zpwfzy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zpwfzy.toon))
 - GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness ([pm-gh1392](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1392.toon))
 - Verify immutable Codecov assets and authenticated Cloud report uploads ([pm-2x67z9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2x67z9.toon))
 
@@ -1883,8 +1884,8 @@
 
 ### Other
 
-- Docstring coverage regressed below achieved-100% by PR\#536 extraction files; quality:static floors never ratcheted and mask drift; drop dead closure-pattern export ([pm-fb3i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fb3i.toon))
 - PR review helper: watch GitHub checks and enforce thread-scoped replies ([pm-0fxa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0fxa.toon))
+- Docstring coverage regressed below achieved-100% by PR\#536 extraction files; quality:static floors never ratcheted and mask drift; drop dead closure-pattern export ([pm-fb3i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fb3i.toon))
 - Token-budget context packer: diversity-aware selection, projection degradation, and bounded output for pm context/next ([pm-55ra](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-55ra.toon))
 - Complete public linked-resource SDK primitives and actionable dependency governance ([pm-jcvg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jcvg.toon))
 
