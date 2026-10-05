@@ -92,17 +92,24 @@ and its genuine drift. Source settings and history are never changed by seeding.
 
 ## Help Discovery Before Mutation
 
-Bare `--help` and `-h` following collection-value options are discovery requests:
+Bare `--help` and `-h` following declared options are discovery requests:
 
 ```bash
 pm test pm-example --add --help
 pm files pm-example --add -h
+pm update pm-example -b -h
+pm create --file --help
 ```
 
 These invocations print help and leave item and history bytes unchanged. To
 persist a literal flag-looking value, attach it explicitly: `--add=--help`.
 JSON help follows the same discovery policy. Bootstrap normalization preserves
-the argv terminator and attached values. Declared short value options follow
-the same policy and normalize to their canonical long spelling for discovery.
+the argv terminator and attached values. The immediately preceding declared
+option is neutralized before parsing, regardless of whether its contract has
+value metadata. Short options, aliases, and booleans follow the same policy;
+no value parser runs for the neutralized option. The original help token stays
+reachable even when another adjacent option consumes the replacement token.
+Global boolean flags retain their presentation semantics, so `--json --help`
+still renders JSON help.
 Explicit bare assignments preserve a single value boundary during expansion,
 so values such as `body=--help` retain their literal meaning.

@@ -398,8 +398,13 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
 
 describe("normalizeBootstrapInvocation", () => {
   it.each([
-    { label: "collection discovery", input: ["test", "pm-a1b2", "--add", "--help"], expected: ["item", "test", "pm-a1b2", "--add=", "--help"] },
-    { label: "short body discovery", input: ["create", "-b", "-h"], expected: ["create", "--body=", "-h"] },
+    { label: "collection discovery", input: ["test", "pm-a1b2", "--add", "--help"], expected: ["item", "test", "pm-a1b2", "--help", "--help"] },
+    { label: "short body discovery", input: ["create", "-b", "-h"], expected: ["create", "-h", "-h"] },
+    { label: "update body without value metadata", input: ["update", "pm-a1b2", "-b", "-h"], expected: ["update", "pm-a1b2", "-h", "-h"] },
+    { label: "linked alias without value metadata", input: ["update", "pm-a1b2", "--linked-test", "--help"], expected: ["update", "pm-a1b2", "--help", "--help"] },
+    { label: "boolean before discovery", input: ["update", "pm-a1b2", "--clear-files", "--help"], expected: ["update", "pm-a1b2", "--help", "--help"] },
+    { label: "global JSON help presentation", input: ["--json", "--help"], expected: ["--json", "--help"] },
+    { label: "adjacent options before discovery", input: ["create", "--title", "--description", "--help"], expected: ["create", "--title", "--help", "--help"] },
     { label: "explicit bare body value", input: ["create", "body=--help"], expected: ["create", "--body=--help"] },
     { label: "explicit short help body value", input: ["create", "body=-h"], expected: ["create", "--body=-h"] },
     { label: "explicit global flag body value", input: ["create", "body=--json"], expected: ["create", "--body=--json"] },

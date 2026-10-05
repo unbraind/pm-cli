@@ -1120,19 +1120,16 @@ function bindAttestationVerification(argv: string[]): void {
   }
 }
 
-/** Protect explicit help discovery while preserving literal values expanded during normalization. */
+/** Keep bare help reachable before parsing by neutralizing its preceding declared option, including options without value metadata. Global booleans preserve presentation; attached literals and terminators retain their boundaries. */
 function protectBootstrapHelpDiscovery(argv: string[], command: string | undefined): void {
   if (!argv.some((token) => token === "--help" || token === "-h")) return;
-  const valueFlags = new Map(resolveSubcommandFlagContractsForCommand(command)
-    .filter((contract) => contract.value_name !== undefined || ["--add", "--remove", "--add-glob"].includes(contract.flag))
-    .flatMap((contract) => [contract.flag, ...(contract.aliases ?? []), ...(contract.short === undefined ? [] : [contract.short])]
-      .map((flag) => [flag, contract.flag] as const)));
+  const declaredFlags = new Set(resolveSubcommandFlagContractsForCommand(command)
+    .flatMap((contract) => [contract.flag, ...(contract.aliases ?? []), ...(contract.short === undefined ? [] : [contract.short])]));
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (token === "--") break;
     if (token !== "--help" && token !== "-h") continue;
-    const canonicalFlag = valueFlags.get(argv[index - 1]);
-    if (canonicalFlag !== undefined) argv[index - 1] = `${canonicalFlag}=`;
+    if (declaredFlags.has(argv[index - 1]) && !BOOTSTRAP_BOOLEAN_FLAGS.has(argv[index - 1])) argv[index - 1] = token;
   }
 }
 
@@ -1201,9 +1198,9 @@ export function normalizeBootstrapInvocation(
   for (const event of coalesced.events) {
     trace.push(event);
   }
-  // Commander consumes required option values before recognizing help. Bind
-  // a canonical empty value before bare help; explicit assignments retain
-  // their value boundary and cannot be interpreted as discovery tokens.
+  // Commander consumes required values before recognizing help. Neutralize
+  // the immediately preceding declared option without guessing its arity;
+  // retain the original help token so adjacent options cannot swallow it.
   protectBootstrapHelpDiscovery(coalesced.argv, commandPathName ?? commandName);
   if (commandPathName === "history attest")
     bindAttestationVerification(coalesced.argv);
