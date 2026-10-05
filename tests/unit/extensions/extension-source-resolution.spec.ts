@@ -30,6 +30,34 @@ describe("extension install source identity", () => {
         sourceResolution: { requested: input, selected: { kind: "npm", input: "npm:@scope/reinstall" } },
       });
     }
+    const collision = "managed-identity-precedence-fixture";
+    const byName: ManagedExtensionRecord = {
+      ...entry, name: collision, directory: "stored-name-fixture",
+      source: { ...entry.source, input: "npm:@scope/name@1.0.0", location: "@scope/name@1.0.0", package: "@scope/name" },
+    };
+    const byDirectory: ManagedExtensionRecord = {
+      ...entry, name: "b-managed-directory-fixture", directory: collision,
+      source: { ...entry.source, input: "npm:@scope/directory@1.0.0", location: "@scope/directory@1.0.0", package: "@scope/directory" },
+    };
+    const byPackage: ManagedExtensionRecord = {
+      ...entry, name: "a-managed-package-fixture", directory: "stored-package-fixture",
+      source: { ...entry.source, input: `npm:${collision}@1.0.0`, location: `${collision}@1.0.0`, package: collision },
+    };
+    const nonNpm: ManagedExtensionRecord = {
+      ...entry, name: collision, directory: collision,
+      source: { kind: "local", input: "local-fixture", location: "local-fixture" },
+    };
+    for (const { candidates, expectedPackage } of [
+      { candidates: [byPackage, byDirectory, byName], expectedPackage: "@scope/name" },
+      { candidates: [byName, byDirectory, byPackage], expectedPackage: "@scope/name" },
+      { candidates: [byPackage, byDirectory], expectedPackage: "@scope/directory" },
+      { candidates: [byDirectory, byPackage], expectedPackage: "@scope/directory" },
+      { candidates: [nonNpm, byPackage], expectedPackage: collision },
+    ]) {
+      expect((await resolveExtensionInstallSourceIdentity(collision, undefined, undefined, candidates)).installSource).toMatchObject({
+        kind: "npm", input: `npm:${expectedPackage}`, spec: expectedPackage,
+      });
+    }
     for (const input of ["./managed-reinstall-fixture", "unmanaged-missing-fixture", ".", "npm:other-fixture", "managed\\reinstall"]) {
       expect((await resolveExtensionInstallSourceIdentity(input, undefined, undefined, [entry])).installSource.input).toBe(input);
     }

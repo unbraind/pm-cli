@@ -63,7 +63,12 @@ export interface ResolvedExtensionInstallSource {
   sourceResolution: ExtensionInstallSourceResolution;
 }
 
-/** Reuse recorded registry identity for a missing bare managed name, preserving explicit local and bundled precedence. */
+/**
+ * Reuse recorded registry identity only for a missing bare managed name.
+ * Local entries and bundled sources retain precedence. Among npm records,
+ * match the manifest name before the stored directory before package identity,
+ * so record ordering cannot promote a weaker match over an exact managed name.
+ */
 async function resolveManagedNpmReinstall(source: InstallSource, entries: readonly ManagedExtensionRecord[]): Promise<InstallSource> {
   if (source.kind !== "local" || source.input.startsWith(".") || source.input.includes("\\") ||
     (source.input.includes("/") && !/^@[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/u.test(source.input))) return source;
@@ -73,8 +78,11 @@ async function resolveManagedNpmReinstall(source: InstallSource, entries: readon
   } catch (error: unknown) {
     if (!isFileMissingError(error)) throw error;
   }
-  const managed = entries.find((entry) => entry.source.kind === "npm" &&
-    [entry.name, entry.directory, entry.source.package].includes(source.input.trim()));
+  const input = source.input.trim();
+  const npmEntries = entries.filter((entry) => entry.source.kind === "npm");
+  const managed = npmEntries.find((entry) => entry.name === input) ??
+    npmEntries.find((entry) => entry.directory === input) ??
+    npmEntries.find((entry) => entry.source.package === input);
   return managed?.source.package === undefined ? source : parseExtensionInstallSource(`npm:${managed.source.package}`, {});
 }
 

@@ -76,6 +76,9 @@ that do not reflect their raw contents.
 Runtime activation diagnostics still run. A bare installed npm extension name
 or recorded package name reuses its managed registry identity on reinstall;
 explicit local paths and bundled aliases retain their existing precedence.
+For a confirmed missing bare input, npm records match by exact manifest name,
+then stored directory, then recorded package identity. A weaker identity match
+cannot replace a stronger match because its record appears earlier.
 
 ## Isolated Schema History
 
