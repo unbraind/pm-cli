@@ -3,6 +3,7 @@ import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runExtension } from "../../../src/sdk/extension.js";
+import { runAction } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("managed extension diagnostic purity", () => {
@@ -38,9 +39,14 @@ describe("managed extension diagnostic purity", () => {
         for (const options of [{ explore: true }, { doctor: true }, { manage: true, offline: true }]) {
           await runExtension(undefined, { ...options, project: true }, { path: context.pmPath });
         }
+        for (const action of ["extension", "package", "extension-manage", "package-manage"]) {
+          expect(await runAction({ action, offline: true, path: context.pmPath, noExtensions: true, options: { manage: true, project: true } })).toMatchObject({
+            details: { extensions: [{ update_check_status: "not_checked", update_check_reason: "offline_requested", update_available: null }] },
+          });
+        }
         expect(requests).toBe(0);
-        const managed = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
-        expect(managed.details, JSON.stringify(managed.details)).toMatchObject({ extensions: [{ source: { package: "freshness-registry-package", version: "1.0.0" }, update_check_status: "checked", update_available: true, last_update_remote_version: "2.0.0" }] });
+        const managed = await runAction({ action: "package-manage", offline: true, path: context.pmPath, noExtensions: true, options: { project: true, offline: false } });
+        expect(managed).toMatchObject({ details: { extensions: [{ source: { package: "freshness-registry-package", version: "1.0.0" }, update_check_status: "checked", update_available: true, last_update_remote_version: "2.0.0" }] } });
         available = false;
         expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "checked", update_available: false }] });
         const offline = await runExtension(undefined, { manage: true, project: true, offline: true }, { path: context.pmPath });

@@ -6,8 +6,9 @@
 
 - GH-1394: Define audited owned-subtree replacement for complete-next settings mutations ([pm-gh1394](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1394.toon))
 - GH-1393: Seed truthful schema-context settings history for linked tests ([pm-gh1393](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1393.toon))
-- GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness ([pm-gh1392](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1392.toon))
 - GH-1398: Preserve help discovery before collection-value mutation ([pm-gh1398](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1398.toon))
+- GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness ([pm-gh1392](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1392.toon))
+- Verify immutable Codecov assets and authenticated Cloud report uploads ([pm-2x67z9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2x67z9.toon))
 
 ## 2026.10.5 - 2026-10-05
 

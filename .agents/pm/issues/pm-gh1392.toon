@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T11:46:15.259Z"
-updated_at: "2026-10-05T02:32:02.121Z"
-closed_at: "2026-10-05T02:26:23.844Z"
-completed_at: "2026-10-05T02:26:23.844Z"
+updated_at: "2026-10-05T04:37:47.987Z"
+closed_at: "2026-10-05T04:25:24.147Z"
+completed_at: "2026-10-05T04:25:24.147Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Listing diagnostics preserve managed-state bytes and timestamp; Install and update own canonical ordering and mutations; Npm freshness uses recorded package identity with an explicit offline option; Bare-name reinstall resolves an already managed npm source; Failed checks retain truthful incomplete coverage.
@@ -18,11 +18,11 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-ugqx
 risk: medium
 confidence: medium
-resolution: Keep managed freshness diagnostics transient with bounded sanitized registry latest checks and explicit offline contracts. Reuse npm identity only for confirmed missing bare managed names; preserve local directory entries including dangling symlinks and propagate unexpected filesystem errors.
-expected_result: Managed diagnostics preserve install bytes and mtime; npm freshness uses recorded latest-channel identity; missing bare managed names reuse npm identity; existing entries including dangling symlinks remain local and unexpected filesystem errors propagate.
-actual_result: "The linked SDK/diagnostic regressions and fresh separate public SDK Node/Bun installations pass, including real registry latest, offline unknown, identical managed bytes/mtime, missing-name reinstall and existing dangling-local precedence."
+resolution: "Keep managed diagnostics transient with bounded sanitized registry latest checks and offline contracts. Deliver top-level offline through canonical and alias SDK/MCP manage handlers while preserving nested-option precedence. Reuse npm identity only for missing bare managed names; preserve existing local entries, including dangling symlinks, and propagate unexpected filesystem errors."
+expected_result: "Managed diagnostics preserve installation bytes and mtime. Registry freshness uses recorded latest-channel identity, and top-level offline controls reach canonical and alias SDK/MCP handlers without remote requests, preserving explicit nested-option precedence. Missing bare managed names reuse npm identity; real local entries remain local and unexpected filesystem errors propagate."
+actual_result: "The same real-registry regression fails before the handoff fix and passes afterward for all four public actions, with zero offline registry requests and a real online lookup when nested offline=false overrides the top-level value. All 36 focused cases, complete static quality, typecheck, fresh separate installed Node/Bun public SDK consumers, nine-package npx/bunx smoke and linked freshness verification pass. Previous source-resolution and bytes/mtime acceptance remain included. Full canonical exact source coverage at the new immutable hosted head is still required before merge."
 affected_version: 2026.10.4
-dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-gf5zw8,discovered_from,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
   pm-gf5zw8,verifies,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-10-04T11:46:15.259Z","harness:codex","cli:create:dep",detected
@@ -34,7 +34,8 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1399,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
   pm-ksr40d,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
   pm-t3jxjj,related,"2026-10-04T22:39:27.165Z","harness:codex","evidence:owned-settings-package-freshness-cohort",detected
-comments[23]{created_at,author,text}:
+  pm-z3ez,discovered_from,"2026-10-05T04:37:47.694Z","harness:codex","cli:update:dep",detected
+comments[28]{created_at,author,text}:
   "2026-10-04T11:46:15.259Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1392 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
   "2026-10-04T18:20:36.463Z","harness:codex","Delivery scope: implement read-only managed diagnostics, provider-aware npm freshness with offline opt-out and managed bare-name source recovery in one SDK package-workflow PR alongside pm-gh1393 and pm-gh1394. Strict all-status intake read 2880/2880 records with no omissions; live GitHub has no open PR/security alert. Preserve truthful partial coverage and installation provenance."
   "2026-10-04T18:42:02.887Z","harness:codex","TDD evidence: new boundary regressions failed on the pre-change SDK. Implementation is SDK-owned and being verified together in the single owned-settings/schema-history/extension-freshness delivery. No new coverage ignores, denominator exclusions, or test-only production exports were added."
@@ -58,12 +59,18 @@ comments[23]{created_at,author,text}:
   "2026-10-05T01:50:53.084Z","harness:codex",The unchanged real composed-continuation integration passes with process-only npm module discovery restored; all advertised public SDK cursor scenarios and actual npm packing complete. The complete canonical source suite is running again on the same implementation bytes. The recovery is confined to that coverage process; separate clean Node/Bun consumers and npx/bunx smoke retain their original environment and actual dependency installation.
   "2026-10-05T02:26:23.136Z","harness:codex","Review delivery verification passed the complete canonical suite: 9766 cases across 775 test files, with only the existing two Windows-only tests skipped locally. Exact source coverage remains 100/100/100/100: statements 66789/66789, branches 51130/51130, functions 13795/13795, lines 63655/63655. The earlier complete run retained the same exact coverage but failed one external npm-module prerequisite; that failed receipt is retained. Restoring actual npm module discovery only for the coverage process passes the unchanged regression and complete suite without source or gate changes. Complete static quality and fresh typecheck pass; separate real installed Node/Bun consumers outside checkout ancestors and nine-package npx/bunx smoke pass in their original clean environments. All four linked delivery test commands pass. No coverage exclusion, ignore, retry, complexity, dependency, docstring or security control was relaxed. First-round bot artifacts have targeted dispositions and usefulness reactions; valid local-entry and structural data-property findings are fixed, while byte-identical default baseline proof rejects the incorrect extra-history-write proposal. Exact-head hosted checks, CodeQL remediation and mandatory provider uploads remain the merge gate, not a claim from local results."
   "2026-10-05T02:32:02.121Z","harness:codex","Final reviewed closeout gates pass: all 2885 records and history streams verify with zero drift; tracker context has 47 passing assertions, graph composition nine and append-only record integrity one. The unchanged 170 legacy closure-metadata warnings remain historical debt. Defect recurrence, staged-history-inclusive secrets and package artifact gates pass. Latest pm-changelog 2026.10.4 generated and checked the five combined delivery fixes; the explicit installer changes only the generated managed receipt timestamp at the same provenance/version. Fresh required production Sentry/telemetry passes with zero critical/high issues, 1.75 percent finish errors below the unchanged 6 percent ceiling and zero missing error-code rows. All implementation/test sources match the successful coverage boundary; exact-head hosted review and uploads remain pending."
+  "2026-10-05T03:57:39.925Z","harness:codex","CodeRabbit finding https://github.com/unbraind/pm-cli/pull/1402#discussion_r4180602714 is supported by the live dispatcher: aliases canonicalize to extension/package before optionsWithAuthor, and its existing hoist lists contain dryRun alone. The reported schema file already declares offline correctly; the fix belongs to src/sdk/runtime-input.ts. Extend the existing real local-registry purity test through public runAction for canonical and alias actions, proving zero actual requests for top-level offline and preserving explicit nested-option precedence. Full source files and both callers were inspected before editing; no duplicate PM item or test-only production seam is added."
+  "2026-10-05T04:01:48.152Z","harness:codex","TDD: the strengthened existing real local-registry test fails before the fix because the canonical public action returns checked/update_available after an actual request despite top-level offline=true. Adding offline to the two existing runtime-input hoist lists makes the same test pass for extension, package, extension-manage and package-manage with zero actual registry requests; explicit options.offline=false still wins and performs a real successful lookup. All 36 focused real-dispatch, transport-normalization and schema parity cases pass. The shared provider fixture, existing diagnostics and bytes/mtime assertions are retained; no mock implements the behavior, no production wrapper or export was introduced, and dryRun handling is unchanged. Final full static quality, fresh packed Node/Bun and npx/bunx acceptance are next; the new hosted head must again pass canonical exact full-source coverage before merge."
+  "2026-10-05T04:11:05.447Z","harness:codex","The first final static attempt retained successful source/docstring/duplication/contracts/security gates but failed the existing tracker assertion because item reopen intentionally cleared previous terminal expected_result and I had not restored active acceptance. That failed receipt is retained. Restored the actual expanded acceptance through pm update; no threshold, assertion or data denominator was changed. Complete static quality will run again before fresh installed-consumer acceptance."
+  "2026-10-05T04:25:22.807Z","harness:codex","Final local correction proof: complete static quality passes at original limits after restoring active acceptance metadata; typecheck passes, separate actual installed npm/Node and Bun consumers outside checkout ancestors pass all public SDK acceptance including all four top-level offline canonical/alias actions, all nine-package npx/bunx smoke passes, and linked freshness verification passes. All six fourth-round new or revised bot artifacts are voted and acknowledged, with the source finding addressed in the shared handler-input owner. Both mandatory hosted reports already succeed at 6c81d over authenticated TLS; this two-line source correction still requires the new immutable head to pass full canonical exact source coverage and all reviews before merge. The first static failure for omitted reopened acceptance remains retained; no assertion, threshold, fixture or denominator was weakened."
+  "2026-10-05T04:33:54.378Z","harness:codex","External analyzer evidence 2026-10-05 for reviewed head 6c81d8fe8bd94ba7961d64df1471c1b5e5af953b: authenticated Chrome inspection of the exact DeepScan PR dashboard shows 0 new issues and 0 fixed issues; CodeFactor PR dashboard shows No issues found. Existing repository-wide CodeFactor generated launcher/runtime copy findings were reconciled under canonical pm-z3ez rather than duplicated or silently suppressed. These reports precede the final top-level offline transport fix; the next pushed head must complete its fresh hosted checks and reviews before merge."
 notes[1]{created_at,author,text}:
   "2026-10-04T18:58:04.373Z","harness:codex","Decision: freshness is transient diagnostic evidence, never an install-state write. Query recorded npm dist-tags.latest with lifecycle scripts disabled, a 10-second request bound and 64 KiB output bound; accept the actual npm single-version JSON array. --offline returns unknown/not_checked and preserves bytes/mtime. Explicit adoption/install/update retain mutation ownership. Managed bare-name reinstall reuses recorded npm identity after existing bundled/local precedence."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-10-04T18:58:06.316Z","harness:codex","An extension manifest version is not npm source freshness. Keep installed source.version, latest dist-tag and unavailable provider evidence distinct; do not persist a read-only diagnostic to make a later context appear authoritative."
   "2026-10-05T00:39:38.067Z","harness:codex","Local-source precedence is based on the directory entry, not target accessibility: lstat preserves dangling symlinks; only an ENOENT may permit managed npm fallback, while permission and structural errors must propagate."
-files[18]:
+  "2026-10-05T04:25:23.394Z","harness:codex","A schema declaration proves discovery, not option delivery. Extend the primary real provider fixture through canonical and alias public dispatch, count actual offline network requests, and independently prove nested-option precedence. Restore active acceptance through the CLI after reopen clears prior terminal evidence before running tracker assurance."
+files[19]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
     note: Latest package-owned changelog install refreshes generated managed receipt
@@ -91,6 +98,9 @@ files[18]:
     scope: project
   - path: src/sdk/extension/update-check.ts
     scope: project
+  - path: src/sdk/runtime-input.ts
+    scope: project
+    note: Canonical SDK and MCP top-level offline handoff
   - path: tests/fixtures/contracts/full.json
     scope: project
   - path: tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts
@@ -106,7 +116,7 @@ files[18]:
     note: Offline discovery parity and exact vocabulary budget
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts tests/unit/extensions/npm-update-check.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,project,600,"harness:codex","2026-10-04T19:24:22.817Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-muu7wbui-36m46u
     kind: test
     status: passed
@@ -151,6 +161,17 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts tests/unit/extensions/npm-update-check.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muuqw50c-7r53m0
+    kind: test
+    status: passed
+    started_at: "2026-10-05T04:23:41.190Z"
+    finished_at: "2026-10-05T04:23:54.972Z"
+    recorded_at: "2026-10-05T04:23:54.972Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts tests/unit/extensions/npm-update-check.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts,schema,schema,source,local_source_ref
 docs[4]:
   - path: CHANGELOG.md
     scope: project
@@ -162,7 +183,7 @@ docs[4]:
   - path: docs/SDK_CONFIGURATION_SAFETY.md
     scope: project
     note: SDK configuration and diagnostic safety contract
-close_reason: "Implemented and locally verified in the single combined SDK delivery; exact-head hosted review, security scans and mandatory uploads remain required before merge."
+close_reason: Implemented and verified the final top-level offline handoff together with the original SDK freshness and source-resolution delivery; new-head hosted checks remain the merge gate.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
