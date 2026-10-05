@@ -4,7 +4,6 @@
 
 ### Fixed
 
-- Verify immutable Codecov release assets before mandatory coverage uploads ([pm-2x67z9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2x67z9.toon))
 - GH-1394: Define audited owned-subtree replacement for complete-next settings mutations ([pm-gh1394](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1394.toon))
 - GH-1393: Seed truthful schema-context settings history for linked tests ([pm-gh1393](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1393.toon))
 - GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness ([pm-gh1392](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1392.toon))
