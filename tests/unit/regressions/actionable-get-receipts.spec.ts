@@ -40,9 +40,12 @@ describe("actionable get receipts", () => {
       const finished = await runCreate({ id: "pm-abcd", title: "Completed prerequisite", type: "Task", status: "closed", closeReason: "Delivered" }, global);
       const pending = await runCreate({ id: "pm-efgh", title: "Pending prerequisite", type: "Task" }, global);
       for (const target of [finished.item, pending.item]) {
-        const created = await runCreate({ title: "Short-reference dependent", type: "Task", blockedBy: target.id.slice(3) }, global);
-        const result = await runGet(created.item.id, global);
-        expect(result.blockers).toEqual({ scope: "declared", closed_count: target.status === "closed" ? 1 : 0, open: target.status === "closed" ? [] : [{ id: target.id, title: target.title, status: target.status }] });
+        for (const reference of [target.id.slice(3), target.id.toUpperCase(), target.id.slice(3).toUpperCase()]) {
+          const created = await runCreate({ title: "Legacy-reference dependent", type: "Task", blockedBy: reference }, global);
+          await fs.writeFile(path.join(pmPath, "tasks", `${created.item.id}.toon`), encode({ ...created.item, blocked_by: reference, dependencies: created.item.dependencies!.map((dependency) => ({ ...dependency, id: reference.toLowerCase() === target.id ? reference : dependency.id })) }) + "\n");
+          const result = await runGet(created.item.id, global);
+          expect(result.blockers).toEqual({ scope: "declared", closed_count: target.status === "closed" ? 1 : 0, open: target.status === "closed" ? [] : [{ id: target.id, title: target.title, status: target.status }] });
+        }
       }
     });
   });
@@ -53,6 +56,7 @@ describe("actionable get receipts", () => {
       const unrelated = await runCreate({ title: "Unrelated completed work", type: "Task", status: "closed", closeReason: "Delivered" }, global);
       const created = await runCreate({ title: "Dependent work", type: "Task", blockedBy: blocker.item.id }, global);
       await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id}.toon`));
+      await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id.toUpperCase()}.toon`));
       await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
     });
   });

@@ -55,7 +55,7 @@ missing and GitHub reports `CLEAN`. GitHub's merge state also retains enforcemen
 of expected check publishers and other merge requirements; a matching name alone
 does not establish that its expected app passed. Missing contexts and blocked or
 unknown merge state remain `incomplete`; native watch failures remain `failed`.
-Superseded attempts never certify readiness. Unavailable policy or status reads
+Superseded attempts carry `superseded: true` and never certify readiness. Unavailable policy or status reads
 fail visibly instead of certifying readiness. Successful
 coverage uploads alone cannot certify a downstream provider's patch status.
 The direct `watch` command emits its complete JSON receipt before exiting `1`

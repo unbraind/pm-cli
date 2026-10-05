@@ -294,6 +294,7 @@ describe("GitHub workflow contract", () => {
         "tests/unit/sdk/pagination.spec.ts",
         "tests/unit/commands/query/search-command.spec.ts",
         "tests/unit/packages/beads-command.spec.ts",
+        "tests/unit/regressions/actionable-get-receipts.spec.ts",
       ])
         expect(portability?.run).toContain(file);
     }

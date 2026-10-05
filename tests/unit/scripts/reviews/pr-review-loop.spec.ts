@@ -337,6 +337,7 @@ describe("PR review loop helper", () => {
 
     for (const changeAt of ["inventory-head", "inventory-base", "readiness-head", "readiness-base", "unavailable-rules"]) {
       let head = 0;
+      let stabilize = false;
       const changingGh = vi.fn((args: string[]) => {
         if (args.at(-1) === "headRefOid,baseRefName") return JSON.stringify({ headRefOid: `head-${++head}`, baseRefName: "main" });
         if (args[0] === "pr" && args[1] === "checks") throw "review failed";
@@ -344,15 +345,16 @@ describe("PR review loop helper", () => {
           if (changeAt === "unavailable-rules") throw new Error("Rules evidence unavailable");
           return "[[]]";
         }
+        const observedChange = stabilize && head >= 3 ? "stable" : changeAt;
         if (args[0] === "pr" && args[1] === "view") return JSON.stringify({
-          headRefOid: changeAt === "readiness-head" ? `different-${head}` : `head-${head}`,
-          baseRefName: changeAt === "readiness-base" ? "retargeted" : "main",
+          headRefOid: observedChange === "readiness-head" ? `different-${head}` : `head-${head}`,
+          baseRefName: observedChange === "readiness-base" ? "retargeted" : "main",
           mergeStateStatus: "CLEAN",
         });
         return JSON.stringify({
           data: { repository: { pullRequest: {
-            number: 531, url: "url", headRefOid: changeAt === "inventory-head" ? `different-${head}` : `head-${head}`,
-            baseRefName: changeAt === "inventory-base" ? "retargeted" : "main", updatedAt: "now",
+            number: 531, url: "url", headRefOid: observedChange === "inventory-head" ? `different-${head}` : `head-${head}`,
+            baseRefName: observedChange === "inventory-base" ? "retargeted" : "main", updatedAt: "now",
             comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
           } } },
         });
@@ -363,6 +365,22 @@ describe("PR review loop helper", () => {
         changingGh,
       )).toThrow(changeAt === "unavailable-rules" ? "Rules evidence unavailable" : "three consecutive");
       expect(changingGh).toHaveBeenCalledTimes(changeAt === "unavailable-rules" ? 4 : changeAt.startsWith("inventory") ? 9 : 15);
+      if (changeAt === "unavailable-rules") continue;
+      head = 0;
+      stabilize = true;
+      changingGh.mockClear();
+      const result = watchChecksAndInventory(
+        { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
+        10,
+        changingGh,
+      );
+      expect(result.checkWatch.attempts).toMatchObject([
+        { attempt: 1, watchedHeadRefOid: "head-1", outcome: "failed", superseded: true },
+        { attempt: 2, watchedHeadRefOid: "head-2", outcome: "failed", superseded: true },
+        { attempt: 3, watchedHeadRefOid: "head-3", outcome: "failed", mergeReadiness: { mergeStateStatus: "CLEAN" } },
+      ]);
+      expect(result.checkWatch.attempts[2]).not.toHaveProperty("superseded");
+      expect(changingGh).toHaveBeenCalledTimes(changeAt.startsWith("inventory") ? 11 : 15);
     }
   });
 

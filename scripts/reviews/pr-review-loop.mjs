@@ -270,7 +270,10 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
     });
     const receipt = { attempt, watchedHeadRefOid, outcome, failedChecks };
     attempts.push(receipt);
-    if (pullRequest.headRefOid !== watchedHeadRefOid || pullRequest.baseRefName !== watched.baseRefName) continue;
+    if (pullRequest.headRefOid !== watchedHeadRefOid || pullRequest.baseRefName !== watched.baseRefName) {
+      receipt.superseded = true;
+      continue;
+    }
     const rules = JSON.parse(executeGh([
       "api", `repos/${target.repo}/rules/branches/${encodeURIComponent(pullRequest.baseRefName)}`,
       "--paginate", "--slurp",
@@ -284,7 +287,11 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
       "pr", "view", String(target.pr), "--repo", target.repo,
       "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
     ]));
-    if (readiness.headRefOid !== watchedHeadRefOid || readiness.baseRefName !== watched.baseRefName) continue;
+    if (readiness.headRefOid !== watchedHeadRefOid || readiness.baseRefName !== watched.baseRefName) {
+      receipt.superseded = true;
+      continue;
+    }
+    // Names prove presence only; publisher and state enforcement remains GitHub's CLEAN gate.
     const emittedContexts = new Set((readiness.statusCheckRollup ?? []).map((check) => check.name ?? check.context));
     const missingContexts = requiredContexts.filter((context) => !emittedContexts.has(context));
     receipt.mergeReadiness = {
