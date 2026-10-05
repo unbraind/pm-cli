@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: all-status,audit,backfill,graph,plan,relationships,resumable
 created_at: "2026-07-13T21:59:23.505Z"
-updated_at: "2026-10-04T22:46:48.083Z"
+updated_at: "2026-10-05T23:04:28.058Z"
 author: codex-root
 estimated_minutes: 1800
 acceptance_criteria: "Every item is classified as correctly connected, intentional root, intentional archive or isolate, waived with rationale, or remediation debt with an exact next action; All legacy edge kinds and aliases are mapped to canonical semantics with source evidence; ambiguous relationships remain investigations rather than guessed rewrites; Execution is partitioned into bounded cursor-based waves with snapshots, checkpoints, deterministic ordering, idempotency, resume, rollback-by-new-event, and multi-agent claim boundaries; Active strategic lineages are enriched before terminal history; closed or canceled items change only in dedicated changelog-safe batches coordinated with pm-e9zh; Every mutation records author, timestamp, rationale, source evidence, confidence, previous meaning, and resulting validation evidence in immutable history; Post-wave audits show no new duplicates, dangling endpoints, false order cycles, history drift, or unexplained policy violations and publish graph-quality deltas; The process is benchmarked and token-bounded for one million items and safe under concurrent agents without full-memory or full-output requirements"
@@ -20,7 +20,7 @@ parent: pm-6x7o
 risk: high
 confidence: medium
 expected_result: "Every item across all statuses is classified as correctly connected, intentional root, waived, or remediation debt with a next action, and the enrichment ran in resumable, reviewable waves."
-dependencies[13]:
+dependencies[14]:
   - id: pm-6x7o
     kind: blocked_by
     created_at: "2026-07-13T21:59:23.505Z"
@@ -69,7 +69,13 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[25]{created_at,author,text}:
+  - id: pm-j8vq
+    kind: verifies
+    created_at: "2026-10-05T23:04:27.782Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[26]{created_at,author,text}:
   "2026-07-13T21:59:23.505Z",codex-root,"Duplicate check 2026-07-13: prior all-status audits are completed point-in-time reviews and pm-e9zh owns terminal resolution evidence; none owns a future resumable typed-relationship reconstruction program. This plan starts only after pm-6x7o."
   "2026-07-31T10:17:21.616Z","harness:codex","Live reconstruction input 2026-07-31: complete all-status/current-state and immutable-activity snapshots were reviewed before mutation; no active isolate, missing active endpoint, parent-scope duplicate, or active ordering cycle exists. Wave 1 received only evidence-backed active prerequisites and semantic implementation/verification/provenance edges. The remaining 11 graph findings are terminal-only information and stay in the dedicated changelog-safe waves; no closed item was rewritten opportunistically."
   "2026-08-01T20:21:49.469Z","harness:codex","Current reconstruction checkpoint 2026-08-01: live graph has 2,266 nodes including three historical missing endpoints, 10,495 deduplicated directed edges, one connected component, zero active isolates, and zero active degree-one nodes. Stored dependencies total 8,872: related 5,403, implements 2,147, discovered_from 291, parent 275, blocked_by 238, blocks 231, verifies 181, supersedes 56, related_to 40, child 8, incident_from 2. The 11 audit findings are informational terminal-only debt: one legacy duplicate class, one retired sentinel class, eight historical ordering-cycle components, and three dangling terminal references. Active enrichment can proceed with evidence-backed typed edges; terminal cleanup remains isolated in pm-hnc9w7, pm-lnrk, and pm-s5e04g so history and changelog truth are preserved."
@@ -95,6 +101,7 @@ comments[25]{created_at,author,text}:
   "2026-10-04T21:35:47.862Z","harness:codex","Live 2026-10-04 graph checkpoint from pm graph audit --summary --json: 2883 recorded nodes, 14386 deduplicated directed edges across ten kinds, zero missing endpoints, zero isolated or degree-one active items, zero ordering contradictions, and 100 percent active and terminal outcome reachability. Implements=2995, discovered_from=1122, verifies=670, incident_from=22, recurs_from=117, supersedes=98; generic related=5621 (39.07 percent) and redundant ordering edges=67. Semantic enrichment remains incomplete: 1441 nodes lack semantic edges under the audit definition. Two informational classes name the same seven preserved terminal hierarchy records. Full live representative metadata confirms original delivery ownership followed by explicit canonical reopening under the later audit programme, so a current parent rewrite would require evidence-backed terminal-wave disposition rather than a guessed density repair. The reconstruction plan remains open and unclaimed; this checkpoint does not represent portfolio, terminal backfill, million-item, or fleet completion."
   "2026-10-04T22:22:14.863Z","harness:codex","Historical GitHub provenance repair: exhaustively read all 657 closed issues and 29 open issues, including comments. All closed issues had PM-link comments, but an object-level check of 638 distinct targets found 10 obsolete main-branch folder paths across 11 existing comments. Corrected only the stale URL paths in place on issues #1189, #1166, #934, #796, #749, #737, #628, #583, #569, #472, and #471; verified each replacement against the current origin/main blob and checked the returned comment body. Created zero additional comments, changed no terminal item status, and preserved historical wording. The older immutable target shared by #1019–#1021 was verified through the GitHub contents API and retained. Three new open intake items still require their canonical file links after the branch first publishes those files; this checkpoint does not claim that pending boundary is complete."
   "2026-10-04T22:46:48.083Z","harness:codex","Live historical-integrity checkpoint: resolution/history validation checked all 2,883 item histories with zero drift, missing streams, hash/chain errors, version skews or workspace-state mismatch. The validator retains 170 historical terminal items with incomplete resolution/expected/actual metadata as warnings. An independent comparison of the complete origin/main and delivery corpora confirms the same 170-item set and no newly deficient terminal item. Preserve those historical gaps as evidence-backed terminal-wave work under this open plan rather than inventing outcomes or silently normalizing old closures. The four current implementation closures must include complete structured evidence atomically."
+  "2026-10-05T22:46:26.040Z","harness:codex","Review clarification for the 2026-10-04T22:22:14.863Z provenance checkpoint: the reported counts are 10 DISTINCT obsolete PM file paths, 11 existing comments, and 11 GitHub issues. Fresh fully paginated comment reads confirm that the original comments on #583 and #569 both link chores/pm-j8vq.toon, explaining the shared path. All ten distinct current main file targets pass the GitHub contents API. The original checkpoint is numerically correct; this append makes the distinct-path versus comment/issue cardinalities explicit without rewriting immutable history or changing any roadmap/terminal status."
 notes[2]:
   - created_at: "2026-07-25T00:00:23.513Z"
     author: maintainer-agent

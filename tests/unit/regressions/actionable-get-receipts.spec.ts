@@ -50,16 +50,19 @@ describe("actionable get receipts", () => {
       }
     });
   });
-  it("rejects a declared blocker whose file contains another item identity", async () => {
+  it.each([false, true])("rejects a declared blocker whose file contains another item identity (matching probe: %s)", async (matchingProbe) => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
       const blocker = await runCreate({ title: "Open prerequisite", type: "Task" }, global);
       const unrelated = await runCreate({ title: "Unrelated completed work", type: "Task", status: "closed", closeReason: "Delivered" }, global);
       const created = await runCreate({ title: "Dependent work", type: "Task", blockedBy: blocker.item.id }, global);
-      await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id}.toon`));
+      const blockerPath = path.join(pmPath, "tasks", `${blocker.item.id}.toon`);
+      await fs.writeFile(blockerPath, encode({ ...unrelated.item, id: matchingProbe ? blocker.item.id : unrelated.item.id }) + "\n");
       // Native case aliases share one destination; case-sensitive hosts retain colliding leaves.
-      await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id.toUpperCase()}.toon`));
-      await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `Pm-${blocker.item.id.slice(3)}.toon`));
+      if (!matchingProbe) {
+        await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id.toUpperCase()}.toon`));
+        await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `Pm-${blocker.item.id.slice(3)}.toon`));
+      }
       const itemPath = path.join(pmPath, "tasks", `${created.item.id}.toon`);
       const historyPath = path.join(pmPath, "history", `${created.item.id}.jsonl`);
       const before = await Promise.all([fs.readFile(itemPath, "utf8"), fs.readFile(historyPath, "utf8")]);
@@ -75,7 +78,39 @@ describe("actionable get receipts", () => {
         directories.mockRestore();
         syncBuiltinESMExports();
       }
-      await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+      if (matchingProbe) {
+        // Node's default names-only overload returns strings; preserve that type in external spies.
+        const nameListingFs: { readdir: (directory: Parameters<typeof fs.readdir>[0]) => Promise<string[]> } = fs;
+        const uppercasePath = path.join(pmPath, "tasks", `${blocker.item.id.toUpperCase()}.toon`);
+        const nativeCaseAlias = await fs.access(uppercasePath).then(() => true, () => false);
+        if (nativeCaseAlias) {
+          // A two-step rename forces the actual directory leaf to change on native aliases.
+          await fs.rename(blockerPath, `${blockerPath}.rename`);
+          await fs.rename(`${blockerPath}.rename`, uppercasePath);
+          await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+        } else {
+          // Model only the external directory response; the SDK and persisted documents remain real.
+          const entries = await fs.readdir(path.join(pmPath, "tasks"));
+          const aliases = vi.spyOn(nameListingFs, "readdir").mockResolvedValueOnce(entries.map((name) => name === path.basename(blockerPath) ? path.basename(uppercasePath) : name));
+          syncBuiltinESMExports();
+          try {
+            await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+          } finally {
+            aliases.mockRestore();
+            syncBuiltinESMExports();
+          }
+        }
+        const disappeared = vi.spyOn(nameListingFs, "readdir").mockResolvedValueOnce([]);
+        syncBuiltinESMExports();
+        try {
+          await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+        } finally {
+          disappeared.mockRestore();
+          syncBuiltinESMExports();
+        }
+      } else {
+        await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+      }
       expect(await Promise.all([fs.readFile(itemPath, "utf8"), fs.readFile(historyPath, "utf8")])).toEqual(before);
     });
   });

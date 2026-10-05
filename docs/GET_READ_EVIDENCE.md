@@ -23,13 +23,17 @@ Legacy text that is not a portable filename remains unresolved and never causes
 a lookup outside the registered item folders.
 A target file with a different embedded item identity refuses the read with an
 identity conflict rather than borrowing an unrelated item's terminal status.
-Physical filename recovery gives an exact leaf precedence and sorts equally
+Physical filename verification also runs when the probe and embedded IDs match:
+case-insensitive access can open a differently spelled leaf with the same probe.
+Verification gives an exact leaf precedence and sorts equally
 preferred case aliases deterministically. A directory-read failure refuses the
 query with `blocker_identity_read_failed` and access-restoration guidance. The
 public SDK retains the original error as its cause; the read never invents a
 missing prerequisite or changes item/history bytes. Native case-insensitive
 fixtures intentionally share a physical destination, while case-sensitive
 fixtures retain colliding leaves and exercise the same identity refusal.
+If the physical leaf disappears between the document read and verification,
+the query refuses the identity instead of treating the probe as proof.
 
 `blockers.scope` is `declared`: the facet resolves forward declarations from this
 item, without enumerating unrelated items. Reverse `blocks` relationships require

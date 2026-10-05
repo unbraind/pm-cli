@@ -745,9 +745,8 @@ function canonicalizeDeclaredBlockers(
   return [...canonical.values()];
 }
 
-/** Recover mismatched probe casing with exact-leaf precedence and stable ties; retain directory failures as typed recovery with their original cause before caller identity validation. */
-async function resolvePhysicalBlockerId(itemPath: string, probedId: string, embeddedId: string): Promise<string> {
-  if (probedId === embeddedId) return probedId;
+/** Verify physical leaf spelling even when probe and embedded IDs match; retain exact-leaf precedence, stable ties and typed directory failures with their original cause. */
+async function resolvePhysicalBlockerId(itemPath: string, probedId: string): Promise<string> {
   const filename = path.basename(itemPath);
   const physicalIds = (await readdir(path.dirname(itemPath)).catch((error: unknown) => {
     throw createPmCliExpectedError("Cannot verify the blocker's physical file identity", {
@@ -759,7 +758,14 @@ async function resolvePhysicalBlockerId(itemPath: string, probedId: string, embe
     .filter((name) => name.toLowerCase() === filename.toLowerCase())
     .sort((left, right) => Number(right === filename) - Number(left === filename) || left.localeCompare(right))
     .map((name) => path.parse(name).name);
-  return [...physicalIds, probedId][0]!;
+  const physicalId = physicalIds[0];
+  if (physicalId === undefined) {
+    throw new PmCliError(`Blocker canonical file disappeared during identity verification: ${probedId}`, EXIT_CODE.CONFLICT, {
+      code: "item_identity_conflict",
+      required: "Restore the canonical blocker file and validate storage integrity before retrying the item read.",
+    });
+  }
+  return physicalId;
 }
 
 /** Attach current forward-declared targets only when requested, retaining unsafe/unknown/external references as unresolved and avoiding unrelated item scans or historical status claims. */
@@ -805,7 +811,7 @@ async function attachGetBlockers(
     );
     if (located === null) continue;
     const loaded = await readLocatedItem(located, { schema: context.settings.schema });
-    located.id = await resolvePhysicalBlockerId(located.itemPath, located.id, loaded.document.metadata.id);
+    located.id = await resolvePhysicalBlockerId(located.itemPath, located.id);
     if (loaded.document.metadata.id !== located.id) {
       throw new PmCliError(`Blocker identity differs from its canonical file: ${located.id}`, EXIT_CODE.CONFLICT, {
         code: "item_identity_conflict",
