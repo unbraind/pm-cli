@@ -1,7 +1,8 @@
 # Actionable item-read evidence
 
 Trackers: [pm-gh1388](../.agents/pm/issues/pm-gh1388.toon),
-[pm-gh1389](../.agents/pm/issues/pm-gh1389.toon).
+[pm-gh1389](../.agents/pm/issues/pm-gh1389.toon),
+[pm-gh1409](../.agents/pm/issues/pm-gh1409.toon).
 
 The public SDK item query supplies the same evidence to CLI and MCP callers.
 Standard and deep current reads include a `blockers` facet when the item declares
@@ -14,6 +15,10 @@ status, so they cannot silently authorize work.
 Short local references resolve to their verified full IDs and count once even
 when both forms are stored. Rows under `open` are unresolved by definition;
 they omit the redundant `resolved: false` flag while retaining resolver context.
+Local comparison keys ignore case for deduplication, while filesystem lookups
+retain the declared spelling. Imported mixed-case IDs therefore resolve to their
+live status on both case-sensitive and case-insensitive filesystems without
+weakening the embedded-identity check.
 Legacy text that is not a portable filename remains unresolved and never causes
 a lookup outside the registered item folders.
 A target file with a different embedded item identity refuses the read with an

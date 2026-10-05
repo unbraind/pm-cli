@@ -21,7 +21,7 @@ interface UploadStep {
 }
 
 describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
-  it("requires checksum verification before either mandatory exact-head upload", async () => {
+  it("requires checksum verification and quiet logs for both mandatory exact-head uploads", async () => {
     const workflow = parse(await readFile(".github/workflows/ci.yml", "utf8")) as { jobs: { coverage: { steps: UploadStep[] } } };
     const steps = workflow.jobs.coverage.steps;
     const bootstrapIndex = steps.findIndex((step) => step.name === "Verify pinned Codecov CLI");
@@ -40,7 +40,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
       expect(steps.indexOf(upload)).toBeGreaterThan(bootstrapIndex);
       expect(upload.if).toBe("${{ !cancelled() && steps.codecov_cli.outcome == 'success' }}");
       expect(upload["continue-on-error"]).toBeUndefined();
-      expect(upload.with).toMatchObject({ binary: "${{ runner.temp }}/pm-codecov/codecov", url: "https://codecov.io", fail_ci_if_error: true,
+      expect(upload.with).toMatchObject({ binary: "${{ runner.temp }}/pm-codecov/codecov", url: "https://codecov.io", fail_ci_if_error: true, verbose: false,
         override_commit: "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" });
       expect(upload.with).not.toHaveProperty("skip_validation");
     }

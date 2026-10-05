@@ -1,0 +1,83 @@
+id: pm-gh1409
+title: "GH-1409/GH-1410: Preserve declared blocker spelling when resolving imported source IDs"
+description: "Both real scheduled Windows Node24 shard1 and macOS Node24 jobs at 7077aca fail the same portable Beads backup CLI read after successful import. Shared actionability comparison keys lowercase local blocker references; get then probes those keys as filesystem identity. On a case-sensitive host the real mixed-case target is silently missing; case-insensitive hosts reach the preserved mixed-case item and reject the fabricated lowercase identity. Preserve declaration spelling for lookup while retaining normalized deduplication, verified physical identity, source casing, external/unknown behavior and bounded forward-only reads."
+type: Issue
+status: closed
+priority: 1
+tags[5]: ci,cross-platform,identity,migration,sdk
+created_at: "2026-10-05T11:47:02.667Z"
+updated_at: "2026-10-05T12:10:27.233Z"
+closed_at: "2026-10-05T12:00:00.770Z"
+completed_at: "2026-10-05T12:00:00.770Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: The existing real portable-backup fixture resolves Tokenwerk-B2 as open with its exact source spelling on Node and Bun; Scalar and dependency blocker declarations preserve lookup spelling while normalized aliases deduplicate; Existing unknown/external/unsafe and mismatched-file refusals remain unchanged; Native Windows and macOS acceptance plus full exact 100/100/100/100 coverage and strict source/docstring/security gates pass without skips or limit changes.
+parent: pm-gh1388
+risk: medium
+confidence: high
+resolution: "Preserve original blocked_by/dependency spelling for verified filesystem lookup while retaining normalized graph deduplication and embedded-item identity refusal. Extend existing Beads live-blocker and mixed-case scalar/terminal actionability fixtures, require the real Beads suite on native Windows/macOS and document this SDK boundary. GH1409 and GH1410 share this canonical causal fix in PR1402."
+expected_result: "Imported mixed-case blockers resolve to their real open/closed status across Node/Bun and native filesystems, while unknown/external/unsafe references and mismatched files remain safely unresolved/refused."
+actual_result: "Real pre-fix Beads status assertion fails; both linked Beads/actionability suites pass all 48 cases after the fix, including mixed-case scalar, dependency and terminal targets. All 19 existing workflow/upload tests pass after an independent missing-native-test red control. Typecheck and fresh real packed npm/Node and Bun Beads imports plus SDK/CLI comparisons pass. Final-head native jobs and full-source 100/100/100/100 remain enforced admission gates before merge; prior-head coverage is not substituted."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-10-05T11:47:02.667Z","harness:codex","cli:create:dep",detected
+  pm-f7jj9b,verifies,"2026-10-05T11:47:02.667Z","harness:codex","cli:create:dep",detected
+  pm-gh1388,implements,"2026-10-05T11:47:02.667Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-10-05T11:47:02.667Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-05T11:47:02.667Z","harness:codex","Duplicate check: strict full live all-status read covers 2890/2890 rows with zero omissions; request-specific search and current open/in-progress views inspected. Full canonical pm-gh1388, pm-f7jj9b and nightly recurrence family metadata/comments were read. Both new alerts have identical failure signatures; consolidate into ONE causal regression rather than duplicate occurrence items or reopening shipped predecessors. The nightly family explicitly excludes individual repairs. Source/core ID and actionability implementations and entire primary Beads test file were inspected before edits."
+  "2026-10-05T11:59:09.317Z","harness:codex","TDD: the strengthened existing portable-backup assertion fails before the SDK fix because the real Tokenwerk-B2 target is reported missing on Linux. Preserving declaration spelling fixes that read; the initial combined Beads/actionability suite passes 48 cases. The strengthened existing native-workflow case independently fails before adding Beads to both required Windows/macOS build-consumer commands and then passes with all 19 workflow/upload cases. No new test cases, mocks, production seams, skip directives or weakened identity checks were added. Fresh packed npm/Node and Bun consumers outside checkout ancestors successfully install the real Beads package, import all three backup items and compare matching SDK/CLI blocker evidence while preserving source comments and closure. Typecheck passes. Full final-head 100/100/100/100 and native hosted jobs remain mandatory before merge."
+  "2026-10-05T12:10:27.233Z","harness:codex","Final local admission: the COMPLETE pnpm quality:static command exits 0, including dependency/security checks, 100-percent structural docstrings, exports, ESLint, duplicate-source gates, generated contracts, SDK/package parity, token/import/transport budgets, tracker/graph/record assurance and bounded mutation. The mixed-case scalar/dependency/terminal primary fixture and real Beads fixture together pass 48 linked cases. Previous static failure on the reopened uploader missing expected_result is preserved; the PM CLI restores its actual active expectation and the full command now succeeds. No budget or gate was relaxed. Final-head hosted coverage and both native jobs still must pass before merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-05T11:59:58.981Z","harness:codex","Portable imported identifiers are case-sensitive source identities, even when graph comparison keys ignore case. Never use a deduplication key as a filesystem lookup ID. Extend the real import fixture to require live target status: successful counts and source identity alone miss a broken follow-up read. Run this package boundary on both native case-insensitive platforms before merge; keep exact embedded-file identity verification."
+files[5]:
+  - path: .github/workflows/ci.yml
+    scope: project
+    note: Native Windows/macOS pre-merge mixed-case migration acceptance
+  - path: src/sdk/query/get.ts
+    scope: project
+    note: Preserve declaration spelling for verified local blocker lookup
+  - path: tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+  - path: tests/unit/packages/beads-command.spec.ts
+    scope: project
+    note: "Extend existing real portable-backup assertion, retaining all relational and closure parity"
+  - path: tests/unit/regressions/actionable-get-receipts.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts,project,300,"harness:codex","2026-10-05T11:47:02.667Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
+test_runs[2]:
+  - run_id: test-local-muv73m5m-k3j9su
+    kind: test
+    status: passed
+    started_at: "2026-10-05T11:57:16.870Z"
+    finished_at: "2026-10-05T11:57:37.642Z"
+    recorded_at: "2026-10-05T11:57:37.642Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muv75j4r-8q8prk
+    kind: test
+    status: passed
+    started_at: "2026-10-05T11:58:40.024Z"
+    finished_at: "2026-10-05T11:59:07.035Z"
+    recorded_at: "2026-10-05T11:59:07.035Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-generated delivery projection
+  docs/GET_READ_EVIDENCE.md,project,Source identity versus comparison-key boundary
+close_reason: Implemented and locally verified declared source identity preservation; native/full-source checks are required before PR1402 merges.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: declared-blocker-source-identity
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts -t \"imports every v0.62 portable-backup relation\""
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/packages/beads-command.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts,"pnpm quality:static",node scripts/run-tests.mjs coverage
+  hosted_checks[3]: Gates (coverage),Windows regression (Node 24),"Runtime (macos-latest, Node 24)"
+  owner: maintainer
+body: "Observed source: https://github.com/unbraind/pm-cli/actions/runs/37301905006 at main 7077aca1d309f07bba6af9d8678f1f6cc5fbbba9. Alerts https://github.com/unbraind/pm-cli/issues/1409 and https://github.com/unbraind/pm-cli/issues/1410 share tests/unit/packages/beads-command.spec.ts:1223 (expected exit0, actual4). Both importer counts and exact identities pass before the first read fails. Scope is SDK declared blocker lookup, not a Beads coercion rewrite or nightly-rate measurement. Historical shipped pm-gh1388 and pm-f7jj9b remain closed under original releases; this distinct subsequent regression owns the new fix and its Unreleased entry in the same PR1402. Native failure mechanism is inferred from the actual code and two platform observations until final-head native acceptance; the local strengthened status assertion must establish an independent red control."

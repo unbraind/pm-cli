@@ -67,9 +67,9 @@ describe("actionable get receipts", () => {
   it("resolves every declared blocker without certifying missing or external references", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
-      const first = await runCreate({ title: "First open prerequisite", type: "Task" }, global);
-      const second = await runCreate({ title: "Second open prerequisite", type: "Task" }, global);
-      const finished = await runCreate({ title: "Finished prerequisite", type: "Task", status: "closed", closeReason: "Delivered before dependent work" }, global);
+      const first = await runCreate({ id: "Source-First", title: "First open prerequisite", type: "Task" }, global);
+      const second = await runCreate({ id: "Source-Second", title: "Second open prerequisite", type: "Task" }, global);
+      const finished = await runCreate({ id: "Source-Finished", title: "Finished prerequisite", type: "Task", status: "closed", closeReason: "Delivered before dependent work" }, global);
       const created = await runCreate({
         title: "Dependent work", type: "Task", blockedBy: second.item.id,
         allowUnresolvedDeps: true,

@@ -215,11 +215,12 @@ jobs:
         run: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts
 
       # pm-n912nt: entry/open races must execute against macOS's canonical /private/tmp root.
+      # pm-gh1409: imported source identities must resolve on native filesystem boundaries.
       - name: Verify transactional settings and preview portability on macOS
         if: matrix.os == 'macos-latest'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/packages/beads-command.spec.ts
 
   # pm-7msh7k: exercise Node 22 subprocess behavior before merge.
   node22-telemetry:
@@ -588,7 +589,7 @@ jobs:
           override_branch: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fail_ci_if_error: true
-          verbose: true
+          verbose: false
 
       # Codecov Test Analytics ingests the JUnit report for flaky-test and
       # failure analytics. Runs on failure too so failing tests are recorded.
@@ -607,7 +608,7 @@ jobs:
           override_branch: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fail_ci_if_error: true
-          verbose: true
+          verbose: false
 
   windows-regression:
     name: Windows regression (Node 24)
@@ -692,10 +693,11 @@ jobs:
         run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts
 
       # pm-n912nt: retain native invalid-ancestor errors and resolved cursor scope before merge.
+      # pm-gh1409: imported source identities must resolve on native filesystem boundaries.
       - name: Verify transactional settings and preview portability on Windows
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/packages/beads-command.spec.ts
 
       # The packed-npm-extension install path exercises the Windows `.cmd` npm
       # spawn + tar extraction + hosted-SDK junction class that only the Node 24
