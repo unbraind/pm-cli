@@ -213,7 +213,7 @@
     "node": ">=22.18.0"
   },
   "dependencies": {
-    "@sentry/node": "10.75.1",
+    "@sentry/node": "11.0.0",
     "@toon-format/toon": "^4.1.1",
     "@types/node": ">=22",
     "commander": "^15.0.0",
