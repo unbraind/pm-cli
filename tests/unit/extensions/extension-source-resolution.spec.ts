@@ -62,6 +62,22 @@ describe("extension install source identity", () => {
       expect((await resolveExtensionInstallSourceIdentity(input, undefined, undefined, [entry])).installSource.input).toBe(input);
     }
     expect((await resolveExtensionInstallSourceIdentity(entry.name, undefined, undefined, [{ ...entry, source: { ...entry.source, package: undefined } }])).installSource.kind).toBe("local");
+    for (const packageName of [
+      "--registry=untrusted", "-option", "https://example.invalid/package.tgz",
+      "file:../other", "owner/repository", "npm:other", "other@1.0.0",
+      "other.tgz", "other.tar.gz", "other;echo fixture", "@scope/name&fixture",
+      "other%26fixture", " other ", "other\n", "",
+    ]) {
+      const malformed = { ...byName, source: { ...byName.source, package: packageName } };
+      expect((await resolveExtensionInstallSourceIdentity(collision, undefined, undefined, [byPackage, byDirectory, malformed])).installSource).toMatchObject({
+        kind: "local", input: collision,
+      });
+    }
+    for (const spec of ["file:../other", "https://example.invalid/package.tgz", "other@1.0.0"]) {
+      expect((await resolveExtensionInstallSourceIdentity(`npm:${spec}`, undefined, undefined, [entry])).installSource).toMatchObject({
+        kind: "npm", input: `npm:${spec}`, spec,
+      });
+    }
     for (const input of ["nested/missing", "/missing/managed", "@scope/missing/nested"]) {
       expect((await resolveExtensionInstallSourceIdentity(input, undefined, undefined, [{ ...entry, name: input }])).installSource.kind).toBe("local");
     }

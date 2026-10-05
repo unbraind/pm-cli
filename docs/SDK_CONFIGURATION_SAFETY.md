@@ -79,6 +79,14 @@ explicit local paths and bundled aliases retain their existing precedence.
 For a confirmed missing bare input, npm records match by exact manifest name,
 then stored directory, then recorded package identity. A weaker identity match
 cannot replace a stronger match because its record appears earlier.
+The selected stored package must parse as exactly one registry package name.
+URLs, local files, aliases, versioned specs, options, and shell-bearing values
+cannot become installation authority through managed metadata; invalid identity
+retains local-source recovery. Explicit `npm:` sources still accept their existing
+caller-selected package specs. Managed state is local installation provenance
+written by lifecycle operations, not permission for arbitrary source execution;
+protect project and global extension roots with the invoking account's filesystem
+permissions.
 
 ## Isolated Schema History
 
