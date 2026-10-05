@@ -1067,9 +1067,10 @@ function normalizeBootstrapTokens(
     const bareKeyValue = parseBareKeyValueToken(token, preserveCurrentToken);
     // Free-text query and annotation bodies, plus explicitly positioned linked
     // test values, must survive bare-key option normalization unchanged.
+    // An equals-attached option already owns its value, including an empty one.
     if (
       !bareKeyValue ||
-      (typeof previous === "string" && previous.startsWith("-")) ||
+      (typeof previous === "string" && previous.startsWith("-") && !previous.includes("=")) ||
       ["search", "comments", "notes", "learnings"].includes(commandName) ||
       isLinkedTestTwoTokenValuePosition(commandName, normalizedArgv)
     ) {

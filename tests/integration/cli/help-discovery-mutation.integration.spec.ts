@@ -57,13 +57,13 @@ describe("help discovery before mutation", () => {
         }
       }
 
-      const literal = context.runCli([...create, "body=--help", "--json"], { expectJson: true });
+      const literal = context.runCli([...create, "--title=Attached title owns its value", "body=--help", "--json"], { expectJson: true });
       expect(literal.code, literal.stderr).toBe(0);
       const created = (await readdir(tasks)).filter((name) => !before.includes(name));
       expect(created).toHaveLength(1);
       const item = context.runCli(["get", path.basename(created[0], ".toon"), "--full", "--json"], { expectJson: true });
       expect(item.code, item.stderr).toBe(0);
-      expect(item.json).toMatchObject({ item: { body: "--help" } });
+      expect(item.json).toMatchObject({ item: { title: "Attached title owns its value", body: "--help" } });
     });
   });
 });
