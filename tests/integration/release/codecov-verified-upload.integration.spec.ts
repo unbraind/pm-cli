@@ -40,7 +40,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
       expect(steps.indexOf(upload)).toBeGreaterThan(bootstrapIndex);
       expect(upload.if).toBe("${{ !cancelled() && steps.codecov_cli.outcome == 'success' }}");
       expect(upload["continue-on-error"]).toBeUndefined();
-      expect(upload.with).toMatchObject({ binary: "${{ runner.temp }}/pm-codecov/codecov", fail_ci_if_error: true,
+      expect(upload.with).toMatchObject({ binary: "${{ runner.temp }}/pm-codecov/codecov", url: "https://codecov.io", fail_ci_if_error: true,
         override_commit: "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" });
       expect(upload.with).not.toHaveProperty("skip_validation");
     }

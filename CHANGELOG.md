@@ -8,6 +8,11 @@
 - GH-1393: Seed truthful schema-context settings history for linked tests ([pm-gh1393](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1393.toon))
 - GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness ([pm-gh1392](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1392.toon))
 - GH-1398: Preserve help discovery before collection-value mutation ([pm-gh1398](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1398.toon))
+
+## 2026.10.5 - 2026-10-05
+
+### Fixed
+
 - GH-1389: Derive get omission receipts from emitted schedule and artifact aliases ([pm-gh1389](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1389.toon))
 - GH-1388: Expose every declared blocker and its live status in default item reads ([pm-gh1388](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1388.toon))
 - Compact retained runtime modules and stage packed SDK acceptance efficiently ([pm-2evidence-dist](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2evidence-dist.toon))

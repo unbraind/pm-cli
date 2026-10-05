@@ -2,11 +2,13 @@ id: pm-2x67z9
 title: Verify immutable Codecov release assets before mandatory coverage uploads
 description: "PR 1402 Gates (coverage) passed exact full-source coverage but both Codecov uploads failed at cli.codecov.io with TLS handshake and signature-download errors. Chrome reproduces ERR_SSL_VERSION_OR_CIPHER_MISMATCH while the provider status page reports no incident. Use the official aged release artifact with a reviewed immutable SHA-256 before execution; preserve immutable action pins, mandatory upload failure and exact-head provenance."
 type: Issue
-status: blocked
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-05T00:54:48.705Z"
-updated_at: "2026-10-05T02:57:43.131Z"
+updated_at: "2026-10-05T03:36:56.303Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#741707f79dc42e212a7a9958"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Real official artifact verifies; corrupt bytes refuse before chmod; both upload paths consume only the verified artifact; hosted exact-head coverage and security gates pass.
@@ -16,13 +18,13 @@ value: Coverage remains publishable and fail-closed without relying on a broken 
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "Only the reviewed immutable official CLI may execute. Both exact-head uploads must complete over authenticated TLS, preserving fail-on-error and 100/100/100/100 source coverage. Closure requires a fresh successful hosted coverage gate after the provider restores its valid ingestion certificate."
-actual_result: "Hosted coverage passed exactly 100/100/100/100 and the official immutable SHA-256 bootstrap succeeded. Both mandatory uploads failed at ingest.codecov.io; a targeted unchanged-head retry failed again. Independent curl reports expired certificate and Chrome reports ERR_CERT_DATE_INVALID. The provider leaf certificate expires 2026-10-04 23:59:59 UTC. No source, gate or TLS control was weakened."
+expected_result: "Both mandatory exact-head reports use the verified immutable CLI through the official HTTPS Codecov Cloud host and complete real uploads. Keep certificate validation, checksum admission, immutable action pins, exact 100/100/100/100 coverage and fail-on-error; no legacy protocol, fake upload, dry run or skipped report is acceptance."
+actual_result: "Local verified official-asset bootstrap and supported current Cloud host routing pass all 19 linked tests, full static quality, fresh typecheck, real packed Node/Bun SDK consumers and all nine-package npx/bunx smoke cases. Daily version-only main release is integrated and latest package-generated changelog passes. Both actual hosted report uploads at the next immutable PR head remain pending; no upload success or merge is claimed."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1392,discovered_from,"2026-10-05T00:54:48.705Z","harness:codex","cli:create:dep",detected
   pm-mwdout,verifies,"2026-10-05T00:54:48.705Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-10-05T00:54:48.705Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-10-05T00:54:48.705Z","harness:codex","Duplicate check: strict live all-status read returned 2884/2884 with zero omissions. Exact uploader-endpoint, TLS-error and verified-asset searches found no existing owner. Completed pm-mwdout action-pin contracts were read live and remain shipped; this is the distinct uploader bootstrap boundary discovered by PR 1402, not a duplicate action-version refresh."
   "2026-10-05T00:58:22.714Z","harness:codex","TDD: all three new bootstrap cases failed before the workflow change because the required verification step was absent. The new real Bash verifier checks immutable SHA-256 before chmod. Both existing uploads require verifier outcome=success, so the existing !cancelled behavior cannot execute unverified bytes after a failed bootstrap. Failed coverage still reaches both uploads after successful verification. The isolated SDK import-cost rerun passed all ten entrypoints at unchanged limits; the prior 252ms/226ms failure remains retained rather than increasing the budget."
   "2026-10-05T01:02:08.925Z","harness:codex","The actual workflow bootstrap downloaded the official v11.3.1 GitHub asset in an owned external temporary root, verified SHA-256 successfully and executed its documented help. Separate synthetic approved/corrupt byte cases exercise the real shell checksum and real chmod; all 19 bootstrap and existing workflow tests pass. Official GitHub steps-context docs confirm outcome is the underlying step result, so both uploads explicitly require steps.codecov_cli.outcome=success while retaining !cancelled diagnostics after test failure. No token, insecure TLS option, skip_validation flag or relaxed upload policy was introduced."
@@ -30,6 +32,10 @@ comments[7]{created_at,author,text}:
   "2026-10-05T02:26:31.880Z","harness:codex","Review delivery verification passed the complete canonical suite: 9766 cases across 775 test files, with only the existing two Windows-only tests skipped locally. Exact source coverage remains 100/100/100/100: statements 66789/66789, branches 51130/51130, functions 13795/13795, lines 63655/63655. The earlier complete run retained the same exact coverage but failed one external npm-module prerequisite; that failed receipt is retained. Restoring actual npm module discovery only for the coverage process passes the unchanged regression and complete suite without source or gate changes. Complete static quality and fresh typecheck pass; separate real installed Node/Bun consumers outside checkout ancestors and nine-package npx/bunx smoke pass in their original clean environments. All four linked delivery test commands pass. No coverage exclusion, ignore, retry, complexity, dependency, docstring or security control was relaxed. First-round bot artifacts have targeted dispositions and usefulness reactions; valid local-entry and structural data-property findings are fixed, while byte-identical default baseline proof rejects the incorrect extra-history-write proposal. Exact-head hosted checks, CodeQL remediation and mandatory provider uploads remain the merge gate, not a claim from local results."
   "2026-10-05T02:57:41.349Z","harness:codex","Hosted evidence: ae4b0646d2dae0569e6c35eae5aa59a3990ade87 coverage gate https://github.com/unbraind/pm-cli/actions/runs/37255864059/job/111593683559 passed full source coverage and immutable uploader checksum before both uploads failed at the provider ingestion connection. Targeted unchanged-head retry https://github.com/unbraind/pm-cli/actions/runs/37255864059/job/111597071948 failed again. Independent TLS inspection identifies CN=*.codecov.io, notAfter=2026-10-04T23:59:59Z; curl refuses the expired certificate and Chrome reports ERR_CERT_DATE_INVALID. The official status page reports no incident, which does not override the endpoint evidence. Recovery belongs to the provider certificate owner; no insecure bypass, fake upload, threshold reduction or merge override is permitted. Reused this canonical delivery item instead of creating a duplicate; it is blocked and unclaimed. Restore service, rerun required checks at the then-current immutable PR head, review any new artifacts, and close only with actual hosted upload success."
   "2026-10-05T02:57:43.130Z","harness:codex","Fresh second-head review receipt: CodeRabbit completed full review and Greptile reports confidence 5/5 with the earlier default-baseline finding explicitly withdrawn. All 16 bot comments/reviews and revised artifacts have a current usefulness vote and targeted acknowledgement; all review threads are resolved. PR-ref CodeQL, Dependabot and secret-scanning open-alert counts are each zero. Sourcery cannot review because its included quota is exhausted; this is unavailable-provider evidence, not approval. The required hosted upload failure remains the merge blocker despite green local gates and completed available reviews."
+  "2026-10-05T03:11:05.517Z","harness:codex","Investigation correction: provider-wide recovery is not the only possible secure path. The official apex https://codecov.io has valid TLS and exposes the same current cloud coverage, commit and test-results APIs; its test-results controller correctly refuses missing authentication. The pinned action declares url, maps it to CC_ENTERPRISE_URL, and the immutable CLI routes all current API requests through that supported host override. An empty unauthenticated coverage diagnostic unexpectedly allocated a short-lived None storage URL; it was discarded and no report bytes were uploaded or treated as evidence. Signed URLs are not retained in public tracking. Work now tests the existing official Cloud host without a legacy protocol, TLS exception or relaxed upload gate. Only real hosted reports for the immutable current PR head can establish recovery."
+  "2026-10-05T03:13:32.646Z","harness:codex","TDD for secure Cloud routing: the existing bootstrap contract failed before the workflow change specifically because the official url was missing. Both upload consumers now select https://codecov.io using the pinned action documented host input; all 19 checksum/corruption and existing workflow regressions pass unchanged apart from the independent routing assertion. The immutable release digest, exact PR SHA, coverage and test-results reports, token and fail-on-error remain intact. This is the current upload protocol and does not select the legacy endpoint. Full static quality and fresh hosted actual upload acceptance are required before closing this item."
+  "2026-10-05T03:26:40.362Z","harness:codex","Complete local static quality passes for the secure official Cloud routing at unchanged limits, including structural docstrings, zero duplication, dependencies/security, contracts, SDK/public surfaces, token budgets, tracker/graph/record assurance and the bounded mutation partition (329 kills plus seven documented equivalents). The concurrent actual daily release advanced main to 7077aca1d309f07bba6af9d8678f1f6cc5fbbba9 and tag v2026.10.5. Third-head static CI failed solely on generated changelog drift against that new base; all other completed checks retain their receipts. The normal field-aware main integration is staged, the current build passes, and regeneration uses latest pm-changelog rather than hand editing or changing its generator here. Domain SDK source checksums still match the complete successful exact-coverage boundary. Actual hosted current-head uploads remain required before closure."
+  "2026-10-05T03:34:24.678Z","harness:codex","Fresh release-base verification passes at package version 2026.10.5: typecheck, separate real npm/Node and Bun packed SDK consumers outside checkout ancestors, all nine-package npx/bunx smoke cases, and the linked 19 verifier/workflow regressions. Normal integration of the actual version-only daily release preserves the exact fully covered SDK source bytes. Latest pm-changelog separates our unreleased SDK fixes from today’s already-cut release. The supported official HTTPS Cloud route is ready for real hosted upload acceptance; this item remains claimed and in progress until both reports actually upload."
 notes[1]{created_at,author,text}:
   "2026-10-05T00:57:05.396Z","harness:codex","Decision: use the official Codecov v11.3.1 Linux GitHub release with its independently matched reviewed SHA-256, verified before chmod and before either upload. The existing pinned action consumes only that verified path. This replaces its broken mutable CDN/GPG downloader with a mandatory immutable digest check; it does not set skip_validation, suppress upload failures, alter TLS, omit reports or change exact-head coverage thresholds. The artifact is older than the existing adoption cooldown."
 learnings[1]{created_at,author,text}:
@@ -39,13 +45,24 @@ files[2]{path,scope,note}:
   tests/integration/release/codecov-verified-upload.integration.spec.ts,project,Actual shell verifier with approved and corrupt download bytes
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,600,"harness:codex","2026-10-05T00:57:04.699Z",local_mutation,sdk/owned-settings-schema-history-extension-freshness
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-muumoeur-2mu183
     kind: test
     status: passed
     started_at: "2026-10-05T02:25:45.852Z"
     finished_at: "2026-10-05T02:25:56.019Z"
     recorded_at: "2026-10-05T02:25:56.019Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muuoz3ck-ym3i8g
+    kind: test
+    status: passed
+    started_at: "2026-10-05T03:30:03.017Z"
+    finished_at: "2026-10-05T03:30:13.555Z"
+    recorded_at: "2026-10-05T03:30:13.555Z"
     passed: 1
     failed: 0
     skipped: 0

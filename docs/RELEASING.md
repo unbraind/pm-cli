@@ -500,7 +500,10 @@ Tracked by [pm-2x67z9](../.agents/pm/issues/pm-2x67z9.toon). CI downloads the
 official Codecov CLI from an immutable GitHub release and checks the reviewed
 SHA-256 before making it executable. Both coverage and test-result uploads
 require that verifier to succeed and retain mandatory upload failures plus
-the exact PR-head identity. Failed tests can still upload diagnostic reports
+the exact PR-head identity. The pinned action's supported `url` input selects
+the official `https://codecov.io` Cloud host for the current coverage and
+test-result APIs; certificate validation remains required for every request.
+Failed tests can still upload diagnostic reports
 after successful verification. Update the release URL and digest together;
 verify the official artifact and its adoption age before changing those pins.
 The shell regression executes the real checksum with approved and corrupt
