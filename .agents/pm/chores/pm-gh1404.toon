@@ -2,27 +2,30 @@ id: pm-gh1404
 title: Adopt CodeQL 4.38.2 and TruffleHog 3.97.9 immutable scanner updates
 description: Integrate newly arrived Dependabot PR 1404 into the existing SDK settings and freshness delivery PR 1402. Update three CodeQL subaction references in lockstep and the TruffleHog scanner pin after independently verifying official tags and more than seven full days of release age. Preserve mandatory scanner behavior and workflow contracts.
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[3]: "area:ci",dependencies,security
 created_at: "2026-10-05T04:50:59.751Z"
-updated_at: "2026-10-05T05:06:08.776Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#741707f79dc42e212a7a9958"
+updated_at: "2026-10-05T05:38:05.211Z"
+closed_at: "2026-10-05T05:25:45.077Z"
+completed_at: "2026-10-05T05:25:45.077Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: Official tag SHAs and publication times are verified; three CodeQL subactions remain in lockstep; unchanged workflow contracts and static quality pass; new-head hosted security and exact full coverage pass; PR 1404 is linked to this canonical owner and closed as superseded only after the replacement lands
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: The exact upstream immutable scanner pins are adopted together and required CodeQL and TruffleHog scans remain successful without weakening permissions or secret detection.
+resolution: Adopted official immutable CodeQL 4.38.2 init/analyze/upload-sarif pins in lockstep and TruffleHog 3.97.9 after seven-day release-age and tag-object verification while retaining scan inputs and least-privilege permissions.
+expected_result: All three CodeQL subactions use the same authenticated immutable upstream commit and TruffleHog uses its independently resolved commit; unchanged workflow tests and mandatory hosted scanners and exact source coverage pass.
+actual_result: Exact combined head 3b8b76121534ab936bf185b4bd2d0e07fd5e12e0 completed all required hosted checks including updated CodeQL and TruffleHog. Full source suite passed 9766 cases in 775 files at 100/100/100/100. Actual Codecov LCOV 1174303 bytes and JUnit 474581 bytes each returned HTTP 200 with no errors or warnings. Fresh PR-ref CodeQL open-alert count is zero. Unchanged 16-case workflow contract and real linked execution passed; full local static quality passed. Greptile sixth review found no actionable issues; CodeRabbit sixth request and Sourcery are quota-unavailable rather than approvals. The watch transport TLS timeout is retained separately from the independently observed successful hosted checks. PR 1404 has its canonical link and acknowledged bot artifacts; it will close as superseded after replacement PR 1402 merges.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2x67z9,discovered_from,"2026-10-05T04:50:59.751Z","harness:codex","cli:create:dep",detected
   pm-mwdout,verifies,"2026-10-05T04:50:59.751Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-10-05T04:50:59.751Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-05T04:50:59.751Z","harness:codex","Duplicate-check receipt: all-status live corpus read returned 2885 of 2885 items with zero omissions and no unreadable records; exact 4.38.2 and 3.97.9 and pull/1404 searches found no existing owner; open and in-progress lists checked before create. Closed historical action-refresh lineage was fully read and remains completed. Official CodeQL v4.38.2 published 2026-09-24T10:27:53Z and TruffleHog v3.97.9 published 2026-09-24T09:11:59Z; both exceed the unchanged seven-day adoption window. GitHub report: https://github.com/unbraind/pm-cli/pull/1404."
   "2026-10-05T04:53:57.932Z","harness:codex",Official annotated CodeQL tag v4.38.2 dereferences to commit 2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2; the TruffleHog v3.97.9 lightweight tag resolves to 4dd8831c5f12599465d4d45c3c447b4018a34c85. Fully read all three affected workflows before changing exactly four uses lines. All existing action inputs and least-privilege permissions are preserved. The unchanged workflow regression suite and complete static gate verify admission; no artificial pin-specific test or threshold change is added. PR 1404 will be superseded only after replacement PR 1402 lands.
+  "2026-10-05T05:25:42.454Z","harness:codex",Exact combined head 3b8b76121534ab936bf185b4bd2d0e07fd5e12e0 completed all required hosted checks including updated CodeQL and TruffleHog. Full source suite passed 9766 cases in 775 files at 100/100/100/100. Actual Codecov LCOV 1174303 bytes and JUnit 474581 bytes each returned HTTP 200 with no errors or warnings. Fresh PR-ref CodeQL open-alert count is zero. Unchanged 16-case workflow contract and real linked execution passed; full local static quality passed. Greptile sixth review found no actionable issues; CodeRabbit sixth request and Sourcery are quota-unavailable rather than approvals. The watch transport TLS timeout is retained separately from the independently observed successful hosted checks. PR 1404 has its canonical link and acknowledged bot artifacts; it will close as superseded after replacement PR 1402 merges.
 files[3]{path,scope}:
   .github/workflows/codeql.yml,project
   .github/workflows/scorecard.yml,project
@@ -43,4 +46,13 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   CHANGELOG.md,project
+close_reason: Immutable scanner updates are implemented and verified at the exact combined hosted source head
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: ci-immutable-security-scanners
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"rejects mutable and incomplete Codecov references in either upload\""
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,"pnpm quality:static"
+  hosted_checks[4]: Analyze (javascript-typescript),Trivy,Gates (coverage),Gates (static)
+  owner: maintainer
 body: ""

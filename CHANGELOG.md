@@ -10,6 +10,10 @@
 - GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness ([pm-gh1392](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1392.toon))
 - Verify immutable Codecov assets and authenticated Cloud report uploads ([pm-2x67z9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2x67z9.toon))
 
+### Security
+
+- Adopt CodeQL 4.38.2 and TruffleHog 3.97.9 immutable scanner updates ([pm-gh1404](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gh1404.toon))
+
 ## 2026.10.5 - 2026-10-05
 
 ### Fixed
