@@ -22,5 +22,8 @@ export function distributionManifestPaths(repoRoot) {
   return [
     ...packages,
     ...FIXED_DISTRIBUTION_MANIFESTS,
+    ...(existsSync(path.join(repoRoot, "runtime-dependencies.json"))
+      ? ["runtime-dependencies.json"]
+      : []),
   ];
 }

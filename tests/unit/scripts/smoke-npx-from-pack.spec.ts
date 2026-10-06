@@ -115,6 +115,13 @@ function runExecFileSyncMock(
   responses: ExecResponses,
   pm: (commandName: string, pmArgs: string[]) => string,
 ): string {
+  if (
+    args[0] ===
+    path.join(process.cwd(), "scripts/release/package-distribution.mjs")
+  )
+    return JSON.stringify({
+      filename: (responses.packOutput ?? "pm-cli-2026.6.14.tgz").trim(),
+    });
   const cmd = baseCommand(command);
   if (cmd === "npm" && args[0] === "pack") {
     return responses.packOutput ?? "pm-cli-2026.6.14.tgz\n";
@@ -347,30 +354,7 @@ describe("smoke-npx-from-pack", () => {
       cleanupTempRoot,
     }));
     mockFs();
-    const execFileSync = vi.fn((command: string, args: string[]) => {
-      if (command === "npm.cmd" && args[0] === "pack")
-        return "pm-cli-2026.6.14.tgz\n";
-      if (command === "npm.cmd" && args[0] === "exec") {
-        const pmArgs = pmArgsAfterBinary(args, "pm");
-        return defaultPm(pmArgs[0]);
-      }
-      if (
-        command === "npx.cmd" &&
-        args.some((arg) => arg.startsWith("file:"))
-      ) {
-        if (args.includes("--version")) return "2026.6.14\n";
-        if (args.includes("--help")) return "Usage: pm\n";
-      }
-      if (
-        command === "npx.cmd" &&
-        args.includes("--package") &&
-        args.includes("pm-cli")
-      ) {
-        if (args.includes("--version")) return "2026.6.14\n";
-        if (args.includes("--help")) return "Usage: pm-cli\n";
-      }
-      return { "bunx.cmd": "2026.6.14\n" }[command] ?? "";
-    });
+    const execFileSync = buildExecFileSync({});
     vi.doMock("node:child_process", () => ({ execFileSync }));
     const originalPlatform = Object.getOwnPropertyDescriptor(
       process,

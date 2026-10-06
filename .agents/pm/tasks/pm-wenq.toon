@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,cli,governance,quality
 created_at: "2026-07-10T10:34:42.049Z"
-updated_at: "2026-09-22T05:23:41.763Z"
+updated_at: "2026-10-06T16:43:27.045Z"
 closed_at: "2026-09-01T04:33:33.553Z"
 completed_at: "2026-09-01T04:33:33.553Z"
 author: maintainer-agent
@@ -15,10 +15,11 @@ acceptance_criteria: Advisory line on close when resolution/expected/actual miss
 parent: pm-33cw
 risk: low
 confidence: medium
+release: v2026.9.1
 resolution: "Delivered the config-gated close-time completeness contract: default warn emits one concise advisory for missing resolution fields, require mode refuses with an executable recovery bundle, complete structured evidence is silent, and guidance records the triple atomically on close."
 expected_result: "Closing without resolution, expected, or actual is visibly warned or refused according to governance; closing with all three is unchanged and the immutable close event carries the full evidence."
 actual_result: "The linked immutable-history and guidance cohort passes 43 tests, and the focused close-command and CLI cohort passes 152 tests covering warn output, strict recovery refusal, and zero warning output when all fields are supplied."
-dependencies[5]:
+dependencies[60]:
   - id: pm-e9zh
     kind: related
     created_at: "2026-07-10T10:34:42.049Z"
@@ -42,6 +43,336 @@ dependencies[5]:
     created_at: "2026-09-01T04:31:16.590Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-03pq3o
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-0mjz
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-0pnz
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-114v
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-13nx
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-1mwk
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-1ybs
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-2ldo
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-4ak1
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-4v4c
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-5qmm
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-6uxhe0
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-7rlp
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-853a
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-9qcr
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-a2h3
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-b0se
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-b84u
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-b9ov
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-bl8x
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-bnmlsc
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-brxdct
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-cbwg
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-cu1i
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-dfg0
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-dprb
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-eqk0
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-fgih
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-fjxm
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-g072
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-ghf1
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-ju83
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-jw2a
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-kfq5
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-krwu
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-l6rz
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-l98s
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-llrp
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-mi2x
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-nf7q
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-o71e
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-oslr
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-q6gx
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-qfdd
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-qwuber
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-rxp1
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-s9iu
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-sjfs
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-sx52hr
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-v3zd3o
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-vjk3
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-w1c0
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-w89s
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-zazb
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-zqsrt5
+    kind: verifies
+    created_at: "2026-10-06T16:43:26.608Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
     author_source: detected
 comments[27]{created_at,author,text}:
   "2026-07-10T10:47:37.642Z",maintainer-agent,"Evidence 2026-07-10: validate_resolution_missing_fields drifted 269 -> 272 (+3) in one day — the 2026-07-09 closes of pm-2ldo, pm-q6gx, pm-cu1i (all closed via close -m with strong prose close_reason but no structured resolution/expected/actual). Confirms the faucet is every routine agent close, not a legacy backlog: without a close-time signal the structured fields will keep losing to close_reason. Rate data point for prioritization: ~3/day at current agent throughput."

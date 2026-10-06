@@ -59,6 +59,15 @@ function versionSlots(manifest) {
       },
     });
   }
+  if (typeof manifest.packages?.[""]?.version === "string") {
+    slots.push({
+      label: "packages.root.version",
+      read: () => manifest.packages[""].version,
+      write: (value) => {
+        manifest.packages[""].version = value;
+      },
+    });
+  }
   if (typeof manifest.metadata?.version === "string") {
     slots.push({
       label: "metadata.version",

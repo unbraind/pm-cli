@@ -107,7 +107,8 @@
     "scripts/install.ps1",
     ".agents/skills/**",
     "scripts/prepare-build-cache.mjs",
-    "marketplace.json"
+    "marketplace.json",
+    "runtime-dependencies.json"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -123,7 +124,7 @@
     "lint:complexity:baseline": "eslint . --suppress-rule complexity --suppress-rule sonarjs/cognitive-complexity",
     "lint:duplicates": "jscpd --config .jscpd.json && jscpd --config .jscpd.source.json && jscpd --config .jscpd.tables.json",
     "lint:codefactor": "pnpm quality:static",
-    "quality:static": "pnpm quality:dependencies && pnpm quality:docstrings && pnpm quality:exports && pnpm lint:eslint && pnpm lint:duplicates && node scripts/check-workflow-permissions.mjs && node scripts/check-dependency-cooldown.mjs && node scripts/gen-plugin-mcp-wrappers.mjs --check && node scripts/gen-agent-plugin-skills.mjs --check && pnpm build && node scripts/contracts-snapshot.mjs --check && node scripts/generate-agent-capability-surfaces.mjs --check && node scripts/generate-error-code-catalog.mjs --check && node scripts/release/repository-assurance.mjs repository-static-quality --trigger ci --json && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs && node scripts/release/refusal-closure-gate.mjs && node scripts/release/agent-task-token-gate.mjs && pnpm quality:mcp-deprecations && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",
+    "quality:static": "pnpm quality:dependencies && node scripts/release/runtime-lock.mjs check && pnpm quality:docstrings && pnpm quality:exports && pnpm lint:eslint && pnpm lint:duplicates && node scripts/check-workflow-permissions.mjs && node scripts/check-dependency-cooldown.mjs && node scripts/gen-plugin-mcp-wrappers.mjs --check && node scripts/gen-agent-plugin-skills.mjs --check && pnpm build && node scripts/contracts-snapshot.mjs --check && node scripts/generate-agent-capability-surfaces.mjs --check && node scripts/generate-error-code-catalog.mjs --check && node scripts/release/repository-assurance.mjs repository-static-quality --trigger ci --json && node scripts/release/audit-package-boundary.mjs && node scripts/release/package-sdk-contract-parity.mjs && node scripts/release/surface-replication-gate.mjs && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs && node scripts/release/refusal-closure-gate.mjs && node scripts/release/agent-task-token-gate.mjs && pnpm quality:mcp-deprecations && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded && node scripts/release/gate-registry.mjs && node scripts/sdk-surface-snapshot.mjs --check && node scripts/bench/sdk-entrypoint-costs.mjs --check && node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",
     "quality:exports": "knip --no-config-hints && node scripts/run-tests.mjs test -- tests/unit/scripts/release/dead-exports.spec.ts",
     "quality:dependencies": "pnpm audit && node scripts/check-development-dependencies.mjs",
     "quality:command-grammar": "pnpm build && node scripts/release/command-grammar-gate.mjs && node scripts/release/flag-invocation-parity.mjs && node scripts/release/flag-lexicon-gate.mjs",
@@ -139,7 +140,7 @@
     "quality:retrieval-eval:update": "pnpm build && node scripts/release/retrieval-eval-gate.mjs --update",
     "quality:gate-registry": "pnpm build && node scripts/release/gate-registry.mjs",
     "quality:tracker-measurements": "pnpm build && node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded",
-    "quality:package-artifact": "pnpm build && node scripts/release/package-artifact-gate.mjs",
+    "quality:package-artifact": "pnpm build && node scripts/release/runtime-lock.mjs check && node scripts/release/package-artifact-gate.mjs",
     "quality:surface-replication": "node scripts/release/surface-replication-gate.mjs",
     "quality:absence-tolerance": "node scripts/release/absence-tolerance-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
@@ -193,7 +194,9 @@
     "prepublishOnly": "pnpm build",
     "quality:docstrings": "node --input-type=module --eval \"import { main } from './scripts/release/docstring-quality.mjs'; console.log(JSON.stringify(main()));\"",
     "quality:docstrings:update": "node --input-type=module --eval \"import { main } from './scripts/release/docstring-quality.mjs'; console.log(JSON.stringify(main(['--update'])));\"",
-    "quality:mutation": "node scripts/run-tests.mjs mutation"
+    "quality:mutation": "node scripts/run-tests.mjs mutation",
+    "prepack": "node scripts/release/runtime-lock.mjs check",
+    "pack:distribution": "pnpm build && node scripts/release/runtime-lock.mjs check && node scripts/release/package-distribution.mjs"
   },
   "keywords": [
     "cli",
@@ -215,13 +218,20 @@
   "dependencies": {
     "@sentry/node": "10.75.1",
     "@toon-format/toon": "^4.1.1",
-    "@types/node": ">=22",
     "commander": "^15.0.0",
     "fast-json-patch": "^3.1.1",
     "npm-package-arg": "^13.0.2",
     "tar": "7.5.22",
     "tinyglobby": "^0.2.17",
     "yaml": "^2.9.1"
+  },
+  "peerDependencies": {
+    "@types/node": "^22 || ^24 || ^26"
+  },
+  "peerDependenciesMeta": {
+    "@types/node": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@codspeed/vitest-plugin": "^5.7.1",

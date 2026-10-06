@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: context-management,metadata,tracker-governance
 created_at: "2026-07-04T19:09:41.942Z"
-updated_at: "2026-09-19T08:40:51.268Z"
+updated_at: "2026-10-06T16:43:23.069Z"
 closed_at: "2026-07-04T19:20:52.951Z"
 author: maintainer-agent
 estimated_minutes: 300
@@ -18,7 +18,7 @@ release: v2026.7.5
 resolution: "All 41 active items (1 milestone, 11 epics, 29 leaves incl. new pm-114v) now carry body + risk + confidence on top of the pre-existing 100% AC/estimate/parent coverage; epic bodies are charters with scope, invariants, and child inventories; deps and one promoted idea (pm-114v) round out the graph."
 expected_result: "Every active item rebuildable from pm CLI alone: body, risk, confidence, AC, estimate, parent, deps populated with real content (no placeholders)."
 actual_result: "Verified by scripted sweep post-pass: 0 items missing any of body/risk/confidence/AC/estimate/priority; parents 100% on non-container items; remaining metadata debt is scoped to pm-j8z6 (linked files) and pm-e9zh (terminal resolution evidence), both open with full bodies."
-dependencies[17]:
+dependencies[38]:
   - id: pm-114v
     kind: related
     created_at: "2026-07-26T17:21:32.422Z"
@@ -72,6 +72,132 @@ dependencies[17]:
     created_at: "2026-08-10T12:05:49.224Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-e9zh
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-esbt
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-f4yn
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-gdi7
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-ghf1
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-ixoa
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-j8z6
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-jqd2
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-jt3b
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-l98s
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-llrp
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-lt6n
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-mpbb
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-o2kc
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-qt5d
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-rj3w
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-u9d0
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-ueuq
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-ugqx
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-ydp6
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-z5nb
+    kind: verifies
+    created_at: "2026-10-06T16:43:22.778Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
     author_source: detected
 notes[1]{created_at,author,text}:
   "2026-07-04T19:20:51.932Z",maintainer-agent,"2026-07-04 metadata backfill pass (this audit) completed the full scope: (1) charter bodies + risk/confidence on the milestone pm-doxj and all 11 open epics — each charter records scope in/out, standing invariants, closed-children count, and the live open-children inventory; (2) full-context bodies (Context / Approach or Design / Definition of done) + risk/confidence on all 24 open leaf items; (3) dep edges wired: pm-114v blocked_by pm-8t5x + related pm-2muu, pm-bgcu related pm-2muu (singleton locks reuse the lock machinery); (4) idea promotion: pm claim --next extracted from pm-8t5x prose into tracked Feature pm-114v under pm-dj98. Verification sweep after the pass: 41/41 active items have AC + estimate + priority + body + risk + confidence; every non-container item has a parent. Comments/linked-artifact reconciliation intentionally NOT duplicated here: the 146 missing / 134 orphaned linked-file rows remain owned by pm-j8z6, terminal-item resolution backfill by pm-e9zh."

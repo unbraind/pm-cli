@@ -273,6 +273,25 @@ The build writes `dist/cli-bundle/bundle-manifest.json` atomically with SHA-256 
 
 4. Run the same release pipeline locally.
 
+Runtime install reproducibility is tracked by
+[pm-gh1417](../.agents/pm/issues/pm-gh1417.toon). The committed
+`runtime-dependencies.json` records only the exact production closure from the
+tested `pnpm-lock.yaml`, including integrity, nested conflicts and optional
+edges. After changing dependencies, run `pnpm install`, then
+`node scripts/release/runtime-lock.mjs apply`. Static and publication gates reject
+drift; never generate the ledger by resolving fresh registry ranges.
+
+`pnpm pack:distribution` builds an isolated publication tree, copies the exact
+installed runtime closure into physical package directories and sets npm's
+`bundleDependencies`. It excludes pnpm's development store and source maps.
+The release workflow publishes this staged tarball with provenance; CI and
+packed smoke tests use the same staging command. Application distribution and
+bundled runtime have separate committed size and file-count limits, so runtime
+payload cannot hide application growth. The ledger ships with the tarball for
+installed-version verification. npm 12 ignores published shrinkwraps; shipping
+a shrinkwrap alone therefore cannot enforce this contract. SDK consumers
+supply the bounded optional Node types peer themselves.
+
 Push the final implementation commit through a reviewed pull request first,
 wait for DeepScan and CodeFactor to finish on that reviewed SHA, then run the
 canonical registry-owned preflight:

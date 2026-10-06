@@ -42,21 +42,16 @@ function runSmokeCommand(command, args, options = {}) {
 }
 
 /** Build the current package and return the absolute packed artifact path. */
-function packCurrentPackage(npm, tempRoot) {
-  const packOutput = runSmokeCommand(npm, [
-    "pack",
-    "--silent",
-    "--pack-destination",
-    tempRoot,
-  ])
-    .trim()
-    .split("\n")
-    .filter((line) => line.trim().length > 0);
-  const tarball = packOutput.at(-1);
-  if (!tarball) {
+function packCurrentPackage(tempRoot) {
+  const report = JSON.parse(
+    runSmokeCommand(process.execPath, [
+      path.join(REPO_ROOT, "scripts/release/package-distribution.mjs"),
+      `--destination=${tempRoot}`,
+    ]),
+  );
+  if (!report.filename)
     throw new Error("npm pack did not produce a tarball name.");
-  }
-  return path.resolve(tempRoot, tarball);
+  return path.resolve(tempRoot, report.filename);
 }
 
 /** Reject commands that succeed without returning the evidence under test. */
@@ -112,11 +107,15 @@ function installPackedConsumer(npm, tarballPath, tempRoot) {
   mkdirSync(consumerRoot, { recursive: true });
   writeFileSync(
     path.join(consumerRoot, "package.json"),
-    `${JSON.stringify({ name: "pm-pack-consumer", private: true, type: "module" }, null, 2)}\n`,
+    `${JSON.stringify({ name: "pm-pack-consumer", private: true, type: "module", devDependencies: { "@types/node": "^22 || ^24 || ^26" } }, null, 2)}\n`,
   );
   runSmokeCommand(npm, ["install", "--no-audit", "--no-fund", tarballPath], {
     cwd: consumerRoot,
   });
+  runSmokeCommand(process.execPath, [
+    path.join(REPO_ROOT, "scripts/release/verify-runtime-installation.mjs"),
+    path.join(consumerRoot, "node_modules", "@unbrained", "pm-cli"),
+  ]);
   return consumerRoot;
 }
 
@@ -219,8 +218,8 @@ function assertPackedCalendarWorkflow(runPackedPm, commandOptions) {
  * Compile the packed SDK and load its CLI entrypoint from a plain consumer.
  *
  * The compiler executable comes from this checkout, but Node declarations must
- * resolve from the consumer's tarball install so GH-602 cannot regress behind
- * repository-local dependencies.
+ * resolve from the consumer's declared optional SDK peer so GH-602 cannot
+ * regress behind repository-local dependencies. CLI-only installs omit it.
  */
 function assertPackedTypescriptConsumer(consumerRoot) {
   writeFileSync(
@@ -288,7 +287,7 @@ function run() {
   const releaseCleanup = registerTempCleanup(tempRoot);
 
   try {
-    const tarballPath = packCurrentPackage(npm, tempRoot);
+    const tarballPath = packCurrentPackage(tempRoot);
     const tarballSpec = `file:${tarballPath}`;
     const consumerRoot = installPackedConsumer(npm, tarballPath, tempRoot);
     const runPackedPm = buildPackedPmRunner(npm, consumerRoot);
@@ -296,14 +295,11 @@ function run() {
     assertNonEmptyOutput("npx smoke test", version, "version output");
     assertEqualOutput(
       "bunx packed pm smoke",
-      runSmokeCommand(bunx, [
-        "--silent",
-        "--bun",
-        "--package",
-        tarballPath,
-        "pm",
-        "--version",
-      ]),
+      runSmokeCommand(
+        bunx,
+        ["--silent", "--bun", "--package", tarballPath, "pm", "--version"],
+        { env: { ...process.env, TMPDIR: tempRoot } },
+      ),
       version,
       "version output",
     );

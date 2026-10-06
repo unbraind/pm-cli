@@ -316,7 +316,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/execution-receipts.ts"],
     emitting_commands: ["*"],
     canonical_code: "no_matching_tests",
     aliases: [],
@@ -329,7 +329,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/execution-receipts.ts"],
     emitting_commands: ["*"],
     canonical_code: "no_projects_matched_filters",
     aliases: [],
@@ -342,7 +342,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/execution-receipts.ts"],
     emitting_commands: ["*"],
     canonical_code: "no_test_files_found",
     aliases: [],
@@ -355,7 +355,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/execution-receipts.ts"],
     emitting_commands: ["*"],
     canonical_code: "no_tests_found",
     aliases: [],
@@ -891,7 +891,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/execution-receipts.ts"],
     emitting_commands: ["*"],
     canonical_code: "reported_zero_passes",
     aliases: [],
@@ -904,7 +904,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/execution-receipts.ts"],
     emitting_commands: ["*"],
     canonical_code: "reported_zero_tests",
     aliases: [],

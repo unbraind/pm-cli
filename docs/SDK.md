@@ -79,15 +79,15 @@ The SDK ships inside the CLI package. There is no separate
 `@unbrained/pm-sdk` package; package authors should depend on
 `@unbrained/pm-cli` and import the public subpaths below.
 
-The package installs `@types/node` as a runtime dependency (`>=22` matches the
-runtime floor) because the shipped `.d.ts` reference Node globals and `node:*`
-modules. A plain package install therefore gives strict TypeScript consumers
-the declarations needed to compile the SDK without a hidden peer setup step.
+The shipped declarations reference Node globals and `node:*` modules. TypeScript
+consumers must declare `@types/node` as a development dependency matching their
+supported Node major. The package declares the bounded optional peer
+`^22 || ^24 || ^26`; CLI-only installs do not require type packages.
 Use `"moduleResolution": "node16"`, `"nodenext"`, or `"bundler"` so the
 `exports`-mapped `./sdk` types resolve.
 
 ```bash
-npm install --save-dev typescript
+npm install --save-dev typescript @types/node@26
 ```
 
 ## Import Surfaces
@@ -1762,6 +1762,16 @@ pre-pagination match count, and use key presence for filter diagnostics;
 
 ### Execution and diagnostics
 
+Workspace assurance composes `createAssuranceWorkspaceContext`,
+`evaluateMeasurement` and `evaluateAssuranceGate` from the public governance
+surface. Strict and ordinary workspace reads both include item bodies alongside
+metadata, comments, notes and learnings. Prose relationship measurements match
+complete case-insensitive IDs, including numeric prefixes and multiple hyphens;
+a longer identifier never creates a gap for its shorter prefix. Pair deduplication,
+explicit/implicit partitions and exact exemptions share this same context.
+Tracked by [pm-jprn58](../.agents/pm/issues/pm-jprn58.toon) and
+[pm-axotea](../.agents/pm/issues/pm-axotea.toon).
+
 Tracked by [pm-oslr](../.agents/pm/features/pm-oslr.toon), the SDK boundary
 capstone [pm-9x6e](../.agents/pm/tasks/pm-9x6e.toon), and quantitative test
 evidence [pm-ygerpy](../.agents/pm/issues/pm-ygerpy.toon).
@@ -1771,6 +1781,14 @@ inspection, and tracker statistics are SDK-owned primitives. A custom CI host or
 project-specific tool can compose the same sandboxing, context-preflight,
 deduplication, failure classification, progress, consent, and structured-result
 behavior as the CLI without spawning `pm` or importing `src/core` modules:
+
+Filtered linked-test runs require positive execution evidence when
+`failOnEmptyTestRun` is enabled. Successful `TestRunResult.execution_receipt`
+records the recognized summary `code` and its `stdout` or `stderr` stream.
+Bun's positive pass count and executed-test summary are recognized, including
+summaries with filtered tests. Explicit zero-test output, nonzero exits, and
+failed configured assertions still fail. See
+[pm-gh1418](../.agents/pm/issues/pm-gh1418.toon).
 
 ```ts
 import {

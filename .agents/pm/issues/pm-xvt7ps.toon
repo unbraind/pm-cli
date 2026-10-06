@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: diagnostics,governance,graph,ordering,remediation
 created_at: "2026-08-13T08:39:32.399Z"
-updated_at: "2026-08-13T12:19:42.555Z"
+updated_at: "2026-10-06T16:43:21.134Z"
 closed_at: "2026-08-13T12:19:41.808Z"
 completed_at: "2026-08-13T12:19:41.808Z"
 author: "harness:claude-code"
@@ -21,16 +21,47 @@ why_now: "All eight surviving cycles were traced to one signature in a single sc
 parent: pm-96h7
 risk: medium
 confidence: 90
+release: v2026.8.14
 resolution: "Graph assembly preserves exact contradictory source-row evidence; audit, remediation, and mutation advisory surfaces identify the executable row removal instead of only cycle membership."
 expected_result: "Each storage contradiction names its exact scalar and structured rows, yields an executable remediation, and cannot recur silently on mutation."
 actual_result: "The dedicated contradiction census drove 31 exact row removals plus 10 lower-evidence ordering repairs; the live graph now reports zero contradictions, zero cycles, and zero findings."
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[36]{id,kind,created_at,author,source_kind,author_source}:
   pm-96h7,implements,"2026-08-13T08:39:32.399Z","harness:claude-code","cli:create:dep",detected
   pm-hnc9w7,discovered_from,"2026-08-13T08:39:32.399Z","harness:claude-code","cli:create:dep",detected
   pm-j82fd3,implements,"2026-08-13T08:39:32.399Z","harness:claude-code","cli:create:dep",detected
   pm-mfvsng,blocked_by,"2026-08-13T08:39:32.399Z","harness:claude-code","cli:create:dep",detected
   pm-jkbqt8,verifies,"2026-08-13T08:44:19.103Z","harness:claude-code","cli:update:dep",detected
   pm-rggtvd,discovered_from,"2026-08-13T08:44:19.103Z","harness:claude-code","cli:update:dep",detected
+  pm-06t,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-0vnr,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-15o,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-1tyv,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-2xl,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-3gi,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-54d,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-6hhn,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-8kxm,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-8z7,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-b1w,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-c8dz,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-cwp,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-defw,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-dgb,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-g6qd,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-gyfn,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-kj4,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-l4o,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-met4,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-murz,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-nj3,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-nkx,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-pmd,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-s9hl,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-si1,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-xtfo,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-ysgr,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-yv2,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-zetb,verifies,"2026-10-06T16:43:20.804Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
 comments[4]{created_at,author,text}:
   "2026-08-13T09:28:47.070Z","harness:codex","Start evidence 2026-08-13: implementing cause-level graph audit evidence, a dedicated scalar/structured-row contradiction finding, mutation advisory/refusal coverage, and later the changelog-safe corpus repair once the structural floors are truthful."
   "2026-08-13T10:42:29.636Z","harness:codex","Verification evidence: exact scalar-blocker versus structured-ordering contradictions have dedicated active and terminal finding codes, sorted cause evidence on cycle findings, exact remediation, and mutation warnings that do not repeat legacy debt. Focused contradiction tests and repository-wide exact coverage passed; packed Bun SDK acceptance observed the active finding from public exports."

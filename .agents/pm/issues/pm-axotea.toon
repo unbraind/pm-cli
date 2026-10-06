@@ -2,11 +2,13 @@ id: pm-axotea
 title: Prose graph census misses valid item identifiers with multiple hyphens
 description: "The public prose_edge_gap SDK measurement reports one missing pair for a canonical pm-target reference but zero for a canonical pm-2evidence-dist reference under the same two-item context. The census token pattern accepts only one hyphen, undercounting missing links for custom identifiers accepted by the CLI."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T07:29:00.577Z"
-updated_at: "2026-10-04T07:29:23.182Z"
+updated_at: "2026-10-06T20:19:40.823Z"
+closed_at: "2026-10-06T20:19:39.905Z"
+completed_at: "2026-10-06T20:19:39.905Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Resolve canonical custom identifiers without prefix collisions or false positive prose matches; Preserve exact counts, deduplication, exemptions, partitions and million-item cost bounds; Add a failing real SDK regression and negative control before changing identifier extraction"
@@ -17,14 +19,42 @@ parent: pm-96h7
 risk: medium
 confidence: high
 environment: Current branch SDK read-only two-item diagnostic on 2026-10-04
-expected_result: Both resolvable unlinked canonical references produce exactly one gap
-actual_result: Single-hyphen control produces one gap; multi-hyphen target produces zero
+resolution: "Match case-insensitive numeric, double-hyphen and multi-hyphen item identifiers as complete tokens; reject shorter-prefix phantom references."
+expected_result: "Every valid existing item ID is recognized exactly once while explicit and implicit partitions, deduplication and exemptions remain correct."
+actual_result: Linked run test-local-mux10j55-i8o9fw passed the identifier regressions. Canonical run test-local-mux4elzm-xbxr14 passed 9863 tests with zero uncovered source counts. Live graph assurance passed under the unchanged 1236 ceiling and 88 existing waivers; million-item measurement scanned 2999998 work units in 6.002 seconds without false contributors.
 component: sdk/governance/assurance
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2evidence-dist,discovered_from,"2026-10-04T07:29:00.577Z","harness:codex","cli:create:dep",detected
   pm-96h7,implements,"2026-10-04T07:29:00.577Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-04T07:29:00.577Z","harness:codex","Duplicate check: full all-status metadata corpus and current CLI search reviewed. The original measurement feature is completed; this distinct custom-identifier extraction defect has no existing implementation owner. Read-only public SDK diagnostic reproduced the mismatch without modifying tracker data. Queued open and unclaimed for its own TDD implementation rather than reopening historical delivery."
-files[1]{path,scope}:
+  "2026-10-06T15:55:26.056Z","harness:codex","TDD ownership: extend the existing public measurement suite with whole multi-segment identifiers, prefix-collision negatives, markdown/path boundaries, case normalization, exact pair counts, exemptions and real custom-id creation in the workspace integration. No new test-only production API is needed. Keep the single-pass census and million-item performance contract."
+files[2]{path,scope}:
   src/sdk/governance/assurance.ts,project
+  tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project,180,"harness:codex","2026-10-06T16:32:17.128Z",local_mutation,fix/authoritative-assurance-bun-receipts-release-lock
+test_runs[1]:
+  - run_id: test-local-mux10j55-i8o9fw
+    kind: test
+    status: passed
+    started_at: "2026-10-06T18:42:33.006Z"
+    finished_at: "2026-10-06T18:42:48.425Z"
+    recorded_at: "2026-10-06T18:42:48.425Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,schema,schema,source,acknowledged
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Implemented and verified complete identifier matching in the prose relationship census.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: graph-composition
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-relationship-sources.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/assurance-relationship-sources.spec.ts
+  hosted_checks[4]: Gates (coverage),Gates (static),Gates (smokes),Windows regression (Node 24)
+  owner: pm-axotea
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: governance,graph,hierarchy,ontology,validation
 created_at: "2026-07-28T22:31:16.548Z"
-updated_at: "2026-09-22T05:07:50.155Z"
+updated_at: "2026-10-06T16:43:30.973Z"
 closed_at: "2026-08-21T14:50:14.397Z"
 completed_at: "2026-08-21T14:50:14.397Z"
 author: "harness:claude-code"
@@ -15,16 +15,35 @@ acceptance_criteria: "Writing a hierarchy dependency row is validated against th
 parent: pm-96h7
 risk: high
 confidence: high
+release: v2026.8.22
 resolution: "Logical relationship identity now provides append idempotency while normalized full stored-row provenance identity bounds exact duplicate collapse; direction, child-end cardinality, divergence, and dual-family traversal precedence are registry-driven everywhere."
 expected_result: "Every hierarchy spelling resolves consistently, invalid direction/cardinality/divergence is refused with structured endpoint evidence, and exact duplicate repair preserves provenance-distinct sibling rows."
 actual_result: "Focused 115-test update/provenance controls and the full 7,681-test exact-coverage run pass at 100/100/100/100; static quality and packed fresh-cache npx/bunx acceptance pass with no refused mutation persisted."
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[24]{id,kind,created_at,author,source_kind,author_source}:
   pm-1w6scp,discovered_from,"2026-07-28T22:31:16.548Z","harness:claude-code","cli:create:dep",detected
   pm-4020c5,blocked_by,"2026-07-28T22:31:16.548Z","harness:claude-code","cli:create:dep",detected
   pm-flnefm,related,"2026-07-28T22:31:16.548Z","harness:claude-code","cli:create:dep",detected
   pm-jkbqt8,related,"2026-07-28T22:31:16.548Z","harness:claude-code","cli:create:dep",detected
   pm-rggtvd,related,"2026-07-28T22:31:16.548Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-07-28T22:31:16.548Z","harness:claude-code","cli:create:dep",detected
+  pm-0nia,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-1265,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-2xl,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-54d,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-7t04,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-8rjn,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-aqat,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-b1w,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-b8rf,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-c0r,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-f45,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-g2nd,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-j7a,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-jauk,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-jiw,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-u9r,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-v7dj,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-ze5g,verifies,"2026-10-06T16:43:30.646Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
 comments[13]{created_at,author,text}:
   "2026-08-21T03:52:56.942Z","harness:codex","Implementation start 2026-08-21: selected as the coupled direction/cardinality half of pm-rggtvd after complete live metadata, note, history, and relationship review. This branch will make the relationship registry authoritative for hierarchy writes and reads, expose structured direction/cardinality/divergence findings, provide exact-row repair, and cover CLI/SDK/MCP plus temporary-workspace behavior. Parent epics and unrelated backlog remain open and unclaimed."
   "2026-08-21T05:34:30.498Z","harness:codex","Implementation evidence 2026-08-21: hierarchy direction and child-end cardinality are now enforced from the relationship registry for scalar and dependency storage; list --parent, tree, child rollups, validate, health, graph analyze, and graph audit consume the same normalized relation set. Exact dependency removal now accepts author and created_at alongside id/kind/source_kind and reports full stored-row coordinates, allowing one misdirected row to be retired without deleting siblings."

@@ -20488,7 +20488,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/execution-receipts.ts"
       ],
       "stability": "stable"
     },
@@ -23765,7 +23765,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/execution-receipts.ts"
       ],
       "stability": "stable"
     },
@@ -23782,7 +23782,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/execution-receipts.ts"
       ],
       "stability": "stable"
     },
@@ -23799,7 +23799,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/execution-receipts.ts"
       ],
       "stability": "stable"
     },
@@ -23816,7 +23816,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/execution-receipts.ts"
       ],
       "stability": "stable"
     },
@@ -24529,7 +24529,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/execution-receipts.ts"
       ],
       "stability": "provisional"
     },
@@ -24546,7 +24546,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/execution-receipts.ts"
       ],
       "stability": "provisional"
     },
