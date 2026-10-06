@@ -1,0 +1,67 @@
+id: pm-flfk2d
+title: "Deliver canonical strict-create, claim-start and scoped init recovery"
+description: "Complete the bounded SDK-owned recovery fixes reported by GitHub issues #1352, #1397 and #1407 while retaining the exhaustive refusal census under pm-f05lsg."
+type: Task
+status: closed
+priority: 1
+tags[3]: agent-ux,recovery,sdk
+created_at: "2026-10-06T11:18:11.080Z"
+updated_at: "2026-10-06T11:55:27.125Z"
+closed_at: "2026-10-06T11:49:35.745Z"
+completed_at: "2026-10-06T11:49:35.745Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Strict required-author policy accepts a known resolved actor but preserves unknown and disabled-policy refusals; strict recovery uses canonical flags and empty collections; explicit claim-start rejects incompatible controls with no unsafe automatic retry; scoped init status and add remain visible and preserve existing documentation; genuine Node and Bun installed artifacts execute the workflows; unchanged exact coverage and static gates pass
+parent: pm-f05lsg
+risk: medium
+confidence: 90
+resolution: "Deliver canonical strict creation, explicit claim-start and scoped init recovery."
+expected_result: Required author policy uses known resolved mutation identity; examples use canonical flags and clear collections; contradictory claim-start controls refuse safely; compact init retains scoped status/add guidance while preserving explicit skip and existing documents.
+actual_result: "All 13 linked recovery cases pass; separately installed Node and Bun execute strict resolved identity, canonical examples, contradictory selection refusal, preview-history preservation and explicit guidance inspection/add. Exact full-source coverage is100/100/100/100 and all local mandatory gates pass; exact-head hosted admission is required before merge."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,implements,"2026-10-06T11:18:11.080Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-06T11:18:11.080Z","harness:codex","Duplicate check: complete live all-status corpus contained 2896 items with no unreadable items or omissions. The exact three-report search matched only parent pm-f05lsg. Full open and in-progress checks and all-status recovery searches found no bounded delivery task for this tranche. This is a child delivery record of the existing feature and does not duplicate its unfinished exhaustive census scope."
+  "2026-10-06T11:49:34.885Z","harness:codex","Local completion: All 13 linked recovery cases pass; separately installed Node and Bun execute strict resolved identity, canonical examples, contradictory selection refusal, preview-history preservation and explicit guidance inspection/add. Canonical full suite passes 9789 runnable tests with only two established Windows-only skips. All 764 maintained source files have zero uncovered counts: statements66841/66841; branches51174/51174; functions13809/13809; lines63702/63702. Complete static pipeline, all four TypeScript configurations, 58 token surfaces, docs links, packed artifact and nine-package npx/bunx smoke pass. Bunx smoke uses a fresh owned temporary cache after the host cache symlink was refused; no host cache or gate is weakened. Required current production Sentry/telemetry gate passes with zero blocking issues and finish-error rate2.06% with zero missing error-code rows. Hosted exact-head review remains required before merge; this is implemented local-source evidence and does not claim published registry adoption."
+files[8]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Latest external pm-changelog 2026.10.5 generates the reviewed delivery
+  - path: src/sdk/init-agent-guidance.ts
+    scope: project
+  - path: src/sdk/init.ts
+    scope: project
+  - path: src/sdk/lifecycle/create.ts
+    scope: project
+  - path: src/sdk/lifecycle/task-composition.ts
+    scope: project
+  - path: tests/integration/cli/agent-create-recovery.integration.spec.ts
+    scope: project
+  - path: tests/integration/cli/init-guidance-display.integration.spec.ts
+    scope: project
+  - path: tests/integration/lifecycle-composition-sdk.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/agent-create-recovery.integration.spec.ts tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,project,300,"harness:codex","2026-10-06T11:18:34.125Z",local_mutation,fix/lossless-pagination-typed-conflicts-agent-recovery
+test_runs[1]:
+  - run_id: test-local-muwl5mua-skl27l
+    kind: test
+    status: passed
+    started_at: "2026-10-06T11:18:36.408Z"
+    finished_at: "2026-10-06T11:18:52.642Z"
+    recorded_at: "2026-10-06T11:18:52.642Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-create-recovery.integration.spec.ts tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Latest external pm-changelog reviewed delivery projection
+  - path: docs/generated/REFUSAL_CLOSURE_CENSUS.md
+    scope: project
+  - path: docs/SDK_CREATE_AND_RECOVERY.md
+    scope: project
+close_reason: Implemented and verified for the combined reviewed delivery.
+body: Strict creation must recognize the resolved mutation actor and emit executable canonical flags with honest clear-collection examples. Explicit claim-start must refuse incompatible selection controls without inventing missing options or an automatic retry. Non-interactive scoped init must retain guidance inspection and explicit add actions without changing user-authored documentation. This child records the already reproduced and implemented three-report delivery tranche; the parent feature retains the remaining complete-corpus scorer and cross-surface acceptance scope. Initial failing TDD receipts and subsequent 13-test passes are preserved in parent history. No shipped precursor is reopened.

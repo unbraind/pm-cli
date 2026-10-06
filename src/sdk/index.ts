@@ -4,6 +4,7 @@
  * Defines public SDK APIs and package-author helpers for Index.
  */
 export type { CompletionRuntimeConfig } from "./completion.js";
+export { isItemAlreadyExistsError, type PmItemAlreadyExistsError } from "./errors.js";
 export {
   PM_COMMAND_CAPABILITY_CONTRACTS,
   PM_COMMAND_VISIBILITY_CONTRACTS,

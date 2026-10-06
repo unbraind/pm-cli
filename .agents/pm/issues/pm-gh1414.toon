@@ -1,0 +1,58 @@
+id: pm-gh1414
+title: "GH-1414/GH-1415: Restore portable schema and checksum nightly fixtures"
+description: "Repair the two new platform fixture failures from nightly run 37454181508 at main 6436916: Windows generated ESM imports use drive paths and macOS checksum execution assumes GNU long options."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: cross-platform,nightly,sdk,testing
+created_at: "2026-10-06T11:38:31.267Z"
+updated_at: "2026-10-06T11:55:27.755Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7343c36984a44dc1559b5333"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Generated audit imports execute as valid file URLs on Windows; actual checksum verifier accepts approved bytes and rejects corrupt bytes before chmod on macOS and Linux; pinned immutable Codecov digest and TLS and quiet authenticated uploads remain mandatory; nightly packed consumer legs explicitly provision Bun; focused regressions and unchanged quality gates pass; fresh branch-head nightly macOS and Windows jobs pass
+parent: pm-u9d0
+risk: medium
+confidence: 90
+severity: high
+expected_result: All supported nightly platform fixtures execute the same schema and checksum contracts without loader or checksum-option refusals.
+actual_result: Scheduled run 37454181508 has two Windows schema cases failing with ERR_UNSUPPORTED_ESM_URL_SCHEME and macOS approved-payload verifier failing with sha256sum usage exit 1.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2x67z9,discovered_from,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
+  pm-2x67z9,verifies,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
+  pm-gh1393,discovered_from,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
+  pm-gh1393,verifies,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-06T11:38:31.267Z","harness:codex","Duplicate check: strict live all-status corpus returned 2897 of 2897 with complete reads and zero omissions or unreadable rows. Exact run and issue-number searches found no existing owner. Exact fixture-path matches identify shipped pm-2x67z9 and pm-gh1393 whose complete live metadata and verified histories were read. The generic platform-recurrence measurement issue does not own these specific fixture repairs. Open and in-progress inventories were refreshed."
+  "2026-10-06T11:46:34.014Z","harness:codex","Red evidence: scheduled run 37454181508 at 6436916 has real macOS approved-byte verifier failure and both Windows schema-policy cases rejected by the Node ESM loader. Full affected fixtures and workflows were read before editing. The bounded repair uses a canonical file URL and actual Node SHA-256 comparison before chmod while keeping the same immutable digest and both corrupt-byte and genuine history-drift refusals. Nightly explicitly provisions the existing pinned Bun 1.4.0 for new packed dual-runtime acceptance. The completed SDK source coverage remains byte-unchanged."
+  "2026-10-06T11:55:27.755Z","harness:codex","Local platform tranche passes all 21 linked cases, including actual approved/corrupt SHA-256 verification before chmod and real source/global history drift refusal. Fresh official Codecov v11.3.1 release metadata still publishes the exact pinned digest and 10402464-byte asset; no pin or security condition changed. Latest pm-changelog 2026.10.5 generates and checks the three completed delivery records. The full-source 9789-case coverage receipt remains unchanged by the subsequent workflow and fixture-only portability fixes. Fresh branch-head nightly macOS and Windows proof is still required before this issue closes."
+files[4]{path,scope}:
+  .github/workflows/ci.yml,project
+  .github/workflows/nightly.yml,project
+  tests/integration/release/codecov-verified-upload.integration.spec.ts,project
+  tests/integration/workspace/schema-settings-history.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-06T11:38:35.563Z",local_mutation,fix/lossless-pagination-typed-conflicts-agent-recovery
+test_runs[1]:
+  - run_id: test-local-muwm5q72-qf5676
+    kind: test
+    status: passed
+    started_at: "2026-10-06T11:46:34.956Z"
+    finished_at: "2026-10-06T11:46:56.606Z"
+    recorded_at: "2026-10-06T11:46:56.606Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: nightly-platform-fixtures
+  negative_control: Approved and corrupt actual verifier payloads plus genuine source/global schema drift refusal
+  local_checks[2]: "pnpm quality:static",node scripts/run-tests.mjs coverage
+  hosted_checks[2]: "Nightly (macos-latest, Node 24)","Nightly (windows-latest, Node 24, shard 2/2)"
+  owner: pm-gh1414
+body: "GitHub #1414 and #1415 are the same scheduled run with two independently observed portability defects. Windows schema-settings-history.integration.spec.ts generates an absolute drive-path static import; Node correctly refuses protocol d:. macOS codecov-verified-upload.integration.spec.ts executes sha256sum --check --strict against a checker that does not support those options. Keep the shipped schema isolation and uploader-integrity contracts. Generate a proper file URL for the audit import. Use actual Node SHA-256 verification in the workflow and retain approved/corrupt byte execution before real chmod. Provision the already pinned Bun runtime on nightly test legs now that packed SDK continuation acceptance executes both runtimes. Existing pm-gh1393 and pm-2x67z9 resolutions remain shipped; this distinct platform fixture delivery verifies those contracts without reopening or duplicating them. Hosted macOS and Windows Node 24 proof must follow local verification."

@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 394
+- Catalog error codes: 395
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 375
-- Coverage fraction: 0.048223
+- Uncovered error codes: 376
+- Coverage fraction: 0.048101
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -172,6 +172,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `invalid_reproducible_process_environment` | `invalid_reproducible_process_environment` | uncovered | none | 0 |
 | `invalid_workspace_snapshot_target` | `invalid_workspace_snapshot_target` | uncovered | none | 0 |
 | `item_already_active` | `item_already_active` | uncovered | none | 0 |
+| `item_already_exists` | `item_already_exists` | uncovered | none | 0 |
 | `item_deleted` | `item_deleted` | uncovered | none | 0 |
 | `item_document_encoding_invalid` | `item_document_encoding_invalid` | uncovered | none | 0 |
 | `item_document_invalid` | `item_document_invalid` | uncovered | none | 0 |

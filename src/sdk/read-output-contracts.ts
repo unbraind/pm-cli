@@ -1549,6 +1549,16 @@ function projectReadOutputRows(
   const continuationState = captureReadOutputContinuationState(projected, resolved.command, cursor, options);
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);
+    // Explicit terminal caps remain deliberate partial reads. An advertised
+    // producer cursor, however, must never jump past rows removed here.
+    if (continuationState.cursorContinuesExistingPage) {
+      rebaseCompactedProducerCursor(
+        projected,
+        continuationState.originalItemCount,
+        continuationState.cursorSource,
+        true,
+      );
+    }
   }
   refreshReadOutputDeliveredCounts(projected, continuationSource);
   return {
@@ -1806,8 +1816,8 @@ function attachReadOutputTruncationDisclosure(
   };
 }
 
-/** Rebase a producer cursor when budget compaction removes rows from its page. */
-function rebaseBudgetCompactedCursor(
+/** Rebase a producer cursor after either amount or cost removes rows from its page. */
+function rebaseCompactedProducerCursor(
   projected: Record<string, unknown>,
   originalItemCount: number,
   cursorSource: unknown,
@@ -1949,7 +1959,7 @@ function compactReadOutputProjection(
     format,
     (compacted) => {
       refreshReadOutputDeliveredCounts(compacted, deliveredSource);
-      const continuationCursorRebased = rebaseBudgetCompactedCursor(
+      const continuationCursorRebased = rebaseCompactedProducerCursor(
         compacted,
         continuationState.originalItemCount,
         continuationState.cursorSource,

@@ -5,6 +5,23 @@ import { refreshReadOutputDeliveredCounts, rememberReadOutputFocusRows, sliceRea
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "../../../../src/sdk/pagination.js";
 
 describe("delivered row count receipts (GH-1371)", () => {
+  it.each(["unbounded", 100000] as const)("rebases advertised producer cursors under an amount-only cap with budget %s", (outputBudget) => {
+    const items = Array.from({ length: 25 }, (_, index) => ({ id: `pm-amount-${index}` }));
+    const producer = { items, count: 25, total: 30, next_cursor: encodeQueryCursor("amount-query", items.at(-1)!.id, 24, "snapshot") };
+    for (const command of ["list", "search"]) {
+      const result = applyReadOutputDimensions(command, { outputLimit: 2, outputBudget }, producer);
+      expect(result.items).toEqual(items.slice(0, 2));
+      expect(result.count).toBe(2);
+      expect(result.total).toBe(30);
+      expect(result.read_output).toMatchObject({ within_budget: true, rows_compacted: false });
+      expect(result.output_budget_truncation).toBeUndefined();
+      expect(decodeQueryCursorEnvelope(result.next_cursor)).toMatchObject({ after_id: items[1]!.id, after_index: 1, fingerprint: "amount-query", snapshot: "snapshot" });
+      const terminal = applyReadOutputDimensions(command, { outputLimit: 2, outputBudget }, { items, count: 25, total: 25, next_cursor: null });
+      expect(terminal.next_cursor).toBeNull();
+      expect(terminal).toMatchObject({ count: 2, total: 25, has_more: true, truncated: true });
+    }
+  });
+
   it("rebases producer deletion fallback from the uncapped page coordinate", () => {
     const items = Array.from({ length: 50 }, (_, index) => ({ id: `pm-coordinate-${index}`, title: "Long coordinate evidence ".repeat(20) }));
     const producer = {

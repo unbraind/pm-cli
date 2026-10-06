@@ -1,6 +1,7 @@
 /** Verify serialized producer and output-budget cursors using the packed SDK public export. */
 import assert from "node:assert/strict";
-import { PmClient } from "@unbrained/pm-cli/sdk";
+import { PmClient, isItemAlreadyExistsError } from "@unbrained/pm-cli/sdk";
+import { isItemAlreadyExistsError as coreConflictGuard } from "@unbrained/pm-cli/sdk/core";
 
 const [pmRoot, emptyRoot, blockedRoot] = process.argv.slice(2);
 const client = new PmClient({ pmRoot, noExtensions: true });
@@ -73,6 +74,41 @@ async function collect(reader, options, expected, blocked = false) {
 }
 
 const results = [];
+for (const [name, reader, options] of [
+  ["list", (options) => client.list(options), { all: true }],
+  ["search", (options) => client.search("Matrix", options), { mode: "keyword", status: "all" }],
+]) {
+  const base = { ...options, tag: "matrix", limit: 25, json: true };
+  const full = await reader({ ...base, limit: 100, outputBudget: "unbounded" });
+  const orderedIds = full.items.map(({ id }) => id);
+  for (const outputBudget of ["unbounded", 100000]) {
+    const ids = [];
+    let after;
+    let reads = 0;
+    do {
+      const page = JSON.parse(JSON.stringify(await reader({ ...base, outputLimit: 2, outputBudget, ...(after ? { after } : {}) })));
+      const rows = deliveredRows(page, false).map(({ id }) => id);
+      assert.deepEqual(rows, orderedIds.slice(ids.length, ids.length + 2));
+      assert.equal(page.read_output.within_budget, true);
+      assert.equal(page.read_output.rows_compacted, false);
+      assert.equal(page.output_budget_truncation, undefined);
+      reads += 1;
+      if (!page.next_cursor) {
+        assert.equal(page.has_more, true, "Explicit terminal caps still disclose withheld rows");
+        const tail = await reader({ ...base, outputLimit: "unbounded", outputBudget, ...(after ? { after } : {}) });
+        const tailIds = tail.items.map(({ id }) => id);
+        assert.deepEqual(tailIds.slice(0, rows.length), rows);
+        ids.push(...tailIds);
+        break;
+      }
+      ids.push(...rows);
+      after = page.next_cursor;
+      assert(reads < 30, "Advertised amount-only continuation must advance");
+    } while (after);
+    assert.deepEqual(ids, orderedIds, "Every advertised cursor resumes at the first undisplayed row");
+    results.push({ name, amountOnly: true, outputBudget, reads, uniqueRows: ids.length });
+  }
+}
 for (const limit of [1, 25]) {
   for (const [name, reader, options, expected] of [
     ["list", (options) => client.list(options), { all: true, outputBudget: 1700 }, 30],
@@ -100,4 +136,16 @@ const recoveryBudget = boundedBlocked.output_budget_truncation?.recovery?.sdk?.o
 assert.equal(typeof recoveryBudget, "number", "Fallback recovery must advertise a usable SDK budget");
 assert(recoveryBudget > 1500);
 results.push({ name: "context", blocked: true, recovery: true, ...await collect((options) => blockedClient.context(options), { ...blockedOptions, outputBudget: recoveryBudget }, 12, true) });
-console.log(JSON.stringify({ publicExport: "@unbrained/pm-cli/sdk", results }));
+const conflictId = `packed-conflict-${process.versions.bun ? "bun" : "node"}`;
+const attempts = await Promise.allSettled(["First packed intent", "Second packed intent"].map((title) =>
+  client.create({ id: conflictId, title, type: "Task", createMode: "progressive" }),
+));
+const winners = attempts.filter(({ status }) => status === "fulfilled");
+const losers = attempts.filter(({ status }) => status === "rejected");
+assert.equal(winners.length, 1);
+assert.equal(losers.length, 1);
+const conflict = losers[0].reason;
+assert(isItemAlreadyExistsError(conflict));
+assert(coreConflictGuard(conflict), "Separate public entrypoints recognize the same structural conflict");
+assert.equal((await client.get(conflict.context.id)).item.title, winners[0].value.item.title);
+console.log(JSON.stringify({ publicExport: "@unbrained/pm-cli/sdk", results, conflicts: { oneWinner: true, coreGuard: true } }));

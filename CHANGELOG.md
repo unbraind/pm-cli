@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1413: Preserve lossless producer cursors under amount-only output caps ([pm-gh1413](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1413.toon))
+- Expose typed explicit-ID duplicate creation conflicts to SDK callers ([pm-gh1400](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1400.toon))
+
+### Other
+
+- Deliver canonical strict-create, claim-start and scoped init recovery ([pm-flfk2d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-flfk2d.toon))
+
 ## 2026.10.6 - 2026-10-06
 
 ### Fixed
