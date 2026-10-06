@@ -397,6 +397,29 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
 });
 
 describe("normalizeBootstrapInvocation", () => {
+  it.each([
+    { label: "collection discovery", input: ["test", "pm-a1b2", "--add", "--help"], expected: ["item", "test", "pm-a1b2", "--help", "--help"] },
+    { label: "short body discovery", input: ["create", "-b", "-h"], expected: ["create", "-h", "-h"] },
+    { label: "update body without value metadata", input: ["update", "pm-a1b2", "-b", "-h"], expected: ["update", "pm-a1b2", "-h", "-h"] },
+    { label: "linked alias without value metadata", input: ["update", "pm-a1b2", "--linked-test", "--help"], expected: ["update", "pm-a1b2", "--help", "--help"] },
+    { label: "boolean before discovery", input: ["update", "pm-a1b2", "--clear-files", "--help"], expected: ["update", "pm-a1b2", "--help", "--help"] },
+    { label: "global JSON help presentation", input: ["--json", "--help"], expected: ["--json", "--help"] },
+    { label: "adjacent options before discovery", input: ["create", "--title", "--description", "--help"], expected: ["create", "--title", "--help", "--help"] },
+    { label: "explicit bare body value", input: ["create", "body=--help"], expected: ["create", "--body=--help"] },
+    { label: "bare body after attached title", input: ["create", "--title=Task", "body=--help"], expected: ["create", "--title=Task", "--body=--help"] },
+    { label: "bare body after attached short title", input: ["create", "-t=Task", "body=-h"], expected: ["create", "-t=Task", "--body=-h"] },
+    { label: "bare body after empty attached title", input: ["create", "--title=", "body=--json"], expected: ["create", "--title=", "--body=--json"] },
+    { label: "literal assignment owned by separated title", input: ["create", "--title", "body=--help"], expected: ["create", "--title", "body=--help"] },
+    { label: "literal assignment owned by separated short title", input: ["create", "-t", "body=--help"], expected: ["create", "-t", "body=--help"] },
+    { label: "explicit short help body value", input: ["create", "body=-h"], expected: ["create", "--body=-h"] },
+    { label: "explicit global flag body value", input: ["create", "body=--json"], expected: ["create", "--body=--json"] },
+    { label: "attached body value", input: ["create", "--body=--help"], expected: ["create", "--body=--help"] },
+    { label: "terminated positional value", input: ["test", "pm-a1b2", "--", "--add", "--help"], expected: ["item", "test", "pm-a1b2", "--", "--add", "--help"] },
+    { label: "ordinary discovery", input: ["create", "--help"], expected: ["create", "--help"] },
+  ])("preserves $label intent during help normalization", ({ input, expected }) => {
+    expect(normalizeBootstrapInvocation(input).argv).toEqual(expected);
+  });
+
   it("absorbs package-runner executable aliases without hiding real commands", () => {
     expect(normalizeBootstrapInvocation(["pm", "init"])).toMatchObject({
       argv: ["workspace", "init"],

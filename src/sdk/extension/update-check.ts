@@ -4,8 +4,13 @@
  * Provides bounded and annotated-tag-aware update checks for managed extensions.
  */
 import { nowIso } from "../../core/shared/time.js";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import npa from "npm-package-arg";
 import type { ManagedExtensionSource } from "./managed-state.js";
-import { runGitCommand } from "./install-sources.js";
+import { resolveNpmCommandName, runGitCommand, shouldRunNpmCommandInShell } from "./install-sources.js";
+
+const execFileAsync = promisify(execFile);
 
 const GITHUB_UPDATE_CHECK_TIMEOUT_MS = 10_000;
 
@@ -19,6 +24,67 @@ export interface GithubUpdateStatus {
   remote_commit?: string;
   /** Stable failure reason when the comparison is incomplete. */
   error?: string;
+}
+
+/** Result of comparing the installed npm identity with its registry latest dist-tag. */
+export interface NpmUpdateStatus extends Omit<GithubUpdateStatus, "remote_commit"> {
+  /** Registry version selected by the latest dist-tag, when valid. */
+  remote_version?: string;
+}
+
+/** Resolve an exact registry version without reflecting untrusted provenance or metadata in diagnostics. */
+function resolveExactNpmVersion(packageName: string, version: unknown, errorCode: string): string {
+  if (typeof version === "string") {
+    try {
+      const parsed = npa.resolve(packageName, version);
+      if (parsed.type === "version") return parsed.fetchSpec;
+    } catch {
+      // npm-package-arg errors contain raw input; report only the caller's stable reason.
+    }
+  }
+  throw new Error(errorCode);
+}
+
+/** Query npm's configured registry with bounded execution and no lifecycle scripts. */
+async function runNpmUpdateQuery(args: string[], timeout: number): Promise<string> {
+  try {
+    const result = await execFileAsync(resolveNpmCommandName(), args, {
+      encoding: "utf8", timeout, maxBuffer: 64 * 1024,
+      shell: shouldRunNpmCommandInShell(),
+      env: { ...process.env, npm_config_ignore_scripts: "true" },
+    });
+    return result.stdout.trim();
+  } catch {
+    // Registry configuration can contain credentials; public diagnostics carry
+    // a stable failure code rather than npm's command, stderr, or environment.
+    throw new Error("npm_registry_lookup_failed");
+  }
+}
+
+/** Compare recorded npm provenance without persisting diagnostic results or guessing missing versions. */
+export async function checkNpmUpdate(
+  source: ManagedExtensionSource,
+  npmRunner: typeof runNpmUpdateQuery = runNpmUpdateQuery,
+): Promise<NpmUpdateStatus> {
+  const checkedAt = nowIso();
+  try {
+    if (source.kind !== "npm" || !source.package || !/^(?:@[a-zA-Z0-9._-]+\/)?[a-zA-Z0-9._-]+$/u.test(source.package)) {
+      throw new Error("missing_or_invalid_npm_package_identity");
+    }
+    const installedVersion = resolveExactNpmVersion(source.package, source.version, "missing_or_invalid_installed_npm_version");
+    const registryOutput = await npmRunner(["view", source.package, "dist-tags.latest", "--json", "--ignore-scripts"], GITHUB_UPDATE_CHECK_TIMEOUT_MS);
+    let output: unknown;
+    try {
+      output = JSON.parse(registryOutput);
+    } catch {
+      throw new Error("invalid_npm_registry_metadata");
+    }
+    const version: unknown = Array.isArray(output) && output.length === 1 ? output[0] : output;
+    const latestVersion = resolveExactNpmVersion(source.package, version, "invalid_npm_registry_version");
+    return { checked_at: checkedAt, available: latestVersion !== installedVersion, remote_version: latestVersion };
+  } catch (error: unknown) {
+    return { checked_at: checkedAt, available: null, error: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 /** Compare ls-remote output with an optional installed revision baseline. */

@@ -215,11 +215,12 @@ jobs:
         run: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts
 
       # pm-n912nt: entry/open races must execute against macOS's canonical /private/tmp root.
+      # pm-gh1409: imported source identities must resolve on native filesystem boundaries.
       - name: Verify transactional settings and preview portability on macOS
         if: matrix.os == 'macos-latest'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts
 
   # pm-7msh7k: exercise Node 22 subprocess behavior before merge.
   node22-telemetry:
@@ -556,13 +557,30 @@ jobs:
           path: coverage
           if-no-files-found: ignore
 
+      # pm-2x67z9: authenticate the immutable official asset before execution;
+      # both uploads require this verifier to succeed, including after test failure.
+      - name: Verify pinned Codecov CLI
+        id: codecov_cli
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          codecov_binary="${RUNNER_TEMP}/pm-codecov/codecov"
+          mkdir -p "${RUNNER_TEMP}/pm-codecov"
+          curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 --proto-redir '=https' --max-time 60 --max-filesize 67108864 \
+            --output "${codecov_binary}" https://github.com/codecov/codecov-cli/releases/download/v11.3.1/codecovcli_linux
+          printf '%s  %s\n' 'ca1d64196d2d34771084afe76ea657d581bf628e31d993ff8e52ea09cc88a56d' "${codecov_binary}" | sha256sum --check --strict
+          chmod 700 "${codecov_binary}"
+
       # Codecov ingests the v8 line-level lcov report. `!cancelled()` so coverage
       # still uploads when the gate fails on the 100% threshold (that is exactly
       # when the Codecov report is most useful for diagnosis).
       - name: Upload coverage to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.codecov_cli.outcome == 'success' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
+          binary: ${{ runner.temp }}/pm-codecov/codecov
+          url: https://codecov.io
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
           disable_search: true
@@ -571,14 +589,16 @@ jobs:
           override_branch: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fail_ci_if_error: true
-          verbose: true
+          verbose: false
 
       # Codecov Test Analytics ingests the JUnit report for flaky-test and
       # failure analytics. Runs on failure too so failing tests are recorded.
       - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.codecov_cli.outcome == 'success' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
+          binary: ${{ runner.temp }}/pm-codecov/codecov
+          url: https://codecov.io
           token: ${{ secrets.CODECOV_TOKEN }}
           report_type: test_results
           files: ./coverage/junit.xml
@@ -588,7 +608,7 @@ jobs:
           override_branch: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           override_commit: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fail_ci_if_error: true
-          verbose: true
+          verbose: false
 
   windows-regression:
     name: Windows regression (Node 24)
@@ -673,10 +693,11 @@ jobs:
         run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts
 
       # pm-n912nt: retain native invalid-ancestor errors and resolved cursor scope before merge.
+      # pm-gh1409: imported source identities must resolve on native filesystem boundaries.
       - name: Verify transactional settings and preview portability on Windows
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts
 
       # The packed-npm-extension install path exercises the Windows `.cmd` npm
       # spawn + tar extraction + hosted-SDK junction class that only the Node 24

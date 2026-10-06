@@ -3,6 +3,8 @@
  *
  * Resolves install-source identity without executing package code.
  */
+import fs from "node:fs/promises";
+import npa from "npm-package-arg";
 import {
   findInstalledNpmPackageCandidate,
   parseExtensionInstallSource,
@@ -12,6 +14,8 @@ import {
   resolveBundledExtensionAliasSource,
   resolveBundledPackageNpmName,
 } from "./bundled-catalog.js";
+import { isFileMissingError } from "../../core/fs/fs-utils.js";
+import type { ManagedExtensionRecord } from "./managed-state.js";
 
 /** Selected install-source identity. */
 export interface ExtensionInstallSourceSelection {
@@ -60,11 +64,45 @@ export interface ResolvedExtensionInstallSource {
   sourceResolution: ExtensionInstallSourceResolution;
 }
 
+/**
+ * Reuse recorded registry identity only for a missing bare managed name.
+ * Local entries and bundled sources retain precedence. Among npm records,
+ * match the manifest name before the stored directory before package identity,
+ * so record ordering cannot promote a weaker match over an exact managed name.
+ * Stored metadata must parse as the exact registry name, never a general npm
+ * spec. Invalid identity retains local-source recovery without package execution.
+ */
+async function resolveManagedNpmReinstall(source: InstallSource, entries: readonly ManagedExtensionRecord[]): Promise<InstallSource> {
+  if (source.kind !== "local" || source.input.startsWith(".") || source.input.includes("\\") ||
+    (source.input.includes("/") && !/^@[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/u.test(source.input))) return source;
+  try {
+    await fs.lstat(source.absolute_path);
+    return source;
+  } catch (error: unknown) {
+    if (!isFileMissingError(error)) throw error;
+  }
+  const input = source.input.trim();
+  const npmEntries = entries.filter((entry) => entry.source.kind === "npm");
+  const managed = npmEntries.find((entry) => entry.name === input) ??
+    npmEntries.find((entry) => entry.directory === input) ??
+    npmEntries.find((entry) => entry.source.package === input);
+  const packageName = managed?.source.package;
+  if (packageName === undefined) return source;
+  try {
+    const identity = npa(packageName);
+    if (!identity.registry || identity.name !== packageName) return source;
+  } catch {
+    return source;
+  }
+  return parseExtensionInstallSource(`npm:${packageName}`, {});
+}
+
 /** Resolve bundled-alias provenance and competing installed npm identity. */
 export async function resolveExtensionInstallSourceIdentity(
   explicitSourceInput: string,
   githubOption: string | undefined,
   ref: string | undefined,
+  managedEntries: readonly ManagedExtensionRecord[] = [],
 ): Promise<ResolvedExtensionInstallSource> {
   const bundledAliasSource =
     typeof githubOption === "string"
@@ -78,10 +116,10 @@ export async function resolveExtensionInstallSourceIdentity(
     bundledAliasName === null
       ? null
       : await resolveBundledPackageNpmName(bundledAliasName);
-  const installSource = parseExtensionInstallSource(
+  const installSource = await resolveManagedNpmReinstall(parseExtensionInstallSource(
     bundledAliasSource ?? explicitSourceInput,
     { forceGithub: typeof githubOption === "string", ref },
-  );
+  ), managedEntries);
   const installedNpmCandidate =
     bundledAliasName === null
       ? null

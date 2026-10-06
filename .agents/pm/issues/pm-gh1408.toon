@@ -1,0 +1,45 @@
+id: pm-gh1408
+title: "GH-1408: Reduce omission receipt overhead for explicit scalar field projections"
+description: Explicit field reads spend most emitted bytes on restoration hints for intentionally excluded groups; define a compact caller-selected omission policy without hiding unexpected truncation or changing read identity.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-05T10:28:03.891Z"
+updated_at: "2026-10-05T10:28:03.891Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Prove complete serialized byte/token savings for explicit selectors on material and empty records across CLI SDK and MCP; preserve minimum identity and requested empty values; retain truthful default/depth receipts and requested-field truncation; preserve alias/provenance and final token accounting; extend existing primary regressions and verify real temporary-directory Node Bun npx bunx consumers without relaxing mandatory gates.
+goal: project management = context management
+objective: Predictable whole-response context cost
+value: Reduce repeated scalar-read tokens while retaining truthful recovery
+parent: pm-5t33or
+risk: medium
+confidence: high
+reporter: GitHub issue #1408
+severity: medium
+environment: Installed pm 2026.10.5 TOON explicit get field projection
+repro_steps: Read a material item with pm get <id> --fields status; measure the complete UTF-8 output and its omission_receipt section separately.
+expected_result: Explicit scalar reads spend their budget on the requested answer while unexpected truncation remains discoverable and defaults retain restoration evidence.
+actual_result: "Read-only current CLI observation: 419 total UTF-8 bytes; 376 receipt bytes (89.74 percent); eight intentionally unselected groups. No implementation yet."
+affected_version: 2026.10.5
+component: sdk/output-projection
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4fwgaz,verifies,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
+  pm-5t33or,implements,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
+  pm-gh1389,discovered_from,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
+  pm-gh1389,verifies,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
+  pm-gok2km,discovered_from,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
+  pm-p258tx,implements,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-05T10:28:03.891Z","harness:codex","Duplicate check: request-specific live search plus strict full all-status corpus 2889/2889 with zero omissions and current open/in_progress inventories found no owner for this explicit-selector overhead policy. Four completed receipt predecessors and the open whole-response budget parent were read in full. This canonical intake preserves their shipped scopes and requires implementation before closure."
+files[5]{path,scope,note}:
+  src/sdk/query/get.ts,project,Existing explicit item selector boundary
+  src/sdk/output-projection.ts,project,Existing receipt policy primitive
+  src/core/output/output.ts,project,Existing serialized output and cost boundary
+  tests/unit/sdk/output-projection.spec.ts,project,Primary future regression owner; extend instead of duplicating
+  tests/unit/commands/query/get-append-command.spec.ts,project,Existing sparse identity and empty collection acceptance owner
+docs[2]{path,scope}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+  docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project
+body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1408\nReported package: 2026.10.5.\n\nAn explicit scalar selector spends most of its emitted output explaining groups that the caller intentionally excluded. The reported pm-2rqw example does not exist in this tracker, so it is not represented as a reproduced fixture. A separate live read through the current CLI, pm get pm-p258tx --fields status, succeeded and emitted 419 UTF-8 bytes; the omission_receipt section occupied 376 bytes (89.74 percent), listing eight material groups beyond the requested id/status answer. This is read-only diagnostic evidence, not an implementation or a fabricated passing regression.\n\nThe completed receipt primitive pm-p258tx, empty/default monotonicity fix pm-gok2km, sparse identity/empty preservation pm-4fwgaz and emitted-alias truthfulness pm-gh1389 remain shipped. Their full live metadata, comments, notes, learnings and complete history were read before classification. This distinct cost policy belongs under the existing whole-response budget feature pm-5t33or. No predecessor is reopened or given a second release attribution.\n\nDesign acceptance must distinguish intentional field exclusion from unexpected truncation inside a requested field. Evaluate a compact receipt for explicit selectors against compatibility needs; retain full restoration evidence for default/depth reads and genuinely withheld requested content. Preserve canonical identity, requested empty collections, alias/provenance accuracy, exact final serialized token accounting, SDK/CLI/MCP parity and existing output budgets. Extend existing primary regressions rather than creating parallel tests. This item remains open and unclaimed; no output implementation or test expectation is changed in PR #1402."

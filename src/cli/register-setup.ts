@@ -176,6 +176,7 @@ function normalizeExtensionOptions(
     trace: readBoolean("trace"),
     watch: readBoolean("watch"),
     runtimeProbe: readBoolean("runtimeProbe", "runtime_probe", "runtime-probe"),
+    offline: readBoolean("offline"),
     fixManagedState: readBoolean(
       "fixManagedState",
       "fix_managed_state",
@@ -636,6 +637,7 @@ function registerLifecycleCommand(
     .option("--explore", `List discovered ${plural} in selected scope`)
     .option("--list", "Alias for --explore")
     .option("--manage", `List managed ${plural} and updates`)
+    .option("--offline", "Skip remote freshness checks during manage")
     .option(
       "--describe",
       `Show surfaces registered by a loaded ${noun}`,
@@ -859,6 +861,7 @@ function registerLifecycleCommand(
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("manage")
+      .option("--offline", "Skip remote freshness checks and report unknown update availability")
       .option(
         "--runtime-probe",
         "Opt-in runtime activation probe for manage output parity",

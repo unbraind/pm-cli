@@ -216,6 +216,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "blocker_identity_read_failed",
+    meaning: "Blocker identity read failed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/query/get.ts"],
+    emitting_commands: ["get"],
+    canonical_code: "blocker_identity_read_failed",
+    aliases: [],
+  },
+  {
     code: "body_file_conflicts_with_body",
     meaning: "Body file conflicts with body condition.",
     stability: "stable",
@@ -2584,19 +2597,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_receipts_pending",
-    aliases: [],
-  },
-  {
-    code: "merge_reconcile_receipt_evidence_untrusted",
-    meaning: "Merge reconcile receipt evidence untrusted condition.",
-    stability: "provisional",
-    exit_code: 4,
-    class: "conflict",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/history-repair.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_reconcile_receipt_evidence_untrusted",
     aliases: [],
   },
 ];

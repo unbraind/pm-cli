@@ -3622,7 +3622,8 @@
         },
         {
           "flag": "--body",
-          "short": "-b"
+          "short": "-b",
+          "value_name": "value"
         },
         {
           "flag": "--body-file"
@@ -4403,6 +4404,10 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "flag": "--offline",
+          "value_type": "boolean"
         },
         {
           "flag": "--runtime-probe"
@@ -6697,6 +6702,10 @@
           "flag": "--manage"
         },
         {
+          "flag": "--offline",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--describe"
         },
         {
@@ -6998,6 +7007,10 @@
           "flag": "--global"
         },
         {
+          "flag": "--offline",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--runtime-probe"
         },
         {
@@ -7119,6 +7132,10 @@
         },
         {
           "flag": "--manage"
+        },
+        {
+          "flag": "--offline",
+          "value_type": "boolean"
         },
         {
           "flag": "--describe"
@@ -7420,6 +7437,10 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "flag": "--offline",
+          "value_type": "boolean"
         },
         {
           "flag": "--runtime-probe"
@@ -20165,6 +20186,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/item/parse.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "blocker_identity_read_failed",
+      "class": "generic_failure",
+      "code": "blocker_identity_read_failed",
+      "emitting_commands": [
+        "get"
+      ],
+      "exit_code": 1,
+      "meaning": "Blocker identity read failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/query/get.ts"
       ],
       "stability": "provisional"
     },
@@ -43820,6 +43858,10 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "offline": {
+            "description": "Skip remote GitHub and npm freshness checks during package or extension manage; update availability remains unknown.",
+            "type": "boolean"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -44968,6 +45010,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "offline": {
+            "description": "Skip remote GitHub and npm freshness checks during package or extension manage; update availability remains unknown.",
             "type": "boolean"
           },
           "outputBudget": {
@@ -46263,6 +46309,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "offline": {
+            "description": "Skip remote GitHub and npm freshness checks during package or extension manage; update availability remains unknown.",
             "type": "boolean"
           },
           "output": {
@@ -63285,10 +63335,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.20.0"
+    "x-schema-version": "4.21.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.20.0",
+  "schema_version": "4.21.0",
   "selected": {
     "action": null,
     "availability_only": false,

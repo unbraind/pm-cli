@@ -2187,6 +2187,27 @@
       ],
       "package_version": "2026.10.4",
       "reason": "The newly introduced blocker facet omits redundant resolved:false from its open rows; IDs, titles, current statuses and external identity are preserved. Existing pre-PR arguments and required result members are unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionCommandOptions",
+        "signature ./sdk:ExtensionCommandSdk",
+        "signature ./sdk:resolveExtensionInstallSourceIdentity",
+        "signature ./sdk/authoring:ExtensionCommandSdk",
+        "signature ./sdk/runtime:ExtensionCommandOptions"
+      ],
+      "package_version": "2026.10.4",
+      "reason": "Add optional owned-settings replacement, offline diagnostics, and managed-source resolution parameters; preserve existing callback and invocation behavior by default."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.10.4",
+      "reason": "Version additive offline managed-diagnostics parameters as strict schema 4.21 and provider schema 1.10; existing invocation defaults remain unchanged."
     }
   ],
   "entrypoints": {
@@ -7357,7 +7378,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandOptions",
-          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
+          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; offline?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
         },
         {
           "classification": "advanced_export",
@@ -7381,7 +7402,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
+          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",
@@ -12667,7 +12688,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.9.0\""
+          "signature": "\"1.10.0\""
         },
         {
           "classification": "supported",
@@ -12811,7 +12832,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.20.0\""
+          "signature": "\"4.21.0\""
         },
         {
           "classification": "contract_data",
@@ -16477,7 +16498,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "resolveExtensionInstallSourceIdentity",
-          "signature": "(explicitSourceInput: string, githubOption: string | undefined, ref: string | undefined) => Promise<ResolvedExtensionInstallSource> | calls: (explicitSourceInput: string, githubOption: string | undefined, ref: string | undefined) => Promise<ResolvedExtensionInstallSource>"
+          "signature": "(explicitSourceInput: string, githubOption: string | undefined, ref: string | undefined, managedEntries?: readonly ManagedExtensionRecord[]) => Promise<ResolvedExtensionInstallSource> | calls: (explicitSourceInput: string, githubOption: string | undefined, ref: string | undefined, managedEntries?: readonly ManagedExtensionRecord[]) => Promise<ResolvedExtensionInstallSource>"
         },
         {
           "classification": "advanced_export",
@@ -21349,7 +21370,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
+          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",
@@ -23431,7 +23452,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.9.0\""
+          "signature": "\"1.10.0\""
         },
         {
           "classification": "contract_data",
@@ -23509,7 +23530,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.20.0\""
+          "signature": "\"4.21.0\""
         },
         {
           "classification": "contract_data",
@@ -32251,7 +32272,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandOptions",
-          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
+          "signature": "export interface ExtensionCommandOptions { install?: boolean; uninstall?: boolean; explore?: boolean; manage?: boolean; describe?: boolean; markdown?: boolean; output?: string; reload?: boolean; doctor?: boolean; catalog?: boolean; init?: boolean; scaffold?: boolean; strictExit?: boolean; failOnWarn?: boolean; adopt?: boolean; adoptAll?: boolean; activate?: boolean; deactivate?: boolean; migrate?: boolean; project?: boolean; local?: boolean; global?: boolean; gh?: string; github?: string; ref?: string; detail?: string; trace?: boolean; watch?: boolean; runtimeProbe?: boolean; offline?: boolean; fixManagedState?: boolean; isolated?: boolean; ignoreGlobal?: boolean; fields?: string; capability?: string; declarative?: boolean; vocabulary?: \"extension\" | \"package\"; dryRun?: boolean; copyPlan?: ExtensionCopyPlanOptions; }"
         },
         {
           "classification": "advanced_export",
@@ -35322,6 +35343,7 @@
     "append_empty_body",
     "assurance_registry_invalid",
     "bare_comma_entry_ambiguous",
+    "blocker_identity_read_failed",
     "body_file_conflicts_with_body",
     "body_file_missing_path",
     "body_file_unreadable",

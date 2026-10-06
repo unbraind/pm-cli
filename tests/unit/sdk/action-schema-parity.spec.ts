@@ -38,7 +38,11 @@ describe("action-scoped MCP schema parity", () => {
     expect(PM_TOOL_PARAMETER_PROPERTIES.definition).toEqual({ type: "object" });
   });
   it("versions install planning and explicit claim receipt projections", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.20.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.21.0");
+    for (const action of ["extension", "package", "extension-manage", "package-manage"] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
+      expect(schema.properties?.offline, action).toMatchObject({ type: "boolean" });
+    }
     for (const action of ["install", "extension-install", "package-install", "extension", "package"] as const) {
       const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
       expect(schema.properties?.dryRun, action).toMatchObject({ type: "boolean" });

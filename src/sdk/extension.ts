@@ -40,7 +40,6 @@ import {
   validateExtensionDirectory,
 } from "./extension/shared.js";
 import {
-  sortManagedEntries,
   managedExtensionSourcesEquivalent,
   readManagedExtensionState,
   writeManagedExtensionState,
@@ -92,6 +91,7 @@ import { summarizeRuntimeCommandPathsForExtension } from "./extension/runtime-su
 import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ownership.js";
 import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
 import { checkGithubUpdate } from "./extension/update-check.js";
+import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
 import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
 import { buildExtensionInstallPlan, type ExtensionInstallPlan, type ExtensionCopyPlanOptions } from "./extension/install-plan.js";
@@ -123,8 +123,6 @@ export type {
   ManagedExtensionState,
 };
 export type { ManagedExtensionStateReadResult } from "./extension/managed-state.js";
-
-const GITHUB_UPDATE_CHECK_CONCURRENCY = 4;
 
 /** Restricts extension command action values accepted by command, SDK, and storage contracts. */
 export type ExtensionCommandAction =
@@ -256,6 +254,8 @@ export interface ExtensionCommandOptions {
   watch?: boolean;
   /** Value that configures or reports runtime probe for this contract. */
   runtimeProbe?: boolean;
+  /** Skip remote freshness checks during manage and report unknown availability. */
+  offline?: boolean;
   /** Value that configures or reports fix managed state for this contract. */
   fixManagedState?: boolean;
   /** Value that configures or reports isolated for this contract. */
@@ -313,6 +313,8 @@ export interface ManagedExtensionSummary {
   last_update_check_at?: string;
   /** Value that configures or reports last update remote commit for this contract. */
   last_update_remote_commit?: string;
+  /** Latest npm registry version observed by this invocation. */
+  last_update_remote_version?: string;
   /** Value that configures or reports update error for this contract. */
   update_error?: string;
   /** Outcome of the registry update check for this extension. */
@@ -961,7 +963,7 @@ const EXTENSION_UPDATE_CHECK_RESOLVERS: ExtensionUpdateCheckResolver[] = [
           reason: "extension_not_managed",
         },
   (managedEntry) =>
-    managedEntry && managedEntry.source.kind !== "github"
+    managedEntry && !["github", "npm"].includes(managedEntry.source.kind)
       ? {
           status: "skipped_non_github",
           reason: `managed_source_kind_${managedEntry.source.kind}`,
@@ -1046,6 +1048,7 @@ const buildInstalledExtensionSummary = (
     update_available: managed.update_available,
     last_update_check_at: managed.last_update_check_at,
     last_update_remote_commit: managed.last_update_remote_commit,
+    last_update_remote_version: managed.last_update_remote_version,
     update_error: managed.update_error,
     update_check_status: updateCheck.status,
     update_check_reason: updateCheck.reason,
@@ -2492,6 +2495,7 @@ const runSingleExtensionInstall = async (
     explicitSourceInput,
     githubOption,
     ctx.options.ref,
+    (await readManagedExtensionState(resolvedRoots.selected_root)).state.entries,
   );
   if (sourceResolution.ambiguous) {
     const npmCandidate = sourceResolution.candidates.find(
@@ -3530,27 +3534,7 @@ const prepareExploreManageState = async (
     state = fix.state;
   }
   if (ctx.action === "manage") {
-    const entries = await mapWithFixedConcurrency(
-      state.entries,
-      GITHUB_UPDATE_CHECK_CONCURRENCY,
-      async (entry) => {
-        if (entry.source.kind !== "github") return entry;
-        const updateStatus = await checkGithubUpdate(entry.source);
-        return {
-          ...entry,
-          last_update_check_at: updateStatus.checked_at,
-          last_update_remote_commit: updateStatus.remote_commit,
-          update_available: updateStatus.available,
-          update_error: updateStatus.error,
-        };
-      },
-    );
-    state = {
-      ...state,
-      updated_at: nowIso(),
-      entries: sortManagedEntries(entries),
-    };
-    await writeManagedExtensionState(ctx.resolvedRoots.selected_root, state);
+    state = await refreshManagedExtensionUpdates(state, ctx.options.offline);
   }
   return { state, fix };
 };
@@ -3659,6 +3643,11 @@ const runExtensionExploreManageAction = async (
     managedState,
   );
   warnings.push(...refreshedInstalled.warnings);
+  if (action === "manage" && options.offline === true) {
+    for (const extension of refreshedInstalled.extensions) {
+      if (extension.managed && ["npm", "github"].includes(extension.source!.kind)) extension.update_check_reason = "offline_requested";
+    }
+  }
   if (action === "manage") {
     const updateWarnings = refreshedInstalled.extensions
       .filter((entry) => entry.update_check_status === "failed")
@@ -3739,13 +3728,12 @@ const EXTENSION_ACTION_HANDLERS: Record<
 const requiresExtensionStateLock = (ctx: ExtensionActionContext): boolean =>
   [
     ctx.action === "uninstall",
-    ctx.action === "manage",
     ctx.action === "adopt",
     ctx.action === "adopt-all",
     ctx.action === "activate",
     ctx.action === "deactivate",
     ctx.action === "migrate",
-    [ctx.action === "doctor", ctx.options.fixManagedState === true].every(
+    [["doctor", "manage"].includes(ctx.action), ctx.options.fixManagedState === true].every(
       Boolean,
     ),
   ].some(Boolean);

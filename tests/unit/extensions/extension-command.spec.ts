@@ -7294,7 +7294,7 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("updates managed GitHub metadata during manage checks", async () => {
+  it("reports GitHub freshness without persisting managed metadata", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "github-manage-source");
       await mkdir(sourceDir, { recursive: true });
@@ -7347,6 +7347,8 @@ describe("extension command runtime", () => {
         },
       };
       await writeFile(managedPath, `${JSON.stringify(managedRaw, null, 2)}\n`, "utf8");
+      const before = await readFile(managedPath, "utf8");
+      const beforeStat = await fsPromises.stat(managedPath);
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       const extensions = (manage.details.extensions as Array<Record<string, unknown>>) ?? [];
@@ -7362,13 +7364,8 @@ describe("extension command runtime", () => {
         ]),
       );
 
-      const refreshedState = JSON.parse(await readFile(managedPath, "utf8")) as {
-        entries: Array<Record<string, unknown>>;
-      };
-      expect(refreshedState.entries[0]).toMatchObject({
-        last_update_remote_commit: remoteCommit,
-        update_available: true,
-      });
+      expect(await readFile(managedPath, "utf8")).toBe(before);
+      expect((await fsPromises.stat(managedPath)).mtimeMs).toBe(beforeStat.mtimeMs);
     });
   });
 

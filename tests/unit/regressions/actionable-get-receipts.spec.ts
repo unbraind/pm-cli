@@ -4,10 +4,11 @@
  * Verifies current declared blocker state and truthful schedule disclosure
  * through real SDK mutations and item reads in disposable trackers.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { encode } from "@toon-format/toon";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { syncBuiltinESMExports } from "node:module";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
 import { runGet } from "../../../src/sdk/query/get.js";
 import { resolveOutputOmissionReceipt } from "../../../src/sdk/output-projection.js";
@@ -40,20 +41,77 @@ describe("actionable get receipts", () => {
       const finished = await runCreate({ id: "pm-abcd", title: "Completed prerequisite", type: "Task", status: "closed", closeReason: "Delivered" }, global);
       const pending = await runCreate({ id: "pm-efgh", title: "Pending prerequisite", type: "Task" }, global);
       for (const target of [finished.item, pending.item]) {
-        const created = await runCreate({ title: "Short-reference dependent", type: "Task", blockedBy: target.id.slice(3) }, global);
-        const result = await runGet(created.item.id, global);
-        expect(result.blockers).toEqual({ scope: "declared", closed_count: target.status === "closed" ? 1 : 0, open: target.status === "closed" ? [] : [{ id: target.id, title: target.title, status: target.status }] });
+        for (const reference of [target.id.slice(3), target.id.toUpperCase(), target.id.slice(3).toUpperCase()]) {
+          const created = await runCreate({ title: "Legacy-reference dependent", type: "Task", blockedBy: reference }, global);
+          await fs.writeFile(path.join(pmPath, "tasks", `${created.item.id}.toon`), encode({ ...created.item, blocked_by: reference, dependencies: created.item.dependencies!.map((dependency) => ({ ...dependency, id: reference.toLowerCase() === target.id ? reference : dependency.id })) }) + "\n");
+          const result = await runGet(created.item.id, global);
+          expect(result.blockers).toEqual({ scope: "declared", closed_count: target.status === "closed" ? 1 : 0, open: target.status === "closed" ? [] : [{ id: target.id, title: target.title, status: target.status }] });
+        }
       }
     });
   });
-  it("rejects a declared blocker whose file contains another item identity", async () => {
+  it.each([false, true])("rejects a declared blocker whose file contains another item identity (matching probe: %s)", async (matchingProbe) => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
       const blocker = await runCreate({ title: "Open prerequisite", type: "Task" }, global);
       const unrelated = await runCreate({ title: "Unrelated completed work", type: "Task", status: "closed", closeReason: "Delivered" }, global);
       const created = await runCreate({ title: "Dependent work", type: "Task", blockedBy: blocker.item.id }, global);
-      await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id}.toon`));
-      await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+      const blockerPath = path.join(pmPath, "tasks", `${blocker.item.id}.toon`);
+      await fs.writeFile(blockerPath, encode({ ...unrelated.item, id: matchingProbe ? blocker.item.id : unrelated.item.id }) + "\n");
+      // Native case aliases share one destination; case-sensitive hosts retain colliding leaves.
+      if (!matchingProbe) {
+        await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `${blocker.item.id.toUpperCase()}.toon`));
+        await fs.copyFile(path.join(pmPath, "tasks", `${unrelated.item.id}.toon`), path.join(pmPath, "tasks", `Pm-${blocker.item.id.slice(3)}.toon`));
+      }
+      const itemPath = path.join(pmPath, "tasks", `${created.item.id}.toon`);
+      const historyPath = path.join(pmPath, "history", `${created.item.id}.jsonl`);
+      const before = await Promise.all([fs.readFile(itemPath, "utf8"), fs.readFile(historyPath, "utf8")]);
+      const failure = Object.assign(new Error("Directory access denied"), { code: "EACCES" });
+      const directories = vi.spyOn(fs, "readdir").mockRejectedValueOnce(failure);
+      syncBuiltinESMExports();
+      try {
+        await expect(runGet(created.item.id, global)).rejects.toMatchObject({
+          name: "PmCliError", exitCode: 1, context: { code: "blocker_identity_read_failed" }, cause: failure,
+        });
+        expect(directories).toHaveBeenCalledWith(path.join(pmPath, "tasks"));
+      } finally {
+        directories.mockRestore();
+        syncBuiltinESMExports();
+      }
+      if (matchingProbe) {
+        // Node's default names-only overload returns strings; preserve that type in external spies.
+        const nameListingFs: { readdir: (directory: Parameters<typeof fs.readdir>[0]) => Promise<string[]> } = fs;
+        const uppercasePath = path.join(pmPath, "tasks", `${blocker.item.id.toUpperCase()}.toon`);
+        const nativeCaseAlias = await fs.access(uppercasePath).then(() => true, () => false);
+        if (nativeCaseAlias) {
+          // A two-step rename forces the actual directory leaf to change on native aliases.
+          await fs.rename(blockerPath, `${blockerPath}.rename`);
+          await fs.rename(`${blockerPath}.rename`, uppercasePath);
+          await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+        } else {
+          // Model only the external directory response; the SDK and persisted documents remain real.
+          const entries = await fs.readdir(path.join(pmPath, "tasks"));
+          const aliases = vi.spyOn(nameListingFs, "readdir").mockResolvedValueOnce(entries.map((name) => name === path.basename(blockerPath) ? path.basename(uppercasePath) : name));
+          syncBuiltinESMExports();
+          try {
+            await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+          } finally {
+            aliases.mockRestore();
+            syncBuiltinESMExports();
+          }
+        }
+        const disappeared = vi.spyOn(nameListingFs, "readdir").mockResolvedValueOnce([]);
+        syncBuiltinESMExports();
+        try {
+          await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+        } finally {
+          disappeared.mockRestore();
+          syncBuiltinESMExports();
+        }
+      } else {
+        await expect(runGet(created.item.id, global)).rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+      }
+      expect(await Promise.all([fs.readFile(itemPath, "utf8"), fs.readFile(historyPath, "utf8")])).toEqual(before);
     });
   });
   it("keeps nonportable legacy blocker text unresolved without reading outside item folders", async () => {
@@ -67,9 +125,9 @@ describe("actionable get receipts", () => {
   it("resolves every declared blocker without certifying missing or external references", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
-      const first = await runCreate({ title: "First open prerequisite", type: "Task" }, global);
-      const second = await runCreate({ title: "Second open prerequisite", type: "Task" }, global);
-      const finished = await runCreate({ title: "Finished prerequisite", type: "Task", status: "closed", closeReason: "Delivered before dependent work" }, global);
+      const first = await runCreate({ id: "Source-First", title: "First open prerequisite", type: "Task" }, global);
+      const second = await runCreate({ id: "Source-Second", title: "Second open prerequisite", type: "Task" }, global);
+      const finished = await runCreate({ id: "Source-Finished", title: "Finished prerequisite", type: "Task", status: "closed", closeReason: "Delivered before dependent work" }, global);
       const created = await runCreate({
         title: "Dependent work", type: "Task", blockedBy: second.item.id,
         allowUnresolvedDeps: true,

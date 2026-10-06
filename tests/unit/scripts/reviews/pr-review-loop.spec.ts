@@ -249,48 +249,77 @@ describe("PR review loop helper", () => {
     expect(reactionFailureGh).toHaveBeenCalledTimes(2);
   });
 
-  it("watches GitHub checks once and inventories the exact watched head", () => {
-    const executeGh = vi.fn()
-      .mockReturnValueOnce('{"headRefOid":"abc123"}')
-      .mockReturnValueOnce("all checks complete")
-      .mockReturnValueOnce(JSON.stringify({
-        data: { repository: { pullRequest: {
-          number: 531,
-          url: "https://github.com/unbraind/pm-cli/pull/531",
-          headRefOid: "abc123",
-          updatedAt: "2026-07-13T00:00:00Z",
-          comments: connection([{ id: "top-comment" }]),
-          reviews: connection([{ id: "review" }]),
-          reviewThreads: connection([{ id: "thread", comments: connection([{ id: "inline" }]) }]),
-        } } },
-      }));
-    const log = vi.fn();
-    main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531"], { runGh: executeGh, log });
+  it("watches emitted checks once without certifying missing required contexts or blocked merge state", () => {
+    for (const [mergeStateStatus, emittedContexts, expectedOutcome, missingContexts, protectedBranch] of [
+      ["BLOCKED", ["build", "ruleset-scan"], "incomplete", ["codecov/patch"], true],
+      ["CLEAN", ["build", "codecov/patch", "ruleset-scan"], "passed", [], true],
+      ["CLEAN", ["build", "ruleset-scan"], "incomplete", ["codecov/patch"], true],
+      ["BLOCKED", ["build", "codecov/patch", "ruleset-scan"], "incomplete", [], true],
+      ["UNKNOWN", ["build", "codecov/patch"], "incomplete", ["ruleset-scan"], true],
+      ["CLEAN", null, "incomplete", ["build", "codecov/patch", "ruleset-scan"], true],
+      ["CLEAN", null, "passed", [], false],
+    ] as const) {
+      const executeGh = vi.fn()
+        .mockReturnValueOnce('{"headRefOid":"abc123","baseRefName":"release/main"}')
+        .mockReturnValueOnce("all checks complete")
+        .mockReturnValueOnce(JSON.stringify({
+          data: { repository: { pullRequest: {
+            number: 531,
+            url: "https://github.com/unbraind/pm-cli/pull/531",
+            headRefOid: "abc123",
+            baseRefName: "release/main",
+            mergeStateStatus,
+            baseRef: { branchProtectionRule: protectedBranch ? { requiredStatusCheckContexts: ["build", "codecov/patch"] } : null },
+            updatedAt: "2026-07-13T00:00:00Z",
+            comments: connection([{ id: "top-comment" }]),
+            reviews: connection([{ id: "review" }]),
+            reviewThreads: connection([{ id: "thread", comments: connection([{ id: "inline" }]) }]),
+          } } },
+        }))
+        .mockReturnValueOnce(JSON.stringify([protectedBranch ? [{ type: "required_status_checks", parameters: {
+          required_status_checks: [{ context: "ruleset-scan" }, { context: "build" }],
+        } }, { type: "pull_request" }] : []]))
+        .mockReturnValueOnce(JSON.stringify({ headRefOid: "abc123", baseRefName: "release/main", mergeStateStatus,
+          statusCheckRollup: emittedContexts?.map((context) => context === "build"
+            ? { name: context, status: "COMPLETED", conclusion: "SUCCESS" } : { context, state: "SUCCESS" }) ?? null,
+        }));
+      const log = vi.fn();
+      expect(main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531"], { runGh: executeGh, log }))
+        .toBe(expectedOutcome === "passed" ? 0 : 1);
 
-    const result = JSON.parse(log.mock.calls[0]?.[0]);
-    expect(result).toMatchObject({
-      repository: "unbraind/pm-cli",
-      checkWatch: { attempts: [{ watchedHeadRefOid: "abc123", outcome: "passed", failedChecks: [] }] },
-      pullRequest: { headRefOid: "abc123" },
-    });
-    expect(executeGh.mock.calls[1]?.[0]).toEqual([
-      "pr", "checks", "531", "--repo", "unbraind/pm-cli", "--watch", "--interval", "30",
-    ]);
+      const result = JSON.parse(log.mock.calls[0]?.[0]);
+      expect(result.checkWatch.attempts[0].outcome).toBe(expectedOutcome);
+      expect(result).toMatchObject({
+        repository: "unbraind/pm-cli",
+        checkWatch: { attempts: [{ watchedHeadRefOid: "abc123", outcome: expectedOutcome, failedChecks: [],
+          mergeReadiness: { baseRefName: "release/main", mergeStateStatus,
+            requiredContexts: protectedBranch ? ["build", "codecov/patch", "ruleset-scan"] : [], missingContexts },
+        }] },
+        pullRequest: { headRefOid: "abc123" },
+      });
+      expect(executeGh.mock.calls[1]?.[0]).toEqual([
+        "pr", "checks", "531", "--repo", "unbraind/pm-cli", "--watch", "--interval", "30",
+      ]);
+      expect(executeGh.mock.calls[3]?.[0]).toContain("repos/unbraind/pm-cli/rules/branches/release%2Fmain");
+      expect(executeGh).toHaveBeenCalledTimes(5);
+    }
   });
 
-  it("returns review findings after failed checks and retries changed heads", () => {
+  it("returns failed review findings, retries head or base races, and refuses unavailable policy evidence", () => {
     const failedCheck = Object.assign(new Error("checks failed"), {
       stdout: "Greptile Review\tfail\t3m31s\thttps://greptile.com/\n",
     });
     const failedGh = vi.fn()
-      .mockReturnValueOnce('{"headRefOid":"abc123"}')
+      .mockReturnValueOnce('{"headRefOid":"abc123","baseRefName":"main"}')
       .mockImplementationOnce(() => { throw failedCheck; })
       .mockReturnValueOnce(JSON.stringify({
         data: { repository: { pullRequest: {
-          number: 531, url: "url", headRefOid: "abc123", updatedAt: "now",
+          number: 531, url: "url", headRefOid: "abc123", baseRefName: "main", updatedAt: "now",
           comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
         } } },
-      }));
+      }))
+      .mockReturnValueOnce('[[]]')
+      .mockReturnValueOnce('{"headRefOid":"abc123","baseRefName":"main","mergeStateStatus":"BLOCKED"}');
     expect(watchChecksAndInventory(
       { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
       10,
@@ -306,23 +335,53 @@ describe("PR review loop helper", () => {
       },
     });
 
-    let head = 0;
-    const changingGh = vi.fn((args: string[]) => {
-      if (args[0] === "pr" && args[1] === "view") return JSON.stringify({ headRefOid: `head-${++head}` });
-      if (args[0] === "pr" && args[1] === "checks") throw "review failed";
-      return JSON.stringify({
-        data: { repository: { pullRequest: {
-          number: 531, url: "url", headRefOid: `different-${head}`, updatedAt: "now",
-          comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
-        } } },
+    for (const changeAt of ["inventory-head", "inventory-base", "readiness-head", "readiness-base", "unavailable-rules"]) {
+      let head = 0;
+      let stabilize = false;
+      const changingGh = vi.fn((args: string[]) => {
+        if (args.at(-1) === "headRefOid,baseRefName") return JSON.stringify({ headRefOid: `head-${++head}`, baseRefName: "main" });
+        if (args[0] === "pr" && args[1] === "checks") throw "review failed";
+        if (args[1]?.includes("rules/branches")) {
+          if (changeAt === "unavailable-rules") throw new Error("Rules evidence unavailable");
+          return "[[]]";
+        }
+        const observedChange = stabilize && head >= 3 ? "stable" : changeAt;
+        if (args[0] === "pr" && args[1] === "view") return JSON.stringify({
+          headRefOid: observedChange === "readiness-head" ? `different-${head}` : `head-${head}`,
+          baseRefName: observedChange === "readiness-base" ? "retargeted" : "main",
+          mergeStateStatus: "CLEAN",
+        });
+        return JSON.stringify({
+          data: { repository: { pullRequest: {
+            number: 531, url: "url", headRefOid: observedChange === "inventory-head" ? `different-${head}` : `head-${head}`,
+            baseRefName: observedChange === "inventory-base" ? "retargeted" : "main", updatedAt: "now",
+            comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
+          } } },
+        });
       });
-    });
-    expect(() => watchChecksAndInventory(
-      { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
-      10,
-      changingGh,
-    )).toThrow("three consecutive");
-    expect(changingGh).toHaveBeenCalledTimes(9);
+      expect(() => watchChecksAndInventory(
+        { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
+        10,
+        changingGh,
+      )).toThrow(changeAt === "unavailable-rules" ? "Rules evidence unavailable" : "three consecutive");
+      expect(changingGh).toHaveBeenCalledTimes(changeAt === "unavailable-rules" ? 4 : changeAt.startsWith("inventory") ? 9 : 15);
+      if (changeAt === "unavailable-rules") continue;
+      head = 0;
+      stabilize = true;
+      changingGh.mockClear();
+      const result = watchChecksAndInventory(
+        { owner: "unbraind", name: "pm-cli", repo: "unbraind/pm-cli", pr: 531 },
+        10,
+        changingGh,
+      );
+      expect(result.checkWatch.attempts).toMatchObject([
+        { attempt: 1, watchedHeadRefOid: "head-1", outcome: "failed", superseded: true },
+        { attempt: 2, watchedHeadRefOid: "head-2", outcome: "failed", superseded: true },
+        { attempt: 3, watchedHeadRefOid: "head-3", outcome: "failed", mergeReadiness: { mergeStateStatus: "CLEAN" } },
+      ]);
+      expect(result.checkWatch.attempts[2]).not.toHaveProperty("superseded");
+      expect(changingGh).toHaveBeenCalledTimes(changeAt.startsWith("inventory") ? 11 : 15);
+    }
   });
 
   it("runs gh with the expected stdio modes and trims its output", () => {
@@ -384,9 +443,18 @@ describe("PR review loop helper", () => {
   it("runs the CLI entrypoint only for direct execution", () => {
     const executeMain = vi.fn();
     const scriptPath = process.platform === "win32" ? "C:\\tmp\\review-loop.mjs" : "/tmp/review-loop.mjs";
-    runCliIfDirect(["node", scriptPath], pathToFileURL(scriptPath).href, executeMain);
-    runCliIfDirect(["node", scriptPath], pathToFileURL(`${scriptPath}.importer`).href, executeMain);
-    runCliIfDirect(["node"], pathToFileURL(scriptPath).href, executeMain);
-    expect(executeMain).toHaveBeenCalledTimes(1);
+    const previousExitCode = process.exitCode;
+    try {
+      runCliIfDirect(["node", scriptPath], pathToFileURL(scriptPath).href, executeMain);
+      expect(process.exitCode).toBe(0);
+      executeMain.mockReturnValue(1);
+      runCliIfDirect(["node", scriptPath], pathToFileURL(scriptPath).href, executeMain);
+      expect(process.exitCode).toBe(1);
+      runCliIfDirect(["node", scriptPath], pathToFileURL(`${scriptPath}.importer`).href, executeMain);
+      runCliIfDirect(["node"], pathToFileURL(scriptPath).href, executeMain);
+      expect(executeMain).toHaveBeenCalledTimes(2);
+    } finally {
+      process.exitCode = previousExitCode;
+    }
   });
 });

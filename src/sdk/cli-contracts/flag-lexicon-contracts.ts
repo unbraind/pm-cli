@@ -213,14 +213,15 @@ export function listPmFlagSpellingInventory(): readonly PmFlagSpellingInventoryE
 // declared-only census. pm-08mt4k adds two explicit scheduling opt-ins to next
 // and claim; aliases remain free and every future increase still fails closed.
 // pm-5bsofk adds one install planning opt-in to each executable install surface.
+// pm-gh1392 adds exactly one explicit no-network freshness opt-out, with no spare allowance.
 const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   init: 30,
   // pm-yql1: the item namespace exposes only the twenty shared global flags.
   item: 20,
   config: 36,
-  extension: 54,
-  package: 55,
-  packages: 55,
+  extension: 55,
+  package: 56,
+  packages: 56,
   install: 27,
   upgrade: 29,
   create: 100,

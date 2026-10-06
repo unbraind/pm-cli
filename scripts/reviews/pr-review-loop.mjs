@@ -65,7 +65,8 @@ query ReviewInventory(
 ) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
-      number url headRefOid updatedAt
+      number url headRefOid baseRefName mergeStateStatus updatedAt
+      baseRef { branchProtectionRule { requiredStatusCheckContexts } }
       comments(first: 100, after: $commentCursor) {
         pageInfo { hasNextPage endCursor }
         nodes { id databaseId author { login } body createdAt updatedAt reactionGroups { content users { totalCount } viewerHasReacted } }
@@ -142,6 +143,9 @@ export function fetchReviewInventory(target, executeGh = runGh) {
       number: page.number,
       url: page.url,
       headRefOid: page.headRefOid,
+      baseRefName: page.baseRefName,
+      mergeStateStatus: page.mergeStateStatus,
+      requiredContexts: page.baseRef?.branchProtectionRule?.requiredStatusCheckContexts ?? [],
       updatedAt: page.updatedAt,
     };
     comments.push(...page.comments.nodes);
@@ -231,17 +235,18 @@ export function addReaction(nodeId, reaction, executeGh = runGh) {
   ]);
 }
 
-/** Wait for checks to settle and inventory the watched head; restart when concurrent pushes change it. */
+/** Wait once per head, then verify required context presence and GitHub merge state before certifying success. */
 export function watchChecksAndInventory(target, interval, executeGh = runGh) {
   if (!Number.isInteger(interval) || interval < 10) {
     usage("watch requires --interval to be an integer of at least 10 seconds.");
   }
   const attempts = [];
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const watchedHeadRefOid = JSON.parse(executeGh([
-      "pr", "view", String(target.pr), "--repo", target.repo, "--json", "headRefOid",
-    ])).headRefOid;
-    let outcome = "passed";
+    const watched = JSON.parse(executeGh([
+      "pr", "view", String(target.pr), "--repo", target.repo, "--json", "headRefOid,baseRefName",
+    ]));
+    const watchedHeadRefOid = watched.headRefOid;
+    let outcome = "incomplete";
     let checkOutput;
     try {
       checkOutput = executeGh([
@@ -263,12 +268,45 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
       const [name, state, duration, url] = line.split("\t");
       return { name, state, duration, url };
     });
-    attempts.push({ attempt, watchedHeadRefOid, outcome, failedChecks });
-    if (pullRequest.headRefOid === watchedHeadRefOid) {
-      return { repository: target.repo, checkWatch: { attempts }, pullRequest };
+    const receipt = { attempt, watchedHeadRefOid, outcome, failedChecks };
+    attempts.push(receipt);
+    if (pullRequest.headRefOid !== watchedHeadRefOid || pullRequest.baseRefName !== watched.baseRefName) {
+      receipt.superseded = true;
+      continue;
     }
+    const rules = JSON.parse(executeGh([
+      "api", `repos/${target.repo}/rules/branches/${encodeURIComponent(pullRequest.baseRefName)}`,
+      "--paginate", "--slurp",
+    ])).flat();
+    const requiredContexts = [...new Set([
+      ...pullRequest.requiredContexts,
+      ...rules.filter((rule) => rule.type === "required_status_checks")
+        .flatMap((rule) => rule.parameters.required_status_checks.map((check) => check.context)),
+    ])];
+    const readiness = JSON.parse(executeGh([
+      "pr", "view", String(target.pr), "--repo", target.repo,
+      "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
+    ]));
+    if (readiness.headRefOid !== watchedHeadRefOid || readiness.baseRefName !== watched.baseRefName) {
+      receipt.superseded = true;
+      continue;
+    }
+    // Names prove presence only; publisher and state enforcement remains GitHub's CLEAN gate.
+    const emittedContexts = new Set((readiness.statusCheckRollup ?? []).map((check) => check.name ?? check.context));
+    const missingContexts = requiredContexts.filter((context) => !emittedContexts.has(context));
+    receipt.mergeReadiness = {
+      headRefOid: readiness.headRefOid,
+      baseRefName: readiness.baseRefName,
+      mergeStateStatus: readiness.mergeStateStatus,
+      requiredContexts,
+      missingContexts,
+    };
+    if (outcome !== "failed" && missingContexts.length === 0 && readiness.mergeStateStatus === "CLEAN") {
+      receipt.outcome = "passed";
+    }
+    return { repository: target.repo, checkWatch: { attempts }, pullRequest };
   }
-  throw new Error("PR head changed during three consecutive check-watch attempts.");
+  throw new Error("PR head or base changed during three consecutive check-watch attempts.");
 }
 
 /** Dispatch top-level comments or independently retryable acknowledgement and reaction writes. */
@@ -314,7 +352,7 @@ function acknowledgeInline(options, executeGh) {
   return { reaction: JSON.parse(reaction), reply: JSON.parse(reply) };
 }
 
-/** Dispatch inventory, watch and conversation operations using injectable GitHub and output boundaries. */
+/** Emit complete operation receipts; return a nonzero watch status when merge readiness is unverified. */
 export function main(argv = process.argv.slice(2), dependencies = {}) {
   const { command, options } = parseArgs(argv);
   const executeGh = dependencies.runGh ?? runGh;
@@ -327,7 +365,9 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   } else if (command === "watch") {
     const target = resolveTarget(options, executeGh);
     const interval = Number(options.interval ?? 30);
-    write(JSON.stringify(watchChecksAndInventory(target, interval, executeGh), null, 2));
+    const receipt = watchChecksAndInventory(target, interval, executeGh);
+    write(JSON.stringify(receipt, null, 2));
+    return receipt.checkWatch.attempts.at(-1).outcome === "passed" ? 0 : 1;
   } else if (command === "react") {
     write(addReaction(options["node-id"], options.reaction, executeGh));
   } else if (handleTopLevelConversationWrite(command, options, executeGh, write)) {
@@ -346,9 +386,9 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   }
 }
 
-/** Run the CLI only for a direct entrypoint invocation, preserving side-effect-free module imports. */
+/** Preserve import purity and propagate direct watch failure only after its complete receipt is emitted. */
 export function runCliIfDirect(argv = process.argv, moduleUrl = import.meta.url, executeMain = main) {
-  if (argv[1] && moduleUrl === pathToFileURL(argv[1]).href) executeMain();
+  if (argv[1] && moduleUrl === pathToFileURL(argv[1]).href) process.exitCode = executeMain() ?? 0;
 }
 
 runCliIfDirect();

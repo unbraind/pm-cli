@@ -1241,6 +1241,19 @@ describe("runBeadsImport", () => {
           },
         ],
       });
+      expect(imported.json).toMatchObject({
+        blockers: {
+          scope: "declared",
+          open: [
+            {
+              id: "Tokenwerk-B2",
+              title: "Preserve relationship target casing",
+              status: "open",
+            },
+          ],
+          closed_count: 0,
+        },
+      });
       expect(importedJson.item.expected_result).toBeUndefined();
       expect(importedJson.item.actual_result).toBeUndefined();
       expect(importedJson.item.notes).toContainEqual({

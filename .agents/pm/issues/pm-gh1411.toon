@@ -1,0 +1,35 @@
+id: pm-gh1411
+title: "GH-1411: Compose amount and token ceilings without stale cursors or skipped rows"
+description: Both presentation ceilings truncate one producer page; advertised continuation rejects an unchanged snapshot and deletion fallback can skip undisplayed rows. Verify the report at the SDK boundary and retain authoritative pre-ceiling counts and fingerprints.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-05T13:12:22.868Z"
+updated_at: "2026-10-05T13:12:22.868Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Demonstrate both reported failures using real temporary SDK/CLI persistence before edits; extend existing primary combined-continuation fixtures; preserve pre-ceiling fingerprint and count; cover deletion fallback with exact ordered IDs and no deduplication masking; preserve semantic scope/filter rejection and serialized receipts; prove full source coverage and real installed Node/Bun/npx/bunx acceptance without weakening any gate.
+parent: pm-gh1371
+risk: high
+confidence: medium
+reporter: GitHub issue #1411
+severity: high
+environment: "Reporter: published pm 2026.10.5; fresh 75-item workspace; output-limit 50 and output-budget 1500"
+repro_steps: Create 75 real Tasks with 400-character descriptions in an isolated tracker. Read with simultaneous output-limit 50 and output-budget 1500. Follow the emitted output cursor unchanged. Separately compose producer limit with both ceilings and delete the last delivered ID before continuing. Inspect exact ID sequence and original page counts.
+expected_result: Every advertised continuation works on unchanged source and deletion fallback never skips undelivered matching rows; actual filter or scope changes remain refused.
+actual_result: "Reported differential reproduction: read_output_cursor_stale without mutations; deletion fallback rebases using capped count and can skip rows. Independently reproducing and implementing these specific interactions remains pending."
+component: sdk/read-output-budget and pagination
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,implements,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
+  pm-gh1371,discovered_from,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
+  pm-gh1371,verifies,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
+  pm-gh1408,related,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-05T13:12:22.868Z","harness:codex","Duplicate check: strict live all-status read covered 2891/2891 complete records with zero omissions; request-specific search plus open and in-progress views and 169 historical keyword candidates found no existing owner for the simultaneous amount-and-token ceiling defect. Full shipped pm-gh1371 metadata and all 30 comments were read. Preserve its October delivery and define this reported three-dimension continuation interaction as a distinct follow-up; no local reproduction or fix is claimed."
+files[4]{path,scope}:
+  src/sdk/read-output-budget.ts,project
+  src/sdk/pagination.ts,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+  tests/unit/sdk/read-output/delivered-counts.spec.ts,project
+body: "GitHub report https://github.com/unbraind/pm-cli/issues/1411 describes two distinct symptoms of one combined-ceiling composition defect: unchanged-workspace output continuation is rejected as stale after both output-limit and output-budget remove rows; deleting the last delivered item before producer continuation can skip undisplayed rows through an offset fallback. The reporter reproduced published 2026.10.5 and references differential native-port evidence. Treat the analysis as reported evidence until a real temporary-workspace SDK/CLI reproduction independently confirms it. Extend existing composed-continuation and delivered-count primary fixtures with three dimensions rather than create duplicate suites. Preserve producer scope and semantic fingerprints; capture authoritative population count before either presentation ceiling; validate fallback indices after deletion; retain legitimate filter/tracker changes as stale. Implementation and source changes are not included in this delivery. This owner stays open and unclaimed; shipped predecessors retain their original closed release attribution."

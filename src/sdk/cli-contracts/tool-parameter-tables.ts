@@ -399,6 +399,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   reload: { type: "boolean" },
   watch: { type: "boolean" },
   runtimeProbe: { type: "boolean" },
+  offline: { type: "boolean" },
   fixManagedState: { type: "boolean" },
   isolated: { type: "boolean" },
   ignoreGlobal: { type: "boolean" },
@@ -954,6 +955,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   runtimeProbe: {
     description:
       "When true for extension-manage, run a doctor-like runtime activation probe for parity fields.",
+  },
+  offline: {
+    description: "Skip remote GitHub and npm freshness checks during package or extension manage; update availability remains unknown.",
   },
   fixManagedState: {
     description:

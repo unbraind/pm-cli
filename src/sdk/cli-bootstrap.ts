@@ -1067,28 +1067,31 @@ function normalizeBootstrapTokens(
     const bareKeyValue = parseBareKeyValueToken(token, preserveCurrentToken);
     // Free-text query and annotation bodies, plus explicitly positioned linked
     // test values, must survive bare-key option normalization unchanged.
+    // An equals-attached option already owns its value, including an empty one.
     if (
-      bareKeyValue &&
-      !(typeof previous === "string" && previous.startsWith("-")) &&
-      !(
-        ["search", "comments", "notes", "learnings"].includes(commandName) ||
-        isLinkedTestTwoTokenValuePosition(commandName, normalizedArgv)
-      )
+      !bareKeyValue ||
+      (typeof previous === "string" && previous.startsWith("-") && !previous.includes("=")) ||
+      ["search", "comments", "notes", "learnings"].includes(commandName) ||
+      isLinkedTestTwoTokenValuePosition(commandName, normalizedArgv)
     ) {
-      const resolution = resolveCanonicalFlag(bareKeyValue.key, lookup);
-      if (resolution) {
-        const replacement = [resolution.flag, bareKeyValue.value];
-        normalizedArgv.push(...replacement);
-        trace.push({
-          from: token,
-          to: replacement,
-          reason: "bare_key_value",
-          confidence: resolution.confidence,
-        });
-        continue;
-      }
+      normalizedArgv.push(token);
+      continue;
     }
-    normalizedArgv.push(token);
+    const resolution = resolveCanonicalFlag(bareKeyValue.key, lookup);
+    if (!resolution) {
+      normalizedArgv.push(token);
+      continue;
+    }
+    const replacement = bareKeyValue.value.startsWith("-")
+      ? [`${resolution.flag}=${bareKeyValue.value}`]
+      : [resolution.flag, bareKeyValue.value];
+    normalizedArgv.push(...replacement);
+    trace.push({
+      from: token,
+      to: replacement,
+      reason: "bare_key_value",
+      confidence: resolution.confidence,
+    });
   }
   return normalizedArgv;
 }
@@ -1118,7 +1121,24 @@ function bindAttestationVerification(argv: string[]): void {
   }
 }
 
-/** Implements normalize bootstrap invocation for the public runtime surface of this module. */
+/** Keep bare help reachable before parsing by neutralizing its preceding declared option, including options without value metadata. Global booleans preserve presentation; attached literals and terminators retain their boundaries. */
+function protectBootstrapHelpDiscovery(argv: string[], command: string | undefined): void {
+  if (!argv.some((token) => token === "--help" || token === "-h")) return;
+  const declaredFlags = new Set(resolveSubcommandFlagContractsForCommand(command)
+    .flatMap((contract) => [contract.flag, ...(contract.aliases ?? []), ...(contract.short === undefined ? [] : [contract.short])]));
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token === "--") break;
+    if (token !== "--help" && token !== "-h") continue;
+    if (declaredFlags.has(argv[index - 1]) && !BOOTSTRAP_BOOLEAN_FLAGS.has(argv[index - 1])) argv[index - 1] = token;
+  }
+}
+
+/**
+ * Canonicalize executable, command, item-address and option aliases before registration.
+ * Coalesce declared list values while preserving explicit literals and help discovery;
+ * return the selected command and normalization events for host diagnostics.
+ */
 export function normalizeBootstrapInvocation(
   argv: string[],
 ): BootstrapInvocationNormalizationResult {
@@ -1179,6 +1199,10 @@ export function normalizeBootstrapInvocation(
   for (const event of coalesced.events) {
     trace.push(event);
   }
+  // Commander consumes required values before recognizing help. Neutralize
+  // the immediately preceding declared option without guessing its arity;
+  // retain the original help token so adjacent options cannot swallow it.
+  protectBootstrapHelpDiscovery(coalesced.argv, commandPathName ?? commandName);
   if (commandPathName === "history attest")
     bindAttestationVerification(coalesced.argv);
   return {
