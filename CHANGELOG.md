@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1414/GH-1415: Restore portable schema and checksum nightly fixtures ([pm-gh1414](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1414.toon))
 - GH-1413: Preserve lossless producer cursors under amount-only output caps ([pm-gh1413](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1413.toon))
 - Expose typed explicit-ID duplicate creation conflicts to SDK callers ([pm-gh1400](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1400.toon))
 

@@ -2,13 +2,13 @@ id: pm-gh1414
 title: "GH-1414/GH-1415: Restore portable schema and checksum nightly fixtures"
 description: "Repair the two new platform fixture failures from nightly run 37454181508 at main 6436916: Windows generated ESM imports use drive paths and macOS checksum execution assumes GNU long options."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: cross-platform,nightly,sdk,testing
 created_at: "2026-10-06T11:38:31.267Z"
-updated_at: "2026-10-06T12:26:04.942Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#7343c36984a44dc1559b5333"
+updated_at: "2026-10-06T12:45:36.293Z"
+closed_at: "2026-10-06T12:45:35.036Z"
+completed_at: "2026-10-06T12:45:35.036Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Generated audit imports execute as valid file URLs on Windows; actual checksum verifier accepts approved bytes and rejects corrupt bytes before chmod on macOS and Linux; pinned immutable Codecov digest and TLS and quiet authenticated uploads remain mandatory; nightly packed consumer legs explicitly provision Bun; focused regressions and unchanged quality gates pass; fresh branch-head nightly macOS and Windows jobs pass
@@ -16,20 +16,22 @@ parent: pm-u9d0
 risk: medium
 confidence: 90
 severity: high
-expected_result: All supported nightly platform fixtures execute the same schema and checksum contracts without loader or checksum-option refusals.
-actual_result: Scheduled run 37454181508 has two Windows schema cases failing with ERR_UNSUPPORTED_ESM_URL_SCHEME and macOS approved-payload verifier failing with sha256sum usage exit 1.
+resolution: "Use canonical file URLs for generated schema audit imports, perform publisher-pinned SHA-256 comparison using static Node imports before chmod, provision pinned Bun on nightly test legs, and assert the exact escaped scoped-init receipt on Windows and Unix."
+expected_result: "All seven nightly jobs pass with the immutable checksum and genuine negative controls enforced, and local platform regressions remain sandbox-safe."
+actual_result: "Nightly run 37463232796 at 7e0d89a9468f001cddf8ec495f897bacd263332e passes all seven jobs including Windows shards 1 and 2, macOS and Linux exact coverage; 22 linked cases pass locally. Mandatory quality and negative controls remain unchanged."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-2x67z9,discovered_from,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
   pm-2x67z9,verifies,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
   pm-gh1393,discovered_from,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
   pm-gh1393,verifies,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-06T11:38:31.267Z","harness:codex","Duplicate check: strict live all-status corpus returned 2897 of 2897 with complete reads and zero omissions or unreadable rows. Exact run and issue-number searches found no existing owner. Exact fixture-path matches identify shipped pm-2x67z9 and pm-gh1393 whose complete live metadata and verified histories were read. The generic platform-recurrence measurement issue does not own these specific fixture repairs. Open and in-progress inventories were refreshed."
   "2026-10-06T11:46:34.014Z","harness:codex","Red evidence: scheduled run 37454181508 at 6436916 has real macOS approved-byte verifier failure and both Windows schema-policy cases rejected by the Node ESM loader. Full affected fixtures and workflows were read before editing. The bounded repair uses a canonical file URL and actual Node SHA-256 comparison before chmod while keeping the same immutable digest and both corrupt-byte and genuine history-drift refusals. Nightly explicitly provisions the existing pinned Bun 1.4.0 for new packed dual-runtime acceptance. The completed SDK source coverage remains byte-unchanged."
   "2026-10-06T11:55:27.755Z","harness:codex","Local platform tranche passes all 21 linked cases, including actual approved/corrupt SHA-256 verification before chmod and real source/global history drift refusal. Fresh official Codecov v11.3.1 release metadata still publishes the exact pinned digest and 10402464-byte asset; no pin or security condition changed. Latest pm-changelog 2026.10.5 generates and checks the three completed delivery records. The full-source 9789-case coverage receipt remains unchanged by the subsequent workflow and fixture-only portability fixes. Fresh branch-head nightly macOS and Windows proof is still required before this issue closes."
   "2026-10-06T12:20:56.205Z","harness:codex","Fresh source-head Nightly Validation 37459991720 at 640502925 passes nightly quality, exact full coverage on Linux Node24, Node22/25, macOS Node24 and Windows shard2. The original generated-import and checksum-option failures are fixed. Windows shard1 finds a separate fixture assertion in the new init-guidance test: raw backslashes are compared to escaped TOON output. Runtime scope and guidance actions are correct; require the exact JSON-escaped path representation in the human receipt and retain real status/add byte-preservation checks. Extend this same platform owner rather than duplicate or reopen the shipped SDK contracts. Local import-cost attempts on Node26 and Node24 exceeded unchanged bounds; actual hosted nightly quality passes them. Preserve local failures as environment-specific measurements without claiming their cause or relaxing the gate."
   "2026-10-06T12:26:04.942Z","harness:codex","The expanded linked platform suite passes 22 cases. Controlled alternating fresh-process measurements of rebuilt main and candidate SDK graph bundles on the same Node26.9 runtime give main p50 105ms and candidate p50 100ms with five runs each; both are below the unchanged 172ms admission ceiling. This does not identify the cause of earlier local timing failures. The complete hosted quality job already passes the unchanged cost, graph, history and mutation gates. Source coverage remains unchanged; the only new fixture change expects the exact escaped path instead of raw backslashes."
+  "2026-10-06T12:45:31.907Z","harness:codex","Final native proof: Nightly Validation 37463232796 at 7e0d89a9468f001cddf8ec495f897bacd263332e passes all seven jobs: complete quality on Ubuntu Node24, full exact coverage on Ubuntu Node24, Ubuntu Node22/25, macOS Node24 and both Windows Node24 shards. URL: https://github.com/unbraind/pm-cli/actions/runs/37463232796 . The 22 linked local cases pass approved/corrupt real checksum execution, genuine settings/history drift refusal and exact scoped init receipt with original guidance bytes preserved. No source coverage or gate threshold changed. Closeout and latest external pm-changelog output are part of the same reviewed delivery."
 files[5]{path,scope}:
   .github/workflows/ci.yml,project
   .github/workflows/nightly.yml,project
@@ -61,6 +63,9 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Portable nightly fixtures pass all supported native jobs
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened
