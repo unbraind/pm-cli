@@ -20,6 +20,42 @@ nightly quality and release paths enforce it. The registry-owned local
 preflight also requires the static gate and permits no skip. Trivy separately
 includes development dependencies in its required repository scan.
 
+## Indexed source-map offsets
+
+[pm-dba47](../.agents/pm/issues/pm-dba47.toon) tracks Dependabot alert 47 and
+the new source-map cause of Scorecard alert 29.
+[GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)
+affects `source-map-js` before 1.2.2. Unchecked indexed-map section offsets can
+block the event loop. The dependency is used by the development lint and test
+graph through `@eslint/css-tree`, `magicast` and `postcss`; this inventory does
+not establish a production exploit. The pnpm override requires a patched 1.x
+release while retaining normal release-age policy and frozen installation.
+The pinned pnpm 11 uses its default one-day minimum release age; the separate
+seven-day Dependabot cooldown governs version-update scheduling. This repair
+adds no age override or exclusion.
+
+A clean audit feed is only evidence about that feed at its observation time.
+GitHub and OSV reported this advisory while the npm audit response was still
+empty. A freshly updated Trivy database also admitted both vulnerable and
+patched temporary fixtures, so that scan did not establish regression sensitivity.
+The independent safe constructor control rejected an oversized indexed-map
+offset only on the patched version, without serializing the huge offset.
+Read the actual locked graph and every available scanner report before
+claiming that findings are retired. Native scans of merged main must confirm
+retirement independently of green PR workflow jobs.
+
+## Worker diagnostics
+
+[pm-cql43](../.agents/pm/issues/pm-cql43.toon) tracks CodeQL alert 43 in the
+test worker bridge. Its captured scanner flow contains a generated temporary
+path, so it does not prove a credential leak. The debug path nevertheless
+previously broadcast arbitrary CLI arguments and stderr. Debug failures now
+emit only a fixed notification; the complete captured result remains available
+to deliberate assertions. A real worker regression uses synthetic private
+input and verifies both notification privacy and preserved result contents,
+plus silence when debugging is disabled or the command succeeds. The harness
+is excluded from the published package.
+
 ## File matching dependency removal
 
 [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)

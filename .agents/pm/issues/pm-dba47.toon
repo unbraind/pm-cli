@@ -1,0 +1,73 @@
+id: pm-dba47
+title: "Dependabot 47 and Scorecard 29: patch indexed source-map offset denial of service"
+description: "Post-merge main a7c662b4984a71d1b08d7909f616839705764ab8 reports Dependabot47 and reopened Scorecard29 for source-map-js1.2.1. High GHSA-68fv-2mgg-jv7q / CVE-2026-93749 affects >=1.0.0 <1.2.2; upstream fix1.2.2 was published2026-09-30T14:08:09.382Z and exceeds the pinned pnpm11 default one-day install minimum. The separate seven-day Dependabot version-update cooldown is unchanged. Installed dev edges are @eslint/css-tree magicast and postcss. npm audit and freshly updated Trivy currently admit the vulnerable version despite GitHub/OSV findings; independent safe installed-library controls establish the patch. No production exploit is established. Preserve both scanner identities under this one cause-specific owner without reopening completed Axios work."
+type: Issue
+status: open
+priority: 0
+tags[1]: security
+created_at: "2026-10-06T00:23:53.369Z"
+updated_at: "2026-10-06T01:12:17.042Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Resolve every source-map-js edge to a patched compatible release; retain existing mandatory scanner gates and release age; prove real isolated vulnerable/patched scanner controls; preserve frozen installs and tooling; independently verify native merged-main scanner retirement.
+parent: pm-qwoy
+risk: high
+confidence: high
+expected_result: No affected source-map-js remains in the locked or installed graph; existing test lint benchmark package and security contracts remain intact.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6ixn,implements,"2026-10-06T00:23:53.369Z","harness:codex","cli:create:dep",detected
+  pm-r61juc,recurs_from,"2026-10-06T00:23:53.369Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-06T00:23:53.369Z","harness:codex","Duplicate check: fresh strict all-status full corpus2892/2892 has no source-map-js or GHSA-68fv match. Full live pm-qwoy pm-6ixn pm-r61juc plus verified histories read. Historical alert29 had distinct fixed causes and stays closed. Links https://github.com/unbraind/pm-cli/security/dependabot/47 https://github.com/unbraind/pm-cli/security/code-scanning/29 https://github.com/advisories/GHSA-68fv-2mgg-jv7q https://github.com/7rulnik/source-map-js/releases/tag/v1.2.2 . Findings arrived after BIG PR1402 merge; prepare reviewed followup without direct-main changes."
+  "2026-10-06T00:31:11.459Z","harness:codex","Manual admission evidence: exact lock diff replaces only source-map-js1.2.1 with1.2.2 across its three parent snapshots, integrity digest and compatible override; no other version changed and frozen install passes. Current Trivy0.74 updated its database but admits BOTH the vulnerable1.2.1 dev-only temporary fixture and patched1.2.2 with zero findings; this is a scanner-feed proof gap, not a passing negative control. npm audit likewise cannot retire the GitHub/OSV finding. Independent real installed-library control initially queried indexed-map column0 and failed the same setup assertion on both versions; corrected to the upstream documented/tested column1. Normal mapping/source-node round trip then passes on both versions; safe constructor-only oversized-offset rejection fails exactly on1.2.1 and passes on1.2.2 without serializing the huge offset or performing a DoS. These manual results are separate from native main scanner retirement."
+  "2026-10-06T00:59:51.139Z","harness:codex","Static gate stopped with two unregistered-recurrence findings: the genuine recurs_from edge to completed pm-r61juc lacks a registered security family seed. Register that historical root in the existing security-scanner-finding family, retain both zero escape budget and current evidence epoch, and include the actual development admission and worker privacy commands. Do not remove the historical edge or reopen the completed Axios fix. Release-age verification: this checkout uses pnpm11 default one-day minimum, not a repository seven-day install setting; the explicit seven-day gate covers Dependabot version updates. Source-map-js1.2.2 was published2026-09-30T14:08:09.382Z and exceeds the pnpm default; no age override or new exclusion was used. The early phrase cooldown eligible refers to pnpm installation, not seven-day Dependabot version scheduling."
+  "2026-10-06T01:11:32.386Z","harness:codex","Final local verification: complete pnpm quality:static exit0, all four configured pnpm typecheck projects pass, history-inclusive secret scan passes, docs links pass, frozen install and exact whole-lockfile comparison pass. All three actual parent resolutions are1.2.2. The complete source suite is recorded once on pm-cql43 through its verifies edge:9781 passing cases and exact100/100/100/100 coverage. Security recurrence familyv4 registers the real historical pm-r61juc seed; complete coverage176/176 with zero missing or uncovered members, while the unchanged policy negative control still rejects both members of a disconnected lineage with exit1. Canonical static bounded mutation check reports329 killed and7 existing reviewed equivalents of336, score97.9167 and no failures; this is not whole-source mutation proof. Node/npm and Bun installed-package manual acceptance and npx/bunx smoke all pass, nine packaged extensions; actual npm artifact19949268bytes and1753files remains inside unchanged20MB distribution budget. Latest pm-changelog2026.10.4 generates unchanged correct existing closed-item changelog. Native main47/29 remain open and no alert was dismissed; reviewed delivery and main rescans are still required."
+notes[1]{created_at,author,text}:
+  "2026-10-06T01:12:14.840Z","harness:codex","Resume from the prepared fix/source-map-security-worker-debug-output branch. Local code tooling admission recurrence negative control exact coverage and installed consumer proofs are complete. Reviewed delivery is pending because BIG PR1402 has already merged and cannot accept additional commits. Do not push repairs directly to main or dismiss active alerts. Deliver source-map patch and worker privacy correction together; obtain the one-PR scope clarification before opening an additional PR. After reviewed merge, wait for native CodeQL Scorecard and Dependabot retirement at the merged SHA before asserting clean main."
+learnings[1]{created_at,author,text}:
+  "2026-10-06T00:38:23.469Z","harness:codex","A green scanner job means the scanner completed under its current data, not that every independently reported advisory is absent. This source-map finding is present in GitHub/OSV while both updated Trivy and npm audit admit the vulnerable version. Keep exact graph and independent safe library controls alongside native alert retirement. Resolve transitive modules from the real parent entrypoint in strict pnpm installations; an unsuccessful root-level require of an unhoisted package is a setup fault, not evidence that the dependency is absent."
+files[3]:
+  - path: config/defect-recurrence-policy.json
+    scope: project
+    note: Register genuine historical security recurrence seed and retain strict family budgets
+  - path: pnpm-lock.yaml
+    scope: project
+  - path: pnpm-workspace.yaml
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "pnpm quality:dependencies",project,240,"harness:codex","2026-10-06T00:29:01.657Z",local_mutation,fix/source-map-security-worker-debug-output,Full npm advisory feed plus installed bundle admission; zero advisory response is not substituted for independent GitHub OSV and Trivy inventory.
+  "node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const coverage = createRequire(import.meta.resolve(\"@vitest/coverage-v8\")); const parent = createRequire(coverage.resolve(\"magicast\")); const { SourceMapConsumer } = parent(\"source-map-js\"); assert.throws(() => new SourceMapConsumer({version: 3, sections: [{offset: {line: 10000001, column: 0}, map: {version: 3, sources: [\"a.js\"], names: [], mappings: \"AAAA\"}}]}), /must not exceed/u);'",project,120,"harness:codex","2026-10-06T00:34:41.703Z",local_mutation,fix/source-map-security-worker-debug-output,Independent known-advisory control using the actual development parent resolution. Constructor only; never serializes an oversized offset. Same control is a relevant safe failure on source-map-js1.2.1 and passes on1.2.2 even when advisory feeds lag.
+test_runs[2]:
+  - run_id: test-local-muvxzmdj-orkq7x
+    kind: test
+    status: passed
+    started_at: "2026-10-06T00:30:15.447Z"
+    finished_at: "2026-10-06T00:30:20.935Z"
+    recorded_at: "2026-10-06T00:30:20.935Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:dependencies",schema,schema,source,local_source_ref
+  - run_id: test-local-muvy599u-yo8hjt
+    kind: test
+    status: passed
+    started_at: "2026-10-06T00:34:43.535Z"
+    finished_at: "2026-10-06T00:34:43.890Z"
+    recorded_at: "2026-10-06T00:34:43.890Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const coverage = createRequire(import.meta.resolve(\"@vitest/coverage-v8\")); const parent = createRequire(coverage.resolve(\"magicast\")); const { SourceMapConsumer } = parent(\"source-map-js\"); assert.throws(() => new SourceMapConsumer({version: 3, sections: [{offset: {line: 10000001, column: 0}, map: {version: 3, sources: [\"a.js\"], names: [], mappings: \"AAAA\"}}]}), /must not exceed/u);'",schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: development-dependency-security
+  negative_control: "node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const coverage = createRequire(import.meta.resolve(\"@vitest/coverage-v8\")); const parent = createRequire(coverage.resolve(\"magicast\")); const { SourceMapConsumer } = parent(\"source-map-js\"); assert.throws(() => new SourceMapConsumer({version: 3, sections: [{offset: {line: 10000001, column: 0}, map: {version: 3, sources: [\"a.js\"], names: [], mappings: \"AAAA\"}}]}), /must not exceed/u);'"
+  local_checks[3]: pnpm install --frozen-lockfile,"pnpm quality:dependencies","node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const coverage = createRequire(import.meta.resolve(\"@vitest/coverage-v8\")); const parent = createRequire(coverage.resolve(\"magicast\")); const { SourceMapConsumer } = parent(\"source-map-js\"); assert.throws(() => new SourceMapConsumer({version: 3, sections: [{offset: {line: 10000001, column: 0}, map: {version: 3, sources: [\"a.js\"], names: [], mappings: \"AAAA\"}}]}), /must not exceed/u);'"
+  hosted_checks[3]: CI / Gates (static),Security and Script Quality / Trivy,CI / Gates (coverage)
+  owner: pm-dba47
+body: ""
