@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T07:29:00.577Z"
-updated_at: "2026-10-06T20:19:40.823Z"
+updated_at: "2026-10-06T20:26:00.746Z"
 closed_at: "2026-10-06T20:19:39.905Z"
 completed_at: "2026-10-06T20:19:39.905Z"
 author: "harness:codex"
@@ -26,9 +26,10 @@ component: sdk/governance/assurance
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2evidence-dist,discovered_from,"2026-10-04T07:29:00.577Z","harness:codex","cli:create:dep",detected
   pm-96h7,implements,"2026-10-04T07:29:00.577Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-04T07:29:00.577Z","harness:codex","Duplicate check: full all-status metadata corpus and current CLI search reviewed. The original measurement feature is completed; this distinct custom-identifier extraction defect has no existing implementation owner. Read-only public SDK diagnostic reproduced the mismatch without modifying tracker data. Queued open and unclaimed for its own TDD implementation rather than reopening historical delivery."
   "2026-10-06T15:55:26.056Z","harness:codex","TDD ownership: extend the existing public measurement suite with whole multi-segment identifiers, prefix-collision negatives, markdown/path boundaries, case normalization, exact pair counts, exemptions and real custom-id creation in the workspace integration. No new test-only production API is needed. Keep the single-pass census and million-item performance contract."
+  "2026-10-06T20:26:00.746Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1421 . Implementation source 857049db83b08ad029c38ddcffd33a33bd8b2056 includes this owner, immutable closure evidence and the generated changelog. Required hosted checks and reviewer feedback are pending; local exact coverage and acceptance receipts are recorded above."
 files[2]{path,scope}:
   src/sdk/governance/assurance.ts,project
   tests/unit/sdk/governance/assurance-relationship-sources.spec.ts,project

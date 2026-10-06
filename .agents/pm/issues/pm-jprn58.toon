@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-04T22:58:46.398Z"
-updated_at: "2026-10-06T20:23:45.003Z"
+updated_at: "2026-10-06T20:26:00.032Z"
 closed_at: "2026-10-06T20:19:03.061Z"
 completed_at: "2026-10-06T20:19:03.061Z"
 author: "harness:codex"
@@ -30,7 +30,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-py7qv2,recurs_from,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
   pm-e0b5,verifies,"2026-10-06T17:36:36.616Z","harness:codex","cli:update:dep",detected
   pm-e9zh,verifies,"2026-10-06T17:36:36.616Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-10-04T22:58:46.398Z","harness:codex","Duplicate check: strict full all-status 2883-item corpus, live request-specific search and open/in_progress inventories inspected. Closed pm-py7qv2 fixed metadata evidence selectors and remains shipped; closed pm-ob9z4y covers pure prose evaluation rather than this strict adapter boundary. Open pm-axotea concerns multi-hyphen ID tokenization, a distinct defect. Existing pm-1jzupz owns assurance. Public SDK controlled proof: two real synthetic items, body-only reference, strict workspace=0 versus full rows=1. Historical graph repair must retain evidence and unchanged ceilings."
   "2026-10-04T23:01:22.817Z","harness:codex","Verification receipt: real public SDK PmClient creation/get plus createAssuranceWorkspaceContext(strict_read=true, include_history=false, resolve_tree=false) and evaluateMeasurement(prose_edge_gap) on two synthetic temporary items outside checkout ancestors returned workspace_value=0, full_item_value=1, holder_body_present=false, population=2. Both project/global tracker roots and telemetry were isolated. No test hook, production export, mock, exemption or threshold was introduced. This is a confirmed open intake, not an implemented change."
   "2026-10-04T23:43:12.793Z","harness:codex","Policy registration: the full live predecessor confirms the same strict assurance adapter projection failure class. Register this open recurrence with the existing history-and-projection-integrity family; preserve all budgets and the predecessor closure. Registration records unresolved scope, not a passing body-only regression or implementation."
@@ -44,6 +44,7 @@ comments[13]{created_at,author,text}:
   "2026-10-06T19:27:39.858Z","harness:codex","Canonical linked coverage run test-local-mux2kki4-iioogk completed 9864 tests: 9861 passed, two skipped and one existing packed-SDK npm-resolution failure. All earlier resource timeouts passed with two workers. Vitest did not emit a coverage report after that failure, so no coverage claim is made. The packed continuation fixture explicitly requires npm to be discoverable through the Node module path on this Homebrew host; verify with the installed npm module root and rerun the unchanged canonical gates."
   "2026-10-06T20:18:12.906Z","harness:codex","Final canonical all-source coverage passed: 9863 executed tests passed; two existing Windows-specific tests skipped locally; 768 measured source files. Exact covered/total counts are lines 63914/63914, statements 67066/67066, functions 13833/13833 and branches 51337/51337. The canonical integer-count gate passed with zero uncovered counts; no thresholds, includes, exclusions or ignore annotations were weakened. Full static chain passed in linked run test-local-mux1vp92-ukycmi. Remaining historical content debt remains explicit: 4130 filler docstrings across 204 files, pre-existing hierarchy advisories and 170 historical closures without recoverable structured evidence. Recent Sentry/telemetry health passed earlier; trace availability remains unverified."
   "2026-10-06T20:23:45.003Z","harness:codex","Final closure checks: strict full 2901-item corpus has zero in-progress items and no omissions or unreadable entries. Record-integrity passes, tracker-context-quality passes 47 assertions and graph-composition passes nine after closure. Latest pm-changelog 2026.10.5 adds exactly five owner entries and preserves all 2577 existing release buckets. Final staged artifact including the generated changelog passes: application 19979778 bytes / 1757 files; runtime 23334884 bytes / 4731 files; zero source maps. Documentation links and version identity checks pass. GitHub PR review and merged-main verification remain subsequent delivery evidence."
+  "2026-10-06T20:26:00.032Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1421 . Implementation source 857049db83b08ad029c38ddcffd33a33bd8b2056 includes this owner, immutable closure evidence and the generated changelog. Required hosted checks and reviewer feedback are pending; local exact coverage and acceptance receipts are recorded above."
 files[122]:
   - path: config/defect-recurrence-policy.json
     scope: project
