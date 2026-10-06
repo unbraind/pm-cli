@@ -4,7 +4,6 @@
 
 ### Fixed
 
-- GH-1417: Bundle the tested CLI runtime closure for reproducible npm and Bun installs ([pm-gh1417](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1417.toon))
 - GH-1418: Accept real Bun filtered-test execution receipts ([pm-gh1418](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1418.toon))
 - Prose graph census misses valid item identifiers with multiple hyphens ([pm-axotea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-axotea.toon))
 - Include body-only references in strict workspace assurance context ([pm-jprn58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jprn58.toon))
