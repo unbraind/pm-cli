@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-05T13:12:22.868Z"
-updated_at: "2026-10-06T06:16:39.058Z"
-closed_at: "2026-10-06T06:16:38.248Z"
-completed_at: "2026-10-06T06:16:38.248Z"
+updated_at: "2026-10-06T06:52:45.223Z"
+closed_at: "2026-10-06T06:52:44.473Z"
+completed_at: "2026-10-06T06:52:44.473Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Demonstrate both reported failures using real temporary SDK/CLI persistence before edits; extend existing primary combined-continuation fixtures; preserve pre-ceiling fingerprint and count; cover deletion fallback with exact ordered IDs and no deduplication masking; preserve semantic scope/filter rejection and serialized receipts; prove full source coverage and real installed Node/Bun/npx/bunx acceptance without weakening any gate.
@@ -19,22 +19,25 @@ reporter: GitHub issue #1411
 severity: high
 environment: "Reporter: published pm 2026.10.5; fresh 75-item workspace; output-limit 50 and output-budget 1500"
 repro_steps: Create 75 real Tasks with 400-character descriptions in an isolated tracker. Read with simultaneous output-limit 50 and output-budget 1500. Follow the emitted output cursor unchanged. Separately compose producer limit with both ceilings and delete the last delivered ID before continuing. Inspect exact ID sequence and original page counts.
-resolution: Capture complete selected producer coordinates before amount and token ceilings so fingerprints and cursor deletion fallback preserve every withheld row.
-expected_result: "Combined producer, amount and token ceilings must return a replayable bounded page and the exact undisplayed ordered suffix after deleting the last delivered identity."
-actual_result: "Real SDK/CLI persistence regressions and packed Node/Bun consumers passed: 25-row producer page, 20-row amount ceiling, 1,700-token budget, deletion fallback and exact 16-item suffix without deduplication masking."
+resolution: "Preserve uncapped producer coordinates under composed ceilings, with regression-sensitive proof for both initial and resumed-page deletion fallback."
+expected_result: Every advertised continuation must preserve scope and identity and deliver the exact undisplayed ordered suffix after deleting the last row of either an initial or compacted resumed page.
+actual_result: "All 13 primary SDK/CLI cases and the public isolated coordinate sensitivity command pass. The resumed-position mutant fails at index5 instead of20 while the original initial-page assertion passes; unchanged source passes. Focused lint, three duplication profiles and four TypeScript projects pass; full-source coverage and all 26 hosted contexts passed the unchanged production source before this test-only review strengthening."
 component: sdk/read-output-budget and pagination
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1371,discovered_from,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1371,verifies,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1408,related,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-05T13:12:22.868Z","harness:codex","Duplicate check: strict live all-status read covered 2891/2891 complete records with zero omissions; request-specific search plus open and in-progress views and 169 historical keyword candidates found no existing owner for the simultaneous amount-and-token ceiling defect. Full shipped pm-gh1371 metadata and all 30 comments were read. Preserve its October delivery and define this reported three-dimension continuation interaction as a distinct follow-up; no local reproduction or fix is claimed."
   "2026-10-06T04:53:40.816Z","harness:codex","Live continuation scope: complete strict corpus 2894/2894 with zero unreadable records, omissions or truncation; selected full metadata and verified complete history read. Deliver composed read ceilings, deliberate-field omission cost, executable projection recovery and prepared source-map/worker privacy repairs in one PR. Only these five owners are active. No duplicate intake created. Auto-release run37414884541 failed specifically on source-map-js before publication; patched lock is part of this delivery."
   "2026-10-06T04:59:26.077Z","harness:codex","TDD evidence: original implementation fails the same newly extended primary fixtures before source correction. Combined ceiling resumes refuse read_output_cursor_stale and the positional coordinate is19 where14 is required; explicit status receipts include deliberately excluded children/claim_state; full/global selector recovery repeats its invalid invocation. After correction, original uncapped collection state drives cursor fingerprints and offsets, explicit selectors define receipt scope, and global selector removal preserves command-local mode placement. Real persisted temporary trackers and existing transport matrices own the proof, without new production test seams or duplicate suites. Final full coverage and hosted review remain pending."
   "2026-10-06T05:15:38.319Z","harness:codex","Test audit rationale: the retained serialized CLI/packed-SDK continuation matrix is the primary end-to-end owner. Extend it with producer limit25 plus canonical output-limit20 and budget1700, and with real deletion of the last delivered identity. The small direct assertion independently proves positional rebase math (pre-fix19 versus expected14); it does not duplicate traversal or persistence proof. No cursor seam or test-only export was added. Keep all rows and exact ordered-suffix comparisons; never deduplicate away omissions or repeats."
   "2026-10-06T05:25:14.812Z","harness:codex","Fresh real npm tarball consumer acceptance now passes under both Node26 and Bun1.4.2 in separate temporary projects: create30, combined25/20/1700 first page, delete its last delivered identity, then compare all16 suffix identities in exact order without deduplication. Both runtimes also verify206-byte selected-status output, requested empty arrays and execution of exact full/global-selector recovery argv. Independent npx/bunx smoke passes9 package entries. Initial manual harness errors (npm12 keyed pack receipt, invalid setup cwd/method, optional terminal count and cleanup race) were corrected in ignored evidence scripts; no production behavior, assertion for ordered suffix, coverage gate or public seam changed."
   "2026-10-06T06:16:37.476Z","harness:codex","Delivery evidence for PR https://github.com/unbraind/pm-cli/pull/1412: fresh canonical coverage passed 9,782 tests with two platform skips; all 764 executable coverage rows and all 66,833 statements, 51,158 branches, 13,806 functions and 63,694 lines are fully covered, with zero skipped coverage counts. Four TypeScript projects, credential and doc-link checks, real packed Node/Bun/npx/bunx acceptance and unchanged security admission pass. Exact head 3af31b07b71d5892c03b200683cf2273628a2beb passed all 26 required hosted contexts, including the complete static command. Earlier failed local timing and stale-fixture receipts remain in history. All five initial bot artifacts were read, voted and specifically acknowledged; explicit source reviews remain pending and will be requested after closeout. Native default-branch alert retirement and exact public publication remain separate post-merge checks."
+  "2026-10-06T06:36:06.804Z","harness:codex","Pre-merge CodeRabbit full review on d8790a441 identified a distinct missing assertion for budget compaction after a nonzero output-cursor offset, followed by deletion of the resumed page last row. The reviewer explicitly found no current formula defect. Reusing this unmerged canonical owner to extend its existing real-persistence integration fixture and prove the assertion is sensitive to a positional-coordinate mutant; no new item or duplicate fixture is needed. Earlier structured closure is retained in immutable history while reopening for this review remediation."
+  "2026-10-06T06:47:29.363Z","harness:codex","CodeRabbit review remediation extends the existing primary fixtures, with no new suite or production change. The real CLI fixture resumes from a nonzero output-cursor offset at a smaller budget, proves resumed-row compaction and the original25-row snapshot denominator, asserts cumulative producer after_index, deletes the last resumed row in the pre-existing clone and compares the entire ordered remaining suffix. The existing unit case now uses a standard50-row producer so the resumed tail necessarily compacts. All13 linked cases, focused ESLint and all four TypeScript projects pass. A disposable source control substituting the full snapshot total for the remaining producer count passed the earlier initial-page assertion but failed the new resumed coordinate assertion: index5 instead of20. The same case passes unchanged source. The first undersized-tail fixture guard failure is retained and is not described as a production defect. A public sandbox-safe linked command reproduces both control outcomes."
+  "2026-10-06T06:52:43.789Z","harness:codex","Review closure: the resumed-coordinate mutant fails the behavioral assertion with expected20 versus actual5, while unchanged source and all13 primary cases pass. The new public linked sensitivity command also passes, and all three duplicate-code profiles, focused ESLint and four TypeScript projects pass. The out-of-scope warning is declined because the user explicitly requested a combined SDK, security and tooling delivery, with six canonical owners and genuine verification relationships. The package-generated changelog diff only adds entries; the existing scanner-update entry remains in Security. Production source and published API contracts are unchanged by this review remediation."
 learnings[1]{created_at,author,text}:
   "2026-10-06T05:31:34.436Z","harness:codex",Composed read bounds must capture replay identity and producer coordinates before either amount or cost removes rows. Validate with exact ordered coverage and deletion fallback; a Set-based uniqueness repair can hide skipped or repeated work.
 files[5]{path,scope}:
@@ -43,9 +46,25 @@ files[5]{path,scope}:
   src/sdk/read-output-contracts.ts,project
   tests/integration/read-output/composed-continuation.integration.spec.ts,project
   tests/unit/sdk/read-output/delivered-counts.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,project,240,"harness:codex","2026-10-06T04:59:23.631Z",local_mutation,fix/composed-read-cursors-projection-recovery-security
-test_runs[1]:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T04:59:23.631Z"
+      source_kind: local_mutation
+      source_ref: fix/composed-read-cursors-projection-recovery-security
+  - command: "node --input-type=module -e 'import assert from \"node:assert/strict\"; import { runIsolatedRegressionControl } from \"./scripts/release/isolated-regression-control.mjs\"; const control={\"sourcePath\": \"src/sdk/read-output-contracts.ts\", \"testPath\": \"tests/unit/sdk/read-output/delivered-counts.spec.ts\", \"testName\": \"rebases producer deletion fallback from the uncapped page coordinate\", \"before\": \"originalItemCount: Array.isArray(projected.items)\\n      ? projected.items.length\\n      : 0,\", \"after\": \"originalItemCount: Array.isArray(projected.items)\\n      ? (cursor?.total_rows ?? projected.items.length)\\n      : 0,\"}; const negative=await runIsolatedRegressionControl(control,true); assert.equal(negative.exit_code,1,negative.output); assert.match(negative.output,/AssertionError/); assert.match(negative.output,/resumed.next_cursor/); const positive=await runIsolatedRegressionControl(control,false); assert.equal(positive.exit_code,0,positive.output); console.log(JSON.stringify({negative:negative.exit_code,positive:positive.exit_code}));'"
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T06:47:28.770Z"
+      source_kind: local_mutation
+      source_ref: fix/composed-read-cursors-projection-recovery-security
+    note: "Publicly reproducible review sensitivity: the initial-page coordinate assertion passes, while using the full collection denominator after nonzero output-cursor resumption fails the new resumed-page assertion; the same fixture passes unchanged source. Disposable copies and runner-isolated tracker roots preserve production data."
+test_runs[4]:
   - run_id: test-local-muw7q1dr-s2ukpl
     kind: test
     status: passed
@@ -57,10 +76,43 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwb6kdv-owiby8
+    kind: test
+    status: failed
+    started_at: "2026-10-06T06:39:10.783Z"
+    finished_at: "2026-10-06T06:39:39.955Z"
+    recorded_at: "2026-10-06T06:39:39.955Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwbag71-7k0jlo
+    kind: test
+    status: passed
+    started_at: "2026-10-06T06:42:15.013Z"
+    finished_at: "2026-10-06T06:42:41.149Z"
+    recorded_at: "2026-10-06T06:42:41.149Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwbgpvf-td95ny
+    kind: test
+    status: passed
+    started_at: "2026-10-06T06:47:30.151Z"
+    finished_at: "2026-10-06T06:47:33.627Z"
+    recorded_at: "2026-10-06T06:47:33.627Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node --input-type=module -e 'import assert from \"node:assert/strict\"; import { runIsolatedRegressionControl } from \"./scripts/release/isolated-regression-control.mjs\"; const control={\"sourcePath\": \"src/sdk/read-output-contracts.ts\", \"testPath\": \"tests/unit/sdk/read-output/delivered-counts.spec.ts\", \"testName\": \"rebases producer deletion fallback from the uncapped page coordinate\", \"before\": \"originalItemCount: Array.isArray(projected.items)\\n      ? projected.items.length\\n      : 0,\", \"after\": \"originalItemCount: Array.isArray(projected.items)\\n      ? (cursor?.total_rows ?? projected.items.length)\\n      : 0,\"}; const negative=await runIsolatedRegressionControl(control,true); assert.equal(negative.exit_code,1,negative.output); assert.match(negative.output,/AssertionError/); assert.match(negative.output,/resumed.next_cursor/); const positive=await runIsolatedRegressionControl(control,false); assert.equal(positive.exit_code,0,positive.output); console.log(JSON.stringify({negative:negative.exit_code,positive:positive.exit_code}));'",schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
-close_reason: Implemented and independently verified; reviewed delivery remains in PR1412.
+close_reason: "Implemented and verified, including distinct resumed-page review coverage."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

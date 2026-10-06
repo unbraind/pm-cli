@@ -1,18 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { compactReadOutputToBudget } from "../../../../src/sdk/read-output-budget.js";
-import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
+import { applyReadOutputDimensions, decodeReadOutputContinuationCursor } from "../../../../src/sdk/read-output-contracts.js";
 import { refreshReadOutputDeliveredCounts, rememberReadOutputFocusRows, sliceReadOutputRowCollection } from "../../../../src/sdk/read-output-rows.js";
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "../../../../src/sdk/pagination.js";
 
 describe("delivered row count receipts (GH-1371)", () => {
   it("rebases producer deletion fallback from the uncapped page coordinate", () => {
-    const items = Array.from({ length: 25 }, (_, index) => ({ id: `pm-coordinate-${index}`, title: "Long coordinate evidence ".repeat(20) }));
-    const result = applyReadOutputDimensions("list", { outputLimit: 20, outputBudget: 1700, outputFormat: "json" }, {
-      items, count: 25, total: 75, next_cursor: encodeQueryCursor("query-fingerprint", items.at(-1)!.id, 24),
-    });
+    const items = Array.from({ length: 50 }, (_, index) => ({ id: `pm-coordinate-${index}`, title: "Long coordinate evidence ".repeat(20) }));
+    const producer = {
+      items, count: items.length, total: 75, next_cursor: encodeQueryCursor("query-fingerprint", items.at(-1)!.id, items.length - 1),
+    };
+    const result = applyReadOutputDimensions("list", { outputLimit: 20, outputBudget: 1700, outputFormat: "json" }, producer);
     expect(result.items.length).toBeGreaterThan(0);
     expect(result.items.length).toBeLessThan(20);
     expect(decodeQueryCursorEnvelope(result.next_cursor).after_index).toBe(result.items.length - 1);
+    const outputCursor = result.output_budget_truncation!.recovery.cursor!;
+    expect(decodeReadOutputContinuationCursor(outputCursor).offset).toBe(result.items.length);
+    const resumed = applyReadOutputDimensions("list", { outputLimit: 20, outputBudget: 1000, outputFormat: "json", outputCursor }, producer);
+    expect(resumed.items.length).toBeGreaterThan(0);
+    expect(resumed.items.length).toBeLessThan(20);
+    expect(resumed.items.length).toBeLessThan(items.length - result.items.length);
+    expect(resumed.output_budget_truncation).toBeDefined();
+    expect(decodeQueryCursorEnvelope(resumed.next_cursor).after_index).toBe(result.items.length + resumed.items.length - 1);
   });
 
   it("counts shaped context focus while preserving population and blocker totals", () => {

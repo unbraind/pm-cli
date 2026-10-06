@@ -6,9 +6,9 @@
 
 - GH-1394: Define audited owned-subtree replacement for complete-next settings mutations ([pm-gh1394](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1394.toon))
 - GH-1393: Seed truthful schema-context settings history for linked tests ([pm-gh1393](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1393.toon))
+- GH-1411: Compose amount and token ceilings without stale cursors or skipped rows ([pm-gh1411](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1411.toon))
 - GH-1386: remove conflicting global output projection from get recovery retries ([pm-gh1386](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1386.toon))
 - GH-1408: Reduce omission receipt overhead for explicit scalar field projections ([pm-gh1408](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1408.toon))
-- GH-1411: Compose amount and token ceilings without stale cursors or skipped rows ([pm-gh1411](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1411.toon))
 - GH-1409/GH-1410: Preserve declared blocker spelling when resolving imported source IDs ([pm-gh1409](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1409.toon))
 - GH-1398: Preserve bare-help discovery before CLI mutations ([pm-gh1398](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1398.toon))
 - GH-1392: Keep extension diagnostics read-only and resolve npm-managed freshness ([pm-gh1392](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1392.toon))

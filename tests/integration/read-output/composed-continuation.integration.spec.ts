@@ -5,6 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { decodeQueryCursorEnvelope } from "../../../src/sdk/pagination.js";
+import type { PmReadOutputContinuation } from "../../../src/sdk/read-output-contracts.js";
 
 interface ReadPage {
   items?: { id: string }[];
@@ -16,7 +18,7 @@ interface ReadPage {
   total?: number;
   has_more?: boolean;
   next_cursor?: string;
-  output_budget_truncation?: { continuations: { cursor: string; path: string }[]; recovery?: { cursor?: string; sdk?: { outputBudget?: number }; cli?: string } };
+  output_budget_truncation?: { continuations: PmReadOutputContinuation[]; recovery?: { cursor?: string; sdk?: { outputBudget?: number }; cli?: string } };
 }
 
 type RunRead = (args: string[]) => Promise<{ code: number | null; json?: unknown; stderr: string }>;
@@ -223,6 +225,29 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       expect((await run(["close", "delete", deliveredIds.at(-1)!, "--json"])).code).toBe(0);
       const remaining = await collectReadPages(run, [...deletionBase, "--after", firstPage.next_cursor!]);
       expect(remaining.ids).toEqual(orderedIds.slice(deliveredIds.length));
+      // The unchanged clone isolates deletion on a compacted resumed page from
+      // the initial-page case above, without adding another setup or test suite.
+      const resumedBase = ["--pm-path", otherTracker, ...deletionBase];
+      const resumedFirst = await run(resumedBase);
+      expect(resumedFirst.code).toBe(0);
+      const resumedFirstPage = resumedFirst.json as ReadPage;
+      const initialIds = resumedFirstPage.items!.map(({ id }) => id);
+      expect(initialIds.length).toBeGreaterThan(0);
+      expect(initialIds).toEqual(orderedIds.slice(0, initialIds.length));
+      const resumedArgs = [...resumedBase];
+      resumedArgs[resumedArgs.indexOf("--output-budget") + 1] = "1100";
+      const resumed = await run([...resumedArgs, "--output-cursor", resumedFirstPage.output_budget_truncation!.recovery!.cursor!]);
+      expect(resumed.code, resumed.stderr).toBe(0);
+      const resumedPage = resumed.json as ReadPage;
+      const resumedIds = resumedPage.items!.map(({ id }) => id);
+      expect(resumedIds.length).toBeGreaterThan(0);
+      expect(resumedIds.length).toBeLessThan(25 - initialIds.length);
+      expect(resumedIds).toEqual(orderedIds.slice(initialIds.length, initialIds.length + resumedIds.length));
+      expect(resumedPage.output_budget_truncation!.continuations[0]!.total_rows).toBe(25);
+      expect(decodeQueryCursorEnvelope(resumedPage.next_cursor!).after_index).toBe(initialIds.length + resumedIds.length - 1);
+      expect((await run(["--pm-path", otherTracker, "close", "delete", resumedIds.at(-1)!, "--json"])).code).toBe(0);
+      const resumedRemaining = await collectReadPages(run, [...resumedBase, "--after", resumedPage.next_cursor!]);
+      expect(resumedRemaining.ids).toEqual(orderedIds.slice(initialIds.length + resumedIds.length));
     });
   });
 });
