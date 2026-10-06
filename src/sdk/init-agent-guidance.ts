@@ -659,10 +659,12 @@ async function handleInteractiveAgentGuidancePrompt(
   pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
 }
 
+/** Report absent managed guidance with read-only inspection and explicit installation actions, leaving user files untouched. */
 function handleNonInteractiveMissingAgentGuidance(
   flow: InitAgentGuidanceFlowState,
 ): void {
   flow.warnings.push("agent_guidance:missing_non_interactive");
+  pushUnique(flow.nextSteps, "Inspect workflow guidance: pm init --agent-guidance status");
   pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
 }
 

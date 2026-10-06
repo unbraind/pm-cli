@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1973,
+    "covered_symbols": 1975,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1974
+    "required_symbols": 1976
   },
   "breaking_acknowledgements": [
     {
@@ -2208,6 +2208,15 @@
       ],
       "package_version": "2026.10.4",
       "reason": "Version additive offline managed-diagnostics parameters as strict schema 4.21 and provider schema 1.10; existing invocation defaults remain unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:PmCliExpectedError",
+        "signature ./sdk/runtime:PmCliExpectedError"
+      ],
+      "package_version": "2026.10.6",
+      "reason": "Optional error code and existing-item context coordinates are additive; the new guard is exported separately and existing error constructors, names and exit classes remain compatible."
     }
   ],
   "entrypoints": {
@@ -9627,6 +9636,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "isItemAlreadyExistsError",
+          "signature": "(error: unknown) => error is PmItemAlreadyExistsError | calls: (error: unknown) => error is PmItemAlreadyExistsError"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "isItemScalarMissingValue",
           "signature": "(value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE | calls: (value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE"
         },
@@ -12988,7 +13003,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -13000,7 +13015,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliExpectedError",
-          "signature": "export interface PmCliExpectedError extends Error { name: typeof PM_CLI_EXPECTED_ERROR_NAME; exitCode: number; context: PmCliErrorContext; cause?: unknown; }"
+          "signature": "export interface PmCliExpectedError extends Error { name: typeof PM_CLI_EXPECTED_ERROR_NAME; exitCode: number; code?: string; context: PmCliErrorContext; cause?: unknown; }"
         },
         {
           "classification": "contract_data",
@@ -13439,6 +13454,12 @@
           "kind": "interface",
           "name": "PmGrammarRefusalObservation",
           "signature": "export interface PmGrammarRefusalObservation { probe_id: string; error_code: string; exit_code: number; allowed_values: readonly string[]; recovery_succeeded: boolean; refusal_mutated_state: boolean; mutated_paths?: readonly string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmItemAlreadyExistsError",
+          "signature": "export interface PmItemAlreadyExistsError extends PmCliExpectedError { code: \"item_already_exists\"; exitCode: typeof EXIT_CODE.CONFLICT; context: PmCliErrorContext & { code: \"item_already_exists\"; id: string; path: string; }; }"
         },
         {
           "classification": "advanced_export",
@@ -25353,6 +25374,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "isItemAlreadyExistsError",
+          "signature": "(error: unknown) => error is PmItemAlreadyExistsError | calls: (error: unknown) => error is PmItemAlreadyExistsError"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "isPmCliExpectedError",
           "signature": "(error: unknown) => error is PmCliExpectedError | calls: (error: unknown) => error is PmCliExpectedError"
         },
@@ -25625,6 +25652,12 @@
           "kind": "interface",
           "name": "PmCompleteListResult",
           "signature": "export interface PmCompleteListResult extends ListFullResult { complete_list: PmCompleteListCertificate; read_output: PmReadOutputReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmItemAlreadyExistsError",
+          "signature": "export interface PmItemAlreadyExistsError extends PmCliExpectedError { code: \"item_already_exists\"; exitCode: typeof EXIT_CODE.CONFLICT; context: PmCliErrorContext & { code: \"item_already_exists\"; id: string; path: string; }; }"
         },
         {
           "classification": "supported",
@@ -33208,7 +33241,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliExpectedError",
-          "signature": "export interface PmCliExpectedError extends Error { name: typeof PM_CLI_EXPECTED_ERROR_NAME; exitCode: number; context: PmCliErrorContext; cause?: unknown; }"
+          "signature": "export interface PmCliExpectedError extends Error { name: typeof PM_CLI_EXPECTED_ERROR_NAME; exitCode: number; code?: string; context: PmCliErrorContext; cause?: unknown; }"
         },
         {
           "classification": "contract_data",
@@ -35484,6 +35517,7 @@
     "invalid_reproducible_process_environment",
     "invalid_workspace_snapshot_target",
     "item_already_active",
+    "item_already_exists",
     "item_deleted",
     "item_document_encoding_invalid",
     "item_document_invalid",

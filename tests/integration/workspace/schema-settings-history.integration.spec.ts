@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createExtensionCommandSdk } from "../../../src/sdk/extension-command-context.js";
 import { PmClient } from "../../../src/sdk/runtime.js";
@@ -42,7 +43,7 @@ describe("schema linked-test settings audit", () => {
         "import assert from 'node:assert/strict';",
         "import { execFileSync, spawnSync } from 'node:child_process';",
         "import { readFileSync, writeFileSync } from 'node:fs';",
-        `import { inspectWorkspaceHistoryState } from ${JSON.stringify(path.resolve("dist/sdk/index.js"))};`,
+        `import { inspectWorkspaceHistoryState } from ${JSON.stringify(pathToFileURL(path.resolve("dist/sdk/index.js")).href)};`,
         `const cli = ${JSON.stringify(cli)};`,
         "for (const root of [process.env.PM_PATH, process.env.PM_GLOBAL_PATH]) {",
         "  const env = { ...process.env, PM_PATH: root };",

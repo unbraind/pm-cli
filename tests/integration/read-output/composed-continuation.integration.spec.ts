@@ -9,7 +9,7 @@ import { decodeQueryCursorEnvelope } from "../../../src/sdk/pagination.js";
 import type { PmReadOutputContinuation } from "../../../src/sdk/read-output-contracts.js";
 
 interface ReadPage {
-  items?: { id: string }[];
+  items?: { id: string; title?: string }[];
   low_level?: { id: string }[];
   high_level?: { id: string }[];
   blocked_fallback?: { id: string }[];
@@ -19,6 +19,7 @@ interface ReadPage {
   has_more?: boolean;
   next_cursor?: string;
   output_budget_truncation?: { continuations: PmReadOutputContinuation[]; recovery?: { cursor?: string; sdk?: { outputBudget?: number }; cli?: string } };
+  read_output?: { within_budget: boolean; rows_compacted: boolean };
 }
 
 type RunRead = (args: string[]) => Promise<{ code: number | null; json?: unknown; stderr: string }>;
@@ -104,6 +105,66 @@ async function stagePublishSources(repository: string, destination: string): Pro
   return manifest;
 }
 
+/** Compare every projected value in producer order, lifting terminal caps only at their original boundary. */
+async function verifyAmountOnlyContinuation(run: RunRead, base: string[], outputBudget: string, orderedValues: string[], outputInclude: "id" | "title"): Promise<void> {
+  const projectedBase = [...base, "--output-include", outputInclude];
+  const capped = [...projectedBase, "--output-limit", "2", "--output-budget", outputBudget];
+  const delivered: string[] = [];
+  let after: string | undefined;
+  for (;;) {
+    const response = await run([...capped, ...(after ? ["--after", after] : [])]);
+    expect(response.code, response.stderr).toBe(0);
+    const page = response.json as ReadPage;
+    const rows = page.items!.map((row) => row[outputInclude]!);
+    if (page.count !== undefined) expect(page.count).toBe(rows.length);
+    if (outputInclude === "title") expect(page.items!.every((row) => !Object.hasOwn(row, "id"))).toBe(true);
+    expect(rows).toEqual(orderedValues.slice(delivered.length, delivered.length + 2));
+    expect(page.read_output).toMatchObject({ within_budget: true, rows_compacted: false });
+    expect(page.output_budget_truncation).toBeUndefined();
+    if (!page.next_cursor) {
+      expect(page.has_more).toBe(true);
+      const tail = await run([...projectedBase, "--output-limit", "unbounded", "--output-budget", outputBudget, ...(after ? ["--after", after] : [])]);
+      expect(tail.code, tail.stderr).toBe(0);
+      const tailValues = (tail.json as ReadPage).items!.map((row) => row[outputInclude]!);
+      expect(tailValues.slice(0, rows.length)).toEqual(rows);
+      delivered.push(...tailValues);
+      break;
+    }
+    delivered.push(...rows);
+    expect(decodeQueryCursorEnvelope(page.next_cursor).after_index).toBe(delivered.length - 1);
+    after = page.next_cursor;
+    expect(delivered.length).toBeLessThan(orderedValues.length);
+  }
+  expect(delivered).toEqual(orderedValues);
+}
+
+/** Check each packed runtime's public continuation and conflict receipts against the same matrix. */
+function verifyPackedEvidence(raw: string): void {
+  const evidence = JSON.parse(raw) as { publicExport: string; conflicts: { oneWinner: boolean; coreGuard: boolean }; results: { name: string; limit?: number; amountOnly?: boolean; empty?: boolean; blocked?: boolean; recovery?: boolean; budgetTransitions: number; uniqueRows: number }[] };
+  expect(evidence.publicExport).toBe("@unbrained/pm-cli/sdk");
+  expect(evidence.conflicts).toEqual({ oneWinner: true, coreGuard: true });
+  expect(evidence.results).toHaveLength(19);
+  expect(evidence.results.filter((result) => result.amountOnly)).toHaveLength(8);
+  expect(evidence.results.filter((result) => result.limit === 25).every((result) => result.budgetTransitions > 0)).toBe(true);
+  expect(evidence.results.filter((result) => result.empty)).toHaveLength(3);
+  expect(evidence.results.filter((result) => result.blocked)).toHaveLength(2);
+  expect(evidence.results.filter((result) => result.blocked).every((result) => result.uniqueRows === 12)).toBe(true);
+  expect(evidence.results.some((result) => result.blocked && result.recovery)).toBe(true);
+}
+
+/** Reuse each producer's real ordering for ID and title projections under both nonbinding token ceilings. */
+async function verifyAmountOnlyProducers(run: RunRead, pmRoot: string): Promise<void> {
+  for (const command of [["list", "--all"], ["search", "Matrix", "--mode", "keyword", "--status", "all"]]) {
+    const base = ["--pm-path", pmRoot, "--json", ...command, "--tag", "matrix", "--limit", "25"];
+    const full = await run([...base, "--limit", "100", "--output-budget", "unbounded"]);
+    expect(full.code, full.stderr).toBe(0);
+    for (const outputInclude of ["id", "title"] as const) for (const outputBudget of ["unbounded", "100000"]) {
+      const orderedValues = (full.json as ReadPage).items!.map((row) => row[outputInclude]!);
+      await verifyAmountOnlyContinuation(run, base, outputBudget, orderedValues, outputInclude);
+    }
+  }
+}
+
 describe("composed producer and budget continuation (GH-1371)", () => {
   it("finishes list, search and hierarchical context reads using advertised serialized cursors", { timeout: 120_000 }, async () => {
     await withTempPmPath(async (context) => {
@@ -121,6 +182,7 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       for (let index = 0; index < 4; index += 1) expect((await run(["close", `pm-matrix-long-projected-continuation-row-to-require-id-only-budget-truncation-${index}`, "Fixture closure", "--json"])).code).toBe(0);
       for (let index = 0; index < 12; index += 1) expect((await run(["--pm-path", blockedTracker, "create", "task", `Blocked matrix work ${index}`, "--id", `blocked-matrix-long-projected-continuation-row-for-budget-pagination-${index}`, "--description", "Blocked execution evidence ".repeat(150), "--tags", "blocked-matrix", "--status", "blocked", "--json"])).code).toBe(0);
       await cp(context.pmPath, otherTracker, { recursive: true });
+      await verifyAmountOnlyProducers(run, context.pmPath);
       for (const query of [
         ["list", "--all", "--limit", "25", "--output-budget", "1700"],
         ["list", "--all", "--limit", "25", "--output-limit", "20", "--output-budget", "1700"],
@@ -199,15 +261,11 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       const manifest = JSON.parse(await readFile(path.join(packedRoot, "package.json"), "utf8")) as { exports: Record<string, unknown> };
       expect(manifest).toEqual(sourceManifest);
       expect(manifest.exports["./sdk"]).toBeDefined();
-      const evidence = JSON.parse(execFileSync(process.execPath, [consumerScript, context.pmPath, emptyTracker, blockedTracker], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 })) as { publicExport: string; results: { name: string; limit?: number; empty?: boolean; blocked?: boolean; recovery?: boolean; budgetTransitions: number; uniqueRows: number }[] };
-      expect(evidence.publicExport).toBe("@unbrained/pm-cli/sdk");
-      expect(evidence.results).toHaveLength(11);
-      expect(evidence.results.filter((result) => result.limit === 25).every((result) => result.budgetTransitions > 0)).toBe(true);
-      expect(evidence.results.filter((result) => result.empty)).toHaveLength(3);
-      expect(evidence.results.filter((result) => result.blocked)).toHaveLength(2);
-      expect(evidence.results.filter((result) => result.blocked).every((result) => result.uniqueRows === 12)).toBe(true);
-      expect(evidence.results.some((result) => result.blocked && result.recovery)).toBe(true);
-      console.log("Packed SDK continuation evidence", JSON.stringify(evidence));
+      for (const runtime of [process.execPath, "bun"]) {
+        const raw = execFileSync(runtime, [consumerScript, context.pmPath, emptyTracker, blockedTracker], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 });
+        verifyPackedEvidence(raw);
+        console.log("Packed SDK continuation evidence", runtime, raw);
+      }
       // Deleting the last delivered identity exercises the producer's positional
       // fallback; compare the entire ordered suffix without deduplicating it.
       const deletionBase = ["list", "--all", "--tag", "matrix", "--limit", "25", "--output-limit", "20", "--output-budget", "1700", "--json"];

@@ -50,7 +50,11 @@ export async function finishComposition<T>(id: string, completed: "claim" | "upd
 /** Claim explicit work and advance it through the workspace's configured workflow. */
 export async function runStartTask(id: string, options: TaskCompositionOptions, global: GlobalOptions): Promise<StartTaskResult> {
   if (options.next === true || options.ifAvailable === true) {
-    throw new PmCliError("--start requires an explicit item id and cannot be combined with --next or --if-available", EXIT_CODE.USAGE);
+    throw new PmCliError("--start cannot be combined with --next or --if-available for an explicit item", EXIT_CODE.USAGE, {
+      code: "invalid_argument_value",
+      required: "Remove --next and --if-available when starting an explicit item.",
+      nextSteps: ["Remove --next and --if-available, keep the explicit item ID and other supplied arguments, then retry."],
+    });
   }
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
   const status = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));

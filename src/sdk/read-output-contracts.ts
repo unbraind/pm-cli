@@ -1546,9 +1546,20 @@ function projectReadOutputRows(
   const continuationSource = result.count_only === true
     ? { ...projected, count_only: true, count: result.count }
     : projected;
-  const continuationState = captureReadOutputContinuationState(projected, resolved.command, cursor, options);
+  const continuationState = captureReadOutputContinuationState(projected, result, resolved.command, cursor, options);
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);
+    // Explicit terminal caps remain deliberate partial reads. An advertised
+    // producer cursor, however, must never jump past rows removed here.
+    if (continuationState.cursorContinuesExistingPage) {
+      rebaseCompactedProducerCursor(
+        projected,
+        continuationState.originalItems,
+        continuationState.cursorSource,
+        true,
+        continuationState.originalItemOffset,
+      );
+    }
   }
   refreshReadOutputDeliveredCounts(projected, continuationSource);
   return {
@@ -1806,17 +1817,19 @@ function attachReadOutputTruncationDisclosure(
   };
 }
 
-/** Rebase a producer cursor when budget compaction removes rows from its page. */
-function rebaseBudgetCompactedCursor(
+/** Rebase from unprojected row identities so field projection cannot discard the continuation boundary. */
+function rebaseCompactedProducerCursor(
   projected: Record<string, unknown>,
-  originalItemCount: number,
+  originalItems: readonly unknown[],
   cursorSource: unknown,
   cursorContinuesExistingPage: boolean,
+  originalItemOffset: number,
 ): boolean {
   if (typeof cursorSource !== "string" || !Array.isArray(projected.items)) {
     return false;
   }
   const retainedCount = projected.items.length;
+  const originalItemCount = originalItems.length;
   if (retainedCount === 0 || retainedCount >= originalItemCount) {
     return false;
   }
@@ -1828,7 +1841,7 @@ function rebaseBudgetCompactedCursor(
   }
   const sourceIndex = cursor.after_index;
   if (sourceIndex === undefined) return false;
-  const last = projected.items.at(-1);
+  const last = originalItems[retainedCount - 1];
   if (Object.prototype.toString.call(last) !== "[object Object]") {
     return false;
   }
@@ -1836,7 +1849,7 @@ function rebaseBudgetCompactedCursor(
   if (typeof lastId !== "string" || lastId.length === 0) return false;
   const afterIndex = cursorContinuesExistingPage
     ? sourceIndex - (originalItemCount - retainedCount)
-    : sourceIndex + retainedCount;
+    : sourceIndex + originalItemOffset + retainedCount;
   if (afterIndex < 0) return false;
   projected.next_cursor = encodeQueryCursor(
     cursor.fingerprint,
@@ -1854,8 +1867,10 @@ interface ReadOutputContinuationState {
     string,
     { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
   >;
-  /** Producer page cardinality before either amount or cost can remove rows. */
-  originalItemCount: number;
+  /** Unprojected rows in this replay suffix, retaining identities privately through field and row projection. */
+  originalItems: readonly unknown[];
+  /** Rows already delivered from a terminal producer page before this output-cursor replay. */
+  originalItemOffset: number;
   /** Whether the source cursor points to the original page's final row. */
   cursorContinuesExistingPage: boolean;
   /** Original producer cursor, or incoming boundary for a terminal page. */
@@ -1865,6 +1880,7 @@ interface ReadOutputContinuationState {
 /** Bind replay fingerprints and positional fallback to the uncapped selected producer page. */
 function captureReadOutputContinuationState(
   projected: Record<string, unknown>,
+  source: Record<string, unknown>,
   command: PmReadOutputSurface,
   cursor: PmReadOutputCursorEnvelope | undefined,
   options: Record<string, unknown>,
@@ -1893,11 +1909,13 @@ function captureReadOutputContinuationState(
     }),
   );
   const cursorContinuesExistingPage = typeof projected.next_cursor === "string";
+  const originalItemOffset = cursor?.path === "items" ? cursor.offset : 0;
   return {
     collectionsBeforeBudget,
-    originalItemCount: Array.isArray(projected.items)
-      ? projected.items.length
-      : 0,
+    originalItems: Array.isArray(source.items)
+      ? originalItemOffset > 0 ? source.items.slice(originalItemOffset) : source.items
+      : [],
+    originalItemOffset,
     cursorContinuesExistingPage,
     cursorSource: cursorContinuesExistingPage
       ? projected.next_cursor
@@ -1949,11 +1967,12 @@ function compactReadOutputProjection(
     format,
     (compacted) => {
       refreshReadOutputDeliveredCounts(compacted, deliveredSource);
-      const continuationCursorRebased = rebaseBudgetCompactedCursor(
+      const continuationCursorRebased = rebaseCompactedProducerCursor(
         compacted,
-        continuationState.originalItemCount,
+        continuationState.originalItems,
         continuationState.cursorSource,
         continuationState.cursorContinuesExistingPage,
+        continuationState.originalItemOffset,
       );
       attachReadOutputTruncationDisclosure(
         compacted,

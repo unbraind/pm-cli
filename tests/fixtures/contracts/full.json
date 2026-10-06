@@ -22288,7 +22288,8 @@
       "code": "invalid_argument_value",
       "emitting_commands": [
         "*",
-        "create"
+        "create",
+        "task-composition"
       ],
       "exit_code": 2,
       "meaning": "Invalid argument value condition.",
@@ -22300,6 +22301,7 @@
         "sdk/context-intent-contracts.ts",
         "sdk/governance/assurance-mutation-error.ts",
         "sdk/lifecycle/create.ts",
+        "sdk/lifecycle/task-composition.ts",
         "sdk/runtime/schema-preview.ts"
       ],
       "stability": "stable"
@@ -22646,6 +22648,23 @@
         "sdk/lifecycle/update.ts"
       ],
       "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "item_already_exists",
+      "class": "conflict",
+      "code": "item_already_exists",
+      "emitting_commands": [
+        "create"
+      ],
+      "exit_code": 4,
+      "meaning": "Item already exists condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/create.ts"
+      ],
+      "stability": "stable"
     },
     {
       "aliases": [],

@@ -26,10 +26,45 @@ export interface PmCliExpectedError extends Error {
   name: typeof PM_CLI_EXPECTED_ERROR_NAME;
   /** Positive process exit code the CLI should terminate with for this failure. */
   exitCode: number;
+  /** Stable producer-owned error code, mirrored from context when available. */
+  code?: string;
   /** Structured, secret-free metadata attached for diagnostics and error guidance. */
   context: PmCliErrorContext;
   /** Optional underlying error that triggered this one, preserved for cause chaining. */
   cause?: unknown;
+}
+
+/** A refused create operation whose canonical ID already names a persisted item. */
+export interface PmItemAlreadyExistsError extends PmCliExpectedError {
+  /** Stable discriminator independent of the diagnostic message. */
+  code: "item_already_exists";
+  /** Creation conflicts preserve the existing conflict exit-code contract. */
+  exitCode: typeof EXIT_CODE.CONFLICT;
+  /** Canonical identity and actual persisted path for a safe subsequent read. */
+  context: PmCliErrorContext & {
+    /** Producer-owned existing-item discriminator. */
+    code: "item_already_exists";
+    /** Normalized ID of the preserved existing item. */
+    id: string;
+    /** Actual document path of the preserved existing item. */
+    path: string;
+  };
+}
+
+/**
+ * Detect an existing-item create conflict across separately bundled SDKs.
+ * Requires the producer code, conflict exit code and usable existing-item
+ * coordinates; ownership conflicts and message lookalikes do not qualify.
+ */
+export function isItemAlreadyExistsError(error: unknown): error is PmItemAlreadyExistsError {
+  if (!isPmCliExpectedError(error) || error.code !== "item_already_exists" || error.exitCode !== EXIT_CODE.CONFLICT) {
+    return false;
+  }
+  const context = error.context;
+  return typeof context === "object" && context !== null &&
+    context.code === "item_already_exists" &&
+    typeof context.id === "string" && context.id.trim().length > 0 &&
+    typeof context.path === "string" && context.path.trim().length > 0;
 }
 
 /**

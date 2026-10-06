@@ -462,6 +462,11 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      - name: Setup Bun for packed SDK consumers
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -569,7 +574,12 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/pm-codecov"
           curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 --proto-redir '=https' --max-time 60 --max-filesize 67108864 \
             --output "${codecov_binary}" https://github.com/codecov/codecov-cli/releases/download/v11.3.1/codecovcli_linux
-          printf '%s  %s\n' 'ca1d64196d2d34771084afe76ea657d581bf628e31d993ff8e52ea09cc88a56d' "${codecov_binary}" | sha256sum --check --strict
+          node --input-type=module - "${codecov_binary}" 'ca1d64196d2d34771084afe76ea657d581bf628e31d993ff8e52ea09cc88a56d' <<'VERIFY'
+          import assert from "node:assert/strict";
+          import { createHash } from "node:crypto";
+          import { readFileSync } from "node:fs";
+          assert.equal(createHash("sha256").update(readFileSync(process.argv[2])).digest("hex"), process.argv[3], "Codecov CLI checksum mismatch");
+          VERIFY
           chmod 700 "${codecov_binary}"
 
       # Codecov ingests the v8 line-level lcov report. `!cancelled()` so coverage

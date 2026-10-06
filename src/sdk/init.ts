@@ -228,13 +228,16 @@ export function summarizeInitResult(result: InitResult): InitConciseResult;
 export function summarizeInitResult(result: InitResult, display = false): InitConciseResult | InitDisplayResult {
   if (display) {
     const warnings = result.warnings.filter((warning) => !/^(?:already_exists:|updated:|registered_type_preset:)/u.test(warning));
+    const guidanceSteps = warnings.includes("agent_guidance:missing_non_interactive")
+      ? result.next_steps.filter((step) => step.includes("--agent-guidance"))
+      : [];
     return {
       ok: result.ok,
       path: result.path,
       governance_preset: result.governance_preset,
       telemetry: `${result.settings.telemetry.enabled ? "enabled" : "disabled"} (${result.settings.telemetry.capture_level})`,
       created_count: result.created_dirs.length,
-      next_steps: result.next_steps.slice(0, 3),
+      next_steps: [...guidanceSteps, ...result.next_steps.filter((step) => !guidanceSteps.includes(step))].slice(0, 3),
       ...(warnings.length > 0 ? { warnings: warnings.join("; ") } : {}),
       details: `${renderPmCommand(["--pm-path", result.path, "init", "--verbose"])} for full setup details and notices (or --json)`,
     };

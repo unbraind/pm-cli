@@ -69,7 +69,16 @@ describe("SDK lifecycle composition", () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Refusal preserves ownership", createMode: "progressive" });
       const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
-      await expect(client.claim(id, { start: true, next: true })).rejects.toThrow("cannot be combined");
+      await expect(client.claim(id, { start: true, next: true })).rejects.toMatchObject({
+        code: "invalid_argument_value",
+        context: { required: "Remove --next and --if-available when starting an explicit item." },
+      });
+      const refused = await context.runCliInProcess(["claim", id, "--start", "--if-available", "--json"]);
+      expect(refused.code).toBe(2);
+      const envelope = JSON.parse(refused.stderr) as { recovery: { missing?: string[]; suggested_retry_args?: string[] }; next_steps: string[] };
+      expect(envelope.recovery.missing ?? []).not.toContain("--next");
+      expect(envelope.recovery.suggested_retry_args).toBeUndefined();
+      expect(envelope.next_steps.join(" ")).toContain("Remove --next and --if-available");
       expect((await client.get(id)).item.assignee).toBeUndefined();
       await client.claim(id, { start: true, force: true });
       const claimed = (await client.get(id)).item.assignee;

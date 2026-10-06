@@ -113,6 +113,7 @@ export {
   type UpdateResult,
 } from "./runtime.js";
 export * from "./core-governance.js";
+export { isItemAlreadyExistsError, type PmItemAlreadyExistsError } from "./errors.js";
 export * from "./agent-session-context.js";
 export { isAlreadyClaimedError } from "./lifecycle/claim.js";
 export {

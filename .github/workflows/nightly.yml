@@ -49,6 +49,12 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: pnpm
 
+      # pm-gh1414: full matrix tests execute the packed SDK on Node and Bun.
+      - name: Setup Bun for packed SDK consumers
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+
       - name: Restore exact TypeScript and Vitest caches
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

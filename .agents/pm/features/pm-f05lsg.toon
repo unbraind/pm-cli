@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ergonomics,ci-gates,discoverability,long-horizon
 created_at: "2026-08-01T13:09:26.104Z"
-updated_at: "2026-10-05T07:18:31.386Z"
+updated_at: "2026-10-06T11:18:35.618Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A replay corpus of wrong invocations is generated from the contract tables and covers every flag with a closed domain, every subcommand family, every required-argument omission and every mutually exclusive flag pair; Every declared error code is reachable from at least one corpus input, and a code with no reachable input is reported as such; A scorer reports the recovery-closure fraction and the list of unrecoverable refusals, scoring a lone nearest-match suggestion as not recoverable; The closure fraction is a ratchet in the gate registry that may not fall, with a negative control proving the gate can fail; The refusal envelope has a declared shape carrying the failing surface, the rejected value, the legal domain when known, and the exit code; Non-interactive init guidance warnings expose bounded executable inspection and explicit add commands while preserving skip/decline intent and user-authored documentation, with real isolated recovery and byte-preservation evidence"
@@ -43,7 +43,7 @@ dependencies[24]{id,kind,created_at,author,source_kind,author_source}:
   pm-z9x1r2,verifies,"2026-10-04T16:59:09.639Z","harness:codex","cli:update:dep",detected
   pm-gh1392,discovered_from,"2026-10-05T04:24:39.138Z","harness:codex","cli:update:dep",detected
   pm-7t04,verifies,"2026-10-05T07:12:01.175Z","harness:codex","cli:update:dep",detected
-comments[70]{created_at,author,text}:
+comments[77]{created_at,author,text}:
   "2026-08-18T19:18:11.981Z","harness:codex","Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
   "2026-08-18T21:13:36.921Z","harness:codex","Tranche evidence: the SDK now provides a typed recovery-closure scorer and findings, the gate registry runs a real temporary-tracker corpus, four current closed-domain probes score 4/4 (fraction 1.0), empty corpora fail closed, and omission/malformed-retry negative controls fail. Remaining acceptance: generate the exhaustive corpus from all contract tables, cover every subcommand family/required omission/mutual exclusion/error code, and persist a historical ratchet. Returning open and releasing ownership."
   "2026-08-18T21:49:08.769Z","harness:codex","Hosted CI evidence: PR #1061 exact head b953e36c22804ba26974a2c81307e91f1094f3ca passed the broad matrix except Gates (static), which correctly failed at generate-error-code-catalog.mjs --check because the recovery additions changed the reachable catalog. Treating this as gate-positive drift detection and regenerating through the repository-owned command."
@@ -114,8 +114,21 @@ comments[70]{created_at,author,text}:
   "2026-10-05T04:24:38.517Z","harness:codex","Queued dogfood UX observation from the pm-gh1392 review recurrence: the already delivered reopen contract correctly clears previous terminal expected_result and preserves it in the recurrence receipt. I omitted restoring active acceptance, and the unchanged tracker-context-quality gate correctly rejected the missing field. Consider a producer-owned, truthful next-step obligation that identifies which active metadata must be re-established and derives a safe restoration/update from retained evidence, while requiring the caller to revise acceptance when the recurrence changes its intent. Do not preserve stale terminal actual_result or weaken the active tracker assertion. This is enhancement context under the existing recovery-corpus owner, not an outstanding defect in the closed reopen foundation and not a duplicate item. The primary failure and actual CLI correction are retained in the invoking item."
   "2026-10-05T07:12:00.243Z","harness:codex","GitHub intake 2026-10-05: https://github.com/unbraind/pm-cli/issues/1407 reports pm init --yes on 2026.10.5 producing bare agent_guidance:missing_non_interactive without a remediation command in warnings or next_steps. Reuse this canonical executable recovery/discovery corpus and the shipped pm-7t04 guidance foundation. Proposed bounded next steps name pm init --agent-guidance status for inspection and pm init --agent-guidance add for explicit project guidance installation. Non-interactive warning recovery must be discoverable and independently runnable; it must preserve explicit skip/decline intent and user-authored documentation, with real isolated before/after byte checks. Do not silently introduce global configuration writes or automatic guidance insertion. Complete 2887-item strict all-status checks and guidance searches found no separate implemented obligation; this is reported observation, not independent reproduction or a delivered fix. The existing owner remains open and unclaimed; prior completed recovery tranches stay completed."
   "2026-10-05T07:18:31.386Z","harness:codex","Intake verification correction: tracker-context-quality rejected a newly linked historical CLI guidance path because it no longer exists. Replaced only that new link with the current src/sdk/init-agent-guidance.ts producer through pm, preserving the failed receipt and unchanged 195-path historical ratchet. This is metadata repair, not an implementation or reproduction claim for GH-1407."
-notes[1]{created_at,author,text}:
-  "2026-10-04T16:59:01.232Z","harness:codex","GitHub report #1397: Agent UX: strict-preset pm create refusal suggests an uncopyable example (--estimate/--estimated-minutes, --acceptance-criteria/--ac) and requires --author although PM_AUTHOR is set\nSource: https://github.com/unbraind/pm-cli/issues/1397\nIntake: 2026-10-04. Published version 2026.10.4, reporter observations and proposals; local reproduction and implementation are pending. Preserve machine-readable contracts, executable recovery and truthful empty metadata. This complete report is routed to the existing canonical owner, which stays open and unclaimed.\n\n## Repro (pm 2026.10.4, fresh workspace)\n```\npm init --preset strict\nPM_AUTHOR=x pm create --type Task --title t --description d --priority 3 --json\n```\nThe `missing_required_option` refusal lists:\n`--acceptance-criteria/--ac, --assignee, --author, --body, --comment, --deadline, --dep, --doc, --estimate/--estimated-minutes, --file, --learning, --message, --note, --status, --tags, --test`\n\nand its last `examples[]` entry is a full command an agent is expected to copy:\n```\npm create --title \"Task example title\" ... --acceptance-criteria/--ac \"<value>\" --assignee \"<value>\" --author \"<value>\" ... --estimate/--estimated-minutes \"<value>\" ...\n```\n\n## Problems\n1. **The example is not runnable.** `--acceptance-criteria/--ac` and `--estimate/--estimated-minutes` are alias *labels*, not flags; pasting the example fails with an unknown-option error. The example should use the canonical flag (`--estimate`, `--acceptance-criteria`) and leave aliases to `missing_required_fields`.\n2. **`--author` is demanded even though `PM_AUTHOR` is set**, and `--status` even though `open` is the create default. Every mutation already resolves the actor from `PM_AUTHOR`; the strict requirement should be satisfied by the resolved actor (and report `author: resolved from PM_AUTHOR`), not force agents to repeat it.\n3. **No example uses the `--clear-*` flags** that the same refusal recommends for honest empty collections, so the copied command invites invented metadata (`--dep id=pm-xxxx`, `--learning ... Durable lesson`). A strict-preset example that uses `--clear-deps --clear-learnings --clear-notes` would steer agents to the truthful form.\n\n## Impact\nFleet packages use the strict preset; every agent's first `pm create` costs a ~5 KB refusal plus a retry, and the copied example either fails or writes placeholder metadata. Measured while rolling an automation change across 21 package repos."
+  "2026-10-06T09:40:51.411Z","harness:codex","Active implementation: GH-1352 mixed start/selection currently emits generic requires wording; GH-1397 strict creation uses alias labels in examples and validates author before resolving automatic identity; GH-1407 default init display slices away the existing SDK guidance remediation. Extend real isolated producer regressions without weakening policy, guessing metadata, or auto-writing guidance. The broader exhaustive error census remains outside this tranche."
+  "2026-10-06T09:50:19.604Z","harness:codex","TDD and focused acceptance passed: GH-1352 structured incompatibility has no false missing --next or guaranteed-failing automatic retry; GH-1397 resolved actor satisfies required author while canonical examples use honest collection clears and explicit status policy remains; GH-1407 compact init exposes scoped status/add actions, inspection preserves user bytes and explicit skip suppresses installation guidance. Existing create/init suites plus producer regressions passed 174 tests. Mandatory live Sentry/telemetry gate passes (critical/high 0, finish-error rate 2.47 percent, missing-code rows 0). The broad exhaustive recovery-census obligation stays open."
+  "2026-10-06T09:56:23.762Z","harness:codex","Fresh observability proof after current actions: required Sentry/telemetry gate passed; local explicit flush drained its one valid queued event to zero with no failed flush. Read-only server query over the last 30 minutes returned 129 starts, 125 finishes and two expected command-error events; latest get/create rows carry pm_version 2026.10.6 and current timestamps. These are aggregate/current producer observations, not proof of every sampled action or an exact end-to-end task trace. Dogfood telemetry status rejects universal output controls on its mixed mutation/read family; rerun without those controls succeeds. Retain this recovery observation here without duplicating an owner."
+  "2026-10-06T10:13:53.970Z","harness:codex","Current linked recovery corpus passes all 13 selected tests: strict actor/canonical collection guidance, contradictory start-selection refusal, compact scoped init status/add actions with byte-preserved user guidance and explicit skip, lifecycle composition, no-side-effect option refusal, and closed-domain recovery. GH-1337 is a verified already-delivered safety behavior, not a newly discovered defect. The generated complete error census now includes the new stable create-conflict code and explicitly reports 376 uncovered catalog obligations; this tranche does not certify the exhaustive umbrella complete. Current Sentry/telemetry gate passes with no recent critical/high issues, and a read-only production query shows fresh 2026.10.6 command rows; aggregate counts are not claimed to prove every individual trace."
+  "2026-10-06T10:21:27.504Z","harness:codex","Standalone installed-artifact acceptance now passes under both Node and Bun in fresh temporary directories. Actual CLI strict initialization/refusal/create resolves PM_AUTHOR, retains required status, emits canonical scalar flags and clear-collection examples. Claim/start/if-available refuses without missing --next or automatic retry. Unsupported dry-run on close/update/claim leaves history byte-identical and supplies no mutating retry. Guidance status preserves original AGENTS.md bytes; only the explicit scoped add command installs guidance. The first private verifier assumed the SDK-shaped create result for concise CLI output; it was corrected to follow the real CLI id receipt with a full get, with no product change or weakened assertion."
+  "2026-10-06T10:43:20.743Z","harness:codex","The complete four-worker source run passes all 9789 runnable tests, but exact coverage correctly rejects seven uncovered lines/seven branches/one function. Removed six unused synthetic seed-example branches now bypassed by honest clear-collection guidance; retained existing explicitly tested helper behavior. Extended the existing init integration with a genuine public SDK reinitialization and compact-display check, preserving the same user-guidance byte proof. The initial SDK probe correctly rejected redundant workspace plus constructor tracker controls; the test now uses only the configured tracker. Focused create127/init36 suites pass and the corrected SDK/CLI guidance journey passes. Full static and exact coverage verification remain required before closure."
+  "2026-10-06T11:18:34.813Z","harness:codex","The implemented GH #1352 / #1397 / #1407 tranche is now recorded by child pm-flfk2d with files, docs, runnable evidence and an implements relationship. The full all-status duplicate check found no existing bounded child. Exhaustive recovery closure remains unfinished: generated census has 395 catalog codes, 19 executable obligations and 376 explicitly uncovered codes. Parent is released to open; only the delivery child and two current issues remain active."
+notes[2]:
+  - created_at: "2026-10-04T16:59:01.232Z"
+    author: "harness:codex"
+    text: "GitHub report #1397: Agent UX: strict-preset pm create refusal suggests an uncopyable example (--estimate/--estimated-minutes, --acceptance-criteria/--ac) and requires --author although PM_AUTHOR is set\nSource: https://github.com/unbraind/pm-cli/issues/1397\nIntake: 2026-10-04. Published version 2026.10.4, reporter observations and proposals; local reproduction and implementation are pending. Preserve machine-readable contracts, executable recovery and truthful empty metadata. This complete report is routed to the existing canonical owner, which stays open and unclaimed.\n\n## Repro (pm 2026.10.4, fresh workspace)\n```\npm init --preset strict\nPM_AUTHOR=x pm create --type Task --title t --description d --priority 3 --json\n```\nThe `missing_required_option` refusal lists:\n`--acceptance-criteria/--ac, --assignee, --author, --body, --comment, --deadline, --dep, --doc, --estimate/--estimated-minutes, --file, --learning, --message, --note, --status, --tags, --test`\n\nand its last `examples[]` entry is a full command an agent is expected to copy:\n```\npm create --title \"Task example title\" ... --acceptance-criteria/--ac \"<value>\" --assignee \"<value>\" --author \"<value>\" ... --estimate/--estimated-minutes \"<value>\" ...\n```\n\n## Problems\n1. **The example is not runnable.** `--acceptance-criteria/--ac` and `--estimate/--estimated-minutes` are alias *labels*, not flags; pasting the example fails with an unknown-option error. The example should use the canonical flag (`--estimate`, `--acceptance-criteria`) and leave aliases to `missing_required_fields`.\n2. **`--author` is demanded even though `PM_AUTHOR` is set**, and `--status` even though `open` is the create default. Every mutation already resolves the actor from `PM_AUTHOR`; the strict requirement should be satisfied by the resolved actor (and report `author: resolved from PM_AUTHOR`), not force agents to repeat it.\n3. **No example uses the `--clear-*` flags** that the same refusal recommends for honest empty collections, so the copied command invites invented metadata (`--dep id=pm-xxxx`, `--learning ... Durable lesson`). A strict-preset example that uses `--clear-deps --clear-learnings --clear-notes` would steer agents to the truthful form.\n\n## Impact\nFleet packages use the strict preset; every agent's first `pm create` costs a ~5 KB refusal plus a retry, and the copied example either fails or writes placeholder metadata. Measured while rolling an automation change across 21 package repos."
+  - created_at: "2026-10-06T10:28:50.401Z"
+    author: "harness:codex"
+    text: "Delivery scope: GH-1352, GH-1397 and GH-1407 are repaired with genuine isolated CLI/SDK tests and standalone installed Node/Bun acceptance. GH-1337 is confirmed as previously repaired and safe. Exhaustive recovery closure remains unfinished: the complete generated 395-code census declares 19 executable and 376 uncovered codes; those unprobed obligations must be expanded under this existing feature without duplicating completed tranches or lowering its ratchet. The feature will return to open and unclaimed after this scoped delivery."
+    edited_at: "2026-10-06T10:29:00.652Z"
 learnings[6]{created_at,author,text}:
   "2026-08-19T05:28:38.341Z","harness:codex","Executable assurance should run the full real corpus once, then exercise failure classification through deterministic injected observations. Replaying an expensive corpus for each scorer branch adds latency without improving behavioral evidence."
   "2026-08-19T08:39:06.383Z","harness:codex","Adapter-only enumerable options can silently defeat SDK fast paths even when behavior remains correct. Pin the real CLI registration path against corrupted source files so derived-index use is observable, and treat raw Commander negation defaults as non-semantic only after normalized filters preserve requested fallback semantics."
@@ -123,76 +136,224 @@ learnings[6]{created_at,author,text}:
   "2026-08-21T23:59:02.159Z","harness:codex",A recovery-closure corpus must validate both the presence of a recovery object and a usable corrective action. Negative controls for missing actions and forged/inconsistent degradation receipts prevent superficially structured diagnostics from passing.
   "2026-08-25T09:51:05.386Z","harness:codex","When a new executable refusal group raises a public ratchet, add a versioned baseline export and retain the prior export unchanged; classify advisory lint findings by their emitted process exit class rather than assuming every invalid manifest signal is a usage error."
   "2026-08-27T17:34:27.308Z","harness:codex","Commander usage errors occur before runtime token-accounting attachment, so a transcript gate must label their independently measured transport honestly while the missing self-reported receipt remains separately owned."
-files[68]{path,scope,note}:
-  docs/agent-task-token-baseline.json,project,Intentional reviewed refusal-envelope token ceiling ratchet
-  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Executable refusal closure for bulk ID input states
-  scripts/agent-token-surface-baseline.json,project,Regenerated agent token surface after contract API addition
-  scripts/error-code-reachability.json,project,Executable refusal closure for bulk ID input states
-  scripts/generate-agent-capability-surfaces.mjs,project,Complete error-catalog refusal closure census and ratchet
-  scripts/generate-error-code-catalog.mjs,project,Review-driven search command provenance generation
-  scripts/release/agent-task-token-gate.mjs,project,executable refusal-to-recovery transcript validation
-  scripts/release/diagnostic-output-baseline.json,project,Ratcheted invalid-input recovery corpus
-  scripts/release/gate-registry.json,project,Active command contract and recovery conformance implementation
-  scripts/release/gate-registry.mjs,project,Discover the independently named flag invocation parity gate in the exhaustive inventory
-  scripts/release/refusal-closure-baseline.json,project,historical refusal corpus ratchet
-  scripts/release/refusal-closure-gate.mjs,project,Active command contract and recovery conformance implementation
-  scripts/release/surface-replication-sets.json,project,Line-scoped replication activation for receipt-bearing changes
-  sdk/public-surface.json,project,Operand-preserving executable recovery contract and verification
-  src/cli/error-guidance.ts,project,Keep unsupported preview flags from offering unsafe mutating retries
-  src/cli/main.ts,project,Operand-preserving executable recovery contract and verification
-  src/cli/register-list-query.ts,project,Operand-preserving executable recovery contract and verification
-  src/cli/register-mutation.ts,project,Schema shorthand safety and shared merge domain
-  src/cli/schema-registration-helpers.ts,project,Lowercase action namespace safety
-  src/core/shared/errors.ts,project,Operand-preserving executable recovery contract and verification
-  src/core/shared/item-metadata-contract.ts,project,Stable typed metadata key union without breaking value signature
-  src/sdk/agent/closed-domain-contracts.ts,project,contract-generated executable refusal corpus
-  src/sdk/agent/refusal-closure-census.ts,project,Complete error-catalog refusal closure census and ratchet
-  src/sdk/agent/refusal-closure.ts,project,Active command contract and recovery conformance implementation
-  src/sdk/agent/refusal-corpus-contracts.ts,project,Grammar-derived required-argument and subcommand refusal SDK contracts
-  src/sdk/agent/tracker-preflight-contracts.ts,project,four-state executable recovery corpus and scorer
-  src/sdk/cli-contracts.ts,project,Public grammar and merge-domain exports
-  src/sdk/cli-contracts/agent-output-contracts.ts,project,Atomic executable retry argv under degradation
-  src/sdk/cli-contracts/completeness.ts,project,CLI SDK recovery parameter closure
-  src/sdk/cli-contracts/enum-contracts.ts,project,Shared merge subcommand domain
-  src/sdk/cli-contracts/flag-contracts.ts,project,item reopen flag closure
-  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Fail-closed full projection semantic mapping
-  src/sdk/context-intent-contracts.ts,project,Operand-preserving executable recovery contract and verification
-  src/sdk/extension/author-manifest.ts,project,emitted schema finding evidence source
-  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Generated error-code catalog synchronized after hosted static drift detection
-  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Generated error-code catalog synchronized after hosted static drift detection
-  src/sdk/governance/assurance-action.ts,project,Typed assurance omission and unknown-action refusals
-  src/sdk/governance/health.ts,project,real health process finding surface
-  src/sdk/index.ts,project,Aggregate refusal corpus SDK export
-  src/sdk/init-agent-guidance.ts,project,Current SDK producer for the reported non-interactive guidance warning; independent reproduction pending
-  src/sdk/query/get.ts,project,Operand-preserving executable recovery contract and verification
-  src/sdk/query/list.ts,project,Operand-preserving executable recovery contract and verification
-  src/sdk/query/projection-contracts.ts,project,dependency-light generated refusal domain source
-  src/sdk/query/search-contracts.ts,project,Operand-preserving executable recovery contract and verification
-  src/sdk/query/search.ts,project,Operand-preserving executable recovery contract and verification
-  src/sdk/runtime.ts,project,Operand-preserving executable recovery contract and verification
-  tests/fixtures/contracts/full.json,project,generated recovery contract snapshot
-  tests/integration/closed-domain-recovery.integration.spec.ts,project,Verify rejected preview flags preserve tracker state and history
-  tests/integration/refusal-reachability.integration.spec.ts,project,Runnable complete-catalog reachability evidence
-  tests/integration/schema-shorthand-safety.integration.spec.ts,project,Non-mutating schema typo recurrence test
-  tests/integration/structured-mutation-io.integration.spec.ts,project,Lean errors retain executable corrective action
-  tests/unit/cli/cli-main-errors.spec.ts,project,Operand-preserving executable recovery contract and verification
-  tests/unit/cli/error-guidance.spec.ts,project,Operand-preserving executable recovery contract and verification
-  tests/unit/cli/nonmutating-option-guidance.spec.ts,project,Verify actionable nonmutating guidance
-  tests/unit/cli/structured-mutation-registration.spec.ts,project,Lean recovery action remains typed and emitted
-  tests/unit/commands/query/list-command.spec.ts,project,Real CLI persistent-index regression coverage
-  tests/unit/scripts/generate-agent-capability-surfaces.spec.ts,project,Complete error-catalog refusal closure census and ratchet
-  tests/unit/scripts/generate-error-code-catalog.spec.ts,project,Search provenance generator regression coverage
-  tests/unit/scripts/refusal-closure-gate.spec.ts,project,Active command contract and recovery conformance implementation
-  tests/unit/sdk/action-schema-parity.spec.ts,project,action reachability ratchet
-  tests/unit/sdk/agent/refusal-closure-census.spec.ts,project,Complete error-catalog refusal closure census and ratchet
-  tests/unit/sdk/agent/refusal-closure.spec.ts,project,Recovery closure scorer negative controls
-  tests/unit/sdk/agent/refusal-corpus-contracts.spec.ts,project,Exhaustive grammar corpus and scorer tests
-  tests/unit/sdk/agent/tracker-preflight-contracts.spec.ts,project,contract and scorer unit coverage
-  tests/unit/sdk/assurance-action.spec.ts,project,Structured unknown-action and missing-preset refusal negative controls
-  tests/unit/sdk/cli-contracts/flag-lexicon-contracts.spec.ts,project,Unmapped full projection negative control
-  tests/unit/sdk/context-intent-contracts.spec.ts,project,Operand-preserving executable recovery contract and verification
-  tests/unit/sdk/query/projection-recovery.spec.ts,project,review-driven recovery regression coverage
-tests[17]:
+files[74]:
+  - path: docs/agent-task-token-baseline.json
+    scope: project
+    note: Intentional reviewed refusal-envelope token ceiling ratchet
+  - path: docs/generated/REFUSAL_CLOSURE_CENSUS.md
+    scope: project
+    note: Generated complete catalog census preserves explicit uncovered obligations
+  - path: scripts/agent-token-surface-baseline.json
+    scope: project
+    note: Regenerated agent token surface after contract API addition
+  - path: scripts/error-code-reachability.json
+    scope: project
+    note: Executable refusal closure for bulk ID input states
+  - path: scripts/generate-agent-capability-surfaces.mjs
+    scope: project
+    note: Complete error-catalog refusal closure census and ratchet
+  - path: scripts/generate-error-code-catalog.mjs
+    scope: project
+    note: Review-driven search command provenance generation
+  - path: scripts/release/agent-task-token-gate.mjs
+    scope: project
+    note: executable refusal-to-recovery transcript validation
+  - path: scripts/release/diagnostic-output-baseline.json
+    scope: project
+    note: Ratcheted invalid-input recovery corpus
+  - path: scripts/release/gate-registry.json
+    scope: project
+    note: Active command contract and recovery conformance implementation
+  - path: scripts/release/gate-registry.mjs
+    scope: project
+    note: Discover the independently named flag invocation parity gate in the exhaustive inventory
+  - path: scripts/release/refusal-closure-baseline.json
+    scope: project
+    note: historical refusal corpus ratchet
+  - path: scripts/release/refusal-closure-gate.mjs
+    scope: project
+    note: Active command contract and recovery conformance implementation
+  - path: scripts/release/surface-replication-sets.json
+    scope: project
+    note: Line-scoped replication activation for receipt-bearing changes
+  - path: sdk/public-surface.json
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/cli/error-guidance.ts
+    scope: project
+    note: Keep unsupported preview flags from offering unsafe mutating retries
+  - path: src/cli/main.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/cli/register-list-query.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/cli/register-mutation.ts
+    scope: project
+    note: Schema shorthand safety and shared merge domain
+  - path: src/cli/schema-registration-helpers.ts
+    scope: project
+    note: Lowercase action namespace safety
+  - path: src/core/shared/errors.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/core/shared/item-metadata-contract.ts
+    scope: project
+    note: Stable typed metadata key union without breaking value signature
+  - path: src/sdk/agent/closed-domain-contracts.ts
+    scope: project
+    note: contract-generated executable refusal corpus
+  - path: src/sdk/agent/refusal-closure-census.ts
+    scope: project
+    note: Complete error-catalog refusal closure census and ratchet
+  - path: src/sdk/agent/refusal-closure.ts
+    scope: project
+    note: Active command contract and recovery conformance implementation
+  - path: src/sdk/agent/refusal-corpus-contracts.ts
+    scope: project
+    note: Grammar-derived required-argument and subcommand refusal SDK contracts
+  - path: src/sdk/agent/tracker-preflight-contracts.ts
+    scope: project
+    note: four-state executable recovery corpus and scorer
+  - path: src/sdk/cli-contracts.ts
+    scope: project
+    note: Public grammar and merge-domain exports
+  - path: src/sdk/cli-contracts/agent-output-contracts.ts
+    scope: project
+    note: Atomic executable retry argv under degradation
+  - path: src/sdk/cli-contracts/completeness.ts
+    scope: project
+    note: CLI SDK recovery parameter closure
+  - path: src/sdk/cli-contracts/enum-contracts.ts
+    scope: project
+    note: Shared merge subcommand domain
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+    note: item reopen flag closure
+  - path: src/sdk/cli-contracts/flag-lexicon-contracts.ts
+    scope: project
+    note: Fail-closed full projection semantic mapping
+  - path: src/sdk/context-intent-contracts.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/sdk/extension/author-manifest.ts
+    scope: project
+    note: emitted schema finding evidence source
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+    note: Generated error-code catalog synchronized after hosted static drift detection
+  - path: src/sdk/generated/generated-error-code-catalog-part-2.ts
+    scope: project
+    note: Generated error-code catalog synchronized after hosted static drift detection
+  - path: src/sdk/governance/assurance-action.ts
+    scope: project
+    note: Typed assurance omission and unknown-action refusals
+  - path: src/sdk/governance/health.ts
+    scope: project
+    note: real health process finding surface
+  - path: src/sdk/index.ts
+    scope: project
+    note: Aggregate refusal corpus SDK export
+  - path: src/sdk/init-agent-guidance.ts
+    scope: project
+    note: Current SDK producer for the reported non-interactive guidance warning; independent reproduction pending
+  - path: src/sdk/init.ts
+    scope: project
+  - path: src/sdk/lifecycle/create.ts
+    scope: project
+  - path: src/sdk/lifecycle/task-composition.ts
+    scope: project
+  - path: src/sdk/query/get.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/sdk/query/list.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/sdk/query/projection-contracts.ts
+    scope: project
+    note: dependency-light generated refusal domain source
+  - path: src/sdk/query/search-contracts.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/sdk/query/search.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: src/sdk/runtime.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+    note: generated recovery contract snapshot
+  - path: tests/integration/cli/agent-create-recovery.integration.spec.ts
+    scope: project
+  - path: tests/integration/cli/init-guidance-display.integration.spec.ts
+    scope: project
+  - path: tests/integration/closed-domain-recovery.integration.spec.ts
+    scope: project
+    note: Verify rejected preview flags preserve tracker state and history
+  - path: tests/integration/lifecycle-composition-sdk.spec.ts
+    scope: project
+  - path: tests/integration/refusal-reachability.integration.spec.ts
+    scope: project
+    note: Runnable complete-catalog reachability evidence
+  - path: tests/integration/schema-shorthand-safety.integration.spec.ts
+    scope: project
+    note: Non-mutating schema typo recurrence test
+  - path: tests/integration/structured-mutation-io.integration.spec.ts
+    scope: project
+    note: Lean errors retain executable corrective action
+  - path: tests/unit/cli/cli-main-errors.spec.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: tests/unit/cli/error-guidance.spec.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: tests/unit/cli/nonmutating-option-guidance.spec.ts
+    scope: project
+    note: Verify actionable nonmutating guidance
+  - path: tests/unit/cli/structured-mutation-registration.spec.ts
+    scope: project
+    note: Lean recovery action remains typed and emitted
+  - path: tests/unit/commands/query/list-command.spec.ts
+    scope: project
+    note: Real CLI persistent-index regression coverage
+  - path: tests/unit/scripts/generate-agent-capability-surfaces.spec.ts
+    scope: project
+    note: Complete error-catalog refusal closure census and ratchet
+  - path: tests/unit/scripts/generate-error-code-catalog.spec.ts
+    scope: project
+    note: Search provenance generator regression coverage
+  - path: tests/unit/scripts/refusal-closure-gate.spec.ts
+    scope: project
+    note: Active command contract and recovery conformance implementation
+  - path: tests/unit/sdk/action-schema-parity.spec.ts
+    scope: project
+    note: action reachability ratchet
+  - path: tests/unit/sdk/agent/refusal-closure-census.spec.ts
+    scope: project
+    note: Complete error-catalog refusal closure census and ratchet
+  - path: tests/unit/sdk/agent/refusal-closure.spec.ts
+    scope: project
+    note: Recovery closure scorer negative controls
+  - path: tests/unit/sdk/agent/refusal-corpus-contracts.spec.ts
+    scope: project
+    note: Exhaustive grammar corpus and scorer tests
+  - path: tests/unit/sdk/agent/tracker-preflight-contracts.spec.ts
+    scope: project
+    note: contract and scorer unit coverage
+  - path: tests/unit/sdk/assurance-action.spec.ts
+    scope: project
+    note: Structured unknown-action and missing-preset refusal negative controls
+  - path: tests/unit/sdk/cli-contracts/flag-lexicon-contracts.spec.ts
+    scope: project
+    note: Unmapped full projection negative control
+  - path: tests/unit/sdk/context-intent-contracts.spec.ts
+    scope: project
+    note: Operand-preserving executable recovery contract and verification
+  - path: tests/unit/sdk/query/projection-recovery.spec.ts
+    scope: project
+    note: review-driven recovery regression coverage
+tests[18]:
   - command: "pnpm quality:recovery-closure"
     scope: project
     timeout_seconds: 240
@@ -274,7 +435,15 @@ tests[17]:
       created_at: "2026-09-28T17:11:04.384Z"
       source_kind: local_mutation
       source_ref: fix/agent-recovery-aliases-duplicate-scoring
-test_runs[12]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/cli/agent-create-recovery.integration.spec.ts tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T10:04:50.939Z"
+      source_kind: local_mutation
+      source_ref: fix/lossless-pagination-typed-conflicts-agent-recovery
+test_runs[15]:
   - run_id: test-local-msz5ibe4-fgmh3m
     kind: test
     status: passed
@@ -397,13 +566,64 @@ test_runs[12]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
-docs[8]{path,scope,note}:
-  docs/agent-task-transcripts.json,project,golden refusal and recovery workflows
-  docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project,Action-preserving recovery budget contract
-  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Generated complete-catalog closure evidence
-  docs/README.md,project,Generated complete-catalog closure evidence
-  docs/RECURRENCE_RECOVERY_CONTRACTS.md,project,recovery closure contract
-  docs/SDK_CONTEXT_INTEGRITY.md,project,refusal closure gate contract
-  docs/SDK_PRIMITIVE_INVENTORY.md,project,shared SDK preflight architecture and ratchet
-  docs/TESTING.md,project,Recovery closure diagnostic gate procedure
+  - run_id: test-local-muwi6x8q-a9uqz4
+    kind: test
+    status: failed
+    started_at: "2026-10-06T09:50:53.088Z"
+    finished_at: "2026-10-06T09:55:53.930Z"
+    recorded_at: "2026-10-06T09:55:53.930Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/agent-create-recovery.integration.spec.ts tests/integration/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwikpin-32g4u1
+    kind: test
+    status: passed
+    started_at: "2026-10-06T10:06:19.955Z"
+    finished_at: "2026-10-06T10:06:37.103Z"
+    recorded_at: "2026-10-06T10:06:37.103Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-create-recovery.integration.spec.ts tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwk14sm-77w8z2
+    kind: test
+    status: passed
+    started_at: "2026-10-06T10:47:06.071Z"
+    finished_at: "2026-10-06T10:47:23.014Z"
+    recorded_at: "2026-10-06T10:47:23.014Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-create-recovery.integration.spec.ts tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[9]:
+  - path: docs/agent-task-transcripts.json
+    scope: project
+    note: golden refusal and recovery workflows
+  - path: docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md
+    scope: project
+    note: Action-preserving recovery budget contract
+  - path: docs/generated/REFUSAL_CLOSURE_CENSUS.md
+    scope: project
+    note: Generated complete-catalog closure evidence
+  - path: docs/README.md
+    scope: project
+    note: Generated complete-catalog closure evidence
+  - path: docs/RECURRENCE_RECOVERY_CONTRACTS.md
+    scope: project
+    note: recovery closure contract
+  - path: docs/SDK_CONTEXT_INTEGRITY.md
+    scope: project
+    note: refusal closure gate contract
+  - path: docs/SDK_CREATE_AND_RECOVERY.md
+    scope: project
+  - path: docs/SDK_PRIMITIVE_INVENTORY.md
+    scope: project
+    note: shared SDK preflight architecture and ratchet
+  - path: docs/TESTING.md
+    scope: project
+    note: Recovery closure diagnostic gate procedure
 body: ""

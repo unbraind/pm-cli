@@ -221,7 +221,7 @@
     },
     {
       "id": "output-budget-and-continuation",
-      "version": 3,
+      "version": 4,
       "title": "Token-budget, omission, and continuation contract regressions",
       "owner_item_id": "pm-1qkivy",
       "escape_class": "production_defect",
@@ -255,7 +255,8 @@
         "pm-b0v8fs",
         "pm-bfa1ob",
         "pm-ips23h",
-        "pm-fgih"
+        "pm-fgih",
+        "pm-gh1411"
       ],
       "budget": {
         "max_escape_rate": 0,

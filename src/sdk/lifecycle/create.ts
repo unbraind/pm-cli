@@ -1159,11 +1159,13 @@ function resolveEffectiveCreateMode(
   return "progressive";
 }
 
+/** Validate explicit policy, then identify unmet strict fields using resolved identity and configured type defaults. */
 function requireCreateOptionByType(
   typeDefinition: ResolvedItemTypeDefinition,
   options: CreateCommandOptions,
   createMode: CreateMode,
   clearOptionKeys: Set<string>,
+  resolvedAuthor: string,
 ): string[] {
   const typeName = typeDefinition.name;
   const optionLookup = buildCreateOptionValueLookup(options);
@@ -1199,7 +1201,13 @@ function requireCreateOptionByType(
   // would contradict the config-driven default. Scoped to status so an explicit
   // status-required policy on a type WITHOUT a default still holds. Only the
   // required check is relaxed; the disabled check above keeps using hasOptionValue.
+  /** Evaluate required fields without relaxing disabled-input policy or inventing scalar defaults. */
   const satisfiesRequiredOption = (optionKey: string): boolean => {
+    // Required identity follows mutation attribution; disabled policy above
+    // still evaluates explicit input, and unknown attribution is not a default.
+    if (optionKey === "author" && resolvedAuthor !== "unknown") {
+      return true;
+    }
     if (optionKey === "status" && typeDefinition.default_status !== undefined) {
       return true;
     }
@@ -1299,12 +1307,14 @@ function typeOptionExampleValue(
   return "<value>";
 }
 
+/** Render canonical scalar flags, retaining placeholders only where the caller must supply project-specific intent. */
 function createExampleTokensForFlag(
   flag: string,
   typeName: string,
   openStatus: string,
 ): string[] {
-  switch (flag) {
+  const canonicalFlag = flag.split("/")[0]!;
+  switch (canonicalFlag) {
     case "--title":
       return ["--title", `"${typeName} example title"`];
     case "--description":
@@ -1317,37 +1327,17 @@ function createExampleTokensForFlag(
       return ["--priority", "1"];
     case "--message":
       return ["--message", `"Create ${typeName} item"`];
-    case "--dep":
-      return [
-        "--dep",
-        '"id=pm-xxxx,kind=related,author=maintainer,created_at=now"',
-      ];
     case "--comment":
       return [
         "--comment",
         '"author=maintainer,created_at=now,text=Implementation context"',
       ];
-    case "--note":
-      return ["--note", '"author=maintainer,created_at=now,text=Design note"'];
-    case "--learning":
-      return [
-        "--learning",
-        '"author=maintainer,created_at=now,text=Durable lesson"',
-      ];
-    case "--file":
-      return ["--file", '"path=src/example.ts,note=implementation file"'];
-    case "--test":
-      return [
-        "--test",
-        '"command=node scripts/run-tests.mjs test,timeout_seconds=240"',
-      ];
-    case "--doc":
-      return ["--doc", '"path=README.md,note=reference doc"'];
     default:
-      return [flag, '"<value>"'];
+      return [canonicalFlag, '"<value>"'];
   }
 }
 
+/** Build a runnable option shape for one configured type, expressing empty required collections with explicit clear flags. */
 function buildTypeSpecificCreateExample(
   typeDefinition: ResolvedItemTypeDefinition,
   missingCreateFlags: string[],
@@ -1373,9 +1363,8 @@ function buildTypeSpecificCreateExample(
     if (includedFlags.has(flag)) {
       continue;
     }
-    tokens.push(
-      ...createExampleTokensForFlag(flag, typeDefinition.name, openStatus),
-    );
+    const clearFlag = CLEAR_FLAG_BY_REQUIRED_CREATE_FLAG[flag];
+    tokens.push(...(clearFlag ? [clearFlag] : createExampleTokensForFlag(flag, typeDefinition.name, openStatus)));
     includedFlags.add(flag);
   }
   for (const key of missingTypeOptionKeys) {
@@ -2591,7 +2580,13 @@ async function writeCreatedItem(params: {
         typeRegistry.type_to_folder,
       );
       if (existing) {
-        throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT);
+        throw new PmCliError(`Item "${id}" already exists`, EXIT_CODE.CONFLICT, {
+          code: "item_already_exists",
+          id: existing.id,
+          path: existing.itemPath,
+          required: "Read the existing item before deciding whether to update it or create a different ID.",
+          nextSteps: [`Inspect the existing item with pm get ${existing.id}.`],
+        });
       }
       if (graphBeforeCreate) {
         const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -2768,17 +2763,18 @@ export async function runCreate(
   assertNoCreateScalarUnsetConflicts(resolvedOptions, unsetTargets);
   assertNoLegacyCreateScalarTokens(resolvedOptions);
 
+  const author = resolveAuthor(
+    parseOptionalString(resolvedOptions.author),
+    settings.author_default,
+  );
   const missingRequiredCreateFlags = requireCreateOptionByType(
     typeDefinition,
     resolvedOptions,
     createMode,
     clearOptionKeys,
+    author,
   );
   const nowValue = nowIso();
-  const author = resolveAuthor(
-    parseOptionalString(resolvedOptions.author),
-    settings.author_default,
-  );
 
   const dependencies = parseDependencies(
     resolvedOptions.dep,

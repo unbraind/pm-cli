@@ -2,11 +2,13 @@ id: pm-gh1400
 title: Expose typed explicit-ID duplicate creation conflicts to SDK callers
 description: GH-1400 reports that explicit duplicate IDs expose only a generic conflict exit code and English text. SDK callers need a stable error code and existing item identity to implement concurrency-safe create-if-absent without message matching.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-04T19:28:39.241Z"
-updated_at: "2026-10-04T19:28:39.241Z"
+updated_at: "2026-10-06T11:49:30.272Z"
+closed_at: "2026-10-06T11:49:29.463Z"
+completed_at: "2026-10-06T11:49:29.463Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Explicit duplicate-ID creation emits a stable typed public SDK error with the existing item identity; a public guard distinguishes it from claims and policy conflicts; Node and Bun concurrent deterministic-ID acceptance preserves the original item and rereads it safely; generated allocation collision and strict similarity governance retain their established contracts.
@@ -17,12 +19,90 @@ why_now: Downstream pm-rl concurrency exposed a fragile create-if-absent recover
 parent: pm-dj98
 risk: medium
 confidence: high
-expected_result: SDK clients distinguish an occupied explicit ID from unrelated conflicts through typed data
+resolution: Expose typed deterministic-ID creation conflicts through both public SDK barrels.
+expected_result: Creation of an existing ID returns stable item_already_exists conflict code with canonical ID and actual existing document path; both structural guards narrow it without parsing messages.
+actual_result: Real concurrent SDK creation has one winner; a cross-type losing retry and CLI retry preserve original document/history bytes; root and core guards also pass in installed Node and Bun consumers. Exact full-source coverage is100/100/100/100 and all local mandatory gates pass; exact-head hosted admission is required before merge.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-35w9l2,verifies,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
   pm-f05lsg,implements,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
   pm-khdq,discovered_from,"2026-10-04T19:28:39.241Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-04T19:28:39.241Z","harness:codex","Duplicate-check evidence: strict full all-status corpus read 2882 of 2882 with zero omissions plus request-specific search and open/in-progress inventories. Historical pm-khdq owns generated allocation overwrite prevention. Historical pm-35w9l2 owns similarity governance. Neither owns the newly reported explicit-ID public typed error contract. GH-1400 source report is retained in full. Remains open and unclaimed; no implementation or live reproduction is claimed."
+  "2026-10-06T09:44:16.663Z","harness:codex","TDD: real concurrent explicit-ID creates produce one winner and one loser, but the baseline loser lacks stable code and existing coordinates. Added a structural public SDK/core guard, producer-owned item_already_exists code with canonical id/path, and byte-preservation checks for item plus one-event history across SDK and CLI retries. Generated-ID allocation and similarity governance remain unchanged."
+  "2026-10-06T09:50:18.096Z","harness:codex","Compatibility evidence: public surface generation classified exact signature text changes for PmCliErrorContext and PmCliExpectedError. Acknowledged only optional additive code/id/path fields; existing constructors, names, exit classes and required shapes remain compatible. Guard exports are separate additions. Focused create/init suites passed 174 tests. Dependency audit reports no known vulnerabilities and tracked-file secret scan is clean."
+  "2026-10-06T10:12:51.046Z","harness:codex","Current linked real-concurrency and structural-guard tests pass. The actual publish tarball was installed in two isolated consumers with npm and bun; both Node and Bun preserve one winning create and expose the losing existing-item conflict through both SDK barrels. CLI retries preserve original item/history bytes, and npx/bunx execute the packed manifest. The stable error ledger and generated catalog now explicitly classify item_already_exists as conflict exit4. Final full coverage/static verification remains pending."
+  "2026-10-06T11:49:28.750Z","harness:codex","Local completion: Real concurrent SDK creation has one winner; a cross-type losing retry and CLI retry preserve original document/history bytes; root and core guards also pass in installed Node and Bun consumers. Canonical full suite passes 9789 runnable tests with only two established Windows-only skips. All 764 maintained source files have zero uncovered counts: statements66841/66841; branches51174/51174; functions13809/13809; lines63702/63702. Complete static pipeline, all four TypeScript configurations, 58 token surfaces, docs links, packed artifact and nine-package npx/bunx smoke pass. Bunx smoke uses a fresh owned temporary cache after the host cache symlink was refused; no host cache or gate is weakened. Required current production Sentry/telemetry gate passes with zero blocking issues and finish-error rate2.06% with zero missing error-code rows. Hosted exact-head review remains required before merge; this is implemented local-source evidence and does not claim published registry adoption."
+learnings[1]{created_at,author,text}:
+  "2026-10-06T10:28:47.336Z","harness:codex",Cross-bundle SDK recovery must use a stable producer discriminator and validated identity coordinates rather than message wording or instanceof. Create conflicts are emitted under the existing per-ID write lock and name the actual preserved type-folder document. A re-read lets the caller compare intent; returning an existing item automatically would make a separate equivalence decision.
+files[13]:
+  - path: scripts/error-code-stability.json
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/core/shared/errors.ts
+    scope: project
+  - path: src/sdk/core.ts
+    scope: project
+  - path: src/sdk/errors.ts
+    scope: project
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+  - path: src/sdk/index.ts
+    scope: project
+  - path: src/sdk/lifecycle/create.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+    note: Generated runtime contract snapshot includes the stable existing-item conflict code
+  - path: tests/fixtures/read-output/packed-continuation-consumer.mjs
+    scope: project
+  - path: tests/integration/cli/item-create-conflict.integration.spec.ts
+    scope: project
+  - path: tests/integration/read-output/composed-continuation.integration.spec.ts
+    scope: project
+  - path: tests/unit/sdk/lifecycle/item-conflict-guard.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/item-create-conflict.integration.spec.ts tests/unit/sdk/lifecycle/item-conflict-guard.spec.ts,project,300,"harness:codex","2026-10-06T10:04:49.277Z",local_mutation,fix/lossless-pagination-typed-conflicts-agent-recovery
+test_runs[2]:
+  - run_id: test-local-muwi6vw6-kdgjmj
+    kind: test
+    status: failed
+    started_at: "2026-10-06T09:50:51.875Z"
+    finished_at: "2026-10-06T09:55:52.182Z"
+    recorded_at: "2026-10-06T09:55:52.182Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/item-create-conflict.integration.spec.ts tests/unit/sdk/item-conflict-guard.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwijkrs-4g4btf
+    kind: test
+    status: passed
+    started_at: "2026-10-06T10:05:25.757Z"
+    finished_at: "2026-10-06T10:05:44.296Z"
+    recorded_at: "2026-10-06T10:05:44.296Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/item-create-conflict.integration.spec.ts tests/unit/sdk/lifecycle/item-conflict-guard.spec.ts,schema,schema,source,local_source_ref
+docs[3]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Latest external pm-changelog reviewed delivery projection
+  - path: docs/README.md
+    scope: project
+  - path: docs/SDK_CREATE_AND_RECOVERY.md
+    scope: project
+close_reason: Implemented and verified for the combined reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: typed-existing-item-conflicts
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/item-create-conflict.integration.spec.ts tests/unit/sdk/lifecycle/item-conflict-guard.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/cli/item-create-conflict.integration.spec.ts tests/unit/sdk/lifecycle/item-conflict-guard.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-gh1400
 body: "## Observed (SDK 2026.10.4)\n`createItem` with an explicit id that already exists throws `PmCliExpectedError(\\`Item \"${id}\" already exists\\`, EXIT_CODE.CONFLICT)` (sdk-core). The error carries only the exit code — the same `CONFLICT` code used for claim conflicts, policy refusals, etc. — and no machine-readable `code`/`context` naming the condition or the existing item id.\n\n## Why it matters (multi-agent concurrency)\nContent-addressed / deterministic ids are the natural way for concurrent agents to converge on one shared item (pm-rl registers environments, seeds and runs by digest so two loops in parallel worktrees share them). The correct pattern is *create, and on \"already exists\" re-read and accept iff identical*. Today the only way to recognise that case is to match the message text:\n\n```ts\nif (!isPmCliExpectedError(error) || error.exitCode !== EXIT_CODE.CONFLICT || !/^Item \"[^\"]+\" already exists$/.test(error.message)) throw error;\n```\n(unbraind/pm-rl#61). Any wording or localisation change silently turns the recovery path into a crash, and the original bug (two simultaneous loops → the loser throws) only showed up as a CI flake on one Node version.\n\n## Proposal\n- Throw with a stable code, e.g. `code: \"item_already_exists\"` plus `context: { id, path }` (like the existing typed refusals), and export a guard `isItemAlreadyExistsError` from the public SDK subpath (cf. #975 for `isAlreadyClaimedError`).\n- Optionally an idempotent primitive: `createItem({ ..., ifExists: \"return-existing\" })` returning `{ created: false, item }` so callers don't need the throw/re-read dance at all."

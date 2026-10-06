@@ -32,7 +32,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
     expect(bootstrap.run).toContain(assetUrl);
     expect(bootstrap.run).toContain(assetDigest);
     expect(bootstrap.run).toContain("--fail --show-error --silent --location --proto '=https' --tlsv1.2");
-    expect(bootstrap.run).toContain("sha256sum --check --strict");
+    expect(bootstrap.run).toContain('node --input-type=module - "${codecov_binary}"');
     expect(bootstrap.run).not.toMatch(/--insecure|curl\s+-k\b/);
     const uploads = steps.filter((step) => step.name === "Upload coverage to Codecov" || step.name === "Upload test results to Codecov");
     expect(uploads).toHaveLength(2);

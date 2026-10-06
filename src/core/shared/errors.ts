@@ -51,6 +51,10 @@ export interface PmCliErrorRecoveryPayload {
 export interface PmCliErrorContext {
   /** Value that configures or reports code for this contract. */
   code?: string;
+  /** Canonical existing item identity returned by a refused create operation. */
+  id?: string;
+  /** Actual persisted existing-item path returned by a refused create operation. */
+  path?: string;
   /** Item whose document could not be decoded or parsed. */
   item_id?: string;
   /** Ordered mutation that failed semantic preview validation. */

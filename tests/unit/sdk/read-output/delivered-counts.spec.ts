@@ -5,23 +5,44 @@ import { refreshReadOutputDeliveredCounts, rememberReadOutputFocusRows, sliceRea
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "../../../../src/sdk/pagination.js";
 
 describe("delivered row count receipts (GH-1371)", () => {
-  it("rebases producer deletion fallback from the uncapped page coordinate", () => {
+  it.each(["unbounded", 100000] as const)("rebases advertised producer cursors under an amount-only cap with budget %s", (outputBudget) => {
+    const items = Array.from({ length: 25 }, (_, index) => ({ id: `pm-amount-${index}`, title: `Amount row ${index}` }));
+    const producer = { items, count: 25, total: 30, next_cursor: encodeQueryCursor("amount-query", items.at(-1)!.id, 24, "snapshot") };
+    for (const command of ["list", "search"]) for (const outputInclude of [undefined, "title"]) {
+      const result = applyReadOutputDimensions(command, { outputLimit: 2, outputBudget, outputInclude }, producer);
+      expect(result.items).toEqual(items.slice(0, 2).map((item) => outputInclude ? { title: item.title } : item));
+      expect(result.count).toBe(2);
+      expect(result.total).toBe(30);
+      expect(result.read_output).toMatchObject({ within_budget: true, rows_compacted: false });
+      expect(result.output_budget_truncation).toBeUndefined();
+      expect(decodeQueryCursorEnvelope(result.next_cursor)).toMatchObject({ after_id: items[1]!.id, after_index: 1, fingerprint: "amount-query", snapshot: "snapshot" });
+      const terminal = applyReadOutputDimensions(command, { outputLimit: 2, outputBudget, outputInclude }, { items, count: 25, total: 25, next_cursor: null });
+      expect(terminal.next_cursor).toBeNull();
+      expect(terminal).toMatchObject({ count: 2, total: 25, has_more: true, truncated: true });
+    }
+  });
+
+  it.each([undefined, "title"])("rebases producer deletion fallback from the uncapped page coordinate with projection %s", (outputInclude) => {
     const items = Array.from({ length: 50 }, (_, index) => ({ id: `pm-coordinate-${index}`, title: "Long coordinate evidence ".repeat(20) }));
+    for (const next_cursor of [encodeQueryCursor("query-fingerprint", items.at(-1)!.id, 74), null]) {
     const producer = {
-      items, count: items.length, total: 75, next_cursor: encodeQueryCursor("query-fingerprint", items.at(-1)!.id, items.length - 1),
+      items, count: items.length, total: next_cursor ? 100 : 75, next_cursor,
     };
-    const result = applyReadOutputDimensions("list", { outputLimit: 20, outputBudget: 1700, outputFormat: "json" }, producer);
+    const after = encodeQueryCursor("query-fingerprint", "pm-previous-page", 24);
+    const result = applyReadOutputDimensions("list", { after, outputLimit: 20, outputBudget: outputInclude ? 1200 : 1700, outputFormat: "json", outputInclude }, producer);
     expect(result.items.length).toBeGreaterThan(0);
     expect(result.items.length).toBeLessThan(20);
-    expect(decodeQueryCursorEnvelope(result.next_cursor).after_index).toBe(result.items.length - 1);
+    expect(decodeQueryCursorEnvelope(result.next_cursor).after_index).toBe(24 + result.items.length);
     const outputCursor = result.output_budget_truncation!.recovery.cursor!;
     expect(decodeReadOutputContinuationCursor(outputCursor).offset).toBe(result.items.length);
-    const resumed = applyReadOutputDimensions("list", { outputLimit: 20, outputBudget: 1000, outputFormat: "json", outputCursor }, producer);
+    const resumed = applyReadOutputDimensions("list", { after, outputLimit: 20, outputBudget: 1000, outputFormat: "json", outputCursor, outputInclude }, producer);
     expect(resumed.items.length).toBeGreaterThan(0);
     expect(resumed.items.length).toBeLessThan(20);
     expect(resumed.items.length).toBeLessThan(items.length - result.items.length);
     expect(resumed.output_budget_truncation).toBeDefined();
-    expect(decodeQueryCursorEnvelope(resumed.next_cursor).after_index).toBe(result.items.length + resumed.items.length - 1);
+    expect(decodeQueryCursorEnvelope(resumed.next_cursor).after_index).toBe(24 + result.items.length + resumed.items.length);
+    expect(decodeQueryCursorEnvelope(resumed.next_cursor).after_id).toBe(items[result.items.length + resumed.items.length - 1]!.id);
+    }
   });
 
   it("counts shaped context focus while preserving population and blocker totals", () => {
