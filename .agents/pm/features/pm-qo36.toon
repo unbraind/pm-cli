@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: "area:extensions","area:sdk",dx,extensibility
 created_at: "2026-06-07T10:05:01.492Z"
-updated_at: "2026-09-19T08:41:05.754Z"
+updated_at: "2026-10-06T16:42:27.549Z"
 closed_at: "2026-06-08T13:51:50.961Z"
 author: audit-platform-agent
 acceptance_criteria: "- Extension `activate(api)` exposes the extension's own name, layer, and version (e.g. api.extension)\n- Available at activation without re-reading the manifest\n- SDK types + docs updated; covered by a test"
@@ -17,7 +17,15 @@ release: v2026.6.9
 resolution: ExtensionApi now exposes read-only frozen api.extension self-identity (name/layer/version/capabilities/pm_min_version/pm_max_version/source_package) built in createExtensionApi. Documented + tested.
 expected_result: "- Extension `activate(api)` exposes the extension's own name, layer, and version (e.g. api.extension)\n- Available at activation without re-reading the manifest\n- SDK types + docs updated; covered by a test"
 actual_result: ExtensionApi now exposes read-only frozen api.extension self-identity (name/layer/version/capabilities/pm_min_version/pm_max_version/source_package) built in createExtensionApi. Documented + tested.
-dependencies[1]{id,kind,created_at}:
-  pm-ugqx,implements,"2026-07-26T17:24:10.271Z"
+dependencies[2]:
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-07-26T17:24:10.271Z"
+  - id: pm-b4cp
+    kind: discovered_from
+    created_at: "2026-10-06T16:42:27.272Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
 close_reason: ExtensionApi now exposes read-only frozen api.extension self-identity (name/layer/version/capabilities/pm_min_version/pm_max_version/source_package) built in createExtensionApi. Documented + tested.
 body: ""

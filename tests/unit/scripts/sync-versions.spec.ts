@@ -174,6 +174,44 @@ async function runSyncVersionsScenario(scenario: Scenario) {
 }
 
 describe("scripts/sync-versions: check mode", () => {
+  it.each(["check", "apply"])(
+    "%s handles both shrinkwrap versions without changing the locked dependency tree",
+    async (mode) => {
+      const files = inSyncFiles();
+      const lockedPackage = { version: "2.11.0", integrity: "sha512-runtime" };
+      files["runtime-dependencies.json"] = {
+        name: "@unbrained/pm-cli",
+        version: ROOT_VERSION,
+        lockfileVersion: 3,
+        packages: {
+          "": { version: "2026.7.10" },
+          "node_modules/runtime": lockedPackage,
+        },
+      };
+      const result = await runSyncVersionsScenario({
+        args: [mode],
+        files,
+        packageDirs: ["pm-alpha"],
+      });
+      if (mode === "check") {
+        expect(result.failure).toEqual(new Error("EXIT:1"));
+        expect(result.errors.join("\n")).toContain(
+          "runtime-dependencies.json packages.root.version",
+        );
+        expect(result.writes).toEqual([]);
+      } else {
+        expect(result.failure).toBeNull();
+        expect(result.writes).toHaveLength(1);
+        expect(JSON.parse(result.writes[0].content)).toMatchObject({
+          version: ROOT_VERSION,
+          packages: {
+            "": { version: ROOT_VERSION },
+            "node_modules/runtime": lockedPackage,
+          },
+        });
+      }
+    },
+  );
   it("passes by default (no command) when every manifest matches the root version", async () => {
     const result = await runSyncVersionsScenario({
       args: [],

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: brainstorm,context-management,governance,graph,organization,planning,review
 created_at: "2026-07-27T06:59:13.980Z"
-updated_at: "2026-09-08T05:33:36.580Z"
+updated_at: "2026-10-06T17:36:30.141Z"
 closed_at: "2026-07-27T07:27:14.965Z"
 author: "harness:opencode"
 acceptance_criteria: "All-status census recorded with live verification evidence (auto-release, npm, CI); brainstorms recorded on the canonical items; every new item dedupe-checked with search evidence; no numbered pass identifiers; graph edges added only where semantically true; pm validate/health re-run clean at the end"
@@ -15,10 +15,11 @@ objective: "Keep the living backlog a complete, deeply-linked, duplicate-free ma
 value: Agents and humans can traverse from any active work to the outcome it serves; brainstorm output is preserved as tracker knowledge instead of chat ephemera
 why_now: "Maintainer requested a comprehensive review, brainstorm, organization, and long-term planning pass across all items with deep graph linking"
 parent: pm-doxj
+release: v2026.7.28
 resolution: "Ecosystem review, brainstorm, and deep-graph enrichment pass complete. Census verified live: 2,128 items (+1 filed: pm-rbg1qo session-topic/effort/role provenance coverage), auto-release succeeded today (v2026.7.27 on npm + GitHub, exactly one auto-release), CI green on main, history drift 0/2,129, graph audit findings unchanged (11 info legacy, no new). Graph enriched +41 edges: 13-edge supersedes chain across all 14 historical review passes (verified 13-hop path pm-89qv6b..pm-xm98), implements/verifies anchors for all 5 anchorless active items + pm-a5w7vv (only roadmap root remains unanchored by design), outcome-milestone DAG completed (multi-path 2028-06 -> 2026-10 via blocked_by), RL entitlement composition (pm-nfrhf0 blocked_by pm-e96opw + pm-rbcvt2). Brainstorms recorded: warm steady-state token loop baseline on pm-g3n00m (default 4.3kB vs disciplined ~50B per cycle; routing-not-capability), RL composition map on pm-nfrhf0. Deliberately not filed: seventh outcome milestone (pm-doxj horizons note fixes ladder at six, promotion via pm-m08hza). Linked test passing 1/0 (pm validate --check-history-drift && pm health --check-only, pm_context_mode=tracker — sandbox mode runs against an empty schema tracker and false-fails repo-invariant assertions). Duplicate check: searches across pass/review/provenance/release themes found only the closed predecessor pm-e9yevx lineage; no open duplicates created."
 expected_result: "All-status census recorded with live verification evidence (auto-release, npm, CI); brainstorms recorded on the canonical items; every new item dedupe-checked with search evidence; no numbered pass identifiers; graph edges added only where semantically true; pm validate/health re-run clean at the end"
 actual_result: "Ecosystem review, brainstorm, and deep-graph enrichment pass complete. Census verified live: 2,128 items (+1 filed: pm-rbg1qo session-topic/effort/role provenance coverage), auto-release succeeded today (v2026.7.27 on npm + GitHub, exactly one auto-release), CI green on main, history drift 0/2,129, graph audit findings unchanged (11 info legacy, no new). Graph enriched +41 edges: 13-edge supersedes chain across all 14 historical review passes (verified 13-hop path pm-89qv6b..pm-xm98), implements/verifies anchors for all 5 anchorless active items + pm-a5w7vv (only roadmap root remains unanchored by design), outcome-milestone DAG completed (multi-path 2028-06 -> 2026-10 via blocked_by), RL entitlement composition (pm-nfrhf0 blocked_by pm-e96opw + pm-rbcvt2). Brainstorms recorded: warm steady-state token loop baseline on pm-g3n00m (default 4.3kB vs disciplined ~50B per cycle; routing-not-capability), RL composition map on pm-nfrhf0. Deliberately not filed: seventh outcome milestone (pm-doxj horizons note fixes ladder at six, promotion via pm-m08hza). Linked test passing 1/0 (pm validate --check-history-drift && pm health --check-only, pm_context_mode=tracker — sandbox mode runs against an empty schema tracker and false-fails repo-invariant assertions). Duplicate check: searches across pass/review/provenance/release themes found only the closed predecessor pm-e9yevx lineage; no open duplicates created."
-dependencies[9]:
+dependencies[41]:
   - id: pm-4k6b
     kind: related
     created_at: "2026-07-27T06:59:30.778Z"
@@ -48,6 +49,198 @@ dependencies[9]:
     created_at: "2026-08-10T12:05:32.965Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-03pq3o
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-0d7ord
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-5t33or
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-9rgaal
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-9rxu
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-a5w7vv
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-dj98
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-e96opw
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-e9zh
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-g3n00m
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-gjicmx
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-gw6uyq
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-hipfu9
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-hnc9w7
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-itsjf0
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-j82fd3
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-m08hza
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-mkzw1x
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-nfrhf0
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-o87av6
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-oskdmu
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-p9a4
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-qwuber
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-rbcvt2
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-s4y3z4
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-szv11n
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-t4d7nz
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-u9d0
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-w7ccmv
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-wrbe
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-xm98
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
+  - id: pm-xp1xsw
+    kind: verifies
+    created_at: "2026-10-06T16:43:18.680Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
     author_source: detected
 comments[3]{created_at,author,text}:
   "2026-07-27T07:00:45.792Z","harness:opencode","Census evidence (live): 2,127 items + this pass item = 2,128 streams; by status open 308 / closed 1,806 / canceled 13 / in_progress 1 (this item). Types: Task 641, Issue 593, Feature 389, Chore 271, Epic 87, Decision 63, Story 53, Plan 22, Milestone 7. History: 39,625 entries across 2,138 streams, drift 0/2,128. Graph: 2,130 nodes, 9,405 edges (related 4,479, implements 1,989, parent 1,952, blocked_by 385, blocks 219, discovered_from 190, verifies 133, supersedes 41, child 15, incident_from 2), 0 isolated active nodes, 0 degree<=1 active nodes. Live system: auto-release scheduled run succeeded 2026-07-27T06:05Z (v2026.7.27 on npm dist-tags.latest + GitHub release, one auto-release today); CI green on main (CodeQL, CodSpeed, Docs, OSSF, Security). Health: only warn is local merge_driver_configuration:5 (environment, not tracker data). Validate: history_drift 0; resolution backfill warning 290 (tracked by pm-e9zh/pm-wrbe). Duplicate check for this pass: pm search 'ecosystem review brainstorm organization planning pass' shows only closed pm-e9yevx (2026-07-26) as predecessor; pm duplicates shows no open cluster matching this theme."

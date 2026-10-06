@@ -2,11 +2,13 @@ id: pm-jprn58
 title: Include body-only references in strict workspace assurance context
 description: "Strict assurance runList projection omits includeBody, so prose-edge evaluation misses authoritative body-only references."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-04T22:58:46.398Z"
-updated_at: "2026-10-04T23:43:36.333Z"
+updated_at: "2026-10-06T20:26:00.032Z"
+closed_at: "2026-10-06T20:19:03.061Z"
+completed_at: "2026-10-06T20:19:03.061Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Prove the strict-workspace false green with real persistence before fixing; preserve strict completeness and metadata; include body references exactly once; reconcile newly exposed historical debt without raising ceilings or inventing edges; preserve exact 100/100/100/100 source coverage and negative controls.
@@ -16,20 +18,34 @@ value: Prevent false-green graph parity and preserve SDK/workspace semantic equi
 parent: pm-1jzupz
 risk: medium
 confidence: 95
-expected_result: A resolvable unlinked body-only reference yields exactly one gap through strict workspace context and the pure public evaluator.
-actual_result: "Isolated public SDK reproduction with two temporary items: strict workspace result 0, full item result 1, strict holder has no body field."
+resolution: Strict and ordinary public SDK assurance contexts include body-only references. Add 346 evidence-backed historical edges across 56 sources while preserving lifecycle metadata and verified release buckets.
+expected_result: "Body-only references contribute genuine graph gaps, typed dependencies remove those gaps, and repository assurance remains within original bounds."
+actual_result: Body regressions and installed public SDK acceptance pass; 2901-item complete corpus and all 47 context plus nine graph assertions pass. Canonical run test-local-mux4elzm-xbxr14 passed 9863 tests and exact 100/100/100/100 coverage across 768 measured source files. Static run test-local-mux1vp92-ukycmi passed. Existing historical documentation and evidence debt remains tracked.
 component: sdk/governance/assurance-runtime
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-1jzupz,implements,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
   pm-axotea,related,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
   pm-gh1392,discovered_from,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
   pm-ob9z4y,verifies,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
   pm-py7qv2,recurs_from,"2026-10-04T22:58:46.398Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+  pm-e0b5,verifies,"2026-10-06T17:36:36.616Z","harness:codex","cli:update:dep",detected
+  pm-e9zh,verifies,"2026-10-06T17:36:36.616Z","harness:codex","cli:update:dep",detected
+comments[14]{created_at,author,text}:
   "2026-10-04T22:58:46.398Z","harness:codex","Duplicate check: strict full all-status 2883-item corpus, live request-specific search and open/in_progress inventories inspected. Closed pm-py7qv2 fixed metadata evidence selectors and remains shipped; closed pm-ob9z4y covers pure prose evaluation rather than this strict adapter boundary. Open pm-axotea concerns multi-hyphen ID tokenization, a distinct defect. Existing pm-1jzupz owns assurance. Public SDK controlled proof: two real synthetic items, body-only reference, strict workspace=0 versus full rows=1. Historical graph repair must retain evidence and unchanged ceilings."
   "2026-10-04T23:01:22.817Z","harness:codex","Verification receipt: real public SDK PmClient creation/get plus createAssuranceWorkspaceContext(strict_read=true, include_history=false, resolve_tree=false) and evaluateMeasurement(prose_edge_gap) on two synthetic temporary items outside checkout ancestors returned workspace_value=0, full_item_value=1, holder_body_present=false, population=2. Both project/global tracker roots and telemetry were isolated. No test hook, production export, mock, exemption or threshold was introduced. This is a confirmed open intake, not an implemented change."
   "2026-10-04T23:43:12.793Z","harness:codex","Policy registration: the full live predecessor confirms the same strict assurance adapter projection failure class. Register this open recurrence with the existing history-and-projection-integrity family; preserve all budgets and the predecessor closure. Registration records unresolved scope, not a passing body-only regression or implementation."
-files[4]:
+  "2026-10-06T15:55:25.301Z","harness:codex","TDD ownership: one real-persistence integration regression will compare strict workspace, ordinary workspace, full SDK get and CLI assurance verdicts for body-only references. The pure census suite owns exact identifier matching, deduplication and exemption semantics. Existing tests cover metadata selectors but never prove the workspace body boundary. Preserve all current ceilings and classify newly visible debt from its actual prose before adding typed edges."
+  "2026-10-06T16:24:33.248Z","harness:codex","Graph reconciliation plan: the corrected body/identifier census exposes 334 net additional gaps (1570 versus unchanged ceiling 1236). Reviewed source prose for 13 historical audit, metadata-backfill, scheduling and contradiction cohorts; prepared 383 evidence-supported rows. Verifies denotes the documented inspection of target metadata/coverage/closure rows, not a new claim that all target feature acceptance criteria pass. Discovered_from preserves stated intake or concrete census provenance; supersedes uses explicit predecessor statements. Nine incidental context mentions are excluded. No ordering edges, ceiling raises, exemptions, reopen operations, or historical rewrites. Each mutation will include its original narrative evidence and append through normal CLI history."
+  "2026-10-06T16:26:17.469Z","harness:codex","Plan correction: the initial arithmetic in comment 5 was incorrect: its 13 cohorts contain 283 approved pairs, not 383. Four additional fully inspected census/governance cohorts bring the concrete plan to 346 rows across 56 source items: 223 verifies, 108 discovered_from, 6 supersedes and 9 related. Typed census links record evidence inspections rather than delivery acceptance; related is retained only for explicitly distinct scope boundaries. Existing release metadata or exact current changelog release buckets will preserve terminal release attribution. The ceiling and exemptions remain unchanged."
+  "2026-10-06T17:25:39.948Z","harness:codex","Historical backfill preservation receipt: 346 evidence-backed typed edges across 56 source records, with all 294 involved live full items and 9763 history events read without omissions. Explicitly inspected cohort narratives govern metadata-verification edges, discovered-from edges for intake-created work and actual predecessor supersedes edges. All original status, resolution, close reason, completion and body/comments/notes/learnings preserved. Eight existing historical release buckets pinned only after immutable-tag evidence. Corrected prose census 1224 is below the unchanged 1236 ceiling, exact exemption list unchanged. Latest pm-changelog 2026.10.5 preserves all 2577 prior closed-item release buckets; generator changes only ordering inside existing sections for those release pins."
+  "2026-10-06T17:32:29.630Z","harness:codex","Live diagnostics: health is authoritative ok with 14 legacy hierarchy advisories and zero history drift. Resolution validation reports the 170 explicitly grouped historical residuals preserved by completed pm-e9zh, whose live resolution and closure evidence were inspected; this does not mean its bounded recovery remains unfinished. Earlier completed pm-e0b5 is historical context, not a current unresolved issue. No fabricated closure fields or duplicate cleanup owner added. Live reliability gate checked recent Sentry data successfully with zero unresolved issues, required production telemetry error rate 3.14 percent and zero missing error-code rows. Collector newest event was about 2.6 seconds old with 140 events in ten minutes. A local queue flush physically drained one row to zero. Sentry trace query for the last 24 hours returned no traces, so trace completeness remains unverified."
+  "2026-10-06T17:36:36.616Z","harness:codex","text=Final semantic review corrected six audit/capability predecessor links from supersedes to related: their prose states follows or continues, which does not prove replacement. The bounded backfill still contains 346 edges: 223 verifies, 108 discovered_from and 15 related. Verification edges record actual metadata inspection, not unperformed feature acceptance. Added two separate owner verification links to the inspected completed historical metadata-recovery records. No lifecycle field or release bucket changed."
+  "2026-10-06T18:48:09.295Z","harness:codex","Fresh strict complete corpus reads all 2901 items, full metadata and bodies without omissions: 239 open, 59 draft, 2584 closed, 14 canceled and exactly five active delivery owners. Live tracker-context assurance passes all 47 assertions; graph-composition passes all nine with 1230 prose gaps under the unchanged 1236 ceiling and existing 88 waivers. Historical backfill remains 346 evidence-backed edges: 223 verifies, 108 discovered_from and 15 related. Canonical coverage is the next acceptance stage; no claim of zero historical backlog."
+  "2026-10-06T19:27:39.858Z","harness:codex","Canonical linked coverage run test-local-mux2kki4-iioogk completed 9864 tests: 9861 passed, two skipped and one existing packed-SDK npm-resolution failure. All earlier resource timeouts passed with two workers. Vitest did not emit a coverage report after that failure, so no coverage claim is made. The packed continuation fixture explicitly requires npm to be discoverable through the Node module path on this Homebrew host; verify with the installed npm module root and rerun the unchanged canonical gates."
+  "2026-10-06T20:18:12.906Z","harness:codex","Final canonical all-source coverage passed: 9863 executed tests passed; two existing Windows-specific tests skipped locally; 768 measured source files. Exact covered/total counts are lines 63914/63914, statements 67066/67066, functions 13833/13833 and branches 51337/51337. The canonical integer-count gate passed with zero uncovered counts; no thresholds, includes, exclusions or ignore annotations were weakened. Full static chain passed in linked run test-local-mux1vp92-ukycmi. Remaining historical content debt remains explicit: 4130 filler docstrings across 204 files, pre-existing hierarchy advisories and 170 historical closures without recoverable structured evidence. Recent Sentry/telemetry health passed earlier; trace availability remains unverified."
+  "2026-10-06T20:23:45.003Z","harness:codex","Final closure checks: strict full 2901-item corpus has zero in-progress items and no omissions or unreadable entries. Record-integrity passes, tracker-context-quality passes 47 assertions and graph-composition passes nine after closure. Latest pm-changelog 2026.10.5 adds exactly five owner entries and preserves all 2577 existing release buckets. Final staged artifact including the generated changelog passes: application 19979778 bytes / 1757 files; runtime 23334884 bytes / 4731 files; zero source maps. Documentation links and version identity checks pass. GitHub PR review and merged-main verification remain subsequent delivery evidence."
+  "2026-10-06T20:26:00.032Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1421 . Implementation source 857049db83b08ad029c38ddcffd33a33bd8b2056 includes this owner, immutable closure evidence and the generated changelog. Required hosted checks and reviewer feedback are pending; local exact coverage and acceptance receipts are recorded above."
+files[122]:
   - path: config/defect-recurrence-policy.json
     scope: project
     note: Register unresolved adapter projection recurrence in the existing integrity family
@@ -39,5 +55,358 @@ files[4]:
     scope: project
   - path: src/sdk/query/list.ts
     scope: project
+  - path: tests/integration/assurance-runtime.integration.spec.ts
+    scope: project
+  - path: .agents/pm/chores/pm-3rgp.toon
+    scope: project
+  - path: .agents/pm/chores/pm-o043.toon
+    scope: project
+  - path: .agents/pm/chores/pm-osea.toon
+    scope: project
+  - path: .agents/pm/chores/pm-othr.toon
+    scope: project
+  - path: .agents/pm/chores/pm-p37b.toon
+    scope: project
+  - path: .agents/pm/chores/pm-tq5t.toon
+    scope: project
+  - path: .agents/pm/chores/pm-wc0d.toon
+    scope: project
+  - path: .agents/pm/chores/pm-yj8n.toon
+    scope: project
+  - path: .agents/pm/chores/pm-zyse.toon
+    scope: project
+  - path: .agents/pm/epics/pm-33cw.toon
+    scope: project
+  - path: .agents/pm/epics/pm-qwoy.toon
+    scope: project
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+  - path: .agents/pm/features/pm-d2wfig.toon
+    scope: project
+  - path: .agents/pm/features/pm-f3pa.toon
+    scope: project
+  - path: .agents/pm/features/pm-i1z6.toon
+    scope: project
+  - path: .agents/pm/features/pm-jyie.toon
+    scope: project
+  - path: .agents/pm/features/pm-mfl1.toon
+    scope: project
+  - path: .agents/pm/features/pm-o3nr.toon
+    scope: project
+  - path: .agents/pm/features/pm-pl53.toon
+    scope: project
+  - path: .agents/pm/features/pm-qo36.toon
+    scope: project
+  - path: .agents/pm/features/pm-rmjy.toon
+    scope: project
+  - path: .agents/pm/features/pm-rpag.toon
+    scope: project
+  - path: .agents/pm/features/pm-tb42.toon
+    scope: project
+  - path: .agents/pm/features/pm-tyj8.toon
+    scope: project
+  - path: .agents/pm/features/pm-u8n5.toon
+    scope: project
+  - path: .agents/pm/features/pm-v68d.toon
+    scope: project
+  - path: .agents/pm/features/pm-wt0g.toon
+    scope: project
+  - path: .agents/pm/features/pm-y1z0.toon
+    scope: project
+  - path: .agents/pm/features/pm-yj9w.toon
+    scope: project
+  - path: .agents/pm/features/pm-z9ho.toon
+    scope: project
+  - path: .agents/pm/history/pm-33cw.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-34gb.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-3rgp.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-5dbn.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-89qv6b.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-axotea.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-ayg31c.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-b4cp.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-d2wfig.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-f3pa.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-gnya.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-hu11.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-i1z6.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-ixm6.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-jprn58.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-jyie.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-ltbr.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-m2kl.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-mcxr.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-mfl1.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-miju.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-nh73.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-nnro.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-o043.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-o3nr.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-osea.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-othr.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-p37b.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-pl53.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-qo36.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-qwoy.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-r0z2.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-rmjy.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-rpag.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-tb42.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-tk1z.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-tq5t.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-tra4.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-tyj8.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-u42x.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-u8n5.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-v3f1n4.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-v4iypw.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-v68d.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-vk7zek.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-wc0d.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-wenq.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-wo7x.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-wt0g.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-xugp.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-xvt7ps.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-xy9n.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-y1z0.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-yj8n.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-yj9w.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-yy8rmx.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-z9ho.jsonl
+    scope: project
+  - path: .agents/pm/history/pm-zyse.jsonl
+    scope: project
+  - path: .agents/pm/issues/pm-axotea.toon
+    scope: project
+  - path: .agents/pm/issues/pm-ayg31c.toon
+    scope: project
+  - path: .agents/pm/issues/pm-jprn58.toon
+    scope: project
+  - path: .agents/pm/issues/pm-ltbr.toon
+    scope: project
+  - path: .agents/pm/issues/pm-mcxr.toon
+    scope: project
+  - path: .agents/pm/issues/pm-u42x.toon
+    scope: project
+  - path: .agents/pm/issues/pm-v3f1n4.toon
+    scope: project
+  - path: .agents/pm/issues/pm-vk7zek.toon
+    scope: project
+  - path: .agents/pm/issues/pm-xvt7ps.toon
+    scope: project
+  - path: .agents/pm/issues/pm-xy9n.toon
+    scope: project
+  - path: .agents/pm/stories/pm-34gb.toon
+    scope: project
+  - path: .agents/pm/stories/pm-5dbn.toon
+    scope: project
+  - path: .agents/pm/stories/pm-b4cp.toon
+    scope: project
+  - path: .agents/pm/stories/pm-gnya.toon
+    scope: project
+  - path: .agents/pm/stories/pm-hu11.toon
+    scope: project
+  - path: .agents/pm/stories/pm-ixm6.toon
+    scope: project
+  - path: .agents/pm/stories/pm-m2kl.toon
+    scope: project
+  - path: .agents/pm/stories/pm-miju.toon
+    scope: project
+  - path: .agents/pm/stories/pm-nh73.toon
+    scope: project
+  - path: .agents/pm/stories/pm-nnro.toon
+    scope: project
+  - path: .agents/pm/stories/pm-r0z2.toon
+    scope: project
+  - path: .agents/pm/stories/pm-tra4.toon
+    scope: project
+  - path: .agents/pm/stories/pm-wo7x.toon
+    scope: project
+  - path: .agents/pm/stories/pm-xugp.toon
+    scope: project
+  - path: .agents/pm/tasks/pm-89qv6b.toon
+    scope: project
+  - path: .agents/pm/tasks/pm-tk1z.toon
+    scope: project
+  - path: .agents/pm/tasks/pm-v4iypw.toon
+    scope: project
+  - path: .agents/pm/tasks/pm-wenq.toon
+    scope: project
+  - path: .agents/pm/tasks/pm-yy8rmx.toon
+    scope: project
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/assurance-runtime.integration.spec.ts tests/unit/sdk/governance/assurance-runtime.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T16:32:15.751Z"
+      source_kind: local_mutation
+      source_ref: fix/authoritative-assurance-bun-receipts-release-lock
+  - command: node scripts/run-tests.mjs coverage -- --maxWorkers=2
+    scope: project
+    timeout_seconds: 2400
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T18:42:34.125Z"
+      source_kind: local_mutation
+      source_ref: fix/prose-census-bun-receipts-runtime-bundles
+    note: Canonical all-source coverage with exact 100 percent thresholds; limited workers avoid competing subprocesses on the shared host
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 900
+    pm_context_mode: tracker
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T18:48:46.865Z"
+      source_kind: local_mutation
+      source_ref: fix/prose-census-bun-receipts-runtime-bundles
+    note: "Strict gates read a disposable full tracker snapshot, including historical defect evidence; schema-only test context cannot validate repository governance"
+test_runs[7]:
+  - run_id: test-local-mux10sdf-1hx83b
+    kind: test
+    status: passed
+    started_at: "2026-10-06T18:42:31.763Z"
+    finished_at: "2026-10-06T18:43:00.387Z"
+    recorded_at: "2026-10-06T18:43:00.387Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/assurance-runtime.integration.spec.ts tests/unit/sdk/governance/assurance-runtime.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-mux17qwm-gr2cfv
+    kind: test
+    status: failed
+    started_at: "2026-10-06T18:44:55.401Z"
+    finished_at: "2026-10-06T18:48:25.078Z"
+    recorded_at: "2026-10-06T18:48:25.078Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",schema,schema,source,local_source_ref
+  - run_id: test-local-mux1i6ur-en3uu3
+    kind: test
+    status: failed
+    started_at: "2026-10-06T18:48:47.931Z"
+    finished_at: "2026-10-06T18:56:32.307Z"
+    recorded_at: "2026-10-06T18:56:32.307Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mux1vp92-ukycmi
+    kind: test
+    status: passed
+    started_at: "2026-10-06T18:57:09.562Z"
+    finished_at: "2026-10-06T19:07:02.677Z"
+    recorded_at: "2026-10-06T19:07:02.677Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mux2kki4-iioogk
+    kind: test
+    status: failed
+    started_at: "2026-10-06T19:07:11.147Z"
+    finished_at: "2026-10-06T19:26:22.924Z"
+    recorded_at: "2026-10-06T19:26:22.924Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2,schema,schema,source,local_source_ref
+  - run_id: test-local-mux3gck3-imvwis
+    kind: test
+    status: failed
+    started_at: "2026-10-06T19:28:44.104Z"
+    finished_at: "2026-10-06T19:51:05.619Z"
+    recorded_at: "2026-10-06T19:51:05.619Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2,schema,schema,source,local_source_ref
+  - run_id: test-local-mux4elzm-xbxr14
+    kind: test
+    status: passed
+    started_at: "2026-10-06T19:52:47.469Z"
+    finished_at: "2026-10-06T20:17:44.145Z"
+    recorded_at: "2026-10-06T20:17:44.145Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=2,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: Implemented and locally verified full-body workspace assurance and historical graph enrichment; closure evidence is included in the reviewed delivery.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: graph-composition
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/assurance-runtime.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/assurance-runtime.integration.spec.ts tests/unit/sdk/governance/assurance-runtime.spec.ts,"pnpm quality:static",node scripts/run-tests.mjs coverage -- --maxWorkers=2
+  hosted_checks[4]: Gates (coverage),Gates (static),Gates (smokes),Windows regression (Node 24)
+  owner: pm-jprn58
 body: "Read-only discovery during SDK package/settings delivery. createAssuranceWorkspaceContext strict mode calls runList with full/noTruncate/strictRead but no includeBody. evaluateMeasurement prose_edge_gap inspects bodies when available. Controlled public SDK proof used two real items outside checkout ancestors with isolated project/global roots; only its own temporary workspace was removed. The issue remains open/unclaimed; no assurance code, exemptions, budgets or thresholds are changed in this delivery."

@@ -1238,6 +1238,17 @@ esac
     try {
       const fakeNpm = path.join(tempRoot, "npm");
       const npmLog = path.join(tempRoot, "npm.log");
+      const distributionScript = path.join(tempRoot, "distribution.mjs");
+      const distributionLog = path.join(tempRoot, "distribution.log");
+      await writeFile(
+        distributionScript,
+        [
+          'import { appendFileSync } from "node:fs";',
+          'appendFileSync(process.env.DISTRIBUTION_LOG, process.argv.slice(2).join(" ") + "\\n");',
+          'if (process.env.DISTRIBUTION_STATUS === "1") process.exit(1);',
+          'console.log(JSON.stringify({ filename: "publication.tgz" }));',
+        ].join("\n"),
+      );
       await writeFile(
         fakeNpm,
         `#!/usr/bin/env bash
@@ -1250,7 +1261,7 @@ case "$*" in
   "view \${NPM_PACKAGE} name --json")
     exit "\${PACKAGE_STATUS}"
     ;;
-  "publish --access public --provenance --tag latest")
+  "publish \${RUNNER_TEMP}/publication.tgz --access public --provenance --tag latest")
     exit 0
     ;;
   *)
@@ -1277,6 +1288,9 @@ esac
             RECOVERY_SOURCE_MODE: "tag",
             NPM_PACKAGE: "@unbrained/pm-cli",
             NPM_FAKE_LOG: npmLog,
+            PACKAGE_DISTRIBUTION: distributionScript,
+            DISTRIBUTION_LOG: distributionLog,
+            DISTRIBUTION_STATUS: "0",
             TARGET_VERSION_STATUS: "1",
             PACKAGE_STATUS: "0",
             ...overrides,
@@ -1294,18 +1308,24 @@ esac
       );
       expect(invocations).toContain("view @unbrained/pm-cli name --json");
       expect(invocations).toContain(
-        "publish --access public --provenance --tag latest",
+        `publish ${tempRoot}/publication.tgz --access public --provenance --tag latest`,
       );
       expect(invocations).not.toContain("access set");
 
       await writeFile(npmLog, "", "utf8");
+      const packedFailure = runScenario({ DISTRIBUTION_STATUS: "1" });
+      expect(packedFailure.status).not.toBe(0);
+      expect(await readFile(npmLog, "utf8")).not.toContain("publish ");
+      await writeFile(npmLog, "", "utf8");
+      await writeFile(distributionLog, "", "utf8");
       const existingVersion = runScenario({ TARGET_VERSION_STATUS: "0" });
+      expect(await readFile(distributionLog, "utf8")).toBe("");
       expect(existingVersion.status).toBe(0);
       expect(existingVersion.stdout).toContain(
         "@unbrained/pm-cli@2026.7.27 is publicly available; skipping npm publish.",
       );
       invocations = await readFile(npmLog, "utf8");
-      expect(invocations).not.toContain("publish --access public");
+      expect(invocations).not.toContain("publish ");
       expect(invocations).not.toContain("access set");
 
       await writeFile(npmLog, "", "utf8");
@@ -1322,7 +1342,7 @@ esac
         "view @unbrained/pm-cli@2026.7.27 version --json",
       );
       expect(invocations).not.toContain("access set");
-      expect(invocations).not.toContain("publish --access public");
+      expect(invocations).not.toContain("publish ");
 
       await writeFile(npmLog, "", "utf8");
       const missingExactTagRecovery = runScenario({
@@ -1334,7 +1354,7 @@ esac
         "refusing to publish different source under an immutable tag",
       );
       invocations = await readFile(npmLog, "utf8");
-      expect(invocations).not.toContain("publish --access public");
+      expect(invocations).not.toContain("publish ");
 
       await writeFile(npmLog, "", "utf8");
       const unpublishedTaggedSourceRecovery = runScenario({
@@ -1347,7 +1367,7 @@ esac
       );
       invocations = await readFile(npmLog, "utf8");
       expect(invocations).toContain(
-        "publish --access public --provenance --tag latest",
+        `publish ${tempRoot}/publication.tgz --access public --provenance --tag latest`,
       );
       expect(invocations).not.toContain("access set");
 
@@ -1361,7 +1381,7 @@ esac
       );
       invocations = await readFile(npmLog, "utf8");
       expect(invocations).not.toContain("access set");
-      expect(invocations).not.toContain("publish --access public");
+      expect(invocations).not.toContain("publish ");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

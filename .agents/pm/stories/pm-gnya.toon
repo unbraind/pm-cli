@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-story,"area:telemetry",capability,living-map,story
 created_at: "2026-07-04T19:59:48.767Z"
-updated_at: "2026-09-19T08:40:20.032Z"
+updated_at: "2026-10-06T16:42:49.795Z"
 closed_at: "2026-07-04T19:59:49.983Z"
 author: maintainer-agent
 estimated_minutes: 360
@@ -19,8 +19,18 @@ release: v2026.7.5
 resolution: "Delivered and maintained by pm-5oj5: redacted consent-gated telemetry, non-blocking OTLP, health diagnostics, and token-gated Sentry; worker reconnect hardening tracked (pm-rj3w)."
 expected_result: A maintainer observes usage and detects problems without leaking any data.
 actual_result: Redacted telemetry + non-blocking OTLP + health + Sentry gating shipped.
-dependencies[2]{id,kind,created_at}:
-  pm-5oj5,implements,"2026-07-26T17:14:41.318Z"
-  pm-rj3w,related,"2026-07-26T17:14:41.318Z"
+dependencies[3]:
+  - id: pm-5oj5
+    kind: implements
+    created_at: "2026-07-26T17:14:41.318Z"
+  - id: pm-rj3w
+    kind: related
+    created_at: "2026-07-26T17:14:41.318Z"
+  - id: pm-osea
+    kind: discovered_from
+    created_at: "2026-10-06T16:42:49.531Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
 close_reason: "Delivered and maintained by pm-5oj5: redacted consent-gated telemetry, non-blocking OTLP, health diagnostics, and token-gated Sentry; worker reconnect hardening tracked (pm-rj3w)."
 body: "## Agent need\nMaintainers need observability into how pm behaves in the field, but pm is git-native and privacy-sensitive, so no project data may leak.\n\n## Delivered surface (pm-5oj5)\ncore/telemetry (consent-aware events, redaction); Sentry instrumentation; non-blocking OTLP queue + worker; pm health checks; telemetry stats (percentiles, error-rate, agent identity).\n\n## Verified by\ntelemetry-env-var-docs and OTLP non-blocking tests. Enduring agent-value statement for the observability capability; new work lands in pm-5oj5."

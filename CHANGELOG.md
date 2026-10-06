@@ -4,9 +4,17 @@
 
 ### Fixed
 
+- GH-1417: Bundle the tested CLI runtime closure for reproducible npm and Bun installs ([pm-gh1417](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1417.toon))
+- GH-1418: Accept real Bun filtered-test execution receipts ([pm-gh1418](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1418.toon))
+- Prose graph census misses valid item identifiers with multiple hyphens ([pm-axotea](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-axotea.toon))
+- Include body-only references in strict workspace assurance context ([pm-jprn58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jprn58.toon))
 - GH-1413: Preserve lossless producer cursors under amount-only output caps ([pm-gh1413](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1413.toon))
 - GH-1414/GH-1415: Restore portable schema and checksum nightly fixtures ([pm-gh1414](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1414.toon))
 - Expose typed explicit-ID duplicate creation conflicts to SDK callers ([pm-gh1400](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1400.toon))
+
+### Security
+
+- Remove vulnerable MCP Apps development client from the locked dependency tree (GHSA-6qxp-vccf-f47h) ([pm-mcpoauth](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mcpoauth.toon))
 
 ### Other
 
@@ -635,8 +643,8 @@
 
 ### Other
 
-- Document the measured canonical agent cold-start across docs and generated guidance ([pm-ka6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ka6d.toon))
 - Close-time completeness signal for structured resolution fields (resolution/expected/actual) — config-gated warn or require ([pm-wenq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wenq.toon))
+- Document the measured canonical agent cold-start across docs and generated guidance ([pm-ka6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ka6d.toon))
 
 ## 2026.8.31 - 2026-08-31
 
@@ -821,12 +829,12 @@
 
 ### Fixed
 
+- The child hierarchy kind has an unenforced direction and cardinality: 7 of 15 rows are inverted against the registry's own declaration and no channel, validator, or audit finding notices ([pm-vk7zek](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vk7zek.toon))
 - GH-1078: Complete-list certification accepts absent or contradictory truth receipts and emits stale recovery ([pm-gh1078](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1078.toon))
 - GH-1076: read-only duplicates rejects universal JSON output controls ([pm-gh1076](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1076.toon))
 - GH-1074: package doctor cannot distinguish a safe declining service override from a global interceptor ([pm-gh1074](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1074.toon))
 - GH-1073: pm init accepts a whitespace id prefix that makes later creates fail ([pm-gh1073](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1073.toon))
 - GH-1075: Windows Node 24 nightly validation failed at main 3e7ac007 ([pm-gh1075](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1075.toon))
-- The child hierarchy kind has an unenforced direction and cardinality: 7 of 15 rows are inverted against the registry's own declaration and no channel, validator, or audit finding notices ([pm-vk7zek](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vk7zek.toon))
 - Hierarchy-canonicalizing dependency kinds bypass every cycle detector: mutual child_of edges leave the graph provably inconsistent while validate, health, and graph analyze all report acyclic ([pm-rggtvd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rggtvd.toon))
 
 ### Security
@@ -845,10 +853,10 @@
 
 ### Fixed
 
+- Typed-outcome reachability admits three of ten edge kinds, so the four semantic kinds the ontology exists to express contribute nothing to the invariant they were minted to satisfy ([pm-ayg31c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ayg31c.toon))
 - The blocks ceiling counts fabricated and evidence-cited ordering edges identically, so the historical ordering reconstruction another item mandates cannot land ([pm-c90tfh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c90tfh.toon))
 - The dependency remove flag accepts a value its own add flag refuses and reports success on a zero-match, so a mistyped graph repair exits 0 having changed nothing ([pm-gos426](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gos426.toon))
 - All four graph traversal verbs reject the semantic edge kinds the ontology exists to express, so 'what implements this milestone' returns the ordering-kind answer with no sign a semantic one exists ([pm-3dyec2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3dyec2.toon))
-- Typed-outcome reachability admits three of ten edge kinds, so the four semantic kinds the ontology exists to express contribute nothing to the invariant they were minted to satisfy ([pm-ayg31c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ayg31c.toon))
 - The graph audit raises duplicate dependency rows at warning severity and the only remediation available deletes every copy, so collapsing a duplicate means briefly destroying a real edge ([pm-flnefm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-flnefm.toon))
 
 ### Other
@@ -914,9 +922,9 @@
 
 ### Other
 
+- Command-destination census: 14 of 76 canonical commands have no declared home in the target grammar, so the surface can be frozen with its shape still undecided ([pm-yy8rmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yy8rmx.toon))
 - Command-grammar conformance gate: the noun-verb table and shared verb vocabulary become machine-checked contracts a non-conforming command cannot pass ([pm-wt43zj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wt43zj.toon))
 - Consolidate the 8 list-\* status variants into pm list --status (list-all/open/draft/in-progress/blocked/closed/canceled become hidden aliases) ([pm-pfqi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pfqi.toon))
-- Command-destination census: 14 of 76 canonical commands have no declared home in the target grammar, so the surface can be frozen with its shape still undecided ([pm-yy8rmx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yy8rmx.toon))
 - Half of the pm events payload is per-row resume cursors an agent never reads: 48 percent of stream bytes buy a capability consumed once per batch ([pm-ez1dfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ez1dfg.toon))
 
 ## 2026.8.17 - 2026-08-17
@@ -990,6 +998,7 @@
 ### Fixed
 
 - Unsupported assurance triggers bypass the typed evaluation-refusal boundary and surface as high-severity Sentry faults ([pm-9yhl2v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9yhl2v.toon))
+- The ordering-cycle finding names the items in the cycle and not the contradiction that creates it, so its remediation hint cannot be executed without re-deriving the cause by hand ([pm-xvt7ps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xvt7ps.toon))
 - A single transient per-test timeout fails the whole pipeline: 1,942 tests share one uniform 30s budget, no retry is configured, and the only diagnosis path is decoding a blob artifact ([pm-rizqb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rizqb6.toon))
 - The degradation ladder only sees top-level arrays, so the governance reads whose bulk is nested skip every intermediate rung and return nothing at all ([pm-kyjdne](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kyjdne.toon))
 - A budget-truncated read reports that rows are missing without a cursor, a recovery, or any sign that it overrode the caller's explicit request for all of them ([pm-jt8aa2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jt8aa2.toon))
@@ -998,7 +1007,6 @@
 - Exact command-path summaries expose intent, flags, and format-aware output ceilings ([pm-pmrae8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pmrae8.toon))
 - Default output ceilings bind representative read surfaces with depth-heavy negative controls ([pm-s2h0mq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s2h0mq.toon))
 - Two of the three ci-triggered assurance gates never ran on a pull request, so the append-only history assertion that carries the immutability guarantee was evaluated only after merge ([pm-fhifkc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fhifkc.toon))
-- The ordering-cycle finding names the items in the cycle and not the contradiction that creates it, so its remediation hint cannot be executed without re-deriving the cause by hand ([pm-xvt7ps](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xvt7ps.toon))
 - The edge-count floor is denominated over a population that includes the edges the graph itself calls redundant, so repairing 73 witnessed implied ordering rows and silently relaxing the guard are the same privileged act ([pm-9gzr4r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9gzr4r.toon))
 - The graph node floor counts materialized placeholders, so its negative control declares the fully repaired corpus a failure and the gate passes only while a dangling reference exists ([pm-mfvsng](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mfvsng.toon))
 - Two governance loosenings sit in the committed assurance registry with no entry in the append-only workspace audit stream, which freezes every future audited write and is invisible to both validate and health ([pm-h06944](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h06944.toon))
@@ -1492,10 +1500,10 @@
 
 ### Other
 
+- Ecosystem review and deep-graph enrichment pass 2026-07-27: all-status census, CLI simplification + token-efficiency + long-term brainstorm, dedupe-checked gap filing ([pm-89qv6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89qv6b.toon))
 - Evaluate Sentry 10.68.0 compatibility and retain 10.67.0 ([pm-r31390](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r31390.toon))
 - Derive ALL MCP tool inputSchemas from \*\_FLAG_CONTRACTS — eliminate hand-declared parallel schema tables (extend the pm_copy pattern) ([pm-xwah](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xwah.toon))
 - Generate shell completions, MCP tool registrations, and command reference docs from the contracts table (single source of truth) ([pm-mu8m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mu8m.toon))
-- Ecosystem review and deep-graph enrichment pass 2026-07-27: all-status census, CLI simplification + token-efficiency + long-term brainstorm, dedupe-checked gap filing ([pm-89qv6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89qv6b.toon))
 - Evaluate @toon-format/toon 4 compatibility and item-format migration ([pm-5cgm2z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5cgm2z.toon))
 - ADR amendment: extensible durable agent provenance dimensions and privacy boundaries ([pm-oskdmu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-oskdmu.toon))
 - SDK completeness is asserted by a 10-case curated array against 85 declared actions: the boundary proves the CLI reaches nothing below the SDK, nothing proves the SDK can do what the CLI does ([pm-te6elw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-te6elw.toon))
@@ -1530,10 +1538,10 @@
 
 ### Other
 
+- 2026-07-26 ecosystem review: all-status walk, graph depth enrichment, agent-ergonomics and release-pipeline verification ([pm-v4iypw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-v4iypw.toon))
 - The merge-safety gate verifies one history stream of 2,058 and never checks drift, so a clean merge that provably corrupts stream anchoring passes CI green ([pm-pdr8t1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pdr8t1.toon))
 - Branch merge is an unrecorded mutation: the field-aware merge produces an item state that no history entry ever produced, so the merged state is unaddressable by restore and point-in-time reads ([pm-9j2r3b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9j2r3b.toon))
 - Continuous multi-branch merge conformance: randomized N-branch divergence and merge property suite with a zero-conflict acceptance bar ([pm-76dnfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-76dnfg.toon))
-- 2026-07-26 ecosystem review: all-status walk, graph depth enrichment, agent-ergonomics and release-pipeline verification ([pm-v4iypw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-v4iypw.toon))
 - Historical release attribution backfill: stamp every terminal item with the release tag that contains its close event ([pm-3j6it6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3j6it6.toon))
 - Terminal relationship backfill, evidence-derived tranche: make every closed and canceled item reachable by typed graph traversal ([pm-qudvto](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qudvto.toon))
 - 2026-07-26 agent-context readiness audit: full CLI, SDK, and ecosystem review and optimization plan ([pm-t9e3bc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-t9e3bc.toon))

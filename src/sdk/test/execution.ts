@@ -4,6 +4,10 @@
  * Implements the pm test command surface and its agent-facing runtime behavior.
  */
 import { readJsonPathValue, splitJsonPathSegments } from "./json-path.js";
+import {
+  detectEmptyLinkedTestRun,
+  findLinkedTestExecutionReceipt,
+} from "./execution-receipts.js";
 import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -316,6 +320,8 @@ export interface TestRunResult {
   exit_code?: number;
   /** Value that configures or reports failure category for this contract. */
   failure_category?: LinkedTestFailureCategory;
+  /** Recognized runner summary proving execution, including the stream that supplied it. */
+  execution_receipt?: { code: string; stream: "stdout" | "stderr" };
   /** Value that configures or reports execution context for this contract. */
   execution_context?: {
     requested_pm_context_mode: LinkedTestPmContextMode;
@@ -815,9 +821,7 @@ function commandUsesSandboxRunner(normalizedCommand: string): boolean {
   );
 }
 
-function segmentInvokesDirectTestRunner(
-  normalizedSegment: string,
-): boolean {
+function segmentInvokesDirectTestRunner(normalizedSegment: string): boolean {
   const rawTokens = normalizedSegment
     .split(" ")
     .filter((token) => token.length > 0);
@@ -833,9 +837,7 @@ function segmentInvokesDirectTestRunner(
     );
     return (
       commandFlagIndex >= 0 &&
-      segmentInvokesDirectTestRunner(
-        args.slice(commandFlagIndex + 1).join(" "),
-      )
+      segmentInvokesDirectTestRunner(args.slice(commandFlagIndex + 1).join(" "))
     );
   }
   if (
@@ -1748,20 +1750,31 @@ async function seedLinkedTestSandbox(
   sourceRoots: LinkedTestSandboxSourceRoots,
   auditSettings = false,
 ): Promise<void> {
-  for (const [sourceRoot, sandboxRoot] of [[sourceRoots.projectPmRoot, sandboxPmPath], [sourceRoots.globalPmRoot, sandboxGlobalPath]]) {
+  for (const [sourceRoot, sandboxRoot] of [
+    [sourceRoots.projectPmRoot, sandboxPmPath],
+    [sourceRoots.globalPmRoot, sandboxGlobalPath],
+  ]) {
     if (auditSettings) {
       const raw = await readFileIfExists(getSettingsPath(sourceRoot));
       if (raw !== null) {
         const settings = await readSettings(sandboxRoot);
         await writeWorkspaceJsonWithHistory({
-          pmRoot: sandboxRoot, filePath: getSettingsPath(sandboxRoot), raw,
-          op: "settings:write", author: resolveAuthor(undefined, settings.author_default),
-          lockTtlSeconds: settings.locks.ttl_seconds, lockWaitMs: settings.locks.wait_ms,
-          recordCreation: true, message: "Seed linked-test schema settings history",
+          pmRoot: sandboxRoot,
+          filePath: getSettingsPath(sandboxRoot),
+          raw,
+          op: "settings:write",
+          author: resolveAuthor(undefined, settings.author_default),
+          lockTtlSeconds: settings.locks.ttl_seconds,
+          lockWaitMs: settings.locks.wait_ms,
+          recordCreation: true,
+          message: "Seed linked-test schema settings history",
         });
       }
     } else {
-      await copyIntoSandboxIfPresent(getSettingsPath(sourceRoot), getSettingsPath(sandboxRoot));
+      await copyIntoSandboxIfPresent(
+        getSettingsPath(sourceRoot),
+        getSettingsPath(sandboxRoot),
+      );
     }
   }
   await copyIntoSandboxIfPresent(
@@ -2079,58 +2092,6 @@ function evaluateStdoutLineCountAssertion(
   return lineCount < minimum
     ? [`stdout line count ${lineCount} is below required minimum ${minimum}`]
     : [];
-}
-
-const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
-  {
-    code: "no_projects_matched_filters",
-    regex: /\bNo projects matched the filters\b/i,
-  },
-  { code: "no_test_files_found", regex: /\bNo test files found\b/i },
-  { code: "no_tests_found", regex: /\bNo tests found\b/i },
-  { code: "no_matching_tests", regex: /\bNo matching tests?\b/i },
-  { code: "collected_zero_items", regex: /\bcollected 0 items?\b/i },
-  {
-    code: "reported_zero_passes",
-    regex:
-      /(?:^\s*(?:#|ℹ)?\s*tests\s+0\s*$[\s\S]*^\s*(?:#|ℹ)?\s*pass\s+0\s*$|^\s*(?:#|ℹ)?\s*pass\s+0\s*$[\s\S]*^\s*(?:#|ℹ)?\s*tests\s+0\s*$)/imu,
-  },
-  {
-    code: "reported_zero_tests",
-    regex: /^\s*(?:#|ℹ)?\s*tests\s+0\s*$/imu,
-  },
-];
-
-const POSITIVE_LINKED_TEST_RUN_PATTERNS = [
-  /^\s*(?:#|ℹ)?\s*tests\s+[1-9]\d*\s*$/imu,
-  /^\s*(?:#|ℹ)?\s*pass\s+[1-9]\d*\s*$/imu,
-  /\bTests?\s+[1-9]\d*\s+passed\b/iu,
-  /\b[1-9]\d*\s+passed\b/iu,
-  /\bTests:\s+(?:.*\b)?[1-9]\d*\s+passed\b/iu,
-];
-
-function detectEmptyLinkedTestRun(
-  stdout: string,
-  stderr: string,
-): { code: string } | null {
-  const combined = `${stdout}\n${stderr}`;
-  for (const pattern of EMPTY_LINKED_TEST_RUN_PATTERNS) {
-    if (pattern.regex.test(combined)) {
-      return { code: pattern.code };
-    }
-  }
-  return null;
-}
-
-/** Return whether runner output contains a recognized positive executed-test receipt. */
-function hasPositiveLinkedTestRunReceipt(
-  stdout: string,
-  stderr: string,
-): boolean {
-  const combined = `${stdout}\n${stderr}`;
-  return POSITIVE_LINKED_TEST_RUN_PATTERNS.some((pattern) =>
-    pattern.test(combined),
-  );
 }
 
 /** Return whether a linked command applies a runner-level test-name filter that must match at least one test. */
@@ -2743,6 +2704,7 @@ function buildLinkedTestPassedResult(
   linkedTest: LinkedTest,
   executionContext: NonNullable<TestRunResult["execution_context"]>,
   execution: LinkedTestExecutionResult,
+  receipt: TestRunResult["execution_receipt"],
 ): TestRunResult {
   return {
     command: linkedTest.command,
@@ -2752,6 +2714,7 @@ function buildLinkedTestPassedResult(
     execution_context: executionContext,
     stdout: execution.stdout,
     stderr: execution.stderr,
+    ...(receipt ? { execution_receipt: receipt } : {}),
   };
 }
 
@@ -2801,6 +2764,10 @@ function buildLinkedTestPassedExecutionResult(params: {
   execution: LinkedTestExecutionResult;
   options: RunLinkedTestsOptions | undefined;
 }): TestRunResult {
+  const receipt = findLinkedTestExecutionReceipt(
+    params.execution.stdout,
+    params.execution.stderr,
+  );
   if (
     params.options?.failOnEmptyTestRun === true ||
     commandUsesTestNameFilter(params.linkedTest.command ?? "")
@@ -2814,10 +2781,7 @@ function buildLinkedTestPassedExecutionResult(params: {
     }
     if (
       commandUsesTestNameFilter(params.linkedTest.command ?? "") &&
-      !hasPositiveLinkedTestRunReceipt(
-        params.execution.stdout,
-        params.execution.stderr,
-      )
+      !receipt
     ) {
       return buildLinkedTestEmptyRunResult({
         ...params,
@@ -2842,6 +2806,7 @@ function buildLinkedTestPassedExecutionResult(params: {
     params.linkedTest,
     params.executionContext,
     params.execution,
+    receipt,
   );
 }
 
@@ -2925,7 +2890,10 @@ export async function runLinkedTests(
       includeTrackerData,
     );
     if (includeWorkspaceSnapshot) {
-      await seedLinkedTestWorkspaceSnapshot(sourceWorkspaceRoot, layout.workspaceSnapshotRoot);
+      await seedLinkedTestWorkspaceSnapshot(
+        sourceWorkspaceRoot,
+        layout.workspaceSnapshotRoot,
+      );
     }
     const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
 
@@ -3363,7 +3331,13 @@ async function recordTestRunSummary(params: {
   runResults: TestRunResult[];
   failOnSkippedTriggered: boolean;
   warnings: string[];
-}): Promise<{ entry: ItemTestRunSummary; receipt: NonNullable<TestResult["evidence_recording"]> } | undefined> {
+}): Promise<
+  | {
+      entry: ItemTestRunSummary;
+      receipt: NonNullable<TestResult["evidence_recording"]>;
+    }
+  | undefined
+> {
   const {
     options,
     pmRoot,
@@ -3390,7 +3364,8 @@ async function recordTestRunSummary(params: {
         recorded: false,
         reason: "tracking_disabled",
         run_id: entry.run_id,
-        recovery_command: "pm config project set test-result-tracking --policy enabled",
+        recovery_command:
+          "pm config project set test-result-tracking --policy enabled",
       },
     };
   }
@@ -3403,12 +3378,22 @@ async function recordTestRunSummary(params: {
       message: `Track test run summary (${entry.run_id})`,
       entry,
     });
-    return { entry, receipt: { recorded: true, reason: "recorded", run_id: entry.run_id } };
+    return {
+      entry,
+      receipt: { recorded: true, reason: "recorded", run_id: entry.run_id },
+    };
   } catch (error: unknown) {
     warnings.push(
       `test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`,
     );
-    return { entry, receipt: { recorded: false, reason: "write_failed", run_id: entry.run_id } };
+    return {
+      entry,
+      receipt: {
+        recorded: false,
+        reason: "write_failed",
+        run_id: entry.run_id,
+      },
+    };
   }
 }
 

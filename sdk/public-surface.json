@@ -2217,6 +2217,13 @@
       ],
       "package_version": "2026.10.6",
       "reason": "Optional error code and existing-item context coordinates are additive; the new guard is exported separately and existing error constructors, names and exit classes remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:TestRunResult"
+      ],
+      "package_version": "2026.10.6",
+      "reason": "pm-gh1418 adds optional TestRunResult.execution_receipt; existing callers and results remain structurally compatible. The snapshot classifier conservatively labels any interface signature change breaking."
     }
   ],
   "entrypoints": {
@@ -19561,7 +19568,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestRunResult",
-          "signature": "export interface TestRunResult { command?: string; path?: string; status: \"passed\" | \"failed\" | \"skipped\"; exit_code?: number; failure_category?: LinkedTestFailureCategory; execution_context?: { requested_pm_context_mode: LinkedTestPmContextMode; pm_context_mode: LinkedTestPmContextMode; auto_pm_context_applied: boolean; is_pm_command: boolean; is_pm_tracker_read_command: boolean; source_project_pm_path: string; sandbox_project_pm_path: string; source_global_pm_path: string; sandbox_global_pm_path: string; source_project_item_count: number; sandbox_project_item_count: number; source_global_item_count: number; sandbox_global_item_count: number; mismatch_detected: boolean; project_extensions_seeded: boolean; global_extensions_seeded: boolean; requested_workspace_context_mode: LinkedTestWorkspaceContextMode; workspace_context_mode: LinkedTestWorkspaceContextMode; working_directory: string; source_workspace_root: string; trust: LinkedTestTrustDecision; }; stdout?: string; stderr?: string; error?: string; }"
+          "signature": "export interface TestRunResult { command?: string; path?: string; status: \"passed\" | \"failed\" | \"skipped\"; exit_code?: number; failure_category?: LinkedTestFailureCategory; execution_receipt?: { code: string; stream: \"stdout\" | \"stderr\"; }; execution_context?: { requested_pm_context_mode: LinkedTestPmContextMode; pm_context_mode: LinkedTestPmContextMode; auto_pm_context_applied: boolean; is_pm_command: boolean; is_pm_tracker_read_command: boolean; source_project_pm_path: string; sandbox_project_pm_path: string; source_global_pm_path: string; sandbox_global_pm_path: string; source_project_item_count: number; sandbox_project_item_count: number; source_global_item_count: number; sandbox_global_item_count: number; mismatch_detected: boolean; project_extensions_seeded: boolean; global_extensions_seeded: boolean; requested_workspace_context_mode: LinkedTestWorkspaceContextMode; workspace_context_mode: LinkedTestWorkspaceContextMode; working_directory: string; source_workspace_root: string; trust: LinkedTestTrustDecision; }; stdout?: string; stderr?: string; error?: string; }"
         },
         {
           "classification": "advanced_export",

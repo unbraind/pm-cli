@@ -1,0 +1,74 @@
+id: pm-mcpoauth
+title: Remove vulnerable MCP Apps development client from the locked dependency tree (GHSA-6qxp-vccf-f47h)
+description: pnpm audit now reports one high advisory on the auto-installed ext-apps 2.0.3 client 2.0.0 peer. Upstream patches client versions from 2.2.0. Repository imports ext-apps server metadata only as types and has no upstream HTTP OAuth client calls; remove the affected dependency while preserving those contracts.
+type: Issue
+status: closed
+priority: 1
+tags[4]: dependencies,dev-dependency,mcp,security
+created_at: "2026-10-06T17:57:49.769Z"
+updated_at: "2026-10-06T21:45:58.569Z"
+closed_at: "2026-10-06T20:20:05.977Z"
+completed_at: "2026-10-06T20:20:05.977Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Frozen install and pnpm audit are clean; affected client version is absent; all four TypeScript projects and existing MCP Apps and authorization tests pass; no runtime dependency is added.
+goal: project management = context management
+objective: Keep the tested development dependency closure free of known advisories without changing public MCP behavior
+value: Prevent vulnerable tooling dependencies and retain reproducible CI and SDK type contracts
+why_now: The GitHub Advisory Database reviewed this advisory on 2026-10-06 and the mandatory dependency gate now fails.
+parent: pm-5k4v
+risk: medium
+confidence: high
+severity: high
+resolution: Use aligned exact MCP client/core 2.2.0 overrides and native pnpm lock repair to remove all advisory-affected 2.0.0 peer contexts without adding runtime dependencies. Preserve erased MCP Apps metadata types and independent SDK issuer and scope controls.
+expected_result: Frozen installation resolves only patched client/core peers; the full development and runtime audit is clean; MCP metadata and authorization contracts remain compatible.
+actual_result: "Linked run test-local-muwzlfeq-ve11qg passed audit, frozen installation, four TypeScript projects and 12 MCP Apps and authorization tests. The affected version and old SDK peer variant are absent. Independent source-to-sink and patch reviews found no reachable production OAuth client path or concrete bypass. Canonical run test-local-mux4elzm-xbxr14 passed 9863 tests at exact full-source coverage; native GitHub alert inventories were empty before PR creation."
+affected_version: @modelcontextprotocol/client@2.0.0
+component: MCP Apps development-only peer dependency graph
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1417,discovered_from,"2026-10-06T17:57:49.769Z","harness:codex","cli:create:dep",detected
+  pm-iktual,related,"2026-10-06T17:57:49.769Z","harness:codex","cli:create:dep",detected
+  pm-mlpn91,related,"2026-10-06T17:57:49.769Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-06T17:57:49.769Z","harness:codex","Duplicate check: current strict full corpus contains 2900 items across every status with no unreadable items or omissions; exact GHSA and CVE searches find no owner. Existing MCP Apps refresh and qs remediation have different completed scope. Advisory: https://github.com/advisories/GHSA-6qxp-vccf-f47h"
+  "2026-10-06T18:02:14.892Z","harness:codex","Dependency boundary evidence: src/sdk/mcp/apps.ts consumes only erased ext-apps/server metadata types. No repository imports or calls use upstream authProvider; withOAuth; auth; fetchToken; or bundled OAuth providers. The vulnerable library path is present only in development peers. Ranged peer overrides retained stale 2.0.0 contexts; exact aligned client/core 2.2.0 overrides plus native fix-lockfile resolution replaced all affected instances. Current frozen install and audit pass with no cooldown exclusions or runtime dependency changes."
+  "2026-10-06T20:26:03.373Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1421 . Implementation source 857049db83b08ad029c38ddcffd33a33bd8b2056 includes this owner, immutable closure evidence and the generated changelog. Required hosted checks and reviewer feedback are pending; local exact coverage and acceptance receipts are recorded above."
+  "2026-10-06T21:27:52.938Z","harness:codex","Security report correction: native lock repair removed valid hasBin entries as a side effect. Related owner pm-gh1417 restores all 28 unchanged executable declarations and synchronizes two runtime ledger entries while retaining the patched client/core 2.2.0 overrides and all 40 production package versions/integrity values. A cold frozen offline install proves complete CodSpeed launchers under the unchanged program/hash policy. Required hosted static and Trivy passed on correction head 81206c540. The managed private remediation report now records the initial launcher regression and correction explicitly; no obsolete-metadata claim remains in that report."
+  "2026-10-06T21:45:58.569Z","harness:codex","Renewed full hosted security and regression proof at b4e61d445b9c061827e3b8442dc6410c6209f3eb: mandatory static dependency audit, Trivy, CodeQL and complete coverage contexts pass, along with native Windows and frozen distribution acceptance. All 768 measured source files have exact 100/100/100/100 coverage, with 9881 passed tests and two Linux-skipped native-Windows cases verified by the Windows job. The repaired executable metadata and patched MCP client/core 2.2.0 peers coexist under the unchanged launcher admission policy. Earlier failed install and timing receipts remain preserved; publication and post-merge alert retirement will be checked independently."
+learnings[1]{created_at,author,text}:
+  "2026-10-06T20:19:38.927Z","harness:codex","Peer override ranges can retain stale pnpm peer contexts. Align the affected client and core at tested exact versions, repair the lock natively, prove frozen installation and audit the installed graph. Source-to-sink inspection distinguishes erased metadata types from reachable OAuth token flows."
+files[4]{path,scope}:
+  pnpm-workspace.yaml,project
+  pnpm-lock.yaml,project
+  .agents/pm/issues/pm-mcpoauth.toon,project
+  .agents/pm/history/pm-mcpoauth.jsonl,project
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  pnpm audit,project,240,"harness:codex","2026-10-06T18:02:14.221Z",local_mutation,fix/prose-census-bun-receipts-runtime-bundles,Audit the complete dev and runtime dependency graph; original negative control was GHSA-6qxp-vccf-f47h
+  pnpm install --frozen-lockfile,project,240,"harness:codex","2026-10-06T18:02:14.221Z",local_mutation,fix/prose-census-bun-receipts-runtime-bundles,Reproduce the patched client and core peers without registry graph drift
+  pnpm typecheck,project,240,"harness:codex","2026-10-06T18:02:14.221Z",local_mutation,fix/prose-census-bun-receipts-runtime-bundles,Actual installed MCP Apps metadata declarations across all four TypeScript projects
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/apps.spec.ts tests/unit/sdk/mcp/authorization.spec.ts,project,240,"harness:codex","2026-10-06T18:02:14.221Z",local_mutation,fix/prose-census-bun-receipts-runtime-bundles,Existing real Apps contracts and independent pm issuer controls
+test_runs[1]:
+  - run_id: test-local-muwzlfeq-ve11qg
+    kind: test
+    status: passed
+    started_at: "2026-10-06T18:02:21.096Z"
+    finished_at: "2026-10-06T18:03:04.130Z"
+    recorded_at: "2026-10-06T18:03:04.130Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm audit,schema,schema,source,local_source_ref
+      pnpm install --frozen-lockfile,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/apps.spec.ts tests/unit/sdk/mcp/authorization.spec.ts,schema,schema,source,local_source_ref
+close_reason: Removed the advisory-affected MCP development client and verified the dependency and authorization boundaries.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: development-dependency-security
+  negative_control: pnpm audit rejects locked @modelcontextprotocol/client 2.0.0 with GHSA-6qxp-vccf-f47h
+  local_checks[4]: pnpm audit,pnpm install --frozen-lockfile,pnpm typecheck,node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/apps.spec.ts tests/unit/sdk/mcp/authorization.spec.ts
+  hosted_checks[2]: Gates (static),Security and Script Quality
+  owner: pm-mcpoauth
+body: ""

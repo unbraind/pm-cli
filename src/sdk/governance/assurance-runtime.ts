@@ -28,6 +28,7 @@ import {
   resolvePortableWorkspaceContext,
 } from "../../core/extensions/index.js";
 import { resolveRegisteredAssuranceMeasurementProvider } from "../../core/extensions/runtime-registrations.js";
+import { listAllItemMetadataWithBody } from "../../core/store/item-store.js";
 import { stableStringify } from "../../core/shared/serialization.js";
 import type {
   AssuranceMeasurementProviderDefinition,
@@ -35,7 +36,6 @@ import type {
 } from "../../core/extensions/extension-types.js";
 import {
   getHistoryPath,
-  listAllItemMetadata,
   readHistoryEntries,
   readSettings,
   resolveItemTypeRegistry,
@@ -304,11 +304,17 @@ export async function createAssuranceWorkspaceContext(
       ? (
           await runList(
             undefined,
-            { status: "all", full: true, noTruncate: true, strictRead: true },
+            {
+              status: "all",
+              full: true,
+              includeBody: true,
+              noTruncate: true,
+              strictRead: true,
+            },
             { path: pmRoot },
           )
         ).items
-      : await listAllItemMetadata(
+      : await listAllItemMetadataWithBody(
           pmRoot,
           settings.item_format,
           typeRegistry.type_to_folder,
@@ -355,7 +361,7 @@ export async function createAssuranceWorkspaceContext(
         | AssuranceGraphSource
         | AssuranceValidateSource
         | AssuranceHealthSource
-      | AssuranceProviderSource,
+        | AssuranceProviderSource,
     ) => {
       if (source.kind === "graph") {
         const key = stableStringify({

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: census,cli-grammar,consolidation,governance
 created_at: "2026-08-05T18:07:17.752Z"
-updated_at: "2026-08-17T18:50:06.442Z"
+updated_at: "2026-10-06T16:43:16.786Z"
 closed_at: "2026-08-17T18:40:51.098Z"
 completed_at: "2026-08-17T18:40:51.098Z"
 author: "harness:claude-code"
@@ -15,10 +15,11 @@ acceptance_criteria: "A checked-in destination table maps every canonical comman
 parent: pm-n7rr
 risk: medium
 confidence: high
+release: v2026.8.18
 resolution: Completed
 expected_result: "Every canonical command has exactly one deterministic grammar disposition, and missing or stale census rows fail verification."
 actual_result: "The generated 129-command census maps every canonical command and is protected by bidirectional diagnostics, snapshots, and negative-control tests."
-dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[22]{id,kind,created_at,author,source_kind,author_source}:
   pm-0z7n,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-1jrdri,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-1kxs,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
@@ -30,6 +31,17 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-wt43zj,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-ya7x55,related,"2026-08-05T18:08:32.066Z","harness:claude-code","cli:update:dep",detected
   pm-pbyu,verifies,"2026-08-17T18:29:03.950Z","harness:codex","cli:update:dep",detected
+  pm-6apl,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-eq4x,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-ik19,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-kcs4,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-lp4j,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-o3fh,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-szdc,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-tnud,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-tqel,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-xkgq,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-yql1,verifies,"2026-10-06T16:43:16.358Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
 comments[2]{created_at,author,text}:
   "2026-08-05T18:08:31.121Z","harness:claude-code","Census recomputed 2026-08-05 against this checkout. 'pm contracts --json' emits 76 canonical command_summaries. Mapping each against the pm-n7rr charter target surface and every filed consolidation child (pm-yql1 item facets, pm-6apl ops, pm-kcs4 navigation, pm-eq4x lifecycle sugar, pm-ik19 bulk and destructive, pm-tqel history, pm-tnud package, pm-o3fh calendar, pm-xkgq aggregate, pm-szdc completion plumbing, pm-lp4j test worker) accounts for 62. The 14 with no declared destination:\n\n  comments-audit, copy, dedupe-audit, dedupe-merge, duplicates, events,\n  guide, item, merge, normalize, reindex, search-advanced, templates, workspace\n\nThey are not scattered: they fall into six clusters, each now a filed sibling — duplicate governance (4), a second search spelling (1), item-level operations (3), maintenance and read surfaces (3), authoring and orientation (3). Cross-checking every open item body for each name found only incidental mentions (pm-ez1dfg names events, pm-qljv names reindex, pm-3dyec2 names guide, pm-a8zm and pm-qapjw5 name item) — none is a consolidation disposition.\n\nThis matters because the target surface is stated as approximately 15 nouns while the emitted surface is 76 commands, and pm-agou would freeze the grammar. A freeze declared over a surface where 18 percent of commands have no recorded home locks in whatever shape those commands happen to have."
   "2026-08-17T18:40:35.061Z","harness:codex","Implementation evidence: completed an exact 129-row live command destination census with deterministic missing, stale, duplicate, unknown-noun, alias-target, and surface-ceiling diagnostics. Default contract discovery is canonical while direct compatibility scoping remains executable. Negative controls corrupt the census deliberately and prove the gate fails upward. Verification: command enumeration, grammar contract, runtime alias defense, snapshots, and full 100/100/100/100 coverage pass."

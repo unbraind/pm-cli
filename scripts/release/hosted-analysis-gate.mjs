@@ -319,6 +319,7 @@ function readExpectedReleaseManifests(parentSha) {
     .filter(
       (filePath) =>
         filePath === "package.json" ||
+        filePath === "runtime-dependencies.json" ||
         FIXED_DISTRIBUTION_MANIFESTS.includes(filePath) ||
         WORKSPACE_MANIFEST_PATTERN.test(filePath),
     )

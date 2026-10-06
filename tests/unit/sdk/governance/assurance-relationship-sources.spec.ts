@@ -63,6 +63,63 @@ function measurement(
 }
 
 describe("assurance relationship measurement sources", () => {
+  it.each([
+    "pm-2evidence-dist",
+    "custom-project-target",
+    "123-project--target",
+  ])(
+    "resolves the complete canonical identifier %s without matching prefixes",
+    async (targetId) => {
+      const fixture: AssuranceEvaluationContext = {
+        ...context,
+        items: [
+          {
+            id: "pm-holder",
+            status: "open",
+            type: "Task",
+            body: `Verify [${targetId.toUpperCase()}](tasks/${targetId}.toon), then ${targetId}.`,
+          },
+          { id: targetId, status: "closed", type: "Task" },
+          {
+            id: targetId.split("-").slice(0, 2).join("-"),
+            status: "open",
+            type: "Task",
+          },
+        ],
+      };
+      const definition = measurement("custom-id", { kind: "prose_edge_gap" });
+      await expect(
+        evaluateMeasurement(definition, fixture),
+      ).resolves.toMatchObject({
+        value: 1,
+        population_size: 3,
+        contributors: [`pm-holder->${targetId}|subject=implicit`],
+        partitions: { explicit_subject: 0, implicit_subject: 1 },
+      });
+      fixture.items[0].body = `Unknown ${targetId}-suffix, x${targetId}, ${targetId}_suffix, and ${targetId}-.`;
+      await expect(
+        evaluateMeasurement(definition, fixture),
+      ).resolves.toMatchObject({ value: 0 });
+      fixture.items[0].body = `Analysis subject: ${targetId}`;
+      await expect(
+        evaluateMeasurement(
+          measurement("exempt-custom-id", {
+            kind: "prose_edge_gap",
+            exemptions: [
+              {
+                holder_id: "pm-holder",
+                target_id: targetId,
+                reason: "Analysis subject",
+                text_contains: "Analysis subject",
+              },
+            ],
+          }),
+          fixture,
+        ),
+      ).resolves.toMatchObject({ value: 0 });
+    },
+  );
+
   it("partitions dependency-kind counts by exact, prefix, and presence provenance", async () => {
     await expect(
       evaluateMeasurement(

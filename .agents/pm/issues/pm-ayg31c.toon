@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: governance,graph,measurement,ontology,reachability
 created_at: "2026-08-13T08:33:42.357Z"
-updated_at: "2026-08-20T18:38:40.635Z"
+updated_at: "2026-10-06T16:43:29.098Z"
 closed_at: "2026-08-20T18:03:00.671Z"
 completed_at: "2026-08-20T18:03:00.671Z"
 author: "harness:claude-code"
@@ -21,16 +21,40 @@ why_now: "The reachability floors are now block-enforcement gates, so the narrow
 parent: pm-96h7
 risk: medium
 confidence: 90
+release: v2026.8.21
 resolution: fixed
 expected_result: "Every relationship kind declared outcome-bearing contributes through its declared direction, the basis is reported, disconnected negative controls fail, ratchets enforce the migrated population, and the generated changelog carries the delivery."
 actual_result: The registry declares traversal and outcome direction; governance reports and traverses the derived basis; all 2516 non-outcome nodes are reachable; zero are unreachable; basis score is 10000; strict controls pass; changed tests are linked through PM.
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[29]{id,kind,created_at,author,source_kind,author_source}:
   pm-96h7,implements,"2026-08-13T08:33:42.357Z","harness:claude-code","cli:create:dep",detected
   pm-bzmeaa,discovered_from,"2026-08-13T08:33:42.357Z","harness:claude-code","cli:create:dep",detected
   pm-xp1xsw,implements,"2026-08-13T08:33:42.357Z","harness:claude-code","cli:create:dep",detected
   pm-3dyec2,discovered_from,"2026-08-13T08:44:17.319Z","harness:claude-code","cli:update:dep",detected
   pm-g4k74y,discovered_from,"2026-08-13T08:44:17.319Z","harness:claude-code","cli:update:dep",detected
   pm-h6b73t,verifies,"2026-08-13T08:44:17.319Z","harness:claude-code","cli:update:dep",detected
+  pm-11ag,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-1w6scp,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-2xl,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-54d,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-6hhn,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-9rgaal,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-b1w,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-c0r,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-crpv,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-defw,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-doxj,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-f45,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-gyfn,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-j7a,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-jiw,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-lql3,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-lty,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-met4,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-murz,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-q6n8sj,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-u9r,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-xtfo,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
+  pm-zetb,verifies,"2026-10-06T16:43:28.783Z","harness:codex","cli:update:evidence-backfill:pm-jprn58",detected
 comments[8]{created_at,author,text}:
   "2026-08-13T14:30:22.472Z","harness:claude-code","Decisive evidence for the basis claim, measured 2026-08-13 by recomputing reachability from the six outcome milestones plus pm-doxj over the on-disk edge set, parsing both TOON dependency encodings.\n\nOver the full edge basis every one of the 2,467 items reaches an apex: zero unreachable. Over the basis the governance code actually admits — parent, child, implements — exactly 11 do not: the eight canceled PRD-era epics pm-6hhn, pm-zetb, pm-murz, pm-met4, pm-xtfo, pm-gyfn, pm-defw and the archived duplicate pm-lty, plus the three canceled probe items pm-11ag, pm-crpv, pm-lql3.\n\nThe part that settles the argument: every one of those eleven already carries a correct, evidence-backed, recorded edge to a reachable node, and in every case it is a supersedes edge stored on the living side. pm-2xl supersedes pm-6hhn, pm-u9r supersedes pm-zetb, pm-c0r supersedes pm-murz, pm-54d supersedes pm-met4, pm-f45 supersedes pm-xtfo, pm-b1w supersedes pm-gyfn, pm-jiw supersedes pm-defw, pm-j7a supersedes pm-lty. The historical spine pm-1w6scp describes as missing is in fact present and correct in the data.\n\nSo the unreachable population is not a data gap and there is nothing to backfill. It is entirely an artifact of excluding one edge kind from the basis, and it is the specific kind whose semantics — this replaced that — is what a timeline query needs most. Recording that edge is the right modelling act and it moves the metric by zero, which is the strongest possible statement of this item's thesis: a project cannot improve a number the basis refuses to read.\n\nCorollary for the remedy. Widening the basis to include supersedes takes audit-basis unreachable from 11 to 0 without adding a single edge. That is worth doing before any further reachability ratchet, because a floor tightened against the narrow basis would permanently price in the exclusion."
   "2026-08-20T17:35:03.400Z","harness:codex","Implementation evidence 2026-08-20: relationship-kind definitions now declare traversal family and typed outcome direction. Governance derives the basis entirely from the registry and reports it compactly as source_to_target=discovered_from,implements,incident_from,parent,recurs_from,verifies; target_to_source=child; both=supersedes. Live graph audit over 2,525 nodes and 12,450 edges reports zero findings, 2,516 non-outcome nodes reachable, zero unreachable, and 10,000 basis points for active, terminal, and total populations. Negative-control tests disconnect an item and prove the score falls, so widening the semantic basis does not make the invariant unfailable. Linked tests passed 44/44."

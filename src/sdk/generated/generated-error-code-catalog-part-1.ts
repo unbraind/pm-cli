@@ -427,7 +427,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "generic_failure",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/execution-receipts.ts"],
     emitting_commands: ["*"],
     canonical_code: "collected_zero_items",
     aliases: [],

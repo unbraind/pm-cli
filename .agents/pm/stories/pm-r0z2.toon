@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-story,"area:quality",capability,living-map,story
 created_at: "2026-07-04T19:59:52.872Z"
-updated_at: "2026-09-19T08:41:07.750Z"
+updated_at: "2026-10-06T16:43:03.944Z"
 closed_at: "2026-07-04T19:59:53.796Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -19,10 +19,24 @@ release: v2026.7.5
 resolution: "Delivered and maintained by pm-92if: CodeFactor A+ quality work is tracked by static gates, suppression ratchets, duplication checks, and open follow-up children."
 expected_result: The codebase stays A+ maintainable under heavy agent contribution.
 actual_result: Static gates + suppression ratchet in place; A+ target with residual findings tracked.
-dependencies[4]{id,kind,created_at}:
-  pm-92if,implements,"2026-07-26T17:24:34.767Z"
-  pm-f4yn,related,"2026-07-26T17:24:34.767Z"
-  pm-jt3b,related,"2026-07-26T17:24:34.767Z"
-  pm-ueuq,related,"2026-07-26T17:24:34.767Z"
+dependencies[5]:
+  - id: pm-92if
+    kind: implements
+    created_at: "2026-07-26T17:24:34.767Z"
+  - id: pm-f4yn
+    kind: related
+    created_at: "2026-07-26T17:24:34.767Z"
+  - id: pm-jt3b
+    kind: related
+    created_at: "2026-07-26T17:24:34.767Z"
+  - id: pm-ueuq
+    kind: related
+    created_at: "2026-07-26T17:24:34.767Z"
+  - id: pm-osea
+    kind: discovered_from
+    created_at: "2026-10-06T16:43:03.566Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
 close_reason: Capability story delivered by pm-92if; residual quality work remains tracked by open children.
 body: "## Agent need\nAgent-driven churn can silently erode code quality; only ratcheted, machine-enforced gates keep the codebase maintainable as many contributors extend it.\n\n## Delivered surface (pm-92if)\nStrict ESLint + eslint-suppressions ratchet (168->109); jscpd duplication gate; LOC + cyclomatic-complexity caps; god-function decomposition precedent (runCreate 172->17).\n\n## Verified by\nStatic gates in CI (CI Gates). In-progress epic; residual decompositions tracked by open children (pm-ueuq, pm-jt3b, pm-f4yn)."

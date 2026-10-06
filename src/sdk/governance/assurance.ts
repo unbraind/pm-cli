@@ -1352,7 +1352,7 @@ function collectProseEdgeCensusInputs(
   const canonicalIds = new Map<string, string>();
   const linkedPairs = new Set<string>();
   const proseMentions: AssuranceProseMentionRecord[] = [];
-  const mentionPattern = /\b[a-z][a-z0-9]*-[a-z0-9]+\b/giu;
+  const mentionPattern = /(?<![\w-])[a-z0-9]+(?:-+[a-z0-9]+)+(?![\w-])/giu;
   let mentionCount = 0;
   for (const item of items) {
     canonicalIds.set(item.id.toLowerCase(), item.id);

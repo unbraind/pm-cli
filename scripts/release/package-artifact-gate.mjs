@@ -17,7 +17,9 @@ function resolveMaxUnpackedSize(budget, profile) {
     typeof budget.max_unpacked_bytes_by_profile !== "object" ||
     budget.max_unpacked_bytes_by_profile === null
   ) {
-    throw new TypeError("Package artifact budget is missing named size profiles");
+    throw new TypeError(
+      "Package artifact budget is missing named size profiles",
+    );
   }
   if (!Object.hasOwn(budget.max_unpacked_bytes_by_profile, profile)) {
     throw new RangeError(`Unknown package artifact profile: ${profile}`);
@@ -36,7 +38,11 @@ function resolveMaxUnpackedSize(budget, profile) {
 function readSingleArtifact(report) {
   const artifacts = Array.isArray(report)
     ? report
-    : Object.values(report !== null && typeof report === "object" ? report : {});
+    : Array.isArray(report?.files)
+      ? [report]
+      : Object.values(
+          report !== null && typeof report === "object" ? report : {},
+        );
   if (artifacts.length !== 1) {
     throw new TypeError("npm pack must return exactly one package report");
   }
@@ -49,10 +55,28 @@ function readSingleArtifact(report) {
   ) {
     throw new TypeError("npm pack report is missing files or unpackedSize");
   }
-  if (!Array.isArray(report) && report[artifact.name] !== artifact) {
-    throw new TypeError("npm pack keyed report identity must match its package name");
+  if (
+    !Array.isArray(report) &&
+    report !== artifact &&
+    report[artifact.name] !== artifact
+  ) {
+    throw new TypeError(
+      "npm pack keyed report identity must match its package name",
+    );
   }
   return artifact;
+}
+
+/** Require explicit non-negative integer ceilings before counting bundled runtime files. */
+function resolveRuntimeBundleBudget(budget) {
+  for (const field of ["max_unpacked_bytes", "max_file_count"]) {
+    if (!Number.isSafeInteger(budget?.[field]) || budget[field] < 0) {
+      throw new TypeError(
+        `Runtime bundle budget requires a non-negative safe integer ${field}`,
+      );
+    }
+  }
+  return budget;
 }
 
 /** Validate one npm pack report against a named committed distribution budget. */
@@ -67,13 +91,30 @@ export function validatePackageArtifact(report, budget, profile = "base") {
     )
     .filter(Boolean);
   const violations = [];
-  if (artifact.unpackedSize > maxUnpackedSize) {
-    violations.push(
-      `unpacked_size:${artifact.unpackedSize}>${maxUnpackedSize}`,
-    );
+  const runtimeFiles = artifact.files.filter((file) =>
+    file?.path?.startsWith("node_modules/"),
+  );
+  const runtimeSize = runtimeFiles.reduce(
+    (total, file) => total + file.size,
+    0,
+  );
+  const runtimeBudget = runtimeFiles.length
+    ? resolveRuntimeBundleBudget(budget.runtime_bundle)
+    : undefined;
+  if (
+    runtimeFiles.length &&
+    (!Number.isFinite(runtimeSize) ||
+      runtimeSize > runtimeBudget.max_unpacked_bytes ||
+      runtimeFiles.length > runtimeBudget.max_file_count)
+  )
+    violations.push("runtime_bundle_budget_exceeded");
+  const distributionSize = artifact.unpackedSize - runtimeSize;
+  const distributionCount = paths.length - runtimeFiles.length;
+  if (distributionSize > maxUnpackedSize) {
+    violations.push(`unpacked_size:${distributionSize}>${maxUnpackedSize}`);
   }
-  if (paths.length > budget.max_file_count) {
-    violations.push(`file_count:${paths.length}>${budget.max_file_count}`);
+  if (distributionCount > budget.max_file_count) {
+    violations.push(`file_count:${distributionCount}>${budget.max_file_count}`);
   }
   for (const suffix of budget.forbidden_suffixes) {
     const matches = paths.filter((file) => file.endsWith(suffix));
@@ -97,6 +138,10 @@ export function validatePackageArtifact(report, budget, profile = "base") {
     unpacked_size: artifact.unpackedSize,
     max_unpacked_size: maxUnpackedSize,
     file_count: paths.length,
+    distribution_size: distributionSize,
+    distribution_file_count: distributionCount,
+    runtime_bundle_size: runtimeSize,
+    runtime_bundle_file_count: runtimeFiles.length,
     forbidden_suffixes: budget.forbidden_suffixes,
   };
 }
@@ -106,14 +151,14 @@ const budget = JSON.parse(
   readFileSync(path.join(scriptRoot, "package-artifact-budget.json"), "utf8"),
 );
 const output = execFileSync(
-  process.platform === "win32" ? "npm.cmd" : "npm",
-  ["pack", "--dry-run", "--json", "--ignore-scripts"],
+  process.execPath,
+  [path.join(scriptRoot, "package-distribution.mjs")],
   { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
 );
 const report = JSON.parse(output);
-const profileArguments = process.argv.slice(2).filter((argument) =>
-  argument.startsWith("--profile"),
-);
+const profileArguments = process.argv
+  .slice(2)
+  .filter((argument) => argument.startsWith("--profile"));
 if (profileArguments.length > 1) {
   throw new TypeError("Package artifact gate accepts at most one --profile");
 }

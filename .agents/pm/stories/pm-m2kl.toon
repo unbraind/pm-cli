@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-story,"area:sdk",capability,living-map,story
 created_at: "2026-07-04T19:59:44.579Z"
-updated_at: "2026-09-19T08:40:44.976Z"
+updated_at: "2026-10-06T16:42:54.953Z"
 closed_at: "2026-07-04T19:59:45.201Z"
 author: maintainer-agent
 estimated_minutes: 600
@@ -19,7 +19,15 @@ release: v2026.7.5
 resolution: "Delivered and maintained by pm-ugqx: SDK define/compose/testing builders, extension runtime, 11 packages, and plugin integrations."
 expected_result: Any project customizes and optimizes pm via the SDK without forking.
 actual_result: SDK builders + test harness + 11 packages + CJS/ESM install support shipped.
-dependencies[1]{id,kind,created_at}:
-  pm-ugqx,implements,"2026-07-26T17:19:51.541Z"
+dependencies[2]:
+  - id: pm-ugqx
+    kind: implements
+    created_at: "2026-07-26T17:19:51.541Z"
+  - id: pm-osea
+    kind: discovered_from
+    created_at: "2026-10-06T16:42:54.627Z"
+    author: "harness:codex"
+    source_kind: "cli:update:evidence-backfill:pm-jprn58"
+    author_source: detected
 close_reason: "Delivered and maintained by pm-ugqx: SDK define/compose/testing builders, extension runtime, 11 packages, and plugin integrations."
 body: "## Agent need\npm is a universal PM tool that ships primitives via an SDK, so any project can extend it (custom commands, types, search, importers, hooks) without forking the core.\n\n## Delivered surface (pm-ugqx)\nsrc/sdk define/compose/runtime/testing; extension loader + registries; capability-usage least-privilege; 11 first-party packages as exemplars; pm-claude/pm-codex plugins.\n\n## Verified by\nScaffold capability matrix (9/9), sandbox tarball install tests (CJS + ESM). Enduring agent-value statement for the extension/SDK capability; new work lands in pm-ugqx."
