@@ -1159,6 +1159,7 @@ function resolveEffectiveCreateMode(
   return "progressive";
 }
 
+/** Validate explicit policy, then identify unmet strict fields using resolved identity and configured type defaults. */
 function requireCreateOptionByType(
   typeDefinition: ResolvedItemTypeDefinition,
   options: CreateCommandOptions,
@@ -1200,6 +1201,7 @@ function requireCreateOptionByType(
   // would contradict the config-driven default. Scoped to status so an explicit
   // status-required policy on a type WITHOUT a default still holds. Only the
   // required check is relaxed; the disabled check above keeps using hasOptionValue.
+  /** Evaluate required fields without relaxing disabled-input policy or inventing scalar defaults. */
   const satisfiesRequiredOption = (optionKey: string): boolean => {
     // Required identity follows mutation attribution; disabled policy above
     // still evaluates explicit input, and unknown attribution is not a default.
@@ -1305,6 +1307,7 @@ function typeOptionExampleValue(
   return "<value>";
 }
 
+/** Render canonical scalar flags, retaining placeholders only where the caller must supply project-specific intent. */
 function createExampleTokensForFlag(
   flag: string,
   typeName: string,
@@ -1334,6 +1337,7 @@ function createExampleTokensForFlag(
   }
 }
 
+/** Build a runnable option shape for one configured type, expressing empty required collections with explicit clear flags. */
 function buildTypeSpecificCreateExample(
   typeDefinition: ResolvedItemTypeDefinition,
   missingCreateFlags: string[],

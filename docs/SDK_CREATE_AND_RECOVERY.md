@@ -77,6 +77,11 @@ actually delivered, even when `--output-limit` caps a larger producer page and
 the token budget does not bind. Serialized SDK, CLI, and packed consumers share
 the same cursor coordinates.
 
+Field selection preserves that boundary: `--output-include title` keeps IDs out
+of returned rows while the cursor still identifies the last delivered source row.
+Token-budget replay of a terminal page retains the number of rows already
+delivered, including in positional recovery after a cursor row is deleted.
+
 An explicit amount cap on a terminal producer page can report `has_more: true`
 without manufacturing a producer cursor. This is a deliberately partial read.
 To retrieve its withheld tail, repeat the same producer boundary with a larger

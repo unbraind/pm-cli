@@ -6,23 +6,25 @@ status: closed
 priority: 1
 tags[3]: agent-ux,recovery,sdk
 created_at: "2026-10-06T11:18:11.080Z"
-updated_at: "2026-10-06T11:55:27.125Z"
-closed_at: "2026-10-06T11:49:35.745Z"
-completed_at: "2026-10-06T11:49:35.745Z"
+updated_at: "2026-10-06T13:54:45.571Z"
+closed_at: "2026-10-06T13:54:44.933Z"
+completed_at: "2026-10-06T13:54:44.933Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Strict required-author policy accepts a known resolved actor but preserves unknown and disabled-policy refusals; strict recovery uses canonical flags and empty collections; explicit claim-start rejects incompatible controls with no unsafe automatic retry; scoped init status and add remain visible and preserve existing documentation; genuine Node and Bun installed artifacts execute the workflows; unchanged exact coverage and static gates pass
 parent: pm-f05lsg
 risk: medium
 confidence: 90
-resolution: "Deliver canonical strict creation, explicit claim-start and scoped init recovery."
-expected_result: Required author policy uses known resolved mutation identity; examples use canonical flags and clear collections; contradictory claim-start controls refuse safely; compact init retains scoped status/add guidance while preserving explicit skip and existing documents.
-actual_result: "All 13 linked recovery cases pass; separately installed Node and Bun execute strict resolved identity, canonical examples, contradictory selection refusal, preview-history preservation and explicit guidance inspection/add. Exact full-source coverage is100/100/100/100 and all local mandatory gates pass; exact-head hosted admission is required before merge."
+resolution: "Deliver SDK-owned strict resolved-author validation, canonical recovery examples with explicit empty collections, safe contradictory claim-start refusal and scoped init guidance. Add meaningful helper documentation, exact actor and complete guidance-status assertions; retain a real refused-create negative control proving caller provenance and the following successful actor remain correct."
+expected_result: "SDK and CLI recovery are actionable without unsafe retries, invented defaults, attribution contamination or modification of user guidance during inspection."
+actual_result: "All13 linked recovery cases pass. Fresh separately installed Node/Bun execute strict resolved identity, canonical examples, selection refusal, preview-history preservation and scoped status/add. Full9790-test coverage is exactly100/100/100/100 over764 source files, with all four TypeScript configurations and unchanged static gates passing. The suggested author-context leak does not reproduce before implementation changes. Broader exhaustive recovery remains open under pm-f05lsg."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,implements,"2026-10-06T11:18:11.080Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-06T11:18:11.080Z","harness:codex","Duplicate check: complete live all-status corpus contained 2896 items with no unreadable items or omissions. The exact three-report search matched only parent pm-f05lsg. Full open and in-progress checks and all-status recovery searches found no bounded delivery task for this tranche. This is a child delivery record of the existing feature and does not duplicate its unfinished exhaustive census scope."
   "2026-10-06T11:49:34.885Z","harness:codex","Local completion: All 13 linked recovery cases pass; separately installed Node and Bun execute strict resolved identity, canonical examples, contradictory selection refusal, preview-history preservation and explicit guidance inspection/add. Canonical full suite passes 9789 runnable tests with only two established Windows-only skips. All 764 maintained source files have zero uncovered counts: statements66841/66841; branches51174/51174; functions13809/13809; lines63702/63702. Complete static pipeline, all four TypeScript configurations, 58 token surfaces, docs links, packed artifact and nine-package npx/bunx smoke pass. Bunx smoke uses a fresh owned temporary cache after the host cache symlink was refused; no host cache or gate is weakened. Required current production Sentry/telemetry gate passes with zero blocking issues and finish-error rate2.06% with zero missing error-code rows. Hosted exact-head review remains required before merge; this is implemented local-source evidence and does not claim published registry adoption."
+  "2026-10-06T13:06:49.659Z","harness:codex","Review round1: both strengthened real recovery tests pass on the existing source before implementation changes. A direct public SDK strict create with explicit refused-author is rejected with exitCode2; caller ambient author provenance is unchanged and the following create records exactly test-author. This contradicts the proposed later-attribution failure: the asynchronous create boundary does not replace the caller context, and each successful mutation resolves its own identity. Retain this executable negative control rather than undoing required resolved-author validation. Scoped status now asserts the actual tracker path, mode, missing managed block, target AGENTS.md and exact checked/missing file sets. Explicit status-required policy remains intentional when a type has no configured default_status; prior GH1337 preview refusal is already shipped and reverified by the linked suite."
+  "2026-10-06T13:54:44.176Z","harness:codex","Review round1 local acceptance: the complete canonical suite passes 9790 runnable tests with only the two established Windows-only skips. Every one of 764 maintained source files has zero uncovered counts: statements66843/66843, branches51178/51178, functions13809/13809, lines63704/63704. The complete static sequence passes after CLI restoration of active expected-result fields; no source, performance, mutation, security or coverage limit was changed. All four TypeScript configurations and documentation links pass. Independently packed and installed npm/Node and Bun consumers each pass eight amount/projection variants over exact 30-row ordering, concurrent one-winner creation and both public conflict guards; npx and bunx execute the installed CLI and stable conflict refusal. Both runtimes also pass strict resolved identity, canonical examples, incompatible-selection refusal, byte-identical preview history and scoped guidance inspection/explicit add. Artifact19964509bytes remains below the unchanged20000000byte ceiling. This is source and candidate-artifact proof, not registry deployment; a fresh exact-head hosted review remains required before merge."
 files[8]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
@@ -43,13 +45,24 @@ files[8]:
     scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/cli/agent-create-recovery.integration.spec.ts tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,project,300,"harness:codex","2026-10-06T11:18:34.125Z",local_mutation,fix/lossless-pagination-typed-conflicts-agent-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-muwl5mua-skl27l
     kind: test
     status: passed
     started_at: "2026-10-06T11:18:36.408Z"
     finished_at: "2026-10-06T11:18:52.642Z"
     recorded_at: "2026-10-06T11:18:52.642Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/agent-create-recovery.integration.spec.ts tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/closed-domain-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwqo4li-0n5fpk
+    kind: test
+    status: passed
+    started_at: "2026-10-06T13:52:52.625Z"
+    finished_at: "2026-10-06T13:53:13.542Z"
+    recorded_at: "2026-10-06T13:53:13.542Z"
     passed: 1
     failed: 0
     skipped: 0
@@ -63,5 +76,5 @@ docs[3]:
     scope: project
   - path: docs/SDK_CREATE_AND_RECOVERY.md
     scope: project
-close_reason: Implemented and verified for the combined reviewed delivery.
+close_reason: Complete locally verified recovery policy and review assertions
 body: Strict creation must recognize the resolved mutation actor and emit executable canonical flags with honest clear-collection examples. Explicit claim-start must refuse incompatible selection controls without inventing missing options or an automatic retry. Non-interactive scoped init must retain guidance inspection and explicit add actions without changing user-authored documentation. This child records the already reproduced and implemented three-report delivery tranche; the parent feature retains the remaining complete-corpus scorer and cross-surface acceptance scope. Initial failing TDD receipts and subsequent 13-test passes are preserved in parent history. No shipped precursor is reopened.

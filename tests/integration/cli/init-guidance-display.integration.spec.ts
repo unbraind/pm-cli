@@ -28,6 +28,7 @@ describe("compact init guidance recovery (GH-1407)", () => {
       expect(await readFile(agentsPath, "utf8")).toBe(original);
       const status = await context.runCliInProcess(["--pm-path", tracker, "init", "--agent-guidance", "status", "--json"], { cwd: context.tempRoot, expectJson: true });
       expect(status.code).toBe(0);
+      expect(status.json).toMatchObject({ path: tracker, agent_guidance: { mode: "status", present: false, target_file: "AGENTS.md", checked_files: ["AGENTS.md", "CLAUDE.md"], files_with_guidance: [], missing_files: ["CLAUDE.md"] } });
       expect(await readFile(agentsPath, "utf8")).toBe(original);
       const added = await context.runCliInProcess(["--pm-path", tracker, "init", "--agent-guidance", "add", "--json"], { cwd: context.tempRoot, expectJson: true });
       expect(added.code).toBe(0);

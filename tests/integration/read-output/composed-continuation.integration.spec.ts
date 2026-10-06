@@ -9,7 +9,7 @@ import { decodeQueryCursorEnvelope } from "../../../src/sdk/pagination.js";
 import type { PmReadOutputContinuation } from "../../../src/sdk/read-output-contracts.js";
 
 interface ReadPage {
-  items?: { id: string }[];
+  items?: { id: string; title?: string }[];
   low_level?: { id: string }[];
   high_level?: { id: string }[];
   blocked_fallback?: { id: string }[];
@@ -105,32 +105,37 @@ async function stagePublishSources(repository: string, destination: string): Pro
   return manifest;
 }
 
-/** Follow amount-only producer cursors and lift deliberate terminal caps at their original boundary. */
-async function verifyAmountOnlyContinuation(run: RunRead, base: string[], outputBudget: string, orderedIds: string[]): Promise<void> {
-  const capped = [...base, "--output-limit", "2", "--output-budget", outputBudget];
+/** Compare every projected value in producer order, lifting terminal caps only at their original boundary. */
+async function verifyAmountOnlyContinuation(run: RunRead, base: string[], outputBudget: string, orderedValues: string[], outputInclude: "id" | "title"): Promise<void> {
+  const projectedBase = [...base, "--output-include", outputInclude];
+  const capped = [...projectedBase, "--output-limit", "2", "--output-budget", outputBudget];
   const delivered: string[] = [];
   let after: string | undefined;
-  do {
+  for (;;) {
     const response = await run([...capped, ...(after ? ["--after", after] : [])]);
     expect(response.code, response.stderr).toBe(0);
     const page = response.json as ReadPage;
-    const rows = verifyDeliveredCounts(page).map(({ id }) => id);
-    expect(rows).toEqual(orderedIds.slice(delivered.length, delivered.length + 2));
+    const rows = page.items!.map((row) => row[outputInclude]!);
+    if (page.count !== undefined) expect(page.count).toBe(rows.length);
+    if (outputInclude === "title") expect(page.items!.every((row) => !Object.hasOwn(row, "id"))).toBe(true);
+    expect(rows).toEqual(orderedValues.slice(delivered.length, delivered.length + 2));
     expect(page.read_output).toMatchObject({ within_budget: true, rows_compacted: false });
     expect(page.output_budget_truncation).toBeUndefined();
     if (!page.next_cursor) {
       expect(page.has_more).toBe(true);
-      const tail = await collectReadPages(run, [...base, "--output-limit", "unbounded", "--output-budget", outputBudget, ...(after ? ["--after", after] : [])]);
-      expect(tail.ids.slice(0, rows.length)).toEqual(rows);
-      delivered.push(...tail.ids);
+      const tail = await run([...projectedBase, "--output-limit", "unbounded", "--output-budget", outputBudget, ...(after ? ["--after", after] : [])]);
+      expect(tail.code, tail.stderr).toBe(0);
+      const tailValues = (tail.json as ReadPage).items!.map((row) => row[outputInclude]!);
+      expect(tailValues.slice(0, rows.length)).toEqual(rows);
+      delivered.push(...tailValues);
       break;
     }
     delivered.push(...rows);
     expect(decodeQueryCursorEnvelope(page.next_cursor).after_index).toBe(delivered.length - 1);
     after = page.next_cursor;
-    expect(delivered.length).toBeLessThan(orderedIds.length);
-  } while (after);
-  expect(delivered).toEqual(orderedIds);
+    expect(delivered.length).toBeLessThan(orderedValues.length);
+  }
+  expect(delivered).toEqual(orderedValues);
 }
 
 /** Check each packed runtime's public continuation and conflict receipts against the same matrix. */
@@ -138,8 +143,8 @@ function verifyPackedEvidence(raw: string): void {
   const evidence = JSON.parse(raw) as { publicExport: string; conflicts: { oneWinner: boolean; coreGuard: boolean }; results: { name: string; limit?: number; amountOnly?: boolean; empty?: boolean; blocked?: boolean; recovery?: boolean; budgetTransitions: number; uniqueRows: number }[] };
   expect(evidence.publicExport).toBe("@unbrained/pm-cli/sdk");
   expect(evidence.conflicts).toEqual({ oneWinner: true, coreGuard: true });
-  expect(evidence.results).toHaveLength(15);
-  expect(evidence.results.filter((result) => result.amountOnly)).toHaveLength(4);
+  expect(evidence.results).toHaveLength(19);
+  expect(evidence.results.filter((result) => result.amountOnly)).toHaveLength(8);
   expect(evidence.results.filter((result) => result.limit === 25).every((result) => result.budgetTransitions > 0)).toBe(true);
   expect(evidence.results.filter((result) => result.empty)).toHaveLength(3);
   expect(evidence.results.filter((result) => result.blocked)).toHaveLength(2);
@@ -147,13 +152,15 @@ function verifyPackedEvidence(raw: string): void {
   expect(evidence.results.some((result) => result.blocked && result.recovery)).toBe(true);
 }
 
-/** Reuse each producer's full ordering for both nonbinding token-budget variants. */
+/** Reuse each producer's real ordering for ID and title projections under both nonbinding token ceilings. */
 async function verifyAmountOnlyProducers(run: RunRead, pmRoot: string): Promise<void> {
   for (const command of [["list", "--all"], ["search", "Matrix", "--mode", "keyword", "--status", "all"]]) {
     const base = ["--pm-path", pmRoot, "--json", ...command, "--tag", "matrix", "--limit", "25"];
-    const full = await collectReadPages(run, [...base, "--output-budget", "unbounded"]);
-    for (const outputBudget of ["unbounded", "100000"]) {
-      await verifyAmountOnlyContinuation(run, base, outputBudget, full.ids);
+    const full = await run([...base, "--limit", "100", "--output-budget", "unbounded"]);
+    expect(full.code, full.stderr).toBe(0);
+    for (const outputInclude of ["id", "title"] as const) for (const outputBudget of ["unbounded", "100000"]) {
+      const orderedValues = (full.json as ReadPage).items!.map((row) => row[outputInclude]!);
+      await verifyAmountOnlyContinuation(run, base, outputBudget, orderedValues, outputInclude);
     }
   }
 }

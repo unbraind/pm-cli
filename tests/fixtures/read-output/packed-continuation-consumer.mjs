@@ -80,23 +80,25 @@ for (const [name, reader, options] of [
 ]) {
   const base = { ...options, tag: "matrix", limit: 25, json: true };
   const full = await reader({ ...base, limit: 100, outputBudget: "unbounded" });
-  const orderedIds = full.items.map(({ id }) => id);
-  for (const outputBudget of ["unbounded", 100000]) {
+  for (const outputInclude of ["id", "title"]) for (const outputBudget of ["unbounded", 100000]) {
+    const orderedValues = full.items.map((row) => row[outputInclude]);
     const ids = [];
     let after;
     let reads = 0;
-    do {
-      const page = JSON.parse(JSON.stringify(await reader({ ...base, outputLimit: 2, outputBudget, ...(after ? { after } : {}) })));
-      const rows = deliveredRows(page, false).map(({ id }) => id);
-      assert.deepEqual(rows, orderedIds.slice(ids.length, ids.length + 2));
+    for (;;) {
+      const page = JSON.parse(JSON.stringify(await reader({ ...base, outputInclude, outputLimit: 2, outputBudget, ...(after ? { after } : {}) })));
+      const rows = page.items.map((row) => row[outputInclude]);
+      if (page.count !== undefined) assert.equal(page.count, rows.length);
+      if (outputInclude === "title") assert(page.items.every((row) => !Object.hasOwn(row, "id")));
+      assert.deepEqual(rows, orderedValues.slice(ids.length, ids.length + 2));
       assert.equal(page.read_output.within_budget, true);
       assert.equal(page.read_output.rows_compacted, false);
       assert.equal(page.output_budget_truncation, undefined);
       reads += 1;
       if (!page.next_cursor) {
         assert.equal(page.has_more, true, "Explicit terminal caps still disclose withheld rows");
-        const tail = await reader({ ...base, outputLimit: "unbounded", outputBudget, ...(after ? { after } : {}) });
-        const tailIds = tail.items.map(({ id }) => id);
+        const tail = await reader({ ...base, outputInclude, outputLimit: "unbounded", outputBudget, ...(after ? { after } : {}) });
+        const tailIds = tail.items.map((row) => row[outputInclude]);
         assert.deepEqual(tailIds.slice(0, rows.length), rows);
         ids.push(...tailIds);
         break;
@@ -104,9 +106,9 @@ for (const [name, reader, options] of [
       ids.push(...rows);
       after = page.next_cursor;
       assert(reads < 30, "Advertised amount-only continuation must advance");
-    } while (after);
-    assert.deepEqual(ids, orderedIds, "Every advertised cursor resumes at the first undisplayed row");
-    results.push({ name, amountOnly: true, outputBudget, reads, uniqueRows: ids.length });
+    }
+    assert.deepEqual(ids, orderedValues, "Every advertised cursor resumes at the first undisplayed row");
+    results.push({ name, amountOnly: true, outputInclude, outputBudget, reads, uniqueRows: ids.length });
   }
 }
 for (const limit of [1, 25]) {

@@ -659,6 +659,7 @@ async function handleInteractiveAgentGuidancePrompt(
   pushUnique(flow.nextSteps, AGENT_GUIDANCE_ADD_LATER_HINT);
 }
 
+/** Report absent managed guidance with read-only inspection and explicit installation actions, leaving user files untouched. */
 function handleNonInteractiveMissingAgentGuidance(
   flow: InitAgentGuidanceFlowState,
 ): void {

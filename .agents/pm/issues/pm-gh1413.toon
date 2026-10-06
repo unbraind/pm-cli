@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-06T09:32:33.780Z"
-updated_at: "2026-10-06T11:49:33.463Z"
-closed_at: "2026-10-06T11:49:32.857Z"
-completed_at: "2026-10-06T11:49:32.857Z"
+updated_at: "2026-10-06T13:54:43.416Z"
+closed_at: "2026-10-06T13:54:42.753Z"
+completed_at: "2026-10-06T13:54:42.753Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Exact ordered CLI and public SDK list/search traversal with producer limit25 and output-limit2 under unbounded and high finite budgets; no skipped or repeated IDs; truthful terminal counts and deliberate caps; preserve combined-ceiling and deletion-fallback controls; exact coverage and packed Node/Bun/npx/bunx acceptance.
 parent: pm-5t33or
 risk: medium
 confidence: 90
-resolution: Rebase advertised producer continuation after amount-only projection.
-expected_result: List and search cursors resume after the final delivered row when an amount cap binds without token compaction; composed amount/token rebasing remains lossless and explicit terminal caps retain deliberate-partial semantics.
-actual_result: All 15 linked producer/consumer cases pass with exact ordered traversal and both runtime exports; real installed Node and Bun consumers each traverse 30 rows with four amount-only cases and no skips or duplicates. Exact full-source coverage is100/100/100/100 and all local mandatory gates pass; exact-head hosted admission is required before merge.
+resolution: Preserve unprojected identities privately through field selection and amount/token compaction; carry the prior replay offset when rebasing terminal producer coordinates. Extend real CLI and packed Node/Bun ordering to ID and title-only projection without exposing IDs or weakening terminal/deletion semantics.
+expected_result: "Every advertised list/search continuation resumes after the last delivered source row under amount-only and composed ceilings, including title-only projection and nonzero terminal replay origins."
+actual_result: "Red-first projection and terminal-replay failures are fixed. All16 linked pagination cases,19 focused review cases,19 packed continuation cases per runtime, eight manual amount/projection variants per runtime and the full9790-test exact100/100/100/100 suite pass. Source, SDK, static, graph, integrity, performance and artifact gates retain their original limits."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1363,implements,"2026-10-06T09:32:33.780Z","harness:codex","cli:create:dep",detected
   pm-gh1371,verifies,"2026-10-06T09:32:33.780Z","harness:codex","cli:create:dep",detected
   pm-gh1411,recurs_from,"2026-10-06T09:32:33.780Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-10-06T09:32:33.780Z","harness:codex","Duplicate check: live strict full all-status corpus2895/2895, zero unreadable records, omissions or truncation; all694 GitHub issues read for canonical links; request-specific search and open/in-progress inventories inspected. No dedicated amount-only/nonbinding-budget owner exists. Closed pm-gh1411 and pm-gh1371 own different completed composed-ceiling repairs, preserved here as precursor lineage. GH-1413 full report retained; reproduction and implementation follow in this single combined PR."
   "2026-10-06T09:39:09.207Z","harness:codex","TDD reproduced GH-1413: both amount-only output-budget variants failed on stale producer coordinates (24 rather than delivered index 1). Implemented rebase before token projection; preserving explicit terminal null cursor semantics. Verification now includes ordered list/search continuations and packed Node/Bun consumers."
   "2026-10-06T10:05:27.035Z","harness:codex","First full verification found only a directory-load violation from new root-level test files: 9788 tests passed, one organization assertion failed. Moved new CLI producer regressions into tests/integration/cli and conflict guard tests into tests/unit/sdk/lifecycle, retaining the 120-file cap. Static lint also identified excessive complexity in the enlarged continuation matrix; extracted substantive traversal/assertion routines and reused ordering/setup without changing coverage policy. Early linked runs timed out while queued behind the full-suite build lease; preserve those receipts and rerun serially."
@@ -32,6 +32,11 @@ comments[9]{created_at,author,text}:
   "2026-10-06T10:26:59.855Z","harness:codex","The existing absence-tolerance gate suite passes 19/19 in isolation in about two seconds. Full coverage is rerunning with four workers and unchanged test timeouts, retries, source include/exclude policy and exact four-metric thresholds. Fresh GitHub intake still has 28 open issues and no open PR, Dependabot, code-scanning or secret-scanning alerts; GH-1413 is the only issue awaiting its newly created canonical record link, which will be added with the pushed delivery. Current complete graph audit:2896 nodes/14487 directed edges, no missing targets, isolates, sparse nodes, ordering contradictions/cycles or unreachable outcomes; only the seven established legacy hierarchy subjects remain informational."
   "2026-10-06T10:57:27.315Z","harness:codex","Repository assurance exposed an unregistered recurrence component containing the closed pm-gh1411 precursor and this new residual. Registered the historical precursor under output-budget-and-continuation version4, without inventing another edge or changing any budget. The authoritative complete population now covers178/178 recorded recurrence items, with no missing or uncovered members; the captured-boundary/terminal-defect negative control still exits1 as required. A live assurance risk request naming only pm-gh1413 selects the output-budget family and its existing local/hosted checks. Generated full contracts now include the stable existing-item code and typed task-composition refusal source."
   "2026-10-06T11:49:31.723Z","harness:codex","Local completion: All 15 linked producer/consumer cases pass with exact ordered traversal and both runtime exports; real installed Node and Bun consumers each traverse 30 rows with four amount-only cases and no skips or duplicates. Canonical full suite passes 9789 runnable tests with only two established Windows-only skips. All 764 maintained source files have zero uncovered counts: statements66841/66841; branches51174/51174; functions13809/13809; lines63702/63702. Complete static pipeline, all four TypeScript configurations, 58 token surfaces, docs links, packed artifact and nine-package npx/bunx smoke pass. Bunx smoke uses a fresh owned temporary cache after the host cache symlink was refused; no host cache or gate is weakened. Required current production Sentry/telemetry gate passes with zero blocking issues and finish-error rate2.06% with zero missing error-code rows. Hosted exact-head review remains required before merge; this is implemented local-source evidence and does not claim published registry adoption."
+  "2026-10-06T13:00:34.120Z","harness:codex","Review round1: CodeRabbit confirms projected title-only rows lack the identity needed by producer rebasing. Add genuine title-only list/search continuation across CLI and packed Node/Bun consumers, preserve unprojected identities privately through amount and token projection, and retain terminal/deletion negative controls. DeepScan correctly flags two redundant do-while conditions after cursor presence was established; simplify those real traversal loops without changing assertions or stopping bounds."
+  "2026-10-06T13:10:33.886Z","harness:codex","Confirmed review TDD: title-only amount projections reproduce stale cursor identity/index24 instead of delivered index1 under unbounded and100000 budgets; projected combined amount/cost replay also refuses the unusable boundary. Retain these failing receipts. The repair keeps unprojected rows privately in continuation state, aligned to the original output-cursor suffix; both amount and cost rebase from those original identities. All18 focused cases now pass, including exact ordered public CLI traversal and19-case packed Node/Bun receipts with8 amount/projection variants. The two redundant test loop conditions are replaced with explicit terminal breaks and unchanged progress assertions. Fresh full-source coverage is running. Optional Greptile review was requested but its repository allowance is exhausted; no paid settings were changed."
+  "2026-10-06T13:23:36.289Z","harness:codex","Full revised suite retains9789 passing cases but fails the unchanged governance cold-validate performance ceiling (10855.66ms versus10000ms); no coverage summary is emitted, so this is not a coverage pass. Preserve the failure and rerun the unchanged performance case in isolation, then full coverage with four workers. Further coordinate inspection reproduces a related terminal-page replay defect through the actual built public SDK/core export: after prior producer index24, first16 rows and resumed6 rows advertise index30 instead of46. Add this terminal-output-cursor positional fallback to the same owner before the next review push, preserving original IDs and exact ordered boundaries."
+  "2026-10-06T13:40:44.748Z","harness:codex","Review round1 verification: all 19 focused cases pass, including title-only projection, both producer-page shapes and replay from a nonzero incoming boundary. The full static sequence passed its source, dependency, documentation, duplication and contract checks, then correctly refused two reopened items lacking expected-result metadata. Current review expectations were restored through pm; tracker context, gate registry, SDK surface, entrypoint and transport ceilings, graph composition, record integrity and the unchanged mutation gate all pass. The earlier complete coverage attempt failed only the existing 10-second governance-read ceiling; the isolated control passes and a new complete four-worker run is pending, with no limits or exclusions changed. The SDK guide now documents projected-field continuation and terminal replay coordinates."
+  "2026-10-06T13:54:41.346Z","harness:codex","Review round1 local acceptance: the complete canonical suite passes 9790 runnable tests with only the two established Windows-only skips. Every one of 764 maintained source files has zero uncovered counts: statements66843/66843, branches51178/51178, functions13809/13809, lines63704/63704. The complete static sequence passes after CLI restoration of active expected-result fields; no source, performance, mutation, security or coverage limit was changed. All four TypeScript configurations and documentation links pass. Independently packed and installed npm/Node and Bun consumers each pass eight amount/projection variants over exact 30-row ordering, concurrent one-winner creation and both public conflict guards; npx and bunx execute the installed CLI and stable conflict refusal. Both runtimes also pass strict resolved identity, canonical examples, incompatible-selection refusal, byte-identical preview history and scoped guidance inspection/explicit add. Artifact19964509bytes remains below the unchanged20000000byte ceiling. This is source and candidate-artifact proof, not registry deployment; a fresh exact-head hosted review remains required before merge."
 learnings[1]{created_at,author,text}:
   "2026-10-06T10:28:44.116Z","harness:codex","Producer pagination coordinates must reflect rows delivered after every projection stage, including an amount cap when token cost does not bind. Capture source coordinates before projection and reuse them for composed rebasing, so token compaction cannot subtract the amount reduction twice. Regressions compare exact ordered IDs through unchanged serialized CLI and independently packed SDK reads; terminal deliberate caps remain distinct from advertised resumable pages."
 files[6]:
@@ -51,7 +56,7 @@ files[6]:
     scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/delivered-counts.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts,project,300,"harness:codex","2026-10-06T09:47:44.619Z",local_mutation,fix/lossless-pagination-typed-conflicts-agent-recovery
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-muwi6y3i-wpcfui
     kind: test
     status: failed
@@ -74,6 +79,17 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/delivered-counts.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwqnnwy-e0kfsu
+    kind: test
+    status: passed
+    started_at: "2026-10-06T13:52:06.219Z"
+    finished_at: "2026-10-06T13:52:51.922Z"
+    recorded_at: "2026-10-06T13:52:51.922Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/delivered-counts.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
 docs[3]:
   - path: CHANGELOG.md
     scope: project
@@ -82,7 +98,7 @@ docs[3]:
     scope: project
   - path: docs/SDK_CREATE_AND_RECOVERY.md
     scope: project
-close_reason: Implemented and verified for the combined reviewed delivery.
+close_reason: Complete locally verified projection-safe continuation and terminal replay
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
