@@ -67,6 +67,18 @@ function readSingleArtifact(report) {
   return artifact;
 }
 
+/** Require explicit non-negative integer ceilings before counting bundled runtime files. */
+function resolveRuntimeBundleBudget(budget) {
+  for (const field of ["max_unpacked_bytes", "max_file_count"]) {
+    if (!Number.isSafeInteger(budget?.[field]) || budget[field] < 0) {
+      throw new TypeError(
+        `Runtime bundle budget requires a non-negative safe integer ${field}`,
+      );
+    }
+  }
+  return budget;
+}
+
 /** Validate one npm pack report against a named committed distribution budget. */
 export function validatePackageArtifact(report, budget, profile = "base") {
   const artifact = readSingleArtifact(report);
@@ -86,12 +98,14 @@ export function validatePackageArtifact(report, budget, profile = "base") {
     (total, file) => total + file.size,
     0,
   );
+  const runtimeBudget = runtimeFiles.length
+    ? resolveRuntimeBundleBudget(budget.runtime_bundle)
+    : undefined;
   if (
     runtimeFiles.length &&
     (!Number.isFinite(runtimeSize) ||
-      runtimeSize > budget.runtime_bundle?.max_unpacked_bytes ||
-      runtimeFiles.length > budget.runtime_bundle?.max_file_count ||
-      !budget.runtime_bundle)
+      runtimeSize > runtimeBudget.max_unpacked_bytes ||
+      runtimeFiles.length > runtimeBudget.max_file_count)
   )
     violations.push("runtime_bundle_budget_exceeded");
   const distributionSize = artifact.unpackedSize - runtimeSize;

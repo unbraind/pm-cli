@@ -179,6 +179,38 @@ describe("package artifact gate", () => {
   });
 
   it.each([
+    undefined,
+    null,
+    {},
+    { max_unpacked_bytes: 30 },
+    { max_file_count: 1 },
+    { max_unpacked_bytes: null, max_file_count: 1 },
+    { max_unpacked_bytes: "30", max_file_count: 1 },
+    { max_unpacked_bytes: -1, max_file_count: 1 },
+    { max_unpacked_bytes: 1.5, max_file_count: 1 },
+    { max_unpacked_bytes: Number.MAX_SAFE_INTEGER + 1, max_file_count: 1 },
+    { max_unpacked_bytes: 30, max_file_count: null },
+    { max_unpacked_bytes: 30, max_file_count: "1" },
+    { max_unpacked_bytes: 30, max_file_count: -1 },
+    { max_unpacked_bytes: 30, max_file_count: 1.5 },
+  ])("rejects an invalid runtime ceiling %#", async (runtimeBundle) => {
+    const result = await run(
+      {
+        name: "fixture",
+        unpackedSize: 2,
+        files: [
+          { path: "dist/cli.js" },
+          { path: "package.json" },
+          { path: "node_modules/runtime/index.js", size: 1 },
+        ],
+      },
+      { ...budget, runtime_bundle: runtimeBundle },
+    );
+    expect(result.failure).toBeInstanceOf(TypeError);
+    expect(String(result.failure)).toContain("Runtime bundle budget");
+  });
+
+  it.each([
     [{ ...budget, max_unpacked_bytes_by_profile: undefined }, "missing"],
     [
       {

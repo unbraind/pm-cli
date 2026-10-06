@@ -7,6 +7,7 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
@@ -245,11 +246,19 @@ it("uses npm's Node entrypoint on Windows and writes a real distributable tarbal
   const executable = path.join(installation, "node.exe");
   await symlink(process.execPath, executable);
   await mkdir(path.join(installation, "node_modules"));
-  const globalModules = execFileSync("npm", ["root", "-g"], {
-    encoding: "utf8",
-  }).trim();
+  const npmRoot =
+    process.platform === "win32"
+      ? path.dirname(
+          createRequire(import.meta.url).resolve("npm/package.json", {
+            paths: [path.dirname(process.execPath)],
+          }),
+        )
+      : path.join(
+          execFileSync("npm", ["root", "-g"], { encoding: "utf8" }).trim(),
+          "npm",
+        );
   await symlink(
-    path.join(globalModules, "npm"),
+    npmRoot,
     path.join(installation, "node_modules/npm"),
     "junction",
   );

@@ -453,7 +453,8 @@
       "integrity": "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==",
       "engines": {
         "node": ">=10"
-      }
+      },
+      "hasBin": true
     },
     "node_modules/tar": {
       "version": "7.5.22",
@@ -504,7 +505,8 @@
       "integrity": "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==",
       "engines": {
         "node": ">= 14.6"
-      }
+      },
+      "hasBin": true
     }
   }
 }
