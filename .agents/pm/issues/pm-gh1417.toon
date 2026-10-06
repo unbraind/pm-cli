@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-06T15:54:12.093Z"
-updated_at: "2026-10-06T21:11:34.588Z"
-closed_at: "2026-10-06T21:11:33.527Z"
-completed_at: "2026-10-06T21:11:33.527Z"
+updated_at: "2026-10-06T21:27:55.827Z"
+closed_at: "2026-10-06T21:27:54.974Z"
+completed_at: "2026-10-06T21:27:54.974Z"
 author: "harness:codex"
 estimated_minutes: 360
 acceptance_criteria: "The shipped runtime-dependencies.json exactly projects the tested production closure and release gates reject drift; Staged tarballs bundle only the exact tested runtime packages without pnpm development-store leakage or source maps; Fresh npm global, npx, Bun install and bunx acceptance preserve the tested runtime versions and public SDK exports; Optional Node types peers are bounded to supported majors and fresh TypeScript SDK consumers compile; CI and provenance publishing use the same isolated staged artifact with independent application and runtime budgets"
@@ -18,14 +18,16 @@ value: Prevent downstream CI from changing when transitive registry ranges move
 parent: pm-u9d0
 risk: medium
 confidence: 90
-resolution: "Stage the 40-package tested production closure, preserve executable lock metadata, fail closed on invalid runtime budgets, verify real Windows npm packing, independently bound lifecycle mutation cases and satisfy strict release ShellCheck."
-expected_result: "Ship the tested npm/Bun runtime tree, refuse drift and unsafe receipts, preserve native Windows and immutable daily publication with unchanged mandatory thresholds."
-actual_result: "114 focused cases and renewed Node/Bun/npx/bunx/public SDK smoke pass; real package budget and cold offline frozen CodSpeed policy pass; graph/history/mutation admission passes. Local timing failures are retained. Hosted full static, canonical coverage and Windows checks remain required for this correction head before merge; no publication of immutable 2026.10.6."
+resolution: "Stage the 40-package tested runtime closure, reject malformed artifact ceilings, preserve frozen-install executable metadata, support actual Windows npm packing, independently bound lifecycle controls and admit real npm 11/12 receipt envelopes."
+expected_result: "Ship the tested npm/Bun runtime tree with exact full-source coverage and unchanged security, quality, performance and immutable daily release controls."
+actual_result: "Hosted correction 81206c540 passed full static and native Windows controls but correctly failed one npm 12 receipt branch at 51341/51342. The added real-packing compatibility case passes focused packer 92/92 lines, 96/96 statements, 8/8 functions and 67/67 branches; linked 165 and 115-case suites, types and lint pass. Prior complete consumer smoke and artifact budgets remain valid. Renewed complete hosted coverage and all required exact-head checks are required before PR #1421 merges."
 component: release/package-artifact
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,implements,"2026-10-06T15:54:12.093Z","harness:codex","cli:create:dep",detected
   pm-r61juc,verifies,"2026-10-06T20:49:00.345Z","harness:codex","cli:update:dep",detected
-comments[20]{created_at,author,text}:
+  pm-92if,related,"2026-10-06T21:25:55.935Z","harness:codex","cli:update:dep",detected
+  pm-js0r,related,"2026-10-06T21:25:55.935Z","harness:codex","cli:update:dep",detected
+comments[25]{created_at,author,text}:
   "2026-10-06T15:54:12.093Z","harness:codex","Duplicate check: strict full all-status corpus contains 2898 items with no omissions or unreadable records; request-specific CLI searches plus exact complete-corpus scans identify no Bun receipt or shrinkwrap-specific owner. Existing broad recovery/release owners and completed precursors remain canonical. This item records the distinct GitHub defect, with reproduction and remediation in the same reviewed delivery."
   "2026-10-06T16:39:20.888Z","harness:codex","Publish lifecycle refinement: retain the existing prepublishOnly build contract and require runtime-lock validation in prepack, which npm executes for pack and publish. Static, version and artifact checks also enforce the projection. SDK consumers declare bounded optional Node types themselves. Packed npm/npx/bunx acceptance passed in a fresh executor cache; installed dependency version/integrity proof and final current-head gates remain underway."
   "2026-10-06T16:50:21.671Z","harness:codex","Real install negative control: host npm 12.0.2 packed no npm-shrinkwrap.json and a fresh isolated global install resolved @opentelemetry/core 2.12.0 instead of tested 2.11.0. The proposed shrinkwrap alone therefore does NOT fulfill install reproducibility. Current npm/cli primary documentation explicitly states npm v12 ignores published shrinkwraps and directs locked publishers to bundleDependencies: https://github.com/npm/cli/blob/latest/docs/lib/content/configuring-npm/package-lock-json.md . Investigating a bounded tested production bundle and verifying actual packed versions across npm/npx/Bun before closure. No installed-tree success is claimed."
@@ -46,6 +48,11 @@ comments[20]{created_at,author,text}:
   "2026-10-06T21:07:13.993Z","harness:codex","SDK timing investigation: all eight modules in the authoring entrypoint static import closure are byte-identical to the previously accepted staged tarball. An unchanged five-sample, one-warm-up diagnostic across all ten SDK exports now passes the same compareEntrypointBudgets policy with zero violations: Node26.9 baseline p50=52ms, authoring p50=133ms under its unchanged 164ms admitted ceiling, p95=173ms and peak RSS=68722688 bytes. The two prior 192ms/189ms failures are preserved. This demonstrates timing variability, not proof of a particular host cause; no budget, sample count, cache policy or source is changed. Required hosted full static admission remains authoritative for the pushed correction head."
   "2026-10-06T21:10:09.076Z","harness:codex","Combined correction verification: linked run test-local-mux5s4bi-evg76d passes 114 focused real cases and test-local-mux5p0lt-20e46e renews packed public SDK plus Node/Bun/npx/bunx acceptance. Actual artifact budget passes with 19,979,822 application bytes / 1,757 files and 23,334,884 runtime bytes / 4,731 files, no source maps. The unchanged full static chain retained SDK timing failures; diagnostic admission passed independently. Subsequent transport-floor receipt test-local-mux6610u-1pnxds failed latency for get/context/next/create. These failures are preserved without threshold changes or claims about host causation; mandatory hosted static and canonical coverage remain required for the correction head."
   "2026-10-06T21:11:32.641Z","harness:codex","Remaining unchanged structural and mutation admission passed in linked receipt test-local-mux6bghg-yhaais: graph-composition all 9 assertions, prose gaps 1230 under the unchanged 1236 ceiling; record-integrity counts 71894 append-only events above the 47588 ratchet; mutation 329/336 killed with 7 previously classified equivalent survivors, admitted by the separate mandatory policy. All local failed timing receipts remain in history. Implementation and local package acceptance are complete; hosted whole-chain static, canonical 100% coverage and native Windows admission will be required before merge of PR #1421."
+  "2026-10-06T21:23:32.863Z","harness:codex","Hosted correction head 81206c540 passed static, Windows, typecheck, actionlint and runtime checks. Canonical coverage and Codecov patch correctly refused one uncovered packer branch; all four source coverage dimensions remain exact required thresholds. Reopen this owner only to add an authentic boundary regression and renew complete hosted admission. No threshold, coverage scope or provider filter changes."
+  "2026-10-06T21:25:57.759Z","harness:codex","Round-two full provider inventory was read after all hosted checks finished: no reviews or inline threads; edited CodeRabbit capacity report, edited CodSpeed receipt, new CodeRabbit command response and Codecov finding were all reacted to and acknowledged by exact revision. Codecov red proof is 51341/51342 branches; other dimensions are fully covered. Direct authenticated standard Greptile review refused free_reviews_limit_reached. Sourcery remains rolling-budget limited and CodeRabbit 159/100-file limited; no unavailable review is treated as approval. Chrome confirms correction-head DeepScan zero new issues and CodeFactor PR no issues. CodeFactor main separately retains two generated standalone plugin-copy reports, with canonical context pm-js0r and pm-92if; no new duplicate owner is created."
+  "2026-10-06T21:25:59.025Z","harness:codex","Live operational observation during review: required Sentry/telemetry reliability gate passed with zero recent unresolved high/critical issues, telemetry error rate 3.25% under unchanged 6% bound and zero missing error codes. Local queue flush drained one valid row; later status produced its own new row. Collector observed 2664 events in ten minutes with newest-event age 0.704 seconds. Recent issue and 24-hour trace reads were complete and empty; trace completeness and logging every possible action are not inferred from these observations. These operational measurements are distinct from publication and merge evidence."
+  "2026-10-06T21:26:44.152Z","harness:codex","The missing hosted branch was npm 12 keyed receipt normalization on the npm 11 runner. Added one behavioral boundary case that delegates both calls to real npm, retains the complete actual source/final receipts, and adapts only their envelope to npm 12 format; it verifies runtime conflict locations and a real written tarball. No artificial files, fabricated success, source exclusion or threshold change. Focused packer tests and all four TypeScript projects plus ESLint pass; native linked selection renews both distribution and correction suites. Hosted 81206c540 already proved the complete unchanged static chain and native Windows fixes; new canonical coverage remains required."
+  "2026-10-06T21:27:54.048Z","harness:codex","Coverage correction verified: native linked receipt test-local-mux6uzgv-tf77qb passes the 165-case distribution suite and 115-case correction suite. Focused actual packer coverage now reports exact 92/92 lines, 96/96 statements, 8/8 functions and 67/67 branches with 26 real acceptance/rejection tests. This is focused evidence; final full-source hosted coverage remains mandatory. Types and ESLint pass; failed previous canonical 51341/51342 branch receipt is preserved. Only this owner was reopened and claimed during this correction."
 notes[1]{created_at,author,text,edited_at}:
   "2026-10-06T15:54:12.093Z","harness:codex","GitHub issue #1417: https://github.com/unbraind/pm-cli/issues/1417\n\n## Problem\n\n`npm install -g @unbrained/pm-cli@<exact version>` is not reproducible: the published package has no `npm-shrinkwrap.json`, so every install re-resolves the transitive tree from caret ranges at install time. Pinning the CLI version pins nothing below it.\n\nOn 2026-10-06 this broke every CI job that installs a pinned CLI, with no change on our side:\n\n```\nnpm install -g @unbrained/pm-cli@2026.10.5\nnpm error code ETARGET\nnpm error notarget No matching version found for @opentelemetry/resources@2.12.0.\n```\n\nA few minutes later the same command failed with `E404 GET .../@opentelemetry/sdk-trace/-/sdk-trace-2.12.0.tgz`. The OpenTelemetry 2.12.0 release was propagating: the packuments already listed 2.12.0 (published 13:40:53Z; our failing install ran at 13:40:43Z) before the tarballs were served. The packages come in transitively through `@sentry/node` (pinned at `10.75.1`, but its own OpenTelemetry deps use `^` ranges). Every downstream repo that pins `@unbrained/pm-cli@X` as a test oracle or tool failed at once: Linux, macOS and Windows jobs, required checks included.\n\nRelated: `dependencies` includes `\"@types/node\": \">=22\"`. That is an unbounded range on a type-only package, so a global install pulls whatever `@types/node` major is newest. Type definitions are not needed at runtime, and an open-ended `>=` is the least reproducible range there is.\n\n## Proposal\n\n1. Publish `npm-shrinkwrap.json` with the CLI package (npm honours it for both `npm i -g` and `npx`), generated from the release lockfile that CI actually tested. A pinned CLI version then installs exactly the tree that passed the release gates. Bun's `bunx`/`bun add -g` ignore shrinkwrap, so also document `--frozen-lockfile`-equivalent guidance, or accept that Bun floats.\n2. Move `@types/node` to `devDependencies`. If consumers of the SDK types need it, use `peerDependencies` + `peerDependenciesMeta.optional`, with a bounded range (`^22 || ^24 || ^26`).\n3. Optional: a release gate that installs the packed tarball with `--prefer-offline=false` into an empty prefix, and fails if the resolved tree differs from the tested lockfile.\n\n## Acceptance\n\n- `npm view @unbrained/pm-cli@<next> _hasShrinkwrap` is `true`.\n- Installing the same CLI version on two different days resolves byte-identical `node_modules` (same integrity hashes).\n- `@types/node` is no longer a runtime dependency.","2026-10-06T15:55:24.563Z"
 learnings[2]{created_at,author,text}:
@@ -134,7 +141,7 @@ tests[6]:
       source_kind: local_mutation
       source_ref: fix/prose-census-bun-receipts-runtime-bundles
     note: Independent remaining structural and mutation admission; prior timing failures remain recorded and full hosted static admission is mandatory
-test_runs[9]:
+test_runs[10]:
   - run_id: test-local-mux0zapq-m4q111
     kind: test
     status: failed
@@ -236,10 +243,22 @@ test_runs[9]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",tracker,tracker,source,local_source_ref
+  - run_id: test-local-mux6uzgv-tf77qb
+    kind: test
+    status: passed
+    started_at: "2026-10-06T21:25:40.437Z"
+    finished_at: "2026-10-06T21:26:27.343Z"
+    recorded_at: "2026-10-06T21:26:27.343Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/runtime-lock.spec.ts tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts tests/unit/scripts/sync-versions.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts --maxWorkers=2,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/lifecycle-evidence-control.spec.ts tests/unit/scripts/development-dependencies.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts --maxWorkers=2,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/RELEASING.md,project
   docs/SDK.md,project
-close_reason: "Implemented tested runtime closure and combined review corrections; release claims, retain failures, require hosted admission before merge."
+close_reason: "Implemented tested runtime closure and all discovered review corrections, including real npm 12 receipt compatibility; retain complete failed and successful evidence."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependencies,dev-dependency,mcp,security
 created_at: "2026-10-06T17:57:49.769Z"
-updated_at: "2026-10-06T20:26:03.373Z"
+updated_at: "2026-10-06T21:27:52.938Z"
 closed_at: "2026-10-06T20:20:05.977Z"
 completed_at: "2026-10-06T20:20:05.977Z"
 author: "harness:codex"
@@ -29,10 +29,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1417,discovered_from,"2026-10-06T17:57:49.769Z","harness:codex","cli:create:dep",detected
   pm-iktual,related,"2026-10-06T17:57:49.769Z","harness:codex","cli:create:dep",detected
   pm-mlpn91,related,"2026-10-06T17:57:49.769Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-06T17:57:49.769Z","harness:codex","Duplicate check: current strict full corpus contains 2900 items across every status with no unreadable items or omissions; exact GHSA and CVE searches find no owner. Existing MCP Apps refresh and qs remediation have different completed scope. Advisory: https://github.com/advisories/GHSA-6qxp-vccf-f47h"
   "2026-10-06T18:02:14.892Z","harness:codex","Dependency boundary evidence: src/sdk/mcp/apps.ts consumes only erased ext-apps/server metadata types. No repository imports or calls use upstream authProvider; withOAuth; auth; fetchToken; or bundled OAuth providers. The vulnerable library path is present only in development peers. Ranged peer overrides retained stale 2.0.0 contexts; exact aligned client/core 2.2.0 overrides plus native fix-lockfile resolution replaced all affected instances. Current frozen install and audit pass with no cooldown exclusions or runtime dependency changes."
   "2026-10-06T20:26:03.373Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1421 . Implementation source 857049db83b08ad029c38ddcffd33a33bd8b2056 includes this owner, immutable closure evidence and the generated changelog. Required hosted checks and reviewer feedback are pending; local exact coverage and acceptance receipts are recorded above."
+  "2026-10-06T21:27:52.938Z","harness:codex","Security report correction: native lock repair removed valid hasBin entries as a side effect. Related owner pm-gh1417 restores all 28 unchanged executable declarations and synchronizes two runtime ledger entries while retaining the patched client/core 2.2.0 overrides and all 40 production package versions/integrity values. A cold frozen offline install proves complete CodSpeed launchers under the unchanged program/hash policy. Required hosted static and Trivy passed on correction head 81206c540. The managed private remediation report now records the initial launcher regression and correction explicitly; no obsolete-metadata claim remains in that report."
 learnings[1]{created_at,author,text}:
   "2026-10-06T20:19:38.927Z","harness:codex","Peer override ranges can retain stale pnpm peer contexts. Align the affected client and core at tested exact versions, repair the lock natively, prove frozen installation and audit the installed graph. Source-to-sink inspection distinguishes erased metadata types from reachable OAuth token flows."
 files[4]{path,scope}:

@@ -1,4 +1,7 @@
-import { execFileSync } from "node:child_process";
+import {
+  execFileSync,
+  type ExecFileSyncOptionsWithStringEncoding,
+} from "node:child_process";
 import {
   mkdtemp,
   mkdir,
@@ -268,6 +271,45 @@ it("uses npm's Node entrypoint on Windows and writes a real distributable tarbal
   expect(
     await readFile(path.join(destination, artifact.filename)),
   ).not.toHaveLength(0);
+}, 60_000);
+
+it("packs real npm artifacts through the npm 12 keyed receipt format", async () => {
+  const { root, manifest } = await createBundleFixture();
+  const destination = await harness.createTempRoot("pm-keyed-publication-");
+  // npm 11 returns arrays; npm 12 keys the same real packing receipt by name.
+  // Preserve real child execution and filesystem output on either CI version.
+  const execute = vi.fn(
+    (
+      file: string,
+      args: readonly string[],
+      options: ExecFileSyncOptionsWithStringEncoding,
+    ) => {
+      const receipt: unknown = JSON.parse(execFileSync(file, args, options));
+      return JSON.stringify({
+        [manifest.name]: Array.isArray(receipt)
+          ? receipt[0]
+          : (receipt as Record<string, unknown>)[manifest.name],
+      });
+    },
+  );
+  vi.doMock("node:child_process", () => ({ execFileSync: execute }));
+  const module = await harness.importModule<{
+    packDistribution: typeof packDistribution;
+  }>("scripts/release/package-distribution.mjs");
+  const artifact = module.packDistribution(root, { destination });
+  expect(artifact.name).toBe(manifest.name);
+  expect(artifact.files).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ path: "node_modules/first/package.json" }),
+      expect.objectContaining({
+        path: "node_modules/second/node_modules/shared/package.json",
+      }),
+    ]),
+  );
+  expect(
+    await readFile(path.join(destination, artifact.filename)),
+  ).not.toHaveLength(0);
+  expect(execute).toHaveBeenCalledTimes(2);
 }, 60_000);
 
 it.each([
