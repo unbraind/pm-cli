@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: cross-platform,nightly,sdk,testing
 created_at: "2026-10-06T11:38:31.267Z"
-updated_at: "2026-10-06T11:55:27.755Z"
+updated_at: "2026-10-06T12:26:04.942Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7343c36984a44dc1559b5333"
 author: "harness:codex"
@@ -24,18 +24,21 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1393,discovered_from,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
   pm-gh1393,verifies,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-10-06T11:38:31.267Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-06T11:38:31.267Z","harness:codex","Duplicate check: strict live all-status corpus returned 2897 of 2897 with complete reads and zero omissions or unreadable rows. Exact run and issue-number searches found no existing owner. Exact fixture-path matches identify shipped pm-2x67z9 and pm-gh1393 whose complete live metadata and verified histories were read. The generic platform-recurrence measurement issue does not own these specific fixture repairs. Open and in-progress inventories were refreshed."
   "2026-10-06T11:46:34.014Z","harness:codex","Red evidence: scheduled run 37454181508 at 6436916 has real macOS approved-byte verifier failure and both Windows schema-policy cases rejected by the Node ESM loader. Full affected fixtures and workflows were read before editing. The bounded repair uses a canonical file URL and actual Node SHA-256 comparison before chmod while keeping the same immutable digest and both corrupt-byte and genuine history-drift refusals. Nightly explicitly provisions the existing pinned Bun 1.4.0 for new packed dual-runtime acceptance. The completed SDK source coverage remains byte-unchanged."
   "2026-10-06T11:55:27.755Z","harness:codex","Local platform tranche passes all 21 linked cases, including actual approved/corrupt SHA-256 verification before chmod and real source/global history drift refusal. Fresh official Codecov v11.3.1 release metadata still publishes the exact pinned digest and 10402464-byte asset; no pin or security condition changed. Latest pm-changelog 2026.10.5 generates and checks the three completed delivery records. The full-source 9789-case coverage receipt remains unchanged by the subsequent workflow and fixture-only portability fixes. Fresh branch-head nightly macOS and Windows proof is still required before this issue closes."
-files[4]{path,scope}:
+  "2026-10-06T12:20:56.205Z","harness:codex","Fresh source-head Nightly Validation 37459991720 at 640502925 passes nightly quality, exact full coverage on Linux Node24, Node22/25, macOS Node24 and Windows shard2. The original generated-import and checksum-option failures are fixed. Windows shard1 finds a separate fixture assertion in the new init-guidance test: raw backslashes are compared to escaped TOON output. Runtime scope and guidance actions are correct; require the exact JSON-escaped path representation in the human receipt and retain real status/add byte-preservation checks. Extend this same platform owner rather than duplicate or reopen the shipped SDK contracts. Local import-cost attempts on Node26 and Node24 exceeded unchanged bounds; actual hosted nightly quality passes them. Preserve local failures as environment-specific measurements without claiming their cause or relaxing the gate."
+  "2026-10-06T12:26:04.942Z","harness:codex","The expanded linked platform suite passes 22 cases. Controlled alternating fresh-process measurements of rebuilt main and candidate SDK graph bundles on the same Node26.9 runtime give main p50 105ms and candidate p50 100ms with five runs each; both are below the unchanged 172ms admission ceiling. This does not identify the cause of earlier local timing failures. The complete hosted quality job already passes the unchanged cost, graph, history and mutation gates. Source coverage remains unchanged; the only new fixture change expects the exact escaped path instead of raw backslashes."
+files[5]{path,scope}:
   .github/workflows/ci.yml,project
   .github/workflows/nightly.yml,project
+  tests/integration/cli/init-guidance-display.integration.spec.ts,project
   tests/integration/release/codecov-verified-upload.integration.spec.ts,project
   tests/integration/workspace/schema-settings-history.integration.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-06T11:38:35.563Z",local_mutation,fix/lossless-pagination-typed-conflicts-agent-recovery
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-06T12:22:40.978Z",local_mutation,fix/lossless-pagination-typed-conflicts-agent-recovery
+test_runs[2]:
   - run_id: test-local-muwm5q72-qf5676
     kind: test
     status: passed
@@ -47,6 +50,17 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muwng2wd-l7uaor
+    kind: test
+    status: passed
+    started_at: "2026-10-06T12:22:41.652Z"
+    finished_at: "2026-10-06T12:22:59.245Z"
+    recorded_at: "2026-10-06T12:22:59.245Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/init-guidance-display.integration.spec.ts tests/integration/workspace/schema-settings-history.integration.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

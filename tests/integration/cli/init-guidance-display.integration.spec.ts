@@ -18,7 +18,7 @@ describe("compact init guidance recovery (GH-1407)", () => {
       expect(initial.stdout).toContain("agent_guidance:missing_non_interactive");
       expect(initial.stdout).toContain("--agent-guidance status");
       expect(initial.stdout).toContain("--agent-guidance add");
-      expect(initial.stdout).toContain(tracker);
+      expect(initial.stdout).toContain(JSON.stringify(tracker));
       expect(await readFile(agentsPath, "utf8")).toBe(original);
       const sdkResult = await new PmClient({ pmRoot: tracker, noExtensions: true }).init(undefined, { yes: true });
       expect(sdkResult.warnings).toContain("agent_guidance:missing_non_interactive");
