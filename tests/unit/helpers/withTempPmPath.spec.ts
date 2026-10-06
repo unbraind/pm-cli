@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readSettings } from "../../../src/core/store/settings.js";
 import {
   applyTempPmEnv,
@@ -41,5 +41,36 @@ describe("withTempPmPath env helpers", () => {
         author_default: "test-author",
       });
     });
+  });
+
+  it.each([
+    { debug: "1", failed: true, notification: true },
+    { debug: "0", failed: true, notification: false },
+    { debug: "1", failed: false, notification: false },
+  ])("keeps worker diagnostics private with debug=$debug and failed=$failed", async ({ debug, failed, notification }) => {
+    vi.stubEnv("PM_TEST_CLI_BRIDGE_DEBUG", debug);
+    vi.stubEnv("PM_TEST_CLI_RUNNER", "bridge");
+    const diagnostic = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await withTempPmPath(async ({ runCli }) => {
+        const privateArgument = "pm-private-debug-example";
+        const result = runCli(failed ? [privateArgument] : ["--version"]);
+        expect(result.status).toBe(failed ? 2 : 0);
+        if (failed) {
+          // The real CLI still returns the private input to its caller. Only
+          // the bridge's automatic log broadcast must exclude it.
+          expect(result.stderr).toContain(privateArgument);
+        } else {
+          expect(result.stdout.trim()).toMatch(/^\d{4}\.\d+\.\d+$/u);
+          expect(result.stderr).toBe("");
+        }
+        expect(diagnostic.mock.calls).toEqual(notification ? [[
+          "[cli-bridge] CLI invocation failed; inspect the returned result for its exit status and captured stderr.",
+        ]] : []);
+      });
+    } finally {
+      diagnostic.mockRestore();
+      vi.unstubAllEnvs();
+    }
   });
 });

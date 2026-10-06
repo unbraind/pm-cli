@@ -21,6 +21,11 @@ is tracked by [pm-8nev0o](../.agents/pm/issues/pm-8nev0o.toon) and
 projection discovery is tracked by
 [pm-q4isdq](../.agents/pm/issues/pm-q4isdq.toon). Shared graph defaults and
 scale enforcement are tracked by [pm-mfy1ux](../.agents/pm/issues/pm-mfy1ux.toon).
+Combined ceiling coordinates, explicit-selector receipt cost, and executable
+global projection retries are tracked by
+[pm-gh1411](../.agents/pm/issues/pm-gh1411.toon),
+[pm-gh1408](../.agents/pm/issues/pm-gh1408.toon), and
+[pm-gh1386](../.agents/pm/issues/pm-gh1386.toon).
 
 For enforcement of declared MCP input options in repository tests, see
 [MCP Option Conformance](MCP_OPTION_CONFORMANCE.md).
@@ -199,6 +204,15 @@ when several groups are needed. This remains truthful for leaf items because
 an explicit children projection returns an empty rollup instead of silently
 conflating “no children” with “children were not requested.”
 
+Explicit `get --fields` selection defines the requested answer. Its receipt
+describes that selection, so intentionally unselected groups do not generate
+restoration rows. The existing complete-receipt shape remains available, and
+requested empty collections and canonical identity remain explicit. Default
+and depth reads retain material-group restoration instructions. A token budget
+that shortens requested strings or collections still emits the shared
+`read_output` and budget-truncation evidence; a complete field-selection
+receipt does not certify that later budget shaping preserved every value.
+
 ## Intent Budgets
 
 Built-in read intents apply valid command-specific defaults and disclose the
@@ -274,6 +288,10 @@ Full/projection conflicts retain the selected full or brief mode and remove the
 conflicting projection and intent controls. If that correction cannot be
 constructed safely, the error does not advertise an automatic retry.
 Tracked by [pm-gh1364](../.agents/pm/issues/pm-gh1364.toon).
+Global `--output-include` conflicts are removed with their consumed values,
+including attached values and options before the subcommand. The surviving
+command-local mode keeps its original option position. An ambiguous mode
+location does not produce an automatic retry.
 
 For a budget-compacted producer page, follow
 `output_budget_truncation.recovery.cursor` with `--output-cursor`, keeping the
@@ -284,6 +302,11 @@ actual filter and scope changes still invalidate its cursor. Emitted `count`
 and `summary.returned_focus` describe delivered rows; matching-population totals
 remain separate, including explicit count-only aggregates. Context hierarchy companions may repeat while continuing a
 focus collection. Tracked by [pm-gh1371](../.agents/pm/issues/pm-gh1371.toon).
+When `--output-limit` and `--output-budget` both reduce a page, snapshot counts
+and fingerprints are captured before either row ceiling. Producer cursors
+rebase from the original page coordinate, so an unchanged output continuation
+is accepted and deletion of its last delivered identity cannot skip withheld
+rows through positional fallback. Filter and tracker-scope checks still apply.
 
 The first cursor page carries the complete projection, filtering, sorting,
 completeness, row, and omission contracts. Continuation pages replace those

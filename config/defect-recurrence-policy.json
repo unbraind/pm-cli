@@ -139,7 +139,7 @@
     },
     {
       "id": "security-scanner-finding",
-      "version": 3,
+      "version": 4,
       "title": "Secret, dependency, and static-analysis findings",
       "owner_item_id": "pm-6ixn",
       "escape_class": "scanner_finding",
@@ -150,14 +150,22 @@
           "pnpm-workspace.yaml",
           "pnpm-lock.yaml",
           "scripts/check-secrets.mjs",
+          "tests/helpers/cliWorkerBridge.ts",
+          "tests/unit/helpers/withTempPmPath.spec.ts",
           ".github/workflows/security.yml"
         ],
         "item_ids": ["pm-qgvj", "pm-4ris"],
         "tags": ["security", "codeql", "semgrep"]
       },
       "checks": {
-        "local": ["pnpm security:scan", "pnpm audit", "pnpm audit --prod"],
+        "local": [
+          "pnpm security:scan",
+          "pnpm quality:dependencies",
+          "pnpm audit --prod",
+          "node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts"
+        ],
         "hosted": [
+          "CI / Gates (coverage)",
           "CodeQL / Analyze (javascript-typescript)",
           "Security and Script Quality / TruffleHog",
           "Security and Script Quality / Trivy"
@@ -166,7 +174,7 @@
       "negative_control": {
         "item_ids": ["pm-qgvj"]
       },
-      "historical_item_ids": ["pm-qgvj", "pm-4ris", "pm-2cv2o1"],
+      "historical_item_ids": ["pm-qgvj", "pm-4ris", "pm-2cv2o1", "pm-r61juc"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.02

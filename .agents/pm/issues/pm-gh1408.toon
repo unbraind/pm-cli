@@ -2,11 +2,13 @@ id: pm-gh1408
 title: "GH-1408: Reduce omission receipt overhead for explicit scalar field projections"
 description: Explicit field reads spend most emitted bytes on restoration hints for intentionally excluded groups; define a compact caller-selected omission policy without hiding unexpected truncation or changing read identity.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-05T10:28:03.891Z"
-updated_at: "2026-10-05T10:28:03.891Z"
+updated_at: "2026-10-06T06:16:43.520Z"
+closed_at: "2026-10-06T06:16:42.829Z"
+completed_at: "2026-10-06T06:16:42.829Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Prove complete serialized byte/token savings for explicit selectors on material and empty records across CLI SDK and MCP; preserve minimum identity and requested empty values; retain truthful default/depth receipts and requested-field truncation; preserve alias/provenance and final token accounting; extend existing primary regressions and verify real temporary-directory Node Bun npx bunx consumers without relaxing mandatory gates.
@@ -20,8 +22,9 @@ reporter: GitHub issue #1408
 severity: medium
 environment: Installed pm 2026.10.5 TOON explicit get field projection
 repro_steps: Read a material item with pm get <id> --fields status; measure the complete UTF-8 output and its omission_receipt section separately.
-expected_result: Explicit scalar reads spend their budget on the requested answer while unexpected truncation remains discoverable and defaults retain restoration evidence.
-actual_result: "Read-only current CLI observation: 419 total UTF-8 bytes; 376 receipt bytes (89.74 percent); eight intentionally unselected groups. No implementation yet."
+resolution: "Explicit get field selection now receives a compact complete selection receipt while preserving canonical identity, requested empty values and independent requested-field budget evidence; default/depth restoration remains truthful."
+expected_result: Reduce serialized selected-field cost without hiding budget truncation or removing restoration instructions from default and depth reads.
+actual_result: Primary material-receipt and CLI/SDK parity suites passed; all 15 assertion-sensitive evidence controls retained. Real packed Node/Bun selected-status responses are 206 bytes; default/depth attribution and requested-empty cases pass.
 affected_version: 2026.10.5
 component: sdk/output-projection
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
@@ -31,15 +34,78 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1389,verifies,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
   pm-gok2km,discovered_from,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
   pm-p258tx,implements,"2026-10-05T10:28:03.891Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-05T10:28:03.891Z","harness:codex","Duplicate check: request-specific live search plus strict full all-status corpus 2889/2889 with zero omissions and current open/in_progress inventories found no owner for this explicit-selector overhead policy. Four completed receipt predecessors and the open whole-response budget parent were read in full. This canonical intake preserves their shipped scopes and requires implementation before closure."
-files[5]{path,scope,note}:
-  src/sdk/query/get.ts,project,Existing explicit item selector boundary
-  src/sdk/output-projection.ts,project,Existing receipt policy primitive
-  src/core/output/output.ts,project,Existing serialized output and cost boundary
-  tests/unit/sdk/output-projection.spec.ts,project,Primary future regression owner; extend instead of duplicating
-  tests/unit/commands/query/get-append-command.spec.ts,project,Existing sparse identity and empty collection acceptance owner
-docs[2]{path,scope}:
+  "2026-10-06T04:53:43.326Z","harness:codex","Live continuation scope: complete strict corpus 2894/2894 with zero unreadable records, omissions or truncation; selected full metadata and verified complete history read. Deliver composed read ceilings, deliberate-field omission cost, executable projection recovery and prepared source-map/worker privacy repairs in one PR. Only these five owners are active. No duplicate intake created. Auto-release run37414884541 failed specifically on source-map-js before publication; patched lock is part of this delivery."
+  "2026-10-06T04:59:32.759Z","harness:codex","TDD evidence: original implementation fails the same newly extended primary fixtures before source correction. Combined ceiling resumes refuse read_output_cursor_stale and the positional coordinate is19 where14 is required; explicit status receipts include deliberately excluded children/claim_state; full/global selector recovery repeats its invalid invocation. After correction, original uncapped collection state drives cursor fingerprints and offsets, explicit selectors define receipt scope, and global selector removal preserves command-local mode placement. Real persisted temporary trackers and existing transport matrices own the proof, without new production test seams or duplicate suites. Final full coverage and hosted review remain pending."
+  "2026-10-06T05:01:46.786Z","harness:codex","Explicit-selection policy preserves the original complete receipt shape and scopes it to the caller-selected answer, rather than listing deliberately excluded groups. Default/depth restoration remains material. Retained schedule/artifact regression tables now assert the actual persisted requested alias values independently, including requested empty collections; they still prove unselected placeholders carry no payload. Removed the now unreachable explicit-selector attribution branch from default/depth materiality. Budget/string/row truncation keeps separate shared evidence."
+  "2026-10-06T05:17:26.946Z","harness:codex","The retained real materiality fixture now checks selected status and item.status, canonical ID, requested empty notes/tests/docs and attributed dependency projections. Reconstruct the prior receipt around the same selected payload and require the emitted answer to use under70 percent of those bytes. Existing scheduling/artifact regression cases continue to verify actual requested reminder/event/deadline and artifact values; default and depth material omission/provenance receipts stay covered. Pure generic caller-supplied projection contracts remain unchanged."
+  "2026-10-06T05:28:13.203Z","harness:codex","Canonical full-source run retained failure receipt:9780 pass/2 fail/2 platform skips across776 files. The changed explicit-field policy exposes one stale CLI/SDK alias parity expectation (children was previously reported deliberately omitted), and the independent consistency control still anchors the removed hasOmittedDependencyProvenance helper. Its negative source mutation cannot match and leaves3 control-script branches/1 statement uncovered. Retain all15 safe and15 assertion-sensitive unsafe controls; update the first two anchors to independently test default withheld attribution and full restoration, without deleting controls or weakening source coverage. The default scheduling/artifact rows retain their material-alias negative controls."
+  "2026-10-06T05:30:00.803Z","harness:codex","Isolated preview of the revised control anchors passes the unchanged negative controller contract: all15 controls execute selected real tests and exit1 from behavior AssertionError, including default attribution withholding, full restoration and default schedule/artifact aliases. No control is removed, no timeout changes, and source-match cardinality still must be exactly one. Await the active static run before applying the two retained fixture corrections to the checkout."
+  "2026-10-06T06:16:41.378Z","harness:codex","Delivery evidence for PR https://github.com/unbraind/pm-cli/pull/1412: fresh canonical coverage passed 9,782 tests with two platform skips; all 764 executable coverage rows and all 66,833 statements, 51,158 branches, 13,806 functions and 63,694 lines are fully covered, with zero skipped coverage counts. Four TypeScript projects, credential and doc-link checks, real packed Node/Bun/npx/bunx acceptance and unchanged security admission pass. Exact head 3af31b07b71d5892c03b200683cf2273628a2beb passed all 26 required hosted contexts, including the complete static command. Earlier failed local timing and stale-fixture receipts remain in history. All five initial bot artifacts were read, voted and specifically acknowledged; explicit source reviews remain pending and will be requested after closeout. Native default-branch alert retirement and exact public publication remain separate post-merge checks."
+learnings[1]{created_at,author,text}:
+  "2026-10-06T05:31:35.103Z","harness:codex","Explicit field selectors define the requested answer. Omission materiality describes accidental loss or default/depth withholding, while deliberate selection should preserve only selected data, stable identity, requested empties and a compact complete receipt. Keep budget disclosure independent, and update genuine source-mutant controls whenever a policy removes their old anchor."
+files[8]:
+  - path: scripts/release/agent-evidence-consistency-control.mjs
+    scope: project
+  - path: src/core/output/output.ts
+    scope: project
+    note: Existing serialized output and cost boundary
+  - path: src/sdk/output-projection.ts
+    scope: project
+    note: Existing receipt policy primitive
+  - path: src/sdk/query/get.ts
+    scope: project
+    note: Existing explicit item selector boundary
+  - path: tests/integration/sdk-context-integrity.integration.spec.ts
+    scope: project
+  - path: tests/unit/commands/query/get-append-command.spec.ts
+    scope: project
+    note: Existing sparse identity and empty collection acceptance owner
+  - path: tests/unit/regressions/actionable-get-receipts.spec.ts
+    scope: project
+  - path: tests/unit/sdk/output-projection.spec.ts
+    scope: project
+    note: Primary future regression owner; extend instead of duplicating
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,240,"harness:codex","2026-10-06T04:59:30.399Z",local_mutation,fix/composed-read-cursors-projection-recovery-security
+  node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts,project,240,"harness:codex","2026-10-06T05:01:45.725Z",local_mutation,fix/composed-read-cursors-projection-recovery-security
+  node scripts/run-tests.mjs test -- tests/integration/sdk-context-integrity.integration.spec.ts tests/unit/scripts/agent-evidence-consistency-control.spec.ts,project,240,"harness:codex","2026-10-06T05:37:23.718Z",local_mutation,fix/composed-read-cursors-projection-recovery-security
+test_runs[2]:
+  - run_id: test-local-muw7qrbl-pklzue
+    kind: test
+    status: passed
+    started_at: "2026-10-06T05:02:50.820Z"
+    finished_at: "2026-10-06T05:03:23.601Z"
+    recorded_at: "2026-10-06T05:03:23.601Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/regressions/actionable-get-receipts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muw901kw-cmorps
+    kind: test
+    status: passed
+    started_at: "2026-10-06T05:37:24.297Z"
+    finished_at: "2026-10-06T05:38:36.415Z"
+    recorded_at: "2026-10-06T05:38:36.415Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk-context-integrity.integration.spec.ts tests/unit/scripts/agent-evidence-consistency-control.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
   docs/SDK_CONTEXT_EVIDENCE_CONTRACTS.md,project
+close_reason: Implemented and independently verified; reviewed delivery remains in PR1412.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: explicit-get-receipt-cost
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/output-projection.spec.ts tests/unit/commands/query/get-append-command.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-gh1408
 body: "GitHub report: https://github.com/unbraind/pm-cli/issues/1408\nReported package: 2026.10.5.\n\nAn explicit scalar selector spends most of its emitted output explaining groups that the caller intentionally excluded. The reported pm-2rqw example does not exist in this tracker, so it is not represented as a reproduced fixture. A separate live read through the current CLI, pm get pm-p258tx --fields status, succeeded and emitted 419 UTF-8 bytes; the omission_receipt section occupied 376 bytes (89.74 percent), listing eight material groups beyond the requested id/status answer. This is read-only diagnostic evidence, not an implementation or a fabricated passing regression.\n\nThe completed receipt primitive pm-p258tx, empty/default monotonicity fix pm-gok2km, sparse identity/empty preservation pm-4fwgaz and emitted-alias truthfulness pm-gh1389 remain shipped. Their full live metadata, comments, notes, learnings and complete history were read before classification. This distinct cost policy belongs under the existing whole-response budget feature pm-5t33or. No predecessor is reopened or given a second release attribution.\n\nDesign acceptance must distinguish intentional field exclusion from unexpected truncation inside a requested field. Evaluate a compact receipt for explicit selectors against compatibility needs; retain full restoration evidence for default/depth reads and genuinely withheld requested content. Preserve canonical identity, requested empty collections, alias/provenance accuracy, exact final serialized token accounting, SDK/CLI/MCP parity and existing output budgets. Extend existing primary regressions rather than creating parallel tests. This item remains open and unclaimed; no output implementation or test expectation is changed in PR #1402."

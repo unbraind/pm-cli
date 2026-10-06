@@ -23,6 +23,7 @@ import { runDirectDistCli, type DirectCliRunOptions, type DirectCliRunResult } f
 /** Per-call deadline before falling back to the spawn runner. */
 const WORKER_CALL_TIMEOUT_MS = 60_000;
 
+/** Captured CLI streams and exit status returned privately to the calling test. */
 interface WorkerCliOutcome {
   status: number;
   stdout: string;
@@ -30,27 +31,27 @@ interface WorkerCliOutcome {
   errorMessage?: string;
 }
 
+/** Per-invocation worker envelope; failed transport responses trigger spawn fallback. */
 interface WorkerResponse {
   ok: boolean;
   result?: WorkerCliOutcome;
   errorMessage?: string;
 }
 
+/** Unreferenced worker reused within this test process until transport failure. */
 let bridgeWorker: Worker | null = null;
 
-function workerScriptPath(): string {
-  return path.resolve(process.cwd(), "tests/helpers/cliWorkerBridge.worker.mjs");
-}
-
+/** Start the worker on demand without keeping the test process alive. */
 function ensureBridgeWorker(): Worker {
   if (bridgeWorker === null) {
-    bridgeWorker = new Worker(workerScriptPath());
+    bridgeWorker = new Worker(path.resolve(process.cwd(), "tests/helpers/cliWorkerBridge.worker.mjs"));
     // Never keep the vitest fork alive just because the bridge exists.
     bridgeWorker.unref();
   }
   return bridgeWorker;
 }
 
+/** Discard a failed worker before retrying through the real process boundary. */
 function teardownBridgeWorker(): void {
   if (bridgeWorker !== null) {
     void bridgeWorker.terminate();
@@ -73,6 +74,7 @@ function snapshotEnv(env: NodeJS.ProcessEnv): Record<string, string> {
   return snapshot;
 }
 
+/** Decode requested JSON output while preserving the caller's captured result. */
 function parseExpectedJson(result: DirectCliRunResult, args: string[], expectJson: boolean | undefined): DirectCliRunResult {
   if (expectJson && result.stdout.trim().length > 0) {
     try {
@@ -131,9 +133,9 @@ export function runWorkerCli(args: string[], options: DirectCliRunOptions = {}):
 
   const outcome = message.message.result;
   if (outcome.status !== 0 && process.env.PM_TEST_CLI_BRIDGE_DEBUG === "1") {
-    // Debug aid: surfacing bridged-CLI stderr, which assertion failures on
-    // exit codes otherwise swallow.
-    console.error(`[cli-bridge] pm ${args.join(" ")} -> ${outcome.status}\n${outcome.stderr}`);
+    // Arguments and captured stderr may contain private values. Leave them
+    // in the returned result for deliberate assertions, never broadcast them.
+    console.error("[cli-bridge] CLI invocation failed; inspect the returned result for its exit status and captured stderr.");
   }
   const result: DirectCliRunResult = {
     code: outcome.status,

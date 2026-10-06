@@ -1500,13 +1500,14 @@ function attachValidateDiagnosticRowContract(
       };
 }
 
-/** Apply field, amount, and repeat projections to every declared row path. */
+/** Capture continuation coordinates before amount bounds, then apply row and repeat projections. */
 function projectReadOutputRows(
   result: Record<string, unknown>,
   resolved: PmResolvedReadOutputDimensions,
   session: PmReadOutputSessionState | undefined,
   cursor: PmReadOutputCursorEnvelope | undefined,
-): Record<string, unknown> {
+  options: Record<string, unknown>,
+): { projected: Record<string, unknown>; continuationState: ReadOutputContinuationState } {
   let projected = { ...result };
   if (resolved.include?.source === "canonical") {
     projected = applyIncludeProjection(
@@ -1545,13 +1546,15 @@ function projectReadOutputRows(
   const continuationSource = result.count_only === true
     ? { ...projected, count_only: true, count: result.count }
     : projected;
+  const continuationState = captureReadOutputContinuationState(projected, resolved.command, cursor, options);
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(projected, resolved.amount.value);
   }
   refreshReadOutputDeliveredCounts(projected, continuationSource);
-  return session === undefined
-    ? projected
-    : applyReadOutputSessionReferences(projected, session);
+  return {
+    projected: session === undefined ? projected : applyReadOutputSessionReferences(projected, session),
+    continuationState,
+  };
 }
 
 /** Resolve the smallest binding per-call or remaining cross-call ceiling. */
@@ -1844,16 +1847,22 @@ function rebaseBudgetCompactedCursor(
   return true;
 }
 
+/** Producer coordinates and complete selected snapshots, captured before row ceilings. */
 interface ReadOutputContinuationState {
+  /** Per-collection identity and suffix offset for output-cursor replay. */
   collectionsBeforeBudget: ReadonlyMap<
     string,
     { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
   >;
+  /** Producer page cardinality before either amount or cost can remove rows. */
   originalItemCount: number;
+  /** Whether the source cursor points to the original page's final row. */
   cursorContinuesExistingPage: boolean;
+  /** Original producer cursor, or incoming boundary for a terminal page. */
   cursorSource: unknown;
 }
 
+/** Bind replay fingerprints and positional fallback to the uncapped selected producer page. */
 function captureReadOutputContinuationState(
   projected: Record<string, unknown>,
   command: PmReadOutputSurface,
@@ -2002,12 +2011,14 @@ export function applyReadOutputDimensions<
     return continuationReadyResult as PmReadOutputResult<Result>;
   }
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
-  let projected = projectReadOutputRows(
+  const projection = projectReadOutputRows(
     continuationReadyResult,
     resolved,
     session,
     cursor,
+    options,
   );
+  let projected = projection.projected;
   preserveReadOutputRowContract(projected, projected, options.outputRowContract === false);
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
@@ -2052,7 +2063,7 @@ export function applyReadOutputDimensions<
         receipt,
         bindingBudget,
         session,
-        captureReadOutputContinuationState(projected, resolved.command, cursor, options),
+        projection.continuationState,
         receipt.estimated_tokens,
         format,
       );
