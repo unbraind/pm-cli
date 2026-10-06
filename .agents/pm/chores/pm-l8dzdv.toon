@@ -2,20 +2,22 @@ id: pm-l8dzdv
 title: Refresh aged SonarJS 4.2.2 and TypeScript-ESLint 8.71 quality tooling
 description: Adopt the two compatible October 6 development updates older than the unchanged seven-day Dependabot cooldown. Preserve all strict gates and compiler/runtime floors; record fresh package census and canonical major-version deferrals.
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[2]: dependencies,quality
 created_at: "2026-10-06T05:07:15.461Z"
-updated_at: "2026-10-06T06:01:07.308Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2646372c50dbdd91c7e84b31"
+updated_at: "2026-10-06T06:16:57.237Z"
+closed_at: "2026-10-06T06:16:56.372Z"
+completed_at: "2026-10-06T06:16:56.372Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: "SonarJS4.2.2 and TypeScript-ESLint8.71 are installed with unchanged cooldown and peer admission; exact full-source coverage remains100/100/100/100; strict static, typecheck and real packed Node/Bun consumers pass."
 parent: pm-doxj
 risk: low
 confidence: high
-expected_result: "Both aged compatible packages install and all strict quality, coverage and packed consumer gates pass."
+resolution: "Adopt cooldown-eligible SonarJS4.2.2 and TypeScript-ESLint8.71.0 with unchanged compiler, engine, age and peer admission; refresh the latest managed pm-changelog receipt."
+expected_result: Eligible compatible updates must pass strict quality and full source coverage while keeping incompatible or younger releases with their existing canonical owners.
+actual_result: "Frozen compatible installation, all 26 required hosted contexts, four TypeScript projects, packed Node/Bun acceptance and exact 100/100/100/100 source coverage passed. Independent remaining local timing, graph, integrity and bounded mutation gates passed; failed full local timing receipts remain preserved."
 dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,related,"2026-10-06T05:07:15.461Z","harness:codex","cli:create:dep",detected
   pm-u9qqip,discovered_from,"2026-10-06T05:07:15.461Z","harness:codex","cli:create:dep",detected
@@ -26,7 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-t3jxjj,related,"2026-10-06T05:16:26.169Z","harness:codex","cli:update:dep",detected
   pm-kb5h,related,"2026-10-06T05:17:54.435Z","harness:codex","cli:update:dep",detected
   pm-5oj5,verifies,"2026-10-06T05:39:08.338Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-10-06T05:07:15.461Z","harness:codex","Duplicate check on 2026-10-06: strict all-status corpus contains 2894 readable items with zero omissions; exact version/title scan finds no owner for SonarJS 4.2.2 or TypeScript-ESLint 8.71. Search and open/in-progress inventories confirm historical refreshes are closed and no active update owner exists. Registry publication ages are 7.69 and 7.49 days; peer ranges accept ESLint10 and TypeScript6.0.3. New versions below seven days and incompatible major upgrades retain their existing policy/owners."
   "2026-10-06T05:10:27.721Z","harness:codex","The first static gate stopped on this newly created item missing acceptance criteria/risk/confidence/estimate. Added the required planning fields through pm; no quality thresholds were relaxed. The code, lint and zero-duplication portions had passed. Re-run the unchanged complete gate against the final dependency set."
   "2026-10-06T05:13:56.730Z","harness:codex","Live platform/release intake: latest scheduled Nightly run37301905006 failed Beads portable-backup identity assertions on Windows/macOS at older release commit7077aca. Full live pm-gh1409 is closed with the corresponding blocker-spelling fix shipped in PR1402/main a7c662b; do not reopen or report that older run as a current defect. Today Auto Release runs37405651221 and37414884541 failed security admission before publication of source-map-js1.2.1; this delivery inherits the reviewed local fix under pm-dba47. All30 open GitHub reports already contain canonical PM-file links, and no open PR/update PR or secret-scanning alert was present at intake."
@@ -39,6 +41,7 @@ comments[12]{created_at,author,text}:
   "2026-10-06T05:46:07.687Z","harness:codex","Live tracker validation completes without unreadable items, history drift, dangling references or active ownership violations; it retains the existing warning for170 historical closures lacking some structured resolution fields. Preserve their immutable close events rather than invent backfilled historical outcomes. This delivery will atomically close all six owners with resolution/expected/actual evidence before generating reviewed changelog."
   "2026-10-06T05:50:22.251Z","harness:codex","The full static pipeline stopped at unchanged import-cost budgets: governance 390ms versus 327ms and merge 255ms versus 226ms. A fresh isolated five-sample check, with no competing project test/build, passed every existing budget: governance median 240ms and merge 165ms. No budget, noise margin, iteration count, or platform exception changed. The prior failed receipt is retained; running the full pipeline again sequentially before fresh canonical coverage."
   "2026-10-06T05:59:37.370Z","harness:codex","The second full static run passed every gate through SDK import cost, then claim cold-start best latency measured524ms against the unchanged415ms budget. No claim-path source changed. Running the exact remaining static command suffix separately, followed by fresh full source coverage; hosted CI must still pass the full command before merge. No budget or mandatory check was removed."
+  "2026-10-06T06:16:55.631Z","harness:codex","Delivery evidence for PR https://github.com/unbraind/pm-cli/pull/1412: fresh canonical coverage passed 9,782 tests with two platform skips; all 764 executable coverage rows and all 66,833 statements, 51,158 branches, 13,806 functions and 63,694 lines are fully covered, with zero skipped coverage counts. Four TypeScript projects, credential and doc-link checks, real packed Node/Bun/npx/bunx acceptance and unchanged security admission pass. Exact head 3af31b07b71d5892c03b200683cf2273628a2beb passed all 26 required hosted contexts, including the complete static command. Earlier failed local timing and stale-fixture receipts remain in history. All five initial bot artifacts were read, voted and specifically acknowledged; explicit source reviews remain pending and will be requested after closeout. Native default-branch alert retirement and exact public publication remain separate post-merge checks."
 notes[1]{created_at,author,text}:
   "2026-10-06T05:40:56.924Z","harness:codex","Delivery scope: one BIG PR combines three context/read SDK and CLI fixes, two real security findings and two aged compatible quality-tool versions. Six owners are actively claimed; broad architecture, major migrations and historical graph programs retain canonical open lineage. Complete metadata/comments/notes/learnings were read for selected owners, including verified immutable histories; strict all-status corpus2894/2894 and raw SDK graph baseline underpin duplicate and relationship decisions."
 learnings[1]{created_at,author,text}:
@@ -116,4 +119,5 @@ docs[3]{path,scope}:
   CHANGELOG.md,project
   docs/ARCHITECTURE.md,project
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Implemented and independently verified; reviewed delivery remains in PR1412.
 body: ""

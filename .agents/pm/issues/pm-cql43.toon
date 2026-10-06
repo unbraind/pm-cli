@@ -2,20 +2,22 @@ id: pm-cql43
 title: "CodeQL 43: keep worker-bridge debug diagnostics free of raw arguments and stderr"
 description: "CodeQL js/clear-text-logging alert43 at tests/helpers/cliWorkerBridge.ts:136 has four SARIF flows from generated temporary global-path data to logged CLI arguments. This is not evidence of a leaked credential. Independently the optional PM_TEST_CLI_BRIDGE_DEBUG=1 sink prints all arguments and captured stderr into test logs. Emit only a fixed failure diagnostic while preserving the entire captured result for deliberate assertions. The harness is excluded from the published package; no actual credential leak or production exposure is established."
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-06T00:23:55.967Z"
-updated_at: "2026-10-06T05:39:06.841Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2646372c50dbdd91c7e84b31"
+updated_at: "2026-10-06T06:16:54.110Z"
+closed_at: "2026-10-06T06:16:53.255Z"
+completed_at: "2026-10-06T06:16:53.255Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Real worker synthetic-private-input regression must fail before correction and pass afterward; debug enabled failures emit only a fixed diagnostic; disabled debugging and successful calls stay silent; retain captured status/stdout/stderr and synchronous/fallback contracts; preserve complete exact source coverage and verify main CodeQL retirement.
 parent: pm-qwoy
 risk: high
 confidence: high
-expected_result: Automatic bridge debug output contains no arguments stderr or inherited environment values; callers still receive complete captured outcomes.
+resolution: "Worker debug failures emit a fixed notification instead of broadcasting CLI arguments and stderr, while captured results remain available for deliberate assertions; local and hosted admission completed. Native alert retirement remains to be verified on merged main."
+expected_result: Preserve captured command results and fallback behavior while keeping private input out of debug notifications and retaining silence for success or disabled debugging.
+actual_result: Real-worker privacy fixtures and schema integration passed; canonical full source coverage is exactly 100/100/100/100. PR CodeQL passed; default-branch alert43 retirement remains a separate post-merge observation.
 dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-6ixn,implements,"2026-10-06T00:23:55.967Z","harness:codex","cli:create:dep",detected
   pm-kvd0,discovered_from,"2026-10-06T00:23:55.967Z","harness:codex","cli:create:dep",detected
@@ -25,7 +27,7 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1411,verifies,"2026-10-06T05:22:37.193Z","harness:codex","cli:update:dep",detected
   pm-l8dzdv,verifies,"2026-10-06T05:22:37.193Z","harness:codex","cli:update:dep",detected
   pm-5oj5,verifies,"2026-10-06T05:39:06.469Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-10-06T00:23:55.967Z","harness:codex","Duplicate check: strict complete all-status corpus2892/2892 has no clear-text-logging or PM_TEST_CLI_BRIDGE_DEBUG owner. Four cliWorkerBridge matches are distinct closed historical owners; full live pm-kvd0 and verified history read. Scanner https://github.com/unbraind/pm-cli/security/code-scanning/43 . Use real worker privacy regression; no scanner dismissal exclusions or production exposure claims. Both new repairs are prepared together after BIG PR1402 merge."
   "2026-10-06T00:24:09.759Z","harness:codex","Intake command recovery: an initial flat --stdin-json item was refused before creation because its runtime custom field was not admitted in that shape. Both attempted claims correctly refused absent IDs. Re-created using declared command-specific flags and seeded typed relationships/comments; no override was used. Full SARIF shows generated sandbox path through arguments, so scanner taint alone is not proof of a leaked credential. The broad raw debug sink remains a justified bounded privacy improvement."
   "2026-10-06T00:27:17.428Z","harness:codex","TDD evidence: isolated pre-fix archive with both tracker roots sandboxed and real built worker. Initial expectation of usage exit1 was wrong and failed two setup assertions; corrected to the actual usage exit2 without changing implementation. Same corrected table then produces exactly one intended privacy failure and four passes: debug-enabled failure prints the synthetic private argument plus original CLI stderr. Source correction emits only a constant notification, keeps all captured result fields, documents bridge contracts, and inlines the trivial one-use worker-path helper. Only console output is observed; worker CLI behavior is real."
@@ -36,6 +38,7 @@ comments[10]{created_at,author,text}:
   "2026-10-06T05:20:39.578Z","harness:codex",Same linked worker suite was selected on this new branch after explicit local command trust acknowledgement. Concurrent execution waited behind the canonical full-source runner lease and reached the unchanged240-second linked-command deadline; retain that timeout receipt rather than count it as product regression or weaken the deadline. Run the focused command sequentially after the source owner releases its lease. Both development admission and the independent real source-map constructor control passed under pm-dba47.
   "2026-10-06T05:22:38.795Z","harness:codex","Verification graph direction clarification: this owner carries the canonical complete-source coverage command, so its verifies edges point to the three read/recovery fixes and the compatible-tool refresh it validates. Removed the initially reversed references through pm. This shared evidence link does not invent new feature dependencies or reopen historical contracts."
   "2026-10-06T05:32:06.346Z","harness:codex","The build lease receipt records PID3503632, verified live as node scripts/run-tests.mjs coverage. That complete-source run held the checkout while the focused worker runner waited; its linked deadline expired before assertions. Preserve that infrastructure receipt. The complete suite includes the worker privacy table; after fixing the two unrelated retained field-policy/control fixtures, run the worker link sequentially and then fresh exact coverage."
+  "2026-10-06T06:16:52.450Z","harness:codex","Delivery evidence for PR https://github.com/unbraind/pm-cli/pull/1412: fresh canonical coverage passed 9,782 tests with two platform skips; all 764 executable coverage rows and all 66,833 statements, 51,158 branches, 13,806 functions and 63,694 lines are fully covered, with zero skipped coverage counts. Four TypeScript projects, credential and doc-link checks, real packed Node/Bun/npx/bunx acceptance and unchanged security admission pass. Exact head 3af31b07b71d5892c03b200683cf2273628a2beb passed all 26 required hosted contexts, including the complete static command. Earlier failed local timing and stale-fixture receipts remain in history. All five initial bot artifacts were read, voted and specifically acknowledged; explicit source reviews remain pending and will be requested after closeout. Native default-branch alert retirement and exact public publication remain separate post-merge checks."
 notes[1]{created_at,author,text}:
   "2026-10-06T01:12:15.520Z","harness:codex",Code and real-worker regression are verified; share the prepared security branch with pm-dba47. Preserve full captured outcome and constant-only automatic notification. Delivery requires one reviewed combined change followed by native merged-main CodeQL retirement. No alert dismissal is authorized and no production credential leak has been demonstrated. Keep provider quotas and absent traces as explicit limitations rather than green verdicts.
 learnings[1]{created_at,author,text}:
@@ -51,7 +54,7 @@ files[3]:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts tests/integration/workspace/schema-settings-history.integration.spec.ts,project,240,"harness:codex","2026-10-06T00:28:18.429Z",local_mutation,fix/source-map-security-worker-debug-output,"Real worker privacy table plus the captured scanner-source path; console sink observation only, both tracker roots sandboxed."
   node scripts/run-tests.mjs coverage -- --maxWorkers=4 --coverage.reportOnFailure,project,2400,"harness:codex","2026-10-06T00:28:19.044Z",local_mutation,fix/source-map-security-worker-debug-output,"Canonical complete source suite, exact 100 thresholds; shared tooling proof for pm-dba47 through verifies edge. Requires the real globally installed npm package available through NODE_PATH on split-installation hosts."
-test_runs[7]:
+test_runs[8]:
   - run_id: test-local-muvxxyiv-d5e17z
     kind: test
     status: passed
@@ -129,9 +132,21 @@ test_runs[7]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts tests/integration/workspace/schema-settings-history.integration.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-muwa913n-3ejy7k
+    kind: test
+    status: passed
+    started_at: "2026-10-06T06:01:07.956Z"
+    finished_at: "2026-10-06T06:13:35.315Z"
+    recorded_at: "2026-10-06T06:13:35.315Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage -- --maxWorkers=4 --coverage.reportOnFailure,schema,schema,source,acknowledged
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Implemented and independently verified; reviewed delivery remains in PR1412.
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_strengthened

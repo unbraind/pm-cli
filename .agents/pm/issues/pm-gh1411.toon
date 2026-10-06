@@ -2,13 +2,13 @@ id: pm-gh1411
 title: "GH-1411: Compose amount and token ceilings without stale cursors or skipped rows"
 description: Both presentation ceilings truncate one producer page; advertised continuation rejects an unchanged snapshot and deletion fallback can skip undisplayed rows. Verify the report at the SDK boundary and retain authoritative pre-ceiling counts and fingerprints.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-05T13:12:22.868Z"
-updated_at: "2026-10-06T05:31:34.436Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2646372c50dbdd91c7e84b31"
+updated_at: "2026-10-06T06:16:39.058Z"
+closed_at: "2026-10-06T06:16:38.248Z"
+completed_at: "2026-10-06T06:16:38.248Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Demonstrate both reported failures using real temporary SDK/CLI persistence before edits; extend existing primary combined-continuation fixtures; preserve pre-ceiling fingerprint and count; cover deletion fallback with exact ordered IDs and no deduplication masking; preserve semantic scope/filter rejection and serialized receipts; prove full source coverage and real installed Node/Bun/npx/bunx acceptance without weakening any gate.
@@ -19,20 +19,22 @@ reporter: GitHub issue #1411
 severity: high
 environment: "Reporter: published pm 2026.10.5; fresh 75-item workspace; output-limit 50 and output-budget 1500"
 repro_steps: Create 75 real Tasks with 400-character descriptions in an isolated tracker. Read with simultaneous output-limit 50 and output-budget 1500. Follow the emitted output cursor unchanged. Separately compose producer limit with both ceilings and delete the last delivered ID before continuing. Inspect exact ID sequence and original page counts.
-expected_result: Every advertised continuation works on unchanged source and deletion fallback never skips undelivered matching rows; actual filter or scope changes remain refused.
-actual_result: "Reported differential reproduction: read_output_cursor_stale without mutations; deletion fallback rebases using capped count and can skip rows. Independently reproducing and implementing these specific interactions remains pending."
+resolution: Capture complete selected producer coordinates before amount and token ceilings so fingerprints and cursor deletion fallback preserve every withheld row.
+expected_result: "Combined producer, amount and token ceilings must return a replayable bounded page and the exact undisplayed ordered suffix after deleting the last delivered identity."
+actual_result: "Real SDK/CLI persistence regressions and packed Node/Bun consumers passed: 25-row producer page, 20-row amount ceiling, 1,700-token budget, deletion fallback and exact 16-item suffix without deduplication masking."
 component: sdk/read-output-budget and pagination
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,implements,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1371,discovered_from,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1371,verifies,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1408,related,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-05T13:12:22.868Z","harness:codex","Duplicate check: strict live all-status read covered 2891/2891 complete records with zero omissions; request-specific search plus open and in-progress views and 169 historical keyword candidates found no existing owner for the simultaneous amount-and-token ceiling defect. Full shipped pm-gh1371 metadata and all 30 comments were read. Preserve its October delivery and define this reported three-dimension continuation interaction as a distinct follow-up; no local reproduction or fix is claimed."
   "2026-10-06T04:53:40.816Z","harness:codex","Live continuation scope: complete strict corpus 2894/2894 with zero unreadable records, omissions or truncation; selected full metadata and verified complete history read. Deliver composed read ceilings, deliberate-field omission cost, executable projection recovery and prepared source-map/worker privacy repairs in one PR. Only these five owners are active. No duplicate intake created. Auto-release run37414884541 failed specifically on source-map-js before publication; patched lock is part of this delivery."
   "2026-10-06T04:59:26.077Z","harness:codex","TDD evidence: original implementation fails the same newly extended primary fixtures before source correction. Combined ceiling resumes refuse read_output_cursor_stale and the positional coordinate is19 where14 is required; explicit status receipts include deliberately excluded children/claim_state; full/global selector recovery repeats its invalid invocation. After correction, original uncapped collection state drives cursor fingerprints and offsets, explicit selectors define receipt scope, and global selector removal preserves command-local mode placement. Real persisted temporary trackers and existing transport matrices own the proof, without new production test seams or duplicate suites. Final full coverage and hosted review remain pending."
   "2026-10-06T05:15:38.319Z","harness:codex","Test audit rationale: the retained serialized CLI/packed-SDK continuation matrix is the primary end-to-end owner. Extend it with producer limit25 plus canonical output-limit20 and budget1700, and with real deletion of the last delivered identity. The small direct assertion independently proves positional rebase math (pre-fix19 versus expected14); it does not duplicate traversal or persistence proof. No cursor seam or test-only export was added. Keep all rows and exact ordered-suffix comparisons; never deduplicate away omissions or repeats."
   "2026-10-06T05:25:14.812Z","harness:codex","Fresh real npm tarball consumer acceptance now passes under both Node26 and Bun1.4.2 in separate temporary projects: create30, combined25/20/1700 first page, delete its last delivered identity, then compare all16 suffix identities in exact order without deduplication. Both runtimes also verify206-byte selected-status output, requested empty arrays and execution of exact full/global-selector recovery argv. Independent npx/bunx smoke passes9 package entries. Initial manual harness errors (npm12 keyed pack receipt, invalid setup cwd/method, optional terminal count and cleanup race) were corrected in ignored evidence scripts; no production behavior, assertion for ordered suffix, coverage gate or public seam changed."
+  "2026-10-06T06:16:37.476Z","harness:codex","Delivery evidence for PR https://github.com/unbraind/pm-cli/pull/1412: fresh canonical coverage passed 9,782 tests with two platform skips; all 764 executable coverage rows and all 66,833 statements, 51,158 branches, 13,806 functions and 63,694 lines are fully covered, with zero skipped coverage counts. Four TypeScript projects, credential and doc-link checks, real packed Node/Bun/npx/bunx acceptance and unchanged security admission pass. Exact head 3af31b07b71d5892c03b200683cf2273628a2beb passed all 26 required hosted contexts, including the complete static command. Earlier failed local timing and stale-fixture receipts remain in history. All five initial bot artifacts were read, voted and specifically acknowledged; explicit source reviews remain pending and will be requested after closeout. Native default-branch alert retirement and exact public publication remain separate post-merge checks."
 learnings[1]{created_at,author,text}:
   "2026-10-06T05:31:34.436Z","harness:codex",Composed read bounds must capture replay identity and producer coordinates before either amount or cost removes rows. Validate with exact ordered coverage and deletion fallback; a Set-based uniqueness repair can hide skipped or repeated work.
 files[5]{path,scope}:
@@ -58,6 +60,7 @@ test_runs[1]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+close_reason: Implemented and independently verified; reviewed delivery remains in PR1412.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
