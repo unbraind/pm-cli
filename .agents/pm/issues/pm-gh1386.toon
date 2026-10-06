@@ -2,11 +2,13 @@ id: pm-gh1386
 title: "GH-1386: remove conflicting global output projection from get recovery retries"
 description: "Reported on installed 2026.10.4: get --full combined with global --output-include emits suggested_retry identical to the rejected invocation. Preserve tracker/JSON scope and unrelated options while removing one conflicting selector or withholding an ambiguous retry. Intake only; this combined delivery has not independently reproduced or implemented this newly arrived report."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,context-management,github-intake
 created_at: "2026-10-04T04:48:35.056Z"
-updated_at: "2026-10-04T04:48:35.056Z"
+updated_at: "2026-10-06T05:31:35.954Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2646372c50dbdd91c7e84b31"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Execute emitted recovery argv for full/output-include conflicts with options before and after subcommand and attached values;Projection conflict is removed while tracker and JSON scope remain unchanged;Existing full/fields repair continues to work;Ambiguous corrections do not emit known-invalid retries
@@ -20,6 +22,39 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,implements,"2026-10-04T04:48:35.056Z","harness:codex","cli:create:dep",detected
   pm-gh1360,discovered_from,"2026-10-04T04:48:35.056Z","harness:codex","cli:create:dep",detected
   pm-gh1364,verifies,"2026-10-04T04:48:35.056Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-04T04:48:35.056Z","harness:codex","All-status duplicate check: searched the complete 2,869-item corpus for projection conflict, mutually exclusive selectors and output-include recovery, ran request-specific CLI search, and refreshed live open/in-progress lists. Fully read the new GH-1386 report and live pm-gh1360 metadata and history. Closed GH-1364 repairs scope retention; open GH-1360 owns a broader authority invariant. Neither owns this newly reported global projection-selector repair defect. Preserve their lineage and leave this intake owner open and unclaimed."
+  "2026-10-06T04:53:44.883Z","harness:codex","Live continuation scope: complete strict corpus 2894/2894 with zero unreadable records, omissions or truncation; selected full metadata and verified complete history read. Deliver composed read ceilings, deliberate-field omission cost, executable projection recovery and prepared source-map/worker privacy repairs in one PR. Only these five owners are active. No duplicate intake created. Auto-release run37414884541 failed specifically on source-map-js before publication; patched lock is part of this delivery."
+  "2026-10-06T04:59:39.460Z","harness:codex","TDD evidence: original implementation fails the same newly extended primary fixtures before source correction. Combined ceiling resumes refuse read_output_cursor_stale and the positional coordinate is19 where14 is required; explicit status receipts include deliberately excluded children/claim_state; full/global selector recovery repeats its invalid invocation. After correction, original uncapped collection state drives cursor fingerprints and offsets, explicit selectors define receipt scope, and global selector removal preserves command-local mode placement. Real persisted temporary trackers and existing transport matrices own the proof, without new production test seams or duplicate suites. Final full coverage and hosted review remain pending."
+  "2026-10-06T05:15:39.904Z","harness:codex","Test audit rationale: extend the existing scoped executable-recovery matrix for global output-include before get, attached output-include after get, and fields/full conflict. Execute the exact emitted argv in the selected tracker with spaces. Parser/quoting unit tests remain distinct transport controls; SDK semantics are not mocked. The first attempted insertion moved a command-local full mode into root position; retain the original caller-selected mode position and consume only competing selectors."
+learnings[1]{created_at,author,text}:
+  "2026-10-06T05:31:35.954Z","harness:codex",Recovery argv editing must consume option values and preserve the original command-local mode position. Global selectors may legally precede the command; moving their replacement mode to that global position creates another invalid invocation.
+files[2]{path,scope}:
+  src/cli/runtime/projection-retry.ts,project
+  tests/integration/cli/projection-retry-scope.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts,project,240,"harness:codex","2026-10-06T04:59:37.134Z",local_mutation,fix/composed-read-cursors-projection-recovery-security
+test_runs[1]:
+  - run_id: test-local-muw7r4n6-wr3ch0
+    kind: test
+    status: passed
+    started_at: "2026-10-06T05:03:24.401Z"
+    finished_at: "2026-10-06T05:03:40.866Z"
+    recorded_at: "2026-10-06T05:03:40.866Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: projection-retry-scope
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/cli/projection-retry-scope.integration.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-gh1386
 body: "GitHub: https://github.com/unbraind/pm-cli/issues/1386\n\nThe current installed `@unbrained/pm-cli` 2026.10.4 emits an unchanged retry for a conflicting get projection when the conflicting selector is the global `--output-include` flag. This reproduces with `--no-extensions`; no custom extension is involved.\n\n```bash\npm --no-extensions get pm-a1b2 --full --output-budget unbounded --output-include item,linked,claim_state\n```\n\nThe command exits 2 before item lookup with `Get projection options are mutually exclusive; remove the extra projection flag and retry.` The recovery is:\n\n```text\nsuggested_retry: pm --no-extensions get pm-a1b2 --full --output-budget unbounded --output-include \"item,linked,claim_state\"\nattempted_command: pm --no-extensions get pm-a1b2 --full --output-budget unbounded --output-include \"item,linked,claim_state\"\n```\n\nExecuting the emitted retry repeats the same failure. As a control, `get pm-a1b2 --full --fields title` repairs its retry by removing `--fields`, so the global projection selector appears to be missed by conflict repair.\n\nExpected: preserve scope and unrelated options while removing one conflicting projection selector, or omit an automatic retry when the choice is ambiguous. The emitted argv should not preserve the known-invalid conflict.\n\nDuplicate check: searched all open and closed issues for projection, mutually exclusive, suggested_retry, full/output-include, and output-include/recovery. Read closed #1364 and open #1360. #1364 addresses dropped tracker/JSON scope; this report concerns a current unchanged conflict retry after that scope fix. #1360 defines authority-preserving recovery rather than this concrete global-selector repair failure.\n\nAcceptance: execute recovery argv for full/output-include conflicts (global option before/after subcommand and attached values), assert the projection conflict is gone and tracker/JSON scope remains unchanged; preserve the working full/fields repair case."

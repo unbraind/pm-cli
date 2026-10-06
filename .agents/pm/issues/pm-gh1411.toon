@@ -2,11 +2,13 @@ id: pm-gh1411
 title: "GH-1411: Compose amount and token ceilings without stale cursors or skipped rows"
 description: Both presentation ceilings truncate one producer page; advertised continuation rejects an unchanged snapshot and deletion fallback can skip undisplayed rows. Verify the report at the SDK boundary and retain authoritative pre-ceiling counts and fingerprints.
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-05T13:12:22.868Z"
-updated_at: "2026-10-05T13:12:22.868Z"
+updated_at: "2026-10-06T05:31:34.436Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2646372c50dbdd91c7e84b31"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Demonstrate both reported failures using real temporary SDK/CLI persistence before edits; extend existing primary combined-continuation fixtures; preserve pre-ceiling fingerprint and count; cover deletion fallback with exact ordered IDs and no deduplication masking; preserve semantic scope/filter rejection and serialized receipts; prove full source coverage and real installed Node/Bun/npx/bunx acceptance without weakening any gate.
@@ -25,11 +27,43 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1371,discovered_from,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1371,verifies,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
   pm-gh1408,related,"2026-10-05T13:12:22.868Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-05T13:12:22.868Z","harness:codex","Duplicate check: strict live all-status read covered 2891/2891 complete records with zero omissions; request-specific search plus open and in-progress views and 169 historical keyword candidates found no existing owner for the simultaneous amount-and-token ceiling defect. Full shipped pm-gh1371 metadata and all 30 comments were read. Preserve its October delivery and define this reported three-dimension continuation interaction as a distinct follow-up; no local reproduction or fix is claimed."
-files[4]{path,scope}:
-  src/sdk/read-output-budget.ts,project
+  "2026-10-06T04:53:40.816Z","harness:codex","Live continuation scope: complete strict corpus 2894/2894 with zero unreadable records, omissions or truncation; selected full metadata and verified complete history read. Deliver composed read ceilings, deliberate-field omission cost, executable projection recovery and prepared source-map/worker privacy repairs in one PR. Only these five owners are active. No duplicate intake created. Auto-release run37414884541 failed specifically on source-map-js before publication; patched lock is part of this delivery."
+  "2026-10-06T04:59:26.077Z","harness:codex","TDD evidence: original implementation fails the same newly extended primary fixtures before source correction. Combined ceiling resumes refuse read_output_cursor_stale and the positional coordinate is19 where14 is required; explicit status receipts include deliberately excluded children/claim_state; full/global selector recovery repeats its invalid invocation. After correction, original uncapped collection state drives cursor fingerprints and offsets, explicit selectors define receipt scope, and global selector removal preserves command-local mode placement. Real persisted temporary trackers and existing transport matrices own the proof, without new production test seams or duplicate suites. Final full coverage and hosted review remain pending."
+  "2026-10-06T05:15:38.319Z","harness:codex","Test audit rationale: the retained serialized CLI/packed-SDK continuation matrix is the primary end-to-end owner. Extend it with producer limit25 plus canonical output-limit20 and budget1700, and with real deletion of the last delivered identity. The small direct assertion independently proves positional rebase math (pre-fix19 versus expected14); it does not duplicate traversal or persistence proof. No cursor seam or test-only export was added. Keep all rows and exact ordered-suffix comparisons; never deduplicate away omissions or repeats."
+  "2026-10-06T05:25:14.812Z","harness:codex","Fresh real npm tarball consumer acceptance now passes under both Node26 and Bun1.4.2 in separate temporary projects: create30, combined25/20/1700 first page, delete its last delivered identity, then compare all16 suffix identities in exact order without deduplication. Both runtimes also verify206-byte selected-status output, requested empty arrays and execution of exact full/global-selector recovery argv. Independent npx/bunx smoke passes9 package entries. Initial manual harness errors (npm12 keyed pack receipt, invalid setup cwd/method, optional terminal count and cleanup race) were corrected in ignored evidence scripts; no production behavior, assertion for ordered suffix, coverage gate or public seam changed."
+learnings[1]{created_at,author,text}:
+  "2026-10-06T05:31:34.436Z","harness:codex",Composed read bounds must capture replay identity and producer coordinates before either amount or cost removes rows. Validate with exact ordered coverage and deletion fallback; a Set-based uniqueness repair can hide skipped or repeated work.
+files[5]{path,scope}:
   src/sdk/pagination.ts,project
+  src/sdk/read-output-budget.ts,project
+  src/sdk/read-output-contracts.ts,project
   tests/integration/read-output/composed-continuation.integration.spec.ts,project
   tests/unit/sdk/read-output/delivered-counts.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,project,240,"harness:codex","2026-10-06T04:59:23.631Z",local_mutation,fix/composed-read-cursors-projection-recovery-security
+test_runs[1]:
+  - run_id: test-local-muw7q1dr-s2ukpl
+    kind: test
+    status: passed
+    started_at: "2026-10-06T05:02:20.955Z"
+    finished_at: "2026-10-06T05:02:49.983Z"
+    recorded_at: "2026-10-06T05:02:49.983Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: composed-read-ceilings
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-gh1411
 body: "GitHub report https://github.com/unbraind/pm-cli/issues/1411 describes two distinct symptoms of one combined-ceiling composition defect: unchanged-workspace output continuation is rejected as stale after both output-limit and output-budget remove rows; deleting the last delivered item before producer continuation can skip undisplayed rows through an offset fallback. The reporter reproduced published 2026.10.5 and references differential native-port evidence. Treat the analysis as reported evidence until a real temporary-workspace SDK/CLI reproduction independently confirms it. Extend existing composed-continuation and delivered-count primary fixtures with three dimensions rather than create duplicate suites. Preserve producer scope and semantic fingerprints; capture authoritative population count before either presentation ceiling; validate fallback indices after deletion; retain legitimate filter/tracker changes as stale. Implementation and source changes are not included in this delivery. This owner stays open and unclaimed; shipped predecessors retain their original closed release attribution."

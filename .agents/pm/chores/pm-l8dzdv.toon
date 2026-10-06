@@ -1,0 +1,119 @@
+id: pm-l8dzdv
+title: Refresh aged SonarJS 4.2.2 and TypeScript-ESLint 8.71 quality tooling
+description: Adopt the two compatible October 6 development updates older than the unchanged seven-day Dependabot cooldown. Preserve all strict gates and compiler/runtime floors; record fresh package census and canonical major-version deferrals.
+type: Chore
+status: in_progress
+priority: 2
+tags[2]: dependencies,quality
+created_at: "2026-10-06T05:07:15.461Z"
+updated_at: "2026-10-06T06:01:07.308Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2646372c50dbdd91c7e84b31"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: "SonarJS4.2.2 and TypeScript-ESLint8.71 are installed with unchanged cooldown and peer admission; exact full-source coverage remains100/100/100/100; strict static, typecheck and real packed Node/Bun consumers pass."
+parent: pm-doxj
+risk: low
+confidence: high
+expected_result: "Both aged compatible packages install and all strict quality, coverage and packed consumer gates pass."
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-do5b,related,"2026-10-06T05:07:15.461Z","harness:codex","cli:create:dep",detected
+  pm-u9qqip,discovered_from,"2026-10-06T05:07:15.461Z","harness:codex","cli:create:dep",detected
+  pm-gh1409,verifies,"2026-10-06T05:14:10.610Z","harness:codex","cli:update:dep",detected
+  pm-dba47,verifies,"2026-10-06T05:16:26.169Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-06T05:16:26.169Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-06T05:16:26.169Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-06T05:16:26.169Z","harness:codex","cli:update:dep",detected
+  pm-kb5h,related,"2026-10-06T05:17:54.435Z","harness:codex","cli:update:dep",detected
+  pm-5oj5,verifies,"2026-10-06T05:39:08.338Z","harness:codex","cli:update:dep",detected
+comments[12]{created_at,author,text}:
+  "2026-10-06T05:07:15.461Z","harness:codex","Duplicate check on 2026-10-06: strict all-status corpus contains 2894 readable items with zero omissions; exact version/title scan finds no owner for SonarJS 4.2.2 or TypeScript-ESLint 8.71. Search and open/in-progress inventories confirm historical refreshes are closed and no active update owner exists. Registry publication ages are 7.69 and 7.49 days; peer ranges accept ESLint10 and TypeScript6.0.3. New versions below seven days and incompatible major upgrades retain their existing policy/owners."
+  "2026-10-06T05:10:27.721Z","harness:codex","The first static gate stopped on this newly created item missing acceptance criteria/risk/confidence/estimate. Added the required planning fields through pm; no quality thresholds were relaxed. The code, lint and zero-duplication portions had passed. Re-run the unchanged complete gate against the final dependency set."
+  "2026-10-06T05:13:56.730Z","harness:codex","Live platform/release intake: latest scheduled Nightly run37301905006 failed Beads portable-backup identity assertions on Windows/macOS at older release commit7077aca. Full live pm-gh1409 is closed with the corresponding blocker-spelling fix shipped in PR1402/main a7c662b; do not reopen or report that older run as a current defect. Today Auto Release runs37405651221 and37414884541 failed security admission before publication of source-map-js1.2.1; this delivery inherits the reviewed local fix under pm-dba47. All30 open GitHub reports already contain canonical PM-file links, and no open PR/update PR or secret-scanning alert was present at intake."
+  "2026-10-06T05:14:14.103Z","harness:codex","Required observability gate passes with zero unresolved Sentry critical/high issues in the14-day window and required collector availability. Fresh one-day collector query observed19109 finishes and596 failures (3.12 percent, below unchanged6 percent ceiling); explicit flush drained1 entry to0 with acknowledged successful delivery at2026-10-06T05:11Z. Sentry issue and trace inventories were empty; empty traces do not prove trace instrumentation coverage. Local packed Bun acceptance initially refused the pre-existing symlinked host cache; retry uses a new private task-owned TMPDIR without modifying or deleting that shared cache."
+  "2026-10-06T05:16:27.505Z","harness:codex","Fresh compatible-tool installation resolves SonarJS4.2.2 and TypeScript-ESLint8.71; installed peer metadata permits ESLint10 and TypeScript6.0.3. Remaining latest versions are either under seven days or canonical major migrations: pm-fokyhh (CodSpeed peer excludes Vitest5), pm-do5b (parser peer excludes TypeScript7 plus compiler API migration), pm-ksr40d (npm-package-arg14 narrows Node22 support), pm-t3jxjj (Sentry11 privacy/instrumentation and real runtime migration proof; latest11.4 is under seven days). No peer, engine, cooldown, coverage or security override is used for these refreshes. No dependency-update PR was left open."
+  "2026-10-06T05:17:53.394Z","harness:codex","Architecture intake reuses existing pm-kb5h source-tree organization ownership. This delivery preserves SDK-owned query semantics, stable public package subpath exports, thin CLI recovery adaptation, and current domain folders; no private-source import or test-only production seam is introduced. Full corpus/graph reading does not justify rewriting historical edges or manufacturing graph depth. Remaining broad density and documentation-quality programs retain their canonical owners rather than being falsely closed by a focused read-contract fix."
+  "2026-10-06T05:19:24.270Z","harness:codex","Current direct TypeScript/ESM folder census is unchanged from the canonical organization program: src/sdk120, src/cli37, tests/unit/sdk120, tests/integration120, scripts30. This is evidence of remaining planned organization work under pm-kb5h; this change adds no new flat source files and keeps stable exports. Standard four-project typecheck passes; tracked-file credential scan is clean and doc-link gate passes."
+  "2026-10-06T05:35:04.156Z","harness:codex","Second complete static receipt reached graph-composition and refused prose-edge gaps1238 versus unchanged1236 ceiling. All earlier static, grammar, recovery, docstring, duplication, surface and cost gates completed. Investigate the exact new references and add only genuine semantic relationships through pm; preserve the historical baseline and do not raise the ceiling."
+  "2026-10-06T05:39:07.633Z","harness:codex","Exact main-versus-current SDK assurance comparison used a disposable committed-main tracker archive, the same definitions/exemptions and actual createAssuranceWorkspaceContext/evaluateMeasurement APIs. Main1236/current1238 identifies precisely two inherited prose pairs: pm-5oj5 to pm-dba47 and pm-cql43 to pm-5oj5. Existing live comments on the observability epic and both security owners document genuine shared Sentry/telemetry verification. Added narrowly scoped verifies links on the security owners; no legacy repair, new exemption or ceiling increase is needed."
+  "2026-10-06T05:46:07.687Z","harness:codex","Live tracker validation completes without unreadable items, history drift, dangling references or active ownership violations; it retains the existing warning for170 historical closures lacking some structured resolution fields. Preserve their immutable close events rather than invent backfilled historical outcomes. This delivery will atomically close all six owners with resolution/expected/actual evidence before generating reviewed changelog."
+  "2026-10-06T05:50:22.251Z","harness:codex","The full static pipeline stopped at unchanged import-cost budgets: governance 390ms versus 327ms and merge 255ms versus 226ms. A fresh isolated five-sample check, with no competing project test/build, passed every existing budget: governance median 240ms and merge 165ms. No budget, noise margin, iteration count, or platform exception changed. The prior failed receipt is retained; running the full pipeline again sequentially before fresh canonical coverage."
+  "2026-10-06T05:59:37.370Z","harness:codex","The second full static run passed every gate through SDK import cost, then claim cold-start best latency measured524ms against the unchanged415ms budget. No claim-path source changed. Running the exact remaining static command suffix separately, followed by fresh full source coverage; hosted CI must still pass the full command before merge. No budget or mandatory check was removed."
+notes[1]{created_at,author,text}:
+  "2026-10-06T05:40:56.924Z","harness:codex","Delivery scope: one BIG PR combines three context/read SDK and CLI fixes, two real security findings and two aged compatible quality-tool versions. Six owners are actively claimed; broad architecture, major migrations and historical graph programs retain canonical open lineage. Complete metadata/comments/notes/learnings were read for selected owners, including verified immutable histories; strict all-status corpus2894/2894 and raw SDK graph baseline underpin duplicate and relationship decisions."
+learnings[1]{created_at,author,text}:
+  "2026-10-06T05:40:56.302Z","harness:codex","Run repository static and full-source coverage sequentially when both retain the checkout build lease. Parallel validation can queue a focused command until its existing deadline expires, proving lease ownership rather than product behavior. Keep successful frozen-source evidence distinct from saved failures, and diagnose graph provenance with the public SDK against committed-main metadata before adding a semantic edge."
+files[3]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  package.json,project
+  pnpm-lock.yaml,project
+tests[2]:
+  - command: "pnpm quality:static"
+    scope: project
+    timeout_seconds: 2400
+    pm_context_mode: tracker
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T05:07:54.428Z"
+      source_kind: local_mutation
+      source_ref: fix/composed-read-cursors-projection-recovery-security
+  - command: "node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt"
+    scope: project
+    timeout_seconds: 2400
+    pm_context_mode: tracker
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-06T05:59:39.933Z"
+      source_kind: local_mutation
+      source_ref: fix/composed-read-cursors-projection-recovery-security
+    note: "Residual unchanged static gates after the full run passed its prefix and SDK import cost but stopped at claim wall-clock timing. Retains the failed whole-pipeline receipts; does not certify the original full command as passed. Hosted full quality:static remains mandatory."
+test_runs[4]:
+  - run_id: test-local-muw8u4kv-307382
+    kind: test
+    status: failed
+    started_at: "2026-10-06T05:10:38.530Z"
+    finished_at: "2026-10-06T05:34:00.367Z"
+    recorded_at: "2026-10-06T05:34:00.367Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muw9by5c-fej0xe
+    kind: test
+    status: failed
+    started_at: "2026-10-06T05:39:21.931Z"
+    finished_at: "2026-10-06T05:47:51.839Z"
+    recorded_at: "2026-10-06T05:47:51.839Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muw9q2u6-0kbpi2
+    kind: test
+    status: failed
+    started_at: "2026-10-06T05:50:22.881Z"
+    finished_at: "2026-10-06T05:58:51.102Z"
+    recorded_at: "2026-10-06T05:58:51.102Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:static",tracker,tracker,source,local_source_ref
+  - run_id: test-local-muw9szxb-lrj6hv
+    kind: test
+    status: passed
+    started_at: "2026-10-06T05:59:42.703Z"
+    finished_at: "2026-10-06T06:01:07.295Z"
+    recorded_at: "2026-10-06T06:01:07.295Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/bench/cli-transport-floor.mjs --check && node dist/cli.js assurance run graph-composition --trigger ci --dry-run --json --output-budget unbounded && node dist/cli.js assurance run record-integrity --trigger ci --dry-run --json --output-budget unbounded && pnpm quality:mutation -- --prebuilt",tracker,tracker,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/ARCHITECTURE.md,project
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+body: ""

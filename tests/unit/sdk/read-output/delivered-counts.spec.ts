@@ -2,8 +2,19 @@ import { describe, expect, it } from "vitest";
 import { compactReadOutputToBudget } from "../../../../src/sdk/read-output-budget.js";
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
 import { refreshReadOutputDeliveredCounts, rememberReadOutputFocusRows, sliceReadOutputRowCollection } from "../../../../src/sdk/read-output-rows.js";
+import { decodeQueryCursorEnvelope, encodeQueryCursor } from "../../../../src/sdk/pagination.js";
 
 describe("delivered row count receipts (GH-1371)", () => {
+  it("rebases producer deletion fallback from the uncapped page coordinate", () => {
+    const items = Array.from({ length: 25 }, (_, index) => ({ id: `pm-coordinate-${index}`, title: "Long coordinate evidence ".repeat(20) }));
+    const result = applyReadOutputDimensions("list", { outputLimit: 20, outputBudget: 1700, outputFormat: "json" }, {
+      items, count: 25, total: 75, next_cursor: encodeQueryCursor("query-fingerprint", items.at(-1)!.id, 24),
+    });
+    expect(result.items.length).toBeGreaterThan(0);
+    expect(result.items.length).toBeLessThan(20);
+    expect(decodeQueryCursorEnvelope(result.next_cursor).after_index).toBe(result.items.length - 1);
+  });
+
   it("counts shaped context focus while preserving population and blocker totals", () => {
     const source = {
       summary: { active_items: 30, blocked: 10, high_level: 1, low_level: 2, returned_focus: { active_items: 4, open: 3, in_progress: 1, blocked: 1 } },

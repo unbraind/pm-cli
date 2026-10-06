@@ -10,7 +10,7 @@ import { LIST_COMMANDER_STRING_OPTION_CONTRACTS, SEARCH_COMMANDER_STRING_OPTION_
 import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "../../sdk/cli-contracts/flag-contracts.js";
 import { renderPmCommand } from "../argv-utils.js";
 
-const VALUE_PROJECTION_FLAGS = new Set(["--fields", "--depth", "--for", "--token-budget"]);
+const VALUE_PROJECTION_FLAGS = new Set(["--fields", "--output-include", "--depth", "--for", "--token-budget"]);
 const BOOLEAN_PROJECTION_FLAGS = new Set(["--full", "--brief", "--compact"]);
 
 /** Derive value arity from the runtime contracts and Commander string options. */
@@ -52,14 +52,6 @@ function withoutProjectionFlags(argv: readonly string[], options: Map<number, st
   return argv.filter((_, index) => !removed.has(index));
 }
 
-/** Insert corrected projection controls before any literal-operand terminator. */
-function withProjectionFlags(argv: string[], additions: string[], position: number): string[] {
-  // The first parsed projection position precedes any actual terminator;
-  // a consumed tracker value may itself be the literal string "--".
-  argv.splice(position, 0, ...additions);
-  return argv;
-}
-
 /** Keep a single caller-selected mode while using the SDK hint for genuinely conflicting modes. */
 function selectProjectionRetryMode(options: Map<number, string>, suggested: readonly string[]): string | undefined {
   const fallback = suggested.find((token) => BOOLEAN_PROJECTION_FLAGS.has(token));
@@ -86,14 +78,16 @@ export function repairProjectionRecovery(
     if (fieldIndex < 0 || suggested[fieldIndex + 1] === undefined) return ambiguous;
     const position = [...options].find(([_, flag]) => flag === "--fields")?.[0] ?? -1;
     if (position < 0) return ambiguous;
-    corrected = withProjectionFlags(withoutProjectionFlags(argv, options, new Set(["--fields"])), ["--fields", suggested[fieldIndex + 1]!], position);
+    corrected = withoutProjectionFlags(argv, options, new Set(["--fields"]));
+    corrected.splice(position, 0, "--fields", suggested[fieldIndex + 1]!);
   } else {
     const mode = selectProjectionRetryMode(options, suggested);
     if (mode === undefined) return ambiguous;
-    const flags = new Set([...VALUE_PROJECTION_FLAGS, ...BOOLEAN_PROJECTION_FLAGS]);
-    const position = [...options].find(([_, flag]) => flags.has(flag))?.[0] ?? -1;
-    if (position < 0) return ambiguous;
-    corrected = withProjectionFlags(withoutProjectionFlags(argv, options, flags), [mode], position);
+    // A global selector can precede the command, but its replacement mode is
+    // command-local. Keep that mode at its original valid option position.
+    if (![...options.values()].includes(mode)) return ambiguous;
+    const flags = new Set([...VALUE_PROJECTION_FLAGS, ...BOOLEAN_PROJECTION_FLAGS].filter((flag) => flag !== mode));
+    corrected = withoutProjectionFlags(argv, options, flags);
   }
   return { ...recovery, suggested_retry: renderPmCommand(corrected), suggested_retry_args: corrected };
 }

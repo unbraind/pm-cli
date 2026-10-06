@@ -432,6 +432,20 @@ describe("output projection omission contracts", () => {
           ]),
         },
       });
+      for (const fields of ["status", "item.status", "notes,tests,docs,dependencies"]) {
+        const selected = await runGet(created.item.id, global, { fields });
+        const disclosed = attachOutputOmissionReceipt("get", selected) as Record<string, unknown>;
+        expect(disclosed.omission_receipt).toStrictEqual(completeReceipt);
+        expect(selected.item.id).toBe(created.item.id);
+        if (fields.includes("status")) {
+          expect(selected.item.status).toBe("open");
+          expect(Buffer.byteLength(JSON.stringify(disclosed))).toBeLessThan(
+            Buffer.byteLength(JSON.stringify({ ...disclosed, omission_receipt: (attachOutputOmissionReceipt("get", claimedBrief) as Record<string, unknown>).omission_receipt })) * 0.7,
+          );
+        } else {
+          expect(selected.item).toMatchObject({ notes: [], tests: [], docs: [], dependencies: [] });
+        }
+      }
     });
 
     const bodyIncluded = {

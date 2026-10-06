@@ -121,6 +121,7 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       await cp(context.pmPath, otherTracker, { recursive: true });
       for (const query of [
         ["list", "--all", "--limit", "25", "--output-budget", "1700"],
+        ["list", "--all", "--limit", "25", "--output-limit", "20", "--output-budget", "1700"],
         ["search", "Matrix", "--mode", "keyword", "--status", "all", "--limit", "25", "--output-budget", "1500"],
         ["context", "--limit", "25", "--output-budget", "1500"],
         ["context", "--fields", "id", "--limit", "25", "--output-budget", "1300"],
@@ -205,6 +206,23 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       expect(evidence.results.filter((result) => result.blocked).every((result) => result.uniqueRows === 12)).toBe(true);
       expect(evidence.results.some((result) => result.blocked && result.recovery)).toBe(true);
       console.log("Packed SDK continuation evidence", JSON.stringify(evidence));
+      // Deleting the last delivered identity exercises the producer's positional
+      // fallback; compare the entire ordered suffix without deduplicating it.
+      const deletionBase = ["list", "--all", "--tag", "matrix", "--limit", "25", "--output-limit", "20", "--output-budget", "1700", "--json"];
+      const complete = await run(["list", "--all", "--tag", "matrix", "--no-truncate", "--output-budget", "unbounded", "--json"]);
+      expect(complete.code).toBe(0);
+      const orderedIds = (complete.json as ReadPage).items!.map(({ id }) => id);
+      const first = await run(deletionBase);
+      expect(first.code).toBe(0);
+      const firstPage = first.json as ReadPage;
+      const deliveredIds = firstPage.items!.map(({ id }) => id);
+      expect(deliveredIds.length).toBeGreaterThan(0);
+      expect(deliveredIds.length).toBeLessThan(20);
+      expect(deliveredIds).toEqual(orderedIds.slice(0, deliveredIds.length));
+      expect(firstPage.output_budget_truncation!.continuations[0]!.total_rows).toBe(25);
+      expect((await run(["close", "delete", deliveredIds.at(-1)!, "--json"])).code).toBe(0);
+      const remaining = await collectReadPages(run, [...deletionBase, "--after", firstPage.next_cursor!]);
+      expect(remaining.ids).toEqual(orderedIds.slice(deliveredIds.length));
     });
   });
 });

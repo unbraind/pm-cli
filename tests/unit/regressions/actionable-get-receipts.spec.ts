@@ -25,7 +25,8 @@ describe("actionable get receipts", () => {
       for (const options of [{}, { depth: "full", fields: "id" }, { depth: "full", fields: "item.id" }]) {
         const ordinary = await runGet(created.item.id, global, options);
         expect(ordinary.item.dependencies).toEqual(options.fields === undefined ? [{ id: target.item.id, kind: "related" }] : undefined);
-        expect(resolveOutputOmissionReceipt("get", ordinary as unknown as Record<string, unknown>)!.omitted_field_groups.some((group) => group.name === "dependency_provenance")).toBe(Object.keys(provenance).length > 0);
+        expect(resolveOutputOmissionReceipt("get", ordinary as unknown as Record<string, unknown>)!.omitted_field_groups.some((group) => group.name === "dependency_provenance")).toBe(options.fields === undefined && Object.keys(provenance).length > 0);
+        if (options.fields !== undefined) expect(ordinary.item).toEqual({ id: created.item.id });
       }
       for (const options of [{ full: true }, { depth: "full" }, { fields: "dependencies" }, { fields: "item.dependencies" }, { depth: "full", fields: "dependencies" }, { depth: "full", fields: "item.dependencies" }]) {
         const complete = await runGet(created.item.id, global, options);
@@ -208,8 +209,12 @@ describe("actionable get receipts", () => {
       if (fields === "schedule.deadline") expect(result.schedule?.deadline).toBe("2026-10-05T12:00:00.000Z");
       const omitted = resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name);
       if (fields === "schedule.deadline") expect(omitted).not.toContain("schedule");
-      expect(omitted.includes("reminders")).toBe(fields !== undefined && fields !== "schedule.reminders" && fields !== "reminders");
-      expect(omitted.includes("events")).toBe(fields !== undefined && fields !== "schedule.events");
+      expect(omitted.includes("reminders")).toBe(false);
+      expect(omitted.includes("events")).toBe(false);
+      if (fields === undefined || fields === "schedule.reminders") expect(result.schedule?.reminders).toEqual(created.item.reminders);
+      if (fields === undefined || fields === "schedule.events") expect(result.schedule?.events).toEqual(created.item.events);
+      if (fields === "reminders") expect(result.item.reminders).toEqual(created.item.reminders);
+      if (fields === "id") expect(result.item).toEqual({ id: created.item.id });
     });
   });
 
@@ -219,7 +224,10 @@ describe("actionable get receipts", () => {
       const created = await runCreate({ title: "Linked read evidence", type: "Task", file: ["path=source.ts"], test: ["command=node -v"], doc: ["path=README.md"] }, global);
       const result = await runGet(created.item.id, global, { fields });
       const omitted = resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name);
-      for (const group of ["files", "tests", "docs"]) expect(omitted.includes(group)).toBe(fields !== undefined && fields !== `linked.${group}`);
+      for (const group of ["files", "tests", "docs"] as const) {
+        expect(omitted.includes(group)).toBe(false);
+        expect(result.linked?.[group]).toEqual(fields === undefined || fields === `linked.${group}` ? created.item[group] : []);
+      }
     });
   });
 });

@@ -31,6 +31,9 @@ describe("scope-preserving projection retries (GH-1364)", () => {
         ["get", "pm-collision", `--pm-path=${other}`, "--fields=title,titlle,close_reason", "--json"],
         ["--path", other, "show", "pm-collision", "--fields", "title", "--fields", "titlle,close_reason", "--json"],
         ["get", "pm-collision", "--pm-path", other, "--for", "inspect", "--full", "--json"],
+        ["--pm-path", other, "--output-include", "item,linked,claim_state", "get", "pm-collision", "--full", "--output-budget", "unbounded", "--json"],
+        ["get", "pm-collision", "--pm-path", other, "--full", "--output-include=item,linked,claim_state", "--output-budget", "unbounded", "--json"],
+        ["get", "pm-collision", "--pm-path", other, "--full", "--fields", "title", "--output-budget", "unbounded", "--json"],
         ["--pm-path", other, "list", "--fields", "title,titlle", "--limit", "1", "--json"],
         ["search", "Selected", "--pm-path", other, "--fields=title,titlle", "--limit", "1", "--json"],
       ]) {
@@ -40,7 +43,7 @@ describe("scope-preserving projection retries (GH-1364)", () => {
         const args = error.recovery.suggested_retry_args;
         expect(args, JSON.stringify({ invocation, error })).toContain("--json");
         const replay = await run(args);
-        expect(replay.code).toBe(0);
+        expect(replay.code, JSON.stringify({ invocation, args, stderr: replay.stderr })).toBe(0);
         if (invocation.includes("list") || invocation.includes("search")) {
           expect(replay.json).toMatchObject({ items: [{ title: "Selected tracker" }] });
           expect(args).toContain("--limit");
@@ -48,7 +51,7 @@ describe("scope-preserving projection retries (GH-1364)", () => {
           const explicitScope = invocation.some((token) => token === "--path" || token.startsWith("--pm-path"));
           expect(replay.json).toMatchObject({ item: { id: "pm-collision", title: explicitScope ? "Selected tracker" : "Default tracker" } });
         }
-        if (invocation.some((token) => token.startsWith("--fields"))) {
+        if (invocation.some((token) => token.startsWith("--fields")) && !invocation.includes("--full")) {
           expect(args[args.lastIndexOf("--fields") + 1]).toBe(invocation.some((token) => token.includes("close_reason")) ? "title,close_reason" : "title");
         }
       }

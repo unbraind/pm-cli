@@ -196,14 +196,6 @@ function itemCollectionCounts(
   return lengths as NonNullable<GetItemProjection["collection_counts"]>;
 }
 
-/** Disclose dependency attribution only when the selected projection removes values actually present in stored rows, without inventing timestamps for legacy edges. */
-function hasOmittedDependencyProvenance(item: ItemMetadata, projection: ResolvedGetProjection): boolean {
-  if ((!projection.fieldProjection && projection.full) || fieldsInclude(projection.fields, "dependencies")) return false;
-  return item.dependencies?.some(({ id: _id, kind: _kind, ...provenance }) =>
-    Object.values(provenance).some((value) => value !== undefined),
-  ) ?? false;
-}
-
 /** Report children as withheld until a computed rollup proves there are none. */
 function itemMaterialFieldGroups(
   item: ItemMetadata,
@@ -234,7 +226,9 @@ function itemMaterialFieldGroups(
       : []),
     ...(buildItemSchedule(item) ? ["schedule"] : []),
     ...(currentSnapshot && collectBlockedByIds(item).length > 0 ? ["blockers"] : []),
-    ...(hasOmittedDependencyProvenance(item, projection) ? ["dependency_provenance"] : []),
+    ...(!projection.full && item.dependencies?.some(({ id: _id, kind: _kind, ...provenance }) =>
+      Object.values(provenance).some((value) => value !== undefined),
+    ) ? ["dependency_provenance"] : []),
   ];
 }
 
@@ -974,7 +968,9 @@ export async function runGet(
   }
   registerOutputMaterialFieldGroups(
     result,
-    itemMaterialFieldGroups(context.metadata, context.body, children, context.historical === undefined, projection),
+    // Explicit selectors define the requested answer. Default/depth reads still
+    // disclose material groups; budget truncation has its own shared receipt.
+    projection.fieldProjection ? [] : itemMaterialFieldGroups(context.metadata, context.body, children, context.historical === undefined, projection),
   );
   return result;
 }

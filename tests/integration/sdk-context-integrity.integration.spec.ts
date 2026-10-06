@@ -99,10 +99,9 @@ describe("SDK context integrity transports", () => {
       expect(cli.json).toMatchObject({
         item: { id, title: "projection parity" },
         omission_receipt: {
-          has_omissions: true,
-          omitted_field_groups: [
-            { name: "children", restore_with: "--fields children" },
-          ],
+          has_omissions: false,
+          omitted_field_group_count: 0,
+          omitted_field_groups: [],
         },
       });
       expect(sdk).toEqual(cli.json);
