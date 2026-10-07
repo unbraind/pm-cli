@@ -1,0 +1,106 @@
+id: pm-preview-path-refusal
+title: Declare non-regular transaction preview paths as recoverable SDK refusals
+description: Sentry PM-CLI-3E reports a handled Windows transaction preview refusal as unclassified_runtime_error with exit 1 on installed 2026.10.6. Preserve non-following filesystem safety while emitting a declared path-redacted refusal and actionable repair guidance from SDK producers and opened descriptor checks.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-07T05:16:46.951Z"
+updated_at: "2026-10-07T06:30:37.886Z"
+closed_at: "2026-10-07T06:16:17.392Z"
+completed_at: "2026-10-07T06:16:17.392Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Real symlink and directory controls reach declared refusal;SDK and CLI preserve source bytes and expose actionable bounded recovery;Opened-descriptor refusal follows the same typed contract;Generated catalog classifies current handled events without message allowlists;Exact all-source coverage and mandatory checks remain intact
+parent: pm-3lhth4
+risk: medium
+confidence: high
+resolution: "Use declared transaction_preview_non_regular_file PmCliError at entry and descriptor checks with usage exit 2 and bounded repair guidance; retain non-following safety and native errno diagnostics, regenerate SDK and runtime error surfaces."
+expected_result: Non-regular preview storage fails closed through the SDK and CLI with stable code actionable recovery and unchanged source bytes.
+actual_result: "78 linked preview controls plus installed Node/Bun acceptance pass; real links FIFOs sockets directories and descriptor races are covered. Exact all-source 100/100/100/100 coverage, static and four TypeScript projects pass. Sentry resolution is reserved for the next release containing the validated source fix."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3lhth4,implements,"2026-10-07T05:16:46.951Z","harness:codex","cli:create:dep",detected
+  pm-gh1390,discovered_from,"2026-10-07T05:16:46.951Z","harness:codex","cli:create:dep",detected
+  pm-n912nt,recurs_from,"2026-10-07T05:16:46.951Z","harness:codex","cli:create:dep",detected
+comments[6]:
+  - created_at: "2026-10-07T05:16:46.951Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete live 2901-record all-status corpus and exact PM-CLI-3E/regular-path searches have no concrete leaf for typed non-regular preview refusal. Existing pm-3lhth4 owns the broader filesystem taxonomy; shipped pm-n912nt preserved native structural diagnostics and is not reopened. Open/in_progress inventories refreshed. Live Sentry latest event 2026-10-07T03:48:27Z is handled Windows Node24 on 2026.10.6 with unclassified_runtime_error exit1; no private paths or event payloads retained."
+  - created_at: "2026-10-07T05:21:57.066Z"
+    author: "harness:codex"
+    text: "TDD red: 18 existing SDK/CLI safety controls failed the declared exit-2/code/recovery contract while 60 other preview controls passed. Real links, FIFOs, sockets, regular-file-to-FIFO descriptor races and configuration directories retained the old unclassified TypeError. The keeper assertions are strengthened, not duplicated. Shared SDK producer now returns a path-redacted PmCliError; native errno controls remain unchanged."
+  - created_at: "2026-10-07T05:37:59.156Z"
+    author: "harness:codex"
+    text: "Linked preview keeper passes all 78 SDK/CLI controls. Independent manual acceptance installs the actual physical-runtime tarball in a temporary consumer and passes under Node and Bun: real conflict/abort, read-only planned abandonment, audited settlement, byte-identical repeat, declared schema-directory refusal and unchanged item/history bytes. Preview intentionally retains a nonzero pending-receipt verdict until applied; the manual harness was corrected to that existing contract."
+  - created_at: "2026-10-07T05:39:13.659Z"
+    author: "harness:codex"
+    text: "Static validation correctly refuses the stale generated runtime contract snapshot after adding transaction_preview_non_regular_file to the source-derived error catalog. Refresh the canonical contract and dependent agent surfaces after the current runner releases its inputs, inspect the generated additive diff, and link every derived file to this owner; no gate baseline or declared refusal semantics are relaxed."
+  - created_at: "2026-10-07T06:15:32.171Z"
+    author: "harness:codex"
+    text: "Final verification: complete canonical runner passes 9,884 applicable tests and exact 100/100/100/100 all-source coverage; strict static and four TypeScript project checks pass. Existing required Windows and macOS preview portability jobs execute the updated SDK refusal assertions. Independent installed Node/Bun manual journeys confirm exit 2, stable error code, actionable next_steps, unchanged source item/history and omission of discovered paths. Native errno controls remain intact. Sentry next-release resolution and hosted exact-head checks remain pending."
+  - created_at: "2026-10-07T06:22:57.272Z"
+    author: "harness:codex"
+    text: "Observability correction: Chrome confirms Sentry PM-CLI-3E is resolved starting with a release AFTER 2026.10.7. The API inRelease field names the baseline for next-release tracking, not a shipped-fix version; the prior interpretation was incorrect. Pending-release resolution is now verified through the visible Sentry header and activity. The validated source fix fb23fe7833408767a6786b87309e1bf679be785f awaits reviewed landing and the next eligible daily publication. Required live telemetry is available with a 3.26 percent finish error rate and zero failure rows without an error code; no all-user-action or end-to-end trace completeness claim is made."
+    edited_at: "2026-10-07T06:30:37.033Z"
+learnings[2]{created_at,author,text}:
+  "2026-10-07T05:28:06.320Z","harness:codex","Filesystem safety refusal is an expected SDK boundary, not an unexpected fault. Use one declared, path-redacted PmCliError at both entry and descriptor checks; retain native errno provenance for persistent structural and permission failures, and render recovery through the existing CLI next_steps contract."
+  "2026-10-07T06:30:37.886Z","harness:codex",Sentry next-release resolution can expose the latest baseline in API inRelease. Verify the visible resolved-starting-after wording and activity before interpreting the field as a shipped-fix version; commit-specific resolution also requires a registered commit.
+files[9]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Latest pm-changelog installation metadata for the package-generated delivery changelog
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/core/fs/fs-utils.ts
+    scope: project
+  - path: src/core/store/settings.ts
+    scope: project
+  - path: src/sdk/generated/generated-error-code-catalog-part-2.ts
+    scope: project
+  - path: src/sdk/item-transaction.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/integration/transactions/semantic-preview.integration.spec.ts
+    scope: project
+  - path: tests/unit/sdk/transactions/preview-snapshot.spec.ts
+    scope: project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,project,"harness:codex","2026-10-07T05:21:56.353Z",local_mutation,fix/merge-receipt-abort-and-settlement
+test_runs[2]:
+  - run_id: test-local-muxnvvbo-gemqkq
+    kind: test
+    status: failed
+    started_at: "2026-10-07T05:22:34.105Z"
+    finished_at: "2026-10-07T05:23:02.099Z"
+    recorded_at: "2026-10-07T05:23:02.099Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muxnxmb3-hk1jgw
+    kind: test
+    status: passed
+    started_at: "2026-10-07T05:23:53.598Z"
+    finished_at: "2026-10-07T05:24:23.727Z"
+    recorded_at: "2026-10-07T05:24:23.727Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/SDK_AUDITED_MUTATIONS.md,project
+close_reason: Implemented typed actionable preview refusals at SDK filesystem safety boundaries
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: transaction-preview-scope-and-path-consistency
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: pm-preview-path-refusal
+body: ""

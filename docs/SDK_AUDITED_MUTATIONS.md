@@ -4,6 +4,24 @@ The extension settings contract is tracked by
 [pm-wtqltn](../.agents/pm/issues/pm-wtqltn.toon). Full-item JSON annotation
 integrity is tracked by [pm-2589e6](../.agents/pm/issues/pm-2589e6.toon).
 Canonical previews are tracked by [pm-2sef82](../.agents/pm/features/pm-2sef82.toon).
+Preview path refusals are tracked by
+[pm-preview-path-refusal](../.agents/pm/issues/pm-preview-path-refusal.toon).
+
+## Transaction preview storage
+
+Item mutation and completion previews inspect a staged copy of the configured
+tracker storage without changing source items or bootstrapping source schemas.
+Linked entries, special files and directories configured as files are refused
+with `transaction_preview_non_regular_file` (CLI exit `2`). SDK callers receive
+a `PmCliError` with the same code and repair guidance in `context.nextSteps`.
+The producer diagnostic omits discovered filesystem paths. Inspect the configured
+settings, schema, session and item storage, restore the intended regular files and directories,
+then retry the original dry run.
+
+Entry and opened-descriptor checks enforce the same contract. Persistent native
+filesystem failures, including missing link targets and permission errors, keep
+their original codes. These checks require stable, trusted ancestors; they do
+not guarantee protection against hostile concurrent path redirection.
 
 ## Extension settings
 

@@ -46,7 +46,7 @@ export async function settleAbandonedMergeReceipts(params: {
           mergeAbandonmentProof,
           message:
             params.message ??
-            "Settle rebase receipt after exact original Git state restoration",
+            `Settle ${receipt.operation.kind} receipt after exact original Git state restoration`,
           auditOperation: "merge_reconcile",
           forceAuditEntry: true,
           auditContext: {

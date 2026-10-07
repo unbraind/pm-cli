@@ -25324,6 +25324,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "transaction_preview_non_regular_file",
+      "class": "usage",
+      "code": "transaction_preview_non_regular_file",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Transaction preview non regular file condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/fs/fs-utils.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "transaction_preview_snapshot_changed",
       "class": "conflict",
       "code": "transaction_preview_snapshot_changed",

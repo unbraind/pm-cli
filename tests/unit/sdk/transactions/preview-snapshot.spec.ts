@@ -163,7 +163,7 @@ describe("semantic preview snapshot consistency", () => {
       const preview = previewItemMutations({ pmRoot: context.pmPath, transactionId: "schema-boundary", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-schema", options: { title: "Contained schema preview", type: "Task" } }] });
       if (["absolute-inside", "optional-types", "empty-schema", "search-schema"].includes(mode)) await expect(preview).resolves.toMatchObject({ validated: true });
       else if (["external-file", "root-directory"].includes(mode)) await expect(preview).rejects.toMatchObject({ exitCode: 2, context: { code: "transaction_preview_external_schema" } });
-      else await expect(preview).rejects.toThrow("Transaction preview requires regular files and directories");
+      else await expect(preview).rejects.toMatchObject({ exitCode: 2, code: "transaction_preview_non_regular_file", context: { nextSteps: expect.any(Array) } });
       expect(await readFile(settingsPath, "utf8")).toBe(before);
       expect(await readFile(outsideSchema, "utf8")).toBe("[]");
       await expect(readFile(path.join(context.pmPath, "schema", "missing-statuses.json"))).rejects.toMatchObject({ code: "ENOENT" });
@@ -236,7 +236,7 @@ describe("semantic preview snapshot consistency", () => {
         await expect(preview).rejects.toMatchObject({ exitCode: 2, context: { transaction_operation: { index: 0, op: "create", id: "pm-child" } } });
         await expect(commitItemMutations(options)).rejects.toThrow('Parent item "pm-missing-focus" was not found');
       } else if (mode === "changed-session") await expect(preview).rejects.toMatchObject({ exitCode: 4, context: { code: "transaction_preview_snapshot_changed" } });
-      else if (mode.startsWith("session-")) await expect(preview).rejects.toThrow("Transaction preview requires regular files and directories");
+      else if (mode.startsWith("session-")) await expect(preview).rejects.toMatchObject({ exitCode: 2, code: "transaction_preview_non_regular_file", context: { nextSteps: expect.any(Array) } });
       else await expect(preview).resolves.toMatchObject({ validated: true });
       if (!mode.startsWith("session-")) expect(await readFile(sessionPath, "utf8")).toBe(JSON.stringify({ focused_item: mode === "changed-session" ? "pm-later-focus" : "pm-missing-focus" }));
       await expect(readFile(path.join(context.pmPath, "tasks", "pm-child.toon"))).rejects.toMatchObject({ code: "ENOENT" });
@@ -311,7 +311,7 @@ describe("semantic preview snapshot consistency", () => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "snapshot-probe.txt"), "regular file");
       copying.change = mode;
-      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "pipe-race", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-pipe", options: { title: "Pipe preview", type: "Task" } }] })).rejects.toThrow("Transaction preview requires regular files and directories");
+      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "pipe-race", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-pipe", options: { title: "Pipe preview", type: "Task" } }] })).rejects.toMatchObject({ exitCode: 2, code: "transaction_preview_non_regular_file", context: { nextSteps: expect.any(Array) } });
     });
   });
 
@@ -330,7 +330,7 @@ describe("semantic preview snapshot consistency", () => {
       await writeFile(path.join(outside, "secret.txt"), "outside tracker");
       const target = kind === "cycle" ? context.pmPath : kind === "file" ? path.join(outside, "secret.txt") : outside;
       await symlink(target, path.join(context.pmPath, "linked-entry"));
-      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "linked-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-linked", options: { title: "Linked preview", type: "Task" } }] })).rejects.toThrow("Transaction preview requires regular files and directories");
+      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "linked-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-linked", options: { title: "Linked preview", type: "Task" } }] })).rejects.toMatchObject({ exitCode: 2, code: "transaction_preview_non_regular_file", context: { nextSteps: expect.any(Array) } });
     });
   });
 
@@ -342,7 +342,7 @@ describe("semantic preview snapshot consistency", () => {
         socket.listen(path.join(context.pmPath, "special-entry"), resolve);
       });
       try {
-        await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "special-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-special", options: { title: "Special preview", type: "Task" } }] })).rejects.toThrow("Transaction preview requires regular files and directories");
+        await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "special-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-special", options: { title: "Special preview", type: "Task" } }] })).rejects.toMatchObject({ exitCode: 2, code: "transaction_preview_non_regular_file", context: { nextSteps: expect.any(Array) } });
       } finally {
         await new Promise<void>((resolve, reject) => socket.close((error) => error ? reject(error) : resolve()));
       }

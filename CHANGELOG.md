@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1390: Keep trusted merge-receipt attribution and committed reconciliation authoritative ([pm-gh1390](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1390.toon))
+- GH-1405: Settle proven abandoned plain-merge receipts without losing provenance ([pm-gh1405](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1405.toon))
+- Declare non-regular transaction preview paths as recoverable SDK refusals ([pm-preview-path-refusal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-preview-path-refusal.toon))
+
 ## 2026.10.7 - 2026-10-07
 
 ### Fixed

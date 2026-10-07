@@ -62,13 +62,14 @@ describe("merge recovery parity", () => {
   it.each(["legacy", "current"])("verifies %s scalar redactions through settlement and refuses tampered copies", async (format) => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
-      const id = createTestItemId(context, { title: "Legacy hash redaction" });
+      const id = createTestItemId(context, { title: "closed" });
       const receipt = await writeMergeReceipt({
         cwd: context.tempRoot,
         itemPath: `.agents/pm/tasks/${id}.toon`,
         preferred: "ours",
         fieldsFromTheirs: [],
         unionFields: [],
+        mergedFieldHashes: { title: hashItemScalarDecisionValue("closed") },
         decisions: [
           {
             field: "title",
@@ -105,7 +106,8 @@ describe("merge recovery parity", () => {
         (await inspectMergeReceiptEvidence(context.tempRoot))
           .invalid_evidence_count,
       ).toBe(0);
-      await markMergeReceiptReconciled(context.tempRoot, receipt!);
+      const settled = await runMergeReconcile({}, { path: context.pmPath });
+      expect(settled.receipts.reconciled).toBe(1);
       expect(
         (
           await inspectMergeReceiptEvidence(context.tempRoot, {

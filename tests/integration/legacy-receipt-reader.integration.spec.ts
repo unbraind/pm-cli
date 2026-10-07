@@ -2,26 +2,31 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { runMergeReconcile } from "../../src/sdk/merge/reconcile.js";
 import {
   inspectMergeReceiptEvidence,
   markMergeReceiptReconciled,
   writeMergeReceipt,
 } from "../../src/sdk/merge/receipts.js";
+import { hashItemScalarDecisionValue } from "../../src/sdk/merge/three-way.js";
+import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("legacy receipt reader", () => {
   it("preserves undefined writer inputs and reads the prior requested-preference encoding", async () => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+      const id = createTestItemId(context, { title: "Legacy missing scalar slots" });
       const receipt = await writeMergeReceipt({
         cwd: context.tempRoot,
-        itemPath: ".agents/pm/tasks/pm-roundtrip.toon",
+        itemPath: `.agents/pm/tasks/${id}.toon`,
         preferred: "ours",
         fieldsFromTheirs: [],
         unionFields: [],
+        mergedFieldHashes: { assignee: hashItemScalarDecisionValue(undefined) },
         decisions: [
           {
-            field: "description",
+            field: "assignee",
             base: undefined,
             ours: undefined,
             theirs: "discarded",
@@ -65,10 +70,8 @@ describe("legacy receipt reader", () => {
         pm_item_scalar_missing: true,
       });
       expect(await readFile(file, "utf8")).toBe(historicalBytes);
-      await markMergeReceiptReconciled(
-        context.tempRoot,
-        historical.receipts[0]!,
-      );
+      const settled = await runMergeReconcile({}, { path: context.pmPath });
+      expect(settled.receipts.reconciled).toBe(1);
       expect(
         (
           await inspectMergeReceiptEvidence(context.tempRoot, {

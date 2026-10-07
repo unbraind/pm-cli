@@ -19,7 +19,7 @@ import {
 } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { resolveAuthor } from "../shared/author.js";
-import { isFileAbsentError, readFileIfExists, readRegularFile } from "../fs/fs-utils.js";
+import { isFileAbsentError, readFileIfExists, readRegularFile, transactionPreviewNonRegularFileError } from "../fs/fs-utils.js";
 import { mutateWorkspaceJsonWithHistory } from "../history/workspace-history.js";
 import { reconcileSettingsSnapshot } from "./settings-concurrency.js";
 import {
@@ -1910,9 +1910,9 @@ async function readConfigurationOnlySettings(pmRoot: string): Promise<SettingsRe
   let entry: Stats;
   try { entry = await lstat(file); }
   catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
-  if (!entry.isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+  if (!entry.isFile()) throw transactionPreviewNonRegularFileError();
   let raw: string;
-  try { raw = await readRegularFile(file, `Transaction preview requires regular files and directories: ${file}`); }
+  try { raw = await readRegularFile(file, transactionPreviewNonRegularFileError()); }
   catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
   let parsed: unknown;
   try { parsed = JSON.parse(raw) as unknown; }

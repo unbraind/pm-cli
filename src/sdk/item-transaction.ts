@@ -7,7 +7,7 @@
  */
 import crypto from "node:crypto";
 import { constants, type Stats } from "node:fs";
-import { isFileMissingError, readRegularFile } from "../core/fs/fs-utils.js";
+import { isFileMissingError, readRegularFile, transactionPreviewNonRegularFileError } from "../core/fs/fs-utils.js";
 import { cp, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
@@ -598,7 +598,7 @@ async function previewEntryStat(file: string): Promise<Stats> {
   } else if (entry.isDirectory() || entry.isFile()) {
     return entry;
   }
-  throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+  throw transactionPreviewNonRegularFileError();
 }
 
 /**
@@ -612,7 +612,7 @@ async function previewFileDigest(file: string): Promise<Buffer> {
   const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const entry = await handle.stat();
-    if (!entry.isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
+    if (!entry.isFile()) throw transactionPreviewNonRegularFileError();
     const contents = crypto.createHash("sha256");
     // Bound this read to the observed size, even if a concurrent writer appends.
     if (entry.size > 0) {
@@ -680,8 +680,8 @@ async function readPreviewConfiguration(root: string, relative: string): Promise
       current = path.join(current, component);
       await previewEntryStat(current);
     }
-    if (!(await previewEntryStat(file)).isFile()) throw new TypeError(`Transaction preview requires regular files and directories: ${file}`);
-    return await readRegularFile(file, `Transaction preview requires regular files and directories: ${file}`);
+    if (!(await previewEntryStat(file)).isFile()) throw transactionPreviewNonRegularFileError();
+    return await readRegularFile(file, transactionPreviewNonRegularFileError());
   } catch (error) {
     if (await isDisappearingPreviewPath(error)) return undefined;
     throw error;

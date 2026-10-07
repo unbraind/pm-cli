@@ -7,6 +7,8 @@ import * as fs from "node:fs/promises";
 import { constants } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { EXIT_CODE } from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
 
 const WINDOWS_RENAME_RETRY_DELAYS_MS = [10, 25, 50, 100];
 
@@ -65,14 +67,32 @@ export async function readFileIfExists(
  * POSIX flags. Entries and ancestors must be trusted and stable: these checks
  * do not pin paths or prevent hostile concurrent redirection before a read.
  * @param targetPath Contained file whose ancestors the caller already validated.
- * @param rejectionMessage Actionable diagnostic when the opened entry is not a regular file.
+ * @param rejectionError Declared refusal when the opened entry is not a regular file.
  */
-export async function readRegularFile(targetPath: string, rejectionMessage: string): Promise<string> {
+export async function readRegularFile(targetPath: string, rejectionError: Error): Promise<string> {
   const handle = await fs.open(targetPath, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
-    if (!(await handle.stat()).isFile()) throw new TypeError(rejectionMessage);
+    if (!(await handle.stat()).isFile()) throw rejectionError;
     return await handle.readFile("utf8");
   } finally { await handle.close(); }
+}
+
+/**
+ * Refuse unsafe preview storage without exposing filesystem paths. Entry and
+ * opened-descriptor checks share this usage error so SDK callers can repair
+ * tracker configuration rather than treating a preserved safety boundary as
+ * an unexpected runtime fault. Native filesystem failures retain their codes.
+ */
+export function transactionPreviewNonRegularFileError(): PmCliError {
+  return new PmCliError("Transaction preview requires regular files and directories.", EXIT_CODE.USAGE, {
+    code: "transaction_preview_non_regular_file",
+    required: "regular files and directories within the configured tracker storage",
+    why: "Preview does not follow linked entries or read special files.",
+    nextSteps: [
+      "Inspect the configured tracker storage, settings, schema and session entries for links, directories used as files, or special files.",
+      "Restore the intended regular files and directories, then retry the original dry-run command.",
+    ],
+  });
 }
 
 /** Implements write file atomic for the public runtime surface of this module. */

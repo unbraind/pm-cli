@@ -3,6 +3,26 @@
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
   "families": [
     {
+      "id": "merge-operation-restoration-and-receipt-settlement",
+      "version": 1,
+      "title": "Git abort recovery and durable receipt settlement preserve exact original-state proof and history idempotency",
+      "owner_item_id": "pm-gh1405",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": ["src/sdk/merge/**", "src/sdk/history-repair.ts"],
+        "item_ids": ["pm-gh1405", "pm-gh1390"]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts"
+        ],
+        "hosted": ["CI / Gates (static)", "CI / Gates (coverage)", "CI / Windows regression (Node 24)"]
+      },
+      "negative_control": { "files": ["src/sdk/merge/receipt-operation.ts"] },
+      "historical_item_ids": ["pm-466m0j"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.03 }
+    },
+    {
       "id": "literal-annotation-bootstrap-normalization",
       "version": 1,
       "title": "Bootstrap option normalization must preserve literal annotation evidence across input transports",

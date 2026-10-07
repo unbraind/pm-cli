@@ -17,8 +17,8 @@ import {
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
-describe("aborted rebase receipt recovery", () => {
-  it("retains provenance and settles only an operation whose exact original Git state was restored", async () => {
+describe("aborted Git operation receipt recovery", () => {
+  it.each(["rebase", "merge"] as const)("retains %s provenance and settles only its exact restored origin", async (kind) => {
     await withTempPmPath(async (context) => {
       const git = (...args: string[]): string =>
         execFileSync("git", args, {
@@ -67,21 +67,21 @@ describe("aborted rebase receipt recovery", () => {
         path.join(context.pmPath, "tasks", `${id}.toon`),
         "utf8",
       );
-      const rebase = spawnSync("git", ["rebase", "upstream"], {
+      const operationResult = spawnSync("git", [kind, "upstream"], {
         cwd: context.tempRoot,
         env: context.env,
         encoding: "utf8",
       });
-      expect(rebase.status, rebase.stderr).not.toBe(0);
+      expect(operationResult.status, operationResult.stderr).not.toBe(0);
       const during = await inspectMergeReceiptEvidence(context.tempRoot);
       expect(during.receipts).toHaveLength(1);
-      expect(during.receipts[0]).toHaveProperty("operation.kind", "rebase");
+      expect(during.receipts[0]).toHaveProperty("operation.kind", kind);
       const active = await runMergeReconcile(
         { dryRun: true },
         { path: context.pmPath },
       );
       expect(active.receipts).toHaveProperty("abandoned", 0);
-      git("rebase", "--abort");
+      git(kind, "--abort");
       expect(
         await readFile(
           path.join(context.pmPath, "tasks", `${id}.toon`),

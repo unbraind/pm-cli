@@ -1,6 +1,6 @@
 /**
  * @module sdk/merge/receipt-operation
- * Records Git coordinates that let reconciliation prove a rebase restored its original state.
+ * Records Git coordinates that let reconciliation prove a merge or rebase restored its original state.
  */
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -12,20 +12,21 @@ import { readBoundedRegularFile } from "./receipt-file-boundary.js";
 const execFileAsync = promisify(execFile);
 const GIT_OBJECT_ID = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/u;
 
-/** Immutable pre-rebase coordinates, without branch names or item contents. */
+/** Immutable pre-operation coordinates, without branch names or item contents. */
 export interface MergeReceiptOperation {
   /** Git operation whose original state can be checked after it ends. */
-  kind: "rebase";
-  /** Commit from which the rebase began. */
+  kind: "rebase" | "merge";
+  /** Commit from which the operation began. */
   original_head: string;
   /** Original item blob at that commit. */
   original_blob: string;
 }
 
-/** Capture a rebase's original commit and item blob, or omit unprovable coordinates. */
+/** Capture original Git coordinates; plain merges require Git's incoming-head signal and the exact ours blob. */
 export async function captureMergeReceiptOperation(
   cwd: string,
   itemPath: string,
+  originalItemRaw?: string,
 ): Promise<MergeReceiptOperation | undefined> {
   const trimmedItemPath = itemPath.trim();
   const normalizedItemPath =
@@ -62,6 +63,33 @@ export async function captureMergeReceiptOperation(
       // No evidence is safer than inferring an abandoned operation from item drift.
     }
   }
+  // Git supplies GITHEAD_<incoming object ID> to plain-merge drivers before
+  // MERGE_HEAD exists. Cherry-pick and revert can share stale ORIG_HEAD and ours
+  // coordinates, so require that operation signal as well as exact origin proof.
+  if (originalItemRaw !== undefined && Object.keys(process.env).some(
+    (key) => /^GITHEAD_[a-f0-9]{40}(?:[a-f0-9]{24})?$/u.test(key),
+  )) {
+    try {
+      const { stdout: heads } = await execFileAsync(
+        "git", ["rev-parse", "HEAD", "ORIG_HEAD"], { cwd, timeout: 10_000 },
+      );
+      const [head, originalHead] = heads.trim().split(/\r?\n/u);
+      if (head !== originalHead || !GIT_OBJECT_ID.test(head)) return undefined;
+      const { stdout } = await execFileAsync(
+        "git", ["rev-parse", "--verify", `${head}:${normalizedItemPath}`],
+        { cwd, timeout: 10_000 },
+      );
+      const originalBlob = stdout.trim();
+      const oursBlob = createHash(originalBlob.length === 40 ? "sha1" : "sha256")
+        .update(`blob ${Buffer.byteLength(originalItemRaw)}\0`)
+        .update(originalItemRaw)
+        .digest("hex");
+      if (originalBlob !== oursBlob) return undefined;
+      return { kind: "merge", original_head: head, original_blob: originalBlob };
+    } catch {
+      // Missing or ambiguous origin evidence must remain unresolved.
+    }
+  }
   return undefined;
 }
 
@@ -74,7 +102,7 @@ export function isMergeReceiptOperation(
   const record = value as Record<string, unknown>;
   return (
     Object.keys(record).length === 3 &&
-    record.kind === "rebase" &&
+    (record.kind === "rebase" || record.kind === "merge") &&
     typeof record.original_head === "string" &&
     GIT_OBJECT_ID.test(record.original_head) &&
     typeof record.original_blob === "string" &&

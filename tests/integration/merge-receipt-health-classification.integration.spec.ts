@@ -1193,7 +1193,7 @@ describe("merge receipt health classification", () => {
             "--title",
             "Durable forgery",
             "--description",
-            "Reject committed durable-only receipt evidence",
+            "Reject durable-only hashes that disagree with the current snapshot",
             "--type",
             "Task",
           ],
@@ -1231,7 +1231,7 @@ describe("merge receipt health classification", () => {
           fields_from_theirs: ["title"],
           union_fields: [],
           merged_field_hashes: {
-            title: hashItemScalarDecisionValue("Changed durable forgery"),
+            title: hashItemScalarDecisionValue("Unproven durable title"),
           },
           decisions: [],
           state: "pending",

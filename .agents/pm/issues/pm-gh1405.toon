@@ -2,11 +2,13 @@ id: pm-gh1405
 title: "GH-1405: Settle proven abandoned plain-merge receipts without losing provenance"
 description: Reported plain git merge --abort leaves pending receipts that existing reconciliation cannot classify; reproduce the distinct lifecycle beyond shipped rebase-abort recovery.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-05T07:11:47.420Z"
-updated_at: "2026-10-05T07:11:55.051Z"
+updated_at: "2026-10-07T10:18:06.074Z"
+closed_at: "2026-10-07T10:18:05.459Z"
+completed_at: "2026-10-07T10:18:05.459Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "A real isolated conflicting plain Git merge followed by abort demonstrates the reported lifecycle before any fix; Exact HEAD/index/item/history and inactive-operation proof authorizes explicit audited abandonment without deleting durable provenance; Applied merges, changed origins, active operations, concurrent mutations and interrupted persistence reject false settlement or remain retry-safe; Supported CLI recovery and health guidance distinguish abandoned receipts from unresolved applied merges and preserve public SDK parity"
@@ -16,21 +18,130 @@ confidence: medium
 severity: high
 environment: "Reporter: Linux, published 2026.10.5, isolated Git repository with installed PM merge drivers"
 repro_steps: "Follow GH-1405 divergent status branches, conflicting Git merge, git merge --abort, then inspect health and reconcile dry run; use disposable roots and retain before/after item, history, Git and receipt bytes."
-expected_result: "Proven aborted plain merges have safe explicit audited abandonment, while applied or changed operations remain pending and immutable durable evidence survives."
-actual_result: Reporter observes pending health failures and no_receipt_set_proves_snapshot after abort; independent reproduction and implementation remain pending.
+resolution: "Require Git-generated incoming-head driver signal plus exact HEAD/ORIG_HEAD and ours blob before recording plain-merge provenance; omit missing/malformed or cherry-pick/revert operation evidence. Preserve audited restored-origin settlement, durable receipts, rebase recovery and retry safety."
+expected_result: "Only actual Git plain-merge driver context plus exact origin coordinates can capture merge provenance; cherry-pick, revert and stale references remain unresolved; SHA-1/SHA-256 merge and rebase abort recovery stays audited and retry-safe."
+actual_result: "The real driver keeper failed before the fix in both Git object formats and passes afterward. All 9884 applicable tests and exact all-source 100/100/100/100 coverage pass, along with strict static gates, four TS projects, nine packed npx/bunx packages and independent installed Node/Bun recovery plus cherry-pick/revert controls. Hosted next-head review/checks remain pending and next daily publication is separate."
 affected_version: 2026.10.5
 component: sdk/merge
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-466m0j,discovered_from,"2026-10-05T07:11:47.420Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-10-05T07:11:47.420Z","harness:codex","cli:create:dep",detected
   pm-g5sx,verifies,"2026-10-05T07:11:47.420Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
-  "2026-10-05T07:11:47.420Z","harness:codex","\"text=Duplicate check: complete strict all-status corpus contains 2887 items with zero omissions/unreadable rows; request-specific searches, current orientation/open/in-progress inventories and full live predecessors were read. No GH-1405 owner or plain-merge-abort recovery item exists. Closed pm-466m0j owns verified rebase-abort recovery and pm-g5sx owns the shipped semantic merge foundation. Keep both completed outcomes intact and link this distinct boundary through discovered_from/verifies/implements. Intake stays open and unclaimed; reported reproduction is not independently verified.\""
-files[4]{path,scope,note}:
-  src/sdk/merge/abandoned-receipts.ts,project,Existing restored-origin proof to extend only after real plain-merge reproduction
-  src/sdk/merge/receipt-operation.ts,project,Existing operation provenance boundary
-  src/sdk/merge/reconcile.ts,project,Supported explicit reconciliation boundary
-  tests/integration/receipt-operation-boundaries.integration.spec.ts,project,Existing real Git operation baseline; a new plain-merge regression is not claimed
-docs[1]{path,scope,note}:
-  docs/MERGE_SAFETY.md,project,Preserve durable privacy-safe evidence and supported recovery contract
+  pm-466m0j,recurs_from,"2026-10-07T05:10:40.375Z","harness:codex","cli:update:dep",detected
+  pm-gh1390,verifies,"2026-10-07T05:10:40.375Z","harness:codex","cli:update:dep",detected
+comments[10]:
+  - created_at: "2026-10-05T07:11:47.420Z"
+    author: "harness:codex"
+    text: "\"text=Duplicate check: complete strict all-status corpus contains 2887 items with zero omissions/unreadable rows; request-specific searches, current orientation/open/in-progress inventories and full live predecessors were read. No GH-1405 owner or plain-merge-abort recovery item exists. Closed pm-466m0j owns verified rebase-abort recovery and pm-g5sx owns the shipped semantic merge foundation. Keep both completed outcomes intact and link this distinct boundary through discovered_from/verifies/implements. Intake stays open and unclaimed; reported reproduction is not independently verified.\""
+  - created_at: "2026-10-07T05:02:52.442Z"
+    author: "harness:codex"
+    text: "Delivery scope: jointly implement plain-merge abandonment and authoritative receipt/history settlement with pm-gh1390 in one reviewed PR. Complete strict all-status inventory read 2901/2901 records, zero omissions/unreadable entries; 239 open, 59 draft, 2589 closed, 14 canceled, zero initial in_progress. GitHub has zero open PRs and zero open Dependabot, code-scanning and secret-scanning alerts. Bootstrap uses current checkout 2026.10.7. Before editing: real isolated Git regression owner for abort/restoration; receipt persistence, provenance and replay-safe settlement controls retain prior rebase behavior. Only these two implementation owners are claimed."
+  - created_at: "2026-10-07T05:08:46.655Z"
+    author: "harness:codex"
+    text: "TDD red evidence: real conflicting plain Git merge creates a receipt without operation.kind; exact same isolated fixture passes the shipped rebase path. New parameterized regression retains active-operation, changed HEAD/index/item, concurrency, interrupted settlement and durable privacy controls. Observed failure before production edits in ignored local red.log."
+  - created_at: "2026-10-07T05:37:58.450Z"
+    author: "harness:codex"
+    text: "Full-suite attempt ran 9,885 cases: 9,881 passed, two platform cases skipped, two failed. An older receipt-schema negative control still used merge as an unsupported kind. The unrelated packed continuation fixture could not resolve the separately installed npm package; its global module location was verified and exposed only through the test-process NODE_PATH. No runtime, coverage denominator or threshold was changed, and no coverage percentage is claimed from this failed run."
+    edited_at: "2026-10-07T06:04:01.047Z"
+  - created_at: "2026-10-07T05:52:39.870Z"
+    author: "harness:codex"
+    text: "Exact all-source coverage found one missing branch while all 9,883 applicable tests passed: the direct SDK keeper exercised SHA-256, while SHA-1 origin capture ran only in the external CLI. Extend the same real Git boundary matrix to sha1 and sha256, assert 40/64-character object identities, and retain both rebase backends plus malformed-origin controls. This adds genuine hash-format compatibility proof without mocks, coverage ignores or production seams."
+  - created_at: "2026-10-07T06:15:31.670Z"
+    author: "harness:codex"
+    text: "Final local verification: 9,884 applicable tests pass, two Windows-only platform skips, exact 100/100/100/100 statements/branches/functions/lines without shrinking the source denominator. Strict static, docstring structure/ratchets, no-duplicate profiles, runtime lock, SDK surface/contracts, graph/history assurance, bounded mutation and security gates pass. Native Windows CI now runs the same real SHA-1/SHA-256 origin-proof and durable worktree settlement fixtures; preview portability was already included in that required job. Hosted review and checks remain the landing gate."
+  - created_at: "2026-10-07T09:36:42.419Z"
+    author: "harness:codex"
+    text: "Investigation note: CodeRabbit final full review of d688100ff identified possible cherry-pick attribution as plain merge when stale ORIG_HEAD equals HEAD. A real isolated Git content driver confirms only plain merge receives GITHEAD_<incoming object ID>; cherry-pick and revert receive neither that signal nor a merge reflog action. Reuse this canonical operation-provenance owner, retain the same BIG PR, require a failing real-Git boundary regression before editing production, and keep all other owners closed/unclaimed."
+  - created_at: "2026-10-07T09:41:17.193Z"
+    author: "harness:codex"
+    text: "TDD red reproduced in both real SHA-1 and SHA-256 custom Git driver runs: conflicting cherry-pick receives kind merge when ORIG_HEAD is stale but equal to HEAD. The same keeper retains actual plain-merge signal and exact ours proof. Green linked tests now cover real merge/cherry-pick/revert, missing and malformed signal, missing/mismatched origin, both rebase backends, changed-state/concurrency, and interrupted audited settlement. Git upstream builtin/merge.c sets GITHEAD_<incoming object ID> before its strategy and ORIG_HEAD update; the capture requires this operation-specific signal without persisting branch labels. Full coverage/static/type and packed acceptance are rerun before closure."
+  - created_at: "2026-10-07T09:53:50.691Z"
+    author: "harness:codex"
+    text: "First full coverage attempt after the operation-signal fix ran 9886 cases: 9882 passed, two Linux platform skips, and two failed. The packed continuation test lacked the test-process NODE_PATH required by this host; an unchanged repository-wide absence-gate test exceeded its 30s timeout. No coverage report was certified. Both affected suites then passed (20 cases) without source, timeout or threshold changes after exposing the verified global npm package through test-process NODE_PATH. Repeat the unchanged full canonical runner and strict gates before claiming final results; the timeout cause is unproven."
+  - created_at: "2026-10-07T10:18:04.795Z"
+    author: "harness:codex"
+    text: "Final operation-identity verification: 9884 applicable tests pass, two Windows-only Linux skips, exact all-source 100/100/100/100 (67111 statements, 51380 branches, 13839 functions, 63953 lines). Full strict static gates and all four TypeScript projects pass; no denominator, exclusions, timeout or threshold changed. Latest pm-changelog remains 2026.10.5. Packed npx/bunx smoke passes all nine bundled packages. Independent installed Node and Bun consumers pass real plain-merge conflict/abort, readonly planning, audited and legacy-audit settlement, unaudited-terminal visibility, byte-identical retries, typed preview refusal and actual cherry-pick/revert non-attribution. Hosted checks and a new full review of the next pushed source remain the landing gate; publication waits for the next eligible daily release."
+notes[1]{created_at,author,text}:
+  "2026-10-07T10:18:04.160Z","harness:codex","Git operation identity evidence: upstream builtin/merge.c sets GITHEAD_<incoming object ID> before the merge strategy and ORIG_HEAD update (https://github.com/git/git/blob/master/builtin/merge.c). Real conflicting content-driver probes in both SHA-1 and SHA-256 observe that signal only for plain merge, while cherry-pick/revert can share stale HEAD/ORIG_HEAD and ours coordinates. The SDK records only kind/origin commit/blob, never incoming branch labels. If the signal is missing or malformed, capture stays undefined and no plain-merge abandonment audit is authorized. Existing real abort/restoration, active/changed-state, concurrency and interrupted-audit retry guards remain required."
+learnings[2]{created_at,author,text}:
+  "2026-10-07T05:11:36.323Z","harness:codex","Git publishes MERGE_HEAD after content drivers execute. Capture plain-merge origin from matching HEAD/ORIG_HEAD and the exact ours blob; active-operation markers alone cannot capture that boundary. Settlement still rechecks inactive Git, exact HEAD/index/item and clean locked history."
+  "2026-10-07T09:41:17.761Z","harness:codex","Matching HEAD, ORIG_HEAD and ours bytes establish origin coordinates, not operation identity. Git cherry-pick/revert reuse content drivers and may inherit matching stale ORIG_HEAD. Plain-merge capture additionally requires Git-generated GITHEAD_<incoming object ID>, including SHA-1/SHA-256. Missing signal fails closed; do not use customizable GIT_REFLOG_ACTION alone. Preserve readonly unsupported receipts and every existing audited rebase/plain-merge recovery guard."
+files[10]:
+  - path: .github/workflows/ci.yml
+    scope: project
+  - path: config/defect-recurrence-policy.json
+    scope: project
+    note: Register abort recovery lineage and required regression checks
+  - path: sdk/public-surface.json
+    scope: project
+    note: Review widened operation kind for typed SDK consumers
+  - path: src/sdk/merge/abandoned-receipts.ts
+    scope: project
+    note: Existing restored-origin proof to extend only after real plain-merge reproduction
+  - path: src/sdk/merge/driver.ts
+    scope: project
+  - path: src/sdk/merge/receipt-operation.ts
+    scope: project
+    note: Existing operation provenance boundary
+  - path: src/sdk/merge/reconcile.ts
+    scope: project
+    note: Supported explicit reconciliation boundary
+  - path: tests/integration/aborted-rebase-recovery.integration.spec.ts
+    scope: project
+  - path: tests/integration/receipt-operation-boundaries.integration.spec.ts
+    scope: project
+    note: Real SHA-1/SHA-256 plain-merge origin proof and both rebase backends
+  - path: tests/unit/sdk/merge/receipt-schema.spec.ts
+    scope: project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts,project,"harness:codex","2026-10-07T05:07:56.924Z",local_mutation,fix/merge-receipt-abort-and-settlement
+test_runs[3]:
+  - run_id: test-local-muxngyv0-5b63fm
+    kind: test
+    status: passed
+    started_at: "2026-10-07T05:11:10.477Z"
+    finished_at: "2026-10-07T05:11:26.844Z"
+    recorded_at: "2026-10-07T05:11:26.844Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muxoy14v-fbf302
+    kind: test
+    status: passed
+    started_at: "2026-10-07T05:52:23.440Z"
+    finished_at: "2026-10-07T05:52:42.559Z"
+    recorded_at: "2026-10-07T05:52:42.559Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muxx1kps-2kxkif
+    kind: test
+    status: passed
+    started_at: "2026-10-07T09:39:00.162Z"
+    finished_at: "2026-10-07T09:39:24.832Z"
+    recorded_at: "2026-10-07T09:39:24.832Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]:
+  - path: CHANGELOG.md
+    scope: project
+  - path: docs/MERGE_SAFETY.md
+    scope: project
+    note: Preserve durable privacy-safe evidence and supported recovery contract
+close_reason: Verified actual Git operation identity for audited plain-merge abort recovery
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: merge-operation-restoration
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: pm-gh1405
 body: "Source: https://github.com/unbraind/pm-cli/issues/1405\n\n## Summary\n\nOn **2026.10.5**, `git merge --abort` after a pm item-driver conflict leaves the repository permanently unhealthy, and the remediation that `pm health` recommends (`pm merge reconcile`) cannot clear it. #1202 fixed the `git rebase --abort` (restored-origin) variant; the plain merge-abort lifecycle still leaves pending receipts for a merge that never landed.\n\nMulti-agent workflows hit this constantly: an agent tries `git merge other-branch`, sees `CONFLICT`, aborts and rebases or asks for help. Afterwards every `pm health` gate in that clone is red.\n\n## Reproduction (fresh scratch repo, pm 2026.10.5, merge drivers installed by `pm init`)\n\n```sh\ngit init -b main && pm init --yes && git add -A && git commit -m init\npm create --title \"Shared item\" --type Task --description x   # -> pm-2rqw\ngit add -A && git commit -m item\ngit switch -c a\nPM_AUTHOR=agent-a pm update pm-2rqw --status in_progress --priority 1\ngit add -A && git commit -m a\ngit switch main && git switch -c b\nPM_AUTHOR=agent-b pm close pm-2rqw \"done in b\"\ngit add -A && git commit -m b\ngit switch main && git merge a && git merge b      # CONFLICT (content) in .agents/pm/tasks/pm-2rqw.toon (status)\ngit merge --abort\n```\n\n## Observed after the abort\n\n- The working tree and `HEAD` are back on `main`, and the item was never merged.\n- `git status` shows an untracked `.agents/pm/merge-receipts/<uuid>.json`; `.git/pm-merge-receipts/` keeps the clone-local copy.\n- `pm health --check-only` reports `ok: false` with `pending_merge_decisions` counting the aborted receipt (it climbs with every retry-and-abort: I reached 2 after one retry), `pending_merge_decision_items: [pm-2rqw]`, and `remediation_map.merge_decisions_unreviewed: \"pm merge reconcile --dry-run\"`.\n- `pm merge reconcile --dry-run` reports `ok: false`, `abandoned: 0`, `reconciled: 0`, and stream `pm-2rqw` `failed`: *\"Merge receipt evidence for pm-2rqw does not prove the exact item snapshot (no_receipt_set_proves_snapshot).\"* No documented command settles the receipt as abandoned.\n\n## Expected\n\nThe same settlement #1208 gives an aborted rebase: when the item at `HEAD` is byte-identical to the receipt's `ours` origin and no merge commit includes `theirs`, classify the receipt as **abandoned**. Health should then be green (or report it as abandoned and safe to discard), and `pm merge reconcile` should settle it. The untracked working-tree copy should be cleaned up, or at least named in the guidance.\n\n## Contrast: the completed merge works\n\nRe-running the same merge to completion (`git add .agents/pm && git commit`, then `pm merge reconcile`) yields `reconciled: 1` and `pm health` `ok: true`, so only the abort lifecycle is affected.\n\nRelated: #1202 (rebase variant, closed via #1208), #1390 (receipt-covered drift reported as unattributed).\n\n\nIntake boundary: this is the reporter's plain git-merge abort observation on published 2026.10.5, not an independently reproduced or fixed defect. The shipped GH-1202 owner pm-466m0j explicitly covers rebase-abort provenance and remains closed. This issue owns the distinct merge-abort lifecycle; preserve durable privacy-safe evidence and require actual isolated Git reproduction before implementation. Do not delete sidecars or force settlement merely to make health green."
