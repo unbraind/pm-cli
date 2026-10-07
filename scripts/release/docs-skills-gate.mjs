@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail, flagBool, parseFlags, runCommand } from "./utils.mjs";
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import {
   inspectDocumentationGraph,
   inspectMarkdown,
@@ -551,11 +552,14 @@ function validateGuideTopic(topic, runtimeEnv, availableCommands, failures) {
 
 export async function runGuideChecks(failures) {
   const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-docs-skills-gate-"));
+  const releaseCleanup = registerTempCleanup(tempRoot);
   const runtimeEnv = {
     PM_PATH: path.join(tempRoot, "project", ".agents", "pm"),
     PM_GLOBAL_PATH: path.join(tempRoot, "global"),
     PM_AUTHOR: "docs-skills-gate",
     PM_CLI_PACKAGE_ROOT: REPO_ROOT,
+    PM_TELEMETRY_DISABLED: "1",
+    PM_TELEMETRY_OTEL_DISABLED: "1",
   };
   try {
     initializeGuideRuntime(runtimeEnv);
@@ -575,6 +579,7 @@ export async function runGuideChecks(failures) {
       maxRetries: 3,
       retryDelay: 100,
     });
+    releaseCleanup();
   }
 }
 

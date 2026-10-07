@@ -98,6 +98,7 @@ pm guide release --json
 - [Extension Lifecycle Contracts](EXTENSION_LIFECYCLE.md) - source identity, durable migrations, and scoped preflight ownership.
 - [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md) - the stability guarantees and contract surface package authors build against.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
+- [SDK Storage Lifecycle](SDK_STORAGE_LIFECYCLE.md) - existing-parent writes, background worker lifetimes, and temporary acceptance producers.
 - [SDK Item Creation and Recovery](SDK_CREATE_AND_RECOVERY.md) - typed deterministic conflicts, resolved identity, actionable refusals, and amount-limited producer cursors.
 - [Audited SDK Settings and Item Updates](SDK_AUDITED_MUTATIONS.md) - extension-owned settings changes, replay-safe previews, and full-item JSON annotation integrity.
 - [SDK execution and recovery contracts](SDK_EXECUTION_CONTRACTS.md): schema-driven scheduling, handoff, and command recovery.

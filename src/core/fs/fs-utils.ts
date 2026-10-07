@@ -95,13 +95,19 @@ export function transactionPreviewNonRegularFileError(): PmCliError {
   });
 }
 
-/** Implements write file atomic for the public runtime surface of this module. */
+/**
+ * Replace a UTF-8 file through a sibling temporary file and atomic rename.
+ * Parent directories are created by default. Background consumers can disable
+ * that behavior to respect removal of their storage while work is in flight;
+ * missing parents then produce the native filesystem error without recreation.
+ */
 export async function writeFileAtomic(
   targetPath: string,
   contents: string,
+  options: { createParentDirectories?: boolean } = {},
 ): Promise<void> {
   const dirPath = path.dirname(targetPath);
-  await ensureDir(dirPath);
+  if (options.createParentDirectories !== false) await ensureDir(dirPath);
   const tempPath = path.join(
     dirPath,
     `.${path.basename(targetPath)}.${process.pid}.${Date.now()}.${crypto.randomBytes(4).toString("hex")}.tmp`,

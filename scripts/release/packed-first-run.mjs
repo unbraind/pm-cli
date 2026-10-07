@@ -10,12 +10,14 @@ import { addAbortSignal } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { startPluginMcpSmoke } from "../plugin-mcp-smoke-harness.mjs";
+import { registerTempOperation } from "../temp-lifecycle.mjs";
 
-const execute = promisify(execFile);
+const execFileAsync = promisify(execFile);
 
 /** Acknowledge split worker batches until completion arrives, under one deadline with listener cleanup. */
-export async function collectTelemetryCompletion(collector, timeoutMs = 90_000) {
-  const signal = AbortSignal.timeout(timeoutMs);
+export async function collectTelemetryCompletion(collector, timeoutMs = 90_000, ownerSignal) {
+  const deadline = AbortSignal.timeout(timeoutMs);
+  const signal = ownerSignal ? AbortSignal.any([ownerSignal, deadline]) : deadline;
   let eventCount = 0;
   for await (const [request, response] of on(collector, "request", {
     signal,
@@ -73,6 +75,15 @@ export async function runPackedFirstRun(packageRoot) {
     await readFile(path.join(root, "package.json"), "utf8"),
   );
   const workspace = await mkdtemp(path.join(tmpdir(), "pm-packed-first-run-"));
+  const lifecycle = registerTempOperation(workspace);
+  /** Reject new stages after interruption and retain the root until the actual child closes. */
+  const execute = async (command, args, options) => {
+    lifecycle.signal.throwIfAborted();
+    const execution = execFileAsync(command, args, { ...options, signal: lifecycle.signal });
+    const closed = new Promise((resolve) => execution.child.once("close", resolve));
+    try { return await execution; }
+    finally { await closed; }
+  };
   const env = {
     ...process.env,
     HOME: path.join(workspace, "home"),
@@ -168,7 +179,7 @@ export async function runPackedFirstRun(packageRoot) {
       const settings = JSON.parse(await readFile(settingsPath, "utf8"));
       settings.telemetry.endpoint = endpoint;
       await writeFile(settingsPath, JSON.stringify(settings));
-      const delivery = collectTelemetryCompletion(collector);
+      const delivery = collectTelemetryCompletion(collector, 90_000, lifecycle.signal);
       const telemetryEnv = {
         ...env,
         PM_TELEMETRY_DISABLED: "0",
@@ -213,6 +224,7 @@ export async function runPackedFirstRun(packageRoot) {
       collector.closeAllConnections();
       await new Promise((resolve) => collector.close(resolve));
     }
+    lifecycle.signal.throwIfAborted();
     const smoke = await startPluginMcpSmoke({
       serverPath: path.join(root, "dist", "mcp", "server.js"),
       author: "packed-first-run",
@@ -246,6 +258,7 @@ export async function runPackedFirstRun(packageRoot) {
     };
   } finally {
     await rm(workspace, { recursive: true, force: true, maxRetries: 5 });
+    lifecycle.finish();
   }
 }
 

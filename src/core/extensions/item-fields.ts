@@ -82,11 +82,6 @@ function parseFieldAssignment(raw: string): { key: string; value: string } {
   return { key, value };
 }
 
-/** Render the dedicated core CLI flag for one reserved metadata key. */
-function coreItemFieldFlag(fieldName: string): string {
-  return `--${fieldName.replaceAll("_", "-")}`;
-}
-
 function parseJsonFieldValue(
   raw: string,
   fieldName: string,
@@ -222,7 +217,12 @@ export function collectRegisteredItemFieldNames(
   );
 }
 
-/** Implements parse registered item field assignments for the public runtime surface of this module. */
+/**
+ * Parse typed assignments using active extension declarations into a new object.
+ * Reserved keys name their dedicated core flags; unknown keys identify the
+ * rejected input separately from legal registered keys. Parsing never writes
+ * tracker state, so a failed assignment cannot persist partial metadata.
+ */
 export function parseRegisteredItemFieldAssignments(
   rawFields: string[] | undefined,
   registrations: ExtensionRegistrationRegistry | null,
@@ -237,7 +237,7 @@ export function parseRegisteredItemFieldAssignments(
     const definition = definitions.get(key);
     if (!definition) {
       if (RESERVED_ITEM_FIELD_NAMES.has(key)) {
-        const flag = coreItemFieldFlag(key);
+        const flag = `--${key.replaceAll("_", "-")}`;
         throw new PmCliError(
           `--field ${key} is a core item field, not an extension field`,
           EXIT_CODE.USAGE,
@@ -263,7 +263,8 @@ export function parseRegisteredItemFieldAssignments(
         EXIT_CODE.USAGE,
         {
           code: "extension_item_field_unknown",
-          recovery: { provided_fields: known },
+          field: key,
+          recovery: { provided_fields: [key] },
           nextSteps:
             known.length > 0
               ? [`Use one of the declared fields: ${known.join(", ")}`]

@@ -1,115 +1,51 @@
 # Build generations and registry acceptance
 
-Tracked by [pm-cxc4jc](../.agents/pm/tasks/pm-cxc4jc.toon) and
-[pm-ygli86](../.agents/pm/tasks/pm-ygli86.toon). Ownership recovery and temporary
-workspace lifecycle follow-ups are
-[pm-63i8nr](../.agents/pm/tasks/pm-63i8nr.toon) and
+Trackers: [pm-cxc4jc](../.agents/pm/tasks/pm-cxc4jc.toon),
+[pm-ygli86](../.agents/pm/tasks/pm-ygli86.toon),
+[pm-63i8nr](../.agents/pm/tasks/pm-63i8nr.toon),
 [pm-p5u6](../.agents/pm/chores/pm-p5u6.toon).
 
-## Complete build ownership
+## Build ownership
 
-`pnpm build` owns one checkout-local lease from build-cache preparation through
-TypeScript compilation, bundling, and finalization. The sandboxed test runner
-uses the same lease for the entire test and coverage session. A second producer
-or consumer waits up to twenty minutes instead of reading partially rewritten
-JavaScript. The lease is under `.cache/build-lease`; its owner receipt records a
-process identifier and an opaque inheritance token.
+Build/test/coverage sessions own `.cache/build-lease` through completion;
+other producers/consumers wait twenty minutes. Nested readers inherit a verified
+PID/token receipt; nested builds require independent workspaces. Direct stages
+and arbitrary `dist` reads bypass this protocol.
 
-Nested read-only test runners inherit the verified live-owner receipt. Starting
-a build inside a test session is refused: rebuilding shared artifacts while
-other test workers consume them would violate the generation boundary. Fixtures
-that exercise the build orchestrator must use independent temporary workspaces.
+Leases never expire or get stolen. Two matching reads proving PID absence fail
+promptly with recovery guidance. Missing/malformed/changing/ambiguous receipts
+use the timeout; PID reuse is ambiguous. Inspect owner and children before
+abandoned-lease removal. Failed builds leave `.cache/build-incomplete`; prebuilt
+tests refuse it until a successful build.
 
-The lease never expires based on its age and is never automatically stolen.
-While waiting, the runner probes the recorded owner's process identifier. If
-the process is definitively absent and a second read confirms the same owner,
-it fails promptly with the receipt path and recovery instructions. Missing,
-malformed, changing, and permission-ambiguous receipts remain protected and use
-the ordinary acquisition timeout. PID reuse can make a departed owner appear
-live; the probe is a conservative diagnostic, not proof of process identity.
-After an interrupted process, inspect the owner and its children before removing
-an abandoned lease. A failed build leaves `.cache/build-incomplete`; prebuilt
-tests refuse that generation until a successful `pnpm build` clears the marker.
-Direct invocations of individual build stages or arbitrary reads of `dist` do
-not participate in this protocol. Use the build and test entrypoints for
-concurrent validation.
+Interrupts stop the child and stage admission, allowing five seconds for
+settlement, lease release and cleanup; unsettled children retain storage.
+Subprocess tests cover build/prebuilt paths and installer exits bypassing
+`finally`. [Storage lifecycle](SDK_STORAGE_LIFECYCLE.md) defines retention and
+platform limits.
 
-## Owned temporary workspaces
+## Registry acceptance
 
-Package smoke, external-package smoke, package-first dogfood, contract snapshots,
-plugin MCP smoke, and the sandboxed test runner register their temporary roots
-with the shared lifecycle helper. Release preparation, installed-agent and
-published-package verification, compatibility checks, isolated regression
-controls, context evaluation, intent calibration, refusal probes, and the point
-and context read benchmarks also register their owned roots. Normal completion
-releases the registration after cleanup. Synchronous
-workspaces also clean on process exit, including uncaught failure. SIGINT and
-SIGTERM run registered cleanup before returning exit codes 130 and 143.
+Release publishes once, chooses the registry's closest older calendar version
+and runs the same eleven-step session against control then candidate in separate
+roots. Linux/macOS/Windows cover npm local/global and Bun local. Installed CLI/SDK
+and selected runtimes have two-minute step deadlines, bounded output and token
+receipts. Synthetic telemetry/external reporting are disabled.
 
-An asynchronous producer must provide bounded shutdown. The plugin harness
-waits for its MCP child to close before removing its workspace; shutdown failure
-retains the directory and reports its path. An abrupt exit cannot await that
-shutdown, so it also retains asynchronous workspaces. Explicit keep-temp modes
-do not register cleanup. No cleanup scans or deletes unrelated temporary roots.
+Control failure indicates harness/environment problems; candidate-only failure
+requires regression investigation. Both block advertisement, which requires every
+matrix leg. Artifacts name manager/step. Immutable versions are never republished;
+exact-tag recovery retains the reviewed control selector. Parent deadlines cover
+preparation and publish/verify/advertise.
 
-The test runner stops its active build or test child on interruption, closes
-admission to later stages, and waits up to five seconds for the runner to settle.
-That wait includes release of its build lease and ordinary cleanup. If the child
-does not stop, the workspace is retained and its location is reported. A signal
-must never remove files still being used by a test process. Real subprocess
-regressions exercise both build-enabled and prebuilt execution, alongside
-installer failures that call `process.exit` and therefore bypass `finally`.
-
-Package-first dogfood disables telemetry for its synthetic child commands so
-detached flush workers cannot recreate the workspace after cleanup. Dedicated
-telemetry acceptance and the live Sentry/telemetry gate verify delivery.
-
-Release-note integration fixtures own their changelog, generator location, and
-Git lookup directory. Both a dated-only changelog and an Unreleased section are
-tested against the same real over-budget tracker. Release preparation can
-therefore regenerate the checkout changelog without changing test inputs.
-
-These handlers cannot run after SIGKILL, power loss, or Windows forced process
-termination. Native signal acceptance runs on Unix; callback and normal-exit
-contracts also run on Windows. The remaining script-wide migration stays tracked
-by pm-p5u6 rather than treating these covered entrypoints as complete adoption.
-
-## Published candidate and control
-
-The Release workflow publishes npm artifacts once, verifies executors, and
-selects the closest older calendar version from the public registry inventory.
-It then runs the same eleven-step agent session against the control first and
-the candidate second in independent temporary installation roots.
-
-The matrix covers Linux, macOS, and Windows with npm local, npm global, and Bun
-local installations. Each session initializes, orients, creates, claims,
-annotates, links evidence, closes, validates, reads the closed item and context,
-and verifies a complete corpus read through the installed public SDK. Each
-subprocess has a two-minute deadline; command output has per-step bounds and the
-report records estimated token cost. Telemetry and external error reporting are
-disabled in these acceptance workspaces.
-
-GitHub release advertisement is a separate job that depends on every matrix
-leg succeeding. A failed control identifies a harness or environment problem;
-a passing control followed by a failing candidate identifies a candidate
-regression to investigate. Neither failure permits advertisement. Reports are
-retained as workflow artifacts; failures also name the manager and failing step.
-Existing npm versions are never republished during exact-tag recovery.
-
-The prepublication artifact gate accepts both npm's array report and npm 12's
-package-keyed report. It requires exactly one artifact, validates keyed package
-identity, and applies the same file, source-map, and size limits to either shape.
-Exact-tag recovery preserves the reviewed control selector before checking out
-older unpublished source. The automatic-release parent budgets the complete
-publish, acceptance, and advertisement sequence plus its preparation work.
-
-Run the same comparison locally:
+The artifact gate validates one npm array/keyed receipt, identity and size/file/map
+limits. Release-note fixtures own generator/changelog/Git roots, isolating
+dated/Unreleased over-budget cases from checkout regeneration.
 
 ```bash
-npm run release:verify-installed-agent -- --version 2026.9.16 --previous-version 2026.9.15 --manager npm --global --json
-npm run release:verify-installed-agent -- --version 2026.9.16 --previous-version 2026.9.15 --manager bun --json
+npm run release:verify-installed-agent -- --version "$CANDIDATE" --previous-version "$CONTROL" --manager npm --global --json
+npm run release:verify-installed-agent -- --version "$CANDIDATE" --previous-version "$CONTROL" --manager bun --json
 ```
 
-Use `npm run` on Windows so the verifier receives the actual npm JavaScript
-entrypoint. CLI and SDK execution use the installed package and the selected
-runtime rather than assuming shell shim names.
+Set both versions. Windows `npm run` supplies npm's JavaScript entrypoint.
+See [packed first run](PACKED_FIRST_RUN.md) and [release policy](RELEASING.md).

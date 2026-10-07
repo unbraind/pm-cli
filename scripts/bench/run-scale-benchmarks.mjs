@@ -15,6 +15,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { PmClient } from "../../dist/cli-bundle/sdk.js";
 import { fail, parseFlags, repoRoot } from "../release/utils.mjs";
+import { registerTempOperation } from "../temp-lifecycle.mjs";
 import {
   generateSyntheticWorkspace,
   parsePositiveInteger,
@@ -129,6 +130,7 @@ export async function measureCliProcess(args, environment) {
     {
       cwd: environment.workspaceRoot,
       env: environment.env,
+      signal: environment.signal,
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -154,8 +156,9 @@ export async function measureCliProcess(args, environment) {
   })();
   try {
     const exitCode = await new Promise((resolve, reject) => {
-      child.once("error", reject);
-      child.once("close", (code) => resolve(code === 0 ? 0 : 1));
+      let failure;
+      child.once("error", (error) => { failure = error; });
+      child.once("close", (code) => failure ? reject(failure) : resolve(code === 0 ? 0 : 1));
     });
     if (exitCode !== 0) {
       throw new Error(
@@ -518,20 +521,9 @@ function resolveTransport(value) {
   return transport;
 }
 
-/** Generate a fixture, benchmark requested transports, and return the report. */
-export async function runScaleBenchmarks(options) {
-  const itemCount = resolveScaleItemCount(options.itemCount);
-  const iterations = parsePositiveInteger(
-    options.iterations ?? 3,
-    "--iterations",
-  );
-  if (iterations > 100) throw new Error("--iterations must be <= 100");
-  const transport = resolveTransport(options.transport);
-  const ownsWorkspace = options.workspaceRoot === undefined;
-  const workspaceRoot = ownsWorkspace
-    ? await mkdtemp(path.join(os.tmpdir(), "pm-scale-benchmark-"))
-    : path.resolve(options.workspaceRoot);
-  try {
+/** Seed and measure one validated workload while its caller owns storage and shutdown. */
+async function runScaleBenchmarkWorkload(options, signal) {
+    const { workspaceRoot, itemCount, iterations, transport } = options;
     const fixture = await generateSyntheticWorkspace({
       workspaceRoot,
       itemCount,
@@ -540,6 +532,7 @@ export async function runScaleBenchmarks(options) {
       mode: options.mode ?? "direct",
       force: true,
     });
+    signal?.throwIfAborted();
     if (fixture.sample_ids.open.length < iterations + 1) {
       throw new Error(
         `Fixture has ${fixture.sample_ids.open.length} open items; need ${iterations + 1}`,
@@ -547,6 +540,7 @@ export async function runScaleBenchmarks(options) {
     }
     const environment = {
       workspaceRoot,
+      signal,
       env: {
         ...process.env,
         PM_PATH: fixture.pm_root,
@@ -562,6 +556,7 @@ export async function runScaleBenchmarks(options) {
     if (transport !== "sdk") {
       transports.cli = await runCliBenchmarks(fixture, iterations, environment);
     }
+    signal?.throwIfAborted();
     if (transport !== "cli") {
       transports.sdk = await runSdkBenchmarks(fixture, iterations, environment);
     }
@@ -577,10 +572,26 @@ export async function runScaleBenchmarks(options) {
       transports,
       transport_overhead: buildTransportOverheadReport(transports),
     };
+}
+
+/** Measure a validated isolated workspace and dispose only roots owned by this run. */
+export async function runScaleBenchmarks(options) {
+  const itemCount = resolveScaleItemCount(options.itemCount);
+  const iterations = parsePositiveInteger(options.iterations ?? 3, "--iterations");
+  if (iterations > 100) throw new Error("--iterations must be <= 100");
+  const transport = resolveTransport(options.transport);
+  const ownsWorkspace = options.workspaceRoot === undefined;
+  const workspaceRoot = ownsWorkspace
+    ? await mkdtemp(path.join(os.tmpdir(), "pm-scale-benchmark-"))
+    : path.resolve(options.workspaceRoot);
+  const lifecycle = ownsWorkspace && options.keepWorkspace !== true ? registerTempOperation(workspaceRoot) : undefined;
+  try {
+    return await runScaleBenchmarkWorkload({ ...options, workspaceRoot, itemCount, iterations, transport }, lifecycle?.signal);
   } finally {
     if (ownsWorkspace && options.keepWorkspace !== true) {
       await rm(workspaceRoot, { recursive: true, force: true });
     }
+    lifecycle?.finish();
   }
 }
 

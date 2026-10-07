@@ -34,6 +34,7 @@ import { resolveSourceContextWritePolicy } from "../environment/source-context.j
 import {
   gitWorkspaceEnvironment,
   resolveMergeDriverConfigScope,
+  writeMergeDriverGitConfig,
 } from "./worktree-config.js";
 import { discoverProjectRuntimeVersionPins } from "../environment/project-runtime-compatibility.js";
 
@@ -895,6 +896,37 @@ export async function runMergeInstall(
   });
 }
 
+/** Serialize pm installers across a clone's worktrees, then re-read their selected configuration layer. Unchanged definitions require no Git write, so an unrelated writer cannot turn an idempotent install into a lock failure. */
+async function installMergeDriverConfiguration(workspaceRoot: string, entries: Array<{ key: string; value: string }>): Promise<void> {
+  const commonDirectory = (await execFileAsync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
+    cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000,
+  })).stdout.trim();
+  const release = await acquireLock(commonDirectory, "merge-driver-config", 120, "merge-install", false, true, 5_000);
+  try {
+    const scope = await resolveMergeDriverConfigScope(workspaceRoot);
+    let stdout: string;
+    try {
+      stdout = (await execFileAsync("git", ["config", scope, "--null", "--get-regexp", "."], {
+        cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000,
+      })).stdout;
+    } catch (error: unknown) {
+      if (typeof error !== "object" || error === null || !("code" in error) || error.code !== 1) throw error;
+      stdout = "";
+    }
+    const current = new Map(stdout.split("\0").filter(Boolean).map((entry) => {
+      const separator = entry.indexOf("\n");
+      return [entry.slice(0, separator), entry.slice(separator + 1)];
+    }));
+    for (const entry of entries) {
+      if (current.get(entry.key) !== entry.value) {
+        await writeMergeDriverGitConfig(workspaceRoot, [scope, entry.key, entry.value]);
+      }
+    }
+  } finally {
+    await release();
+  }
+}
+
 /**
  * Install merge safety for an initialized tracker without depending on the
  * caller's cwd or global CLI path resolution. This is the SDK primitive used
@@ -963,22 +995,7 @@ export async function installMergeFence(options: {
   }
   if (!dryRun) {
     try {
-      const configScope = await resolveMergeDriverConfigScope(
-        canonicalWorkspaceRoot,
-      );
-      for (const entry of gitConfigEntries) {
-        await execFileAsync(
-          "git",
-          ["config", configScope, entry.key, entry.value],
-          {
-            cwd: canonicalWorkspaceRoot,
-            env: gitWorkspaceEnvironment(),
-            encoding: "utf8",
-            windowsHide: true,
-            timeout: 10_000,
-          },
-        );
-      }
+      await installMergeDriverConfiguration(canonicalWorkspaceRoot, gitConfigEntries);
     } catch {
       throw new PmCliError(
         `Cannot install repository-local merge drivers in ${canonicalWorkspaceRoot}. Ensure the repository Git config is writable and no other Git process holds its lock, then retry.`,

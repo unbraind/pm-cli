@@ -1,0 +1,70 @@
+id: pm-gh1424
+title: "GH-1424: Wait safely for contended Git merge-driver configuration"
+description: Parallel package prepare hooks race on Git config.lock; SDK merge installation must wait for transient contention and preserve bounded actionable refusal for permanent failures.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-07T17:18:38.064Z"
+updated_at: "2026-10-07T19:53:35.115Z"
+closed_at: "2026-10-07T19:53:34.332Z"
+completed_at: "2026-10-07T19:53:34.332Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Released Git config locks permit complete installation without caller retries; persistent locks fail within a declared bound without publishing a new attributes fence; non-contention failures are not retried; unchanged driver definitions are not rewritten; linked-worktree configuration migration remains isolated and race-safe
+parent: pm-dj98
+risk: medium
+confidence: high
+reporter: GitHub #1424
+severity: medium
+repro_steps: Hold .git/config.lock while starting parallel installed prepare hooks; release it after 200ms. Pre-fix installs fail with merge_git_config_unwritable instead of waiting.
+resolution: "Coordinated installations across a clone's worktrees, read the selected configuration layer and skip identical definitions. Required native Git writes retry only lock contention with bounded backoff; persistent locks and other failures preserve typed refusal and attributes safety."
+expected_result: "Concurrent merge setup succeeds after transient native lock release, avoids rewriting matching definitions, and never deletes external locks or publishes attributes after config failure."
+actual_result: "Both linked merge suites passed 27 real Git cases, including concurrent installs, external native lock release, persistent lock refusal, malformed-config read/write race, idempotent bytes/mtime and worktree isolation. Actual packed SDK concurrent setup passed npm and Bun; full suite exact four-metric coverage passed."
+component: SDK merge-driver installation
+customer_impact: Parallel npm/Bun package prepare hooks can fail despite valid writable repositories.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2muu,implements,"2026-10-07T17:18:38.064Z","harness:codex","cli:create:dep",detected
+  pm-bnmlsc,discovered_from,"2026-10-07T17:18:38.064Z","harness:codex","cli:create:dep",detected
+  pm-c1dwbt,verifies,"2026-10-07T17:18:38.064Z","harness:codex","cli:create:dep",detected
+  pm-dj98,implements,"2026-10-07T17:43:31.945Z","harness:codex","cli:update:dep",detected
+  pm-p5u6,related,"2026-10-07T17:43:31.945Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-07T17:18:38.064Z","harness:codex","Duplicate check: strict complete all-status 2902-item corpus and request-specific CLI searches read. Closed pm-bnmlsc classifies config failure but does not retry contention; pm-c1dwbt owns completed worktree isolation; pm-2muu owns tracker locks. No existing owner implements Git config contention. Public report https://github.com/unbraind/pm-cli/issues/1424."
+  "2026-10-07T17:53:46.680Z","harness:codex","Regression evidence: the real-Git transient lock case failed before the fix; after serialization and bounded native contention waits, six worktree configuration cases passed. Three concurrent installs now complete after a released config.lock. A repeated matching install preserves config bytes/mtime even while an external lock is held. Persistent lock, attributes safety, and linked-worktree isolation remain covered. Local packed npm and Bun SDK consumers each completed three concurrent installs without caller retries. Full coverage and hosted checks are pending; no hosted success is claimed here."
+  "2026-10-07T18:25:53.032Z","harness:codex","Static context-quality gate identified missing risk, confidence, estimate and expected-result fields on this newly created issue. Those fields are now supplied through the declared CLI metadata flags. No assurance bound was relaxed. Native process and persistence contracts remain the test boundary; new coverage will prove a configuration read race refuses before any attempted driver write."
+  "2026-10-07T19:00:29.928Z","harness:codex","Coverage control now exercises an actual native Git configuration read race: an executable proxy forwards every command to Git and changes only its owned fixture after worktree-scope discovery. The selected-layer read returns its genuine malformed-config failure; installation refuses without driver writes or retries and preserves unrelated attributes byte-for-byte. Together with released and persistent native locks, idempotent no-write receipts and linked-worktree isolation, all seven worktree cases pass."
+  "2026-10-07T19:35:31.390Z","harness:codex","Final local public SDK acceptance uses the new physical bundled tarball under both npm/Node and Bun; three concurrent real-Git installs complete in each isolated clone. All27linked merge cases pass. Five-sample import-cost admission passes under supported Node24.12 at unchanged limits (merge median181ms, budget226ms); broader local Node26 timings remain a retained failed environment observation, not a relaxed gate."
+  "2026-10-07T19:53:30.957Z","harness:codex","Final local acceptance before reviewed delivery: full sandboxed coverage passed 9,897 tests (787 passed files; platform-only skips preserved), with exact lines 64,023/64,023, statements 67,190/67,190, functions 13,853/13,853 and branches 51,419/51,419. All owner-linked checks passed, including the existing packed continuation regression under real npm/npx and Bun/bunx. Actual bundled shipping-artifact acceptance passed isolated CLI/SDK workflows, concurrent real Git setup, rejected custom-field immutability and telemetry completion after owned-root deletion. Dependency audit and tracked-file secret scan found zero findings. Strict static prefix passed; the unchanged Node 24 import admission and remaining assurance/mutation gates passed separately. The retained aggregate Node 26 timing failure and earlier failed coverage attempts remain failed receipts, not reported as passes. Full live history verification matched item hashes. Closure records local source acceptance; hosted review, merge and the next eligible immutable daily publication remain distinct."
+learnings[1]{created_at,author,text}:
+  "2026-10-07T17:53:47.466Z","harness:codex","Git locks belong to Git: never delete config.lock to recover contention. Serialize migration at the shared clone directory, retry only the native File exists lock error within a bound, and skip matching definitions so idempotent prepare hooks do not require a write lock."
+files[3]{path,scope}:
+  src/sdk/merge/install.ts,project
+  src/sdk/merge/worktree-config.ts,project
+  tests/unit/sdk/merge/worktree-config.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,2400,"harness:codex","2026-10-07T17:35:03.408Z",local_mutation,fix/sdk-install-and-workspace-lifecycle
+test_runs[1]:
+  - run_id: test-local-muyhbmgq-mv5h70
+    kind: test
+    status: passed
+    started_at: "2026-10-07T19:06:15.078Z"
+    finished_at: "2026-10-07T19:07:05.978Z"
+    recorded_at: "2026-10-07T19:07:05.978Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,Idempotent configuration and bounded contention contract
+close_reason: Resolved native Git configuration contention and idempotent merge installation.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: core-coverage
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts -t \"waits for a released Git config lock\""
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-gh1424
+body: ""

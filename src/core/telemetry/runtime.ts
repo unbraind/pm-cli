@@ -36,7 +36,7 @@ import {
   readAuthorEnvironment,
 } from "../shared/author.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import { isConfigurationOnlySettingsRead, readSettings, writeSettings } from "../store/settings.js";
+import { isConfigurationOnlySettingsRead, readSettings, runWithConfigurationOnlySettings, writeSettings } from "../store/settings.js";
 import { clearSettingsReadCache } from "../store/settings-read-cache.js";
 import {
   deriveTelemetryCommandResolution,
@@ -400,6 +400,7 @@ async function writeRuntimeState(
       await writeFileAtomic(
         runtimeStatePath(globalPmRoot),
         `${JSON.stringify(normalized, null, 2)}\n`,
+        { createParentDirectories: !parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]) },
       );
     }, globalPmRoot);
   } catch {
@@ -1721,7 +1722,9 @@ async function rewriteQueue(
   const contents = serialized.length > 0 ? `${serialized}\n` : "";
   for (let attempt = 0; ; attempt += 1) {
     try {
-      await writeFileAtomic(queuePath(globalPmRoot), contents);
+      await writeFileAtomic(queuePath(globalPmRoot), contents, {
+        createParentDirectories: !parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]),
+      });
       return;
     } catch (error: unknown) {
       const retryDelay = TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS[attempt];
@@ -1883,7 +1886,9 @@ async function rewritePendingOtelSpans(
   const contents = serialized.length > 0 ? `${serialized}\n` : "";
   for (let attempt = 0; ; attempt += 1) {
     try {
-      await writeFileAtomic(otelSpansQueuePath(globalPmRoot), contents);
+      await writeFileAtomic(otelSpansQueuePath(globalPmRoot), contents, {
+        createParentDirectories: !parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]),
+      });
       return;
     } catch (error: unknown) {
       const retryDelay = TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS[attempt];
@@ -2100,6 +2105,7 @@ async function withQueueMutation<T>(
       // and hooks must not intercept its coordination or recurse into capture.
       const release = await acquireLock(
         globalPmRoot, "telemetry-queue", 60, "telemetry", false, false, waitMs,
+        { createParentDirectories: !parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]) },
       );
       try {
         // Reads before lock acquisition can cache a pre-peer settings snapshot.
@@ -2315,7 +2321,9 @@ async function acquireTelemetryFlushLock(
   globalPmRoot: string,
 ): Promise<boolean> {
   const lockPath = flushLockPath(globalPmRoot);
-  await mkdir(path.dirname(lockPath), { recursive: true });
+  if (!parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV])) {
+    await mkdir(path.dirname(lockPath), { recursive: true });
+  }
   try {
     await mkdir(lockPath);
     return true;
@@ -2568,7 +2576,7 @@ function scheduleTelemetryFlush(
   }
 }
 
-/** Best-effort drain of event and span queues when both process consent and persisted settings permit delivery. */
+/** Drain consented event and span queues without reviving removed storage in detached workers. Foreground SDK callers retain identity initialization; workers only read existing base settings and never scaffold directories, schemas or identities. */
 export async function flushTelemetryQueueNow(
   globalPmRoot = resolveGlobalPmRoot(process.cwd()),
 ): Promise<void> {
@@ -2576,13 +2584,15 @@ export async function flushTelemetryQueueNow(
     return;
   }
   try {
-    const settings = await readSettings(globalPmRoot);
-    if (!settings.telemetry.enabled) {
-      return;
-    }
-    const installation = await withQueueMutation(() => ensureInstallationId(globalPmRoot), globalPmRoot);
-    if (!installation) return;
-    await flushQueueWithProcessLock(globalPmRoot, installation.endpoint, installation.retentionDays);
+    await runWithConfigurationOnlySettings(globalPmRoot, async () => {
+      const settings = await readSettings(globalPmRoot);
+      if (!settings.telemetry.enabled) {
+        return;
+      }
+      const installation = await withQueueMutation(() => ensureInstallationId(globalPmRoot), globalPmRoot);
+      if (!installation) return;
+      await flushQueueWithProcessLock(globalPmRoot, installation.endpoint, installation.retentionDays);
+    }, () => parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]));
   } catch {
     // Telemetry workers are best effort and must never fail user commands.
   }

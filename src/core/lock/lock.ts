@@ -222,12 +222,16 @@ async function createLockFile(
   owner: string,
   ttlSeconds: number,
   token: string,
+  createParentDirectories: boolean,
 ): Promise<void> {
-  await fs.mkdir(path.dirname(lockPath), { recursive: true });
+  if (createParentDirectories) await fs.mkdir(path.dirname(lockPath), { recursive: true });
   // Publication of an empty file precedes its owner JSON. Fence both steps
   // against stale cleanup so no peer can reclaim a live initializing owner.
   const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
   if (releaseCleanupGate === null) {
+    // A removed parent is absence, not another owner's initializing lock.
+    // Preserve its native error instead of spending the contention budget.
+    await fs.access(path.dirname(lockPath));
     throw Object.assign(new Error("Lock initialization is contended"), { code: "EEXIST" });
   }
   try {
@@ -728,7 +732,12 @@ export const _testOnly = {
   removeConfirmedStaleLock,
 };
 
-/** Implements acquire lock for the public runtime surface of this module. */
+/**
+ * Acquire a token-owned tracker lock with bounded contention waiting and
+ * explicit stale-owner policy. Background consumers may disable creation of
+ * parent directories so acquiring or retrying a lock cannot revive removed
+ * storage. Extension overrides retain responsibility for their own lifecycle.
+ */
 export async function acquireLock(
   pmRoot: string,
   id: string,
@@ -737,6 +746,7 @@ export async function acquireLock(
   force = false,
   forceRequiredForStaleLock = true,
   waitMs?: number,
+  options: { createParentDirectories?: boolean } = {},
 ): Promise<() => Promise<void>> {
   const lockOverride = await runActiveServiceOverride("lock_acquire", {
     pm_root: pmRoot,
@@ -769,7 +779,7 @@ export async function acquireLock(
 
   for (;;) {
     try {
-      await createLockFile(lockPath, id, owner, ttlSeconds, token);
+      await createLockFile(lockPath, id, owner, ttlSeconds, token, options.createParentDirectories !== false);
       return async () => {
         await releaseOwnedLock(lockPath, id, owner, token);
         await runActiveServiceOverride("lock_release", {

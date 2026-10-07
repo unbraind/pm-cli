@@ -8,6 +8,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { evaluateReleaseReliability, validateReliabilityPolicy } from "./release-reliability.mjs";
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 
 /** Run bounded, non-shell GitHub CLI reads; API and JSON errors fail the census. */
 function github(args) {
@@ -80,11 +81,13 @@ export function collectReleaseReliability(repository, policy, now, read = github
   const query = new URLSearchParams({ per_page: "100", created: `${start}..${end.toISOString()}` });
   const listed = completePages(read(["api", `repos/${repository}/actions/workflows/auto-release.yml/runs?${query}`, "--paginate", "--slurp"]), "workflow_runs");
   const root = mkdtempSync(path.join(tmpdir(), "pm-release-reliability-"));
+  const releaseCleanup = registerTempCleanup(root);
   try {
     const runs = listed.map((run) => originalAttempt(run, repository, read, root));
     return { ...evaluateReleaseReliability(runs, policy, now), repository, census_complete: true };
   } finally {
     rmSync(root, { recursive: true, force: true });
+    releaseCleanup();
   }
 }
 
