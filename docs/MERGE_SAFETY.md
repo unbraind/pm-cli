@@ -296,8 +296,10 @@ the durable evidence for other worktrees instead of deleting the sidecar.
 
 Applied-merge settlement has the same retry contract, tracked by
 [pm-gh1390](../.agents/pm/issues/pm-gh1390.toon). The current item must still
-satisfy authoritative receipt proof; only an identical receipt context in
-verified history suppresses a repeated provenance event. This also works with
+satisfy authoritative receipt proof; only an identical receipt context in a
+sealed event from reanchored, verified history suppresses a repeated provenance
+event. Matching unsealed legacy context receives a new sealed audit while its
+original entry remains intact. This also works with
 durable-only evidence in another worktree. Once that worktree commits the
 settled sidecar and history, a receiving worktree's stale local pending receipt
 cannot reopen it. A subsequent `pm merge reconcile` leaves all three files

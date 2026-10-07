@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-04T11:45:54.908Z"
-updated_at: "2026-10-07T08:10:45.470Z"
-closed_at: "2026-10-07T08:00:32.210Z"
-completed_at: "2026-10-07T08:00:32.210Z"
+updated_at: "2026-10-07T08:52:33.045Z"
+closed_at: "2026-10-07T08:52:32.284Z"
+completed_at: "2026-10-07T08:52:32.284Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Trusted pending receipt overlap routes drift remediation to merge reconcile; Committed reconciled state dominates stale clone-local pending indexes; Repeated reconciliation writes nothing and adds no duplicate audit event; Unrelated drift and malformed evidence remain fail-closed.
@@ -18,16 +18,16 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-dj98
 risk: medium
 confidence: medium
-resolution: "Require exact immutable receipt provenance and matching sealed verified merge_reconcile disposition history before durable terminal state suppresses pending evidence. Preserve readonly scans, correct health attribution and idempotent interrupted settlement; document original HEAD and retained durable sidecars."
-expected_result: "Audited committed settlement dominates stale local copies; absent, invalid or mismatched audit leaves durable evidence pending without writes, and supported SDK startup remains within existing budgets."
-actual_result: "40 linked tests and all 9884 applicable tests pass with exact 100/100/100/100 source coverage. Four TypeScript projects, nine packed npx/bunx packages and installed Node/Bun recovery journeys pass. Isolated ten-entrypoint startup diagnostic has zero budget violations, runtime median 259ms against 452ms. Final complete static chain and hosted re-review remain landing gates; next daily publication remains separate."
+resolution: "Require exact immutable receipt provenance and complete sealed verified merge_reconcile disposition before accepting durable terminal state. Reuse identical audits only from reanchored verified sealed history; matching unsealed legacy context receives a new sealed event while preserving its original entry. Keep readonly scans, correct health attribution and idempotent interrupted retries."
+expected_result: "Committed audited settlement dominates stale local copies, unaudited or mismatched evidence stays pending without writes, and legacy unsealed retry context is recovered once through a sealed audit with unchanged repeat history."
+actual_result: "40 linked cases and all 9884 applicable tests pass with exact all-source 100/100/100/100 coverage. Complete strict static and four TypeScript projects pass. Nine packed npx/bunx packages and installed Node/Bun conflict-abort, legacy audit recovery, byte-preservation and typed-preview-refusal journeys pass. Both actionable CodeRabbit findings were reproduced before their fixes; final pushed-head hosted checks and full re-review remain landing gates, with publication awaiting the next eligible daily release."
 affected_version: 2026.10.4
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,discovered_from,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-baksix,verifies,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-baksix,recurs_from,"2026-10-07T05:10:41.301Z","harness:codex","cli:update:dep",detected
-comments[17]:
+comments[20]:
   - created_at: "2026-10-04T11:45:54.908Z"
     author: "harness:codex"
     text: "Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1390 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
@@ -80,12 +80,22 @@ comments[17]:
     author: "harness:codex"
     text: "Final complete pnpm quality:static passes with final closed metadata: strict dependency/docstring/export/ESLint/duplicate checks, workflow permissions/cooldown, generated contracts and agent surfaces, package/SDK boundary and replication, command/refusal/token ratchets, tracker-context/graph/history assurance, gate registry, unchanged SDK entrypoint/startup budgets and bounded mutation checks. Four TypeScript projects, full exact coverage, linked 40-case keeper, installed Node/Bun and npx/bunx acceptance already pass on identical frozen source. Latest pm-changelog generation and check pass; all three implemented claims are released. The complete fix will be pushed for fresh exact-head hosted checks and all configured review requests on PR 1422; landing and publication are not claimed yet."
     edited_at: "2026-10-07T08:10:45.470Z"
+  - created_at: "2026-10-07T08:25:17.222Z"
+    author: "harness:codex"
+    text: "CodeRabbit full review of 14d113045 identifies thread 4204639318: receipt retry deduplication accepts matching unsealed legacy history context, while the receipt scanner now correctly requires a sealed audit. Reopen the same unmerged canonical delivery and reproduce the consistency boundary in the existing real-worktree keeper before changing production code. All 26 effective required contexts finished without failures; this actionable thread remains the landing blocker."
+  - created_at: "2026-10-07T08:29:24.782Z"
+    author: "harness:codex"
+    text: "Review round 3 completed: all nine new or edited bot artifacts were fully read, usefulness-voted and given specific revision-aware acknowledgements, including empty review events and confirmations. TDD red independently reproduces thread 4204639318: a valid chain ending in matching unsealed legacy context reports successful reconciliation but its receipt remains pending. Extend the existing real-worktree keeper without adding duplicate fixtures; the fix uses reanchor.entries and requires record_hash_version before deduplicating. Green controls retain the original legacy entry, append a matching sealed audit, verify the resulting chain, preserve readonly preview and prove the next apply leaves history unchanged. Full coverage and complete final gates will repeat on the new source."
+  - created_at: "2026-10-07T08:52:30.684Z"
+    author: "harness:codex"
+    text: "Final sealed-audit retry verification passes: complete 9884-test suite with two Windows-only Linux skips and exact 100/100/100/100 all-source coverage (67110 statements, 51378 branches, 13838 functions, 63952 lines). Forty linked cases pass. Complete pnpm quality:static and all four TypeScript projects pass; bounded mutation retains 329 killed plus seven validated equivalent mutants and zero failures. Nine packed npx/bunx packages pass. Independently installed Node/Bun journeys now recover both an unaudited terminal flag and a matching unsealed legacy abandonment audit, preserve original legacy entries, append sealed audit proof, and repeat without history changes. All source and test inputs were frozen throughout final verification."
 notes[2]{created_at,author,text}:
   "2026-10-07T06:36:28.460Z","harness:codex","External DeepScan main dashboard inspected in Chrome: zero open issues at historical main analysis 686e7640a6455b65dbe9de82039a48c304598751, with an embedded ESLint integration warning. That old dashboard is not current-head evidence. The PR separately passes required native ESLint/static gates and exact-head DeepScan/CodeFactor contexts; confirm the final PR report before merge."
   "2026-10-07T06:40:51.066Z","harness:codex","Chrome verification of PR 1422: DeepScan explicitly shows source head 5d198b93d054ecbe2e73b159fcaa8eb312479218 with 0 new and 0 fixed issues; CodeFactor PR report says No issues found. Its main dashboard separately retains two duplicate reports for generated standalone plugin scripts and canonical templates. Existing .codefactor.yml identifies these generated mirrors as the hosted Ignore Files checklist, and generation/replication gates remain mandatory. Do not describe a green no-new-issues PR check as zero total baseline findings; retain that baseline under the existing quality lineage pm-92if without inventing another duplicate owner."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-10-07T05:11:35.433Z","harness:codex","Committed durable lifecycle state must dominate stale worktree-local indexes only after exact immutable provenance validation. Retrying a history-committed, receipt-write-interrupted settlement must reuse its identical trusted audit context, while changed item proof and unrelated audits remain separate."
   "2026-10-07T07:48:31.953Z","harness:codex","Receipt copy provenance and lifecycle authority are separate proofs. A schema-valid terminal flag must not hide durable pending evidence: require its complete disposition summary in sealed, verified merge_reconcile history. Readonly scans verify history once per item and never rewrite damaged or unaudited evidence; exercise valid-chain wrong-context controls as well as malformed data."
+  "2026-10-07T08:52:31.418Z","harness:codex","Lifecycle scanning and retry deduplication must agree on audit strength. Reuse only exact matching context in sealed verified reanchored history; a readable legacy entry provides item-state compatibility, not authenticated disposition authority. Preserve that legacy event and append one sealed audit rather than reporting success while leaving its receipt perpetually pending."
 files[10]:
   - path: .github/workflows/ci.yml
     scope: project
@@ -110,7 +120,7 @@ files[10]:
     scope: project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,project,"harness:codex","2026-10-07T07:26:22.009Z",local_mutation,fix/merge-receipt-abort-and-settlement
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-muxnhgk4-jgjktc
     kind: test
     status: failed
@@ -144,10 +154,21 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muxukgo6-5lm2qf
+    kind: test
+    status: passed
+    started_at: "2026-10-07T08:29:26.400Z"
+    finished_at: "2026-10-07T08:30:07.206Z"
+    recorded_at: "2026-10-07T08:30:07.206Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/MERGE_SAFETY.md,project
-close_reason: Implemented audited durable receipt authority with real compatibility and startup verification
+close_reason: Implemented and verified sealed audited durable settlement and legacy receipt retry recovery
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

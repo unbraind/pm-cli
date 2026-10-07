@@ -818,7 +818,7 @@ export async function runHistoryRepair(
 /** Preserve explicit audit requests while reusing an identical receipt disposition in verified history. */
 function shouldAppendForcedHistoryAudit(
   options: HistoryRepairCommandOptions,
-  historyEntries: readonly HistoryEntry[],
+  verifiedHistoryEntries: readonly HistoryEntry[],
   auditContext: HistoryRepairCommandOptions["auditContext"],
 ): boolean {
   // Receipt persistence can fail after the audited history transaction commits.
@@ -827,8 +827,9 @@ function shouldAppendForcedHistoryAudit(
     (options.mergeAbandonmentProof !== undefined ||
       (options.mergeReceiptProof !== undefined && options.force !== true)) &&
     auditContext !== undefined &&
-    historyEntries.some(
+    verifiedHistoryEntries.some(
       (entry) =>
+        entry.record_hash_version !== undefined &&
         entry.op === "merge_reconcile" &&
         stableStringify(entry.context) ===
           stableStringify(auditContext),
@@ -924,7 +925,7 @@ async function buildHistoryRepairPlan(
     reanchor.entriesRehashed > 0,
     reanchor.entriesPatchRepaired > 0,
     reconcileNeeded,
-    shouldAppendForcedHistoryAudit(options, historyEntries, effectiveAuditContext),
+    shouldAppendForcedHistoryAudit(options, reanchor.entries, effectiveAuditContext),
     provenanceNormalization.receipt.changed,
   ].some(Boolean);
   const author = snapshot.author;

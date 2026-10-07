@@ -151,6 +151,24 @@ describe("merge receipt settlement across worktrees", () => {
           { id: receipt.id, state: "pending" },
         ]);
       }
+      const legacyEntries = [...settledEntries.slice(0, -1), unsealedAudit];
+      expect(verifyHistoryChainWithVersion(legacyEntries).ok).toBe(true);
+      const legacyHistory = `${legacyEntries.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
+      await writeFile(historyPath, legacyHistory);
+      await runMergeReconcile({ dryRun: true }, { path: context.pmPath });
+      expect(await readFile(historyPath, "utf8")).toBe(legacyHistory);
+      const legacyRecovered = await runMergeReconcile({}, { path: context.pmPath });
+      expect(legacyRecovered.ok).toBe(true);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toEqual([]);
+      const recoveredHistory = await readFile(historyPath, "utf8");
+      const recoveredEntries = recoveredHistory.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(recoveredEntries.slice(0, -1)).toEqual(legacyEntries);
+      expect(recoveredEntries.at(-1)).toMatchObject({
+        op: "merge_reconcile", context: audit.context, record_hash_version: 1,
+      });
+      expect(verifyHistoryChainWithVersion(recoveredEntries).ok).toBe(true);
+      await runMergeReconcile({}, { path: context.pmPath });
+      expect(await readFile(historyPath, "utf8")).toBe(recoveredHistory);
       await rm(historyPath);
       expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toHaveLength(1);
       await writeFile(historyPath, settledHistory);
