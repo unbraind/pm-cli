@@ -184,6 +184,11 @@ same complete receipt summary and disposition. An absent, unreadable, invalid,
 unsealed, or mismatched audit keeps the receipt pending in memory; inspection
 rewrites neither receipt nor history. History is verified once per affected
 item in each receipt scan.
+Copy provenance includes normalized `requested_preference_applied`, so copies
+that disagree on whether preference participated cannot share lifecycle state
+even if history matches one copy. Inspection reports `copy_provenance_mismatch`,
+and settlement refuses before either receipt is written. Legacy omission uses
+the declared conflict policy's default participation value.
 A local reconciled copy paired with a pending durable copy remains pending,
 so an interrupted settlement can finish its durable write:
 

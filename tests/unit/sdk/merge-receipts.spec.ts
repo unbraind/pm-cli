@@ -1093,6 +1093,7 @@ describe("clone-local merge decision receipts", () => {
       string,
       unknown
     >;
+    const originalDurable = { ...durable };
     durable.item_id = "pm-divergent-forged";
     durable.item_path = ".agents/pm/tasks/pm-divergent-forged.toon";
     durable.state = "reconciled";
@@ -1124,6 +1125,39 @@ describe("clone-local merge decision receipts", () => {
       ],
       { cwd: workspace, encoding: "utf8" },
     ).trim();
+    const localPath = path.join(receiptDirectory, `${receipt!.id}.json`);
+    for (const [localApplied, durableApplied] of [[true, false], [false, true]]) {
+      const localCopy = { ...receipt!, requested_preference_applied: localApplied };
+      const localBytes = `${JSON.stringify(localCopy)}\n`;
+      const durableBytes = `${JSON.stringify({
+        ...originalDurable,
+        requested_preference_applied: durableApplied,
+        state: "reconciled",
+        reconciled_at: "2026-08-24T00:00:00.000Z",
+      })}\n`;
+      await writeFile(localPath, localBytes, "utf8");
+      await writeFile(durablePath, durableBytes, "utf8");
+      await expect(inspectMergeReceiptEvidence(workspace, { pmRoot })).resolves.toMatchObject({
+        receipts: [],
+        invalid_evidence_count: 1,
+        invalid_evidence: [{ reason: "copy_provenance_mismatch", receipt_id: receipt!.id }],
+      });
+      await expect(markMergeReceiptReconciled(workspace, localCopy)).rejects.toThrow(
+        "settlement copies disagree on immutable merge provenance",
+      );
+      expect(await readFile(localPath, "utf8")).toBe(localBytes);
+      expect(await readFile(durablePath, "utf8")).toBe(durableBytes);
+    }
+    // Omitted legacy participation is equivalent to the normalized preferred-side value.
+    await writeFile(localPath, `${JSON.stringify({
+      ...receipt!, requested_preference_applied: undefined,
+    })}\n`, "utf8");
+    await writeFile(durablePath, `${JSON.stringify(originalDurable)}\n`, "utf8");
+    await expect(inspectMergeReceiptEvidence(workspace, { pmRoot })).resolves.toMatchObject({
+      invalid_evidence_count: 0,
+      receipts: [{ id: receipt!.id, requested_preference_applied: true, state: "pending" }],
+    });
+    await writeFile(durablePath, `${JSON.stringify(durable)}\n`, "utf8");
     await Promise.all(
       Array.from({ length: 100 }, async (_, index) =>
         mkdir(

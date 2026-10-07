@@ -310,6 +310,9 @@ function receiptProvenanceFingerprint(receipt: MergeDecisionReceipt, legacy = fa
       created_at: receipt.created_at,
       requested_preference:
         receipt.requested_preference ?? receipt.preferred ?? "ours",
+      requested_preference_applied:
+        receipt.requested_preference_applied ??
+        (receipt.conflict_resolution ?? "preferred_side") === "preferred_side",
       conflict_resolution: receipt.conflict_resolution ?? "preferred_side",
       fields_from_theirs: receipt.fields_from_theirs,
       union_fields: receipt.union_fields,

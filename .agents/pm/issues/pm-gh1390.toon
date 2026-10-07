@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-04T11:45:54.908Z"
-updated_at: "2026-10-07T08:52:33.045Z"
-closed_at: "2026-10-07T08:52:32.284Z"
-completed_at: "2026-10-07T08:52:32.284Z"
+updated_at: "2026-10-07T11:09:46.971Z"
+closed_at: "2026-10-07T11:09:46.201Z"
+completed_at: "2026-10-07T11:09:46.201Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Trusted pending receipt overlap routes drift remediation to merge reconcile; Committed reconciled state dominates stale clone-local pending indexes; Repeated reconciliation writes nothing and adds no duplicate audit event; Unrelated drift and malformed evidence remain fail-closed.
@@ -18,16 +18,16 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-dj98
 risk: medium
 confidence: medium
-resolution: "Require exact immutable receipt provenance and complete sealed verified merge_reconcile disposition before accepting durable terminal state. Reuse identical audits only from reanchored verified sealed history; matching unsealed legacy context receives a new sealed event while preserving its original entry. Keep readonly scans, correct health attribution and idempotent interrupted retries."
-expected_result: "Committed audited settlement dominates stale local copies, unaudited or mismatched evidence stays pending without writes, and legacy unsealed retry context is recovered once through a sealed audit with unchanged repeat history."
-actual_result: "40 linked cases and all 9884 applicable tests pass with exact all-source 100/100/100/100 coverage. Complete strict static and four TypeScript projects pass. Nine packed npx/bunx packages and installed Node/Bun conflict-abort, legacy audit recovery, byte-preservation and typed-preview-refusal journeys pass. Both actionable CodeRabbit findings were reproduced before their fixes; final pushed-head hosted checks and full re-review remain landing gates, with publication awaiting the next eligible daily release."
+resolution: "Require exact complete normalized receipt provenance, including preference participation, before composing durable lifecycle state or writing settlement. Accept terminal state only with an exact complete disposition in sealed verified history; retry only through verified sealed reanchored audit context, preserving legacy entries and readonly inspection."
+expected_result: Audited settlement dominates equivalent stale local copies; contradictory summary fields fail closed without writes; unaudited or mismatched evidence remains pending; legacy audit context is sealed once and repeat history stays unchanged.
+actual_result: "40 linked cases and all 9884 applicable tests pass with exact all-source 100/100/100/100 coverage. Strict static and four TypeScript projects pass. Nine packed npx/bunx packages and installed Node/Bun conflict-abort, cherry-pick/revert identity, divergent-summary refusal, legacy audit recovery, idempotent retry and typed preview journeys pass. Review regressions were reproduced before fixes. Final pushed-head hosted checks and full review remain landing requirements; publication awaits the next eligible daily release."
 affected_version: 2026.10.4
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,discovered_from,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-baksix,verifies,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-baksix,recurs_from,"2026-10-07T05:10:41.301Z","harness:codex","cli:update:dep",detected
-comments[20]:
+comments[24]:
   - created_at: "2026-10-04T11:45:54.908Z"
     author: "harness:codex"
     text: "Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1390 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
@@ -89,13 +89,26 @@ comments[20]:
   - created_at: "2026-10-07T08:52:30.684Z"
     author: "harness:codex"
     text: "Final sealed-audit retry verification passes: complete 9884-test suite with two Windows-only Linux skips and exact 100/100/100/100 all-source coverage (67110 statements, 51378 branches, 13838 functions, 63952 lines). Forty linked cases pass. Complete pnpm quality:static and all four TypeScript projects pass; bounded mutation retains 329 killed plus seven validated equivalent mutants and zero failures. Nine packed npx/bunx packages pass. Independently installed Node/Bun journeys now recover both an unaudited terminal flag and a matching unsealed legacy abandonment audit, preserve original legacy entries, append sealed audit proof, and repeat without history changes. All source and test inputs were frozen throughout final verification."
+  - created_at: "2026-10-07T10:43:59.302Z"
+    author: "harness:codex"
+    text: "Review round 5 finding 4205904057: full review of f19ee8bac identifies requested_preference_applied missing from immutable receipt-copy provenance. Verified source inspection confirms the scanner and settlement preflight share this incomplete fingerprint. Reuse this unmerged canonical owner; extend the existing real-file divergent-copy keeper with both boolean directions, readonly byte preservation and settlement preflight refusal, while preserving normalized legacy compatibility. No new duplicate item."
+  - created_at: "2026-10-07T10:45:14.570Z"
+    author: "harness:codex"
+    text: "TDD red confirms thread 4205904057 with actual temporary receipt files: the existing divergent-copy keeper reports zero invalid evidence when only requested_preference_applied differs. Extend the same keeper, retaining its original coordinate-mismatch and bounded-diagnostic controls, with both boolean directions, read-only bytes, settlement preflight refusal and legacy normalized-omission equivalence. Production adds the complete normalized summary field to the existing shared fingerprint without new exports, seams or helpers."
+  - created_at: "2026-10-07T11:07:51.456Z"
+    author: "harness:codex"
+    text: "Final source passes all 9884 tests and exact 100/100/100/100 coverage: 67111 statements, 51384 branches, 13839 functions and 63953 lines. Strict static and four TypeScript projects pass; bounded mutation remains 329 killed plus seven validated equivalent mutants and zero failures. Nine packed npx/bunx packages pass. The new installed divergence journey correctly returns merge_receipt_evidence_invalid at integrity exit 4; its initial harness incorrectly expected exit 1. Correct only the ignored harness assertion, retain the failed receipt and rerun both installed consumers; product source and passed gates remain unchanged."
+  - created_at: "2026-10-07T11:09:45.378Z"
+    author: "harness:codex"
+    text: "Final normalized-copy validation complete: 40 linked cases and 9884 full-suite cases pass with exact 100/100/100/100 coverage, unchanged statements/functions/lines and all four added branches covered (51384/51384). Strict static, all four TypeScript projects, bounded mutation, nine packed npx/bunx packages and installed Node/Bun journeys pass. Installed consumers retain a sealed history audit matching the local copy while only the durable preference flag differs: report rejects the copy, preview and apply return merge_receipt_evidence_invalid at exit 4, and item/history/both receipt files remain byte-identical. Equivalent legacy omission stays readable; coordinate tamper and bounded evidence controls remain. Every available new or revised bot artifact was read and usefulness-voted with specific grouped acknowledgements; the full-review split suggestion was declined because the user explicitly requires these three declared SDK owners in one BIG PR. Final pushed-head hosted checks, full re-review and merge remain required; publication is separate."
 notes[2]{created_at,author,text}:
   "2026-10-07T06:36:28.460Z","harness:codex","External DeepScan main dashboard inspected in Chrome: zero open issues at historical main analysis 686e7640a6455b65dbe9de82039a48c304598751, with an embedded ESLint integration warning. That old dashboard is not current-head evidence. The PR separately passes required native ESLint/static gates and exact-head DeepScan/CodeFactor contexts; confirm the final PR report before merge."
   "2026-10-07T06:40:51.066Z","harness:codex","Chrome verification of PR 1422: DeepScan explicitly shows source head 5d198b93d054ecbe2e73b159fcaa8eb312479218 with 0 new and 0 fixed issues; CodeFactor PR report says No issues found. Its main dashboard separately retains two duplicate reports for generated standalone plugin scripts and canonical templates. Existing .codefactor.yml identifies these generated mirrors as the hosted Ignore Files checklist, and generation/replication gates remain mandatory. Do not describe a green no-new-issues PR check as zero total baseline findings; retain that baseline under the existing quality lineage pm-92if without inventing another duplicate owner."
-learnings[3]{created_at,author,text}:
+learnings[4]{created_at,author,text}:
   "2026-10-07T05:11:35.433Z","harness:codex","Committed durable lifecycle state must dominate stale worktree-local indexes only after exact immutable provenance validation. Retrying a history-committed, receipt-write-interrupted settlement must reuse its identical trusted audit context, while changed item proof and unrelated audits remain separate."
   "2026-10-07T07:48:31.953Z","harness:codex","Receipt copy provenance and lifecycle authority are separate proofs. A schema-valid terminal flag must not hide durable pending evidence: require its complete disposition summary in sealed, verified merge_reconcile history. Readonly scans verify history once per item and never rewrite damaged or unaudited evidence; exercise valid-chain wrong-context controls as well as malformed data."
   "2026-10-07T08:52:31.418Z","harness:codex","Lifecycle scanning and retry deduplication must agree on audit strength. Reuse only exact matching context in sealed verified reanchored history; a readable legacy entry provides item-state compatibility, not authenticated disposition authority. Preserve that legacy event and append one sealed audit rather than reporting success while leaving its receipt perpetually pending."
+  "2026-10-07T11:09:44.775Z","harness:codex","Immutable receipt copy proof must include every normalized field in its public disposition summary, including requested_preference_applied. Verify copy consistency before composing lifecycle state or validating a history audit, and repeat the same proof before settlement writes. Preserve omitted legacy defaults as equivalent normalized values; use real persisted divergent copies and independently installed preview/apply refusals to prove no bytes change."
 files[10]:
   - path: .github/workflows/ci.yml
     scope: project
@@ -120,7 +133,7 @@ files[10]:
     scope: project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,project,"harness:codex","2026-10-07T07:26:22.009Z",local_mutation,fix/merge-receipt-abort-and-settlement
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-muxnhgk4-jgjktc
     kind: test
     status: failed
@@ -165,10 +178,21 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muxzey2p-xpba1m
+    kind: test
+    status: passed
+    started_at: "2026-10-07T10:45:15.090Z"
+    finished_at: "2026-10-07T10:45:47.905Z"
+    recorded_at: "2026-10-07T10:45:47.905Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/MERGE_SAFETY.md,project
-close_reason: Implemented and verified sealed audited durable settlement and legacy receipt retry recovery
+close_reason: Implemented and verified complete normalized copy provenance and sealed audited receipt settlement
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
