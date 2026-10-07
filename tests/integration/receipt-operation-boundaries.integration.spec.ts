@@ -11,11 +11,11 @@ import { writeMergeReceipt } from "../../src/sdk/merge/receipts.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("receipt operation boundaries", () => {
-  it("captures both rebase backends and verifies SHA-256 Git object identities", async () => {
+  it.each(["sha1", "sha256"])("captures both rebase backends and verifies %s Git object identities", async (format) => {
     await withTempPmPath(async (context) => {
       const git = (...args: string[]) =>
         execFileSync("git", args, { cwd: context.tempRoot, encoding: "utf8" });
-      git("init", "-q", "--object-format=sha256");
+      git("init", "-q", `--object-format=${format}`);
       git("config", "user.name", "Receipt Test");
       git("config", "user.email", "receipt@example.invalid");
       const itemPath = "item with spaces.toon";
@@ -24,6 +24,19 @@ describe("receipt operation boundaries", () => {
       git("add", itemPath);
       git("commit", "-qm", "Original state");
       const originalHead = git("rev-parse", "HEAD").trim();
+      expect(originalHead).toHaveLength(format === "sha1" ? 40 : 64);
+      expect(await captureMergeReceiptOperation(context.tempRoot, itemPath, raw)).toBeUndefined();
+      git("update-ref", "ORIG_HEAD", originalHead);
+      const mergeOperation = await captureMergeReceiptOperation(context.tempRoot, itemPath, raw);
+      expect(mergeOperation).toEqual({
+        kind: "merge", original_head: originalHead,
+        original_blob: git("rev-parse", `HEAD:${itemPath}`).trim(),
+      });
+      expect(isMergeReceiptOperation(mergeOperation)).toBe(true);
+      expect(await captureMergeReceiptOperation(context.tempRoot, itemPath)).toBeUndefined();
+      expect(await captureMergeReceiptOperation(context.tempRoot, itemPath, `${raw}\n`)).toBeUndefined();
+      git("update-ref", "ORIG_HEAD", mergeOperation!.original_blob);
+      expect(await captureMergeReceiptOperation(context.tempRoot, itemPath, raw)).toBeUndefined();
       for (const backend of ["rebase-merge", "rebase-apply"]) {
         const directory = path.join(context.tempRoot, ".git", backend);
         await mkdir(directory);
@@ -92,7 +105,7 @@ describe("receipt operation boundaries", () => {
       "rebase",
       {},
       {
-        kind: "merge",
+        kind: "cherry_pick",
         original_head: "a".repeat(40),
         original_blob: "b".repeat(40),
       },

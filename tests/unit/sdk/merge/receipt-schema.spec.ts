@@ -63,7 +63,7 @@ describe("receipt schema recovery boundaries", () => {
     };
     for (const override of [
       { operation: null },
-      { operation: { ...operation, kind: "merge" } },
+      { operation: { ...operation, kind: "cherry_pick" } },
       { operation, settlement: "original_git_state_restored" },
       { state: "reconciled", settlement: "original_git_state_restored" },
       { operation, state: "reconciled", settlement: "unknown" },

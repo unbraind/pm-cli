@@ -102,8 +102,9 @@ describe("semantic transaction previews (GH-1370)", () => {
           const args = ["item", command, ...(command === "complete" ? ["pm-unsafe", "Staged closure"] : []), "--transaction-id", "unsafe-schema", "--dry-run", "--json", ...(noExtensions ? ["--no-extensions"] : [])];
           const result = spawnSync(process.execPath, [path.resolve("dist/cli.js"), ...args], { env: context.env, encoding: "utf8", timeout: 10_000, input: command === "mutate" ? JSON.stringify([{ op: "update", id: "pm-unsafe", options: { title: "Staged title" } }]) : undefined });
           expect(result.error).toBeUndefined();
-          expect(result.status).toBe(1);
-          expect(result.stderr).toContain("Transaction preview requires regular files and directories");
+          expect(result.status).toBe(2);
+          expect(JSON.parse(result.stderr)).toMatchObject({ code: "transaction_preview_non_regular_file", next_steps: expect.arrayContaining([expect.stringContaining("retry the original dry-run")]) });
+          expect(result.stderr).not.toContain(context.pmPath);
           if (kind === "settings-pipe") expect((await lstat(settingsPath)).isFIFO()).toBe(true);
           else expect(await readFile(settingsPath, "utf8")).toBe(beforeSettings);
           expect(await readFile(itemPath, "utf8")).toBe(beforeItem);

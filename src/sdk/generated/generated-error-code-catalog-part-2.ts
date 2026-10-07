@@ -1485,6 +1485,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "transaction_preview_non_regular_file",
+    meaning: "Transaction preview non regular file condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/fs/fs-utils.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_preview_non_regular_file",
+    aliases: [],
+  },
+  {
     code: "transaction_preview_snapshot_changed",
     meaning: "Transaction preview snapshot changed condition.",
     stability: "provisional",

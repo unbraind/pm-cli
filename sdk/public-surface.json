@@ -2224,6 +2224,14 @@
       ],
       "package_version": "2026.10.6",
       "reason": "pm-gh1418 adds optional TestRunResult.execution_receipt; existing callers and results remain structurally compatible. The snapshot classifier conservatively labels any interface signature change breaking."
+    },
+    {
+      "changes": [
+        "signature ./sdk:MergeReceiptOperation",
+        "signature ./sdk/merge:MergeReceiptOperation"
+      ],
+      "package_version": "2026.10.7",
+      "reason": "pm-gh1405: MergeReceiptOperation.kind now also reports merge; exhaustive typed consumers must handle both kinds. Existing rebase data and receipt version remain compatible; ship with the next eligible calendar release."
     }
   ],
   "entrypoints": {
@@ -10826,7 +10834,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptOperation",
-          "signature": "export interface MergeReceiptOperation { kind: \"rebase\"; original_head: string; original_blob: string; }"
+          "signature": "export interface MergeReceiptOperation { kind: \"rebase\" | \"merge\"; original_head: string; original_blob: string; }"
         },
         {
           "classification": "advanced_export",
@@ -29690,7 +29698,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptOperation",
-          "signature": "export interface MergeReceiptOperation { kind: \"rebase\"; original_head: string; original_blob: string; }"
+          "signature": "export interface MergeReceiptOperation { kind: \"rebase\" | \"merge\"; original_head: string; original_blob: string; }"
         },
         {
           "classification": "supported",
@@ -35676,6 +35684,7 @@
     "tracker_root_not_directory",
     "tracker_root_unreadable",
     "transaction_preview_external_schema",
+    "transaction_preview_non_regular_file",
     "transaction_preview_snapshot_changed",
     "type_duplicate",
     "type_invalid",

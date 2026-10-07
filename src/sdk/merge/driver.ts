@@ -288,7 +288,7 @@ export async function runMergeDriver(
           ]),
         ),
         decisions: itemMerge.conflict_decisions,
-        operation: await captureMergeReceiptOperation(process.cwd(), options.itemPath),
+        operation: await captureMergeReceiptOperation(process.cwd(), options.itemPath, oursRaw),
       };
     }
   } else {

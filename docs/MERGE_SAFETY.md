@@ -177,7 +177,10 @@ and `hash_only`, while the clone-local receipt remains `clone_local`. This lets
 a fresh-clone reviewer recover ordinary control-plane decisions without
 publishing titles, descriptions, custom statuses, or other potentially private
 content. When both copies exist the SDK deduplicates them and prefers the
-locally recoverable copy:
+locally recoverable values. After immutable provenance matches, durable
+reconciled state takes precedence over a stale clone-local pending copy.
+A local reconciled copy paired with a pending durable copy remains pending,
+so an interrupted settlement can finish its durable write:
 
 ```bash
 pm merge report
@@ -249,14 +252,22 @@ does not recover the original private value.
 
 ## Receipts from an aborted rebase
 
-Tracked by [pm-466m0j](../.agents/pm/issues/pm-466m0j.toon). New receipts
-created during a rebase capture only its original commit and item blob in the
-typed `MergeReceiptOperation` contract. After aborting, run:
+Tracked by [pm-466m0j](../.agents/pm/issues/pm-466m0j.toon) and
+[pm-gh1405](../.agents/pm/issues/pm-gh1405.toon). New receipts created during a
+merge or rebase capture only its operation kind, original commit, and item blob
+in the typed `MergeReceiptOperation` contract. A plain merge captures these
+before Git publishes `MERGE_HEAD`: `HEAD` must equal `ORIG_HEAD`, and the
+driver's ours input must hash to the item blob at that commit. Missing or
+ambiguous coordinates are omitted. After aborting, run:
 
 ```bash
 pm merge reconcile --dry-run --json
-pm merge reconcile --message "Record restored original rebase state" --json
+pm merge reconcile --message "Record restored original Git state" --json
 ```
+
+SDK consumers that exhaustively handle `MergeReceiptOperation.kind` must
+accept both `rebase` and `merge`. Existing rebase coordinates and receipt
+version remain valid; no stored receipt migration is required.
 
 Settlement requires Git to have left every active merge/rebase/cherry-pick/revert
 operation, HEAD to match the original commit, and the item in HEAD, index, and
@@ -270,6 +281,15 @@ the same eligibility checks and leaves both history and receipts untouched.
 If receipt persistence fails after the audit commits, retry reuses the identical
 verified disposition and finishes the receipt writes without appending another
 audit event. An unrelated earlier audit does not satisfy this check.
+
+Applied-merge settlement has the same retry contract, tracked by
+[pm-gh1390](../.agents/pm/issues/pm-gh1390.toon). The current item must still
+satisfy authoritative receipt proof; only an identical receipt context in
+verified history suppresses a repeated provenance event. This also works with
+durable-only evidence in another worktree. Once that worktree commits the
+settled sidecar and history, a receiving worktree's stale local pending receipt
+cannot reopen it. A subsequent `pm merge reconcile` leaves all three files
+unchanged.
 
 Old receipts without operation coordinates remain pending for ordinary review.
 Tracked `merge-receipts/` sidecars are durable provenance and must remain tracked.

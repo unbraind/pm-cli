@@ -333,15 +333,20 @@ function receiptProvenanceFingerprints(receipt: MergeDecisionReceipt): string[] 
   return fingerprints;
 }
 
-/** Merge clone-local and durable lifecycle state without losing pending work. */
+/** Durable settlement is authoritative after provenance validation; an interrupted local-only write remains pending. */
 function mergeReceiptCopyLifecycle(
   local: MergeDecisionReceipt,
   durable: MergeDecisionReceipt,
 ): MergeDecisionReceipt {
-  if (local.state === "reconciled" && durable.state === "reconciled" && local.settlement === durable.settlement) {
-    return local;
-  }
   const { reconciled_at: _reconciledAt, settlement: _settlement, ...pendingLocal } = local;
+  if (durable.state === "reconciled") {
+    return {
+      ...pendingLocal,
+      state: "reconciled",
+      reconciled_at: durable.reconciled_at,
+      ...(durable.settlement === undefined ? {} : { settlement: durable.settlement }),
+    };
+  }
   return { ...pendingLocal, state: "pending" };
 }
 

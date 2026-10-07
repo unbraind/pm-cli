@@ -698,6 +698,13 @@ jobs:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts
 
+      # pm-gh1405 / pm-gh1390: verify both Git object formats and durable
+      # receipt settlement across real worktrees on the native Windows runner.
+      - name: Verify merge receipt recovery and settlement on Windows
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts
+
       - name: Verify nested linked-test dependency junctions
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"

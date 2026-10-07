@@ -3270,17 +3270,16 @@ async function correlateMergeReceiptHistoryDriftItems(params: {
       details.chain_mismatches,
     ].flatMap((value) => (Array.isArray(value) ? (value as string[]) : [])),
   );
-  const cloneLocalReceiptsByItem = new Map<string, MergeDecisionReceipt[]>();
+  const receiptsByItem = new Map<string, MergeDecisionReceipt[]>();
   for (const receipt of params.pendingMergeReceipts) {
-    if (receipt.evidence_source !== "clone_local") continue;
-    const receipts = cloneLocalReceiptsByItem.get(receipt.item_id) ?? [];
+    const receipts = receiptsByItem.get(receipt.item_id) ?? [];
     receipts.push(receipt);
-    cloneLocalReceiptsByItem.set(receipt.item_id, receipts);
+    receiptsByItem.set(receipt.item_id, receipts);
   }
   const attributed: string[] = [];
   for (const id of hashMismatches) {
     if (unsafeStreamIds.has(id)) continue;
-    const receipts = cloneLocalReceiptsByItem.get(id);
+    const receipts = receiptsByItem.get(id);
     if (!receipts || receipts.length === 0) continue;
     try {
       await runHistoryRepair(
