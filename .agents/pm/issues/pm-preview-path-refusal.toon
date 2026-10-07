@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-07T05:16:46.951Z"
-updated_at: "2026-10-07T06:22:57.272Z"
+updated_at: "2026-10-07T06:30:37.886Z"
 closed_at: "2026-10-07T06:16:17.392Z"
 completed_at: "2026-10-07T06:16:17.392Z"
 author: "harness:codex"
@@ -22,15 +22,29 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-3lhth4,implements,"2026-10-07T05:16:46.951Z","harness:codex","cli:create:dep",detected
   pm-gh1390,discovered_from,"2026-10-07T05:16:46.951Z","harness:codex","cli:create:dep",detected
   pm-n912nt,recurs_from,"2026-10-07T05:16:46.951Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
-  "2026-10-07T05:16:46.951Z","harness:codex","Duplicate check: complete live 2901-record all-status corpus and exact PM-CLI-3E/regular-path searches have no concrete leaf for typed non-regular preview refusal. Existing pm-3lhth4 owns the broader filesystem taxonomy; shipped pm-n912nt preserved native structural diagnostics and is not reopened. Open/in_progress inventories refreshed. Live Sentry latest event 2026-10-07T03:48:27Z is handled Windows Node24 on 2026.10.6 with unclassified_runtime_error exit1; no private paths or event payloads retained."
-  "2026-10-07T05:21:57.066Z","harness:codex","TDD red: 18 existing SDK/CLI safety controls failed the declared exit-2/code/recovery contract while 60 other preview controls passed. Real links, FIFOs, sockets, regular-file-to-FIFO descriptor races and configuration directories retained the old unclassified TypeError. The keeper assertions are strengthened, not duplicated. Shared SDK producer now returns a path-redacted PmCliError; native errno controls remain unchanged."
-  "2026-10-07T05:37:59.156Z","harness:codex","Linked preview keeper passes all 78 SDK/CLI controls. Independent manual acceptance installs the actual physical-runtime tarball in a temporary consumer and passes under Node and Bun: real conflict/abort, read-only planned abandonment, audited settlement, byte-identical repeat, declared schema-directory refusal and unchanged item/history bytes. Preview intentionally retains a nonzero pending-receipt verdict until applied; the manual harness was corrected to that existing contract."
-  "2026-10-07T05:39:13.659Z","harness:codex","Static validation correctly refuses the stale generated runtime contract snapshot after adding transaction_preview_non_regular_file to the source-derived error catalog. Refresh the canonical contract and dependent agent surfaces after the current runner releases its inputs, inspect the generated additive diff, and link every derived file to this owner; no gate baseline or declared refusal semantics are relaxed."
-  "2026-10-07T06:15:32.171Z","harness:codex","Final verification: complete canonical runner passes 9,884 applicable tests and exact 100/100/100/100 all-source coverage; strict static and four TypeScript project checks pass. Existing required Windows and macOS preview portability jobs execute the updated SDK refusal assertions. Independent installed Node/Bun manual journeys confirm exit 2, stable error code, actionable next_steps, unchanged source item/history and omission of discovered paths. Native errno controls remain intact. Sentry next-release resolution and hosted exact-head checks remain pending."
-  "2026-10-07T06:22:57.272Z","harness:codex","Observability: the validated fix is committed as fb23fe7833408767a6786b87309e1bf679be785f and awaits reviewed landing/publication. The external Sentry next-release mutation acknowledged inNextRelease but fresh reads associated the group with existing 2026.10.7, which lacks this fix; that association was reverted to unresolved rather than claiming current publication fixed. Commit-specific association cannot yet find the unpublished source commit. Recent required telemetry query was available: finish error rate 3.26 percent, zero failure rows without an error code. No all-user-action or end-to-end trace completeness claim is made."
-learnings[1]{created_at,author,text}:
+comments[6]:
+  - created_at: "2026-10-07T05:16:46.951Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete live 2901-record all-status corpus and exact PM-CLI-3E/regular-path searches have no concrete leaf for typed non-regular preview refusal. Existing pm-3lhth4 owns the broader filesystem taxonomy; shipped pm-n912nt preserved native structural diagnostics and is not reopened. Open/in_progress inventories refreshed. Live Sentry latest event 2026-10-07T03:48:27Z is handled Windows Node24 on 2026.10.6 with unclassified_runtime_error exit1; no private paths or event payloads retained."
+  - created_at: "2026-10-07T05:21:57.066Z"
+    author: "harness:codex"
+    text: "TDD red: 18 existing SDK/CLI safety controls failed the declared exit-2/code/recovery contract while 60 other preview controls passed. Real links, FIFOs, sockets, regular-file-to-FIFO descriptor races and configuration directories retained the old unclassified TypeError. The keeper assertions are strengthened, not duplicated. Shared SDK producer now returns a path-redacted PmCliError; native errno controls remain unchanged."
+  - created_at: "2026-10-07T05:37:59.156Z"
+    author: "harness:codex"
+    text: "Linked preview keeper passes all 78 SDK/CLI controls. Independent manual acceptance installs the actual physical-runtime tarball in a temporary consumer and passes under Node and Bun: real conflict/abort, read-only planned abandonment, audited settlement, byte-identical repeat, declared schema-directory refusal and unchanged item/history bytes. Preview intentionally retains a nonzero pending-receipt verdict until applied; the manual harness was corrected to that existing contract."
+  - created_at: "2026-10-07T05:39:13.659Z"
+    author: "harness:codex"
+    text: "Static validation correctly refuses the stale generated runtime contract snapshot after adding transaction_preview_non_regular_file to the source-derived error catalog. Refresh the canonical contract and dependent agent surfaces after the current runner releases its inputs, inspect the generated additive diff, and link every derived file to this owner; no gate baseline or declared refusal semantics are relaxed."
+  - created_at: "2026-10-07T06:15:32.171Z"
+    author: "harness:codex"
+    text: "Final verification: complete canonical runner passes 9,884 applicable tests and exact 100/100/100/100 all-source coverage; strict static and four TypeScript project checks pass. Existing required Windows and macOS preview portability jobs execute the updated SDK refusal assertions. Independent installed Node/Bun manual journeys confirm exit 2, stable error code, actionable next_steps, unchanged source item/history and omission of discovered paths. Native errno controls remain intact. Sentry next-release resolution and hosted exact-head checks remain pending."
+  - created_at: "2026-10-07T06:22:57.272Z"
+    author: "harness:codex"
+    text: "Observability correction: Chrome confirms Sentry PM-CLI-3E is resolved starting with a release AFTER 2026.10.7. The API inRelease field names the baseline for next-release tracking, not a shipped-fix version; the prior interpretation was incorrect. Pending-release resolution is now verified through the visible Sentry header and activity. The validated source fix fb23fe7833408767a6786b87309e1bf679be785f awaits reviewed landing and the next eligible daily publication. Required live telemetry is available with a 3.26 percent finish error rate and zero failure rows without an error code; no all-user-action or end-to-end trace completeness claim is made."
+    edited_at: "2026-10-07T06:30:37.033Z"
+learnings[2]{created_at,author,text}:
   "2026-10-07T05:28:06.320Z","harness:codex","Filesystem safety refusal is an expected SDK boundary, not an unexpected fault. Use one declared, path-redacted PmCliError at both entry and descriptor checks; retain native errno provenance for persistent structural and permission failures, and render recovery through the existing CLI next_steps contract."
+  "2026-10-07T06:30:37.886Z","harness:codex",Sentry next-release resolution can expose the latest baseline in API inRelease. Verify the visible resolved-starting-after wording and activity before interpreting the field as a shipped-fix version; commit-specific resolution also requires a registered commit.
 files[9]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
