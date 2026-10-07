@@ -3,12 +3,15 @@
  * Exercises receipt attribution and settlement across two real Git worktrees.
  */
 import { execFileSync } from "node:child_process";
-import { chmod, readFile } from "node:fs/promises";
+import { chmod, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { sealHistoryRecord } from "../../../src/core/history/history.js";
+import { verifyHistoryChainWithVersion } from "../../../src/core/history/replay.js";
 import { runHealth } from "../../../src/sdk/governance/health.js";
 import { runMergeReconcile } from "../../../src/sdk/merge/reconcile.js";
 import { inspectMergeReceiptEvidence } from "../../../src/sdk/merge/receipts.js";
+import type { HistoryEntry } from "../../../src/types/index.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -56,12 +59,31 @@ describe("merge receipt settlement across worktrees", () => {
       ]);
       const observerHistoryPath = path.join(observerPmRoot, "history", `${id}.jsonl`);
       const before = await readFile(observerHistoryPath, "utf8");
+      const observerReceiptPath = path.join(observerPmRoot, "merge-receipts", `${receipt.id}.json`);
+      const pendingDurable = await readFile(observerReceiptPath, "utf8");
+      await writeFile(observerReceiptPath, `${JSON.stringify({
+        ...JSON.parse(pendingDurable), state: "reconciled", reconciled_at: "2026-10-07T00:00:00.000Z",
+      })}\n`);
+      expect((await inspectMergeReceiptEvidence(observer, { pmRoot: observerPmRoot })).receipts).toMatchObject([
+        { id: receipt.id, state: "pending" },
+      ]);
+      expect(await readFile(observerHistoryPath, "utf8")).toBe(before);
       const health = await runHealth({ path: observerPmRoot }, { full: true, checkOnly: true });
       expect(health.checks.find((check) => check.name === "history_drift")?.details).toMatchObject({
         merge_receipt_attributed_items: [id],
         remediation_map: { history_drift_merge_receipt: "pm merge reconcile" },
       });
       expect(await readFile(observerHistoryPath, "utf8")).toBe(before);
+      await writeFile(observerReceiptPath, pendingDurable);
+      const mainReceiptPath = path.join(context.pmPath, "merge-receipts", `${receipt.id}.json`);
+      const mainPending = await readFile(mainReceiptPath, "utf8");
+      await writeFile(mainReceiptPath, `${JSON.stringify({
+        ...JSON.parse(mainPending), state: "reconciled", reconciled_at: "2026-10-07T00:00:00.000Z",
+      })}\n`);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toMatchObject([
+        { id: receipt.id, state: "pending" },
+      ]);
+      await writeFile(mainReceiptPath, mainPending);
       let interruptedHistory: string | undefined;
       if (process.platform !== "win32" && process.getuid?.() !== 0) {
         const durableDirectory = path.join(observerPmRoot, "merge-receipts");
@@ -98,6 +120,48 @@ describe("merge receipt settlement across worktrees", () => {
       expect(await readFile(historyPath, "utf8")).toBe(settledHistory);
       expect(await readFile(durablePath, "utf8")).toBe(settledReceipt);
       expect(await readFile(path.join(localPath, `${receipt.id}.json`), "utf8")).toBe(staleLocal);
+      const settledEntries = settledHistory.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      const audit = settledEntries.at(-1)!;
+      expect(audit.op).toBe("merge_reconcile");
+      for (const changedAudit of [
+        { ...audit, op: "update" },
+        { ...audit, context: undefined },
+        { ...audit, context: {} },
+        ...[null, [], "invalid", {}, { receipts: "invalid" }, { receipts: [null] }].map(
+          (merge) => ({ ...audit, context: { merge } }),
+        ),
+        { ...audit, context: { merge: { receipts: [{ receipt_id: receipt.id }] } } },
+      ]) {
+        const altered = [...settledEntries.slice(0, -1), sealHistoryRecord(changedAudit)];
+        expect(verifyHistoryChainWithVersion(altered).ok).toBe(true);
+        await writeFile(historyPath, `${altered.map((entry) => JSON.stringify(entry)).join("\n")}\n`);
+        expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toMatchObject([
+          { id: receipt.id, state: "pending" },
+        ]);
+      }
+      const { record_hash: _recordHash, record_hash_version: _recordVersion, ...unsealedAudit } = audit;
+      for (const invalidHistory of [
+        "invalid JSON\n",
+        "null\n",
+        `${[...settledEntries.slice(0, -1), unsealedAudit].map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+        `${[...settledEntries.slice(0, -1), { ...audit, message: "Unauthenticated edit" }].map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+      ]) {
+        await writeFile(historyPath, invalidHistory);
+        expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toMatchObject([
+          { id: receipt.id, state: "pending" },
+        ]);
+      }
+      await rm(historyPath);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toHaveLength(1);
+      await writeFile(historyPath, settledHistory);
+      await writeFile(durablePath, `${JSON.stringify({
+        ...JSON.parse(settledReceipt), settlement: "original_git_state_restored",
+      })}\n`);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toMatchObject([
+        { id: receipt.id, state: "pending" },
+      ]);
+      await writeFile(durablePath, settledReceipt);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toEqual([]);
     });
   });
 });

@@ -936,7 +936,7 @@ describe("clone-local merge decision receipts", () => {
     });
     const boundedReceipt = await writeMergeReceipt({
       cwd: workspace,
-      itemPath: ".agents/pm/tasks/pm-bounded.toon",
+      itemPath: ".agents/pm/tasks/pm-durable.toon",
       preferred: "ours",
       fieldsFromTheirs: [],
       unionFields: [],
@@ -953,7 +953,7 @@ describe("clone-local merge decision receipts", () => {
     });
     const nullReceipt = await writeMergeReceipt({
       cwd: workspace,
-      itemPath: ".agents/pm/tasks/pm-null.toon",
+      itemPath: ".agents/pm/tasks/pm-durable.toon",
       preferred: "ours",
       fieldsFromTheirs: [],
       unionFields: [],
@@ -1033,7 +1033,7 @@ describe("clone-local merge decision receipts", () => {
       await listMergeReceipts(clone, {
         pmRoot: path.join(clone, ".agents", "pm"),
       }),
-    ).toEqual([]);
+    ).toHaveLength(3);
     expect(
       await listMergeReceipts(clone, {
         includeReconciled: true,
@@ -1042,19 +1042,24 @@ describe("clone-local merge decision receipts", () => {
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          state: "reconciled",
+          state: "pending",
           value_availability: "mixed",
         }),
         expect.objectContaining({
-          state: "reconciled",
+          state: "pending",
           value_availability: "bounded_inline",
         }),
         expect.objectContaining({
-          state: "reconciled",
+          state: "pending",
           value_availability: "mixed",
         }),
       ]),
     );
+    for (const candidate of clonedReceipts) {
+      expect(JSON.parse(await readFile(path.join(
+        clone, ".agents", "pm", "merge-receipts", `${candidate.id}.json`,
+      ), "utf8"))).toMatchObject({ state: "reconciled" });
+    }
     await markMergeReceiptReconciled(clone, {
       ...clonedReceipts[0]!,
       id: "durable-sidecar-missing",

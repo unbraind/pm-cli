@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-04T11:45:54.908Z"
-updated_at: "2026-10-07T06:40:51.695Z"
-closed_at: "2026-10-07T06:16:15.979Z"
-completed_at: "2026-10-07T06:16:15.979Z"
+updated_at: "2026-10-07T08:10:45.470Z"
+closed_at: "2026-10-07T08:00:32.210Z"
+completed_at: "2026-10-07T08:00:32.210Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Trusted pending receipt overlap routes drift remediation to merge reconcile; Committed reconciled state dominates stale clone-local pending indexes; Repeated reconciliation writes nothing and adds no duplicate audit event; Unrelated drift and malformed evidence remain fail-closed.
@@ -18,30 +18,75 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-dj98
 risk: medium
 confidence: medium
-resolution: "Validate immutable receipt provenance before composing lifecycle state; durable reconciled state dominates stale local pending indexes, durable-only proof informs health, and retry reuses identical trusted history audits after interrupted settlement writes."
-expected_result: Trusted drift receives merge reconciliation guidance; committed settlement stays terminal across worktrees and retries produce no duplicate audit.
-actual_result: "Real linked worktrees, actual interrupted EACCES persistence, counterfeit proof controls and repeated byte-identical history/local/durable evidence pass. Full 9884-test exact 100/100/100/100 coverage and strict static/type gates pass; hosted landing checks and next daily publication remain pending."
+resolution: "Require exact immutable receipt provenance and matching sealed verified merge_reconcile disposition history before durable terminal state suppresses pending evidence. Preserve readonly scans, correct health attribution and idempotent interrupted settlement; document original HEAD and retained durable sidecars."
+expected_result: "Audited committed settlement dominates stale local copies; absent, invalid or mismatched audit leaves durable evidence pending without writes, and supported SDK startup remains within existing budgets."
+actual_result: "40 linked tests and all 9884 applicable tests pass with exact 100/100/100/100 source coverage. Four TypeScript projects, nine packed npx/bunx packages and installed Node/Bun recovery journeys pass. Isolated ten-entrypoint startup diagnostic has zero budget violations, runtime median 259ms against 452ms. Final complete static chain and hosted re-review remain landing gates; next daily publication remains separate."
 affected_version: 2026.10.4
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,discovered_from,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-baksix,verifies,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-dj98,implements,"2026-10-04T11:45:54.908Z","harness:codex","cli:create:dep",detected
   pm-baksix,recurs_from,"2026-10-07T05:10:41.301Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
-  "2026-10-04T11:45:54.908Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1390 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
-  "2026-10-07T05:02:53.256Z","harness:codex","Delivery scope: authoritative receipt lifecycle composition, shared-worktree drift attribution and idempotent reconciliation, implemented alongside pm-gh1405. TDD owner: real shared Git worktrees and persisted history/receipt bytes; retain malformed/mismatched proof rejection. Full all-status duplicate check is complete at 2901 records; no new umbrella or duplicate item. Only the two actively edited owners are in_progress."
-  "2026-10-07T05:08:47.421Z","harness:codex","TDD red evidence: real linked Git worktree with durable-only lossless receipt has merge_receipt_attributed_items empty and generic history repair guidance. Regression also asserts committed settlement dominates stale local pending bytes and a second SDK reconciliation leaves history and both receipt copies byte-identical. Immutable provenance validation remains mandatory."
-  "2026-10-07T05:10:59.902Z","harness:codex","Additional TDD red: actual EACCES on durable receipt persistence occurs after the applied merge history audit commits. Retry appended a duplicate empty merge_reconcile event. The shared worktree keeper now requires byte-identical history across retry; the repair planner reuses only identical trusted receipt context, preserving force behavior and ordinary explicit audits."
-  "2026-10-07T05:28:04.886Z","harness:codex","Repository context verification: full live health and history-drift validation pass. Health retains 14 advisory legacy hierarchy findings; validation reports 170 historical resolution-field warnings rather than integrity failures. Complete all-status intake and graph census include terminal history; no fabricated depth or inferred closure evidence is added. GitHub has no open PRs before this delivery, all 23 open issues have PM-file comments, and native security alert inventories plus dependency audit are empty. These observations do not claim the wider open roadmap complete."
-  "2026-10-07T06:08:02.591Z","harness:codex","Final canonical runner passes 9,884 applicable tests with two Windows-only platform skips and exact all-source 100/100/100/100 coverage. Four TypeScript projects passed. Packed npx/bunx smoke passes all nine bundled packages; independent installed Node/Bun recovery journeys pass. The staged secret scan identified one machine-specific npm path in delivery evidence, now removed through verified history-redact plus a normal comment correction; item/history integrity remains valid and the staged scan passes. Final static validation and hosted review remain pending."
-  "2026-10-07T06:36:27.909Z","harness:codex","PR 1422 first reviewed source head 5d198b93d054ecbe2e73b159fcaa8eb312479218 passes every one of the 26 effective required contexts; GitHub reports CLEAN with no missing checks. Native Windows recovery, coverage, static/type checks, CodeQL, Trivy, ShellCheck, PSScriptAnalyzer, actionlint, CodeFactor, DeepScan and package/runtime matrices pass. Review inventory has no inline findings: CodeRabbit automatic review skipped due repository star policy and must be explicitly triggered; Greptile trial ended and Sourcery review quota is exhausted. These provider limitations are not clean code-review approvals. Every current bot artifact will receive a usefulness vote and a specific linked acknowledgement before the final metadata push/retrigger."
-  "2026-10-07T06:40:51.695Z","harness:codex","First feedback round completed: all six bot artifacts were read in full, voted thumbs-up for useful scope/coverage/availability information, and given specific artifact-linked revision-aware acknowledgements; there were no inline threads. Sourcery guide and benchmark report are contextual evidence; trial/quota notices remain limitations. CodeRabbit full manual review is requested after the final PM correction push, together with the other configured providers. Production source, test inputs and all-source coverage denominator are unchanged from the green reviewed source head."
+comments[17]:
+  - created_at: "2026-10-04T11:45:54.908Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1390 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
+  - created_at: "2026-10-07T05:02:53.256Z"
+    author: "harness:codex"
+    text: "Delivery scope: authoritative receipt lifecycle composition, shared-worktree drift attribution and idempotent reconciliation, implemented alongside pm-gh1405. TDD owner: real shared Git worktrees and persisted history/receipt bytes; retain malformed/mismatched proof rejection. Full all-status duplicate check is complete at 2901 records; no new umbrella or duplicate item. Only the two actively edited owners are in_progress."
+  - created_at: "2026-10-07T05:08:47.421Z"
+    author: "harness:codex"
+    text: "TDD red evidence: real linked Git worktree with durable-only lossless receipt has merge_receipt_attributed_items empty and generic history repair guidance. Regression also asserts committed settlement dominates stale local pending bytes and a second SDK reconciliation leaves history and both receipt copies byte-identical. Immutable provenance validation remains mandatory."
+  - created_at: "2026-10-07T05:10:59.902Z"
+    author: "harness:codex"
+    text: "Additional TDD red: actual EACCES on durable receipt persistence occurs after the applied merge history audit commits. Retry appended a duplicate empty merge_reconcile event. The shared worktree keeper now requires byte-identical history across retry; the repair planner reuses only identical trusted receipt context, preserving force behavior and ordinary explicit audits."
+  - created_at: "2026-10-07T05:28:04.886Z"
+    author: "harness:codex"
+    text: "Repository context verification: full live health and history-drift validation pass. Health retains 14 advisory legacy hierarchy findings; validation reports 170 historical resolution-field warnings rather than integrity failures. Complete all-status intake and graph census include terminal history; no fabricated depth or inferred closure evidence is added. GitHub has no open PRs before this delivery, all 23 open issues have PM-file comments, and native security alert inventories plus dependency audit are empty. These observations do not claim the wider open roadmap complete."
+  - created_at: "2026-10-07T06:08:02.591Z"
+    author: "harness:codex"
+    text: "Final canonical runner passes 9,884 applicable tests with two Windows-only platform skips and exact all-source 100/100/100/100 coverage. Four TypeScript projects passed. Packed npx/bunx smoke passes all nine bundled packages; independent installed Node/Bun recovery journeys pass. The staged secret scan identified one machine-specific npm path in delivery evidence, now removed through verified history-redact plus a normal comment correction; item/history integrity remains valid and the staged scan passes. Final static validation and hosted review remain pending."
+  - created_at: "2026-10-07T06:36:27.909Z"
+    author: "harness:codex"
+    text: "PR 1422 first reviewed source head 5d198b93d054ecbe2e73b159fcaa8eb312479218 passes every one of the 26 effective required contexts; GitHub reports CLEAN with no missing checks. Native Windows recovery, coverage, static/type checks, CodeQL, Trivy, ShellCheck, PSScriptAnalyzer, actionlint, CodeFactor, DeepScan and package/runtime matrices pass. Review inventory has no inline findings: CodeRabbit automatic review skipped due repository star policy and must be explicitly triggered; Greptile trial ended and Sourcery review quota is exhausted. These provider limitations are not clean code-review approvals. Every current bot artifact will receive a usefulness vote and a specific linked acknowledgement before the final metadata push/retrigger."
+  - created_at: "2026-10-07T06:40:51.695Z"
+    author: "harness:codex"
+    text: "First feedback round completed: all six bot artifacts were read in full, voted thumbs-up for useful scope/coverage/availability information, and given specific artifact-linked revision-aware acknowledgements; there were no inline threads. Sourcery guide and benchmark report are contextual evidence; trial/quota notices remain limitations. CodeRabbit full manual review is requested after the final PM correction push, together with the other configured providers. Production source, test inputs and all-source coverage denominator are unchanged from the green reviewed source head."
+  - created_at: "2026-10-07T06:57:24.766Z"
+    author: "harness:codex"
+    text: "Review remediation: CodeRabbit PR 1422 thread 4203949218 identifies a schema-valid durable reconciled flag without matching history audit suppressing pending evidence. The same unmerged canonical delivery is reopened for real-file negative controls and verified history-backed lifecycle authority; no duplicate work item is created."
+  - created_at: "2026-10-07T06:59:51.439Z"
+    author: "harness:codex"
+    text: "Review TDD red: the existing real linked-worktree keeper writes a schema-valid durable reconciled flag with no merge_reconcile audit; inspectMergeReceiptEvidence currently returns no pending receipts. The focused regression fails at the pending-evidence assertion, independently reproducing thread 4203949218. Coverage and gates are unchanged."
+  - created_at: "2026-10-07T07:03:41.401Z"
+    author: "harness:codex"
+    text: "Review remediation green: 35 focused SDK and real-Git integration tests pass. The primary worktree keeper now proves unaudited durable-only and paired-copy flags stay pending without file mutation, then checks valid settlement, interrupted retry and stale local copies. Additional controls preserve a valid sealed history chain while changing operation/context/summary, reject unsealed or damaged history, and distinguish applied from abandoned disposition. The direct receipt writer test retains raw persisted reconciled-state assertions while proving a lifecycle flag alone cannot settle fresh-clone evidence."
+  - created_at: "2026-10-07T07:26:24.168Z"
+    author: "harness:codex"
+    text: "Full-run remediation evidence: the first review-fix coverage attempt found exactly three historical fixtures that used the receipt persistence primitive without an audit. Retained their undefined-slot, legacy/current hash, raw-byte and tamper controls; now settle real correctly matched item snapshots through runMergeReconcile. The missing-value fixture uses the actually absent optional assignee field. All six targeted compatibility/worktree cases pass; the complete exact-coverage runner is rerun next. No production gate or coverage denominator is relaxed."
+  - created_at: "2026-10-07T07:48:31.258Z"
+    author: "harness:codex"
+    text: "Review-fix exact coverage passes all 9884 applicable tests across 784 files (two Windows-only skips on Linux): statements 67110/67110, branches 51377/51377, functions 13838/13838, lines 63952/63952. No exclusions or thresholds changed. The complete static chain passed source checks but correctly stopped at active expected-result metadata cleared by reopening; restored that required field through pm update and will rerun the full chain after final closure. Seven-file linked verification now passes."
+  - created_at: "2026-10-07T07:51:06.478Z"
+    author: "harness:codex"
+    text: "Final review remediation: all four TypeScript projects pass, packed npx/bunx smoke passes all nine bundled packages, and independently installed Node/Bun tarball journeys pass real Git conflict/abort, readonly abandonment planning, verified settlement, unaudited terminal-state visibility, byte-identical retries and typed preview refusal. Linked verification passes 40 cases in seven files; exact full coverage remains 9884 passing tests and 100/100/100/100. Second review round: all six new or revised bot artifacts were read, usefulness-voted and given specific revision-aware acknowledgements. CodeRabbit thread 4203949218 is fixed locally; final push, full hosted re-review and merge remain required. Live required Sentry/telemetry gate passes (3.24 percent finish errors, zero missing error codes); native security alerts remain zero. Latest registry pm-changelog remains 2026.10.5."
+  - created_at: "2026-10-07T07:59:13.112Z"
+    author: "harness:codex"
+    text: "Final static attempt passes metadata, source checks, graph and gate-registry checks but fails the required SDK runtime import-cost median: 515ms exceeds the unchanged 452ms budget. Investigate whether new eager history verification imports increased the entrypoint graph before rerunning; preserve the budget and use this unmerged canonical delivery rather than creating duplicate work."
+  - created_at: "2026-10-07T08:00:31.513Z"
+    author: "harness:codex"
+    text: "Isolated fresh-process diagnostic used the unchanged benchmark implementation and budgets, five samples per entrypoint after warmup. All ten SDK entrypoints pass with zero violations: sdk/runtime p50 259ms, p95 300ms, unchanged allowed median 452ms. The earlier 515ms overshoot is not reproduced; host scheduling is a possible explanation, not a proven root cause. No source, benchmark, budget or coverage inputs changed. Repeat the full static chain once on final closed metadata; retain both receipts rather than erase the failed attempt."
+  - created_at: "2026-10-07T08:09:48.121Z"
+    author: "harness:codex"
+    text: "Final complete pnpm quality:static passes with final closed metadata: strict dependency/docstring/export/ESLint/duplicate checks, workflow permissions/cooldown, generated contracts and agent surfaces, package/SDK boundary and replication, command/refusal/token ratchets, tracker-context/graph/history assurance, gate registry, unchanged SDK entrypoint/startup budgets and bounded mutation checks. Four TypeScript projects, full exact coverage, linked 40-case keeper, installed Node/Bun and npx/bunx acceptance already pass on identical frozen source. Latest pm-changelog generation and check pass; all three implemented claims are released. The complete fix will be pushed for fresh exact-head hosted checks and all configured review requests on PR 1422; landing and publication are not claimed yet."
+    edited_at: "2026-10-07T08:10:45.470Z"
 notes[2]{created_at,author,text}:
   "2026-10-07T06:36:28.460Z","harness:codex","External DeepScan main dashboard inspected in Chrome: zero open issues at historical main analysis 686e7640a6455b65dbe9de82039a48c304598751, with an embedded ESLint integration warning. That old dashboard is not current-head evidence. The PR separately passes required native ESLint/static gates and exact-head DeepScan/CodeFactor contexts; confirm the final PR report before merge."
   "2026-10-07T06:40:51.066Z","harness:codex","Chrome verification of PR 1422: DeepScan explicitly shows source head 5d198b93d054ecbe2e73b159fcaa8eb312479218 with 0 new and 0 fixed issues; CodeFactor PR report says No issues found. Its main dashboard separately retains two duplicate reports for generated standalone plugin scripts and canonical templates. Existing .codefactor.yml identifies these generated mirrors as the hosted Ignore Files checklist, and generation/replication gates remain mandatory. Do not describe a green no-new-issues PR check as zero total baseline findings; retain that baseline under the existing quality lineage pm-92if without inventing another duplicate owner."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-10-07T05:11:35.433Z","harness:codex","Committed durable lifecycle state must dominate stale worktree-local indexes only after exact immutable provenance validation. Retrying a history-committed, receipt-write-interrupted settlement must reuse its identical trusted audit context, while changed item proof and unrelated audits remain separate."
-files[7]:
+  "2026-10-07T07:48:31.953Z","harness:codex","Receipt copy provenance and lifecycle authority are separate proofs. A schema-valid terminal flag must not hide durable pending evidence: require its complete disposition summary in sealed, verified merge_reconcile history. Readonly scans verify history once per item and never rewrite damaged or unaudited evidence; exercise valid-chain wrong-context controls as well as malformed data."
+files[10]:
   - path: .github/workflows/ci.yml
     scope: project
   - path: config/defect-recurrence-policy.json
@@ -53,13 +98,19 @@ files[7]:
     scope: project
   - path: src/sdk/merge/receipts.ts
     scope: project
+  - path: tests/integration/legacy-receipt-reader.integration.spec.ts
+    scope: project
   - path: tests/integration/merge-receipt-health-classification.integration.spec.ts
+    scope: project
+  - path: tests/integration/merge-recovery-parity.integration.spec.ts
     scope: project
   - path: tests/integration/workspace/merge-receipt-settlement.integration.spec.ts
     scope: project
+  - path: tests/unit/sdk/merge-receipts.spec.ts
+    scope: project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,project,"harness:codex","2026-10-07T05:21:55.215Z",local_mutation,fix/merge-receipt-abort-and-settlement
-test_runs[2]:
+  node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,project,"harness:codex","2026-10-07T07:26:22.009Z",local_mutation,fix/merge-receipt-abort-and-settlement
+test_runs[3]:
   - run_id: test-local-muxnhgk4-jgjktc
     kind: test
     status: failed
@@ -82,10 +133,21 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/merge-receipt-worktree-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muxt2k7v-bbcso8
+    kind: test
+    status: passed
+    started_at: "2026-10-07T07:47:39.088Z"
+    finished_at: "2026-10-07T07:48:12.379Z"
+    recorded_at: "2026-10-07T07:48:12.379Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts tests/unit/sdk/merge-reconcile.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/legacy-receipt-reader.integration.spec.ts tests/integration/merge-recovery-parity.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/MERGE_SAFETY.md,project
-close_reason: Implemented durable receipt authority and idempotent reconciliation across shared worktrees
+close_reason: Implemented audited durable receipt authority with real compatibility and startup verification
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

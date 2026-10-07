@@ -178,7 +178,12 @@ a fresh-clone reviewer recover ordinary control-plane decisions without
 publishing titles, descriptions, custom statuses, or other potentially private
 content. When both copies exist the SDK deduplicates them and prefers the
 locally recoverable values. After immutable provenance matches, durable
-reconciled state takes precedence over a stale clone-local pending copy.
+reconciled state takes precedence over a stale clone-local pending copy only
+when verified item history contains a sealed `merge_reconcile` event with the
+same complete receipt summary and disposition. An absent, unreadable, invalid,
+unsealed, or mismatched audit keeps the receipt pending in memory; inspection
+rewrites neither receipt nor history. History is verified once per affected
+item in each receipt scan.
 A local reconciled copy paired with a pending durable copy remains pending,
 so an interrupted settlement can finish its durable write:
 
@@ -272,6 +277,8 @@ version remain valid; no stored receipt migration is required.
 Settlement requires Git to have left every active merge/rebase/cherry-pick/revert
 operation, HEAD to match the original commit, and the item in HEAD, index, and
 working tree to match the original blob. The item history must already be clean.
+Requiring the original HEAD also rules out a new commit incorporating the
+abandoned merge's other branch.
 The history transaction rechecks the proof against its exact protected item
 snapshot. Apply appends an explicit `merge_reconcile` event with
 `abandoned_receipts` and the reason `original_git_state_restored`; it then marks
@@ -281,6 +288,11 @@ the same eligibility checks and leaves both history and receipts untouched.
 If receipt persistence fails after the audit commits, retry reuses the identical
 verified disposition and finishes the receipt writes without appending another
 audit event. An unrelated earlier audit does not satisfy this check.
+
+The driver-created `merge-receipts/<receipt-id>.json` sidecar can remain
+untracked after Git aborts. After reviewed settlement, commit that privacy-safe
+sidecar together with the item's new history audit. Reconciliation preserves
+the durable evidence for other worktrees instead of deleting the sidecar.
 
 Applied-merge settlement has the same retry contract, tracked by
 [pm-gh1390](../.agents/pm/issues/pm-gh1390.toon). The current item must still

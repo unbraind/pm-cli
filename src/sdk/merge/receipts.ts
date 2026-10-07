@@ -12,6 +12,8 @@ import type { Stats } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { readHistoryEntries } from "../../core/history/read.js";
+import { verifyHistoryChainWithVersion } from "../../core/history/replay.js";
 import {
   ensureDir,
   isFileAbsentError,
@@ -21,6 +23,7 @@ import {
 } from "../../core/fs/fs-utils.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
+import type { HistoryEntry } from "../../types/index.js";
 import {
   encodeItemScalarDecisionValue,
   hashItemScalarDecisionValue,
@@ -65,7 +68,7 @@ export interface MergeDecisionReceipt {
   merged_field_hashes?: Record<string, string>;
   /** Full recoverable scalar decisions, retained only in the clone. */
   decisions: ItemMergeConflictDecision[];
-  /** Immutable original Git coordinates captured while the driver runs during a rebase. */
+  /** Immutable original Git coordinates captured while the driver runs during a merge or rebase. */
   operation?: MergeReceiptOperation;
   /** Explicit audited disposition when the original Git state was restored instead of merging. */
   settlement?: "original_git_state_restored";
@@ -333,7 +336,7 @@ function receiptProvenanceFingerprints(receipt: MergeDecisionReceipt): string[] 
   return fingerprints;
 }
 
-/** Durable settlement is authoritative after provenance validation; an interrupted local-only write remains pending. */
+/** Compose matching receipt copies before validating the durable settlement audit. */
 function mergeReceiptCopyLifecycle(
   local: MergeDecisionReceipt,
   durable: MergeDecisionReceipt,
@@ -348,6 +351,48 @@ function mergeReceiptCopyLifecycle(
     };
   }
   return { ...pendingLocal, state: "pending" };
+}
+
+/** Keep unaudited durable lifecycle flags pending; verified record context must match the complete disposition. */
+async function retainAuditedDurableSettlements(
+  receipts: Map<string, MergeDecisionReceipt>,
+  durableReceipts: readonly MergeDecisionReceipt[],
+  pmRoot: string,
+): Promise<void> {
+  const histories = new Map<string, HistoryEntry[]>();
+  for (const durable of durableReceipts) {
+    const receipt = receipts.get(durable.id);
+    if (durable.state !== "reconciled" || receipt === undefined) continue;
+    let entries = histories.get(receipt.item_id);
+    if (entries === undefined) {
+      try {
+        entries = await readHistoryEntries(
+          path.join(pmRoot, "history", `${receipt.item_id}.jsonl`),
+          receipt.item_id,
+        );
+        if (!verifyHistoryChainWithVersion(entries).ok) entries = [];
+      } catch {
+        entries = [];
+      }
+      histories.set(receipt.item_id, entries);
+    }
+    const abandoned = receipt.settlement === "original_git_state_restored";
+    const expected = stableStringify({
+      ...summarizeMergeReceipt(receipt),
+      ...(abandoned ? { reason: receipt.settlement, operation: receipt.operation } : {}),
+    });
+    const audited = entries.some((entry) => {
+      if (entry.op !== "merge_reconcile" || entry.record_hash_version === undefined) return false;
+      const merge = entry.context?.merge;
+      if (typeof merge !== "object" || merge === null || Array.isArray(merge)) return false;
+      const summaries = (merge as Record<string, unknown>)[abandoned ? "abandoned_receipts" : "receipts"];
+      return Array.isArray(summaries) && summaries.some((summary: unknown) => stableStringify(summary) === expected);
+    });
+    if (!audited) {
+      const { reconciled_at: _reconciledAt, settlement: _settlement, ...pending } = receipt;
+      receipts.set(receipt.id, { ...pending, state: "pending" });
+    }
+  }
 }
 
 /** Convert a raw receipt into privacy-safe history context. */
@@ -699,6 +744,7 @@ export async function inspectMergeReceiptEvidence(
         : mergeReceiptCopyLifecycle(receipt, durableCopy),
     );
   }
+  await retainAuditedDurableSettlements(receipts, durable.receipts, trackerRoot);
   return {
     receipts: [...receipts.values()]
       .filter(
