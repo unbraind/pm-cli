@@ -1,12 +1,12 @@
 {
   "name": "@unbrained/pm-cli",
-  "version": "2026.10.6",
+  "version": "2026.10.7",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "@unbrained/pm-cli",
-      "version": "2026.10.6",
+      "version": "2026.10.7",
       "dependencies": {
         "@sentry/node": "10.75.1",
         "@toon-format/toon": "^4.1.1",
