@@ -1,0 +1,61 @@
+id: pm-native-git-retry-proof
+title: Prove native Git lock retry after observed contention in PR1425
+description: "CodeRabbit PR1425 identified that a fixed 200ms fixture release can precede the first configuration write, allowing the native Git retry regression to pass without contention. Preserve the closed production-fix owner and strengthen acceptance with observed genuine Git failure, deterministic owner release and a disabled-retry negative control."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-07T20:10:22.629Z"
+updated_at: "2026-10-07T20:16:33.822Z"
+closed_at: "2026-10-07T20:16:00.113Z"
+completed_at: "2026-10-07T20:16:00.113Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Native Git must first return its genuine lock-exists failure before the fixture writer releases its owned lock; the installation then retries successfully. Disabling retry makes this regression fail. All-platform concurrent and unchanged-config checks remain separate and pass.
+parent: pm-gh1424
+risk: low
+confidence: high
+resolution: "Replace timer-only contention proof with an executable proxy that preserves native Git commands, output and status; release the fixture-owned lock only after the genuine lock-exists error. Share native instrumentation with the malformed-config race and keep concurrent/idempotent checks on all platforms."
+expected_result: The retry regression requires observed external contention and fails when retry is disabled; concurrent setup and unchanged configuration stay covered.
+actual_result: "Both linked suites passed all 28 cases. A temporary disabled-retry negative control failed with the genuine configuration refusal and original source was restored. Typechecking, ESLint and zero-duplication checks passed. The proxy cases are Unix-only; real all-platform configuration tests remain enabled."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2muu,verifies,"2026-10-07T20:10:22.629Z","harness:codex","cli:create:dep",detected
+  pm-gh1424,verifies,"2026-10-07T20:10:22.629Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-07T20:10:22.629Z","harness:codex","Duplicate check: strict complete all-status 2904-item corpus and current CLI search/open/in-progress reads found no PR1425 retry-proof owner. The production fix pm-gh1424 is closed and fully read; preserve it and add this bounded review follow-up child. CodeRabbit finding https://github.com/unbraind/pm-cli/pull/1425#discussion_r4211403216 identifies a valid timer-only test gap, not a current production failure."
+  "2026-10-07T20:11:57.987Z","harness:codex","Review implementation keeps the all-platform concurrent/idempotent journey and adds a separate Unix executable-proxy journey. The shared proxy forwards every invocation and exit status to native Git. It removes only its fixture-owned config.lock after Git genuinely emits File exists and records the command/status/diagnostic; no fixed release timer, mock lock error or production seam is used. The earlier malformed-config proxy now shares this instrumentation helper."
+  "2026-10-07T20:14:23.901Z","harness:codex","Negative control disabled only the native retry guard and the new observed-contention journey failed with the genuine merge configuration refusal; original production source was restored byte-for-byte. Initial fixture checks also exposed two harness assumptions: the driver name must match the inspected contract, and Git lock-failure numeric codes differ between runtimes (native Git returned 255). The final test asserts a native nonzero result plus the exact lock-exists diagnostic and command, rather than inventing a portable numeric code. Failed attempts remain recorded."
+  "2026-10-07T20:15:59.103Z","harness:codex","Accepted review evidence: both linked real-Git suites now pass 28 cases, including observed native lock contention, successful retry, unchanged-config refusal safety and all-platform concurrent/idempotent setup. Disabling the retry guard caused the new journey to fail; production source is restored and has no diff from the first green head. Typechecking and ESLint pass and jscpd reports zero clones. First-head CI completed all 40 emitted checks without failures; required native static and coverage gates are green. Chrome CodeFactor says No issues found and DeepScan reports zero new issues at a8bc9ee. Greptile reports trial ended and Sourcery weekly budget exhausted; neither is represented as approval. CodeRabbit scope split suggestion conflicts with the explicitly requested multi-item BIG PR, and its callback-oriented 78.38% estimator does not replace the repository AST presence gate or semantic ratchet."
+learnings[1]{created_at,author,text}:
+  "2026-10-07T20:14:01.570Z","harness:codex","A timed fixture lock release can occur before the system reaches its write and therefore cannot prove retry. Release owned lock storage only after observing the real external failure; complement the positive journey with a disabled-retry negative control, keeping all-platform coordination checks independent."
+files[1]{path,scope}:
+  tests/unit/sdk/merge/worktree-config.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,"harness:codex","2026-10-07T20:11:15.978Z",local_mutation,fix/sdk-install-and-workspace-lifecycle
+test_runs[2]:
+  - run_id: test-local-muyjpld1-tkwkh5
+    kind: test
+    status: failed
+    started_at: "2026-10-07T20:13:23.636Z"
+    finished_at: "2026-10-07T20:13:56.965Z"
+    recorded_at: "2026-10-07T20:13:56.965Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muyjrf6q-hvc3yw
+    kind: test
+    status: passed
+    started_at: "2026-10-07T20:14:26.862Z"
+    finished_at: "2026-10-07T20:15:22.274Z"
+    recorded_at: "2026-10-07T20:15:22.274Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Made native Git retry acceptance independent of release timing.
+body: ""

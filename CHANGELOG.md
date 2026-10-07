@@ -12,6 +12,7 @@
 
 ### Other
 
+- Prove native Git lock retry after observed contention in PR1425 ([pm-native-git-retry-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-native-git-retry-proof.toon))
 - Bound local temp footprint: prune Node compile cache and guarantee smoke/dogfood sandbox cleanup on failure ([pm-p5u6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5u6.toon))
 
 ## 2026.10.7 - 2026-10-07

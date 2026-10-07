@@ -6,6 +6,35 @@ import { describe, expect, it } from "vitest";
 import { installMergeFence, auditMergeDriverConfiguration, findGitWorkspaceRoot } from "../../../../src/sdk/merge/install.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
+/** Forward every command to native Git, recording calls and running a fixture hook after its genuine result. Restore PATH after the bounded test journey. */
+async function withNativeGitProxy(root: string, afterGit: string[], run: (calls: string) => Promise<void>): Promise<void> {
+  const nativeGit = path.join(execFileSync("git", ["--exec-path"], { encoding: "utf8" }).trim(), "git");
+  const proxyRoot = path.join(root, "git-proxy");
+  await mkdir(proxyRoot);
+  const calls = path.join(root, "git-calls.jsonl");
+  const proxy = path.join(proxyRoot, "git");
+  await writeFile(proxy, [
+    "#!/usr/bin/env node",
+    "const { spawnSync } = require('node:child_process');",
+    "const { writeFileSync, rmSync } = require('node:fs');",
+    "const args = process.argv.slice(2);",
+    "writeFileSync(" + JSON.stringify(calls) + ", JSON.stringify(args) + '\\n', { flag: 'a' });",
+    "const result = spawnSync(" + JSON.stringify(nativeGit) + ", args, { stdio: ['ignore', 'pipe', 'pipe'] });",
+    "process.stdout.write(result.stdout); process.stderr.write(result.stderr);",
+    ...afterGit,
+    "process.exit(result.status ?? 1);",
+  ].join("\n"));
+  await chmod(proxy, 0o755);
+  const originalPath = process.env.PATH;
+  try {
+    process.env.PATH = proxyRoot + path.delimiter + originalPath;
+    await run(calls);
+  } finally {
+    if (originalPath === undefined) delete process.env.PATH;
+    else process.env.PATH = originalPath;
+  }
+}
+
 describe("worktree-local merge drivers", () => {
   // This executable proxy delegates every command to native Git and changes
   // only its owned fixture between scope discovery and the selected-layer read.
@@ -17,45 +46,47 @@ describe("worktree-local merge drivers", () => {
       const attributes = path.join(tempRoot, ".gitattributes");
       await writeFile(attributes, "# unrelated attributes must survive\n*.private -diff\n");
       const before = await readFile(attributes);
-      const proxyRoot = path.join(tempRoot, "git-proxy");
-      await mkdir(proxyRoot);
-      const calls = path.join(tempRoot, "git-calls.jsonl");
       const worktreeConfig = path.join(tempRoot, ".git", "config.worktree");
-      const proxy = path.join(proxyRoot, "git");
-      await writeFile(proxy, [
-        "#!/usr/bin/env node",
-        "const { spawnSync } = require('node:child_process');",
-        "const { writeFileSync } = require('node:fs');",
-        "const args = process.argv.slice(2);",
-        "writeFileSync(" + JSON.stringify(calls) + ", JSON.stringify(args) + '\\n', { flag: 'a' });",
-        "const result = spawnSync(" + JSON.stringify(nativeGit) + ", args, { stdio: ['ignore', 'pipe', 'pipe'] });",
-        "process.stdout.write(result.stdout); process.stderr.write(result.stderr);",
+      await withNativeGitProxy(tempRoot, [
         "if (args.includes('--get') && args.includes('extensions.worktreeConfig')) writeFileSync(" + JSON.stringify(worktreeConfig) + ", '[invalid\\n');",
-        "process.exit(result.status ?? 1);",
-      ].join("\n"));
-      await chmod(proxy, 0o755);
-      const originalPath = process.env.PATH;
-      try {
-        process.env.PATH = proxyRoot + path.delimiter + originalPath;
+      ], async (calls) => {
         await expect(installMergeFence({ workspaceRoot: tempRoot, pmRoot: pmPath }))
           .rejects.toThrow("Cannot install repository-local merge drivers");
         expect(await readFile(attributes)).toEqual(before);
         const commands = (await readFile(calls, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as string[]);
         expect(commands.at(-1)).toEqual(["config", "--worktree", "--null", "--get-regexp", "."]);
         expect(commands.filter((args) => args.includes("--get-regexp"))).toHaveLength(1);
-      } finally {
-        process.env.PATH = originalPath;
-      }
+      });
     });
   });
 
-  it("waits for a released Git config lock and leaves matching configuration untouched", async () => {
+  it.skipIf(process.platform === "win32")("waits for a released Git config lock after native contention is observed", async () => {
+    await withTempPmPath(async ({ tempRoot, pmPath }) => {
+      execFileSync("git", ["init", "-q"], { cwd: tempRoot, env: gitWorkspaceEnvironment() });
+      const lock = path.join(tempRoot, ".git", "config.lock");
+      const contention = path.join(tempRoot, "native-contention.json");
+      await writeFile(lock, "another Git writer");
+      await withNativeGitProxy(tempRoot, [
+        "if (result.status !== 0 && /could not lock config file [^\\r\\n]+: File exists/u.test(result.stderr.toString())) {",
+        "  writeFileSync(" + JSON.stringify(contention) + ", JSON.stringify({ args, status: result.status, stderr: result.stderr.toString() }));",
+        "  rmSync(" + JSON.stringify(lock) + ");",
+        "}",
+      ], async () => {
+        expect((await installMergeFence({ workspaceRoot: tempRoot, pmRoot: pmPath })).ok).toBe(true);
+      });
+      const observed = JSON.parse(await readFile(contention, "utf8")) as { args: string[]; status: number; stderr: string };
+      expect(observed.args).toEqual(["config", "--local", "merge.pm-item-toon.name", "pm field-aware TOON item document merge"]);
+      expect(observed.status).not.toBe(0);
+      expect(observed.stderr).toContain("File exists");
+      expect(await auditMergeDriverConfiguration(tempRoot)).toMatchObject({ status: "ok" });
+    });
+  });
+
+  it("coordinates concurrent installs and leaves matching configuration untouched", async () => {
     await withTempPmPath(async ({ tempRoot, pmPath }) => {
       execFileSync("git", ["init", "-q"], { cwd: tempRoot, env: gitWorkspaceEnvironment() });
       const config = path.join(tempRoot, ".git", "config");
       const lock = `${config}.lock`;
-      await writeFile(lock, "another Git writer");
-      const release = setTimeout(() => { void rm(lock); }, 200);
       try {
         const installations = await Promise.all(Array.from({ length: 3 }, () =>
           installMergeFence({ workspaceRoot: tempRoot, pmRoot: pmPath })));
@@ -69,7 +100,6 @@ describe("worktree-local merge drivers", () => {
         expect((await stat(config)).mtimeMs).toBe(beforeStat.mtimeMs);
         expect(await readFile(lock, "utf8")).toBe("unrelated Git writer still holds the lock");
       } finally {
-        clearTimeout(release);
         await rm(lock, { force: true });
       }
     });
