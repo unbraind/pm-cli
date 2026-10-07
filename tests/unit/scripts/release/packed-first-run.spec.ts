@@ -42,6 +42,12 @@ describe("packed first run", () => {
       expect(collector.listenerCount("request")).toBe(0);
       await expect(collectTelemetryCompletion(collector, 10)).rejects.toMatchObject({ name: "AbortError" });
       expect(collector.listenerCount("request")).toBe(0);
+      const owner = new AbortController();
+      const interrupted = collectTelemetryCompletion(collector, 2000, owner.signal);
+      const stopped = expect(interrupted).rejects.toMatchObject({ name: "AbortError" });
+      owner.abort();
+      await stopped;
+      expect(collector.listenerCount("request")).toBe(0);
       const incoming = once(collector, "request");
       const stalled = collectTelemetryCompletion(collector, 500);
       const refused = expect(stalled).rejects.toMatchObject({ name: "AbortError" });

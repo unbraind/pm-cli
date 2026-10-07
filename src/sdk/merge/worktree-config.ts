@@ -6,8 +6,30 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
+import { setTimeout as delay } from "node:timers/promises";
 
 const execFileAsync = promisify(execFile);
+
+/** Write clone-local configuration after a bounded wait for Git's own exclusive lock. Retry only the native lock-exists diagnostic; never remove another writer's lock or retry malformed and unwritable configuration. */
+export async function writeMergeDriverGitConfig(cwd: string, args: string[]): Promise<void> {
+  const deadline = performance.now() + 5_000;
+  let backoff = 25;
+  for (;;) {
+    try {
+      await execFileAsync("git", ["config", ...args], {
+        cwd, env: { ...gitWorkspaceEnvironment(), LC_ALL: "C" }, timeout: 10_000,
+      });
+      return;
+    } catch (error: unknown) {
+      const remaining = deadline - performance.now();
+      if (typeof error !== "object" || error === null || !("stderr" in error) ||
+        typeof error.stderr !== "string" ||
+        !/could not lock config file [^\r\n]+: File exists/u.test(error.stderr) || remaining <= 0) throw error;
+      await delay(Math.min(backoff, remaining));
+      backoff = Math.min(backoff * 2, 200);
+    }
+  }
+}
 
 /** Preserve caller tools and preferences while binding Git repository discovery and writes to the explicit cwd. */
 export function gitWorkspaceEnvironment(): NodeJS.ProcessEnv {
@@ -44,8 +66,8 @@ export async function resolveMergeDriverConfigScope(workspaceRoot: string): Prom
   for (const key of ["core.bare", "core.worktree"]) {
     const value = await readLocalGitConfig(workspaceRoot, key);
     if (value === undefined || (key === "core.bare" && value !== "true")) continue;
-    await execFileAsync("git", ["config", "--file", mainConfig, key, value], { cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000 });
-    await execFileAsync("git", ["config", "--local", "--unset-all", key], { cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000 });
+    await writeMergeDriverGitConfig(workspaceRoot, ["--file", mainConfig, key, value]);
+    await writeMergeDriverGitConfig(workspaceRoot, ["--local", "--unset-all", key]);
   }
   // The shared driver defaults remain as a migration fallback for worktrees
   // that have not run install yet; the main tree receives an explicit pin.
@@ -53,9 +75,9 @@ export async function resolveMergeDriverConfigScope(workspaceRoot: string): Prom
     for (const field of ["name", "driver"]) {
       const key = `merge.${driver}.${field}`;
       const value = await readLocalGitConfig(workspaceRoot, key);
-      if (value !== undefined) await execFileAsync("git", ["config", "--file", mainConfig, key, value], { cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000 });
+      if (value !== undefined) await writeMergeDriverGitConfig(workspaceRoot, ["--file", mainConfig, key, value]);
     }
   }
-  await execFileAsync("git", ["config", "--local", "extensions.worktreeConfig", "true"], { cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000 });
+  await writeMergeDriverGitConfig(workspaceRoot, ["--local", "extensions.worktreeConfig", "true"]);
   return "--worktree";
 }

@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail, parseFlags, repoRoot, runCommand } from "./utils.mjs";
 import { cleanupTempRoot } from "../smoke-cleanup.mjs";
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { BUILTIN_HARNESS_SIGNAL_DESCRIPTORS } from "../../dist/cli-bundle/sdk-core.js";
 
 const MANIFEST_VERSION = 3;
@@ -577,6 +578,7 @@ function validateToleratedCommandResult(entry, result) {
 
 function measureCorpus(cliPath) {
   const workspaceRoot = mkdtempSync(path.join(tmpdir(), "pm-token-budget-"));
+  const releaseCleanup = registerTempCleanup(workspaceRoot);
   const options = {
     workspaceRoot,
     pmPath: path.join(workspaceRoot, ".agents", "pm"),
@@ -668,6 +670,7 @@ function measureCorpus(cliPath) {
     return { measurements, negativeControl, intentNegativeControl };
   } finally {
     cleanupTempRoot(workspaceRoot);
+    releaseCleanup();
   }
 }
 

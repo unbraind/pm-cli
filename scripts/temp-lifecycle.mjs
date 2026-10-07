@@ -68,3 +68,35 @@ export function registerTempCleanup(root, options = {}) {
     }
   };
 }
+
+/**
+ * Coordinate an asynchronous script's owned root with its completion.
+ * Interrupts close stage admission through an AbortSignal and wait for the
+ * caller's finally block before removal. Pass the signal to child processes
+ * and check it after uncancellable SDK work. A timed-out producer retains its
+ * workspace. Call finish after normal disposal, even when the operation fails.
+ */
+export function registerTempOperation(root, timeoutMs = 5000) {
+  const controller = new AbortController();
+  let finish;
+  const completed = new Promise((resolve) => { finish = resolve; });
+  const release = registerTempCleanup(root, {
+    shutdown: async () => {
+      controller.abort(new Error("Temporary workspace operation interrupted"));
+      let timeout;
+      try {
+        const stopped = await Promise.race([
+          completed.then(() => true),
+          new Promise((resolve) => { timeout = setTimeout(resolve, timeoutMs, false); }),
+        ]);
+        if (!stopped) throw new Error("Producer did not finish within " + timeoutMs + "ms; workspace retained.");
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+  });
+  return {
+    signal: controller.signal,
+    finish: () => { finish(); release(); },
+  };
+}

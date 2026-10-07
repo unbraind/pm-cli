@@ -74,7 +74,18 @@ Health and validation name `pm merge install` as the repair command for missing
 or drifted drivers. This upgrade behavior is tracked by
 [pm-rcjyft](../.agents/pm/issues/pm-rcjyft.toon).
 
-The installer publishes the shared `.gitattributes` fence only after the clone-local driver commands are configured. If the repository Git config is read-only or another Git process holds its lock, the command returns the stable `merge_git_config_unwritable` error with recovery guidance and leaves an absent fence absent. Use `pm merge install --dry-run --json` to inspect the contract in intentionally read-only workspaces.
+The installer publishes the shared `.gitattributes` fence only after the
+clone-local driver commands are configured. Matching definitions are read
+without rewriting Git configuration. Concurrent pm installers coordinate
+through a clone-local lock shared by its worktrees. Each required Git write
+waits up to five seconds for Git's native config-file lock, with capped backoff;
+it never removes another writer's lock. Persistent contention, malformed
+configuration, and permission failures return the stable
+`merge_git_config_unwritable` error with recovery guidance and leave an absent
+fence absent. This behavior is tracked by
+[pm-gh1424](../.agents/pm/issues/pm-gh1424.toon).
+Use `pm merge install --dry-run --json` to inspect the contract in
+intentionally read-only workspaces.
 
 ### Independent worktree runtimes
 

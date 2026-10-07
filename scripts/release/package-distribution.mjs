@@ -15,6 +15,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { registerTempCleanup } from "../temp-lifecycle.mjs";
 
 /** Decode npm 11 and npm 12's single-package receipts. */
 function readArtifact(output) {
@@ -166,6 +167,7 @@ export function packDistribution(root, options = {}) {
       throw new Error("Unsafe runtime ledger location");
   }
   const stage = mkdtempSync(path.join(tmpdir(), "pm-publication-"));
+  const releaseCleanup = registerTempCleanup(stage);
   try {
     const sourceReport = readArtifact(
       execFileSync(
@@ -221,6 +223,7 @@ export function packDistribution(root, options = {}) {
     );
   } finally {
     rmSync(stage, { recursive: true, force: true });
+    releaseCleanup();
   }
 }
 

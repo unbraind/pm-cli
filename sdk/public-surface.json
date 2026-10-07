@@ -2232,6 +2232,16 @@
       ],
       "package_version": "2026.10.7",
       "reason": "pm-gh1405: MergeReceiptOperation.kind now also reports merge; exhaustive typed consumers must handle both kinds. Existing rebase data and receipt version remain compatible; ship with the next eligible calendar release."
+    },
+    {
+      "changes": [
+        "signature ./sdk:acquireLock",
+        "signature ./sdk:writeFileAtomic",
+        "signature ./sdk/runtime:acquireLock",
+        "signature ./sdk/runtime:writeFileAtomic"
+      ],
+      "package_version": "2026.10.7",
+      "reason": "Add optional createParentDirectories policy to acquireLock and writeFileAtomic; existing positional calls and default parent creation remain compatible. Detached consumers may opt out of recreating removed storage."
     }
   ],
   "entrypoints": {
@@ -2386,7 +2396,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "acquireLock",
-          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>>"
         },
         {
           "classification": "supported",
@@ -20896,7 +20906,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "writeFileAtomic",
-          "signature": "(targetPath: string, contents: string) => Promise<void> | calls: (targetPath: string, contents: string) => Promise<void>"
+          "signature": "(targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void> | calls: (targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void>"
         },
         {
           "classification": "advanced_export",
@@ -31732,7 +31742,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "acquireLock",
-          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>>"
         },
         {
           "classification": "advanced_export",
@@ -34780,7 +34790,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "writeFileAtomic",
-          "signature": "(targetPath: string, contents: string) => Promise<void> | calls: (targetPath: string, contents: string) => Promise<void>"
+          "signature": "(targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void> | calls: (targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void>"
         }
       ],
       "types": "dist/sdk/runtime.d.ts"

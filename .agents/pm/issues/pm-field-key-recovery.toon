@@ -1,0 +1,65 @@
+id: pm-field-key-recovery
+title: Name the rejected custom field in extension-field recovery
+description: Unknown extension-field refusals populate recovery.provided_fields with the declared legal keys and omit the rejected key from the normalized CLI detail. Agents cannot identify which field to repair without another inspection.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-07T18:37:37.192Z"
+updated_at: "2026-10-07T19:53:36.705Z"
+closed_at: "2026-10-07T19:53:35.936Z"
+completed_at: "2026-10-07T19:53:35.936Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: "SDK refusals separate the rejected input from the legal field domain; normalized CLI JSON and human recovery expose the actual rejected key; registered extension field writes and reserved core-field recovery remain compatible; focused and full-source exact coverage, docstring and static gates pass"
+parent: pm-f05lsg
+risk: low
+confidence: high
+resolution: Unknown extension-field errors identify the rejected key in field/provided_fields while sorted legal registered keys remain in recovery next steps. Inlined the single-use core-field expression and documented the recovery semantics.
+expected_result: "Agents receive rejected caller input separately from legal choices, with stable typed and human refusals and byte-identical item/history storage."
+actual_result: "All four linked field/recovery suites passed 267 cases after a failing regression control. Isolated installed npm/npx and Bun/bunx CLI refusals reported provided_fields=[missing], exposed legal choices, exited 2 and left item/history bytes unchanged. Full source suite passed 9,897 tests at exact 100/100/100/100."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2jtbl8,verifies,"2026-10-07T18:37:37.192Z","harness:codex","cli:create:dep",detected
+  pm-f05lsg,implements,"2026-10-07T18:37:37.192Z","harness:codex","cli:create:dep",detected
+  pm-p5u6,discovered_from,"2026-10-07T18:37:37.192Z","harness:codex","cli:create:dep",detected
+  pm-qvdj,discovered_from,"2026-10-07T18:37:37.192Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-07T18:37:37.192Z","harness:codex","Duplicate check: strict complete 2903-item all-status corpus with zero unreadable or omitted rows, request-specific extension_item_field_unknown search and open/in-progress inventories read. Closed pm-qvdj shipped generic setters; closed pm-2jtbl8 shipped reserved-core flag recovery. Their live full metadata confirms neither owns the current rejected-versus-legal field inversion. This narrow diagnostic defect was discovered while documenting SDK lifecycle work; the exhaustive recovery feature remains its canonical parent."
+  "2026-10-07T18:42:59.374Z","harness:codex","TDD: extending the existing typed-assignment test failed before the change because recovery.provided_fields contained count/enabled/payload rather than missing, and context had no rejected field. The legal domain stays in nextSteps. Added only rejected-key context and corrected provided_fields; inlined the existing one-call single-expression core flag helper as required by code-quality policy. Replaced the touched parser boilerplate docstring with its actual side-effect-free contract. No new test-only production seam, export, dynamic import or artificial coverage exemption was introduced."
+  "2026-10-07T18:55:21.883Z","harness:codex","Focused regression: all 267 tests pass across extension item-field parsing, active runtime registrations, create and update. Manual isolated CLI acceptance confirms exit 2, stable extension_item_field_unknown, provided_fields=[missing] in normalized JSON and human recovery, and byte-identical item plus append-only history after both refused updates. Legal domain assertions remain in the existing SDK test. No repository tracker was used by the acceptance fixture."
+  "2026-10-07T19:35:32.842Z","harness:codex","Final physical publication acceptance confirms the stable rejected-key refusal through installed npm/Node and Bun CLIs. Both JSON and human output identify missing, both failed updates leave original item/history bytes unchanged, and the full normal lifecycle still completes through npx/bunx. Legal-domain behavior is separately asserted by the existing focused SDK regression. The full-source repeat is pending; closure will retain structured observed results."
+  "2026-10-07T19:53:31.736Z","harness:codex","Final local acceptance before reviewed delivery: full sandboxed coverage passed 9,897 tests (787 passed files; platform-only skips preserved), with exact lines 64,023/64,023, statements 67,190/67,190, functions 13,853/13,853 and branches 51,419/51,419. All owner-linked checks passed, including the existing packed continuation regression under real npm/npx and Bun/bunx. Actual bundled shipping-artifact acceptance passed isolated CLI/SDK workflows, concurrent real Git setup, rejected custom-field immutability and telemetry completion after owned-root deletion. Dependency audit and tracked-file secret scan found zero findings. Strict static prefix passed; the unchanged Node 24 import admission and remaining assurance/mutation gates passed separately. The retained aggregate Node 26 timing failure and earlier failed coverage attempts remain failed receipts, not reported as passes. Full live history verification matched item hashes. Closure records local source acceptance; hosted review, merge and the next eligible immutable daily publication remain distinct."
+learnings[1]{created_at,author,text}:
+  "2026-10-07T18:51:55.265Z","harness:codex","Recovery inputs and allowed domains are different contracts: provided_fields must identify rejected caller input; sorted legal keys belong in next_steps. Extend the existing semantic assertion and confirm CLI normalization without performing an item/history mutation."
+files[3]:
+  - path: scripts/release/docstring-quality-baseline.json
+    scope: project
+  - path: src/core/extensions/item-fields.ts
+    scope: project
+    note: SDK validation separates rejected input from the legal extension field domain
+  - path: tests/unit/extensions/extensions-item-fields.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/extensions/runtime-registrations.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,project,2400,"harness:codex","2026-10-07T18:42:57.161Z",local_mutation,fix/sdk-install-and-workspace-lifecycle
+test_runs[1]:
+  - run_id: test-local-muyhc350-xmcq8a
+    kind: test
+    status: passed
+    started_at: "2026-10-07T19:07:06.919Z"
+    finished_at: "2026-10-07T19:07:27.587Z"
+    recorded_at: "2026-10-07T19:07:27.587Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/extensions/runtime-registrations.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,schema,schema,source,local_source_ref
+close_reason: Corrected rejected custom-field input recovery without mutating refused updates.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: core-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-field-key-recovery
+body: ""

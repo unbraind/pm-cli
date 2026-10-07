@@ -81,7 +81,15 @@ describe("extensions item field runtime wiring", () => {
 
     expect(() =>
       parseRegisteredItemFieldAssignments(["missing=value"], registrations),
-    ).toThrow("--field missing is not declared");
+    ).toThrowError(expect.objectContaining({
+      message: "--field missing is not declared by an active extension item-field registration",
+      context: expect.objectContaining({
+        code: "extension_item_field_unknown",
+        field: "missing",
+        recovery: { provided_fields: ["missing"] },
+        nextSteps: ["Use one of the declared fields: count, enabled, payload"],
+      }),
+    }));
     expect(() =>
       parseRegisteredItemFieldAssignments(["count=NaN"], registrations),
     ).toThrow("must be a number");

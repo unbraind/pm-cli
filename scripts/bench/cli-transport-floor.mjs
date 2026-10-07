@@ -17,6 +17,7 @@ import {
   summarizeSamples,
 } from "./run-scale-benchmarks.mjs";
 import { generateSyntheticWorkspace } from "./scale-workspace.mjs";
+import { registerTempOperation } from "../temp-lifecycle.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -82,6 +83,7 @@ async function measureColdStartOperation(operation, iteration, options) {
   const workspaceRoot = await mkdtemp(
     path.join(os.tmpdir(), "pm-cli-cold-floor-"),
   );
+  const lifecycle = registerTempOperation(workspaceRoot);
   try {
     const manifest = await generateSyntheticWorkspace({
       workspaceRoot,
@@ -90,10 +92,12 @@ async function measureColdStartOperation(operation, iteration, options) {
       mode: "direct",
       force: true,
     });
+    lifecycle.signal.throwIfAborted();
     return await (options.measure ?? measureCliProcess)(
       argsForOperation(operation, manifest, iteration),
       {
         workspaceRoot,
+        signal: lifecycle.signal,
         env: {
           ...process.env,
           PM_PATH: manifest.pm_root,
@@ -109,6 +113,7 @@ async function measureColdStartOperation(operation, iteration, options) {
     );
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
+    lifecycle.finish();
   }
 }
 

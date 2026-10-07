@@ -192,7 +192,9 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       ]) {
         const base = ["--pm-path", context.pmPath, "--json", ...query, "--tag", "matrix"];
         const { ids, producerCursor, transitions, budgetContinuations, companionRows } = await collectReadPages(run, base);
-        expect(ids).toHaveLength(query[0] === "context" ? 26 : 30);
+        expect(ids, JSON.stringify({
+          command: base, ids, producerCursor, transitions, budgetContinuations, companionRows,
+        })).toHaveLength(query[0] === "context" ? 26 : 30);
         expect(transitions).toBeGreaterThan(0);
         expect(budgetContinuations, base.join(" ")).toBeGreaterThan(0);
         if (query[0] === "context") expect(companionRows).toBeGreaterThan(0);

@@ -5,6 +5,7 @@
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { registerTempOperation } from "../temp-lifecycle.mjs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -773,8 +774,10 @@ export async function main(argv = process.argv.slice(2)) {
   // Scope is query semantics. Re-seed complete replays at one real path so
   // fingerprints remain comparable without changing cache ctimes mid-task.
   const comparisonWorkspace = mkdtempSync(path.join(tmpdir(), "pm-agent-task-accounted-"));
+  const lifecycle = registerTempOperation(comparisonWorkspace);
   try {
     const baselineFixture = await seedWorkspace(comparisonWorkspace);
+    lifecycle.signal.throwIfAborted();
     const replacements = new Map([
       ["$ANCHOR_ID", baselineFixture.anchorId],
       ["$LIFECYCLE_ID", fixtureId("agent-task-transcript-lifecycle")],
@@ -797,6 +800,7 @@ export async function main(argv = process.argv.slice(2)) {
     rmSync(comparisonWorkspace, { recursive: true, force: true });
     mkdirSync(comparisonWorkspace, { recursive: true, mode: 0o700 });
     const accountedFixture = await seedWorkspace(comparisonWorkspace);
+    lifecycle.signal.throwIfAborted();
     assertMatchingAgentTaskFixtureAnchors(baselineFixture, accountedFixture);
     const measured = tasks.map((task, index) =>
       measureTask(accountedFixture.pmRoot, baselineReplays[index], task),
@@ -826,6 +830,7 @@ export async function main(argv = process.argv.slice(2)) {
     return finalizeAgentTaskTokenReport(report, flags, baselinePath);
   } finally {
     rmSync(comparisonWorkspace, { recursive: true, force: true });
+    lifecycle.finish();
   }
 }
 
