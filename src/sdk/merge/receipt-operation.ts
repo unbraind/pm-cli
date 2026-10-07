@@ -22,7 +22,7 @@ export interface MergeReceiptOperation {
   original_blob: string;
 }
 
-/** Capture the original Git coordinates; plain merges additionally require the driver's exact ours blob. */
+/** Capture original Git coordinates; plain merges require Git's incoming-head signal and the exact ours blob. */
 export async function captureMergeReceiptOperation(
   cwd: string,
   itemPath: string,
@@ -63,10 +63,12 @@ export async function captureMergeReceiptOperation(
       // No evidence is safer than inferring an abandoned operation from item drift.
     }
   }
-  // Git writes ORIG_HEAD before invoking a plain-merge driver, but MERGE_HEAD
-  // only afterwards. Require the supplied ours blob to prove the origin instead
-  // of treating a stale ORIG_HEAD alone as an active merge.
-  if (originalItemRaw !== undefined) {
+  // Git supplies GITHEAD_<incoming object ID> to plain-merge drivers before
+  // MERGE_HEAD exists. Cherry-pick and revert can share stale ORIG_HEAD and ours
+  // coordinates, so require that operation signal as well as exact origin proof.
+  if (originalItemRaw !== undefined && Object.keys(process.env).some(
+    (key) => /^GITHEAD_[a-f0-9]{40}(?:[a-f0-9]{24})?$/u.test(key),
+  )) {
     try {
       const { stdout: heads } = await execFileAsync(
         "git", ["rev-parse", "HEAD", "ORIG_HEAD"], { cwd, timeout: 10_000 },

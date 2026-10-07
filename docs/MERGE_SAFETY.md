@@ -261,9 +261,14 @@ Tracked by [pm-466m0j](../.agents/pm/issues/pm-466m0j.toon) and
 [pm-gh1405](../.agents/pm/issues/pm-gh1405.toon). New receipts created during a
 merge or rebase capture only its operation kind, original commit, and item blob
 in the typed `MergeReceiptOperation` contract. A plain merge captures these
-before Git publishes `MERGE_HEAD`: `HEAD` must equal `ORIG_HEAD`, and the
+before Git publishes `MERGE_HEAD`: Git must supply its `GITHEAD_<incoming object
+ID>` driver environment signal, `HEAD` must equal `ORIG_HEAD`, and the
 driver's ours input must hash to the item blob at that commit. Missing or
-ambiguous coordinates are omitted. After aborting, run:
+ambiguous coordinates are omitted. Matching origin references and bytes alone
+cannot identify a plain merge: cherry-pick and revert also invoke content
+drivers. Without Git's incoming-head signal, those receipts remain unresolved
+and cannot receive a plain-merge abandonment audit. Branch labels from the
+driver environment are never persisted. After aborting, run:
 
 ```bash
 pm merge reconcile --dry-run --json
