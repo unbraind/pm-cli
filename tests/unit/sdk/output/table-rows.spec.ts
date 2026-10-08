@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { countTokens } from "gpt-tokenizer/encoding/o200k_base";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { formatBuiltInOutput } from "../../../../src/core/output/output.js";
+import {
+  formatBuiltInOutput,
+  formatOutput,
+} from "../../../../src/core/output/output.js";
 import {
   decodePmTableRows,
   encodePmTableRows,
@@ -230,6 +233,19 @@ describe("lossless SDK table cells", () => {
     expect(formatBuiltInOutput({ notes_count: 2 }, "toon")).toContain(
       "notes_count: 2",
     );
+  });
+
+  it("preserves collection count aliases in explicit lean JSON", () => {
+    const item = {
+      id: "pm-example",
+      collection_counts: { notes: 0, tests: 2 },
+      notes_count: 0,
+      tests_count: 2,
+    };
+    const result = { item, items: [item] };
+    expect(
+      JSON.parse(formatOutput(result, { json: true, lean: true })),
+    ).toEqual(result);
   });
 });
 

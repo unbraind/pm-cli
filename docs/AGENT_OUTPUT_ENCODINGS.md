@@ -32,7 +32,7 @@ Malformed JSON cells throw instead of silently changing their meaning.
 The TOON presentation of an item prints `collection_counts.notes` and
 `collection_counts.tests` once, suppressing `notes_count` or `tests_count` only
 when the alias equals its canonical count. Zero counts and differing values stay
-visible. JSON and custom projections continue to carry the legacy keys.
+visible. JSON, including explicit lean JSON, continues to carry the legacy keys.
 
 ## Measurement and readability
 

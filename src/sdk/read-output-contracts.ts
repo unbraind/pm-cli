@@ -481,10 +481,12 @@ const BEHAVIOR_PRESERVING_MIGRATION_HINTS: Readonly<Record<string, string>> =
       "--unbounded is a compatibility alias; prefer --output-limit unbounded.",
   });
 
+/** Translate a CLI flag into the underscore selector used by projection-mode contracts. */
 function flagSelector(flag: string): string {
   return flag.slice(2).replaceAll("-", "_");
 }
 
+/** Describe a canonical replacement or preserve the distinct behavior of a legacy flag. */
 function migrationHint(flag: string, dimension: PmReadOutputDimension): string {
   const behaviorHint = BEHAVIOR_PRESERVING_MIGRATION_HINTS[flag];
   if (behaviorHint !== undefined) return behaviorHint;
@@ -501,6 +503,7 @@ function migrationHint(flag: string, dimension: PmReadOutputDimension): string {
   return `${flag} is a compatibility alias; prefer ${CANONICAL_OPTIONS[dimension]} ${suffix}.`;
 }
 
+/** Freeze one surface's shared dimensions, legacy migration hints, and retention policy. */
 function buildSurfaceContract(
   command: PmReadOutputSurface,
 ): PmReadOutputSurfaceContract {
@@ -628,6 +631,7 @@ const HYBRID_READ_MUTATION_KEYS: Readonly<
   ],
 };
 
+/** Detect shaping controls separately from a renderer-only format selection. */
 function hasCanonicalReadOutputOptions(
   options: Record<string, unknown>,
 ): boolean {
@@ -832,12 +836,14 @@ export function normalizeReadOutputIncludeModeOptions(
   }
 }
 
+/** Convert a dashed CLI flag to the camel-case key accepted by command option records. */
 function optionKey(flag: string): string {
   return flag
     .slice(2)
     .replace(/-([a-z])/gu, (_, character: string) => character.toUpperCase());
 }
 
+/** Read camel-case, snake-case, and negated truncation compatibility spellings. */
 function readOption(options: Record<string, unknown>, flag: string): unknown {
   const key = optionKey(flag);
   if (Object.hasOwn(options, key)) return options[key];
@@ -847,10 +853,12 @@ function readOption(options: Record<string, unknown>, flag: string): unknown {
   return undefined;
 }
 
+/** Distinguish supplied option values from absent or explicitly disabled controls. */
 function isRequestedOption(value: unknown): boolean {
   return value !== undefined && value !== false && value !== null;
 }
 
+/** Normalize CSV strings or string arrays into ordered, unique, nonempty selectors. */
 function stringList(value: unknown): string[] | undefined {
   const values = Array.isArray(value) ? value : [value];
   const normalized = values
@@ -860,6 +868,7 @@ function stringList(value: unknown): string[] | undefined {
   return normalized.length > 0 ? [...new Set(normalized)] : undefined;
 }
 
+/** Accept only positive safe integers or their decimal-string representations. */
 function positiveInteger(value: unknown): number | undefined {
   const parsed =
     typeof value === "number"
@@ -870,6 +879,7 @@ function positiveInteger(value: unknown): number | undefined {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+/** Select the first usable legacy alias after invocation provenance exclusions. */
 function resolveLegacyDimension(
   contract: PmReadOutputDimensionContract,
   options: Record<string, unknown>,
@@ -885,6 +895,7 @@ function resolveLegacyDimension(
   return undefined;
 }
 
+/** Prefer canonical field selectors, falling back to a legacy selector or mode flag. */
 function resolveIncludeValue(
   canonical: unknown,
   legacy: { value: unknown; flag: string } | undefined,
@@ -898,6 +909,7 @@ function resolveIncludeValue(
   };
 }
 
+/** Resolve canonical row ceilings before compatible numeric or unbounded aliases. */
 function resolveAmountValue(
   canonical: unknown,
   legacy: { value: unknown; flag: string } | undefined,
@@ -919,6 +931,7 @@ function resolveAmountValue(
     : { source: "legacy", value: legacyLimit };
 }
 
+/** Resolve a canonical token ceiling before a valid legacy numeric budget. */
 function resolveCostValue(
   canonical: unknown,
   legacy: { value: unknown; flag: string } | undefined,
@@ -937,6 +950,7 @@ function resolveCostValue(
     : { source: "legacy", value: legacyBudget };
 }
 
+/** Resolve static encodings while retaining legacy stream and follow behavior. */
 function resolveEncodingValue(
   canonical: unknown,
   legacy: { value: unknown; flag: string } | undefined,
@@ -953,6 +967,7 @@ function resolveEncodingValue(
     : undefined;
 }
 
+/** Exclude forwarded compatibility options that invocation provenance did not request. */
 function shouldIgnoreReadOutputLegacyAlias(
   provenance: PmReadOutputInvocationProvenance | undefined,
   dimension: PmReadOutputDimension,
@@ -978,6 +993,7 @@ function shouldIgnoreReadOutputLegacyAlias(
   );
 }
 
+/** Recognize complete-read modes that opt out of the implicit default token ceiling. */
 function hasCompleteReadOutputIntent(
   command: string,
   legacyByDimension: Record<
@@ -999,6 +1015,7 @@ function hasCompleteReadOutputIntent(
   );
 }
 
+/** Report canonical dimensions, including include modes forwarded to command options. */
 function canonicalReadOutputOptionsUsed(
   resolvedByDimension: Record<
     PmReadOutputDimension,
@@ -1124,6 +1141,7 @@ export function resolveReadOutputDimensions(
   };
 }
 
+/** Recognize non-null object records for envelope and row projection. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -1155,6 +1173,7 @@ const GET_STABLE_DERIVED_ITEM_SELECTORS = [
   "tests_count",
 ] as const;
 
+/** Retain the top-level fields named by plain or qualified selectors. */
 function projectRecordFields(
   value: Record<string, unknown>,
   selectors: readonly string[],
@@ -1165,6 +1184,7 @@ function projectRecordFields(
   );
 }
 
+/** Enumerate get item fields and sections while excluding transport envelope keys. */
 function getProjectionVocabulary(result: Record<string, unknown>): {
   item: Record<string, unknown>;
   itemFields: string[];
@@ -1199,6 +1219,7 @@ function getProjectionVocabulary(result: Record<string, unknown>): {
   };
 }
 
+/** Validate get selectors and publish recovery instructions for every omitted field or section. */
 function applyGetIncludeProjection(
   result: Record<string, unknown>,
   selectors: readonly string[],
@@ -1315,6 +1336,7 @@ function rejectEmptyIncludeProjection(
   );
 }
 
+/** Project declared rows or envelope sections while refusing selectors that empty every row. */
 function applyIncludeProjection(
   command: PmReadOutputSurface,
   result: Record<string, unknown>,
@@ -1355,6 +1377,7 @@ function applyIncludeProjection(
   );
 }
 
+/** Cap declared row collections and refresh delivered counts and truncation evidence. */
 function applyAmountBound(
   result: Record<string, unknown>,
   amount: number | "unbounded",
@@ -1381,6 +1404,7 @@ function applyAmountBound(
   return bounded;
 }
 
+/** List caller-selected dimensions without presenting implicit defaults as requests. */
 function requestedDimensions(
   resolved: PmResolvedReadOutputDimensions,
 ): PmReadOutputDimension[] {
@@ -1641,6 +1665,7 @@ function resolveBindingReadOutputBudget(
   return budgets.sort((left, right) => left.tokens - right.tokens)[0];
 }
 
+/** Attach canonical option provenance only when the invocation used it. */
 function canonicalReadOutputReceiptFields(
   resolved: PmResolvedReadOutputDimensions,
 ): Pick<PmReadOutputReceipt, "canonical_options_used"> {

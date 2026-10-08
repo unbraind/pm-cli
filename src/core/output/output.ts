@@ -1,7 +1,7 @@
 /**
  * @module core/output/output
  *
- * Formats compact human and machine output for Output.
+ * Projects command results and renders JSON or TOON with extension ownership, budget receipts, and safe process-stream delivery.
  */
 import {
   getActiveCommandContext,
@@ -25,11 +25,11 @@ import { encodePmTableRows } from "../../sdk/output/table-rows.js";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
 
-/** Documents the output options payload exchanged by command, SDK, and package integrations. */
+/** Host output controls shared by command execution and extension rendering. */
 export interface OutputOptions {
-  /** Value that configures or reports json for this contract. */
+  /** Select JSON explicitly; otherwise use the host default format. */
   json?: boolean;
-  /** Value that configures or reports quiet for this contract. */
+  /** Suppress process output while retaining the active command result. */
   quiet?: boolean;
   /** When true, mutation results drop the verbose changed_fields array (keeps changed_field_count). */
   noChangedFields?: boolean;
@@ -57,13 +57,13 @@ export interface OutputOptions {
   outputRowContract?: boolean;
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
-  /** Value that configures or reports command for this contract. */
+  /** Command identity used to resolve read contracts and extension overrides. */
   command?: string;
-  /** Value that configures or reports command args for this contract. */
+  /** Positional arguments passed to the output service override. */
   commandArgs?: string[];
-  /** Inputs that customize the command operation. */
+  /** Command options merged with active invocation options for output contracts. */
   commandOptions?: Record<string, unknown>;
-  /** Value that configures or reports pm root for this contract. */
+  /** Tracker root supplied to the output service override. */
   pmRoot?: string;
 }
 
@@ -76,16 +76,19 @@ const NATIVE_OUTPUT_MARKER = "__pm_native_output";
 let streamErrorHandlersInstalled = false;
 type OutputStreamTarget = "stdout" | "stderr";
 
+/** Recognize non-null object records, excluding array collections. */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Record suppressed structured delivery while retaining its context-serving receipt. */
 function setActiveCommandResultOmitted(source: unknown): void {
   const omitted = { read_output: { result_omitted: true } };
   propagateContextUsageServingReceipt(source, omitted);
   setActiveCommandResult(omitted);
 }
 
+/** Store the delivered object or an omission receipt when rendering takes ownership. */
 function setActiveCommandDeliveryResult(
   result: unknown,
   receiptSource: unknown,
@@ -98,10 +101,12 @@ function setActiveCommandDeliveryResult(
   setActiveCommandResultOmitted(receiptSource);
 }
 
+/** Detect the marker that bypasses extension service and renderer overrides. */
 function shouldUseNativeOutput(result: unknown): boolean {
   return isPlainObject(result) && result[NATIVE_OUTPUT_MARKER] === true;
 }
 
+/** Remove the host-only native-rendering marker before publishing a result. */
 function stripNativeOutputMarker<T>(result: T): T {
   if (!isPlainObject(result) || result[NATIVE_OUTPUT_MARKER] !== true) {
     return result;
@@ -110,6 +115,7 @@ function stripNativeOutputMarker<T>(result: T): T {
   return rest as T;
 }
 
+/** Recognize EPIPE without assuming the thrown value is an Error instance. */
 function isBrokenPipeError(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -118,6 +124,7 @@ function isBrokenPipeError(error: unknown): boolean {
   );
 }
 
+/** Treat a closed output consumer as success while preserving an existing failure. */
 function markStdoutBrokenPipeExitCode(): void {
   if (
     process.exitCode === undefined ||
@@ -127,6 +134,7 @@ function markStdoutBrokenPipeExitCode(): void {
   }
 }
 
+/** Report failed diagnostic delivery without replacing a more specific exit code. */
 function markStderrBrokenPipeExitCode(): void {
   if (
     process.exitCode === undefined ||
@@ -136,6 +144,7 @@ function markStderrBrokenPipeExitCode(): void {
   }
 }
 
+/** Apply the exit policy for the stream whose consumer closed the pipe. */
 function markBrokenPipeExitCode(target: OutputStreamTarget): void {
   if (target === "stdout") {
     markStdoutBrokenPipeExitCode();
@@ -144,6 +153,7 @@ function markBrokenPipeExitCode(target: OutputStreamTarget): void {
   markStderrBrokenPipeExitCode();
 }
 
+/** Rethrow non-pipe stream failures asynchronously so they remain observable. */
 function handleUnhandledStreamError(error: unknown): void {
   const unhandled = error instanceof Error ? error : new Error(String(error));
   setImmediate(() => {
@@ -151,6 +161,7 @@ function handleUnhandledStreamError(error: unknown): void {
   });
 }
 
+/** Install process-wide pipe handling once without swallowing unrelated stream errors. */
 function installStreamErrorHandlers(): void {
   if (streamErrorHandlersInstalled) {
     return;
@@ -172,6 +183,7 @@ function installStreamErrorHandlers(): void {
   });
 }
 
+/** Write to the selected process stream; return false for a closed pipe and propagate other failures. */
 function writeToStream(target: OutputStreamTarget, text: string): boolean {
   installStreamErrorHandlers();
   try {
@@ -190,16 +202,17 @@ function writeToStream(target: OutputStreamTarget, text: string): boolean {
   }
 }
 
-/** Implements write stdout for the public runtime surface of this module. */
+/** Write stdout and return false when its consumer has closed the pipe. */
 export function writeStdout(text: string): boolean {
   return writeToStream("stdout", text);
 }
 
-/** Implements write stderr for the public runtime surface of this module. */
+/** Write stderr and preserve diagnostic delivery failures in the process exit code. */
 export function writeStderr(text: string): boolean {
   return writeToStream("stderr", text);
 }
 
+/** Quote strings as JSON while preserving scalar numbers, booleans, and null. */
 function renderScalar(value: unknown): string {
   if (typeof value === "string") return JSON.stringify(value);
   if (typeof value === "number" || typeof value === "boolean")
@@ -208,6 +221,7 @@ function renderScalar(value: unknown): string {
   return JSON.stringify(value);
 }
 
+/** Identify scalar JSON cells that can occupy standard TOON table columns. */
 function isToonPrimitive(value: unknown): value is JsonValue {
   return (
     value === null ||
@@ -234,6 +248,7 @@ function tabularObjectArray(
   );
 }
 
+/** Indent every line of an encoded block at the enclosing TOON nesting depth. */
 function indentToon(encoded: string, depth: number): string {
   const indent = "  ".repeat(depth);
   return encoded
@@ -278,14 +293,18 @@ function renderToonObjectEntry(
   return `${indent}${key}:\n${renderToonValue(entry, depth + 1)}`;
 }
 
-function compactToonValue(value: unknown): unknown | undefined {
+/** Keep sparse presentation rules shared while allowing lean JSON to retain count aliases. */
+function compactToonValue(
+  value: unknown,
+  omitDuplicateCountAliases = true,
+): unknown | undefined {
   if (value === null || value === undefined) {
     return undefined;
   }
 
   if (Array.isArray(value)) {
     const compactedEntries = value
-      .map((entry) => compactToonValue(entry))
+      .map((entry) => compactToonValue(entry, omitDuplicateCountAliases))
       .filter((entry): entry is unknown => entry !== undefined);
     return compactedEntries.length > 0 ? compactedEntries : undefined;
   }
@@ -295,6 +314,7 @@ function compactToonValue(value: unknown): unknown | undefined {
     const entries = Object.entries(value).filter(
       ([key, entry]) =>
         !(
+          omitDuplicateCountAliases &&
           (key === "notes_count" || key === "tests_count") &&
           isPlainObject(value.collection_counts) &&
           entry ===
@@ -310,7 +330,7 @@ function compactToonValue(value: unknown): unknown | undefined {
         compacted[key] = [];
         continue;
       }
-      const compactedEntry = compactToonValue(entry);
+      const compactedEntry = compactToonValue(entry, omitDuplicateCountAliases);
       if (compactedEntry !== undefined) {
         compacted[key] = compactedEntry;
       }
@@ -321,6 +341,7 @@ function compactToonValue(value: unknown): unknown | undefined {
   return value;
 }
 
+/** Render objects recursively and arrays through the standard TOON encoder. */
 function renderToonValue(value: unknown, depth: number): string {
   const indent = "  ".repeat(depth);
 
@@ -347,6 +368,7 @@ function renderToonValue(value: unknown, depth: number): string {
   return `${indent}${renderScalar(value)}`;
 }
 
+/** Render a declared calendar result as Markdown; decline other result shapes. */
 function renderDefaultMarkdownResult(value: unknown): string | null {
   if (!isPlainObject(value) || value.output_default !== "markdown") {
     return null;
@@ -382,6 +404,7 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
   return `${lines.join("\n")}\n`;
 }
 
+/** Prefer an explicit JSON choice over the configured default, otherwise select TOON. */
 function resolveOutputFormat(options: OutputOptions): "json" | "toon" {
   return options.json === true ||
     (options.json === undefined && options.defaultOutputFormat === "json")
@@ -396,8 +419,9 @@ const LEAN_READ_ENVELOPE_ECHO_KEYS = new Set([
   "sorting",
 ]);
 
+/** Remove sparse values and list echoes while preserving legacy JSON count aliases. */
 function projectLeanJsonValue(value: unknown): unknown {
-  const compacted = compactToonValue(value);
+  const compacted = compactToonValue(value, false);
   if (!isPlainObject(compacted) || !Array.isArray(compacted.items)) {
     return compacted ?? null;
   }
@@ -670,7 +694,7 @@ function formatEffectiveOutput(
   return rendered;
 }
 
-/** Implements format output for the public runtime surface of this module. */
+/** Resolve command ownership and suppression before projecting and rendering the result. */
 export function formatOutput(result: unknown, options: OutputOptions): string {
   const commandOverride = runActiveCommandOverride(result);
   const suppressedOutput = isHostOutputSuppressed(commandOverride.result)
@@ -688,7 +712,7 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   return formatEffectiveOutput(effectiveResult, nativeOutput, options);
 }
 
-/** Implements print result for the public runtime surface of this module. */
+/** Apply declared exit codes and mutation projection before writing a nonquiet result. */
 export function printResult(result: unknown, options: OutputOptions): void {
   if (
     isPlainObject(result) &&
@@ -712,7 +736,7 @@ export function printResult(result: unknown, options: OutputOptions): void {
   writeStdout(rendered);
 }
 
-/** Implements print error for the public runtime surface of this module. */
+/** Apply the error service override and emit one newline-terminated diagnostic. */
 export function printError(message: string): void {
   const override = runActiveServiceOverrideSync("error_format", {
     message,
@@ -724,7 +748,7 @@ export function printError(message: string): void {
   writeStderr(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
 }
 
-/** Public contract for output test only, shared by SDK and presentation-layer consumers. */
+/** Internal rendering seams retained for deterministic presentation regression tests. */
 export const outputTestOnly = {
   compactToonValue,
   renderToonValue,

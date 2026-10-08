@@ -24,6 +24,7 @@ import {
   type TempPmContext,
 } from "../../../helpers/withTempPmPath.js";
 
+/** Build deterministic metadata for scorer tests, allowing explicit runtime-shape overrides. */
 function relevanceItem(
   id: string,
   overrides: Partial<ItemMetadata> = {},
@@ -41,6 +42,7 @@ function relevanceItem(
   } as ItemMetadata;
 }
 
+/** Create real sandbox items with different priorities for context and next ranking comparisons. */
 function createContextRankingItems(context: TempPmContext): string[] {
   const createdIds: string[] = [];
   for (const [title, priority] of [
