@@ -9,35 +9,13 @@ import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { ItemMetadata, LinkedFile, LinkScope } from "../../types/index.js";
+import { loadDatabaseSync, loadStableDatabaseSync } from "./sqlite-runtime.js";
 
 const QUERY_INDEX_FILENAME = "metadata-query-index.sqlite";
 const QUERY_INDEX_VERSION = "5";
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
-function loadDatabaseSync(
-  loadModule: (specifier: string) => unknown,
-): DatabaseSyncConstructor | null {
-  try {
-    const loaded = loadModule(["node", "sqlite"].join(":")) as {
-      DatabaseSync?: DatabaseSyncConstructor;
-    };
-    return loaded.DatabaseSync ?? null;
-  } catch {
-    return null;
-  }
-}
-
 let RuntimeDatabaseSync: DatabaseSyncConstructor | null | undefined;
-
-function loadStableDatabaseSync(
-  nodeVersion: string,
-  loadModule: (specifier: string) => unknown,
-): DatabaseSyncConstructor | null {
-  const nodeMajor = Number.parseInt(nodeVersion, 10);
-  return Number.isFinite(nodeMajor) && nodeMajor >= 22
-    ? loadDatabaseSync(loadModule)
-    : null;
-}
 
 function resolveDatabaseSync(): DatabaseSyncConstructor | null {
   if (RuntimeDatabaseSync !== undefined) return RuntimeDatabaseSync;

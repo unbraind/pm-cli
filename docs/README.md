@@ -43,6 +43,7 @@ pm guide release --json
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
 - [Semantic Batching and Retrieval Quality](SEARCH_QUALITY.md) - independent request bounds, execution receipts, and per-query quality floors.
 - [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
+- [Faithful Package Acceptance](PACKAGE_GATE_ACCEPTANCE.md) - self-isolating package gates, independent Git snapshots, native diagnostics and isolated timing admission.
 - [Completion Portability and Bounded Replication Checks](VALIDATION_PORTABILITY.md) - literal Bash choices across versions and locales, and semantic Git diff collection.
 - [Build and Release Acceptance](BUILD_AND_RELEASE_ACCEPTANCE.md) - complete-build leases and cross-platform registry installation controls.
 - [Security Governance](SECURITY_GOVERNANCE.md) - vulnerability reporting, review discipline, property fuzzing, and OpenSSF limitations.

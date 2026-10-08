@@ -2,11 +2,13 @@ id: pm-aiqmgj
 title: Native SQLite warnings corrupt strict machine-channel acceptance on Node 24.12
 description: "Canonical full coverage on Node 24.12.0 completed 9386 passing tests but failed workflow-policy MCP JSON parsing and lossless mutation stderr cleanliness because native SQLite ExperimentalWarning text preceded application output. Preserve application diagnostics and determine the runtime capability or subprocess boundary responsible, without globally silencing warnings or weakening assertions."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:ci","area:sdk","horizon:current",runtime-compatibility
 created_at: "2026-09-28T09:20:34.544Z"
-updated_at: "2026-09-29T19:19:41.464Z"
+updated_at: "2026-10-08T06:31:09.941Z"
+closed_at: "2026-10-08T06:31:09.197Z"
+completed_at: "2026-10-08T06:31:09.197Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce the two affected tests on Node 24.12 and compare supported Node 22/current; identify the actual production or harness boundary; preserve unexpected application-warning and JSON assertions; add a negative control and prove focused supported-runtime coverage without global warning suppression
@@ -19,20 +21,95 @@ why_now: Discovered during full validation of current SDK mutation contracts
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: Supported runtimes retain parseable machine channels and strict unexpected-stderr detection
-actual_result: Node 24.12.0 emits native SQLite ExperimentalWarning into two strict subprocess assertions; no exact coverage artifact is produced
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Both native indexes share an exact synchronous warning filter; direct tests now load the real constructor under that filter and verify a fresh native subprocess without hiding application diagnostics.
+expected_result: Native SQLite first loading leaves machine channels clean and normal warning delivery restored; application warnings and original strict CLI assertions remain active.
+actual_result: "Node 22 linked native acceptance and all 22 Node 24 focused cases pass, including a real cold in-memory database and visible application diagnostic. All first-head hosted checks and the local static aggregate pass; final updated-head CI and re-review remain required before merge."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-7msh7k,related,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
   pm-hqy7lr,discovered_from,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
   pm-lvd647,discovered_from,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
   pm-u9d0,implements,"2026-09-28T09:20:34.544Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-ugqx,implements,"2026-10-08T04:24:13.937Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-09-28T09:20:34.544Z","harness:codex","Duplicate check: complete all-status 2829-item census searched for SQLite ExperimentalWarning, strict stderr, runtime warnings and stderr pollution, plus live keyword search and open/in-progress lists. Full records for the two linked historical runtime fixes cover different earlier failure sets; no open owner was found for these two Node 24.12 acceptance failures. Historical closed fixes remain closed. This issue is open and unclaimed until its implementation is actively selected."
   "2026-09-29T19:19:41.464Z","harness:codex","Reconfirmed during PR #1353 full-corpus validation on Node 24.12.0 with two workers: 9432 pass, two failures, two Windows-only skips, exit 3 after 1260.02 seconds. The exact existing workflow-policy MCP JSON parsing and lossless-mutation empty-stderr assertions fail on native experimental SQLite warning text. This is the existing canonical owner, not a new duplicate. No global warning suppression or assertion weakening was used. Node 26.9.0 is being validated separately; implementation of this distinct supported-runtime defect remains open and unclaimed."
-files[2]{path,scope}:
+  "2026-10-08T04:24:13.937Z","harness:codex","{\"created_at\": \"now\", \"text\": \"Live intake: strict all-status CLI read covered 2905/2905 items with complete receipt and zero omissions, including terminal metadata. All 21 open GitHub issues already have canonical PM-file comments; no open PR, Dependabot, CodeQL or secret-scanning alert was present. Verified Node24.12 baseline: the unchanged workflow-policy JSON refusal and lossless mutation stderr cases both fail specifically on the native SQLite announcement (2 failed / 7 passed). A shared synchronous optional-loader boundary now filters only that exact announcement while preserving all other warning arguments and immediately restoring the previous emitter, including exceptions. Both original assertions pass unchanged, and the independent warning-delivery negative control fails before / passes after. Node24 focused acceptance: 23 passed in six files; no global warning suppression or runtime floor change.\"}"
+  "2026-10-08T05:31:56.811Z","harness:codex","Pre-close evidence: all selected PM-linked commands passed. Full source coverage passed 788 files and 9910 tests, exact statements 67214/67214, branches 51435/51435, functions 13854/13854, lines 64042/64042. Two Windows-only cases are delegated to the required Windows gate. Documentation, TypeScript and tracked secret gates passed. Hosted review and final aggregate static validation remain delivery checks; no publication of this branch is claimed."
+  "2026-10-08T06:20:58.200Z","harness:codex","PR 1426 review identified that the warning-delivery unit case preloads node:sqlite before its spy. Existing cold CLI subprocess acceptance passes, but strengthen direct primitive acceptance with a genuinely fresh native-load subprocess and preserved application warning. Reuse the current delivery owner and keep real native SQLite rather than a fake constructor."
+  "2026-10-08T06:31:08.500Z","harness:codex","Review remediation verified: the unit boundary now requires real native SQLite inside the loader instead of importing it at module scope. A cold subprocess opens a real in-memory database, restores emitWarning, clears NODE_OPTIONS/NODE_NO_WARNINGS and still emits the unrelated ApplicationWarning. Node 22 PM-linked machine-channel acceptance passes; Node 24.12 focused acceptance passes 22 tests in five files with the original MCP JSON and lossless mutation assertions intact. TypeScript, focused ESLint, all three zero-clone scans and docstring admission pass. Greptile trial and Sourcery quota replies are recorded as provider limitations, not approval; CodeRabbit four inline findings are being remediated in the same reviewed delivery."
+notes[1]{created_at,author,text}:
+  "2026-10-08T04:51:14.381Z","harness:codex","Warning boundary audit: both metadata-query and history indexes use one synchronous optional SQLite loader. It intercepts only the exact native ExperimentalWarning announcement during require, forwards other warning types/messages/Error objects with original arguments, and restores the prior emitter on success and failure. No env-based/global warning suppression and no public SDK signature change."
+learnings[1]{created_at,author,text}:
+  "2026-10-08T06:29:15.282Z","harness:codex","A runtime value import can preload an optional native module before a warning spy. Direct primitive acceptance must include a fresh subprocess that imports the real loader before node:sqlite, exercises an actual in-memory database, clears inherited warning-suppression flags, and verifies an unrelated application warning remains visible."
+files[6]{path,scope}:
   tests/integration/workflow-policy-mcp.spec.ts,project
   tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,project,240,"harness:codex","2026-09-28T09:20:34.544Z",local_mutation,fix/plan-receipts-linked-evidence
+  src/core/store/sqlite-runtime.ts,project
+  src/core/store/item-metadata-query-index.ts,project
+  src/core/history/event-index.ts,project
+  tests/unit/core/item/sqlite-runtime.spec.ts,project
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-28T09:20:34.544Z"
+      source_kind: local_mutation
+      source_ref: fix/plan-receipts-linked-evidence
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/item/sqlite-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-08T04:24:14.824Z"
+      source_kind: local_mutation
+      source_ref: fix/faithful-package-gates-and-machine-channels
+    note: Focused sandboxed regression acceptance
+test_runs[3]:
+  - run_id: test-local-muz3ed4x-9u1894
+    kind: test
+    status: passed
+    started_at: "2026-10-08T05:24:52.764Z"
+    finished_at: "2026-10-08T05:25:05.409Z"
+    recorded_at: "2026-10-08T05:25:05.409Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/sqlite-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muz5ja2e-kxare2
+    kind: test
+    status: passed
+    started_at: "2026-10-08T06:24:41.038Z"
+    finished_at: "2026-10-08T06:24:53.942Z"
+    recorded_at: "2026-10-08T06:24:53.942Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/sqlite-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muz5n927-qvq655
+    kind: test
+    status: passed
+    started_at: "2026-10-08T06:27:46.090Z"
+    finished_at: "2026-10-08T06:27:59.263Z"
+    recorded_at: "2026-10-08T06:27:59.263Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/sqlite-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/PACKAGE_GATE_ACCEPTANCE.md,project
+  docs/README.md,project
+close_reason: Completed cold-native acceptance and pre-merge review remediation.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: strict-runtime-machine-channels
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/item/sqlite-runtime.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/item/sqlite-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts tests/unit/commands/lifecycle/lossless-mutation-contracts.spec.ts
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Windows regression (Node 24)
+  owner: pm-cli maintainers
 body: ""

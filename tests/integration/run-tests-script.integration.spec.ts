@@ -1,11 +1,40 @@
 import { spawnSync } from "node:child_process";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { withTempDir } from "../helpers/temp.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 describe("scripts/run-tests.mjs", () => {
+  it.each(["standard", "root-layout"])("refuses %s ancestor trackers before allocating fixtures", async (layout) => {
+    await withTempDir("pm-runner-ancestor-", async (root) => {
+      const tracker = layout === "standard" ? path.join(root, ".agents", "pm") : root;
+      const scratch = path.join(root, "scratch");
+      await mkdir(tracker, { recursive: true });
+      await mkdir(scratch);
+      const settings = '{"version":1,"id_prefix":"fixture-"}\n';
+      const settingsPath = path.join(tracker, "settings.json");
+      await writeFile(settingsPath, settings);
+      const result = spawnSync(process.execPath, ["scripts/run-tests.mjs", "test", "--", "--help"], {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          TMPDIR: scratch, TEMP: scratch, TMP: scratch,
+          PM_PATH: path.join(root, "isolated-pm"),
+          PM_GLOBAL_PATH: path.join(root, "isolated-global"),
+          PM_RUN_TESTS_SKIP_BUILD: "1",
+        },
+      });
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(2);
+      expect(result.stderr).toContain("ancestor tracker");
+      expect(result.stderr).toContain(tracker);
+      expect(await readFile(settingsPath, "utf8")).toBe(settings);
+    });
+  });
+
   it(
     "forwards targeted Vitest file filters in sandbox mode",
     () => {

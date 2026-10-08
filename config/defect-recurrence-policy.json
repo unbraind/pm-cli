@@ -528,23 +528,25 @@
     },
     {
       "id": "linked-test-execution-boundaries",
-      "version": 1,
+      "version": 2,
       "title": "Linked-test isolation, output capture, and execution evidence",
       "owner_item_id": "pm-q813",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": ["pm-5sm91o"]
+        "item_ids": ["pm-5sm91o", "pm-runner-ancestor-tracker"],
+        "file_patterns": ["src/sdk/test/**", "scripts/run-tests.mjs"]
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/unit/sdk/linked-command-identity.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/unit/sdk/linked-command-identity.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/integration/run-tests-script.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts"
         ],
-        "hosted": ["CI / Gates (coverage)"]
+        "hosted": ["CI / Gates (coverage)", "CI / Gates (static)", "CI / Windows regression (Node 24)"]
       },
       "negative_control": {
         "item_ids": ["pm-5sm91o"]
       },
-      "historical_item_ids": ["pm-5sm91o", "pm-m0b7h8", "pm-q813"],
+      "historical_item_ids": ["pm-5sm91o", "pm-m0b7h8", "pm-q813", "pm-bukwmy", "pm-t05d8d"],
       "budget": {
         "max_escape_rate": 0,
         "max_false_positive_rate": 0.05

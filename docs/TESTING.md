@@ -57,8 +57,12 @@ fixtures must never create production incidents from a developer host.
 
 Temporary directories must live outside the checkout and outside any ancestor
 workspace with initialized tracker data. The runner rejects a checkout-local
-temporary root, including a symlink alias, before starting build or test
-processes ([pm-bukwmy](../.agents/pm/issues/pm-bukwmy.toon)). If the default
+temporary root and every initialized standard or root-layout ancestor tracker,
+including physical symlink aliases, before allocating fixtures or starting build
+or test processes ([pm-bukwmy](../.agents/pm/issues/pm-bukwmy.toon),
+[pm-runner-ancestor-tracker](../.agents/pm/issues/pm-runner-ancestor-tracker.toon)).
+Unrelated valid settings files remain admissible; unreadable or invalid ancestor
+settings refuse ancestry certification. If the default
 temporary filesystem is full, set `TMPDIR` (or `TEMP`/`TMP` on Windows) to an
 existing isolated scratch directory; an ignored directory inside the repository
 is not isolated. Filesystem fixtures must honor `node:os`'s `tmpdir()` and remove
@@ -549,7 +553,11 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   copy, and binds its `.agents/pm` path to the selected temporary tracker.
   `.git`, `.agents`, coverage output, and common cache directories are excluded
   at every directory depth, with reserved names matched case-insensitively for
-  portable admission. Each existing root or nested `node_modules`
+  portable admission. Git sources receive an independent commit/tag object store
+  with fresh configuration, no source hooks, and no origin remote. Repository
+  history remains available; this is execution isolation, not history redaction.
+  See [Faithful package acceptance](PACKAGE_GATE_ACCEPTANCE.md) for limits.
+  Each existing root or nested `node_modules`
   directory is linked at its original relative path, including installations
   already represented by directory symlinks. This preserves independent
   monorepo dependency versions without copying dependency trees. Dependency

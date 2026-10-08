@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -78,9 +78,10 @@ async function stopActiveChild() {
 
 /** Reject scratch directories whose ancestry could expose the real workspace tracker to tests. */
 function assertExternalTemporaryDirectory() {
+  const temporaryRoot = realpathSync(tmpdir());
   const relative = path.relative(
     realpathSync(process.cwd()),
-    realpathSync(tmpdir()),
+    temporaryRoot,
   );
   if (
     relative === "" ||
@@ -91,6 +92,25 @@ function assertExternalTemporaryDirectory() {
     throw new Error(
       "Test temporary directory is inside the workspace. Set TMPDIR (or TEMP/TMP on Windows) to an existing directory outside the checkout.",
     );
+  }
+  // PM_PATH is deliberately unset by discovery fixtures. Protect every real
+  // ancestor tracker, even when the scratch directory is outside this checkout.
+  for (let ancestor = temporaryRoot; ; ancestor = path.dirname(ancestor)) {
+    const nestedTracker = path.join(ancestor, ".agents", "pm");
+    if (existsSync(path.join(nestedTracker, "settings.json"))) {
+      throw new Error(`Test temporary directory has an initialized ancestor tracker: ${nestedTracker}. Choose a scratch root outside tracker hierarchies.`);
+    }
+    const settingsPath = path.join(ancestor, "settings.json");
+    if (existsSync(settingsPath)) {
+      let settings;
+      try { settings = JSON.parse(readFileSync(settingsPath, "utf8")); }
+      catch { throw new Error(`Cannot certify test temporary ancestry: unreadable or invalid ${settingsPath}. Choose a scratch root outside tracker hierarchies.`); }
+      if (settings !== null && typeof settings === "object" && !Array.isArray(settings)
+        && (Object.hasOwn(settings, "id_prefix") || Object.hasOwn(settings, "item_format"))) {
+        throw new Error(`Test temporary directory has an initialized ancestor tracker: ${ancestor}. Choose a scratch root outside tracker hierarchies.`);
+      }
+    }
+    if (path.dirname(ancestor) === ancestor) break;
   }
 }
 

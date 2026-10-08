@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 
 import type { Plugin } from "vite";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import TestReliabilityReporter, {
   TEST_AT_RISK_RATIO,
   TEST_TIMEOUT_MS,
@@ -105,7 +105,29 @@ export default defineConfig({
       // separately prove that production configuration defaults to core.
       PM_MCP_PROFILE: "full",
     },
-    include: ["tests/**/*.spec.ts"],
+    // Wall-clock admission runs after every parallel contract file, retaining
+    // its original latency ceiling without charging unrelated worker load.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "contracts",
+          include: ["tests/**/*.spec.ts"],
+          exclude: [...configDefaults.exclude, "tests/integration/scratch-lifecycle.integration.spec.ts"],
+          sequence: { groupOrder: 0 },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "lifecycle-performance",
+          include: ["tests/integration/scratch-lifecycle.integration.spec.ts"],
+          sequence: { groupOrder: 1 },
+          fileParallelism: false,
+          maxWorkers: 1,
+        },
+      },
+    ],
     testTimeout: TEST_TIMEOUT_MS,
     hookTimeout: 30_000,
     retry: process.env.CI ? 1 : 0,

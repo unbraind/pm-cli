@@ -1,6 +1,7 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { access, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { runTest } from "../../src/sdk/test/execution.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
@@ -53,28 +54,52 @@ describe("linked-test workspace and trust contracts", () => {
       await symlink(dependencyRoot, path.join(packageRoot, "node_modules"), process.platform === "win32" ? "junction" : "dir");
       await symlink("node_modules/snapshot-dependency/index.js", path.join(packageRoot, "dependency-alias.js"), "file");
       await writeFile(path.join(sourceRoot, "root.js"), "export { version } from 'snapshot-dependency';\n");
+      /** Keep repository selectors from redirecting fixture writes into another checkout. */
+      const git = (args: string[]) => execFileSync("git", ["-C", sourceRoot, ...args], {
+        encoding: "utf8",
+        env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_"))),
+      }).trim();
+      git(["init", "--initial-branch=package-fixture"]);
+      git(["add", "root.js"]);
+      git(["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "Package acceptance identity"]);
+      git(["tag", "v1.0.0"]);
+      const head = git(["rev-parse", "HEAD"]);
       const testPath = path.join(packageRoot, "dependency.test.mjs");
       await writeFile(testPath, [
         "import assert from 'node:assert/strict';",
         "import { test } from 'node:test';",
         "import { writeFileSync } from 'node:fs';",
+        "import { existsSync, mkdtempSync, rmSync } from 'node:fs';",
+        "import { execFileSync } from 'node:child_process';",
+        "import { tmpdir } from 'node:os';",
+        "import path from 'node:path';",
         "import { version as rootVersion } from '../../root.js';",
         "import { version } from 'snapshot-dependency';",
         "import { version as aliasVersion } from './dependency-alias.js';",
+        "const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith('GIT_')));",
         "test('independent dependency identities', () => {",
         "  assert.equal(rootVersion, '1.0.0');",
         "  assert.equal(version, '2.0.0');",
         "  assert.equal(aliasVersion, '2.0.0');",
         "  assert.ok(process.env.PM_GLOBAL_PATH);",
+        `  assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', env }).trim(), ${JSON.stringify(head)});`,
+        "  assert.equal(execFileSync('git', ['describe', '--tags', '--exact-match'], { encoding: 'utf8', env }).trim(), 'v1.0.0');",
+        "  const fixture = mkdtempSync(path.join(tmpdir(), 'pm-nested-package-'));",
+        "  try {",
+        `    execFileSync(process.execPath, [${JSON.stringify(fileURLToPath(new URL("../../dist/cli.js", import.meta.url)))}, 'init', '--yes', '--agent-guidance', 'skip', '--json'], { cwd: fixture, stdio: 'pipe', env });`,
+        "    assert.ok(existsSync(path.join(fixture, '.agents/pm/settings.json')));",
+        "  } finally { rmSync(fixture, { recursive: true, force: true }); }",
         "  assert.equal(process.env.PM_PATH, undefined);",
         "  writeFileSync('snapshot-only.txt', version);",
         "});",
       ].join("\n"));
       const before = await readFile(testPath, "utf8");
       const direct = spawnSync(process.execPath, ["--test", testPath], {
-        cwd: sourceRoot, env: { ...context.env, PM_PATH: undefined }, encoding: "utf8",
+        cwd: sourceRoot,
+        env: { ...Object.fromEntries(Object.entries(context.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_"))), PM_PATH: undefined },
+        encoding: "utf8",
       });
-      expect(direct.status, direct.stderr).toBe(0);
+      expect(direct.status, `${direct.stdout}\n${direct.stderr}`).toBe(0);
       expect(await readFile(path.join(sourceRoot, "snapshot-only.txt"), "utf8")).toBe("2.0.0");
       await rm(path.join(sourceRoot, "snapshot-only.txt"));
       context.env.PM_SOURCE_WORKSPACE_ROOT = sourceRoot;
@@ -89,6 +114,11 @@ describe("linked-test workspace and trust contracts", () => {
       expect(result).toMatchObject({ status: "passed" });
       expect((snapshot.json as TestEnvelope).execution_context).toMatchObject({ workspace_context_mode: "snapshot" });
       expect(result.stdout).toContain("independent dependency identities");
+      const redirected = context.runCli(["test", id, "--run", "--pm-context", "schema", "--override-linked-pm-context", "--json"], { cwd: sourceRoot, expectJson: true });
+      expect(redirected.code).toBe(5);
+      expect((redirected.json as TestEnvelope).run_results[0]).toMatchObject({ status: "failed", failure_category: "assertion_failure" });
+      expect(git(["rev-parse", "HEAD"])).toBe(head);
+      expect(git(["tag", "--list"])).toBe("v1.0.0");
       expect(await readFile(testPath, "utf8")).toBe(before);
       await expect(access(path.join(sourceRoot, "snapshot-only.txt"))).rejects.toThrow();
       expect(await readFile(path.join(dependencyRoot, "snapshot-dependency", "index.js"), "utf8")).toBe('export const version = "2.0.0";\n');
