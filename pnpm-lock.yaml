@@ -97,6 +97,9 @@ importers:
       github-slugger:
         specifier: 2.0.0
         version: 2.0.0
+      gpt-tokenizer:
+        specifier: 4.0.0
+        version: 4.0.0
       greptile:
         specifier: ^3.6.0
         version: 3.6.0
@@ -1863,6 +1866,9 @@ packages:
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
+
+  gpt-tokenizer@4.0.0:
+    resolution: {integrity: sha512-YAWIyzvuVUHEfW7tFfFAxH8qQb+Q3RU9nYOTy7skMNX5qzU6Q8jxTHZLyO56ug1vYvCR7wndzpd3jwD86/mhjQ==}
 
   greptile@3.6.0:
     resolution: {integrity: sha512-30mjNYyso0vKaUe/SjAG/ichNGE0/ZoLSZrDVjCGAhUc8LVdRjFYNoT/45T+jyCrkPkHuqxMELyq4Cy6IYMHuQ==}
@@ -4308,6 +4314,8 @@ snapshots:
   globals@17.12.0: {}
 
   gopd@1.2.0: {}
+
+  gpt-tokenizer@4.0.0: {}
 
   greptile@3.6.0: {}
 

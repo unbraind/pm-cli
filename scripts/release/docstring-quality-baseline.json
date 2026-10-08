@@ -63,7 +63,6 @@
     "src/core/item/type-registry.ts": 24,
     "src/core/lock/lock-gc.ts": 17,
     "src/core/output/mutation-projection.ts": 1,
-    "src/core/output/output.ts": 11,
     "src/core/output/query-summary.ts": 2,
     "src/core/packages/manifest.ts": 30,
     "src/core/packages/root.ts": 3,

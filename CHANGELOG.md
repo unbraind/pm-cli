@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Fact-preserving SDK table encoding, measured TOON defaults, and complete context budgets ([pm-kvxqp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-kvxqp1.toon))
+
 ### Fixed
 
 - GH-1391: Express faithful self-isolating source package gates without tracker redirects ([pm-gh1391](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1391.toon))

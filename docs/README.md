@@ -35,6 +35,7 @@ pm guide release --json
 - [Onboarding](ONBOARDING.md) - first-two-hours maintainer and contributor setup.
 - [Agent Guide](AGENT_GUIDE.md) - canonical agent loop, tracker linking, and token-minimal command choices.
 - [Agent Read and Test Receipts](AGENT_READ_AND_TEST_RECEIPTS.md) - JSON help provenance, linked-test persistence, and history diff continuation.
+- [Fact-preserving Agent Output](AGENT_OUTPUT_ENCODINGS.md) - lossless SDK table cells, measured token ratchets, count aliases, and whole-response context budgets.
 - [Agent Evidence Consistency](AGENT_EVIDENCE_CONSISTENCY.md) - literal annotations, concurrent history validation, and declared recovery help.
 - [Actionable Item-read Evidence](GET_READ_EVIDENCE.md) - declared blocker status, historical separation, and truthful schedule/artifact omission receipts.
 - [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
