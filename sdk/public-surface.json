@@ -2242,6 +2242,15 @@
       ],
       "package_version": "2026.10.7",
       "reason": "Add optional createParentDirectories policy to acquireLock and writeFileAtomic; existing positional calls and default parent creation remain compatible. Detached consumers may opt out of recreating removed storage."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputReceipt",
+        "signature ./sdk/contracts:PmReadOutputReceipt",
+        "signature ./sdk/core:PmReadOutputReceipt"
+      ],
+      "package_version": "2026.10.8",
+      "reason": "The optional output-budget source now includes legacy for the context compatibility ceiling; JSON result facts and prior canonical/default/session budget precedence are preserved. Exhaustive receipt consumers must handle the new source; see docs/AGENT_OUTPUT_ENCODINGS.md."
     }
   ],
   "entrypoints": {
@@ -5873,6 +5882,12 @@
           "signature": "(value: string, header: string) => string | calls: (value: string, header: string) => string"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "decodePmTableRows",
+          "signature": "(table: PmEncodedTableRows) => Record<string, JsonValue>[] | calls: (table: PmEncodedTableRows) => Record<string, JsonValue>[]"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "decodeQueryCursor",
@@ -6777,6 +6792,12 @@
           "kind": "function",
           "name": "encodeMcpHttpHeaderValue",
           "signature": "(value: string | number | boolean) => string | calls: (value: string | number | boolean) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "encodePmTableRows",
+          "signature": "(rows: readonly Record<string, JsonValue>[]) => PmEncodedTableRows | calls: (rows: readonly Record<string, JsonValue>[]) => PmEncodedTableRows"
         },
         {
           "classification": "supported",
@@ -13357,6 +13378,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "PmEncodedTableRows",
+          "signature": "export interface PmEncodedTableRows { rows: Record<string, string | number | boolean | null>[]; encoding: PmTableCellEncoding; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "PmEpisodeSession",
           "signature": "export interface PmEpisodeSession<TAction, TOutput> { observe(): Promise<ObservationResult<RecordedStateObject>>; step(action: TAction): Promise<EpisodeActionReceipt<TOutput>>; score(): Promise<VerdictResult>; close(): Promise<ClosedEpisode>; }"
         },
@@ -13970,7 +13997,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; applied_depth?: \"brief\"; degradation_reason?: \"output_budget_reached\"; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\" | \"legacy\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; applied_depth?: \"brief\"; degradation_reason?: \"output_budget_reached\"; }"
         },
         {
           "classification": "contract_data",
@@ -14205,6 +14232,12 @@
           "kind": "interface",
           "name": "PmSubcommandRefusalContract",
           "signature": "export interface PmSubcommandRefusalContract extends PmGrammarRefusalContract { rejected_value: string; allowed_values: readonly string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmTableCellEncoding",
+          "signature": "export interface PmTableCellEncoding { json_columns: string[]; absent: Array<[ number, string ]>; }"
         },
         {
           "classification": "contract_data",
@@ -24092,7 +24125,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; applied_depth?: \"brief\"; degradation_reason?: \"output_budget_reached\"; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\" | \"legacy\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; applied_depth?: \"brief\"; degradation_reason?: \"output_budget_reached\"; }"
         },
         {
           "classification": "contract_data",
@@ -25724,7 +25757,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputReceipt",
-          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; applied_depth?: \"brief\"; degradation_reason?: \"output_budget_reached\"; }"
+          "signature": "export interface PmReadOutputReceipt { contract_version: 1; command: PmReadOutputSurface; requested_dimensions: PmReadOutputDimension[]; budget_source?: \"default\" | \"legacy\"; budget_tokens?: number; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; canonical_options_used?: string[]; legacy_aliases_used: string[]; migration_hints: string[]; estimated_tokens: number; within_budget: boolean; strings_compacted: boolean; rows_compacted: boolean; compacted_row_paths?: string[]; result_omitted: boolean; omitted_result_estimated_tokens?: number; applied_depth?: \"brief\"; degradation_reason?: \"output_budget_reached\"; }"
         },
         {
           "classification": "supported",

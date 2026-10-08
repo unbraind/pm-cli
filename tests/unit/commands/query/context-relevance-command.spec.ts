@@ -348,13 +348,21 @@ describe("context relevance command integration", () => {
       expect(nextAlias.json).toMatchObject({
         ranking: { model: "default-weighted-v1" },
       });
-      for (const result of budgetAliases) {
-        expect(result.code).toBe(0);
-        expect(result.json).toMatchObject({
-          filters: { token_budget: 64 },
-          packing: { token_budget: 64 },
-        });
-      }
+      expect(budgetAliases[0].code).toBe(2);
+      expect(budgetAliases[0].json).toMatchObject({
+        read_output: {
+          budget_source: "legacy",
+          budget_tokens: 64,
+          within_budget: false,
+          result_omitted: true,
+        },
+        output_budget_exceeded: { reason: "requested_budget_infeasible" },
+      });
+      expect(budgetAliases[1].code).toBe(0);
+      expect(budgetAliases[1].json).toMatchObject({
+        filters: { token_budget: 64 },
+        packing: { token_budget: 64 },
+      });
       await expect(
         runContext({ tokenBudget: "0" }, { path: context.pmPath }),
       ).rejects.toThrow("--token-budget must be a positive integer");

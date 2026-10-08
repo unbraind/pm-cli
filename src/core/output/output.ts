@@ -21,6 +21,7 @@ import {
   resolveReadOutputEncoding,
 } from "../../sdk/read-output-contracts.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
+import { encodePmTableRows } from "../../sdk/output/table-rows.js";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
 
@@ -216,10 +217,10 @@ function isToonPrimitive(value: unknown): value is JsonValue {
   );
 }
 
+/** Determine whether a nonempty object collection has uniform scalar columns. */
 function tabularObjectArray(
-  value: unknown[],
+  value: Record<string, unknown>[],
 ): value is Record<string, JsonValue>[] {
-  if (value.length === 0 || !value.every(isPlainObject)) return false;
   const keys = Object.keys(value[0]!);
   return (
     keys.length > 0 &&
@@ -246,16 +247,30 @@ function renderToonObjectEntry(
   key: string,
   entry: unknown,
   depth: number,
+  allowNestedTable: boolean,
 ): string {
   const indent = "  ".repeat(depth);
   if (!isPlainObject(entry) && !Array.isArray(entry)) {
     return `${indent}${key}: ${renderScalar(entry)}`;
   }
-  if (Array.isArray(entry) && entry.length === 0) {
-    return `${indent}${key}: []`;
-  }
-  if (Array.isArray(entry) && tabularObjectArray(entry)) {
-    return indentToon(encodeToon({ [key]: entry }), depth);
+  if (Array.isArray(entry)) {
+    if (entry.length === 0) return `${indent}${key}: []`;
+    const expanded = indentToon(encodeToon({ [key]: entry }), depth);
+    if (
+      allowNestedTable &&
+      entry.length >= 2 &&
+      entry.every(isPlainObject) &&
+      !tabularObjectArray(entry)
+    ) {
+      const table = encodePmTableRows(entry as Record<string, JsonValue>[]);
+      const tabular = indentToon(
+        encodeToon({ [key]: table.rows, [`${key}_encoding`]: table.encoding }),
+        depth,
+      );
+      if (Buffer.byteLength(tabular) < Buffer.byteLength(expanded))
+        return tabular;
+    }
+    return expanded;
   }
   if (isPlainObject(entry) && Object.keys(entry).length === 0) {
     return `${indent}${key}: {}`;
@@ -277,7 +292,16 @@ function compactToonValue(value: unknown): unknown | undefined {
 
   if (isPlainObject(value)) {
     const compacted: Record<string, unknown> = {};
-    for (const [key, entry] of Object.entries(value)) {
+    const entries = Object.entries(value).filter(
+      ([key, entry]) =>
+        !(
+          (key === "notes_count" || key === "tests_count") &&
+          isPlainObject(value.collection_counts) &&
+          entry ===
+            value.collection_counts[key === "notes_count" ? "notes" : "tests"]
+        ),
+    );
+    for (const [key, entry] of entries) {
       if (
         key === "omitted_field_groups" &&
         Array.isArray(entry) &&
@@ -302,30 +326,21 @@ function renderToonValue(value: unknown, depth: number): string {
 
   if (Array.isArray(value)) {
     if (value.length === 0) return "[]";
-    if (tabularObjectArray(value)) {
-      return indentToon(encodeToon(value), depth);
-    }
-    return value
-      .map((entry) => {
-        if (!isPlainObject(entry) && !Array.isArray(entry)) {
-          return `${indent}- ${renderScalar(entry)}`;
-        }
-        const rendered = renderToonValue(entry, depth + 1);
-        const lines = rendered.split("\n");
-        const [firstLine, ...rest] = lines;
-        if (rest.length === 0) {
-          return `${indent}- ${firstLine.trimStart()}`;
-        }
-        return `${indent}- ${firstLine.trimStart()}\n${rest.join("\n")}`;
-      })
-      .join("\n");
+    return indentToon(encodeToon(value), depth);
   }
 
   if (isPlainObject(value)) {
     const entries = Object.entries(value);
     if (entries.length === 0) return "{}";
     return entries
-      .map(([key, entry]) => renderToonObjectEntry(key, entry, depth))
+      .map(([key, entry]) =>
+        renderToonObjectEntry(
+          key,
+          entry,
+          depth,
+          !Object.hasOwn(value, `${key}_encoding`),
+        ),
+      )
       .join("\n");
   }
 
@@ -448,23 +463,44 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
 
 /** Collapse only successful standard list receipts; retain warnings, custom fields, filters, and bounded-read diagnostics. */
 function projectCompleteBriefList(value: unknown): unknown {
-  if (!isPlainObject(value) || !Array.isArray(value.items) || Object.hasOwn(value, "details") ||
-      !isPlainObject(value.projection) || value.projection.mode !== "brief" ||
-      !isPlainObject(value.completeness) || value.completeness.status !== "complete" ||
-      [value.completeness.unreadable_item_count, value.completeness.unreadable_directory_count].some((count) => count !== 0) ||
-      [value.has_more, value.truncated].some((flag) => flag !== false) ||
-      value.count !== value.items.length || value.total !== value.count ||
-      !isPlainObject(value.omission_receipt) ||
-      JSON.stringify(value.omission_receipt.omitted_field_groups) !== JSON.stringify([{ name: "full_item_fields", restore_with: "--full" }])) {
+  if (
+    !isPlainObject(value) ||
+    !Array.isArray(value.items) ||
+    Object.hasOwn(value, "details") ||
+    !isPlainObject(value.projection) ||
+    value.projection.mode !== "brief" ||
+    !isPlainObject(value.completeness) ||
+    value.completeness.status !== "complete" ||
+    [
+      value.completeness.unreadable_item_count,
+      value.completeness.unreadable_directory_count,
+    ].some((count) => count !== 0) ||
+    [value.has_more, value.truncated].some((flag) => flag !== false) ||
+    value.count !== value.items.length ||
+    value.total !== value.count ||
+    !isPlainObject(value.omission_receipt) ||
+    JSON.stringify(value.omission_receipt.omitted_field_groups) !==
+      JSON.stringify([{ name: "full_item_fields", restore_with: "--full" }])
+  ) {
     return value;
   }
-  const { total: _total, has_more: _hasMore, truncated: _truncated,
-    next_cursor: _nextCursor, completeness: _completeness,
-    projection: _projection, now: _now, omission_receipt: _omissions,
-    sorting, ...rest } = value;
+  const {
+    total: _total,
+    has_more: _hasMore,
+    truncated: _truncated,
+    next_cursor: _nextCursor,
+    completeness: _completeness,
+    projection: _projection,
+    now: _now,
+    omission_receipt: _omissions,
+    sorting,
+    ...rest
+  } = value;
   return {
     ...rest,
-    ...(isPlainObject(sorting) && sorting.sort === "default" ? {} : { sorting }),
+    ...(isPlainObject(sorting) && sorting.sort === "default"
+      ? {}
+      : { sorting }),
     details: "--full",
   };
 }

@@ -1,3 +1,4 @@
+import { decode } from "@toon-format/toon";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearActiveExtensionHooks,
@@ -147,13 +148,19 @@ describe("core/output/output", () => {
     expect(rendered).not.toContain("none:");
     expect(rendered).not.toContain("arr_empty:");
     expect(rendered).not.toContain("obj_empty:");
-    expect(rendered).toContain('  - "x"');
-    expect(rendered).toContain("  - 2");
-    expect(rendered).toContain("  - true");
+    expect(decode(rendered)).toEqual({
+      text: "hello",
+      num: 3,
+      bool: false,
+      arr_scalars: ["x", 2, true],
+      arr_single_nested: [{ key: "value" }],
+      arr_multi_line: [{ nested: ["a", { deep: 1 }] }],
+      nested: { child: { leaf: "done" } },
+    });
     expect(rendered).not.toContain("  - null");
     expect(rendered).toContain("arr_single_nested[1]{key}:\n  value");
-    expect(rendered).toContain("arr_multi_line:");
-    expect(rendered).toContain("- nested:");
+    expect(rendered).toContain("arr_multi_line[1]:");
+    expect(rendered).toContain("- nested[2]:");
     expect(rendered).toContain("- deep: 1");
     expect(rendered).not.toContain("drop:");
     expect(rendered).not.toContain("empty_nested:");
@@ -678,7 +685,10 @@ describe("core/output/output", () => {
     expect(rendered).toContain("item:");
     expect(rendered).toContain('  id: "pm-a1b2"');
     expect(rendered).toContain('  status: "open"');
-    expect(rendered).toContain("changed_fields:");
+    expect(decode(rendered)).toEqual({
+      item: { id: "pm-a1b2", status: "open" },
+      changed_fields: ["id", "status"],
+    });
     expect(rendered).not.toContain("summary:");
     expect(rendered).not.toContain("highlights:");
     expect(rendered).not.toContain("next_steps:");

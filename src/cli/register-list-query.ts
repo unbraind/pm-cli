@@ -483,7 +483,7 @@ function registerListCommand(
     .option("--recent", "Filter to items updated in the last 7 days")
     .option(
       "--updated-after <value>",
-      'Updated since ISO timestamp or signed relative (-2h/-7d for past); use last-window ISO',
+      "Updated since ISO timestamp or signed relative (-2h/-7d for past); use last-window ISO",
     )
     .option(
       "--updated-before <value>",
@@ -525,7 +525,10 @@ function registerListCommand(
       "--filter-metadata-missing",
       "Show only items missing any tracked metadata (AC, estimate, or resolution)",
     )
-    .option("--limit <n>", "Alias for --output-limit; --output-budget may cap rows")
+    .option(
+      "--limit <n>",
+      "Alias for --output-limit; --output-budget may cap rows",
+    )
     .option(
       "--offset <n>",
       "Skip the first n matching rows before limit is applied",
@@ -1129,16 +1132,10 @@ export function registerListQueryCommands(
         "Fields: parent,type,priority,status,assignee,tags,sprint,release (comma-separated)",
       )
       .option("--count", "Counts (default)")
-      .option(
-        "--completion",
-        "Status counts and completion_pct",
-      )
+      .option("--completion", "Status counts and completion_pct")
       .option("--sum <field>", "Group numeric sum")
       .option("--avg <field>", "Group numeric average")
-      .option(
-        "--include-unparented",
-        "Keep unparented group",
-      )
+      .option("--include-unparented", "Keep unparented group")
       .option("--status <value>", "Item status")
       .option("--type <value>", "Item type")
       .option("--tag <value>", "Filter by tag")
@@ -1244,10 +1241,7 @@ export function registerListQueryCommands(
         "--explain-ranking",
         "Include the scorer model, per-signal contributions, and ranked candidate ids",
       )
-      .option(
-        "--token-budget <n>",
-        "Maximum estimated tokens spent on ranked focus rows",
-      )
+      .option("--token-budget <n>", "Complete JSON/TOON response token ceiling")
       .option(
         "--no-extension-health",
         "Omit the installed extension health summary",
@@ -1311,7 +1305,10 @@ export function registerListQueryCommands(
         "Include human-gated Decision items in the claimable ready queue",
       )
       .option("--include-gates", "Include outcome gates in the ready queue")
-      .option("--include-containers", "Include containers with unfinished descendants in the ready queue")
+      .option(
+        "--include-containers",
+        "Include containers with unfinished descendants in the ready queue",
+      )
       .option(
         "--format <value>",
         "Next output format override: markdown|toon|json",
@@ -1504,10 +1501,7 @@ export function registerListQueryCommands(
         "--token-budget <n>",
         "Override the selected intent's maximum estimated output tokens",
       )
-      .option(
-        "--depth <value>",
-        "brief|standard|deep|full (default: standard)",
-      )
+      .option("--depth <value>", "brief|standard|deep|full (default: standard)")
       .option(
         "--full",
         "Full details and children for any type; excludes --depth/--fields",
@@ -1542,19 +1536,10 @@ export function registerListQueryCommands(
       .enablePositionalOptions()
       .argument("<id>", "Item id")
       .option("--limit <n>", "Latest n entries")
-      .option(
-        "--compact",
-        "Index, time, op, author, patch count, fields",
-      )
+      .option("--compact", "Index, time, op, author, patch count, fields")
       .option("--full", "Full entries with JSON Patches")
-      .option(
-        "--provenance",
-        "Authors and provenance; no patches",
-      )
-      .option(
-        "--provenance-summary",
-        "Count provenance completeness",
-      )
+      .option("--provenance", "Authors and provenance; no patches")
+      .option("--provenance-summary", "Count provenance completeness")
       .option(
         "--harness <value>",
         "Recorded/resolved harness (repeatable)",
@@ -1570,22 +1555,10 @@ export function registerListQueryCommands(
         "Exact provenance match (repeatable)",
         collect,
       )
-      .option(
-        "--diff",
-        "Before/after field diffs",
-      )
-      .option(
-        "--field <name>",
-        "Filter changed field; implies --diff",
-      )
-      .option(
-        "--verify",
-        "Verify full chain and replay",
-      )
-      .option(
-        "--strict-exit",
-        "With --verify, fail on integrity errors",
-      )
+      .option("--diff", "Before/after field diffs")
+      .option("--field <name>", "Filter changed field; implies --diff")
+      .option("--verify", "Verify full chain and replay")
+      .option("--strict-exit", "With --verify, fail on integrity errors")
       .option("--fail-on-warn", "Alias for --strict-exit")
       .option("--format <value>", "Output: json|toon")
       .description("Show item history entries.")
@@ -1660,7 +1633,9 @@ export function registerListQueryCommands(
   }
 
   if (shouldRegister("activity")) {
-    registerHistoryActivityCommand(program.command("activity", { hidden: true }));
+    registerHistoryActivityCommand(
+      program.command("activity", { hidden: true }),
+    );
   }
 
   if (shouldRegister("graph")) {
