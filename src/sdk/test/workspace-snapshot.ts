@@ -4,12 +4,33 @@
  */
 import { cp, lstat, mkdir, readlink, realpath, stat, symlink } from "node:fs/promises";
 import type { Stats } from "node:fs";
+import { execFile } from "node:child_process";
 import path from "node:path";
+import { promisify } from "node:util";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
 
 const EXCLUDED_SEGMENTS = new Set([
   ".agents", ".git", ".nyc_output", ".turbo", "coverage",
 ]);
+const execFileAsync = promisify(execFile);
+
+/**
+ * Preserve commit/tag identity in an independent Git object store. Fresh clone
+ * configuration and an empty template exclude source hooks, local settings and
+ * shared object paths; removing origin prevents accidental source writeback.
+ * Non-repository directories retain their existing filesystem-only snapshot.
+ */
+async function seedSnapshotGitIdentity(sourceRoot: string, snapshotRoot: string): Promise<void> {
+  const marker = await statSnapshotTarget(path.join(sourceRoot, ".git"));
+  if (!marker || (marker.isDirectory() && !await statSnapshotTarget(path.join(sourceRoot, ".git/HEAD")))) return;
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_")));
+  await execFileAsync("git", ["clone", "--no-local", "--no-checkout", "--template=", "--", sourceRoot, snapshotRoot], {
+    env, timeout: 120_000, maxBuffer: 1024 * 1024, windowsHide: true,
+  });
+  await execFileAsync("git", ["-C", snapshotRoot, "remote", "remove", "origin"], {
+    env, timeout: 10_000, windowsHide: true,
+  });
+}
 
 /** Recognize reserved tracker/build segments independently of filesystem casing. */
 function hasExcludedSegment(relative: string): boolean {
@@ -76,7 +97,7 @@ async function resolveSnapshotTarget(
 }
 
 /**
- * Copy source files into a disposable workspace and link root and nested
+ * Copy source files and independent Git identity into a disposable workspace and link root and nested
  * dependency directories at their original relative paths. Dependency trees
  * are shared by convention, not protected against writes; callers must trust
  * the linked command and use an independent install for dependency mutations.
@@ -98,6 +119,7 @@ export async function seedLinkedTestWorkspaceSnapshot(
     throw new Error("Snapshot destination must be disjoint from the source workspace; choose a temporary root outside the checkout.");
   }
   await mkdir(path.dirname(snapshotRoot), { recursive: true });
+  await seedSnapshotGitIdentity(resolvedSourceRoot, snapshotRoot);
   await cp(resolvedSourceRoot, snapshotRoot, {
     recursive: true,
     force: true,

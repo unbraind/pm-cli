@@ -1,0 +1,63 @@
+id: pm-runner-ancestor-tracker
+title: Reject external test scratch roots beneath an initialized ancestor tracker
+description: "The test runner rejects scratch roots inside this checkout but admits external roots beneath a different initialized tracker. Fixtures that intentionally unset PM_PATH then discover that ancestor; nested init can update its settings. Reject every such root before fixture allocation, build, or child execution, including physical symlink aliases and root-layout trackers."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-08T04:43:08.875Z"
+updated_at: "2026-10-08T05:32:02.650Z"
+closed_at: "2026-10-08T05:32:01.950Z"
+completed_at: "2026-10-08T05:32:01.950Z"
+author: "harness:codex"
+acceptance_criteria: Initialized standard and root-layout ancestor trackers are refused before child execution; unrelated settings and uninitialized directories remain supported; failure diagnostics identify the unsafe root.
+parent: pm-u9d0
+resolution: "The runner checks physical temporary-root ancestry for standard and root-layout trackers before allocation, build or child execution; recurrence-family v2 registers the historical boundary and current checks."
+expected_result: Discovery fixtures cannot reach a real ancestor tracker when PM_PATH is intentionally absent; unrelated valid settings remain supported.
+actual_result: "Real standard/root ancestor controls fail before and pass after the guard; 46 runner unit cases and three integration cases pass, with complete 100/100/100/100 source coverage. The prior external initialization-settings incident is preserved and recorded; no guessed restoration is claimed."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bukwmy,recurs_from,"2026-10-08T04:43:08.875Z","harness:codex","cli:create:dep",detected
+  pm-gh1391,discovered_from,"2026-10-08T04:43:08.875Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-10-08T04:43:08.875Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-08T04:43:08.875Z","harness:codex","Duplicate check: complete strict 2905-item all-status corpus plus live search temporary directory ancestor tracker isolation and current open/in-progress lists. Closed pm-bukwmy protects only checkout-local roots; this new external ancestor boundary is a recurrence, not unfinished historical work. During acceptance an external scratch root under an existing tracker reached its init settings; no item files changed. Scratch roots now use a tracker-free external hierarchy."
+  "2026-10-08T04:47:35.463Z","harness:codex","TDD: both real ancestor controls failed before the fix with exit 0; the strengthened guard refuses them with exit 2 before fixture allocation or child execution. Forty-eight focused runner/retry tests pass, including real valid unrelated JSON and both root-layout markers. The new item recurs from the completed checkout-local guard; it does not reopen historical work."
+  "2026-10-08T04:53:53.698Z","harness:codex","The mandatory recurrence gate correctly refused the newly recorded two-item lineage because its historical root was not registered. A version-2 proposal for the existing linked-test-execution-boundaries family adds both the historical root and current semantic trigger, retains old checks, and selects the new real runner/snapshot regressions in local and hosted gates. Read-only SDK-backed assurance evaluation certifies the complete recurrence population under the proposal; this policy will land with the reviewed fix after the coverage runner releases its source tree."
+  "2026-10-08T05:19:44.731Z","harness:codex","Preservation note: the external tracker has no proven pre-initialization settings preimage. Its single workspace-history event establishes the touched initialization document, but does not recover the preceding settings bytes. No guessed rollback, history deletion, or restoration claim was made. The affected item files remain unchanged; the strengthened refusal and tracker-free acceptance hierarchy prevent a repeat."
+  "2026-10-08T05:32:01.085Z","harness:codex","Pre-close evidence: all selected PM-linked commands passed. Full source coverage passed 788 files and 9910 tests, exact statements 67214/67214, branches 51435/51435, functions 13854/13854, lines 64042/64042. Two Windows-only cases are delegated to the required Windows gate. Documentation, TypeScript and tracked secret gates passed. Hosted review and final aggregate static validation remain delivery checks; no publication of this branch is claimed."
+notes[1]{created_at,author,text}:
+  "2026-10-08T04:51:15.666Z","harness:codex","Acceptance boundary incident: a temporary hierarchy beneath an existing external tracker allowed PM_PATH-unset discovery to reach that tracker during nested init. Only initialization settings/workspace event/runtime index were touched; item files retained their previous timestamps. Future acceptance uses tracker-free external ancestry. The guard now detects both standard tracker settings and root-layout id_prefix/item_format markers before fixture allocation or build; malformed/unreadable root settings fail ancestry certification."
+learnings[1]{created_at,author,text}:
+  "2026-10-08T04:51:17.485Z","harness:codex",Outside the checkout is insufficient sandbox certification. Discovery walks every ancestor; reject known tracker markers before starting tests and verify refusal with real external roots rather than only mocked path arithmetic.
+files[4]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  scripts/run-tests.mjs,project
+  tests/integration/run-tests-script.integration.spec.ts,project
+  tests/unit/scripts/run-tests.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/integration/run-tests-script.integration.spec.ts,project,300,"harness:codex","2026-10-08T04:47:34.798Z",local_mutation,fix/faithful-package-gates-and-machine-channels,Real ancestor refusal controls and root-layout admission; no real tracker execution
+test_runs[1]:
+  - run_id: test-local-muz3evfg-4rx8wn
+    kind: test
+    status: passed
+    started_at: "2026-10-08T05:25:22.318Z"
+    finished_at: "2026-10-08T05:25:29.116Z"
+    recorded_at: "2026-10-08T05:25:29.116Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/integration/run-tests-script.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/PACKAGE_GATE_ACCEPTANCE.md,project
+  docs/TESTING.md,project
+close_reason: Implemented and verified the linked local acceptance boundary; closure evidence is included in the reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-test-execution-boundaries
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/run-tests-script.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/integration/run-tests-script.integration.spec.ts
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Windows regression (Node 24)
+  owner: pm-cli maintainers
+body: ""

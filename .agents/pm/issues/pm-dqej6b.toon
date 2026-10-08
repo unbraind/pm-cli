@@ -2,11 +2,13 @@ id: pm-dqej6b
 title: Scratch lifecycle 15-second wall-clock assertion flakes under default full coverage concurrency
 description: "Two local full-coverage runs on 2026-09-29 failed only tests/integration/scratch-lifecycle.integration.spec.ts:132 because the entire nine-command scratch CLI lifecycle took 16166.9ms and 15517.2ms against a fixed 15000ms wall-clock assertion. The same test passed alone in 4155ms, and a full run with Vitest --maxWorkers 4 passed 9433 tests at exact 100/100/100/100. This is evidence of a load-sensitive quality gate, not proof of a product latency regression."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:quality",coverage,flaky-test,performance
 created_at: "2026-09-29T11:40:12.733Z"
-updated_at: "2026-09-29T11:58:23.810Z"
+updated_at: "2026-10-08T05:32:00.413Z"
+closed_at: "2026-10-08T05:31:59.738Z"
+completed_at: "2026-10-08T05:31:59.738Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce under controlled concurrency and measure the real CLI command costs; distinguish product latency from host scheduling contention without deleting or blindly increasing the performance budget; make the default full-coverage gate deterministic while preserving exact 100/100/100/100 coverage and integration lifecycle assertions.
@@ -14,16 +16,53 @@ parent: pm-doxj
 risk: medium
 confidence: high
 severity: medium
-expected_result: The scratch lifecycle performance contract identifies real CLI regressions without failing solely from unrelated parallel test load.
-actual_result: Two default-worker coverage runs were red solely at the 15-second assertion; isolated and four-worker runs passed with the same production code.
+resolution: The unchanged scratch lifecycle specification runs once after parallel contracts in a serialized Vitest project; nested reliability controls omit inherited projects.
+expected_result: The original 15000 ms / 3000-token contract detects actual latency regressions without unrelated test contention.
+actual_result: Canonical full coverage passes 9910 tests at exact 100/100/100/100; scratch file completes in 4153 ms. A reproducible disposable 15100 ms delay fails the original latency assertion at 18515.85 ms while its functional and token checks pass.
 component: test reliability
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-h9gsix,discovered_from,"2026-09-29T11:40:12.733Z","harness:codex","cli:create:dep",detected
   pm-z436,discovered_from,"2026-09-29T11:40:12.733Z","harness:codex","cli:create:dep",detected
   pm-7x0wqg,discovered_from,"2026-09-29T11:58:23.590Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-u9d0,implements,"2026-10-08T04:24:16.973Z","harness:codex","cli:update:dep",detected
+  pm-z436,verifies,"2026-10-08T04:24:16.973Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
   "2026-09-29T11:40:12.733Z","harness:codex","Duplicate check across every PM status: pm-z436 owns the completed scratch lifecycle experience; pm-h9gsix and pm-7x0wqg are closed coverage-flake repairs for different all-package install tests. No existing item owns this exact repeated 15-second scratch assertion. Evidence: default runs 16166.9ms and 15517.2ms; isolated 4155ms; four-worker full coverage 9433 passed, exact 100/100/100/100."
-files[2]{path,scope}:
+  "2026-10-08T04:24:16.973Z","harness:codex","{\"created_at\": \"now\", \"text\": \"The existing lifecycle assertions and original 15000ms / 3000-token budgets are unchanged. Vitest now schedules the lifecycle performance project after the parallel contracts project with one worker. Root include inheritance initially duplicated selected tests across projects; that configuration mistake was caught by the first focused receipt and corrected before acceptance by moving the broad include solely to the contracts project. Final focused receipts show each of six files exactly once, with scratch lifecycle only in its final project. Node24.12 timing case passes at 4285ms for the two-case file. Full canonical coverage and a preserved-budget negative control remain required before closure.\"}"
+  "2026-10-08T05:13:45.531Z","harness:codex","Final reproducible latency negative control copied only disposable source, retained the original 15000 ms and 3000-token assertions, injected a real 15100 ms delay after the measurement start, and exited 1 at 18515.85 ms. The functional companion and output-token assertion passed. The runnable control is recorded in structured gate_evidence; no production or canonical test edits were made by this control. The unrelated temporary-path token-ratchet portability finding is tracked separately in open unclaimed pm-agent-token-path."
+  "2026-10-08T05:31:58.882Z","harness:codex","Pre-close evidence: all selected PM-linked commands passed. Full source coverage passed 788 files and 9910 tests, exact statements 67214/67214, branches 51435/51435, functions 13854/13854, lines 64042/64042. Two Windows-only cases are delegated to the required Windows gate. Documentation, TypeScript and tracked secret gates passed. Hosted review and final aggregate static validation remain delivery checks; no publication of this branch is claimed."
+notes[1]{created_at,author,text}:
+  "2026-10-08T04:51:15.022Z","harness:codex","Timing and selection evidence: the unchanged two-case scratch lifecycle specification remains at 15000 ms and 3000 estimated output tokens. Vitest groupOrder schedules it after the parallel contract project with one worker. The retry-control child config explicitly omits inherited projects; its existing report assertion caught and now prevents duplicate control execution. Private isolated negative control inserted a real 15100 ms delay and failed the original latency assertion at 23784 ms."
+learnings[1]{created_at,author,text}:
+  "2026-10-08T04:51:16.930Z","harness:codex",Serialize the measured lifecycle after parallel contract work while retaining the original limits; inherited Vitest projects must be omitted by one-file nested controls or a gate can run twice.
+files[3]{path,scope}:
+  tests/fixtures/vitest-reliability/vitest.config.ts,project
   tests/integration/scratch-lifecycle.integration.spec.ts,project
   vitest.config.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts,project,300,"harness:codex","2026-10-08T04:24:18.106Z",local_mutation,fix/faithful-package-gates-and-machine-channels,Focused sandboxed regression acceptance
+test_runs[1]:
+  - run_id: test-local-muz3epsr-nz9qez
+    kind: test
+    status: passed
+    started_at: "2026-10-08T05:25:05.970Z"
+    finished_at: "2026-10-08T05:25:21.819Z"
+    recorded_at: "2026-10-08T05:25:21.819Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/PACKAGE_GATE_ACCEPTANCE.md,project
+  docs/README.md,project
+close_reason: Implemented and verified the linked local acceptance boundary; closure evidence is included in the reviewed delivery.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: scratch-lifecycle-performance
+  negative_control: "node --input-type=module --eval 'import { cp, mkdtemp, readFile, rm, symlink, writeFile } from \"node:fs/promises\";\nimport { spawnSync } from \"node:child_process\";\nimport { tmpdir } from \"node:os\";\nimport path from \"node:path\";\nconst source = process.cwd();\nconst root = await mkdtemp(path.join(tmpdir(), \"pm-latency-negative-\"));\nconst excluded = new Set([\".agents\", \".git\", \".cache\", \"coverage\", \"node_modules\"]);\ntry {\n  await cp(source, root, { recursive: true, filter: value => !path.relative(source, value).split(path.sep).some(segment => excluded.has(segment)) });\n  await symlink(path.join(source, \"node_modules\"), path.join(root, \"node_modules\"), \"junction\");\n  const spec = path.join(root, \"tests/integration/scratch-lifecycle.integration.spec.ts\");\n  const original = await readFile(spec, \"utf8\");\n  const marker = \"const started = performance.now();\";\n  if (!original.includes(marker)) throw new Error(\"Latency control insertion point is absent\");\n  await writeFile(spec, original.replace(marker, marker + \"\\n      await new Promise(resolve => setTimeout(resolve, 15100));\"));\n  const result = spawnSync(process.execPath, [\"scripts/run-tests.mjs\", \"test\", \"--\", \"tests/integration/scratch-lifecycle.integration.spec.ts\"], { cwd: root, env: process.env, stdio: \"inherit\" });\n  if (result.error) throw result.error;\n  process.exitCode = result.status ?? 1;\n} finally {\n  await rm(root, { recursive: true, force: true });\n}\n'"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/scratch-lifecycle.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: pm-cli maintainers
 body: ""

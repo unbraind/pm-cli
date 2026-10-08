@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -37,6 +38,49 @@ function mockFsPromises() {
 }
 
 describe("run-tests", () => {
+  it("refuses an external scratch directory beneath an initialized nested tracker before allocating fixtures", async () => {
+    const root = await harness.createTempRoot("pm-runner-ancestor-");
+    const tracker = path.join(root, ".agents", "pm");
+    const scratch = path.join(root, "scratch", "nested");
+    await mkdir(tracker, { recursive: true });
+    await mkdir(scratch, { recursive: true });
+    await writeFile(path.join(tracker, "settings.json"), "{}");
+    Object.assign(process.env, { TMPDIR: scratch, TEMP: scratch, TMP: scratch, PM_RUN_TESTS_SKIP_BUILD: "1" });
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    process.argv = ["node", "scripts/run-tests.mjs", "test"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(2);
+    expect(mkdtempMock).not.toHaveBeenCalled();
+    expect(spawn).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining(tracker));
+  });
+
+  it.each([
+    ["null", 0],
+    ["[]", 0],
+    ['"unrelated settings"', 0],
+    ['{"theme":"dark"}', 0],
+    ['{"id_prefix":"fixture-"}', 2],
+    ['{"item_format":"toon"}', 2],
+    ["invalid json", 2],
+  ] as const)("certifies root-layout ancestry from %s", async (settings, exitCode) => {
+    const root = await harness.createTempRoot("pm-runner-settings-");
+    await writeFile(path.join(root, "settings.json"), settings);
+    Object.assign(process.env, { TMPDIR: root, TEMP: root, TMP: root, PM_RUN_TESTS_SKIP_BUILD: "1" });
+    const spawn = vi.fn(() => closeChild(0));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    mockFsPromises();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    process.argv = ["node", "scripts/run-tests.mjs", "test"];
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(exitCode);
+    expect(mkdtempMock).toHaveBeenCalledTimes(exitCode === 0 ? 1 : 0);
+    expect(spawn).toHaveBeenCalledTimes(exitCode === 0 ? 1 : 0);
+  });
+
   it.each(["close", "error", "idle", "timeout", "cleanup-error"])("settles %s interruption before releasing its workspace", async (mode) => {
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
@@ -94,7 +138,7 @@ describe("run-tests", () => {
   it.each([["test"], ["mutation", "--prebuilt"]])("refuses incomplete generation for %s", async (...args) => {
     const spawn = vi.fn(() => closeChild(0));
     vi.doMock("node:child_process", () => ({ spawn }));
-    vi.doMock("node:fs", () => ({ existsSync: () => true, realpathSync: (value: string) => value }));
+    vi.doMock("node:fs", () => ({ existsSync: (value: string) => value.endsWith("build-incomplete"), realpathSync: (value: string) => value }));
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
     process.argv = ["node", "scripts/run-tests.mjs", ...args];
@@ -113,8 +157,8 @@ describe("run-tests", () => {
       vi.doMock("node:fs", () => ({
         existsSync: () => false,
         realpathSync: vi.fn()
-          .mockReturnValueOnce(process.cwd())
-          .mockReturnValueOnce(path.resolve(process.cwd(), suffix)),
+          .mockReturnValueOnce(path.resolve(process.cwd(), suffix))
+          .mockReturnValueOnce(process.cwd()),
       }));
       mockFsPromises();
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -147,8 +191,8 @@ describe("run-tests", () => {
     vi.doMock("node:fs", () => ({
         existsSync: () => false,
       realpathSync: vi.fn()
-        .mockReturnValueOnce(process.cwd())
-        .mockReturnValueOnce(path.dirname(process.cwd())),
+        .mockReturnValueOnce(path.dirname(process.cwd()))
+        .mockReturnValueOnce(process.cwd()),
     }));
     mockFsPromises();
     process.argv = ["node", "scripts/run-tests.mjs", "test"];
@@ -165,8 +209,8 @@ describe("run-tests", () => {
     vi.doMock("node:fs", () => ({
         existsSync: () => false,
       realpathSync: vi.fn()
-        .mockReturnValueOnce("C:\\workspace")
-        .mockReturnValueOnce("D:\\scratch"),
+        .mockReturnValueOnce("D:\\scratch")
+        .mockReturnValueOnce("C:\\workspace"),
     }));
     mockFsPromises();
     process.argv = ["node", "scripts/run-tests.mjs", "test"];

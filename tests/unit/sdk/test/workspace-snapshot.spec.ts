@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { lstat, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -5,6 +6,54 @@ import { describe, expect, it } from "vitest";
 import { seedLinkedTestWorkspaceSnapshot } from "../../../../src/sdk/test/workspace-snapshot.js";
 
 describe("linked workspace snapshot filesystem policy", () => {
+  it("retains Git commit and tag identity without sharing objects, remotes, configuration or hooks", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-git-"));
+    const source = path.join(root, "source");
+    const snapshot = path.join(root, "snapshot");
+    try {
+      await mkdir(path.join(source, ".agents/pm"), { recursive: true });
+      await writeFile(path.join(source, "package.json"), '{"name":"snapshot-fixture"}');
+      await writeFile(path.join(source, ".agents/pm/private"), "source tracker");
+      const git = (cwd: string, args: string[]) => execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
+      git(source, ["init", "--initial-branch=fixture"]);
+      git(source, ["add", "package.json"]);
+      git(source, ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "Package identity"]);
+      git(source, ["tag", "v1.0.0"]);
+      git(source, ["config", "snapshot.private", "must-not-copy"]);
+      await writeFile(path.join(source, ".git/hooks/pre-commit"), "private hook");
+      const head = git(source, ["rev-parse", "HEAD"]);
+      const previousGitDir = process.env.GIT_DIR;
+      process.env.GIT_DIR = path.join(root, "unrelated-git-directory");
+      try {
+        await seedLinkedTestWorkspaceSnapshot(source, snapshot);
+      } finally {
+        if (previousGitDir === undefined) delete process.env.GIT_DIR;
+        else process.env.GIT_DIR = previousGitDir;
+      }
+      expect(git(snapshot, ["rev-parse", "HEAD"])).toBe(head);
+      expect(git(snapshot, ["describe", "--tags", "--exact-match"])).toBe("v1.0.0");
+      expect(git(snapshot, ["remote"])).toBe("");
+      expect(git(snapshot, ["config", "--get-regexp", "^core\\."])).not.toContain(source);
+      expect(git(snapshot, ["config", "--list"])).not.toContain("snapshot.private");
+      await expect(lstat(path.join(snapshot, ".git/hooks/pre-commit"))).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(lstat(path.join(snapshot, ".agents"))).rejects.toMatchObject({ code: "ENOENT" });
+      git(snapshot, ["tag", "snapshot-only"]);
+      expect(git(source, ["tag", "--list"])).toBe("v1.0.0");
+      expect(await readFile(path.join(source, ".agents/pm/private"), "utf8")).toBe("source tracker");
+      expect(git(source, ["rev-parse", "HEAD"])).toBe(head);
+      const worktree = path.join(root, "worktree");
+      git(source, ["worktree", "add", "--detach", worktree]);
+      const worktreeSnapshot = path.join(root, "worktree-snapshot");
+      await seedLinkedTestWorkspaceSnapshot(worktree, worktreeSnapshot);
+      expect(git(worktreeSnapshot, ["rev-parse", "HEAD"])).toBe(head);
+      expect(git(worktreeSnapshot, ["describe", "--tags", "--exact-match"])).toBe("v1.0.0");
+      await rm(source, { recursive: true });
+      expect(git(snapshot, ["show", "HEAD:package.json"])).toBe('{"name":"snapshot-fixture"}');
+      expect(git(worktreeSnapshot, ["show", "HEAD:package.json"])).toBe('{"name":"snapshot-fixture"}');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
   it("copies sources, excludes tracker/build trees, and retains each real dependency directory", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-"));
     const source = path.join(root, "source");

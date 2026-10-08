@@ -1,0 +1,47 @@
+id: pm-jscpd-54
+title: Refresh cooldown-eligible jscpd 5.4 duplicate-detection tooling
+description: "Adopt the compatible jscpd 5.4.0 duplicate detector after the unchanged seven-day release age, while retaining literal zero-duplication gates and canonical major-migration deferrals."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-08T05:29:06.822Z"
+updated_at: "2026-10-08T05:52:02.682Z"
+closed_at: "2026-10-08T05:32:04.090Z"
+completed_at: "2026-10-08T05:32:04.090Z"
+author: "harness:codex"
+acceptance_criteria: jscpd 5.4.0 and its supported platform artifacts resolve without release-age overrides; all three duplicate scans remain zero; audit and the full mandatory static suite pass; major migrations remain represented by canonical items.
+parent: pm-92if
+resolution: Updated the duplicate detector and all platform lock entries to cooldown-eligible jscpd 5.4.0 without overriding dependency policy.
+expected_result: The supported duplicate-detection tool is current and all literal zero-clone gates remain mandatory.
+actual_result: The new tool installs and the PM-linked three-scope duplicate command passes at exit 0; all unchanged scans report zero clones. Registry-current incompatible major migrations and young releases remain explicitly documented in their canonical lineage and the dependency census.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-runner-ancestor-tracker,discovered_from,"2026-10-08T05:29:06.822Z","harness:codex","cli:create:dep",detected
+  pm-92if,implements,"2026-10-08T05:30:58.287Z","harness:codex","cli:update:dep",detected
+  pm-do5b,related,"2026-10-08T05:52:02.361Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-08T05:52:02.361Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-08T05:52:02.361Z","harness:codex","cli:update:dep",detected
+  pm-rnpmtp,related,"2026-10-08T05:52:02.361Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-08T05:29:06.822Z","harness:codex","Duplicate check: complete strict all-status corpus plus the two new boundary findings, exact jscpd 5.4.0 search, and refreshed open/in-progress inventories. No version-specific owner exists. Historical tooling refreshes are complete and remain closed. Registry publication 2026-09-30T18:11:43.825Z exceeds seven days; Node engine >=18 supports the retained project floor. Other newest patch/minor versions remain inside the unchanged cooldown; existing Vitest/TypeScript/npm-package-arg major owners are retained."
+  "2026-10-08T05:31:10.835Z","harness:codex","Live dependency disposition: jscpd 5.4.0 is installed without a cooldown override. Current registry confirms CodSpeed 5.7.1 excludes Vitest 5, typescript-estree 8.71.1 excludes TypeScript 7, and npm-package-arg 14 requires Node 22.22.2 / 24.15.0 above the retained 22.18.0 floor; canonical pm-fokyhh, pm-do5b, and pm-ksr40d remain unclaimed. The newest Node types, Greptile, ESLint, TypeScript-ESLint, Knip, marked, Sentry and Unicorn releases are younger than seven days and remain under the unchanged supply-chain cooldown. Pinned pnpm renewal remains separately governed by pm-rnpmtp and its real mixed-runtime admission criteria."
+  "2026-10-08T05:32:03.255Z","harness:codex","Pre-close evidence: all selected PM-linked commands passed. Full source coverage passed 788 files and 9910 tests, exact statements 67214/67214, branches 51435/51435, functions 13854/13854, lines 64042/64042. Two Windows-only cases are delegated to the required Windows gate. Documentation, TypeScript and tracked secret gates passed. Hosted review and final aggregate static validation remain delivery checks; no publication of this branch is claimed."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "pnpm lint:duplicates",project,300,"harness:codex","2026-10-08T05:30:59.106Z",local_mutation,fix/faithful-package-gates-and-machine-channels,All three unchanged zero-clone gates on the cooldown-eligible tool
+test_runs[1]:
+  - run_id: test-local-muz3m1ts-bus628
+    kind: test
+    status: passed
+    started_at: "2026-10-08T05:31:00.348Z"
+    finished_at: "2026-10-08T05:31:04.000Z"
+    recorded_at: "2026-10-08T05:31:04.000Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:duplicates",schema,schema,source,local_source_ref
+close_reason: Implemented and verified the linked local acceptance boundary; closure evidence is included in the reviewed delivery.
+body: ""

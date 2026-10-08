@@ -21,6 +21,7 @@ import { PmCliError } from "../shared/errors.js";
 import { isMillisecondPrecisionRfc3339DateTime } from "../shared/time.js";
 import { readHistoryEntries } from "./read.js";
 import { classifyHistoryEvent } from "./event-classification.js";
+import { loadDatabaseSync, loadStableDatabaseSync } from "../store/sqlite-runtime.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
 const EVENT_INDEX_VERSION = "5";
@@ -362,29 +363,6 @@ async function readAuthoritativeHistoryEvents(
   pmRoot: string,
 ): Promise<IndexedHistoryEvent[]> {
   return (await readAuthoritativeHistorySnapshot(pmRoot)).events;
-}
-
-function loadDatabaseSync(
-  loadModule: (specifier: string) => unknown,
-): DatabaseSyncConstructor | null {
-  try {
-    const loaded = loadModule(["node", "sqlite"].join(":")) as {
-      DatabaseSync?: DatabaseSyncConstructor;
-    };
-    return loaded.DatabaseSync ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function loadStableDatabaseSync(
-  nodeVersion: string,
-  loadModule: (specifier: string) => unknown,
-): DatabaseSyncConstructor | null {
-  const nodeMajor = Number.parseInt(nodeVersion, 10);
-  return Number.isFinite(nodeMajor) && nodeMajor >= 22
-    ? loadDatabaseSync(loadModule)
-    : null;
 }
 
 let RuntimeDatabaseSync: DatabaseSyncConstructor | null | undefined;

@@ -1,0 +1,31 @@
+id: pm-agent-token-path
+title: Agent-task token ratchet changes verdict with temporary-root path length
+description: "The unchanged agent-task replay exceeds published Plan mutation and composite token ceilings when TMPDIR has a longer external path, because advertised recovery commands contain that physical path. A canonical short-root replay passes unchanged. This is a fixture portability gap; do not raise token budgets or claim a product-output regression without separating incidental root length from meaningful output."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-08T05:13:12.301Z"
+updated_at: "2026-10-08T05:52:01.837Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: The same tree yields the same token-gate verdict beneath short and long safe temporary roots; independently reported emitted bytes remain truthful; recovery commands remain executable against the actual fixture; negative controls still reject real output growth.
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: medium
+expected_result: Short and long safe scratch roots produce the same token-gate verdict while exact emitted-byte receipts and executable recovery targeting remain truthful.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4o7tlx,recurs_from,"2026-10-08T05:13:12.301Z","harness:codex","cli:create:dep",detected
+  pm-8pnj,implements,"2026-10-08T05:13:12.301Z","harness:codex","cli:create:dep",detected
+  pm-dqej6b,discovered_from,"2026-10-08T05:13:12.301Z","harness:codex","cli:create:dep",detected
+  pm-95h7pg,verifies,"2026-10-08T05:52:01.494Z","harness:codex","cli:update:dep",detected
+  pm-aksavu,verifies,"2026-10-08T05:52:01.494Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-08T05:13:12.301Z","harness:codex","Duplicate check: complete strict all-status 2905-item corpus and the newly created ancestor item, targeted title/description plus metadata search, refreshed open/in-progress lists, and full live pm-8pnj/pm-aksavu/pm-4o7tlx/pm-95h7pg reads. Historical fixes covered accounting validity or ambient warning/env leakage, not recovery-path length. Current evidence: longer-root Plan task 894 vs 848 tokens, add 298 vs 275, complete 297 vs 274, composite 13883 vs 13882; unchanged short-root replay exits 0. Remains open and unclaimed while the four selected fixes finish."
+files[1]{path,scope}:
+  scripts/release/agent-task-token-gate.mjs,project
+docs[1]{path,scope}:
+  docs/agent-task-token-baseline.json,project
+escape_class: nightly_regression
+body: ""
