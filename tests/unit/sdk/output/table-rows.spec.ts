@@ -219,6 +219,18 @@ describe("lossless SDK table cells", () => {
     );
   });
 
+  it("preserves equally sized scalar rows with different fields through the public renderer", () => {
+    const source = {
+      items: [
+        { id: "one", left: "first fact" },
+        { id: "two", right: "second fact" },
+      ],
+    };
+    const restored = restoreTables(decode(formatBuiltInOutput(source, "toon")));
+    expect(restored).toEqual(source);
+    expect(JSON.parse(formatBuiltInOutput(source, "json"))).toEqual(source);
+  });
+
   it("removes only equal count aliases in TOON and preserves zero counts and distinct values", () => {
     const item = {
       collection_counts: { notes: 0, tests: 2 },

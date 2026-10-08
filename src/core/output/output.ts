@@ -25,6 +25,12 @@ import { encodePmTableRows } from "../../sdk/output/table-rows.js";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
 
+/** Legacy count aliases point to the canonical collection key carrying the same fact. */
+const COLLECTION_COUNT_ALIASES = new Map([
+  ["notes_count", "notes"],
+  ["tests_count", "tests"],
+]);
+
 /** Host output controls shared by command execution and extension rendering. */
 export interface OutputOptions {
   /** Select JSON explicitly; otherwise use the host default format. */
@@ -99,11 +105,6 @@ function setActiveCommandDeliveryResult(
     return;
   }
   setActiveCommandResultOmitted(receiptSource);
-}
-
-/** Detect the marker that bypasses extension service and renderer overrides. */
-function shouldUseNativeOutput(result: unknown): boolean {
-  return isPlainObject(result) && result[NATIVE_OUTPUT_MARKER] === true;
 }
 
 /** Remove the host-only native-rendering marker before publishing a result. */
@@ -221,16 +222,6 @@ function renderScalar(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Identify scalar JSON cells that can occupy standard TOON table columns. */
-function isToonPrimitive(value: unknown): value is JsonValue {
-  return (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  );
-}
-
 /** Determine whether a nonempty object collection has uniform scalar columns. */
 function tabularObjectArray(
   value: Record<string, unknown>[],
@@ -241,9 +232,16 @@ function tabularObjectArray(
     value.every(
       (entry) =>
         Object.keys(entry).length === keys.length &&
-        keys.every(
-          (key) => Object.hasOwn(entry, key) && isToonPrimitive(entry[key]),
-        ),
+        keys.every((key) => {
+          if (!Object.hasOwn(entry, key)) return false;
+          const cell = entry[key];
+          return (
+            cell === null ||
+            typeof cell === "string" ||
+            typeof cell === "number" ||
+            typeof cell === "boolean"
+          );
+        }),
     )
   );
 }
@@ -311,16 +309,15 @@ function compactToonValue(
 
   if (isPlainObject(value)) {
     const compacted: Record<string, unknown> = {};
-    const entries = Object.entries(value).filter(
-      ([key, entry]) =>
-        !(
-          omitDuplicateCountAliases &&
-          (key === "notes_count" || key === "tests_count") &&
-          isPlainObject(value.collection_counts) &&
-          entry ===
-            value.collection_counts[key === "notes_count" ? "notes" : "tests"]
-        ),
-    );
+    const entries = Object.entries(value).filter(([key, entry]) => {
+      const canonicalCount = COLLECTION_COUNT_ALIASES.get(key);
+      return (
+        !omitDuplicateCountAliases ||
+        canonicalCount === undefined ||
+        !isPlainObject(value.collection_counts) ||
+        entry !== value.collection_counts[canonicalCount]
+      );
+    });
     for (const [key, entry] of entries) {
       if (
         key === "omitted_field_groups" &&
@@ -402,14 +399,6 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
     lines.push(`- [${kind}] ${itemId} ${title}${reminderText}`.trim());
   }
   return `${lines.join("\n")}\n`;
-}
-
-/** Prefer an explicit JSON choice over the configured default, otherwise select TOON. */
-function resolveOutputFormat(options: OutputOptions): "json" | "toon" {
-  return options.json === true ||
-    (options.json === undefined && options.defaultOutputFormat === "json")
-    ? "json"
-    : "toon";
 }
 
 const LEAN_READ_ENVELOPE_ECHO_KEYS = new Set([
@@ -602,6 +591,7 @@ function formatEffectiveOutput(
   effectiveResult: unknown,
   nativeOutput: boolean,
   options: OutputOptions,
+  defaultFormat: "json" | "toon",
 ): string {
   const activeCommandContext = getActiveCommandContext();
   const command = options.command ?? activeCommandContext?.command;
@@ -623,8 +613,7 @@ function formatEffectiveOutput(
     ),
   };
   const format =
-    resolveReadOutputEncoding(command ?? "", commandOptions) ??
-    resolveOutputFormat(options);
+    resolveReadOutputEncoding(command ?? "", commandOptions) ?? defaultFormat;
   const resolvedCommandOptions = {
     ...commandOptions,
     resolvedOutputFormat: format,
@@ -700,7 +689,9 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   const suppressedOutput = isHostOutputSuppressed(commandOverride.result)
     ? commandOverride.result
     : null;
-  const nativeOutput = shouldUseNativeOutput(commandOverride.result);
+  const nativeResult = commandOverride.result;
+  const nativeOutput =
+    isPlainObject(nativeResult) && nativeResult[NATIVE_OUTPUT_MARKER] === true;
   const effectiveResult = suppressedOutput
     ? suppressedOutput.result
     : stripNativeOutputMarker(commandOverride.result);
@@ -709,7 +700,17 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
     setActiveCommandResultOmitted(effectiveResult);
     return "";
   }
-  return formatEffectiveOutput(effectiveResult, nativeOutput, options);
+  const defaultFormat =
+    options.json === true ||
+    (options.json === undefined && options.defaultOutputFormat === "json")
+      ? "json"
+      : "toon";
+  return formatEffectiveOutput(
+    effectiveResult,
+    nativeOutput,
+    options,
+    defaultFormat,
+  );
 }
 
 /** Apply declared exit codes and mutation projection before writing a nonquiet result. */
