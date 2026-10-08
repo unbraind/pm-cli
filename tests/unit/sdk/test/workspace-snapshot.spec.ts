@@ -2,19 +2,30 @@ import { execFileSync } from "node:child_process";
 import { lstat, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { seedLinkedTestWorkspaceSnapshot } from "../../../../src/sdk/test/workspace-snapshot.js";
 
 describe("linked workspace snapshot filesystem policy", () => {
-  it("retains Git commit and tag identity without sharing objects, remotes, configuration or hooks", async () => {
+  it("retains Git identity with custom clone defaults without sharing objects, remotes, configuration or hooks", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-git-"));
     const source = path.join(root, "source");
     const snapshot = path.join(root, "snapshot");
     try {
+      const gitHome = path.join(root, "git-home");
+      await mkdir(gitHome);
+      await writeFile(path.join(gitHome, ".gitconfig"), "[clone]\n defaultRemoteName = upstream\n");
+      vi.stubEnv("HOME", gitHome);
+      vi.stubEnv("USERPROFILE", gitHome);
+      vi.stubEnv("XDG_CONFIG_HOME", path.join(gitHome, ".config"));
+      vi.stubEnv("GIT_DIR", path.join(root, "inherited-git-directory"));
       await mkdir(path.join(source, ".agents/pm"), { recursive: true });
       await writeFile(path.join(source, "package.json"), '{"name":"snapshot-fixture"}');
       await writeFile(path.join(source, ".agents/pm/private"), "source tracker");
-      const git = (cwd: string, args: string[]) => execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
+      /** Keep every fixture Git command inside its selected repository. */
+      const git = (cwd: string, args: string[]) => execFileSync("git", ["-C", cwd, ...args], {
+        encoding: "utf8",
+        env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_"))),
+      }).trim();
       git(source, ["init", "--initial-branch=fixture"]);
       git(source, ["add", "package.json"]);
       git(source, ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "Package identity"]);
@@ -41,6 +52,7 @@ describe("linked workspace snapshot filesystem policy", () => {
       expect(git(source, ["tag", "--list"])).toBe("v1.0.0");
       expect(await readFile(path.join(source, ".agents/pm/private"), "utf8")).toBe("source tracker");
       expect(git(source, ["rev-parse", "HEAD"])).toBe(head);
+      await expect(lstat(path.join(root, "inherited-git-directory"))).rejects.toMatchObject({ code: "ENOENT" });
       const worktree = path.join(root, "worktree");
       git(source, ["worktree", "add", "--detach", worktree]);
       const worktreeSnapshot = path.join(root, "worktree-snapshot");
@@ -51,6 +63,7 @@ describe("linked workspace snapshot filesystem policy", () => {
       expect(git(snapshot, ["show", "HEAD:package.json"])).toBe('{"name":"snapshot-fixture"}');
       expect(git(worktreeSnapshot, ["show", "HEAD:package.json"])).toBe('{"name":"snapshot-fixture"}');
     } finally {
+      vi.unstubAllEnvs();
       await rm(root, { recursive: true, force: true });
     }
   });

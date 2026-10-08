@@ -4,10 +4,10 @@
 
 ### Fixed
 
+- GH-1391: Express faithful self-isolating source package gates without tracker redirects ([pm-gh1391](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1391.toon))
+- Native SQLite warnings corrupt strict machine-channel acceptance on Node 24.12 ([pm-aiqmgj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aiqmgj.toon))
 - Reject external test scratch roots beneath an initialized ancestor tracker ([pm-runner-ancestor-tracker](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-runner-ancestor-tracker.toon))
 - Scratch lifecycle 15-second wall-clock assertion flakes under default full coverage concurrency ([pm-dqej6b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dqej6b.toon))
-- Native SQLite warnings corrupt strict machine-channel acceptance on Node 24.12 ([pm-aiqmgj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-aiqmgj.toon))
-- GH-1391: Express faithful self-isolating source package gates without tracker redirects ([pm-gh1391](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1391.toon))
 
 ### Other
 

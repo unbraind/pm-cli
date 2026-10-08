@@ -54,7 +54,11 @@ describe("linked-test workspace and trust contracts", () => {
       await symlink(dependencyRoot, path.join(packageRoot, "node_modules"), process.platform === "win32" ? "junction" : "dir");
       await symlink("node_modules/snapshot-dependency/index.js", path.join(packageRoot, "dependency-alias.js"), "file");
       await writeFile(path.join(sourceRoot, "root.js"), "export { version } from 'snapshot-dependency';\n");
-      const git = (args: string[]) => execFileSync("git", ["-C", sourceRoot, ...args], { encoding: "utf8" }).trim();
+      /** Keep repository selectors from redirecting fixture writes into another checkout. */
+      const git = (args: string[]) => execFileSync("git", ["-C", sourceRoot, ...args], {
+        encoding: "utf8",
+        env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_"))),
+      }).trim();
       git(["init", "--initial-branch=package-fixture"]);
       git(["add", "root.js"]);
       git(["-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "Package acceptance identity"]);
@@ -72,16 +76,17 @@ describe("linked-test workspace and trust contracts", () => {
         "import { version as rootVersion } from '../../root.js';",
         "import { version } from 'snapshot-dependency';",
         "import { version as aliasVersion } from './dependency-alias.js';",
+        "const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith('GIT_')));",
         "test('independent dependency identities', () => {",
         "  assert.equal(rootVersion, '1.0.0');",
         "  assert.equal(version, '2.0.0');",
         "  assert.equal(aliasVersion, '2.0.0');",
         "  assert.ok(process.env.PM_GLOBAL_PATH);",
-        `  assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), ${JSON.stringify(head)});`,
-        "  assert.equal(execFileSync('git', ['describe', '--tags', '--exact-match'], { encoding: 'utf8' }).trim(), 'v1.0.0');",
+        `  assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', env }).trim(), ${JSON.stringify(head)});`,
+        "  assert.equal(execFileSync('git', ['describe', '--tags', '--exact-match'], { encoding: 'utf8', env }).trim(), 'v1.0.0');",
         "  const fixture = mkdtempSync(path.join(tmpdir(), 'pm-nested-package-'));",
         "  try {",
-        `    execFileSync(process.execPath, [${JSON.stringify(fileURLToPath(new URL("../../dist/cli.js", import.meta.url)))}, 'init', '--yes', '--agent-guidance', 'skip', '--json'], { cwd: fixture, stdio: 'pipe' });`,
+        `    execFileSync(process.execPath, [${JSON.stringify(fileURLToPath(new URL("../../dist/cli.js", import.meta.url)))}, 'init', '--yes', '--agent-guidance', 'skip', '--json'], { cwd: fixture, stdio: 'pipe', env });`,
         "    assert.ok(existsSync(path.join(fixture, '.agents/pm/settings.json')));",
         "  } finally { rmSync(fixture, { recursive: true, force: true }); }",
         "  assert.equal(process.env.PM_PATH, undefined);",
@@ -90,7 +95,9 @@ describe("linked-test workspace and trust contracts", () => {
       ].join("\n"));
       const before = await readFile(testPath, "utf8");
       const direct = spawnSync(process.execPath, ["--test", testPath], {
-        cwd: sourceRoot, env: { ...context.env, PM_PATH: undefined }, encoding: "utf8",
+        cwd: sourceRoot,
+        env: { ...Object.fromEntries(Object.entries(context.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_"))), PM_PATH: undefined },
+        encoding: "utf8",
       });
       expect(direct.status, `${direct.stdout}\n${direct.stderr}`).toBe(0);
       expect(await readFile(path.join(sourceRoot, "snapshot-only.txt"), "utf8")).toBe("2.0.0");

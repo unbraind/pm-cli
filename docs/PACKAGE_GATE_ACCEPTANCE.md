@@ -23,6 +23,7 @@ at their original relative paths. A Git workspace additionally receives an
 independent clone of commit and tag objects, so release-tag checks and dependency
 resolution work together. The clone uses no shared objects or source hooks,
 does not inherit source-local Git configuration, and has no origin remote.
+The internal remote name is explicit even with a custom `clone.defaultRemoteName`.
 Its Git objects remain readable after the source checkout is removed.
 
 The working tree excludes tracker and generated build/report directories.

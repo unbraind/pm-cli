@@ -24,7 +24,7 @@ async function seedSnapshotGitIdentity(sourceRoot: string, snapshotRoot: string)
   const marker = await statSnapshotTarget(path.join(sourceRoot, ".git"));
   if (!marker || (marker.isDirectory() && !await statSnapshotTarget(path.join(sourceRoot, ".git/HEAD")))) return;
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_")));
-  await execFileAsync("git", ["clone", "--no-local", "--no-checkout", "--template=", "--", sourceRoot, snapshotRoot], {
+  await execFileAsync("git", ["clone", "--no-local", "--no-checkout", "--template=", "--origin=origin", "--", sourceRoot, snapshotRoot], {
     env, timeout: 120_000, maxBuffer: 1024 * 1024, windowsHide: true,
   });
   await execFileAsync("git", ["-C", snapshotRoot, "remote", "remove", "origin"], {

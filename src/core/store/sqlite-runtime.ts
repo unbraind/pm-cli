@@ -15,6 +15,7 @@ export function loadDatabaseSync(
   loadModule: (specifier: string) => unknown,
 ): typeof DatabaseSync | null {
   const emitWarning = process.emitWarning;
+  /** Forward application diagnostics unchanged during the synchronous native probe. */
   process.emitWarning = (warning, ...args: unknown[]) => {
     if (warning === "SQLite is an experimental feature and might change at any time"
       && args[0] === "ExperimentalWarning") return;

@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-04T11:46:01.044Z"
-updated_at: "2026-10-08T05:59:25.852Z"
-closed_at: "2026-10-08T05:31:55.418Z"
-completed_at: "2026-10-08T05:31:55.418Z"
+updated_at: "2026-10-08T06:31:11.350Z"
+closed_at: "2026-10-08T06:31:10.681Z"
+completed_at: "2026-10-08T06:31:10.681Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce the nested disposable SDK-root failure and snapshot identity gap; Define an explicit source-tracker protection contract before permitting source execution without PM_PATH; Preserve PM_GLOBAL_PATH isolation and trust checks; Real package commands match direct CI results without mutating the source tracker.
@@ -18,23 +18,25 @@ value: Agents can act on one truthful context read and preserve durable evidence
 parent: pm-ugqx
 risk: medium
 confidence: medium
-resolution: Independent Git-backed source snapshots preserve release identity and nested dependency paths while self-isolating package gates leave the source tracker unchanged.
-expected_result: Tag-aware package commands and nested disposable init behave like direct CI without weakening source-tracker safety.
-actual_result: "Real source/worktree Git controls and direct/linked nested dependency acceptance pass; packed SDK journeys pass on Node 22.18, 24.12, 26.9 and Bun 1.4.2; source none-mode and forced schema redirection fail as expected."
+resolution: "Disposable snapshots preserve independent Git HEAD and tags with an explicit removable origin remote, original nested dependency paths and safe fixture Git environments."
+expected_result: Tag-aware package gates and nested disposable initialization work across supported runtimes without source-tracker or Git-selector writeback.
+actual_result: "Real custom clone-default and inherited-GIT_DIR controls fail before their fixes and pass afterward; the inherited repository directory stays absent. Node 22 linked Git acceptance and 22 Node 24 focused cases pass, and packed SDK journeys with the custom preference pass Node 22/24/26 and Bun. All first-head hosted checks and local static aggregate pass; updated-head review and CI remain required before merge."
 affected_version: 2026.10.4
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-t05d8d,discovered_from,"2026-10-04T11:46:01.044Z","harness:codex","cli:create:dep",detected
   pm-t05d8d,verifies,"2026-10-04T11:46:01.044Z","harness:codex","cli:create:dep",detected
   pm-ugqx,implements,"2026-10-04T11:46:01.044Z","harness:codex","cli:create:dep",detected
   pm-t05d8d,implements,"2026-10-08T04:24:15.408Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-04T11:46:01.044Z","harness:codex","Duplicate check: complete live all-status corpus returned 2873 of 2873 records with zero omissions. Exact GH-1391 and issue URL were absent. Full relevant terminal predecessor metadata and comments were inspected. Request-specific search and open/in-progress inventories were refreshed. This distinct reported boundary is retained under the existing lineage and remains open and unclaimed."
   "2026-10-08T04:24:15.408Z","harness:codex","{\"created_at\": \"now\", \"text\": \"Implementation decision: preserve the source-tracker safety contract instead of admitting none-mode in a live source checkout. Snapshot mode now carries an independent Git object store with exact HEAD/tag identity plus existing nested installation paths, no origin remote, source-local configuration, hooks or shared objects. Original source files and uncommitted package files still copy through the existing containment rules. Real fixture acceptance runs the same package test directly and via CLI-linked snapshot: two dependency versions, a release tag and nested disposable pm init all pass. Forcing schema mode redirects the nested fixture and fails as an intentional negative control. A Git-identity test fails before / passes after; a linked worktree and conflicting ambient GIT_DIR are also covered. The implementation documents excluded working-tree data, historical Git-object visibility and remaining absolute-path/submodule/dependency-write limits. No unsafe source bypass or new command flag is introduced.\"}"
   "2026-10-08T04:48:09.203Z","harness:codex","Manual packed SDK acceptance passes under Node 22.18.0, 24.12.0, 26.9.0 and Bun 1.4.2. Each run initializes an external disposable project via PmClient, adds and runs a tag-aware self-isolating gate through runTest in snapshot mode, verifies nested fixture settings and unchanged source tracker settings, refuses live-source none mode, and certifies the complete SDK corpus. Published 2026.10.8 independently passes npm/Bun 11-step installed journeys and npx/bunx CLI plus stdio/HTTP MCP discovery; those publication receipts do not certify this branch as published."
   "2026-10-08T05:31:54.764Z","harness:codex","Pre-close evidence: all selected PM-linked commands passed. Full source coverage passed 788 files and 9910 tests, exact statements 67214/67214, branches 51435/51435, functions 13854/13854, lines 64042/64042. Two Windows-only cases are delegated to the required Windows gate. Documentation, TypeScript and tracked secret gates passed. Hosted review and final aggregate static validation remain delivery checks; no publication of this branch is claimed."
   "2026-10-08T05:59:25.852Z","harness:codex","Final delivery verification: packed npm/npx/bunx smoke passed with nine packages; all selected linked commands passed. Full source coverage reports 9910 passing tests and exact 100% statements/branches/functions/lines. The static aggregate stopped on metadata and prose-edge gaps; after CLI repairs its tracker-context, graph-composition, record-integrity and mutation components pass, with 329 killed mutants and seven reviewed equivalents. Required hosted aggregate validation and review remain pending; this branch is not published."
-notes[1]{created_at,author,text}:
+  "2026-10-08T06:10:33.403Z","harness:codex","Pre-merge acceptance reproduced a real ambient Git preference failure: clone.defaultRemoteName=upstream creates a non-origin remote and the snapshot cleanup rejects origin. The original source tracker remains unchanged. Reuse this delivery owner for an explicit clone remote and extend the existing real Git fixture; no duplicate item is needed."
+notes[2]{created_at,author,text}:
   "2026-10-08T04:51:13.863Z","harness:codex","Snapshot acceptance decision: preserve the original tag-aware gate in an independent Git clone rather than permit unprotected live-source execution with PM_PATH unset. Fresh config, empty template, no shared objects, removed origin and contained file aliases preserve the source boundary. Dependencies retain original nested lookup identities. Snapshot Git history is intentionally not redacted; source-local settings, absolute paths and submodule configuration are documented limits."
+  "2026-10-08T06:29:12.970Z","harness:codex","Review remediation: explicit --origin=origin survives clone.defaultRemoteName=upstream. The existing real Git fixture now starts with an inherited GIT_DIR selector, sanitizes all fixture Git subprocess environments, preserves the separate conflicting seeder injection, and proves the inherited repository directory was never created. Direct and generated package subprocesses filter their original environments without overwriting PM context values. Before/after controls fail then pass; the complete first hosted round and local static aggregate passed. Final packed SDK acceptance with the custom clone preference passes Node 22.18, 24.12, 26.9 and Bun 1.4.2."
 learnings[1]{created_at,author,text}:
   "2026-10-08T04:51:16.231Z","harness:codex",A faithful package gate needs independent Git identity as well as files and dependencies. Explicitly removing PM_PATH fixes nested init targeting only when the disposable temporary ancestry itself has no initialized tracker.
 files[5]{path,scope}:
@@ -45,7 +47,7 @@ files[5]{path,scope}:
   tests/unit/sdk/test/workspace-snapshot.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/test/workspace-snapshot.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,project,300,"harness:codex","2026-10-08T04:24:16.238Z",local_mutation,fix/faithful-package-gates-and-machine-channels,Focused sandboxed regression acceptance
-test_runs[1]:
+test_runs[4]:
   - run_id: test-local-muz3e2yf-6hi2tp
     kind: test
     status: passed
@@ -57,11 +59,44 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/test/workspace-snapshot.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muz523pl-hngvz4
+    kind: test
+    status: passed
+    started_at: "2026-10-08T06:11:17.739Z"
+    finished_at: "2026-10-08T06:11:32.553Z"
+    recorded_at: "2026-10-08T06:11:32.553Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/workspace-snapshot.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muz5gzek-th6fdk
+    kind: test
+    status: passed
+    started_at: "2026-10-08T06:22:50.907Z"
+    finished_at: "2026-10-08T06:23:06.812Z"
+    recorded_at: "2026-10-08T06:23:06.812Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/workspace-snapshot.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-muz5p9k4-t680xo
+    kind: test
+    status: passed
+    started_at: "2026-10-08T06:29:11.054Z"
+    finished_at: "2026-10-08T06:29:33.220Z"
+    recorded_at: "2026-10-08T06:29:33.220Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/workspace-snapshot.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   docs/PACKAGE_GATE_ACCEPTANCE.md,project
   docs/README.md,project
   docs/TESTING.md,project
-close_reason: Implemented and verified the linked local acceptance boundary; closure evidence is included in the reviewed delivery.
+close_reason: Completed Git configuration and fixture-safety review remediation.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
