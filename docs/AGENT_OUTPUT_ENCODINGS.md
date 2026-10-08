@@ -12,7 +12,11 @@ TOON keeps the existing sparse presentation policy. It renders primitive arrays
 inline and uses standard nested TOON for short object collections. For collections
 of at least two object rows, the renderer compares the complete nested and
 key-hoisted representations, including decoding metadata, and selects the table
-only when its UTF-8 payload is smaller. Existing flat tables remain unchanged.
+only when its UTF-8 payload is smaller. Before constructing a candidate, it counts
+present own-field cells and distinct columns in linear input time. A dense grid
+larger than twice the present-cell count uses expanded TOON without allocating
+padding or absent coordinates. Uniform collections remain eligible at any size.
+Existing flat tables remain unchanged.
 
 Nested table cells contain JSON text. `<collection>_encoding.json_columns` names
 every column using this codec; all present cells in such a column use JSON,
@@ -28,6 +32,9 @@ cells plus explicit restoration metadata. They preserve empty containers, nulls,
 false, zero, sparse keys, and arbitrary JSON strings. The CLI's existing sparse
 projection runs before encoding; the codec itself never drops those values.
 Malformed JSON cells throw instead of silently changing their meaning.
+Explicit codec calls construct a dense grid proportional to row count times
+distinct-column count; package authors must budget that allocation for sparse
+inputs. This public codec does not impose a row cap or silently change encoding.
 
 The TOON presentation of an item prints `collection_counts.notes` and
 `collection_counts.tests` once, suppressing `notes_count` or `tests_count` only

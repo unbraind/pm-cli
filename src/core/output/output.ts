@@ -255,6 +255,20 @@ function indentToon(encoded: string, depth: number): string {
     .join("\n");
 }
 
+/** Bound automatic table padding to twice the input's own-field cells before allocation. */
+function isNestedTableCandidateBounded(
+  rows: Record<string, unknown>[],
+): boolean {
+  const columns = new Set<string>();
+  let presentCells = 0;
+  for (const row of rows) {
+    const keys = Object.keys(row);
+    presentCells += keys.length;
+    for (const key of keys) columns.add(key);
+  }
+  return rows.length * columns.size <= presentCells * 2;
+}
+
 /** Render one object field while preserving nested and tabular TOON structure. */
 function renderToonObjectEntry(
   key: string,
@@ -273,7 +287,8 @@ function renderToonObjectEntry(
       allowNestedTable &&
       entry.length >= 2 &&
       entry.every(isPlainObject) &&
-      !tabularObjectArray(entry)
+      !tabularObjectArray(entry) &&
+      isNestedTableCandidateBounded(entry)
     ) {
       const table = encodePmTableRows(entry as Record<string, JsonValue>[]);
       const tabular = indentToon(

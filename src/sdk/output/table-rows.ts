@@ -27,6 +27,9 @@ export interface PmEncodedTableRows {
  * Project JSON object rows into a lossless table, preserving key order by first
  * occurrence. A column containing any container serializes all present values
  * as JSON so mixed strings, nulls, arrays, and objects remain unambiguous.
+ * Allocation is proportional to rows times distinct columns; callers budget
+ * that dense grid before encoding sparse inputs. The host formatter preflights
+ * automatic candidates and falls back to expanded TOON for sparse grids.
  */
 export function encodePmTableRows(
   rows: readonly Record<string, JsonValue>[],

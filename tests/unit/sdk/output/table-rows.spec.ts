@@ -1,5 +1,7 @@
 import { decode, encode, type JsonValue } from "@toon-format/toon";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { countTokens } from "gpt-tokenizer/encoding/o200k_base";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
@@ -219,16 +221,52 @@ describe("lossless SDK table cells", () => {
     );
   });
 
-  it("preserves equally sized scalar rows with different fields through the public renderer", () => {
+  it("preserves sparse scalar rows with distinct fields through the public renderer", () => {
     const source = {
-      items: [
-        { id: "one", left: "first fact" },
-        { id: "two", right: "second fact" },
-      ],
+      items: Array.from({ length: 64 }, (_, index) => ({
+        id: `row-${index}`,
+        [`field_${index}`]: `fact-${index}`,
+      })),
     };
     const restored = restoreTables(decode(formatBuiltInOutput(source, "toon")));
     expect(restored).toEqual(source);
     expect(JSON.parse(formatBuiltInOutput(source, "json"))).toEqual(source);
+  });
+
+  it("renders 10,000 sparse rows without exhausting a real bounded Node heap", () => {
+    const child = spawnSync(
+      process.execPath,
+      [
+        "--max-old-space-size=128",
+        "--input-type=module",
+        "--eval",
+        `
+import { deepStrictEqual } from "node:assert";
+import { decode } from "@toon-format/toon";
+import { formatBuiltInOutput } from "./dist/core/output/output.js";
+
+const source = {
+  items: Array.from({ length: 10_000 }, (_, index) => ({
+    id: "row-" + index,
+    ["field_" + index]: "fact-" + index,
+  })),
+};
+const restored = decode(formatBuiltInOutput(source, "toon"));
+deepStrictEqual(restored, source);
+console.log(JSON.stringify({ ok: true, rows: source.items.length }));
+`,
+      ],
+      {
+        cwd: fileURLToPath(new URL("../../../../", import.meta.url)),
+        encoding: "utf8",
+        timeout: 60_000,
+        maxBuffer: 64 * 1024,
+      },
+    );
+    expect(child.error).toBeUndefined();
+    expect(child.signal, child.stderr).toBeNull();
+    expect(child.status, child.stderr).toBe(0);
+    expect(JSON.parse(child.stdout)).toEqual({ ok: true, rows: 10_000 });
   });
 
   it("removes only equal count aliases in TOON and preserves zero counts and distinct values", () => {
