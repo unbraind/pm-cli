@@ -52,6 +52,7 @@ jobs:
       PACKAGE_ARTIFACT_GATE: scripts/release/package-artifact-gate.mjs
       PACKAGE_DISTRIBUTION: scripts/release/package-distribution.mjs
       RELEASE_CONTROL: scripts/release/release-control.mjs
+      WORKSPACE_COMPATIBILITY: scripts/release/workspace-compatibility.mjs
 
     steps:
       - name: Checkout
@@ -82,10 +83,18 @@ jobs:
           cp scripts/release/package-distribution.mjs "${RELEASE_CONTROLS}/package-distribution.mjs"
           cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"
           cp scripts/release/release-control.mjs "${RELEASE_CONTROLS}/release-control.mjs"
+          cp scripts/release/utils.mjs "${RELEASE_CONTROLS}/utils.mjs"
+          cp scripts/release/workspace-compatibility.mjs "${RELEASE_CONTROLS}/workspace-compatibility.mjs"
+          cp scripts/release/workspace-compatibility-policy.json "${RELEASE_CONTROLS}/workspace-compatibility-policy.json"
+          COMPATIBILITY_FIXTURES="${RELEASE_CONTROLS}/../../tests/fixtures/compatibility"
+          mkdir -p "${COMPATIBILITY_FIXTURES}/custom-fields"
+          cp tests/fixtures/compatibility/custom-fields/index.mjs "${COMPATIBILITY_FIXTURES}/custom-fields/index.mjs"
+          cp tests/fixtures/compatibility/sdk-reader.mjs "${COMPATIBILITY_FIXTURES}/sdk-reader.mjs"
           {
             echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs"
             echo "PACKAGE_DISTRIBUTION=${RELEASE_CONTROLS}/package-distribution.mjs"
             echo "RELEASE_CONTROL=${RELEASE_CONTROLS}/release-control.mjs"
+            echo "WORKSPACE_COMPATIBILITY=${RELEASE_CONTROLS}/workspace-compatibility.mjs"
           } >> "${GITHUB_ENV}"
 
       - name: Setup pnpm
@@ -257,6 +266,10 @@ jobs:
       - name: Compatibility migration gate
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json
+
+      - name: Published workspace compatibility matrix
+        timeout-minutes: 6
+        run: node "${WORKSPACE_COMPATIBILITY}" --json
 
       - name: Reliability threshold gate
         env:

@@ -2135,6 +2135,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "item_format_version_unsupported",
+    meaning: "Item format version unsupported condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/item/item-format.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "item_format_version_unsupported",
+    aliases: [],
+  },
+  {
     code: "item_id_collision",
     meaning: "Item id collision condition.",
     stability: "stable",

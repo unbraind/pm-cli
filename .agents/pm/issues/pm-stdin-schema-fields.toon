@@ -2,18 +2,22 @@ id: pm-stdin-schema-fields
 title: Full-item stdin JSON must preserve declared schema and extension custom fields
 description: "Disposable acceptance on 2026.10.9 confirms a declared schema string escape_class works through --escape-class but create --stdin-json converts it into --field key=escape_class,value=production_defect and refuses extension_item_field_unknown with provided_fields=[key]. Full-item JSON cannot represent project-defined schema fields despite accepting arbitrary metadata keys. Inspect schema-field versus registered-extension ownership before adapting custom values; retain typed refusal and typo guidance."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-09T11:20:17.021Z"
-updated_at: "2026-10-09T11:52:53.835Z"
+updated_at: "2026-10-09T15:47:04.152Z"
+closed_at: "2026-10-09T15:47:03.534Z"
+completed_at: "2026-10-09T15:47:03.534Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Create and get-to-update stdin JSON round trips preserve declared string/number/boolean/object/array schema and extension fields; explicit flags retain precedence; undeclared fields and typos refuse before mutation; disposable CLI and public SDK tests prove exact item/history behavior.
 parent: pm-mpbb
 risk: medium
 confidence: high
-expected_result: Full-item JSON can represent declared project schema and extension fields with precise typed validation and explicit-flag precedence.
+resolution: The public SDK adapter resolves workspace metadata through declared option keys and aliases; CLI stdin supplies the selected schema. Raw extension assignments and per-field explicit overrides preserve scalar/container types. Persisted schema arrays retain their full shape.
+expected_result: Declared schema and extension values survive create/get/update round trips; explicit flags win and invalid inputs preserve item and history bytes.
+actual_result: "TDD keeper reproduced the defect before changes. Real temporary CLI and public SDK acceptance passed all five types, aliases and overrides; invalid/typo inputs preserved exact bytes. Linked tests, full 9966-test coverage at 100/100/100/100, static gates, manual acceptance and packed npm/Bun consumers passed."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-2589e6,related,"2026-10-09T11:20:17.021Z","harness:codex","cli:create:dep",detected
   pm-gh1428,discovered_from,"2026-10-09T11:20:17.021Z","harness:codex","cli:create:dep",detected
@@ -21,15 +25,76 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-qvdj,verifies,"2026-10-09T11:20:17.021Z","harness:codex","cli:create:dep",detected
   pm-usfg,implements,"2026-10-09T11:20:17.021Z","harness:codex","cli:create:dep",detected
   pm-field-key-recovery,discovered_from,"2026-10-09T11:52:52.773Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-09T11:20:17.021Z","harness:codex","Duplicate check: strict complete 2908-item all-status corpus and request-specific stdin/custom-field search, open and in-progress inventories checked. Full live metadata and history read for closed pm-kipd, pm-qvdj, pm-2589e6 and pm-field-key-recovery. Those delivered full-item transport, extension setters, annotation integrity and rejected-key diagnostics; none owns this schema/extension custom-field transport defect. Reproduced with independent disposable tracker: init, schema add-field escape_class --type string --commands create,update,list,search,context, then stdin document versus explicit --escape-class. JSON stderr exit 2 names key; explicit create exits 0. This follow-up remains open and unclaimed."
   "2026-10-09T11:25:22.007Z","harness:codex",Registered the completed full-item transport seed pm-kipd with the existing CLI/SDK/MCP contract-drift family so this recorded recurrence inherits mandatory static/coverage admission. Registration selects protections and does not assert the schema/extension transport defect is fixed. Item remains open and unclaimed.
   "2026-10-09T11:52:53.835Z","harness:codex","Graph admission: inspection of the already completed rejected-field diagnostic exposed that the stdin adapter supplies a generated key assignment instead of the actual schema field. Reuse its diagnostic lineage; the new transport defect remains open and unclaimed."
-files[2]:
+  "2026-10-09T14:42:41.740Z","harness:codex","Implementation scope: full live metadata, notes/learnings, history and closed transport/setter/recovery foundations inspected after strict 2912-item all-status intake with no omissions. Reproduce declared schema and extension fields, fix SDK-owned full-item adapter, retain explicit-flag precedence and refusal immutability. Deliver alongside cross-version workspace conformance in one PR; no new duplicate owner."
+  "2026-10-09T14:58:57.902Z","harness:codex","TDD evidence: the existing adapter keeper failed before changes on malformed key-prefixed extension assignments and missing schema option mapping. The real disposable CLI keeper additionally reproduced persisted schema-array truncation: metadata arrays were interpreted as repeated flags. Scope includes distinguishing metadata containers from CLI occurrences, all five scalar/container types, aliases, per-field overrides, and byte-identical item/history after refusals. No overlapping test removed; unit grammar and real CLI/SDK persistence prove distinct boundaries."
+  "2026-10-09T15:36:46.597Z","harness:codex",Linked sandbox-safe CLI/SDK keeper rerun passed after serialized build ownership. Full all-source suite passed 9966 tests with exact 100/100/100/100 coverage and no uncovered counts; no tests removed or coverage-ignore added. Strict lint and duplicate checks pass. New structured format refusal requires generated command and agent refusal inventories refreshed together; snapshots are regenerated through their canonical tools.
+  "2026-10-09T15:46:23.502Z","harness:codex","Delivery evidence: complete static quality pipeline passed without threshold changes, including lint, zero duplicate clones, docstring floors, package/SDK boundaries, generated snapshots, command/refusal/token budgets, tracker-context, graph composition, record integrity, import/transport cost checks and the existing mutation keeper. Focused linked transport tests and manual temporary tracker journey passed. Full-source coverage is exact 100/100/100/100, 9966 tests passing; public packed npm/npx/Bun/bunx consumers passed. Closure and generated changelog will be reviewed in the same implementation PR."
+notes[1]{created_at,author,text}:
+  "2026-10-09T15:13:52.184Z","harness:codex","Manual disposable CLI journey passed: schema add-field array with a distinct CLI flag and alias; Epic parent plus implements edge; stdin create; full get/edit/update with explicit alias override; undeclared-field refusal preserving exact item and history bytes; claim/start, evidence comment, close/release, and history hash verification plus storage/drift validation. Packed npm/npx/Bun/bunx smoke also passed for 2026.10.9 with nine first-party packages. Live observability: one-day Sentry critical/high counts zero, telemetry error rate 1.04 percent and missing-error-code rows zero; this is a pre-merge observation, not proof of post-merge trace freshness."
+learnings[1]{created_at,author,text}:
+  "2026-10-09T15:08:42.179Z","harness:codex","Whole-item JSON is a transport contract, not CLI pair syntax: schema metadata keys must resolve through declared option identities; extension name=value assignments must preserve their raw payload; stored arrays must not be interpreted as repeated argv occurrences. Byte comparisons across both item and append-only history prove refusal atomicity."
+files[11]:
   - path: config/defect-recurrence-policy.json
+    scope: project
+  - path: scripts/release/docstring-quality-baseline.json
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/cli/register-mutation.ts
+    scope: project
+  - path: src/core/item/item-format.ts
+    scope: project
+  - path: src/core/schema/runtime-field-values.ts
     scope: project
   - path: src/sdk/structured-mutations.ts
     scope: project
     note: Whole-item custom-field transport investigation
+  - path: tests/integration/schema/custom-field-roundtrip.integration.spec.ts
+    scope: project
+  - path: tests/unit/core/schema/runtime-field-values.spec.ts
+    scope: project
+  - path: tests/unit/sdk/structured-mutations.spec.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/core/schema/runtime-field-values.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts,project,240,"harness:codex","2026-10-09T15:20:59.157Z",local_mutation,fix/custom-field-roundtrips-version-skew
+test_runs[2]:
+  - run_id: test-local-mv13uxnx-9trfkh
+    kind: test
+    status: failed
+    started_at: "2026-10-09T15:09:30.337Z"
+    finished_at: "2026-10-09T15:13:30.861Z"
+    recorded_at: "2026-10-09T15:13:30.861Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/core/schema/runtime-field-values.spec.ts tests/integration/custom-field-roundtrip.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv14kqe6-s3bwi8
+    kind: test
+    status: passed
+    started_at: "2026-10-09T15:33:20.710Z"
+    finished_at: "2026-10-09T15:33:34.494Z"
+    recorded_at: "2026-10-09T15:33:34.494Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/core/schema/runtime-field-values.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Implemented and verified declared custom-field JSON transport for reviewed delivery.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test -- tests/integration/schema/custom-field-roundtrip.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (compat)
+  owner: pm-stdin-schema-fields
 body: ""

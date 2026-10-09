@@ -48,6 +48,8 @@ import {
 } from "../schema/runtime-schema.js";
 import {
   BASELINE_ITEM_FORMAT_VERSION,
+  CURRENT_ITEM_FORMAT_VERSION,
+  effectiveItemFormatVersion,
   normalizeItemFormatVersion,
 } from "./item-format-version.js";
 import { normalizeStatusInput } from "./status.js";
@@ -135,6 +137,8 @@ export interface ItemDocumentFormatOptions {
   extensionFieldNames?: readonly string[];
   /** Value that configures or reports on warning for this contract. */
   onWarning?: (warning: string) => void;
+  /** Refuse ahead-of-runtime markers before metadata validation; raw inspection defaults to preserving them. */
+  requireSupportedFormat?: boolean;
 }
 
 function resolveRuntimeSchemaValidationContext(
@@ -193,6 +197,23 @@ function documentSyntaxError(format: ItemFormat, message: string): never {
     required: `Provide a syntactically valid ${format === "toon" ? "TOON" : "JSON Markdown"} item document.`,
     why: "The document could not be decoded far enough to validate item metadata.",
   });
+}
+
+/** Admit the storage marker before schema/body validation can misclassify a future document as recoverable corruption. */
+function assertSupportedItemFormat(metadata: unknown, required: boolean | undefined): void {
+  if (!required || typeof metadata !== "object" || metadata === null) return;
+  const formatVersion = effectiveItemFormatVersion(metadata as Pick<ItemMetadata, "pm_format_version">);
+  if (formatVersion <= CURRENT_ITEM_FORMAT_VERSION) return;
+  throw new PmCliError(
+    `Stored item uses format version ${formatVersion}; this runtime supports up to ${CURRENT_ITEM_FORMAT_VERSION}. Upgrade pm before reading or changing this item.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "item_format_version_unsupported",
+      format_version: formatVersion,
+      required: "Upgrade to a pm runtime supporting the stored item format.",
+      nextSteps: ["Preserve the original item and history; do not lower pm_format_version to bypass compatibility checks."],
+    },
+  );
 }
 
 function buildKnownItemMetadataKeys(
@@ -694,6 +715,7 @@ function coerceRuntimeItemMetadataFields(
         definition,
         fieldValue,
         `metadata field "${definition.metadata_key}"`,
+        "metadata",
       );
     } catch (error: unknown) {
       validationError(
@@ -1616,6 +1638,7 @@ function coerceNormalizedRuntimeFields(
       definition,
       currentValue,
       `metadata field "${definition.metadata_key}"`,
+      "metadata",
     );
   }
 }
@@ -1870,7 +1893,7 @@ function parseJsonMarkdownItemDocument(
   runtimeContext?: RuntimeSchemaValidationContext,
   options: Pick<
     ItemDocumentFormatOptions,
-    "schema" | "extensionFieldNames" | "onWarning"
+    "schema" | "extensionFieldNames" | "onWarning" | "requireSupportedFormat"
   > = {},
 ): ItemDocument {
   const normalized = stripLeadingYamlDocument(content);
@@ -1898,6 +1921,7 @@ function parseJsonMarkdownItemDocument(
   } catch {
     documentSyntaxError("json_markdown", "JSON front matter is not valid JSON");
   }
+  assertSupportedItemFormat(parsed, options.requireSupportedFormat);
   assertValidItemMetadata(parsed, runtimeContext);
 
   return {
@@ -1911,7 +1935,7 @@ function parseToonItemDocument(
   runtimeContext?: RuntimeSchemaValidationContext,
   options: Pick<
     ItemDocumentFormatOptions,
-    "schema" | "extensionFieldNames" | "onWarning"
+    "schema" | "extensionFieldNames" | "onWarning" | "requireSupportedFormat"
   > = {},
 ): ItemDocument {
   let parsed: unknown;
@@ -1930,6 +1954,10 @@ function parseToonItemDocument(
     "TOON item document must be an object",
   );
   const record = parsed as Record<string, unknown>;
+  assertSupportedItemFormat(
+    Object.prototype.hasOwnProperty.call(record, "front_matter") ? record.front_matter : record,
+    options.requireSupportedFormat,
+  );
   if (
     !REQUIRED_STRING_FIELDS.some((fieldName) =>
       Object.prototype.hasOwnProperty.call(record, fieldName),

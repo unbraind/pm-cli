@@ -22736,6 +22736,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "item_format_version_unsupported",
+      "class": "conflict",
+      "code": "item_format_version_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Item format version unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/item-format.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "item_id_collision",
       "class": "conflict",
       "code": "item_id_collision",

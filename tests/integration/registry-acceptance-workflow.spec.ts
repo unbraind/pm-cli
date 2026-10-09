@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { parse } from "yaml";
@@ -21,6 +21,11 @@ it("executes preserved reviewed artifact controls with their transitive imports 
       const separator = line.indexOf("=");
       return [line.slice(0, separator), line.slice(separator + 1)];
     }));
+    expect(controls.WORKSPACE_COMPATIBILITY).toBeTypeOf("string");
+    const controlRoot = path.resolve(path.dirname(controls.WORKSPACE_COMPATIBILITY), "../..");
+    for (const file of ["scripts/release/workspace-compatibility.mjs", "scripts/release/workspace-compatibility-policy.json", "scripts/release/utils.mjs", "tests/fixtures/compatibility/custom-fields/index.mjs", "tests/fixtures/compatibility/sdk-reader.mjs"]) {
+      expect(await readFile(path.join(controlRoot, file), "utf8")).toBe(await readFile(file, "utf8"));
+    }
     const gate = controls.PACKAGE_ARTIFACT_GATE;
     expect(await readFile(gate, "utf8")).toBe(await readFile("scripts/release/package-artifact-gate.mjs", "utf8"));
     const budget = JSON.parse(await readFile(path.join(path.dirname(gate), "package-artifact-budget.json"), "utf8")) as { required_paths: string[]; max_unpacked_bytes_by_profile: { base: number } };
@@ -36,6 +41,16 @@ it("executes preserved reviewed artifact controls with their transitive imports 
     const result = spawnSync(process.execPath, [gate], { cwd: workspace, encoding: "utf8", timeout: 30_000 });
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ ok: true, package: manifest.name, version: manifest.version, max_unpacked_size: budget.max_unpacked_bytes_by_profile.base });
+    if (process.platform !== "win32") {
+      const alias = path.join(root, "reviewed controls alias");
+      await symlink(controlRoot, alias);
+      for (const entry of [controls.WORKSPACE_COMPATIBILITY, path.join(alias, "scripts/release/workspace-compatibility.mjs")]) {
+        const compatibility = spawnSync(process.execPath, [entry], { cwd: workspace, encoding: "utf8", timeout: 30_000 });
+        expect(compatibility.status, compatibility.stderr).toBe(1);
+        expect(compatibility.stderr).toContain("Expected a stable calendar version");
+        expect(compatibility.stderr).not.toContain("ERR_MODULE_NOT_FOUND");
+      }
+    }
     await rm(path.resolve(path.dirname(controls.PACKAGE_DISTRIBUTION), "../temp-lifecycle.mjs"));
     const missing = spawnSync(process.execPath, [gate], { cwd: workspace, encoding: "utf8", timeout: 10_000 });
     expect(missing.status).toBe(1);

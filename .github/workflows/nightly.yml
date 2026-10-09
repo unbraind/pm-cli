@@ -186,6 +186,10 @@ jobs:
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json
 
+      - name: Published workspace compatibility matrix
+        timeout-minutes: 6
+        run: node scripts/release/workspace-compatibility.mjs --json
+
       - name: Alert on scheduled nightly failure
         if: failure() && github.event_name == 'schedule'
         shell: bash

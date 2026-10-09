@@ -142,6 +142,42 @@ failed, skipped, stale, ambiguous, and different-tree results all fail.
 `pnpm release:gates` includes the same non-skippable verification, so run it
 only after the pushed reviewed head's hosted analyzers are terminal.
 
+## Published Workspace Compatibility
+
+Tracked by [pm-pae3wo](../.agents/pm/tasks/pm-pae3wo.toon).
+Run `node scripts/release/workspace-compatibility.mjs --json` after building.
+The policy in `scripts/release/workspace-compatibility-policy.json` requires
+the two immediately preceding stable calendar releases. Each installed release
+writes a disposable workspace read by the current runtime, and the current
+runtime writes one read by that release. Exact scalar and container values must
+survive CLI and public SDK reads, ordinary writes with their registration
+disabled, history restoration, native Git merges, reconciliation, and history
+verification. Missing releases, metadata loss, or invalid merged histories fail
+the gate. CI, nightly quality, release publication, and local preflight require
+this matrix alongside the independent legacy Markdown migration check.
+
+Metadata probes and installs explicitly use the public npm registry with
+separate empty user/global configurations and a fresh temporary cache. Inherited
+npm settings and registry-auth environment variables are removed, so host
+configuration cannot change the artifacts selected by the declared window.
+
+The current item-operation boundary refuses a stored `pm_format_version`
+ahead of its supported version with `item_format_version_unsupported` and
+upgrade guidance. Reads, updates, deletion, and restoration preserve the
+original item/history on refusal, including documents whose metadata/body
+shapes are invalid for the current runtime. Admission precedes schema validation
+so restore cannot misclassify newer data as ordinary corruption. Static fixture
+modules read separate JSON data; published SDK probes use the public package
+entrypoint from their own consumer directory. Raw parsers still preserve future version
+markers for integrity inspection; inventory diagnostics are not permission to
+rewrite an unsupported item.
+
+Run the matrix from the built workspace root. Exact-tag release recovery retains
+the reviewed matrix controls, policy and static fixtures outside the checkout,
+then tests the selected tagged runtime through its manifest and public SDK. A
+historical tag need not contain newly added gate scripts; recovery still runs
+the mandatory matrix without rewriting the tagged source or skipping policy.
+
 ## Focused Test Runs
 
 ```bash

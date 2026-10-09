@@ -358,6 +358,16 @@
         "optional_flag": "--skip-compatibility"
       },
       {
+        "id": "workspace-compatibility",
+        "gates": ["workspace-version-skew"],
+        "executable": {
+          "command": "node",
+          "args": ["scripts/release/workspace-compatibility.mjs", "--json"],
+          "capture_json": true
+        },
+        "skip_policy": "forbidden"
+      },
+      {
         "id": "sentry-telemetry-gate",
         "gates": ["release-integrity"],
         "executable": {
@@ -411,6 +421,17 @@
     ]
   },
   "gates": [
+    {
+      "id": "workspace-version-skew",
+      "owner": "pm-pae3wo",
+      "pipelines": ["ci.yml#gates", "nightly.yml#quality", "release.yml#release"],
+      "failure_taxonomy": ["compatibility_window_incomplete", "unknown_metadata_lost", "cross_version_restore_failed", "cross_version_merge_failed"],
+      "bypass": { "allowed": false, "audit": "Two previous stable releases must pass exact metadata and history assertions in both directions; success exit codes alone cannot certify compatibility." },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/workspace-compatibility.spec.ts",
+        "assertion": "detects nested metadata loss despite successful process exits"
+      }
+    },
     {
       "id": "scheduled-release-reliability",
       "owner": "pm-e70zh5",

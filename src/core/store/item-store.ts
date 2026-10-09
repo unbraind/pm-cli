@@ -225,6 +225,7 @@ export async function readLocatedItemSnapshot(
   try {
     document = parseItemDocument(raw, {
       format: item.item_format,
+      requireSupportedFormat: true,
       schema: options.schema,
       extensionFieldNames: resolveActiveExtensionFieldNames(
         options.extensionFieldNames,
@@ -232,6 +233,11 @@ export async function readLocatedItemSnapshot(
       onWarning: (warning) => appendWarning(options.warnings, warning),
     });
   } catch (error) {
+    if (error instanceof PmCliError && error.code === "item_format_version_unsupported") {
+      throw new PmCliError(`Item ${item.id}: ${error.message}`, error.exitCode, {
+        ...error.context, item_id: item.id, item_path: item.itemPath,
+      });
+    }
     if (error instanceof PmCliError && error.code === "item_document_invalid") {
       return {
         raw,

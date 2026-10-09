@@ -217,6 +217,14 @@ describe("coerceRuntimeFieldValue repeatable / array paths", () => {
       coerceRuntimeFieldValue(makeField({ type: "array" }), undefined),
     ).toBeUndefined();
   });
+
+  it("preserves metadata arrays including empty and nested containers without treating entries as flags", () => {
+    const field = makeField({ type: "array" });
+    for (const value of [[], [0, false, null, { nested: ["x,y=z"] }], [[1], [2]]]) {
+      expect(coerceRuntimeFieldValue(field, value, "stored payload", "metadata")).toEqual(value);
+    }
+    expect(() => coerceRuntimeFieldValue(makeField({ type: "object" }), [], "stored payload", "metadata")).toThrow("valid JSON object");
+  });
 });
 
 describe("coerceRuntimeFieldValue semantic schema paths", () => {
