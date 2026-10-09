@@ -15,7 +15,7 @@ export interface ReliabilityAttempt {
   outcome: "success" | "failure" | "pending";
   /** Observed repair instant, when supported by independent evidence. */
   repaired_at?: string;
-  /** Evidence-backed cause; leave unknown when no classification is available. */
+  /** Failure-only cause; omit on success/pending and leave unknown without classification. */
   cause?: "product" | "infrastructure" | "unknown";
 }
 
@@ -102,7 +102,7 @@ function groupAttempts(attempts: readonly ReliabilityAttempt[], families: readon
     if (typeof attempt.id !== "string" || attempt.id.trim().length === 0 || ids.has(attempt.id)) throw new TypeError("Invalid or duplicate reliability attempt identity.");
     ids.add(attempt.id);
     const group = groups.get(attempt.family);
-    if (!group || !["success", "failure", "pending"].includes(attempt.outcome) || (attempt.cause !== undefined && !["product", "infrastructure", "unknown"].includes(attempt.cause))) throw new TypeError("Invalid reliability attempt family, outcome or cause.");
+    if (!group || !["success", "failure", "pending"].includes(attempt.outcome) || (attempt.cause !== undefined && (!["product", "infrastructure", "unknown"].includes(attempt.cause) || attempt.outcome !== "failure"))) throw new TypeError("Invalid reliability attempt family, outcome or cause.");
     const created = instant(attempt.started_at);
     if (attempt.repaired_at !== undefined && (instant(attempt.repaired_at) < created || attempt.outcome !== "failure")) throw new TypeError("Invalid reliability repair chronology.");
     if (created >= start && created < end) group.push(attempt);

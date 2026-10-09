@@ -66,6 +66,7 @@ describe("public reliability window primitive", () => {
   it.each([
     { id: "" }, { id: 1 }, { family: "undeclared" }, { outcome: "unknown" },
     { cause: "guessed" }, { started_at: "bad" }, { started_at: null },
+    { outcome: "success", cause: "product" }, { outcome: "pending", cause: "unknown" },
     { started_at: "2026-10-32T00:00:00Z" },
     { repaired_at: "bad" }, { repaired_at: "2026-10-01T00:00:00Z" },
     { outcome: "success", repaired_at: "2026-10-03T00:00:00Z" },

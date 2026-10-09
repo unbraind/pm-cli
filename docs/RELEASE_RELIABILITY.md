@@ -104,8 +104,12 @@ requires seven completed original attempts per family and at most 10% failures
 over 30 days. Breaches fail the operational report and appear in the workflow
 summary; they remain distinct from checks evaluating a candidate repair.
 
-The collector derives current leg identities from `nightly.yml`, retains
-historical observed legs, retrieves attempt 1 after reruns, and reads both open
+The collector derives current leg identities from `nightly.yml` and each run's
+applicable population from the workflow at its original head SHA. Immutable
+definitions are cached within one census; legacy OS/Node matrices and today's
+labelled shards both retain their actual generations. Newly introduced families
+never gain synthetic pending attempts in older runs. It retains historical
+observed legs, retrieves attempt 1 after reruns, and reads both open
 and closed alert issues plus their complete comment pages. Original failures,
 distinct affected UTC days and observed closure durations survive alert repair.
 Every new alert carries the stable PM recurrence owner and a platform/Node family
@@ -113,6 +117,9 @@ identity. Counts do not depend on a maintained list of occurrence IDs. An absent
 job is pending evidence; an empty family has a null rate and fails coverage.
 
 Alert closure is the recorded latency endpoint, not proof of a product fix.
+When one alert episode links several failed runs, its shared closure is the
+endpoint for each recorded occurrence's alert-closure latency. This does not
+assert that an independent per-attempt product repair was verified.
 Product versus infrastructure cause stays `unknown` until independent evidence
 classifies it. Repairs at or beyond the report cutoff remain unresolved in that
 historical window. API errors, incomplete search results, missing pages,

@@ -17,9 +17,14 @@ export function nightlyFamilies(source) {
   const workflow = document.toJS();
   const matrix = workflow?.jobs?.nightly?.strategy?.matrix?.include;
   const quality = workflow?.jobs?.quality?.name;
-  if (!Array.isArray(matrix) || typeof quality !== "string") throw new Error("Missing nightly family population.");
-  const families = [...matrix.map((entry) => entry.label), quality];
-  if (families.some((family) => typeof family !== "string" || !family.startsWith("Nightly ")) || new Set(families).size !== families.length) throw new Error("Invalid nightly family identity.");
+  if (!Array.isArray(matrix)) throw new Error("Missing nightly family population.");
+  const families = matrix.map((entry) => {
+    if (entry.label !== undefined) return entry.label;
+    if (typeof entry.os !== "string" || !/^\d+$/u.test(String(entry.node))) throw new Error("Invalid legacy nightly family identity.");
+    return `Nightly (${entry.os}, Node ${entry.node})`;
+  });
+  if (quality !== undefined) families.push(quality);
+  if (families.length === 0 || families.some((family) => typeof family !== "string" || !family.startsWith("Nightly ")) || new Set(families).size !== families.length) throw new Error("Invalid nightly family identity.");
   return families;
 }
 
@@ -67,12 +72,18 @@ function collectAlertLinks(repository, start, families, read) {
 
 /** Preserve first-attempt jobs, including historical legs removed from today's matrix. */
 function collectOriginalJobs(listed, repository, defaultBranch, read) {
+  const populations = new Map();
   return listed.map((listedRun) => {
     const base = `repos/${repository}/actions/runs/${listedRun.id}`;
     const run = listedRun.run_attempt === 1 ? listedRun : JSON.parse(read(["api", `${base}/attempts/1`]));
-    if (!Number.isSafeInteger(run.id) || run.id < 1 || run.id !== listedRun.id || run.run_attempt !== 1 || run.event !== "schedule" || run.head_branch !== defaultBranch) throw new Error("Nightly original attempt identity mismatch.");
+    if (!Number.isSafeInteger(run.id) || run.id < 1 || run.id !== listedRun.id || run.run_attempt !== 1 || run.event !== "schedule" || run.head_branch !== defaultBranch || typeof run.head_sha !== "string" || !/^[a-f\d]{40}$/u.test(run.head_sha)) throw new Error("Nightly original attempt identity mismatch.");
     const jobs = completePages(read(["api", `${base}/attempts/1/jobs?per_page=100`, "--paginate", "--slurp"]), "jobs");
-    return { run, jobs };
+    let families = populations.get(run.head_sha);
+    if (!families) {
+      families = nightlyFamilies(read(["api", `repos/${repository}/contents/.github/workflows/nightly.yml?ref=${run.head_sha}`, "-H", "Accept: application/vnd.github.raw+json"]));
+      populations.set(run.head_sha, families);
+    }
+    return { run, jobs, families };
   });
 }
 
@@ -88,16 +99,16 @@ function nightlyAttempt(run, jobs, family, links) {
   const allClosed = alerts.length > 0 && closures.length === alerts.length;
   return {
     attempt: { id, family, started_at: run.created_at, outcome, ...(outcome === "failure" && allClosed ? { repaired_at: closures.at(-1) } : {}) },
-    evidence: { id, run_id: run.id, job_id: job?.id ?? null, alerts, cause: "unknown", repair_evidence: closures.length ? "alert_closure_only" : "unavailable" },
+    evidence: { id, run_id: run.id, workflow_sha: run.head_sha, job_id: job?.id ?? null, alerts, cause: "unknown", repair_evidence: closures.length ? "alert_closure_only" : "unavailable" },
   };
 }
 
 /** Map original job outcomes to stable family occurrences and retain independent closure evidence. */
-function nightlyAttempts(observed, currentFamilies, links) {
+function nightlyAttempts(observed, links) {
   const attempts = [];
   const evidence = [];
-  for (const { run, jobs } of observed) {
-    const applicable = [...new Set([...currentFamilies, ...jobs.map((job) => job.name).filter((name) => /^Nightly(?: quality)? \(/u.test(name))])];
+  for (const { run, jobs, families } of observed) {
+    const applicable = [...new Set([...families, ...jobs.map((job) => job.name).filter((name) => /^Nightly(?: quality)? \(/u.test(name))])];
     for (const family of applicable) {
       const row = nightlyAttempt(run, jobs, family, links);
       attempts.push(row.attempt);
@@ -120,10 +131,10 @@ export function collectNightlyReliability(repository, policy, now, families, rea
   const query = new URLSearchParams({ per_page: "100", event: "schedule", branch: defaultBranch, created: `${start}..${end}` });
   const listed = completePages(read(["api", `repos/${repository}/actions/workflows/nightly.yml/runs?${query}`, "--paginate", "--slurp"]), "workflow_runs");
   const observed = collectOriginalJobs(listed, repository, defaultBranch, read);
-  const historical = observed.flatMap(({ jobs }) => jobs.map((job) => job.name).filter((name) => /^Nightly(?: quality)? \(/u.test(name)));
+  const historical = observed.flatMap(({ jobs, families: expected }) => [...expected, ...jobs.map((job) => job.name).filter((name) => /^Nightly(?: quality)? \(/u.test(name))]);
   const population = [...new Set([...families, ...historical])];
   const { links, alert_count: alertCount } = collectAlertLinks(repository, start, population, read);
-  const { attempts, evidence } = nightlyAttempts(observed, families, links);
+  const { attempts, evidence } = nightlyAttempts(observed, links);
   return {
     ...evaluateReliabilityWindow(attempts, { ...sdkPolicy, families: population }), repository, attempt: 1,
     census_complete: true, policy, attempts, evidence,
