@@ -97,6 +97,29 @@ function reliabilitySeries(run, policy) {
   return { name: "excluded", row: run };
 }
 
+/** Summarize a declared origin without changing the native scheduled policy. */
+function originSummary(rows) {
+  rows.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id);
+  const completed = rows.filter((row) => row.completed);
+  const failed = completed.filter((row) => row.failed);
+  return {
+    completed: completed.length, failed: failed.length, pending: rows.length - completed.length,
+    failure_rate: completed.length === 0 ? null : failed.length / completed.length,
+    outcomes: counts(completed, "outcome"), failure_stages: counts(failed, "failure_stage"),
+    outcome_evidence_complete: completed.every((row) => row.outcome !== "unknown_success" && (!row.failed || row.failure_stage !== "unrecorded")),
+    items: rows,
+  };
+}
+
+/** Admit only an origin compatible with the actual workflow event. */
+function recordDeclaredOrigin(run, origins, policy) {
+  const origin = run.trigger_origin;
+  if (origin === undefined || origin === null) return;
+  const events = { native_schedule: "schedule", morning_dispatcher: "workflow_dispatch", operator: "workflow_dispatch", blocker_retry: "issues" };
+  if (!Object.hasOwn(events, origin) || events[origin] !== run.event) throw new Error("Release origin contradicts event.");
+  origins[origin].push(observation(run, policy, origin === "native_schedule"));
+}
+
 /**
  * Evaluate a complete run census in [now-window, now). A red historical rate
  * is an operational report, independent of the gates judging a candidate tree.
@@ -109,19 +132,19 @@ export function evaluateReleaseReliability(runs, policy, now) {
   const selected = [];
   const dispatcher = [];
   const excluded = [];
+  const origins = { native_schedule: [], morning_dispatcher: [], operator: [], blocker_retry: [] };
   for (const run of runs) {
     const created = timestamp(run.created_at);
     if (created < start || created >= end) continue;
     if (ids.has(run.id)) throw new Error(`Duplicate run id ${run.id}.`);
     ids.add(run.id);
+    recordDeclaredOrigin(run, origins, policy);
     const { name, row } = reliabilitySeries(run, policy);
     ({ scheduled: selected, dispatcher, excluded })[name].push(row);
   }
   selected.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id);
   const completed = selected.filter((row) => row.completed);
   const failed = completed.filter((row) => row.failed);
-  const dispatcherCompleted = dispatcher.filter((row) => row.completed);
-  const dispatcherFailed = dispatcherCompleted.filter((row) => row.failed);
   const failureRate = completed.length === 0 ? null : failed.length / completed.length;
   const expected = nominalOccurrence(end - policy.max_dispatch_delay_minutes * MINUTE_MS, policy);
   const violations = [];
@@ -137,14 +160,9 @@ export function evaluateReleaseReliability(runs, policy, now) {
     completed: completed.length, failed: failed.length, pending: selected.length - completed.length,
     failure_rate: failureRate, outcomes: counts(completed, "outcome"),
     failure_stages: counts(failed, "failure_stage"), excluded_events: counts(excluded, "event"),
-    dispatcher: {
-      completed: dispatcherCompleted.length, failed: dispatcherFailed.length,
-      pending: dispatcher.length - dispatcherCompleted.length,
-      failure_rate: dispatcherCompleted.length === 0 ? null : dispatcherFailed.length / dispatcherCompleted.length,
-      outcomes: counts(dispatcherCompleted, "outcome"), failure_stages: counts(dispatcherFailed, "failure_stage"),
-      items: dispatcher,
-    },
+    dispatcher: originSummary(dispatcher),
     pre_attribution_gap: excluded.filter((run) => run.event === "workflow_dispatch" && !run.trigger_origin).map((run) => run.id),
+    origins: Object.fromEntries(Object.entries(origins).map(([origin, rows]) => [origin, originSummary(rows)])),
     outcome_evidence_complete: completed.every((row) => row.outcome !== "unknown_success" && (!row.failed || row.failure_stage !== "unrecorded")),
     items: selected,
   };

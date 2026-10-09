@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1975,
+    "covered_symbols": 1980,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1976
+    "required_symbols": 1981
   },
   "breaking_acknowledgements": [
     {
@@ -7039,6 +7039,12 @@
           "kind": "function",
           "name": "evaluateProvenanceCoverage",
           "signature": "(entries: readonly HistoryEntry[], descriptors: readonly HarnessSignalDescriptor[], minimumSample: number) => Omit<ProvenanceCoverageAnalytics, \"window\"> | calls: (entries: readonly HistoryEntry[], descriptors: readonly HarnessSignalDescriptor[], minimumSample: number) => Omit<ProvenanceCoverageAnalytics, \"window\">"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "evaluateReliabilityWindow",
+          "signature": "(attempts: readonly ReliabilityAttempt[], policy: ReliabilityWindowPolicy) => ReliabilityWindowReport | calls: (attempts: readonly ReliabilityAttempt[], policy: ReliabilityWindowPolicy) => ReliabilityWindowReport"
         },
         {
           "classification": "supported",
@@ -16147,6 +16153,30 @@
           "kind": "interface",
           "name": "ReleaseResult",
           "signature": "export interface ReleaseResult { item: Record<string, unknown>; changed_fields?: string[]; released_by: string; previous_assignee: string | null; forced: boolean; warnings?: string[]; suggestions?: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityAttempt",
+          "signature": "export interface ReliabilityAttempt { id: string; family: string; started_at: string; outcome: \"success\" | \"failure\" | \"pending\"; repaired_at?: string; cause?: \"product\" | \"infrastructure\" | \"unknown\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityFamilyReport",
+          "signature": "export interface ReliabilityFamilyReport { family: string; attempts: number; completed: number; failed: number; pending: number; failure_rate: number | null; affected_days: string[]; repair_minutes: number[]; unresolved: number; causes: Record<\"product\" | \"infrastructure\" | \"unknown\", number>; violations: Array<\"insufficient_completed_attempts\" | \"failure_rate\">; ok: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityWindowPolicy",
+          "signature": "export interface ReliabilityWindowPolicy { window_start: string; window_end: string; families: readonly string[]; max_failure_rate: number; min_completed_attempts: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityWindowReport",
+          "signature": "export interface ReliabilityWindowReport { schema: \"pm-reliability-window/1\"; window_start: string; window_end: string; ok: boolean; families: ReliabilityFamilyReport[]; }"
         },
         {
           "classification": "advanced_export",
@@ -26969,6 +26999,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "evaluateReliabilityWindow",
+          "signature": "(attempts: readonly ReliabilityAttempt[], policy: ReliabilityWindowPolicy) => ReliabilityWindowReport | calls: (attempts: readonly ReliabilityAttempt[], policy: ReliabilityWindowPolicy) => ReliabilityWindowReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "evaluateSimilarityGovernance",
           "signature": "(candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"advisory\" | \"off\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined> | calls: (candidate: SimilarItemCandidate, options: FindSimilarItemsOptions & { mode: \"off\" | \"advisory\" | \"strict\"; allowDuplicate?: boolean; }) => Promise<SimilarityAdvisory | undefined>"
         },
@@ -27517,6 +27553,30 @@
           "kind": "interface",
           "name": "ReindexResult",
           "signature": "export interface ReindexResult { ok: boolean; mode: ReindexMode; total_items: number; semantic: { enabled: boolean; stale_items: number; unchanged_items: number; embedded_items: number; vector_upserted: number; batches_completed: number; batching?: EmbeddingBatchReceipt; }; artifacts: { manifest: string; embeddings: string; }; warnings: string[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityAttempt",
+          "signature": "export interface ReliabilityAttempt { id: string; family: string; started_at: string; outcome: \"success\" | \"failure\" | \"pending\"; repaired_at?: string; cause?: \"product\" | \"infrastructure\" | \"unknown\"; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityFamilyReport",
+          "signature": "export interface ReliabilityFamilyReport { family: string; attempts: number; completed: number; failed: number; pending: number; failure_rate: number | null; affected_days: string[]; repair_minutes: number[]; unresolved: number; causes: Record<\"product\" | \"infrastructure\" | \"unknown\", number>; violations: Array<\"insufficient_completed_attempts\" | \"failure_rate\">; ok: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityWindowPolicy",
+          "signature": "export interface ReliabilityWindowPolicy { window_start: string; window_end: string; families: readonly string[]; max_failure_rate: number; min_completed_attempts: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ReliabilityWindowReport",
+          "signature": "export interface ReliabilityWindowReport { schema: \"pm-reliability-window/1\"; window_start: string; window_end: string; ok: boolean; families: ReliabilityFamilyReport[]; }"
         },
         {
           "classification": "supported",

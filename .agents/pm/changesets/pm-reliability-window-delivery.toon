@@ -1,0 +1,109 @@
+id: pm-reliability-window-delivery
+title: Add SDK reliability windows and preserve nightly and release-origin recurrence
+description: "Reviewed delivery of the public governance reliability primitive, complete original nightly job census with all-state alert and PM repair correlation, enforced nightly threshold artifacts, and independent operator/blocker release-origin series. This delivery completes the nightly measurement acceptance while preserving broader operator follow-up and upstream tag-origin work under the canonical release owner."
+type: Changeset
+status: closed
+priority: 1
+tags[3]: release,reliability,sdk
+created_at: "2026-10-09T20:39:42.745Z"
+updated_at: "2026-10-09T21:47:05.987Z"
+closed_at: "2026-10-09T21:47:05.257Z"
+completed_at: "2026-10-09T21:47:05.257Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: Original failures survive repair and reruns; current and historical leg populations remain measurable; missing evidence refuses health; all recorded historical alerts retain PM repair links; default-branch report thresholds change verdicts; public Node/Bun and typed package consumers pass; exact whole-source coverage and existing quality gates remain unchanged.
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Delivered the public reliability-window SDK primitive, original-SHA nightly populations, failure-only attribution validation, enforced operational artifacts and all four declared release-origin series while preserving canonical broader release acceptance."
+expected_result: "Independent SDK, GitHub adapter, typed packed consumers and unchanged quality gates preserve original evidence across current and historical workflow generations."
+actual_result: 83 focused cases and fresh Node24/Node26/Bun packed and typed consumers pass; Node24 static/type/mutation gates pass unchanged. Last full population run passed10028 cases at exact100/100/100/100 before the final two cause regressions; final hosted whole-source checks must pass before merge. Historical replay retains230 rows/28alerts/45SHAs. Node26 cold-start gate failure and review-provider quota/trial limits remain explicitly recorded rather than called approval.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,implements,"2026-10-09T20:39:42.745Z","harness:codex","cli:create:dep",detected
+  pm-prrlce,implements,"2026-10-09T20:39:42.745Z","harness:codex","cli:create:dep",detected
+  pm-g0b88h,discovered_from,"2026-10-09T20:52:19.506Z","harness:codex","cli:update:dep",detected
+  pm-3a68,discovered_from,"2026-10-09T21:01:10.242Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-10-09T20:39:42.745Z","harness:codex","Duplicate-check evidence: strict all-status corpus read completed 2912/2912 items with no omissions; request-specific live search plus open and in-progress inventories were reread. Reuse canonical owners pm-2zjs0g and pm-prrlce. The only prior Changeset pm-g0b88h delivers embedding/schema work and is distinct. This record describes the concrete cross-owner delivery and does not duplicate or close their broader future acceptance."
+  "2026-10-09T20:41:25.121Z","harness:codex","Verification: canonical full Node24 source suite passed 10023 tests (two Windows-only skips) with exactly 67584/67584 statements, 51690/51690 branches, 13934/13934 functions and 64345/64345 lines. Static quality and source/exported/member docstring coverage each passed unchanged 100% gates; dependency audit and tracked-secret scan passed. An 8868444-byte real distribution was installed in an external temporary consumer: Node24, Node26 and Bun all preserved a repaired original failure and returned a healthy zero on clean data; the strict typed consumer and isolated CLI lifecycle/history verification passed. The package artifact boundary and npx/bunx nine-package acceptance passed. Required live Sentry/telemetry access passed: no recent unresolved fatal/error issues, 2.71% seven-day finish error rate, zero missing-code rows; one-day aggregate returned 4505 finish events and 0.93%. These aggregates are not exhaustive realtime per-action delivery proof. Latest npm pm-changelog 2026.10.5 was installed through the managed project package command."
+  "2026-10-09T20:47:38.784Z","harness:codex",Final production adapter historical replay confirms all 28 distinct linked alert issues are reconstructed from API data without a maintained occurrence list. The unchanged linked 76-test command also passes with a recorded focused_tests=76 count measurement. Coverage evidence remains the separate canonical full-run receipt; it is not attached to the focused run as a made-up measurement.
+  "2026-10-09T21:01:11.030Z","harness:codex","Review submission: PR https://github.com/unbraind/pm-cli/pull/1432 targets implementation head 9f68f4e2d. Chrome directly verified its CodeFactor page reports No issues found. The DeepScan main dashboard identifies an independent embedded ESLint 8.15.0 failure: No files matching the pattern dot were found; that provider sub-analysis is not coverage of the current repository ESLint rules. Native DeepScan exact-head findings remain pending, while the repository current ESLint/static gate already passed. Fresh required live Sentry/telemetry query passed with zero recent blocking issues, 2.71% seven-day finish errors and zero missing-code rows. Complete hosted checks and bot artifacts will be reviewed before merge."
+  "2026-10-09T21:14:15.077Z","harness:codex","Review remediation: 81 focused tests now pass. An external isolated copy of the pre-fix collector, with both tracker roots isolated and its complete adjacent imports retained, failed specifically at the independent expected-zero synthetic pending assertion (actual1 expected0); the identical control passed after the correction. Per-original-head workflow definitions are cached, legacy OS/Node populations remain supported, and artifact evidence retains workflow_sha. The reused-alert regression preserves two original failures, unknown causes and explicitly closure-only latency. Original required hosted checks passed; CodeRabbit manual review was requested because automatic review was skipped, and Greptile returned an expired-trial notice rather than substantive approval. Full coverage and historical live replay are running before review retrigger on the next head."
+  "2026-10-09T21:17:41.926Z","harness:codex","CodeRabbit completed the manually requested first review and identified a valid SDK input gap: defined cause on success or pending is accepted but omitted from failure-only cause counts. This will be rejected with two outcome-table regressions after the running suite releases its source/build ownership. The reviewer allowance is now exhausted for this hour; future provider availability must be reported separately from validation and must not be described as approval. DeepScan Chrome exact-head PR1432 view verified zero new issues at 9f68f4e2d."
+  "2026-10-09T21:37:04.794Z","harness:codex","Strict local performance gate retained a failure on Node26: cold create best582ms versus unchanged398ms admission and claim best609ms versus415ms. Earlier source/ESLint/docstring/dependency/context/public-surface/import gates passed; the runtime-profile/host contribution is not established. Repeating the full unchanged quality command under the CI-supported Node24 profile supplies a distinct controlled runtime comparison, without changing budgets, samples, margins or assertions. The two additional contradictory-cause cases already pass, including an isolated published-SDK failing-before/passing-after control. Cubic separately reported its monthly review-line limit and provided no substantive review."
+  "2026-10-09T21:47:02.696Z","harness:codex","Final local review verification: all 83 focused cases and the linked measured command pass after the original-population and failure-only SDK cause fixes. An 8868803-byte fresh packed consumer passes Node24, Node26 and Bun1.4, strict TypeScript, contradictory-cause rejection, isolated CLI lifecycle and immutable history verification. Full unchanged Node24 static quality, type checks and bounded mutation gate pass (336 candidates,329 killed,7 explicitly equivalent). The last canonical whole-source run passed 10028 cases with two Windows-only skips and exact 67594/67594 statements,51699/51699 branches,13933/13933 functions,64354/64354 lines; it predates the final two cause cases, which are covered by the latest focused/packed controls and must also pass the final hosted whole-source gate before merge. Node26 cold-start admission failure remains recorded; the distinct Node24 profile passed without budget/sample/assertion changes, and its root cause is not established."
+learnings[1]{created_at,author,text}:
+  "2026-10-09T21:47:03.271Z","harness:codex","Public input validation must reject contradictory metadata before aggregation rather than silently dropping it: failure-only causes are invalid on success or pending. Use a failing external packed-SDK control, then validate the same boundary on Node and Bun. Preserve failed runtime-profile gate evidence and compare a distinct supported profile without relaxing admission limits."
+files[13]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Managed latest pm-changelog activation receipt
+  - path: .github/workflows/nightly.yml
+    scope: project
+  - path: .github/workflows/release-reliability.yml
+    scope: project
+  - path: config/nightly-reliability-policy.json
+    scope: project
+  - path: scripts/release/collect-nightly-reliability.mjs
+    scope: project
+  - path: scripts/release/release-reliability.mjs
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/governance.ts
+    scope: project
+  - path: src/sdk/governance/reliability.ts
+    scope: project
+  - path: tests/unit/scripts/release/collect-nightly-reliability.spec.ts
+    scope: project
+  - path: tests/unit/scripts/release/release-reliability.spec.ts
+    scope: project
+  - path: tests/unit/sdk/governance/reliability.spec.ts
+    scope: project
+  - path: vitest.config.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts,project,300,"harness:codex","2026-10-09T20:41:24.420Z",local_mutation,feat/sdk-reliability-release-origin-nightly-recurrence
+test_runs[3]:
+  - run_id: test-local-mv1flp3h-wmldgb
+    kind: test
+    status: passed
+    started_at: "2026-10-09T20:42:04.610Z"
+    finished_at: "2026-10-09T20:42:15.245Z"
+    recorded_at: "2026-10-09T20:42:15.245Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv1fqxpl-2e4nor
+    kind: test
+    status: passed
+    started_at: "2026-10-09T20:46:10.943Z"
+    finished_at: "2026-10-09T20:46:19.689Z"
+    recorded_at: "2026-10-09T20:46:19.689Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[1]{name,value,unit,threshold,recorded_at}:
+      focused_tests,76,count,76,"2026-10-09T20:46:19.689Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv1hvyug-b7zpik
+    kind: test
+    status: passed
+    started_at: "2026-10-09T21:46:05.241Z"
+    finished_at: "2026-10-09T21:46:13.672Z"
+    recorded_at: "2026-10-09T21:46:13.672Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[1]{name,value,unit,threshold,recorded_at}:
+      focused_tests,83,count,83,"2026-10-09T21:46:13.672Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/RELEASE_RELIABILITY.md,project
+close_reason: "Connected SDK reliability, nightly recurrence and release-origin delivery completed with review remediation"
+body: ""

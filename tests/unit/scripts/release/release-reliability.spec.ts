@@ -25,6 +25,25 @@ function run(id: number, overrides: Record<string, unknown> = {}) {
 }
 
 describe("release reliability", () => {
+  it("retains operator and blocker failures as independent declared-origin series", () => {
+    const report = evaluateReleaseReliability([
+      run(1, { trigger_origin: "native_schedule", outcome: "published" }),
+      run(2, { event: "workflow_dispatch", trigger_origin: "operator", conclusion: "failure", failure_stage: "acceptance" }),
+      run(3, { event: "issues", trigger_origin: "blocker_retry", outcome: "same_day_verified" }),
+      run(5, { event: "workflow_dispatch", trigger_origin: "operator", outcome: "published" }),
+      run(4, { event: "workflow_dispatch", trigger_origin: "operator", outcome: "published", created_at: "2026-09-23T02:40:00Z", run_started_at: "2026-09-23T02:42:00Z" }),
+    ], policy, now);
+    expect(report.completed).toBe(1);
+    expect(report.failure_rate).toBe(0);
+    expect(report.origins.operator).toMatchObject({ completed: 3, failed: 1, failure_rate: 1 / 3, failure_stages: { acceptance: 1 } });
+    expect(report.origins.operator.items.map((row: { id: number }) => row.id)).toEqual([4, 2, 5]);
+    expect(report.origins.blocker_retry).toMatchObject({ completed: 1, failed: 0, failure_rate: 0 });
+    expect(report.origins.morning_dispatcher.failure_rate).toBeNull();
+    expect(report.origins.operator.items[0]).not.toHaveProperty("dispatch_delay_minutes");
+    expect(() => evaluateReleaseReliability([run(1, { trigger_origin: "operator" })], policy, now)).toThrow("contradicts event");
+    expect(() => evaluateReleaseReliability([run(1, { trigger_origin: "unknown" })], policy, now)).toThrow("contradicts event");
+    expect(evaluateReleaseReliability([run(1, { trigger_origin: null })], policy, now).origins.native_schedule.completed).toBe(0);
+  });
   it("binds the configured clock to the production cron and enforces the reporting verdict", () => {
     const configured = JSON.parse(readFileSync("config/release-reliability-policy.json", "utf8"));
     const production = parseDocument(readFileSync(".github/workflows/auto-release.yml", "utf8"));

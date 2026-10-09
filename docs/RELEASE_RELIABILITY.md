@@ -7,7 +7,7 @@ installed-package diagnostics are tracked by
 [pm-q7c36n](../.agents/pm/issues/pm-q7c36n.toon).
 
 The **Release Reliability** workflow evaluates the preceding 30 days after a
-scheduled Auto Release completes, daily at nominal 04:35 UTC, and on manual
+default-branch Auto Release or Nightly Validation completes, daily at nominal 04:35 UTC, and on manual
 dispatch. It saves a JSON report and fails its own check when policy is breached.
 The report is independent of candidate correctness: historical failures must
 remain visible while a reviewed repair can still pass publication gates.
@@ -48,6 +48,11 @@ be uploaded, the collector reads the declared run name. Historical dispatches
 without either declaration appear in `pre_attribution_gap`; the failed
 2026-09-28 morning dispatch cannot be attributed from its old run record.
 Dispatcher rows retain creation time, queue delay, outcome, and failure stage.
+The `origins` map also retains independent `native_schedule`, `operator`, and
+`blocker_retry` series, each with original counts, failure stages and outcome
+evidence completeness. Undeclared historical runs remain explicit attribution
+gaps; event or actor never supplies an invented origin. These diagnostic series
+do not alter the native scheduled policy denominator.
 They omit nominal occurrence and dispatch delay because the native 02:35 UTC
 cron is not the dispatcher's clock; the scheduled timing policy does not apply
 to those rows.
@@ -85,8 +90,54 @@ hosted acceptance job limit.
 
 The report is a rolling observation, not a permanent archive of all releases.
 Retain exported receipts externally if a longer historical window is needed.
-It does not implement the separate nightly per-leg reliability programme or
-change the manual same-day version policy.
+It does not change the manual same-day version policy or propagate upstream
+origin through historical lightweight tags. Those remaining outcomes retain
+their existing PM owners.
+
+## Nightly recurrence and public SDK
+
+[pm-2zjs0g](../.agents/pm/issues/pm-2zjs0g.toon) owns the nightly recurrence meter.
+The same reporting workflow builds trusted default-branch code and writes a
+separate `nightly-reliability-<run>-<attempt>` artifact, including when release
+reporting is already red. Its [versioned policy](../config/nightly-reliability-policy.json)
+requires seven completed original attempts per family and at most 10% failures
+over 30 days. Breaches fail the operational report and appear in the workflow
+summary; they remain distinct from checks evaluating a candidate repair.
+
+The collector derives current leg identities from `nightly.yml` and each run's
+applicable population from the workflow at its original head SHA. Immutable
+definitions are cached within one census; legacy OS/Node matrices and today's
+labelled shards both retain their actual generations. Newly introduced families
+never gain synthetic pending attempts in older runs. It retains historical
+observed legs, retrieves attempt 1 after reruns, and reads both open
+and closed alert issues plus their complete comment pages. Original failures,
+distinct affected UTC days and observed closure durations survive alert repair.
+Every new alert carries the stable PM recurrence owner and a platform/Node family
+identity. Counts do not depend on a maintained list of occurrence IDs. An absent
+job is pending evidence; an empty family has a null rate and fails coverage.
+
+Alert closure is the recorded latency endpoint, not proof of a product fix.
+When one alert episode links several failed runs, its shared closure is the
+endpoint for each recorded occurrence's alert-closure latency. This does not
+assert that an independent per-attempt product repair was verified.
+Product versus infrastructure cause stays `unknown` until independent evidence
+classifies it. Repairs at or beyond the report cutoff remain unresolved in that
+historical window. API errors, incomplete search results, missing pages,
+duplicate identities and ambiguous jobs refuse a complete-census claim.
+
+Packages can reuse the harness-independent evaluator through
+`evaluateReliabilityWindow` from `@unbrained/pm-cli/sdk/governance`. Supply
+`ReliabilityAttempt` records with unique `id`, stable `family`, `started_at`,
+original `outcome` and optional `repaired_at`/`cause`, plus an explicit
+`ReliabilityWindowPolicy` population, half-open window, maximum failure fraction
+and minimum completed count. The typed result preserves per-family findings,
+unknown causes and repair observations. No GitHub dependency, filesystem tracker,
+clock read or network call is required by this SDK primitive.
+
+For reproducible offline evaluation, retain the report's `attempts` and `policy`
+with its exact window; rerun the SDK evaluator against those records. The GitHub
+adapter accepts a caller-chosen clock and a 1–90 day policy window, allowing
+historical family reconstruction while keeping the production 30-day policy fixed.
 
 Provider contracts: [workflow run attempts](https://docs.github.com/en/rest/actions/workflow-runs#get-a-workflow-run-attempt)
 and [completion-triggered workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run).

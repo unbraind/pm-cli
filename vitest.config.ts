@@ -72,6 +72,10 @@ export default defineConfig({
   plugins: [stripScriptShebang],
   resolve: {
     alias: [
+      {
+        find: /^@unbrained\/pm-cli\/sdk\/governance$/,
+        replacement: fileURLToPath(new URL("./src/sdk/governance.ts", import.meta.url)),
+      },
       // The docs/examples reference scripts import the published package by its
       // bare specifier (`@unbrained/pm-cli/sdk`). Under test that resolves only
       // via the workspace self-link in node_modules, which is absent in a clean
