@@ -142,6 +142,27 @@ failed, skipped, stale, ambiguous, and different-tree results all fail.
 `pnpm release:gates` includes the same non-skippable verification, so run it
 only after the pushed reviewed head's hosted analyzers are terminal.
 
+## Published Workspace Compatibility
+
+Tracked by [pm-pae3wo](../.agents/pm/tasks/pm-pae3wo.toon).
+Run `node scripts/release/workspace-compatibility.mjs --json` after building.
+The policy in `scripts/release/workspace-compatibility-policy.json` requires
+the two immediately preceding stable calendar releases. Each installed release
+writes a disposable workspace read by the current runtime, and the current
+runtime writes one read by that release. Exact scalar and container values must
+survive CLI and public SDK reads, ordinary writes with their registration
+disabled, history restoration, native Git merges, reconciliation, and history
+verification. Missing releases, metadata loss, or invalid merged histories fail
+the gate. CI, nightly quality, release publication, and local preflight require
+this matrix alongside the independent legacy Markdown migration check.
+
+The current item-operation boundary refuses a stored `pm_format_version`
+ahead of its supported version with `item_format_version_unsupported` and
+upgrade guidance. Reads, updates, deletion, and restoration preserve the
+original item/history on refusal. Raw parsers still preserve future version
+markers for integrity inspection; inventory diagnostics are not permission to
+rewrite an unsupported item.
+
 ## Focused Test Runs
 
 ```bash

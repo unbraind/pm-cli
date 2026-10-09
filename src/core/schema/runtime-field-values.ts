@@ -287,25 +287,34 @@ function validateRuntimeFieldValue(
   return value;
 }
 
-/** Implements coerce runtime field value for the public runtime surface of this module. */
+/** Keep persisted containers intact while selecting the final occurrence of repeated CLI flags. */
+function coerceRuntimeContainerValue(
+  definition: RuntimeFieldDefinitionResolved,
+  rawValue: unknown,
+  label: string,
+  inputKind: "option" | "metadata",
+): unknown {
+  const raw = inputKind === "option" && Array.isArray(rawValue)
+    ? rawValue[rawValue.length - 1]
+    : rawValue;
+  if (raw === undefined) return undefined;
+  return validateRuntimeFieldValue(
+    definition,
+    parseJsonContainerValue(raw, label, definition.type as "array" | "object"),
+    label,
+  );
+}
+
+/** Validate a declared field; option arrays represent repeated flags, while metadata containers retain their exact shape. */
 export function coerceRuntimeFieldValue(
   definition: RuntimeFieldDefinitionResolved,
   rawValue: unknown,
   labelOverride?: string,
+  inputKind: "option" | "metadata" = "option",
 ): unknown {
   const label = labelOverride ?? `--${definition.cli_flag}`;
   if (definition.type === "array" || definition.type === "object") {
-    const containerRaw = Array.isArray(rawValue)
-      ? rawValue[rawValue.length - 1]
-      : rawValue;
-    if (containerRaw === undefined) {
-      return undefined;
-    }
-    return validateRuntimeFieldValue(
-      definition,
-      parseJsonContainerValue(containerRaw, label, definition.type),
-      label,
-    );
+    return coerceRuntimeContainerValue(definition, rawValue, label, inputKind);
   }
   if (definition.repeatable || definition.type === "string_array") {
     const values = normalizeStringArrayValue(rawValue);

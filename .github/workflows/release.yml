@@ -258,6 +258,10 @@ jobs:
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json
 
+      - name: Published workspace compatibility matrix
+        timeout-minutes: 6
+        run: node scripts/release/workspace-compatibility.mjs --json
+
       - name: Reliability threshold gate
         env:
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}

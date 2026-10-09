@@ -11,6 +11,9 @@ import {
   EXIT_CODE,
   PmCliError,
   createUnknownSubcommandError,
+  readSettings,
+  resolvePmRoot,
+  resolveRuntimeFieldRegistry,
 } from "../sdk/runtime-primitives.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -600,6 +603,22 @@ function isDescriptionStdinConsumer(
   );
 }
 
+/** Resolve the selected tracker schema before adapting a whole-item document. */
+async function readItemDocumentOptions(
+  input: string,
+  mode: "create" | "update",
+  options: Record<string, unknown>,
+  globalOptions: GlobalOptions,
+): Promise<Record<string, unknown>> {
+  const settings = await readSettings(resolvePmRoot(process.cwd(), globalOptions.path));
+  return itemDocumentToMutationOptions(
+    input,
+    mode,
+    options,
+    resolveRuntimeFieldRegistry(settings.schema).definitions,
+  );
+}
+
 async function runCreateAction(
   typeOrTitle: string | undefined,
   secondTitle: string | undefined,
@@ -615,7 +634,7 @@ async function runCreateAction(
       "-",
       "--stdin-json",
     );
-    options = itemDocumentToMutationOptions(input ?? "", "create", options);
+    options = await readItemDocumentOptions(input ?? "", "create", options, globalOptions);
   }
   const positionals = resolveCreatePositionals(
     typeOrTitle,
@@ -1164,7 +1183,7 @@ async function runUpdateAction(
       "-",
       "--stdin-json",
     );
-    options = itemDocumentToMutationOptions(input ?? "", "update", options);
+    options = await readItemDocumentOptions(input ?? "", "update", options, globalOptions);
   }
   const descriptionStdinResolved = isDescriptionStdinConsumer(
     options,

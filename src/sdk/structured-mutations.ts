@@ -23,6 +23,8 @@ import {
 } from "./cli-contracts/commander-mutation-options.js";
 import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation } from "./item-transaction.js";
+import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
+import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 
 const MUTATION_ROW_KEYS = ["op", "id", "reason", "options"] as const;
 const REFERENCED_MUTATION_ROW_KEYS = [
@@ -776,10 +778,22 @@ function appendItemDocumentEntry(
   key: string,
   value: unknown,
   mode: "create" | "update",
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+  explicitOptions: Record<string, unknown>,
 ): void {
   const readOnlyKeys =
     mode === "update" ? UPDATE_READ_ONLY_ITEM_KEYS : READ_ONLY_ITEM_KEYS;
   if (readOnlyKeys.has(key)) return;
+  const definition = runtimeFields.find((field) => field.metadata_key === key && field.commands.includes(mode));
+  if (definition !== undefined) {
+    const explicitValue = readRuntimeFieldOptionValue(explicitOptions, definition);
+    documentOptions[runtimeFieldOptionTarget(definition)] = explicitValue !== undefined
+      ? explicitValue
+      : definition.type === "array" || definition.type === "object"
+        ? JSON.stringify(value)
+        : value;
+    return;
+  }
   if (!ITEM_FIELD_KEYS.has(key)) {
     const suggestion = nearestKey(key, [...ITEM_FIELD_KEYS]);
     if (suggestion !== undefined)
@@ -787,15 +801,7 @@ function appendItemDocumentEntry(
     const fields = Array.isArray(documentOptions.field)
       ? (documentOptions.field as string[])
       : [];
-    fields.push(
-      serializePairs(
-        {
-          key,
-          value: typeof value === "string" ? value : JSON.stringify(value),
-        },
-        ["key", "value"],
-      ),
-    );
+    fields.push(`${key}=${typeof value === "string" ? value : JSON.stringify(value)}`);
     documentOptions.field = fields;
     return;
   }
@@ -824,11 +830,15 @@ function appendItemDocumentEntry(
 /**
  * Convert a direct item JSON document or `pm get --json` envelope into the
  * create/update option shape. Explicit CLI flags override document values.
+ * Supply the workspace's resolved schema fields to route metadata keys through
+ * declared option names and aliases. Extension assignments retain raw strings
+ * and JSON containers, with explicit assignments applied after document values.
  */
 export function itemDocumentToMutationOptions(
   input: string,
   mode: "create" | "update",
   explicitOptions: Record<string, unknown> = {},
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[] = [],
 ): Record<string, unknown> {
   const parsed = parseJsonValue(input, "Item document");
   if (!isPlainObject(parsed)) {
@@ -840,7 +850,7 @@ export function itemDocumentToMutationOptions(
   const { item, linked } = resolveItemDocument(parsed);
   const documentOptions: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(item)) {
-    appendItemDocumentEntry(documentOptions, key, value, mode);
+    appendItemDocumentEntry(documentOptions, key, value, mode, runtimeFields, explicitOptions);
   }
   appendFacetOptions(documentOptions, item, mode === "update");
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
@@ -866,6 +876,9 @@ export function itemDocumentToMutationOptions(
         ([, value]) => value !== undefined,
       ),
     ),
+    ...(Array.isArray(documentOptions.field) && Array.isArray(explicitOptions.field)
+      ? { field: [...documentOptions.field, ...explicitOptions.field] }
+      : {}),
     stdinJson: undefined,
   };
 }

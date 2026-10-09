@@ -69,7 +69,7 @@
     "src/core/schema/fields-file.ts": 25,
     "src/core/schema/item-types-file.ts": 15,
     "src/core/schema/runtime-field-filters.ts": 2,
-    "src/core/schema/runtime-field-values.ts": 4,
+    "src/core/schema/runtime-field-values.ts": 3,
     "src/core/schema/runtime-schema.ts": 47,
     "src/core/schema/status-defs-file.ts": 13,
     "src/core/schema/type-inference.ts": 2,

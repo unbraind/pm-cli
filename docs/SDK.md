@@ -1552,8 +1552,19 @@ accepts either a direct `ItemDocument` or the envelope returned by
 `pm get <id> --json`, strips read-only metadata, maps canonical snake-case item
 fields to typed mutation options, and serializes linked facets through the same
 repeatable option forms as create/update. Explicit options win over document
-values. Unknown near-miss keys fail; application-defined fields are routed
-through the public `field` escape hatch.
+values. Pass `resolveRuntimeFieldRegistry(settings.schema).definitions` as the
+fourth argument to route workspace metadata keys through their declared SDK
+option names. CLI stdin automatically resolves the selected workspace schema.
+Schema aliases override document values through the same field registry.
+Declared extension fields use raw `name=value` assignments; explicit `field`
+entries override only matching names, preserving other document fields. Strings
+retain commas, equals signs, quotes, Unicode, and newlines; numbers, booleans,
+objects, and arrays retain their types. Unknown fields and near-miss built-in
+keys refuse before item or history writes.
+
+Tracked by [pm-stdin-schema-fields](../.agents/pm/issues/pm-stdin-schema-fields.toon).
+Stored schema containers retain their decoded shape; repeated CLI container
+flags still select the final supplied value.
 
 The built-in adapters stay deliberately thin:
 

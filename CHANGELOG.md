@@ -2,12 +2,17 @@
 
 ## Unreleased
 
+### Added
+
+- Cross-version workspace compatibility matrix: prove that workspaces written by older and newer pm releases stay readable and mergeable ([pm-pae3wo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pae3wo.toon))
+
 ### Changed
 
 - Refresh eligible Node type and Greptile release-review tooling patches ([pm-release-devtool-patches](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-release-devtool-patches.toon))
 
 ### Fixed
 
+- Full-item stdin JSON must preserve declared schema and extension custom fields ([pm-stdin-schema-fields](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-stdin-schema-fields.toon))
 - Agent-task token ratchet changes verdict with temporary-root path length ([pm-agent-token-path](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-agent-token-path.toon))
 - Exact-tag recovery must preserve the complete reviewed release-control import closure ([pm-gh1429](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1429.toon))
 - Installed-agent acceptance must recover infeasible context budgets and retain structured refusal diagnostics ([pm-gh1428](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1428.toon))

@@ -35,6 +35,10 @@ import {
   serializeItemDocument,
 } from "../item/item-format.js";
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
+import {
+  CURRENT_ITEM_FORMAT_VERSION,
+  effectiveItemFormatVersion,
+} from "../item/item-format-version.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { isUtf8 } from "node:buffer";
@@ -253,6 +257,21 @@ export async function readLocatedItemSnapshot(
       };
     }
     throw error;
+  }
+  const formatVersion = effectiveItemFormatVersion(document.metadata);
+  if (formatVersion > CURRENT_ITEM_FORMAT_VERSION) {
+    throw new PmCliError(
+      `Item ${item.id} uses format version ${formatVersion}; this runtime supports up to ${CURRENT_ITEM_FORMAT_VERSION}. Upgrade pm before reading or changing this item.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "item_format_version_unsupported",
+        item_id: item.id,
+        item_path: item.itemPath,
+        format_version: formatVersion,
+        required: "Upgrade to a pm runtime supporting the stored item format.",
+        nextSteps: ["Preserve the original item and history; do not lower pm_format_version to bypass compatibility checks."],
+      },
+    );
   }
   return { raw, document, error: null };
 }

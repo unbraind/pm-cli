@@ -694,6 +694,7 @@ function coerceRuntimeItemMetadataFields(
         definition,
         fieldValue,
         `metadata field "${definition.metadata_key}"`,
+        "metadata",
       );
     } catch (error: unknown) {
       validationError(
@@ -1616,6 +1617,7 @@ function coerceNormalizedRuntimeFields(
       definition,
       currentValue,
       `metadata field "${definition.metadata_key}"`,
+      "metadata",
     );
   }
 }

@@ -2251,6 +2251,13 @@
       ],
       "package_version": "2026.10.8",
       "reason": "The optional output-budget source now includes legacy for the context compatibility ceiling; JSON result facts and prior canonical/default/session budget precedence are preserved. Exhaustive receipt consumers must handle the new source; see docs/AGENT_OUTPUT_ENCODINGS.md."
+    },
+    {
+      "changes": [
+        "signature ./sdk:itemDocumentToMutationOptions"
+      ],
+      "package_version": "2026.10.9",
+      "reason": "Add optional resolved workspace fields to the full-item adapter; existing three-argument calls keep their contract, while declared metadata now follows schema option names and explicit aliases."
     }
   ],
   "entrypoints": {
@@ -9917,7 +9924,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "itemDocumentToMutationOptions",
-          "signature": "(input: string, mode: \"create\" | \"update\", explicitOptions?: Record<string, unknown>) => Record<string, unknown> | calls: (input: string, mode: \"create\" | \"update\", explicitOptions?: Record<string, unknown>) => Record<string, unknown>"
+          "signature": "(input: string, mode: \"create\" | \"update\", explicitOptions?: Record<string, unknown>, runtimeFields?: readonly RuntimeFieldDefinitionResolved[]) => Record<string, unknown> | calls: (input: string, mode: \"create\" | \"update\", explicitOptions?: Record<string, unknown>, runtimeFields?: readonly RuntimeFieldDefinitionResolved[]) => Record<string, unknown>"
         },
         {
           "classification": "supported",
@@ -35580,6 +35587,7 @@
     "item_document_encoding_invalid",
     "item_document_invalid",
     "item_document_roundtrip_failed",
+    "item_format_version_unsupported",
     "item_id_collision",
     "item_identity_ambiguous",
     "item_identity_conflict",

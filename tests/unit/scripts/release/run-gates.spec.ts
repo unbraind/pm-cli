@@ -33,7 +33,7 @@ describe("scripts/release/run-gates", () => {
   it("marks dogfood/compatibility/sentry checks skipped and emits a JSON summary", async () => {
     const spawnSync = vi.fn((_command: string, args: string[]) => ({
       status: 0,
-      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs")
+      stdout: (args.includes("scripts/release/hosted-analysis-gate.mjs") || args.includes("scripts/release/workspace-compatibility.mjs"))
         ? '{"ok":true}'
         : "",
       stderr: "",
@@ -95,14 +95,15 @@ describe("scripts/release/run-gates", () => {
           entry.name === "hosted-analysis-gate" && entry.skipped !== true,
       ),
     ).toBe(true);
-    expect(spawnSync).toHaveBeenCalled();
+    expect(payload.checks.find((entry) => entry.name === "workspace-compatibility")).toMatchObject({ status: "passed", ok: true });
+    expect(spawnSync.mock.calls.some(([, args]) => args.includes("scripts/release/workspace-compatibility.mjs"))).toBe(true);
   });
 
   it("passes the elevated token only to hosted analysis", async () => {
     process.env.RELEASE_POLICY_TOKEN = "policy-token";
     const spawnSync = vi.fn((_command: string, args: string[]) => ({
       status: 0,
-      stdout: args.includes("scripts/release/hosted-analysis-gate.mjs")
+      stdout: (args.includes("scripts/release/hosted-analysis-gate.mjs") || args.includes("scripts/release/workspace-compatibility.mjs"))
         ? '{"ok":true}'
         : "",
       stderr: "",
@@ -145,6 +146,9 @@ describe("scripts/release/run-gates", () => {
       const joined = [command, ...args].join(" ");
       if (joined.includes("compatibility-check.mjs")) {
         return { status: 0, stdout: '{"compatibility":"ok"}', stderr: "" };
+      }
+      if (joined.includes("workspace-compatibility.mjs")) {
+        return { status: 0, stdout: '{"ok":true}', stderr: "" };
       }
       if (joined.includes("sentry-telemetry-gate.mjs")) {
         return {

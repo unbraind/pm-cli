@@ -2,11 +2,13 @@ id: pm-pae3wo
 title: "Cross-version workspace compatibility matrix: prove that workspaces written by older and newer pm releases stay readable and mergeable"
 description: "Build a cross-version compatibility matrix that exercises old and new readers, writers, migrations, and merge drivers so mixed-version agent fleets cannot silently corrupt or lose workspace state."
 type: Task
-status: open
+status: closed
 priority: 1
-tags[7]: ci,compatibility,format-version,migration,multi-agent,quality-gate,storage
+tags[8]: added,ci,compatibility,format-version,migration,multi-agent,quality-gate,storage
 created_at: "2026-07-24T23:47:05.940Z"
-updated_at: "2026-09-08T13:31:57.612Z"
+updated_at: "2026-10-09T15:47:06.315Z"
+closed_at: "2026-10-09T15:47:05.055Z"
+completed_at: "2026-10-09T15:47:05.055Z"
 author: maintainer-agent
 estimated_minutes: 1500
 acceptance_criteria: "The matrix covers at least the previous two release lines writing and the current build reading, plus the reverse direction; Forward-incompatible reads fail loudly with an actionable error rather than silently misparsing or dropping fields; Backward-compatible reads preserve unknown fields on round-trip so an older reader cannot destroy a newer writer's data; Merge drivers are exercised across version skew, not only within one version; The declared compatibility window is documented and the matrix fails when the code drifts from the declaration"
@@ -18,9 +20,11 @@ outcome: "A CI matrix writes workspaces with previous releases, reads and mutate
 why_now: "The format_version field exists and migrations are planned, but there is no test proving what happens when a newer writer meets an older reader — the exact situation a staggered agent fleet creates daily."
 parent: pm-o2kc
 risk: medium
-confidence: medium
-expected_result: "Workspaces written by older and newer releases read, merge and migrate in both directions, with forward-incompatible reads failing loudly and unknown fields surviving round trips."
-dependencies[14]:
+confidence: high
+resolution: "A declared two-prior-stable-release window runs real published writers/readers in both directions with CLI/SDK reads, exact unknown metadata, restoration, native Git merging, reconciliation and verified history. CI, nightly, release and local preflight require it. Normal item operations refuse unsupported future format versions before changing bytes."
+expected_result: "Mixed-version workspaces preserve exact unknown data and valid histories across reads, writes, restore and merge; policy drift and unsupported format versions fail visibly."
+actual_result: "2026.10.7 and 2026.10.8 passed all four directions against the 2026.10.9 source build, including installed public SDK baseline assertions and native Git drivers. Future get/update/delete/restore refusals preserved item/history bytes. Nested-loss and policy-window negative controls passed; legacy Markdown migration, full static/graph/integrity gates and source coverage passed."
+dependencies[15]:
   - id: pm-a8lnoh
     kind: related
     created_at: "2026-07-24T23:47:05.940Z"
@@ -69,4 +73,85 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+  - id: pm-stdin-schema-fields
+    kind: verifies
+    created_at: "2026-10-09T15:03:41.510Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[7]{created_at,author,text}:
+  "2026-10-09T14:42:42.288Z","harness:codex","Implementation scope: full live metadata and history inspected. Build a checked-in compatibility window and real published-release/current-source matrix covering bidirectional read/mutate/unknown-field preservation, merge version skew, history integrity and fail-closed format versions. Initial GitHub intake: no open PRs or dependency/code/secret alerts, all 16 open issues linked to canonical PM items, npm/GitHub latest 2026.10.9, pm-changelog latest 2026.10.5."
+  "2026-10-09T14:58:58.710Z","harness:codex","Compatibility implementation adds a declared two-prior-stable-release window with real installed artifacts, both writer/reader directions, public SDK reads, unknown scalar/container preservation after disabling registrations, restoration, native Git merge drivers, reconciliation and verified histories. Current runtime additionally refuses future pm_format_version before reads/update/delete/restore, preserving item and history bytes. Raw format parsing remains usable by integrity diagnostics. Existing legacy Markdown migration gate remains the independent migration keeper."
+  "2026-10-09T15:21:00.799Z","harness:codex","Verification audit: initial all-source run found the two new specs exceeded the existing 120-file integration directory cap and the release-runner mocked capture lacked a receipt for the newly mandatory gate. Partitioned specs into schema/release areas; kept the cap unchanged; extended the existing runner keeper to prove --skip-compatibility cannot skip published workspace compatibility. Existing packed SDK keeper requires the installed global npm package exposed through NODE_PATH on this host. Linked runs waiting behind full-suite build ownership timed out; rerunning serialized without changing ownership or timeouts."
+  "2026-10-09T15:30:39.017Z","harness:codex","Release and security intake receipt: current public npm and GitHub version is 2026.10.9; its reviewed recovery publication completed successfully after earlier scheduled/dispatch failures. The scheduled first attempt remains a historical failure, not a success. This branch will not republish the immutable same-day version; its changes become eligible for the next daily cut. Fresh GitHub dependency, secret and code-scanning inventories each contain zero open alerts and no open PR exists before this delivery. The 16 open GitHub issues retain canonical PM links. Tracker storage/history validation passes with the pre-existing 170 historical missing-resolution warning retained as debt."
+  "2026-10-09T15:34:02.864Z","harness:codex","All-source verification passed: 9966 tests, 792 passing files, exact statements/branches/functions/lines 100 percent with integer uncovered counts zero. The new matrix itself has 94/94 statements, 22/22 branches, 12/12 functions and 85/85 lines covered by real published-artifact execution. Added an independent installed public SDK format-version assertion so the declared baseline cannot silently drift when a runtime format constant changes. Existing nested-value loss negative control and two-prior-release window refusals remain separate policy proofs."
+  "2026-10-09T15:42:51.663Z","harness:codex","Test-audit keeper map: pure policy tests prove numeric release ordering, prerelease exclusion, complete two-release windows and nested-loss refusal; real acceptance uses published npm artifacts, public SDK reads, native Git drivers, exact metadata and verified hashes; the existing legacy Markdown migration keeper remains independent. Future-format tests prove exit/code/guidance and item/history byte preservation across get/update/delete/restore, but a real upgrade to a not-yet-published future storage format is not asserted. Generated refusal census retains that recovery obligation explicitly rather than labeling source coverage as executable upgrade proof."
+  "2026-10-09T15:46:24.020Z","harness:codex","Delivery evidence: complete static pipeline passed, including non-skippable compatibility gate admission, generated contracts, 100 percent source/exported/member docstring floors, unchanged token ceilings, SDK import/transport cost guards, graph composition, tracker context, record integrity and mutation evidence (329 killed, 7 declared equivalents, zero uncovered). Linked published-artifact/native-Git acceptance passed all four rows, including the public SDK storage-format baseline assertion. No force or lock override used; no coverage ignores or lint suppressions added."
+notes[1]{created_at,author,text}:
+  "2026-10-09T15:08:40.542Z","harness:codex","Observed acceptance receipt: published 2026.10.7 and 2026.10.8 each passed both writer/reader directions with the 2026.10.9 source build. Real installed SDK reads, unknown typed metadata, restore, native Git drivers, reconcile without force and exact history verification all passed. The harness is grouped beside the existing compatibility-check acceptance script; its required gate is registered for CI/nightly/release and cannot be skipped in local preflight."
+learnings[1]{created_at,author,text}:
+  "2026-10-09T15:08:43.806Z","harness:codex","A successful process exit is insufficient compatibility evidence. Compare exact unknown values and replay hashes across both release directions, restore historical states, run native merge drivers and reconcile. Preserve forward format markers for diagnostics but refuse normal operations before unsupported item bytes can be rewritten."
+files[13]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Latest pm-changelog activation metadata used for reviewed generated closeout
+  - path: .github/workflows/ci.yml
+    scope: project
+  - path: .github/workflows/nightly.yml
+    scope: project
+  - path: .github/workflows/release.yml
+    scope: project
+  - path: scripts/release/gate-registry.json
+    scope: project
+  - path: scripts/release/workspace-compatibility-policy.json
+    scope: project
+  - path: scripts/release/workspace-compatibility.mjs
+    scope: project
+  - path: src/core/store/item-store.ts
+    scope: project
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+  - path: tests/integration/release/workspace-compatibility.integration.spec.ts
+    scope: project
+  - path: tests/integration/schema/custom-field-roundtrip.integration.spec.ts
+    scope: project
+  - path: tests/unit/scripts/release/run-gates.spec.ts
+    scope: project
+  - path: tests/unit/scripts/release/workspace-compatibility.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/workspace-compatibility.spec.ts tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts tests/unit/scripts/release/run-gates.spec.ts,project,300,"harness:codex","2026-10-09T15:20:59.979Z",local_mutation,fix/custom-field-roundtrips-version-skew
+test_runs[2]:
+  - run_id: test-local-mv13w8mn-q696ws
+    kind: test
+    status: failed
+    started_at: "2026-10-09T15:09:31.230Z"
+    finished_at: "2026-10-09T15:14:31.727Z"
+    recorded_at: "2026-10-09T15:14:31.727Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/workspace-compatibility.spec.ts tests/integration/workspace-compatibility.integration.spec.ts tests/integration/custom-field-roundtrip.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv14mtof-sy9zqx
+    kind: test
+    status: passed
+    started_at: "2026-10-09T15:34:03.496Z"
+    finished_at: "2026-10-09T15:35:12.063Z"
+    recorded_at: "2026-10-09T15:35:12.063Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/workspace-compatibility.spec.ts tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts tests/unit/scripts/release/run-gates.spec.ts,schema,schema,source,local_source_ref
+docs[3]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Package-owned generated reviewed delivery notes
+  - path: docs/generated/REFUSAL_CLOSURE_CENSUS.md
+    scope: project
+    note: Generated inventory includes the future item format refusal
+  - path: docs/TESTING.md
+    scope: project
+close_reason: Implemented and verified bidirectional published-workspace compatibility for reviewed delivery.
 body: "## Problem\nStorage carries a format_version field and migration primitives are planned, but no test answers the practical questions: what does today's build do with a workspace written by last month's build, what does last month's build do with today's, and what happens when two such agents merge branches.\n\n## Approach\nA matrix job that installs prior published releases, generates representative workspaces with them, then runs the current build's read, mutate, validate, merge, and history-verify paths against those workspaces — and the mirror direction using the current build as writer.\n\n## Field preservation\nThe critical invariant is that an older reader must not destroy fields it does not understand. Round-trip preservation of unknown fields is what makes a staggered fleet safe, and it must be asserted explicitly.\n\n## Boundary\nNot schema migration itself, which is owned separately. This proves the compatibility window; migrations move workspaces across it."

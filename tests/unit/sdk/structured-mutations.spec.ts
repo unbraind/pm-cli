@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
 import {
   itemDocumentToMutationOptions,
   parseAtomicMutationControls,
@@ -463,8 +465,8 @@ describe("structured mutation input", () => {
       regression: "false",
       message: "explicit",
       field: expect.arrayContaining([
-        'key=custom_one,value="{\\"nested\\":true}"',
-        'key=custom_two,value="quoted,field"',
+        'custom_one={"nested":true}',
+        'custom_two=quoted,field',
       ]),
       comment: ['text="said \\"yes\\"\\non two lines",author=agent'],
       note: ["text=note"],
@@ -525,6 +527,26 @@ describe("structured mutation input", () => {
       learning: ["text=New learning"],
     });
     expect(flatUpdate).not.toHaveProperty("note");
+  });
+
+  it("routes declared metadata keys through schema option names and merges explicit extension overrides", () => {
+    const fields = resolveRuntimeFieldRegistry({
+      ...SETTINGS_DEFAULTS.schema,
+      fields: [
+        { key: "classification", metadata_key: "escape_class", cli_flag: "class", cli_aliases: ["category"], type: "string" },
+        { key: "payload", type: "array" },
+      ],
+    }).definitions;
+    expect(itemDocumentToMutationOptions(
+      JSON.stringify({ escape_class: "document", payload: [1, { nested: true }], custom_one: "kept", custom_two: "document" }),
+      "create",
+      { category: "flag", field: ["custom_two=flag"] },
+      fields,
+    )).toMatchObject({
+      classification: "flag",
+      payload: '[1,{"nested":true}]',
+      field: ["custom_one=kept", "custom_two=document", "custom_two=flag"],
+    });
   });
 
   it("rejects misspelled envelope and item keys and invalid facet arrays", () => {
