@@ -4,6 +4,8 @@ import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const UTILS_SPECIFIER = "../../../../scripts/release/utils.mjs";
 const harness = createScriptHarness([UTILS_SPECIFIER]);
+let fixtureCreated = false;
+let fixtureClosed = false;
 
 type CommandResult = { status: number; stdout: string; stderr: string; exit_status?: number | null; signal?: string | null; error_code?: string | null; timed_out?: boolean };
 
@@ -18,6 +20,8 @@ interface RunOptions {
 
 /** Execute the real verifier with isolated installer, filesystem, and output boundaries. */
 async function runAcceptance(options: RunOptions) {
+  fixtureCreated = false;
+  fixtureClosed = false;
   vi.restoreAllMocks();
   vi.resetModules();
   vi.doUnmock("node:fs");
@@ -88,6 +92,8 @@ async function runAcceptance(options: RunOptions) {
 
 /** Return minimal valid installer and lifecycle receipts for controlled failure variations. */
 function successfulCommand(command: string, args: string[]): CommandResult {
+  if (args.includes("init")) { fixtureCreated = false; fixtureClosed = false; }
+  if (args.includes("close")) fixtureClosed = true;
   if (
     (["npm", process.execPath].includes(command) && args.includes("install")) ||
     (command === "bun" && args[0] === "add")
@@ -95,6 +101,7 @@ function successfulCommand(command: string, args: string[]): CommandResult {
     return { status: 0, stdout: "installed", stderr: "" };
   }
   if (args.includes("create")) {
+    fixtureCreated = true;
     return {
       status: 0,
       stdout: JSON.stringify({ id: "accept-test" }),
@@ -105,6 +112,13 @@ function successfulCommand(command: string, args: string[]): CommandResult {
     return {
       status: 0,
       stdout: JSON.stringify({ item: { id: "accept-test", status: "closed" } }),
+      stderr: "",
+    };
+  }
+  if (args.includes("context")) {
+    return {
+      status: 0,
+      stdout: JSON.stringify({ summary: { total_items: fixtureCreated ? 1 : 0, closed: fixtureClosed ? 1 : 0 } }),
       stderr: "",
     };
   }
@@ -123,6 +137,79 @@ function successfulCommand(command: string, args: string[]): CommandResult {
 }
 
 describe("verify-installed-agent-session", () => {
+  it("executes advertised same-intent recovery and checks actual context populations", async () => {
+    let closed = false;
+    const acceptance = await runAcceptance({
+      argv: ["--version", "2026.10.9", "--manager", "npm", "--json"],
+      runCommand: (command, args) => {
+        if (args.includes("close")) closed = true;
+        if (args.includes("context")) {
+          if (args.includes("512")) return { status: 2, stderr: "", stdout: JSON.stringify({
+            output_budget_exceeded: { omitted_result: true, reason: "requested_budget_infeasible", recovery: { outputBudget: "unbounded" } },
+            read_output: { result_omitted: true, within_budget: false },
+          }) };
+          return { status: 0, stderr: "", stdout: JSON.stringify({ summary: { total_items: closed ? 1 : 0, closed: closed ? 1 : 0 } }) };
+        }
+        return successfulCommand(command, args);
+      },
+    });
+    expect(acceptance.failure).toBeNull();
+    const reads = acceptance.runCommand.mock.calls.filter(([, args]) => args.includes("context"));
+    expect(reads).toHaveLength(4);
+    for (const [, args] of reads) expect(args).toContain("orient");
+    expect(reads.map(([, args]) => args.at(-1))).toEqual(["512", "unbounded", "512", "unbounded"]);
+    expect(acceptance.json.sessions[0].steps.filter((step: { exit_status: number }) => step.exit_status === 2)).toHaveLength(2);
+  });
+
+  it.each([
+    null,
+    {},
+    { output_budget_exceeded: { recovery: { outputBudget: "unbounded" } } },
+    { output_budget_exceeded: { omitted_result: true, reason: "wrong_reason" } },
+    { output_budget_exceeded: { omitted_result: true, reason: "requested_budget_infeasible" } },
+    { output_budget_exceeded: { omitted_result: true, reason: "requested_budget_infeasible", recovery: { outputBudget: "4096" } }, read_output: { result_omitted: true, within_budget: false } },
+    { output_budget_exceeded: { omitted_result: true, reason: "requested_budget_infeasible", recovery: { outputBudget: "unbounded" } } },
+    { output_budget_exceeded: { omitted_result: true, reason: "requested_budget_infeasible", recovery: { outputBudget: "unbounded" } }, read_output: { result_omitted: true, within_budget: true } },
+  ])("refuses an incomplete or untrusted budget recovery receipt: %j", async (payload) => {
+    const result = await runAcceptance({
+      argv: ["--version", "2026.10.9", "--manager", "npm"],
+      runCommand: (command, args) => args.includes("context")
+        ? { status: 2, stdout: JSON.stringify(payload), stderr: "" }
+        : successfulCommand(command, args),
+    });
+    expect(String(result.failure)).toContain("invalid context budget refusal");
+  });
+
+  it.each([
+    null,
+    {},
+    { summary: { total_items: 0, closed: 1 } },
+    { summary: { total_items: 0, closed: 0 }, read_output: { result_omitted: true } },
+    { summary: { total_items: 0, closed: 0 }, output_budget_exceeded: { omitted_result: true } },
+  ])("refuses missing population facts or success-shaped omissions: %j", async (payload) => {
+    const result = await runAcceptance({
+      argv: ["--version", "2026.10.9", "--manager", "npm"],
+      runCommand: (command, args) => args.includes("context")
+        ? { status: 0, stdout: JSON.stringify(payload), stderr: "" }
+        : successfulCommand(command, args),
+    });
+    expect(String(result.failure)).toContain("context facts were incomplete");
+  });
+
+  it("retains bounded redacted stdout and process failure evidence", async () => {
+    const result = await runAcceptance({
+      argv: ["--version", "2026.10.9", "--manager", "npm"],
+      runCommand: (command, args) => args.includes("claim")
+        ? { status: 17, stdout: JSON.stringify({ code: "budget_refused", token: 'private-token"escaped-tail', padding: "x".repeat(2000) }), stderr: "Authorization: Bearer private-header", signal: null, error_code: null }
+        : successfulCommand(command, args),
+    });
+    expect(String(result.failure)).toContain('"exit_status":17');
+    expect(String(result.failure)).toContain("budget_refused");
+    expect(String(result.failure)).not.toContain("private-token");
+    expect(String(result.failure)).not.toContain("escaped-tail");
+    expect(String(result.failure)).not.toContain("private-header");
+    expect(String(result.failure).length).toBeLessThan(1000);
+  });
   it("isolates inherited script policy without changing the caller environment", async () => {
     vi.stubEnv("npm_config_allow_scripts", "lowercase-policy");
     vi.stubEnv("NpM_CoNfIg_AlLoW_ScRiPtS", "mixed-policy");
@@ -290,7 +377,7 @@ describe("verify-installed-agent-session", () => {
           : successfulCommand(command, args),
     });
     expect(String(commandFailure.failure)).toContain(
-      "failed at npm:orient: context failed",
+      'failed at npm:orient: {"classification":"nonzero_exit"',
     );
     const emptyCommandFailure = await runAcceptance({
       argv: ["--version", "2026.7.31", "--manager", "npm"],
@@ -300,7 +387,7 @@ describe("verify-installed-agent-session", () => {
           : successfulCommand(command, args),
     });
     expect(String(emptyCommandFailure.failure)).toContain(
-      "failed at npm:orient: command exited non-zero",
+      '"stderr_excerpt":"","stdout_excerpt":""',
     );
     const malformed = await runAcceptance({
       argv: ["--version", "2026.7.31", "--manager", "npm"],

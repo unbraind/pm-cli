@@ -73,8 +73,11 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
-          RELEASE_CONTROLS="${RUNNER_TEMP}/release-controls"
+          RELEASE_CONTROLS="${RUNNER_TEMP}/release-controls/scripts/release"
           mkdir -p "${RELEASE_CONTROLS}"
+          # Keep the reviewed local import topology outside the mutable checkout.
+          cp scripts/temp-lifecycle.mjs "${RELEASE_CONTROLS}/../temp-lifecycle.mjs"
+          cp scripts/smoke-cleanup.mjs "${RELEASE_CONTROLS}/../smoke-cleanup.mjs"
           cp scripts/release/package-artifact-gate.mjs "${RELEASE_CONTROLS}/package-artifact-gate.mjs"
           cp scripts/release/package-distribution.mjs "${RELEASE_CONTROLS}/package-distribution.mjs"
           cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"

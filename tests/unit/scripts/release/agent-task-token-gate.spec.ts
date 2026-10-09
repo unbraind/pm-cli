@@ -17,6 +17,7 @@ import {
   validateAgentTaskTokenInvocation,
 } from "../../../../scripts/release/agent-task-token-gate.mjs";
 import { attachOutputTokenAccounting } from "../../../../src/sdk/output-token-accounting.js";
+import { quoteCommandArg } from "../../../../src/core/shared/command-line.js";
 
 const tempRoots: string[] = [];
 
@@ -29,20 +30,22 @@ afterEach(async () => {
 
 describe("agent-task transcript token gate", () => {
   const steps = [
-    { id: "orient", estimated_tokens: 10, accounting_mode: "self_reported" },
-    { id: "inspect", estimated_tokens: 20, accounting_mode: "self_reported" },
+    { id: "orient", comparison_estimated_tokens: 10, accounting_mode: "self_reported" },
+    { id: "inspect", comparison_estimated_tokens: 20, accounting_mode: "self_reported" },
   ];
   const report = {
+    comparison_scope: "plan_recovery_tracker_root_canonicalized",
     transcript_digest: "sha256:test",
-    composite_estimated_tokens: 30,
+    composite_comparison_estimated_tokens: 30,
     orientation: {
       canonical_task_id: "orientation-context-intent",
       measured_winner_tokens: 30,
     },
-    tasks: [{ id: "context", estimated_tokens: 30, steps }],
+    tasks: [{ id: "context", comparison_estimated_tokens: 30, steps }],
   };
   const baseline = {
-    version: 4,
+    version: 5,
+    comparison_scope: "plan_recovery_tracker_root_canonicalized",
     transcript_digest: "sha256:test",
     composite_max_estimated_tokens: 30,
     orientation: {
@@ -73,7 +76,7 @@ describe("agent-task transcript token gate", () => {
       {
         id: "orientation-context-intent",
         step_count: 1,
-        estimated_tokens: 300,
+        comparison_estimated_tokens: 300,
         steps: [
           {
             id: "context",
@@ -84,7 +87,7 @@ describe("agent-task transcript token gate", () => {
       {
         id: "orientation-contracts-next",
         step_count: 2,
-        estimated_tokens: 800,
+        comparison_estimated_tokens: 800,
         steps: [
           { id: "contracts", verified_fields: ["commands"] },
           {
@@ -315,7 +318,7 @@ describe("agent-task transcript token gate", () => {
         {
           tasks: orientationReport.tasks.map((task) => ({
             ...task,
-            estimated_tokens: 300,
+            comparison_estimated_tokens: 300,
           })),
         },
         orientation,
@@ -324,7 +327,7 @@ describe("agent-task transcript token gate", () => {
     const mixedCaseTasks = ["a-orientation", "Z-orientation"].map((id) => ({
       id,
       step_count: 1,
-      estimated_tokens: 300,
+      comparison_estimated_tokens: 300,
       steps: [{ id: "context", verified_fields: ["state"] }],
     }));
     expect(
@@ -391,15 +394,15 @@ describe("agent-task transcript token gate", () => {
       compareAgentTaskTokenBaseline(
         {
           ...report,
-          composite_estimated_tokens: 31,
+          composite_comparison_estimated_tokens: 31,
           tasks: [
             {
               ...report.tasks[0],
-              estimated_tokens: 31,
+              comparison_estimated_tokens: 31,
               steps: [
                 {
                   id: "orient",
-                  estimated_tokens: 11,
+                  comparison_estimated_tokens: 11,
                   accounting_mode: "self_reported",
                 },
                 steps[1],
@@ -416,13 +419,30 @@ describe("agent-task transcript token gate", () => {
     ]);
   });
 
+  it.each([undefined, Number.NaN, Number.POSITIVE_INFINITY, -1, 0.5])("rejects invalid comparison measurements (%s)", (value) => {
+    expect(compareAgentTaskTokenBaseline({
+      ...report,
+      composite_comparison_estimated_tokens: value,
+      tasks: [{ ...report.tasks[0], comparison_estimated_tokens: value, steps: [{ ...steps[0], comparison_estimated_tokens: value }, steps[1]] }],
+    }, baseline)).toEqual(expect.arrayContaining([
+      "task:context:invalid_comparison_measurement",
+      "task:context:step:orient:invalid_comparison_measurement",
+      "composite:invalid_comparison_measurement",
+    ]));
+  });
+
+  it("refuses a stale or omitted comparison scope", () => {
+    expect(compareAgentTaskTokenBaseline(report, { ...baseline, comparison_scope: undefined })).toContain("comparison_scope:mismatch");
+    expect(compareAgentTaskTokenBaseline({ ...report, comparison_scope: "all_paths_removed" }, baseline)).toContain("comparison_scope:mismatch");
+  });
+
   it("fails closed on baseline version, digest, identity, and count drift", () => {
     expect(
       compareAgentTaskTokenBaseline(
         {
           ...report,
           transcript_digest: "sha256:new",
-          tasks: [{ id: "new", estimated_tokens: 1, steps: [] }],
+          tasks: [{ id: "new", comparison_estimated_tokens: 1, steps: [] }],
         },
         { ...baseline, version: 1 },
       ),
@@ -1010,6 +1030,23 @@ describe("agent-task transcript token gate", () => {
     /** Attach real accounting to each candidate payload before testing parity rejection. */
     const transport = (value: unknown) => ({ status: 0, stdout: render(attachOutputTokenAccounting(value, render)), stderr: "" });
     expect(validateAgentTaskTokenInvocation(baselineTransport, transport(accounted), step, roots)).toMatchObject({ payload: accounted });
+    const measurements = ["/tmp/short", "/a long isolated temporary parent/".repeat(8)].map((root) => {
+      const value = payload(quoteCommandArg(root));
+      return validateAgentTaskTokenInvocation(
+        { status: 0, stdout: render(value), stderr: "" }, transport(value), step,
+        { baseline: root, accounted: root },
+      );
+    });
+    expect(measurements[0].comparison_estimated_tokens).toBeTypeOf("number");
+    expect(measurements[0].comparison_estimated_tokens).toBe(measurements[1].comparison_estimated_tokens);
+    expect(measurements[1].emitted_bytes).toBeGreaterThan(measurements[0].emitted_bytes);
+    for (const measured of measurements) expect(measured.estimated_tokens).toBe(Math.ceil(measured.emitted_bytes / 4));
+    const retainedFact = { ...accounted, description: "/tmp/accounted ".repeat(100) };
+    const larger = validateAgentTaskTokenInvocation(
+      { status: 0, stdout: render(retainedFact), stderr: "" }, transport(retainedFact), step,
+      { baseline: "/tmp/accounted", accounted: "/tmp/accounted" },
+    );
+    expect(larger.comparison_estimated_tokens).toBeGreaterThan(measurements[0].comparison_estimated_tokens);
     for (const drift of [
       payload("/tmp/wrong"),
       { ...accounted, id: "pm-wrong" },

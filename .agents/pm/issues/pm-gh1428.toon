@@ -1,0 +1,73 @@
+id: pm-gh1428
+title: Installed-agent acceptance must recover infeasible context budgets and retain structured refusal diagnostics
+description: "GitHub #1428 and Release run 37878238415 reproduced published 2026.10.9 exit 2 at npm:orient. The verifier requests context --limit 1 --token-budget 512, ignores structured stdout on nonzero exit, and unit stubs return an empty object for context. Preserve the complete-envelope SDK contract. Drive real installed context with feasible success budgets, intentionally prove budget refusal and same-intent recovery, validate population facts after mutations, and retain safe bounded diagnostics."
+type: Issue
+status: closed
+priority: 1
+tags[4]: acceptance,"area:release","horizon:current",regression
+created_at: "2026-10-09T10:50:55.409Z"
+updated_at: "2026-10-09T12:10:29.522Z"
+closed_at: "2026-10-09T11:59:26.160Z"
+completed_at: "2026-10-09T11:59:26.160Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Real npm local/global and Bun candidate/control sessions complete the SDK-backed lifecycle under whole-envelope budgets; refusal and same-intent recovery preserve population facts and do not accept omitted output as an empty tracker; nonzero command errors retain redacted bounded stdout and stderr plus process status; regression controls fail before the fix without weakening output limits, artifact identity, deadlines, or release advertisement gates"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+resolution: "Installed-agent acceptance validates whole-envelope context refusals, executes the advertised same-intent unbounded recovery, proves actual empty/closed populations, records exit statuses and retains bounded credential-redacted stdout/stderr diagnostics."
+expected_result: Actual installed public SDK/CLI lifecycle succeeds for npm and Bun without omitted context facts or relaxed output ceilings.
+actual_result: "Candidate 2026.10.9 and control 2026.10.8 passed four disposable npm/Bun sessions of 13 steps and 23821 characters each; global npm control/candidate passed. Malformed refusal/population and stdout-only failure regressions pass; full source suite 9958 passed at exact 100/100/100/100. Source static assurance, context, packed consumers, linked test and mutation gates pass. Hosted exact-tag recovery remains a separate post-merge observation."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,verifies,"2026-10-09T10:50:55.409Z","harness:codex","cli:create:dep",detected
+  pm-8pnj,implements,"2026-10-09T10:50:55.409Z","harness:codex","cli:create:dep",detected
+  pm-kvxqp1,discovered_from,"2026-10-09T10:50:55.409Z","harness:codex","cli:create:dep",detected
+  pm-q7c36n,recurs_from,"2026-10-09T10:50:55.409Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,recurs_from,"2026-10-09T10:50:55.409Z","harness:codex","cli:create:dep",detected
+  pm-agent-token-path,related,"2026-10-09T11:52:46.159Z","harness:codex","cli:update:dep",detected
+  pm-lwnifd,related,"2026-10-09T11:52:46.159Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-10-09T10:50:55.409Z","harness:codex","{\"text\":\"Duplicate check: strict complete all-status 2908-item corpus (2602 closed, 233 open, 59 draft, 14 canceled; no omissions/unreadable rows), keyword CLI searches, and live full metadata/history reads of pm-ygli86, pm-q7c36n, pm-kvxqp1, pm-lwnifd and pm-agent-token-path. No exact active owner for this regression. Source: https://github.com/unbraind/pm-cli/issues/1428\"}"
+  "2026-10-09T10:56:36.126Z","harness:codex","TDD baseline: focused acceptance/control suite ran 35 tests, 30 passed and five new regression assertions failed. Failures independently demonstrate lost structured stdout/process evidence, rejected same-intent budget recovery and malformed recovery receipts. No output budgets or deadlines were relaxed."
+  "2026-10-09T11:06:19.124Z","harness:codex","Real registry manual acceptance passed with @unbrained/pm-cli 2026.10.9 candidate and 2026.10.8 previous control under npm and Bun in independent disposable workspaces: four sessions, 13 observed steps each, two budget refusals followed by successful same-intent recovery each, complete SDK list item_count=1 and source_complete/full_projection=true. Every session reported 23821 output characters. Platform matrix remains a distinct hosted requirement."
+  "2026-10-09T11:25:21.214Z","harness:codex","Strict recurrence gate refused the newly recorded acceptance recurrence because its installed-consumer component had no explicit family seed. Added the canonical acceptance item to the existing installed-consumer family, with its real control-closure regression and full hosted coverage; retained historical class counts and all denominators. Extracted context acceptance validation from the enclosing session to satisfy the separate CodeFactor-compatible complexity limit of 16."
+  "2026-10-09T11:31:18.809Z","harness:codex","Cross-project intake: strict all-status corpus and live metadata/history preserve historical completed work. All 18 open GitHub issues have PM-link comments; initial open PR, Dependabot, code-scanning and secret-scanning counts were zero. Full graph audit retained 14911 deduplicated edges, 14844 informative, no ordering contradiction or isolated active item; historical hierarchy advisories and 170 missing-resolution warnings remain visible. Fresh required Sentry/telemetry gate passes with no critical/high Sentry findings, and one-day telemetry reports 4830 finishes, 0.87% failures and zero missing error-code rows. These are current observations, separate from hosted release success and permanent queue drainage."
+  "2026-10-09T11:40:53.424Z","harness:codex","Full final-source coverage passed 9958 tests with zero uncovered source counts: lines 64101/64101, statements 67275/67275, functions 13870/13870, branches 51487/51487. All owner-linked tests passed through pm test with isolated schema context. Final candidate/control npm and Bun manual sessions each passed 13 steps with real population, complete SDK read, observed refusal/recovery status and original output ceilings. The earlier full run failed a host npm-module resolution prerequisite and remains a failed receipt; enabling the installed global npm module resolved it without changing source or tests. Final static/context/packed consumer chain is running and closure awaits its result."
+  "2026-10-09T11:52:46.985Z","harness:codex","Graph admission: installed-context acceptance and the temporary-path ratchet are co-delivered verification repairs. The completed exact-tag recovery lineage is relevant to accepting its unchanged public package. These are semantic sibling links, not new ordering prerequisites."
+  "2026-10-09T12:10:29.521Z","harness:codex","Final pre-PR aggregate validation passed: fresh complete pnpm quality:static, typecheck, source exact coverage, context/token surface, doc/skill links, tracked-file secret scan, dependency audit, all linked checks, npm/npx/Bun/bunx packed consumers and 89-command package-first dogfood. Latest npm pm-changelog 2026.10.5 generated the four actual closures under Unreleased; its check passed. Final distribution 19952672 bytes is below the unchanged 20000000-byte base budget. Historical 170 missing-resolution warnings and known prose gaps remain explicit. All four implemented owners are closed/released; the separately reproduced schema-field transport owner stays open/unclaimed. Hosted review and exact-tag publication recovery remain separate upcoming verifications."
+notes[1]{created_at,author,text}:
+  "2026-10-09T11:06:15.581Z","harness:codex","Acceptance uses the public installed SDK/CLI, not repository internals. A bounded context refusal is expected evidence, followed by its exact same-intent recovery; all output characters and observed statuses are retained. Whole-envelope source behavior and existing 4096/12000-character ceilings remain enforced."
+learnings[1]{created_at,author,text}:
+  "2026-10-09T11:59:23.926Z","harness:codex","Preserve raw measurements and failure receipts as evidence. A recovery or comparison normalization must validate its exact contract before use; independently execute the real installed/packed boundary and retain a negative control. Local source acceptance, hosted review, merge, registry publication and GitHub Release advertisement are distinct claims."
+files[3]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  scripts/release/verify-installed-agent-session.mjs,project
+  tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project,300,"harness:codex","2026-10-09T11:04:43.488Z",local_mutation,fix/release-context-acceptance-control-closure
+test_runs[1]:
+  - run_id: test-local-mv0w6aep-xi3622
+    kind: test
+    status: passed
+    started_at: "2026-10-09T11:38:18.105Z"
+    finished_at: "2026-10-09T11:38:23.665Z"
+    recorded_at: "2026-10-09T11:38:23.665Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/QUALITY_EVIDENCE.md,project
+close_reason: Recover infeasible installed context requests with exact receipt validation and bounded process diagnostics.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: package-consumer
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-installed-agent-session.spec.ts
+  local_checks[2]: node scripts/release/verify-installed-agent-session.mjs --version 2026.10.9 --previous-version 2026.10.8 --manager both --json,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (coverage),Gates (smokes)
+  owner: pm-gh1428
+body: ""

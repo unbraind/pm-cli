@@ -76,6 +76,34 @@ function assertCompleteSdkRead(manager, sdkRead) {
   }
 }
 
+/** Require a whole-envelope refusal with exactly the supported same-intent recovery. */
+function assertContextBudgetRefusal(context, manager, label) {
+  if (
+    context?.output_budget_exceeded?.omitted_result !== true ||
+    context.output_budget_exceeded.reason !== "requested_budget_infeasible" ||
+    context.output_budget_exceeded.recovery?.outputBudget !== "unbounded" ||
+    context.read_output?.result_omitted !== true ||
+    context.read_output.within_budget !== false
+  ) fail(`Installed-agent acceptance received an invalid context budget refusal at ${manager}:${label}.`);
+}
+
+/** Accept complete context facts or execute only the advertised budget recovery. */
+function readContext(session, label, expectedItems, expectedClosed) {
+  const { runStep, steps, manager, executable, workspace } = session;
+  const args = ["--json", "--no-extensions", "context", "--for", "orient", "--limit", "1", "--output-budget", "512"];
+  let context = runStep(label, args, executable, workspace, [0, 2]);
+  if (steps.at(-1).exit_status === 2) {
+    assertContextBudgetRefusal(context, manager, label);
+    context = runStep(`${label}-recovery`, [...args.slice(0, -1), context.output_budget_exceeded.recovery.outputBudget]);
+  }
+  if (
+    context?.summary?.total_items !== expectedItems ||
+    context.summary.closed !== expectedClosed ||
+    context.read_output?.result_omitted === true ||
+    context.output_budget_exceeded?.omitted_result === true
+  ) fail(`Installed-agent acceptance context facts were incomplete at ${manager}:${label}.`);
+}
+
 /** Execute a cold SDK and CLI lifecycle with per-command output and time bounds. */
 function runAgentSession(manager, executable, installRoot, publicRegistryEnv, deadline) {
   const workspace = path.join(installRoot, "agent-workspace");
@@ -90,7 +118,7 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv, de
   };
   const steps = [];
   let outputCharacters = 0;
-  const runStep = (label, args, command = executable, cwd = workspace) => {
+  const runStep = (label, args, command = executable, cwd = workspace, expectedStatuses = [0]) => {
     const result = runCommand(command === executable ? (manager === "bun" ? "bun" : process.execPath) : command, command === executable ? [executable, ...args] : args, {
       cwd,
       capture: true,
@@ -99,9 +127,9 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv, de
       inheritEnvironment: false,
       timeout: remainingAcceptanceMs(deadline),
     });
-    if (result.status !== 0) {
+    if (!expectedStatuses.includes(result.status)) {
       fail(
-        `Installed-agent acceptance failed at ${manager}:${label}: ${result.stderr.trim() || "command exited non-zero"}`,
+        `Installed-agent acceptance failed at ${manager}:${label}: ${JSON.stringify(commandFailureReceipt(result))}`,
       );
     }
     let parsed;
@@ -124,11 +152,14 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv, de
     steps.push({
       label,
       ok: true,
+      exit_status: result.status,
       output_characters: result.stdout.length,
       maximum_output_characters: maximumCharacters,
     });
     return parsed;
   };
+
+  const contextSession = { runStep, steps, manager, executable, workspace };
 
   runStep("init", [
     "--json",
@@ -139,15 +170,7 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv, de
     "accept",
     "--no-merge-fence",
   ]);
-  runStep("orient", [
-    "--json",
-    "--no-extensions",
-    "context",
-    "--limit",
-    "1",
-    "--token-budget",
-    "512",
-  ]);
+  readContext(contextSession, "orient", 0, 0);
   const created = runStep("create", [
     "--json",
     "--no-extensions",
@@ -217,15 +240,7 @@ function runAgentSession(manager, executable, installRoot, publicRegistryEnv, de
       `Installed-agent acceptance read-back did not observe closed state for ${manager}.`,
     );
   }
-  runStep("context-read-back", [
-    "--json",
-    "--no-extensions",
-    "context",
-    "--limit",
-    "1",
-    "--token-budget",
-    "512",
-  ]);
+  readContext(contextSession, "context-read-back", 1, 1);
   const sdkProgram = `import { PmClient } from ${JSON.stringify(packageName)}; const result = await new PmClient({ pmRoot: ${JSON.stringify(pmRoot)}, noExtensions: true }).listAllComplete(); console.log(JSON.stringify({ item_count: result.complete_list.item_count, source_complete: result.complete_list.source_complete, full_projection: result.complete_list.full_projection }));`;
   const sdkRead = runStep(
     "sdk-complete-list",
@@ -280,12 +295,18 @@ function installPackage(manager, packageSpec, installRoot, publicRegistryEnv, gl
       );
 }
 
-/** Keep diagnostics bounded and strip credentials before they enter a hosted log. */
-function installFailureReceipt(result, attempt) {
-  const redactedStderr = result.stderr
+/** Strip supported credential forms before either output stream enters a hosted log. */
+function redactCommandDiagnostic(source) {
+  return source
     .replace(/(^|\n)([ \t]*Authorization\s*:\s*)[^\r\n]*/gimu, "$1$2[redacted]")
     .replace(/(https?:\/\/)[^\s/@]+@/giu, "$1[redacted]@")
+    .replace(/("(?:token|password|secret|authorization|_authToken)"\s*:\s*)"(?:\\.|[^"\\])*"/giu, '$1"[redacted]"')
     .replace(/(Bearer\s+|(?:token|password|secret|authorization|_authToken)\s*[=:]\s*)[^\s&]+/giu, "$1[redacted]");
+}
+
+/** Preserve process status and both bounded output streams without exposing credentials. */
+function commandFailureReceipt(result, attempt) {
+  const redactedStderr = redactCommandDiagnostic(result.stderr);
   const transientRegistry = !result.error_code && !result.signal && /(?:\bE404\b|\b404 Not Found\b|^error: GET https?:\/\/[^\r\n ]+ - 404$|^error: package [^\r\n]+ not found [^\r\n ]+ 404$)/imu.test(redactedStderr);
   const errorKind = new Map([["ETIMEDOUT", "timeout"], ["ENOENT", "executable_missing"]]).get(result.error_code);
   return {
@@ -295,6 +316,7 @@ function installFailureReceipt(result, attempt) {
     signal: result.signal ?? null,
     error_code: result.error_code ?? null,
     stderr_excerpt: redactedStderr.slice(0, 512),
+    stdout_excerpt: redactCommandDiagnostic(result.stdout).slice(0, 512),
   };
 }
 
@@ -317,7 +339,7 @@ function installAndRun(manager, packageSpec, root, publicRegistryEnv, globalInst
       installAttempts.push({ attempt, classification: "success", exit_status: 0 });
       break;
     }
-    const receipt = installFailureReceipt(installResult, attempt);
+    const receipt = commandFailureReceipt(installResult, attempt);
     installAttempts.push(receipt);
     if (receipt.classification !== "registry_visibility" || attempt === 3) break;
     console.error(`Waiting for ${manager} registry visibility (attempt ${attempt}/3)...`);

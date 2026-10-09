@@ -202,7 +202,7 @@
     },
     {
       "id": "review-caught-contract-drift",
-      "version": 2,
+      "version": 3,
       "title": "CLI, SDK, MCP, and initialization contract drift caught in review",
       "owner_item_id": "pm-rtn5h6",
       "escape_class": "review_caught_late",
@@ -214,7 +214,7 @@
           "src/core/init/**",
           "tests/integration/**"
         ],
-        "item_ids": ["pm-at1j", "pm-0bwe"],
+        "item_ids": ["pm-at1j", "pm-0bwe", "pm-kipd"],
         "tags": ["review-feedback", "surface-parity"]
       },
       "checks": {
@@ -225,6 +225,7 @@
         "item_ids": ["pm-at1j"]
       },
       "historical_item_ids": [
+        "pm-kipd",
         "pm-0bwe",
         "pm-7f9zkh",
         "pm-ablm",
@@ -554,19 +555,20 @@
     },
     {
       "id": "installed-consumer-portability",
-      "version": 2,
+      "version": 3,
       "title": "Packed npm and Bun runtime compatibility and executable verification",
       "owner_item_id": "pm-ikj8ve",
       "escape_class": "production_defect",
       "triggers": {
-        "item_ids": ["pm-8eebb6", "pm-vks66s", "pm-aaxq4n"]
+        "item_ids": ["pm-8eebb6", "pm-vks66s", "pm-aaxq4n", "pm-gh1428"]
       },
       "checks": {
         "local": [
           "node scripts/run-tests.mjs test -- tests/unit/scripts/release/verify-published-release.spec.ts tests/unit/scripts/release/verify-installed-agent-session.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts",
           "node scripts/run-tests.mjs test -- tests/unit/sdk/merge/worktree-config.spec.ts"
         ],
-        "hosted": ["CI / Gates (smokes)"]
+        "hosted": ["CI / Gates (smokes)", "CI / Gates (coverage)"]
       },
       "negative_control": {
         "item_ids": ["pm-8eebb6"]

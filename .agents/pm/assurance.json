@@ -2485,16 +2485,16 @@
       "negative_control": {
         "cases": [
           {
-            "observed": 1236,
+            "observed": 1233,
             "expected": "pass"
           },
           {
-            "observed": 1237,
+            "observed": 1234,
             "expected": "fail"
           }
         ]
       },
-      "ceiling": 1236
+      "ceiling": 1233
     },
     {
       "id": "blocks-total-ceiling",

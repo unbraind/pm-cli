@@ -1,9 +1,50 @@
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { parse } from "yaml";
 import { expect, it } from "vitest";
+
+it("executes preserved reviewed artifact controls with their transitive imports from a foreign workspace", async () => {
+  const workflow = parse(await readFile(".github/workflows/release.yml", "utf8")) as { jobs: Record<string, Job> };
+  const preserve = workflow.jobs.release.steps.find((step) => step.name === "Preserve reviewed package artifact controls")?.run;
+  expect(preserve).toBeTypeOf("string");
+  const root = await mkdtemp(path.join(tmpdir(), "pm-release-control-closure-"));
+  const githubEnv = path.join(root, "github-env");
+  try {
+    const copied = spawnSync("bash", ["--noprofile", "--norc", "-s"], {
+      input: preserve, encoding: "utf8", timeout: 10_000,
+      env: { ...process.env, RUNNER_TEMP: root, GITHUB_ENV: githubEnv },
+    });
+    expect(copied.status, copied.stderr).toBe(0);
+    const controls = Object.fromEntries((await readFile(githubEnv, "utf8")).trim().split("\n").map((line) => {
+      const separator = line.indexOf("=");
+      return [line.slice(0, separator), line.slice(separator + 1)];
+    }));
+    const gate = controls.PACKAGE_ARTIFACT_GATE;
+    expect(await readFile(gate, "utf8")).toBe(await readFile("scripts/release/package-artifact-gate.mjs", "utf8"));
+    const budget = JSON.parse(await readFile(path.join(path.dirname(gate), "package-artifact-budget.json"), "utf8")) as { required_paths: string[]; max_unpacked_bytes_by_profile: { base: number } };
+    const workspace = path.join(root, "foreign source with spaces");
+    await mkdir(workspace);
+    const manifest = { name: "release-control-fixture", version: "1.0.0", files: budget.required_paths };
+    for (const file of budget.required_paths) {
+      await mkdir(path.dirname(path.join(workspace, file)), { recursive: true });
+      await writeFile(path.join(workspace, file), "reviewed control fixture\n");
+    }
+    await writeFile(path.join(workspace, "package.json"), JSON.stringify(manifest));
+    await writeFile(path.join(workspace, "runtime-dependencies.json"), JSON.stringify({ packages: { "": manifest } }));
+    const result = spawnSync(process.execPath, [gate], { cwd: workspace, encoding: "utf8", timeout: 30_000 });
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ ok: true, package: manifest.name, version: manifest.version, max_unpacked_size: budget.max_unpacked_bytes_by_profile.base });
+    await rm(path.resolve(path.dirname(controls.PACKAGE_DISTRIBUTION), "../temp-lifecycle.mjs"));
+    const missing = spawnSync(process.execPath, [gate], { cwd: workspace, encoding: "utf8", timeout: 10_000 });
+    expect(missing.status).toBe(1);
+    expect(missing.stderr).toContain("ERR_MODULE_NOT_FOUND");
+    expect(missing.stderr).toContain("temp-lifecycle.mjs");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
 
 interface Job {
   needs?: string | string[];

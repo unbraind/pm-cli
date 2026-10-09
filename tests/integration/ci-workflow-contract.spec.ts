@@ -864,7 +864,7 @@ describe("GitHub workflow contract", () => {
       'if [ "${GITHUB_REF_NAME}" != "${DEFAULT_BRANCH}" ]; then',
       "Exact-tag recovery must be dispatched from ${DEFAULT_BRANCH}; received ${GITHUB_REF_NAME}.",
       "name: Preserve reviewed package artifact controls",
-      'RELEASE_CONTROLS="${RUNNER_TEMP}/release-controls"',
+      'RELEASE_CONTROLS="${RUNNER_TEMP}/release-controls/scripts/release"',
       'cp scripts/release/package-artifact-gate.mjs "${RELEASE_CONTROLS}/package-artifact-gate.mjs"',
       'cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"',
       'echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs"',

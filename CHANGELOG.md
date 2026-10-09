@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Refresh eligible Node type and Greptile release-review tooling patches ([pm-release-devtool-patches](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-release-devtool-patches.toon))
+
+### Fixed
+
+- Agent-task token ratchet changes verdict with temporary-root path length ([pm-agent-token-path](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-agent-token-path.toon))
+- Exact-tag recovery must preserve the complete reviewed release-control import closure ([pm-gh1429](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1429.toon))
+- Installed-agent acceptance must recover infeasible context budgets and retain structured refusal diagnostics ([pm-gh1428](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1428.toon))
+
 ## 2026.10.9 - 2026-10-09
 
 ### Added
