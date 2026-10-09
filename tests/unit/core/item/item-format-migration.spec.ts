@@ -32,6 +32,30 @@ async function writeTaskWithFormat(pmPath: string, id: string, format: ItemForma
 }
 
 describe("migrateItemFilesToFormat", () => {
+  it("preserves future-version Markdown and any current TOON variant instead of converting or deleting them", async () => {
+    for (const hasCurrentVariant of [false, true]) {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-future-migration";
+        const markdownPath = getItemPath(pmPath, "Task", id, "json_markdown");
+        const toonPath = getItemPath(pmPath, "Task", id, "toon");
+        await writeTaskWithFormat(pmPath, id, "json_markdown", "future metadata");
+        const metadata = { ...buildTaskDocument(id, "future metadata").metadata, pm_format_version: 2 };
+        await fs.writeFile(markdownPath, JSON.stringify(metadata));
+        if (hasCurrentVariant) await writeTaskWithFormat(pmPath, id, "toon", "current metadata");
+        const originalMarkdown = await fs.readFile(markdownPath);
+        const originalToon = hasCurrentVariant ? await fs.readFile(toonPath) : undefined;
+
+        const result = await migrateItemFilesToFormat(pmPath, "toon");
+        expect(result.migrated).toEqual([]);
+        expect(result.removed).toEqual([]);
+        expect(result.warnings).toEqual([expect.stringContaining("Upgrade")]);
+        expect(await fs.readFile(markdownPath)).toEqual(originalMarkdown);
+        if (hasCurrentVariant) expect(await fs.readFile(toonPath)).toEqual(originalToon);
+        else await expect(fs.access(toonPath)).rejects.toMatchObject({ code: "ENOENT" });
+      });
+    }
+  });
+
   it("migrates json markdown items with leading YAML wrappers into TOON", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await writeTaskWithFormat(pmPath, "pm-yaml-wrapper", "json_markdown", "yaml-wrapped-source");

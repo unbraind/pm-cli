@@ -1,7 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { create, get, readSettings, resolveRuntimeFieldRegistry, update } from "../../../src/sdk/runtime.js";
+import { parseItemDocument } from "../../../src/core/item/item-format.js";
 import { itemDocumentToMutationOptions } from "../../../src/sdk/structured-mutations.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -28,8 +29,9 @@ describe("declared custom item JSON transport", () => {
       const extensionValues = Object.fromEntries(Object.entries(values).map(([key, value]) => [key.replace("schema_", "extension_"), value]));
       const extensionRoot = path.join(context.pmPath, "extensions", "custom-fields");
       await mkdir(extensionRoot, { recursive: true });
-      await writeFile(path.join(extensionRoot, "manifest.json"), JSON.stringify({ name: "custom-fields", version: "1.0.0", entry: "index.cjs", capabilities: ["schema"] }));
-      await writeFile(path.join(extensionRoot, "index.cjs"), `exports.activate = (api) => api.registerItemFields(${JSON.stringify(Object.keys(extensionValues).map((name, index) => ({ name, type: types[index] })))});\n`);
+      await writeFile(path.join(extensionRoot, "manifest.json"), JSON.stringify({ name: "custom-fields", version: "1.0.0", entry: "index.mjs", capabilities: ["schema"] }));
+      await copyFile(new URL("../../fixtures/compatibility/custom-fields/index.mjs", import.meta.url), path.join(extensionRoot, "index.mjs"));
+      await writeFile(path.join(extensionRoot, "fields.json"), JSON.stringify(Object.keys(extensionValues).map((name, index) => ({ name, type: types[index] }))));
       const created = context.runCli(["create", "--stdin-json", "--json"], {
         input: JSON.stringify({ title: "Custom transport", type: "Task", ...values, ...extensionValues }), expectJson: true,
       });
@@ -59,20 +61,46 @@ describe("declared custom item JSON transport", () => {
   });
 
   it("refuses newer stored item formats before reads, mutations, deletion, or recovery can change bytes", async () => {
-    await withTempPmPath(async (context) => {
-      const created = context.runCli(["create", "--title", "Future format", "--type", "Task", "--json"], { expectJson: true }).json as { item: { id: string } };
-      const id = created.item.id;
-      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
-      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
-      await writeFile(itemPath, `${await readFile(itemPath, "utf8")}\npm_format_version: 2\n`);
-      const original = await Promise.all([readFile(itemPath), readFile(historyPath)]);
-      for (const args of [["get", id], ["update", id, "--title", "Unsafe"], ["delete", id], ["restore", id, "1"]]) {
-        const refused = context.runCli([...args, "--json"]);
-        expect(refused.code, refused.stderr).toBe(4);
-        expect(JSON.parse(refused.stderr)).toMatchObject({ code: "item_format_version_unsupported", required: expect.stringContaining("Upgrade") });
-        expect(await Promise.all([readFile(itemPath), readFile(historyPath)])).toEqual(original);
-      }
-      await expect(get(id, {}, { pmRoot: context.pmPath, noExtensions: true })).rejects.toMatchObject({ context: { code: "item_format_version_unsupported", item_id: id, format_version: 2 } });
-    });
+    for (const format of ["toon", "json_markdown"] as const) {
+      await withTempPmPath(async (context) => {
+        const created = context.runCli(["create", "--title", "Future format", "--type", "Task", "--json"], { expectJson: true }).json as { item: { id: string } };
+        const id = created.item.id;
+        const createdPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+        const itemPath = path.join(context.pmPath, "tasks", `${id}.${format === "toon" ? "toon" : "md"}`);
+        const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+        const baseline = await readFile(createdPath, "utf8");
+        const metadata = { ...parseItemDocument(baseline, { format: "toon" }).metadata, pm_format_version: 2 };
+        if (format === "json_markdown") {
+          await rename(createdPath, itemPath);
+        }
+        const variants = format === "toon" ? [
+          `${baseline}\npm_format_version: 2\n`,
+          `${baseline.replace(/^title:.*$/mu, "title: 123")}\npm_format_version: 2\n`,
+          "pm_format_version: 2\n",
+          "front_matter:\n  pm_format_version: 2\n  title: 123\nbody[1]: wrong-shape\n",
+        ] : [JSON.stringify(metadata), JSON.stringify({ ...metadata, title: 123 }), JSON.stringify({ pm_format_version: 2 })];
+        expect(parseItemDocument(variants[0]!, { format }).metadata.pm_format_version).toBe(2);
+        expect(() => parseItemDocument(variants[0]!, { format, requireSupportedFormat: true })).toThrow("Upgrade");
+        for (const raw of variants) {
+          await writeFile(itemPath, raw);
+          const original = await Promise.all([readFile(itemPath), readFile(historyPath)]);
+          for (const args of [["get", id], ["update", id, "--title", "Unsafe"], ["delete", id], ["restore", id, "1"]]) {
+            const refused = context.runCli([...args, "--json"]);
+            expect(refused.code, refused.stderr).toBe(4);
+            expect(JSON.parse(refused.stderr)).toMatchObject({ code: "item_format_version_unsupported", required: expect.stringContaining("Upgrade") });
+            expect(await Promise.all([readFile(itemPath), readFile(historyPath)])).toEqual(original);
+          }
+          await expect(get(id, {}, { pmRoot: context.pmPath, noExtensions: true })).rejects.toMatchObject({ context: { code: "item_format_version_unsupported", item_id: id, format_version: 2 } });
+        }
+        for (const raw of format === "toon" ? ["front_matter: null\n", "front_matter: 123\n"] : []) {
+          await writeFile(itemPath, raw);
+          const invalid = context.runCli(["get", id, "--json"]);
+          expect(JSON.parse(invalid.stderr).code).toBe("item_document_invalid");
+          const restored = context.runCli(["restore", id, "1", "--json"]);
+          expect(restored.code, restored.stderr).toBe(0);
+          expect(context.runCli(["history", id, "--verify", "--json"]).code).toBe(0);
+        }
+      });
+    }
   });
 });

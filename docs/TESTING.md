@@ -159,9 +159,19 @@ this matrix alongside the independent legacy Markdown migration check.
 The current item-operation boundary refuses a stored `pm_format_version`
 ahead of its supported version with `item_format_version_unsupported` and
 upgrade guidance. Reads, updates, deletion, and restoration preserve the
-original item/history on refusal. Raw parsers still preserve future version
+original item/history on refusal, including documents whose metadata/body
+shapes are invalid for the current runtime. Admission precedes schema validation
+so restore cannot misclassify newer data as ordinary corruption. Static fixture
+modules read separate JSON data; published SDK probes use the public package
+entrypoint from their own consumer directory. Raw parsers still preserve future version
 markers for integrity inspection; inventory diagnostics are not permission to
 rewrite an unsupported item.
+
+Run the matrix from the built workspace root. Exact-tag release recovery retains
+the reviewed matrix controls, policy and static fixtures outside the checkout,
+then tests the selected tagged runtime through its manifest and public SDK. A
+historical tag need not contain newly added gate scripts; recovery still runs
+the mandatory matrix without rewriting the tagged source or skipping policy.
 
 ## Focused Test Runs
 

@@ -1564,7 +1564,10 @@ keys refuse before item or history writes.
 
 Tracked by [pm-stdin-schema-fields](../.agents/pm/issues/pm-stdin-schema-fields.toon).
 Stored schema containers retain their decoded shape; repeated CLI container
-flags still select the final supplied value.
+flags still select the final supplied value. Normal SDK item operations refuse
+ahead-of-runtime storage markers before schema or body validation and retain
+item identity/path in the structured error. Integrity diagnostics preserve
+future markers for inspection.
 
 The built-in adapters stay deliberately thin:
 

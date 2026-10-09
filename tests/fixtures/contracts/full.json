@@ -22747,7 +22747,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/store/item-store.ts"
+        "core/item/item-format.ts"
       ],
       "stability": "provisional"
     },

@@ -56,6 +56,20 @@ function errorSummary(error: unknown): string {
     .slice(0, 120);
 }
 
+/** Validate a legacy alternate before deleting it when a preferred current file supplied the migrated content. */
+async function assertLegacyAlternateSafeToRemove(
+  sourcePath: string,
+  alternatePath: string,
+  schema?: RuntimeSchemaSettings,
+): Promise<void> {
+  if (sourcePath === alternatePath) return;
+  parseItemDocument(await fs.readFile(alternatePath, "utf8"), {
+    format: "json_markdown",
+    requireSupportedFormat: true,
+    schema,
+  });
+}
+
 /** Implements migrate item files to format for the public runtime surface of this module. */
 export async function migrateItemFilesToFormat(
   pmRoot: string,
@@ -124,12 +138,14 @@ export async function migrateItemFilesToFormat(
         const sourceRaw = await fs.readFile(sourcePath, "utf8");
         const parsedDocument = parseItemDocument(sourceRaw, {
           format: sourceFormat,
+          requireSupportedFormat: true,
           schema,
           onWarning: (warning) =>
             warnings.push(
               `item_format_migration_parse_warning:${itemId}:${warning}`,
             ),
         });
+        await assertLegacyAlternateSafeToRemove(sourcePath, alternatePath, schema);
         const targetPath = getItemPath(
           pmRoot,
           itemType,
