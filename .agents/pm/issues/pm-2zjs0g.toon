@@ -2,19 +2,23 @@ id: pm-2zjs0g
 title: "Platform nightly legs fail on half of all days and nothing measures the rate: each alert opens a fresh issue and closes on repair, so a 28-occurrence family reads as 28 first occurrences"
 description: "Measured 2026-08-03 against the live GitHub Actions record and the tracker itself.\n\nThe scheduled Nightly Validation workflow has raised 28 failure alerts between 2026-06-20 and 2026-08-03. That is 23 distinct calendar days carrying at least one red leg across a 44-day window, so a platform leg fails on roughly half of all days. By leg: windows-latest Node 24 nineteen times, macos-latest Node 24 six times, ubuntu-latest three times. Every one of the 28 alerts is closed. Median time from alert to closure is 5.7 hours and the maximum is 175 hours.\n\nThe alerting itself works exactly as specified. The workflow searches for an open issue with the same title, comments on it if one exists, and otherwise opens a new one. Because each occurrence is repaired within hours, the search never finds an open issue, so every occurrence opens a fresh one. The channel therefore encodes each failure as a first occurrence and destroys the recurrence count as a side effect of working correctly.\n\nThe tracker shows the same shape. A title census over all items returns roughly thirty closed items whose subject is a platform nightly regression, spanning at least eight months of releases and many independent root causes: POSIX path literals, realpath canonicalization asymmetry, short-name temp directories, native path quoting, errno literals, spawn and lock behaviour, and most recently a workspace slug encoding. Each was diagnosed, fixed, closed and forgotten. No item, report, gate or command anywhere computes the family rate.\n\nThe consequence is a decision error, not a test error. Every individual repair looks proportionate because it is judged against one failing spec. The correct comparison is against the family: a defect class that recurs on half of all days with a median five-hour repair is consuming more sustained effort than the pre-merge control it lacks would cost, and nothing in the project can state that sentence with evidence. The exact same argument was already accepted for the release pipeline, where the failure rate of the scheduled auto-release was made a first-class defect precisely because the recovery path closes its own evidence. This item is that argument applied to the platform legs.\n\nScope is measurement and escalation, not the repair of any individual leg and not the choice of which checks run before merge. It must produce a durable, queryable rate per leg per period, a recurrence identity that survives repair, and a declared threshold that changes behaviour when crossed."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: ci,recurrence,reliability
 created_at: "2026-08-03T20:34:28.473Z"
-updated_at: "2026-10-05T11:59:59.622Z"
+updated_at: "2026-10-09T20:47:39.744Z"
+closed_at: "2026-10-09T20:47:39.639Z"
+completed_at: "2026-10-09T20:47:39.639Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "A durable per-leg failure-rate report is derivable from recorded data alone and states occurrences, distinct affected days, and repair latency over a caller-chosen window; The alert channel carries a stable recurrence identity so a repaired occurrence does not reset the count, and the identity survives closure of the alert and of the tracking item; A declared threshold on the rate changes behaviour rather than only reporting, and the behaviour change is recorded where the release decision can read it; The historical 28 occurrences and the tracker items that repaired them are reconciled into one queryable family with no hand-maintained list; A negative control proves the meter reports zero on a period with no failures rather than failing open"
 parent: pm-u9d0
 risk: high
 confidence: 90
-expected_result: "Per-leg nightly failure rate, distinct days and repair latency are derivable from recorded data, and a repaired occurrence keeps its recurrence identity instead of resetting the count."
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Added public SDK reliability windows, complete original nightly job/alert/PM correlation and durable enforced per-leg reports with stable recurrence ownership"
+expected_result: "Closed alerts and successful retries cannot erase original failures; rate, affected days and observed repair latency remain queryable with explicit missing evidence and a real healthy negative control"
+actual_result: "All 28 historical alerts correlate with original runs and recorded PM repair links; original live failures remain visible at unchanged thresholds; 76 focused tests, 10023 full tests and exact 100/100/100/100 coverage pass with packed Node/Bun and real semantic dogfood acceptance"
+dependencies[32]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,implements,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
   pm-e70zh5,discovered_from,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
   pm-ei6x66,related,"2026-08-03T20:35:36.738Z","harness:claude-code","cli:update:dep",detected
@@ -25,7 +29,29 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-zlv8jl,related,"2026-08-03T20:56:40.405Z","harness:claude-code","cli:update:dep",detected
   pm-5iwfkj,discovered_from,"2026-10-03T12:20:42.104Z","harness:codex","cli:update:dep",detected
   pm-gh1370,discovered_from,"2026-10-03T12:20:42.104Z","harness:codex","cli:update:dep",detected
-comments[5]:
+  pm-prrlce,verifies,"2026-10-09T20:05:05.368Z","harness:codex","cli:update:dep",detected
+  pm-0682l4,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-0fhw,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-23xkss,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-25b7tg,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-2kkl,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-3x8w4m,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-9gvazz,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-b24b,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-dprb,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-gume,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-hvt3,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-i84i,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-ihmfs6,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-lt6n,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-lvd647,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-noq46i,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-rusbe4,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-wr8utz,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-xaib,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-xpkt,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+  pm-zpe7,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
+comments[10]:
   - created_at: "2026-08-03T20:56:39.512Z"
     author: "harness:claude-code"
     text: "A clean natural experiment, observed 2026-08-03 immediately after this item was filed.\n\nA commit touching only tracker data under the pm store, with no source, script, workflow or test file changed, turned the Windows regression job on main red. Two tests in the init command suite failed at 30010 and 30002 milliseconds, which is the generic Vitest timeout rather than an assertion. Re-running the failed job against byte-identical content passed, and main is green at the same commit.\n\nThe experiment is clean because the input could not have caused a behavioural change. Tracker data is not read by that suite, which sandboxes its own store path. So the failure carried zero information about the commit and the leg still reported red.\n\nTwo consequences for this item.\n\nFirst, the measured failure rate is a mixture and nothing separates its parts. Of the 28 alerts counted here, an unknown fraction are product defects that a pre-merge control would have caught, and an unknown fraction are infrastructure timeouts that no control can catch because there is nothing to catch. A rate that mixes them cannot justify any decision, which strengthens rather than weakens the case for measuring it properly: the first thing the meter has to do is partition.\n\nSecond, the timeout class is itself a recurrence. Two items in this tracker are already closed for the same subject, Windows init package acceptance exceeding the generic Vitest timeout, and both closed with a per-site timeout increase. The class has returned on a third site. That is the second independent recurrence found today and it arrived, unprompted, in the CI response to the commit that filed the recurrence work.\n\nPartitioning rule this suggests, recorded as input rather than as a decision: a failure whose signature is a timeout at the declared limit, on a leg whose median passing duration for that suite is far below the limit, and which passes on re-run with identical content, is infrastructure. Everything else is a candidate defect until proved otherwise. The re-run is the discriminator and it is cheap.\n"
@@ -42,4 +68,68 @@ comments[5]:
   - created_at: "2026-10-05T11:59:59.622Z"
     author: "harness:codex"
     text: "Scheduled run 37301905006 at main 7077aca produced GH1409 and GH1410 with the same portable-backup get exit4 on Windows/macOS. Distinct causal child pm-gh1409 now owns the SDK source-spelling fix, real Linux red/green status assertion and required native acceptance in PR1402. This recurrence measurement family stays open and unclaimed; no shipped predecessor is reopened or release history reassigned."
+  - created_at: "2026-10-09T19:52:08.293Z"
+    author: "harness:codex"
+    text: "Implementation scope: original GitHub first attempts, per-leg SDK recurrence evaluation, complete paginated all-state alert evidence, explicit unknown cause classification, UTC affected days and censored alert-closure latency. Derive current leg population from the actual workflow and preserve historical observed legs. Enforce declared failure/coverage thresholds in a separately persisted operational report; closure never rewrites the original failure denominator."
+  - created_at: "2026-10-09T20:05:09.344Z"
+    author: "harness:codex"
+    text: "Test-audit evidence: the public SDK suite owns recurrence semantics; the collector suite independently proves GitHub pagination, original attempt identity, legacy leg retention, PM-link correlation and trusted workflow routing. Only external GitHub transport is substituted. The pre-fix timestamp and mixed-open-alert regressions failed independently, then the implementation was corrected. No coverage denominator, threshold or suppression changed. The first broad static run detected 121 tests in a 120-file SDK directory; the new governance test now lives under tests/unit/sdk/governance rather than relaxing the organization gate."
+  - created_at: "2026-10-09T20:13:23.232Z"
+    author: "harness:codex"
+    text: "Live historical reconciliation: all 28 alert issues created 2026-06-20 through 2026-08-03 retain original-run references and canonical PM repair links. The caller-chosen 45-day report ending 2026-08-04 retains the original red jobs and clean Ubuntu Node25/Node20 negative controls. Complete live metadata and histories of all 22 unique recorded repair owners were downloaded with no omissions. Added only evidenced discovered_from relationships to this measurement owner; source repairs remain closed. The original issue description grouped four Windows Node20 alerts under Windows Node24; live titles preserve those runtime generations separately. Alert counts and red-job occurrences are different populations: an issue can contain subsequent failed runs in comments."
+  - created_at: "2026-10-09T20:30:50.621Z"
+    author: "harness:codex"
+    text: "Verification checkpoint: the first full Node24 run passed all 10023 behavioral tests and two legitimate Windows-only skips, while the unchanged exact coverage gate rejected one unexercised multi-origin ordering callback. The origin partition regression now asserts an independent chronological ID sequence including same-instant tie breaking. The broad source suite is being rerun without coverage exclusions or threshold changes. An overlapping linked run timed out waiting for the build lease; after the suite released that lease, the same linked command passed unchanged. Run broad and linked builds sequentially to avoid manufacturing a harness timeout."
+  - created_at: "2026-10-09T20:47:37.956Z"
+    author: "harness:codex"
+    text: "Completed implementation evidence: public SDK windows, first-attempt collector, all-state alert/PM correlation, stable alert-owner comments and enforced per-leg workflow policy pass 76 focused cases and the full 10023-test suite at exact 100/100/100/100 coverage. A final live production-collector replay ending 2026-08-04 retains 280 original family observations, all 28 linked historical alerts and genuine healthy zero-rate Ubuntu/macOS legacy legs. The live 30-day meter faithfully remains red for macOS and both Windows shards at the unchanged 10% policy; this resolves missing measurement rather than erasing outcomes. Packed Node24/Node26/Bun, strict typed consumers, nine-package npx/bunx acceptance and 91-step package-first dogfood with real local semantic indexing/hybrid search passed. Publication of this reviewed source is a separate future daily release claim."
+learnings[1]{created_at,author,text}:
+  "2026-10-09T20:13:24.004Z","harness:codex","A reliability denominator must count original job attempts, not alert issues. Reused alert comments can carry several occurrences; closure is only an observed latency endpoint and never rewrites the original outcome or supplies an inferred product/infrastructure cause."
+files[10]{path,scope,note}:
+  .github/workflows/nightly.yml,project,Original-attempt recurrence measurement and public SDK delivery
+  .github/workflows/release-reliability.yml,project,Original-attempt recurrence measurement and public SDK delivery
+  config/nightly-reliability-policy.json,project,Original-attempt recurrence measurement and public SDK delivery
+  scripts/release/collect-nightly-reliability.mjs,project,Original-attempt recurrence measurement and public SDK delivery
+  sdk/public-surface.json,project,Original-attempt recurrence measurement and public SDK delivery
+  src/sdk/governance.ts,project,Original-attempt recurrence measurement and public SDK delivery
+  src/sdk/governance/reliability.ts,project,Original-attempt recurrence measurement and public SDK delivery
+  tests/unit/scripts/release/collect-nightly-reliability.spec.ts,project,Original-attempt recurrence measurement and public SDK delivery
+  tests/unit/sdk/governance/reliability.spec.ts,project,Original-attempt recurrence measurement and public SDK delivery
+  vitest.config.ts,project,Original-attempt recurrence measurement and public SDK delivery
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,project,300,"harness:codex","2026-10-09T20:05:04.495Z",local_mutation,feat/sdk-reliability-release-origin-nightly-recurrence
+test_runs[2]:
+  - run_id: test-local-mv1esdxx-p3n3gn
+    kind: test
+    status: failed
+    started_at: "2026-10-09T20:14:27.059Z"
+    finished_at: "2026-10-09T20:19:27.765Z"
+    recorded_at: "2026-10-09T20:19:27.765Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv1f0vyw-jidknn
+    kind: test
+    status: passed
+    started_at: "2026-10-09T20:25:55.630Z"
+    finished_at: "2026-10-09T20:26:04.376Z"
+    recorded_at: "2026-10-09T20:26:04.376Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/RELEASE_RELIABILITY.md,project
+close_reason: Original nightly recurrence is now measured and retained after repairs
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: nightly-reliability-window
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/reliability.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts
+  hosted_checks[1]: Release origins and nightly recurrence reliability
+  owner: pm-2zjs0g
 body: ""

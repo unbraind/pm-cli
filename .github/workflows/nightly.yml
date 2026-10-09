@@ -112,12 +112,16 @@ jobs:
           Run: ${RUN_URL}
           Commit: ${NIGHTLY_SHA}
 
+          Recurrence owner: [pm-2zjs0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2zjs0g.toon).
+          Family: nightly:${NIGHTLY_OS}:node:${NIGHTLY_NODE}
+
           Investigate before trusting the next daily release."
 
           if [[ -n "${existing_issue}" ]]; then
             gh issue comment "${existing_issue}" --body "${body}"
           else
-            gh issue create --title "${title}" --body "${body}"
+            created_issue="$(gh issue create --title "${title}" --body "${body}")"
+            gh issue comment "${created_issue}" --body "Recurrence tracked by [pm-2zjs0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2zjs0g.toon)."
           fi
 
   quality:
@@ -208,10 +212,14 @@ jobs:
           Run: ${RUN_URL}
           Commit: ${NIGHTLY_SHA}
 
+          Recurrence owner: [pm-2zjs0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2zjs0g.toon).
+          Family: nightly:${NIGHTLY_OS}:node:${NIGHTLY_NODE}
+
           Investigate before trusting the next daily release."
 
           if [[ -n "${existing_issue}" ]]; then
             gh issue comment "${existing_issue}" --body "${body}"
           else
-            gh issue create --title "${title}" --body "${body}"
+            created_issue="$(gh issue create --title "${title}" --body "${body}")"
+            gh issue comment "${created_issue}" --body "Recurrence tracked by [pm-2zjs0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2zjs0g.toon)."
           fi

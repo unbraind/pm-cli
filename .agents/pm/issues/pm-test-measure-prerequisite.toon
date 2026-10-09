@@ -1,0 +1,21 @@
+id: pm-test-measure-prerequisite
+title: Expose the test measurement run prerequisite in help and recovery
+description: "A real delivery workflow tried pm test <id> --measure focused_tests=76 and received --measure requires --run. Command help only says Record name=value evidence, and recovery points to generic item/help commands rather than an executable same-intent test retry. Preserve the fail-closed requirement, declare the prerequisite in help/contracts, and supply an actionable minimal recovery without weakening clone-local linked-test trust."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"area:contracts","horizon:future"
+created_at: "2026-10-09T20:48:23.014Z"
+updated_at: "2026-10-09T20:52:18.978Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Help and machine contracts state the run prerequisite; a measurement-only request refuses before mutation with an executable same-intent recovery; linked-test trust and sandbox isolation remain enforced; behavioral negative controls and generated surface parity pass without token budget relaxation.
+parent: pm-n7rr
+risk: low
+confidence: high
+expected_result: An agent discovers the run prerequisite before requesting measurement evidence and receives an executable same-intent recovery while trust and sandbox safeguards remain intact
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-reliability-window-delivery,discovered_from,"2026-10-09T20:48:23.014Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-09T20:48:23.014Z","harness:codex","Duplicate check: full 2912-item all-status corpus plus the new delivery record were checked for --measure prerequisites and conditional help/recovery coverage; no equivalent item exists. Existing pm-n7rr is the grammar umbrella and is reused as parent. This observed UX follow-up remains open and unclaimed; it is not part of the completed SDK reliability implementation."
+body: ""

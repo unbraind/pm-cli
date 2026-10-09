@@ -1,0 +1,6 @@
+{
+  "schema": "nightly-reliability-policy/1",
+  "window_days": 30,
+  "max_failure_rate": 0.1,
+  "min_completed_attempts": 7
+}

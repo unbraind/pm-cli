@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add SDK reliability windows and preserve nightly and release-origin recurrence ([pm-reliability-window-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-reliability-window-delivery.toon))
 - Cross-version workspace compatibility matrix: prove that workspaces written by older and newer pm releases stay readable and mergeable ([pm-pae3wo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pae3wo.toon))
 
 ### Changed
@@ -12,6 +13,7 @@
 
 ### Fixed
 
+- Platform nightly legs fail on half of all days and nothing measures the rate: each alert opens a fresh issue and closes on repair, so a 28-occurrence family reads as 28 first occurrences ([pm-2zjs0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2zjs0g.toon))
 - Full-item stdin JSON must preserve declared schema and extension custom fields ([pm-stdin-schema-fields](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-stdin-schema-fields.toon))
 - Agent-task token ratchet changes verdict with temporary-root path length ([pm-agent-token-path](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-agent-token-path.toon))
 - Exact-tag recovery must preserve the complete reviewed release-control import closure ([pm-gh1429](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1429.toon))

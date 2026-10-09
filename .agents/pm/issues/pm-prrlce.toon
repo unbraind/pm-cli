@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:release",automation,diagnostics,"horizon:current"
 created_at: "2026-09-28T15:31:49.498Z"
-updated_at: "2026-10-08T16:46:45.907Z"
+updated_at: "2026-10-09T20:47:41.269Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every Auto Release and Release run carries an explicit trigger origin (native schedule, morning dispatcher, blocker retry, operator) from a declared input and its run name, never inferred from event or actor; Release reliability reports a separate series per origin, including the dispatcher's attempts, failures and failing stages, while the native scheduled denominator stays unchanged as decided on pm-9url9h; The same-day manual follow-up of pm-uenmu9 requires an explicit follow-up request from the operator origin; negative control: a dispatcher-origin run after a same-day tag exists skips before any version mutation; The 2026-09-28 dispatcher failure is visible in the new series or recorded as an explicit pre-attribution gap"
@@ -23,7 +23,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,discovered_from,"2026-09-28T15:32:05.324Z","harness:claude-code","cli:update:dep",detected
   pm-z329kd,discovered_from,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
   pm-uenmu9,discovered_from,"2026-09-29T09:47:31.174Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-09-29T10:00:31.279Z","harness:codex","Implemented declared Auto Release origin in workflow run names and attempt receipts; morning dispatcher now passes its own origin. Reliability collection includes schedule, dispatch, and issue runs while keeping the native scheduled policy denominator intact; the dispatcher has a separate count, failure rate, stage series, and historical unattributed-run gap. New same-day dispatcher runs take the early immutable-tag guard. Release exact-tag dispatch carries origin; tag-push runs retain tag_push provenance. Linked tests passed (72), full coverage passed 9,428 tests at 100/100/100/100, and packed npm/Bun manual acceptance passed. Remaining acceptance: per-origin reliability series for operator and blocker retry, and upstream origin propagation into tag-push Release runs; operator-only ordinal follow-up remains owned by pm-uenmu9. No hosted release run or live new-origin receipt has yet been observed."
   "2026-09-29T10:28:52.881Z","harness:codex",PR #1350 review found the new origin-bearing Release run name no longer matched exact-tag recovery selection. Added exact declared-origin run-name matching with wrong-tag and unknown-origin negative controls; focused selector tests pass. Greptile discussion #4132270479.
   "2026-09-29T12:22:02.811Z","harness:codex","PR #1350 CodeRabbit discussion #4133333546 identified that dispatcher observations used the native 02:35 UTC cron for nominal occurrence and dispatch delay. Dispatcher rows now omit those schedule-specific timing fields, retain queue delay/outcome/failure stage, and focused negative controls prove native scheduled rows still keep their timing. Documentation states the boundary."
@@ -34,6 +34,8 @@ comments[10]{created_at,author,text}:
   "2026-10-05T04:06:29.202Z","harness:codex","Completed actual timer-origin receipt: https://github.com/unbraind/pm-cli/actions/runs/37256615423 ran on reviewed source 9fa82f63b9211491af7f1d062f072654aa763a21 as Auto Release (morning_dispatcher), completed successfully at 2026-10-05T03:44:12Z, and published immutable GitHub release v2026.10.5 at 03:43:49Z. The npm registry now reports @unbrained/pm-cli 2026.10.5. Normal PR integration contains the version-only main release commit 7077aca; our SDK fixes remain Unreleased and are not claimed published in that already-cut version. No extra manual dispatch or republish was sent. This supplies the real automatic request/publication receipt; operator/blocker reliability series, policy recovery and upstream tag-push attribution remain separate canonical acceptance, so this broader item stays open and unclaimed."
   "2026-10-07T17:41:35.687Z","harness:codex","2026-10-07 release checkpoint: fully downloaded hosted Release Reliability attempt 37613199789/1 reports a complete census of 30 original native scheduled attempts, seven failures (23.33% against the unchanged 10% ceiling), and dispatch_window violations. Current daily publication succeeded independently. Historical failures remain counted; no rerun, denominator change or threshold relaxation was used. The dispatcher/origin acceptance in this item remains distinct from worker workspace cleanup in pm-p5u6."
   "2026-10-08T16:46:45.907Z","harness:codex","2026-10-08 live release checkpoint: hosted Release Reliability run 37770997756 reports a complete original native-schedule census of 30 attempts / six failures (20% versus unchanged 10% policy), with scheduled_failure_rate and dispatch_window violations. Latest native schedule succeeded, verified the same-day release, and arrived 409.2 minutes after nominal 02:35 UTC. The morning_dispatcher series has four attributed attempts / one failure (25%) and four explicit pre-attribution gaps; outcome_evidence_complete=false remains explicit. Current published npm package is 2026.10.8 and the actual 02:45 morning dispatcher run 37719393862 succeeded. Successful publication is separate from red rolling reliability and incomplete upstream/per-origin acceptance. No extra dispatch, republish, denominator change or relaxed policy was used; this broader item stays open/unclaimed."
+  "2026-10-09T19:52:07.786Z","harness:codex","TDD: the independent declared-origin report regression fails on the shipped evaluator because operator and blocker_retry series are absent. Completing those series without changing the native scheduled denominator; shared SDK recurrence evaluation and nightly measurement are implemented alongside pm-2zjs0g. Full all-status census2912 is complete with zero omissions/unreadable records; GitHub has no open PR or security alerts."
+  "2026-10-09T20:41:25.717Z","harness:codex","Concrete origin tranche is complete: native_schedule, morning_dispatcher, operator and blocker_retry each preserve independent original counts, failure stages, null-versus-zero rates and evidence completeness without changing the native scheduled denominator. Live census retained 30 original native attempts with 7 failures; declared morning_dispatcher retained 5 completed/2 failed, operator 9/1 and blocker_retry 52/51 with unrecorded failure stages explicitly unknown. This operational debt is distinct from the green candidate tree. Remaining operator-only same-day follow-up policy belongs to pm-uenmu9; upstream tag-trigger provenance remains under this broader owner. The reviewed Changeset pm-reliability-window-delivery records this actual implementation without falsely closing broader acceptance."
 notes[1]{created_at,author,text}:
   "2026-09-29T10:00:32.043Z","harness:codex",A tag-push Release run currently knows only tag_push in its run name. Do not equate that with the upstream Auto Release trigger; completing the accepted provenance contract needs immutable upstream attribution through the tag or an explicitly dispatched Release workflow without duplicate publish runs.
 learnings[1]{created_at,author,text}:
@@ -55,7 +57,7 @@ files[13]{path,scope}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-09-29T09:38:31.591Z",local_mutation,fix/release-origin-and-install-diagnostics
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,project,300,"harness:codex","2026-09-29T10:29:04.313Z",local_mutation,fix/release-origin-and-install-diagnostics
-test_runs[3]:
+test_runs[6]:
   - run_id: test-local-mumhi17y-rifyl0
     kind: test
     status: passed
@@ -91,6 +93,42 @@ test_runs[3]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv1fh5mt-lmqm8l
+    kind: test
+    status: failed
+    started_at: "2026-10-09T20:38:43.201Z"
+    finished_at: "2026-10-09T20:38:43.397Z"
+    recorded_at: "2026-10-09T20:38:43.397Z"
+    passed: 0
+    failed: 2
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mv1fiej8-h2c11r
+    kind: test
+    status: failed
+    started_at: "2026-10-09T20:39:41.488Z"
+    finished_at: "2026-10-09T20:39:41.588Z"
+    recorded_at: "2026-10-09T20:39:41.588Z"
+    passed: 0
+    failed: 2
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mv1fj6tu-m1t48j
+    kind: test
+    status: passed
+    started_at: "2026-10-09T20:40:03.944Z"
+    finished_at: "2026-10-09T20:40:18.258Z"
+    recorded_at: "2026-10-09T20:40:18.258Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,schema,schema,source,acknowledged
 docs[1]{path,scope}:
   docs/RELEASE_RELIABILITY.md,project
 body: ""
