@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[8]: added,ci,compatibility,format-version,migration,multi-agent,quality-gate,storage
 created_at: "2026-07-24T23:47:05.940Z"
-updated_at: "2026-10-09T17:07:24.465Z"
-closed_at: "2026-10-09T17:07:23.911Z"
-completed_at: "2026-10-09T17:07:23.911Z"
+updated_at: "2026-10-09T17:54:23.023Z"
+closed_at: "2026-10-09T17:54:22.252Z"
+completed_at: "2026-10-09T17:54:22.252Z"
 author: maintainer-agent
 estimated_minutes: 1500
 acceptance_criteria: "The matrix covers at least the previous two release lines writing and the current build reading, plus the reverse direction; Forward-incompatible reads fail loudly with an actionable error rather than silently misparsing or dropping fields; Backward-compatible reads preserve unknown fields on round-trip so an older reader cannot destroy a newer writer's data; Merge drivers are exercised across version skew, not only within one version; The declared compatibility window is documented and the matrix fails when the code drifts from the declaration"
@@ -21,9 +21,9 @@ why_now: "The format_version field exists and migrations are planned, but there 
 parent: pm-o2kc
 risk: medium
 confidence: high
-resolution: "Added mandatory real published-artifact compatibility against two prior stable calendar releases, public SDK reads, exact unknown-field preservation, restoration, native Git merge drivers, reconciliation and verified histories. Admit future storage markers before schema/body validation or legacy migration; preserve unsupported alternate files and valid baseline corruption recovery. Static ESM fixtures carry data-only JSON, and exact-tag recovery preserves the reviewed matrix/policy/import/assets closure while testing the selected built workspace."
-expected_result: "Mixed-version workspaces preserve exact data and histories; unsupported formats refuse without item/history rewrites, including malformed and legacy documents. Every publication/preflight runs the declared matrix from reviewed controls."
-actual_result: "Four current-source/published-release rows and an independent preserved-gate run against actual public npm2026.10.9 pass. Future get/update/delete/restore return conflict4 and typed upgrade guidance while exact item/history hashes remain unchanged; baseline restoration succeeds. All linked tests, 9967-test suite, integer-exact100/100/100/100 coverage, complete static pipeline and nine packed npm/npx/Bun/bunx consumers pass. Hosted remediation-head validation and AI-review availability are verified separately before merge."
+resolution: "Added mandatory real published-artifact compatibility against two prior stable calendar releases, public SDK reads, exact unknown-field preservation, restoration, native Git merge drivers, reconciliation and verified histories. Admit future storage markers before schema/body validation or legacy migration; preserve unsupported alternate files and valid baseline corruption recovery. Static ESM fixtures carry data-only JSON, and exact-tag recovery preserves the reviewed matrix/policy/import/assets closure while testing the selected built workspace. Canonicalize native ESM entrypoint paths and verify both direct and symlinked preserved-control invocations execute."
+expected_result: "Mixed-version workspaces preserve data/history and refuse unsupported storage before recovery or migration. Every publication/preflight executes the reviewed matrix, including native temporary-directory aliases."
+actual_result: "Four real matrix rows and public SDK probes pass; future-format refusals preserve item/history, baseline recovery succeeds, preserved immutable-source recovery passes, and direct/symlinked controls reach substantive admission. Same symlink keeper failed before the fix and passes afterward. Full9967-test suite has integer-exact100/100/100/100 coverage; complete static,3 linked commands and documented helper checks pass. Previously verified nine packed npm/npx/Bun/bunx consumers remain separate package evidence. Hosted final-head CI and bot availability are verified before merge."
 dependencies[16]:
   - id: pm-a8lnoh
     kind: related
@@ -85,7 +85,7 @@ dependencies[16]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[19]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-10-09T14:42:42.288Z","harness:codex","Implementation scope: full live metadata and history inspected. Build a checked-in compatibility window and real published-release/current-source matrix covering bidirectional read/mutate/unknown-field preservation, merge version skew, history integrity and fail-closed format versions. Initial GitHub intake: no open PRs or dependency/code/secret alerts, all 16 open issues linked to canonical PM items, npm/GitHub latest 2026.10.9, pm-changelog latest 2026.10.5."
   "2026-10-09T14:58:58.710Z","harness:codex","Compatibility implementation adds a declared two-prior-stable-release window with real installed artifacts, both writer/reader directions, public SDK reads, unknown scalar/container preservation after disabling registrations, restoration, native Git merge drivers, reconciliation and verified histories. Current runtime additionally refuses future pm_format_version before reads/update/delete/restore, preserving item and history bytes. Raw format parsing remains usable by integrity diagnostics. Existing legacy Markdown migration gate remains the independent migration keeper."
   "2026-10-09T15:21:00.799Z","harness:codex","Verification audit: initial all-source run found the two new specs exceeded the existing 120-file integration directory cap and the release-runner mocked capture lacked a receipt for the newly mandatory gate. Partitioned specs into schema/release areas; kept the cap unchanged; extended the existing runner keeper to prove --skip-compatibility cannot skip published workspace compatibility. Existing packed SDK keeper requires the installed global npm package exposed through NODE_PATH on this host. Linked runs waiting behind full-suite build ownership timed out; rerunning serialized without changing ownership or timeouts."
@@ -105,12 +105,17 @@ comments[19]{created_at,author,text}:
   "2026-10-09T16:46:09.643Z","harness:codex","Platform obligation: published workspace matrix execution remains the declared Linux gate; the foreign-control Node probe follows the existing matrix platform boundary and does not execute npm.cmd through execFileSync on Windows. Exact copied-control/assets checks and the preserved artifact/registry shell keepers still run on Windows. General CLI/SDK and installed npm/npm-global/Bun platform coverage remain mandatory and unchanged."
   "2026-10-09T16:51:00.190Z","harness:codex","Fresh one-day required observability gate passes: Sentry access verified with zero recent unresolved critical/high issues; telemetry finish-error rate1.07percent and zero missing error-code rows. Local telemetry is enabled with recent successful flush and no failures; its one newly generated status event is not permanent queue debt. Sentry trace-list was queried separately for the recent hour; record its actual count at delivery rather than infer trace freshness from flush success."
   "2026-10-09T17:07:23.300Z","harness:codex","Final local source verification passes: 9967 tests across792 passing files, exact statements67400/67400, branches51542/51542, functions13887/13887 and lines64212/64212. Complete static pipeline and nine packed npm/npx/Bun/bunx package consumers pass. All three linked keeper commands pass; the final platform-scoped preserved-control keeper passes independently after its portability edit. Tracked credential scan and dependency audit are clean; latest pm-changelog is still2026.10.5. No thresholds, suppressions, coverage ignores, ownership overrides or published versions were relaxed/changed. Next delivery step is one remediation commit on PR1431 followed by fresh hosted CI and requested reviews."
+  "2026-10-09T17:28:52.247Z","harness:codex","Review round2 receipt: CodeQL automatically resolved both source-construction threads after static ESM/data-only fixtures; CodeRabbit full review completed. Required macOS smoke failed because the compatibility control exited0 without executing through the macOS temporary-directory alias. Reproduce the same path-identity defect with a real symlink on Linux before correcting entrypoint admission. The review registry note is an intentional real-artifact acceptance obligation, not a reason to replace published artifacts with mocks or skip mandatory coverage."
+  "2026-10-09T17:29:39.077Z","harness:codex","Native-path TDD: extending the existing foreign-workspace preservation keeper with a real control-directory symlink failed before the fix (expected refusal1, received silent exit0), matching macOS CI. Entrypoint comparison now uses the actual filesystem path resolved by Node; direct invocation, safe imports and real four-row acceptance remain covered. No mock, flag, extra export or threshold change is introduced."
+  "2026-10-09T17:41:06.399Z","harness:codex","Review dispositions: every new or edited bot artifact from round2 was read and voted. CodeRabbit completed its full review with one operational registry note; the documented mandatory real-artifact keeper remains, with deterministic policy unit tests retained. Its separate callback/script docstring estimate is not the required source/export/member documentation floor and gave no missing-function locations. CodeQL alerts44/45 have fixed PR instances without dismissal; exact-head CodeFactor and DeepScan report zero issues. Greptile trial expiry, Sourcery quota and cubic monthly budget remain availability limits, never approval. Fresh complete GitHub issue/comment inventory verifies all16 open issues have canonical PM links. Privacy-safe telemetry aggregates show147 recent starts and147 finishes; trace freshness remains independently unverified."
+  "2026-10-09T17:54:21.620Z","harness:codex","Final native-path verification: same real symlink keeper failed before the admission fix and passes afterward; direct invocation, import-only side-effect safety and all four published runtime rows pass. Full9967-test coverage is integer-exact100/100/100/100; complete static and all3 linked keeper commands pass, run test-local-mv19k6c9-hzw4l8. Added substantive documentation for the module and nontrivial local release/subprocess/runtime helpers; fresh documentation and ESLint checks pass after that comment-only change. Latest pm-changelog remains2026.10.5. No gate, denominator, mutation policy or provider requirement was weakened."
 notes[2]{created_at,author,text}:
   "2026-10-09T15:08:40.542Z","harness:codex","Observed acceptance receipt: published 2026.10.7 and 2026.10.8 each passed both writer/reader directions with the 2026.10.9 source build. Real installed SDK reads, unknown typed metadata, restore, native Git drivers, reconcile without force and exact history verification all passed. The harness is grouped beside the existing compatibility-check acceptance script; its required gate is registered for CI/nightly/release and cannot be skipped in local preflight."
   "2026-10-09T16:42:49.542Z","harness:codex","Historical release-control verification link is justified by the retained executable registry-acceptance-workflow keeper: it still packs a foreign workspace using reviewed artifact budgets and detects physical removal of temp-lifecycle.mjs, now also retaining the required matrix import/assets closure. Canonical pm-gh1429 remains closed; this compatibility extension neither reopens shipped recovery work nor invents a schedule dependency."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-10-09T15:08:43.806Z","harness:codex","A successful process exit is insufficient compatibility evidence. Compare exact unknown values and replay hashes across both release directions, restore historical states, run native merge drivers and reconcile. Preserve forward format markers for diagnostics but refuse normal operations before unsupported item bytes can be rewritten."
   "2026-10-09T16:25:22.935Z","harness:codex","Compatibility acceptance must place public SDK consumers in a child directory separate from the Git workspace: adding node_modules/@unbrained/pm-cli at the workspace root changes project runtime pin detection and can refuse older writers. Keep runtime discovery intact; do not bypass stale-runtime policy. Future-version admission must protect both item reads/recovery and legacy pre-mutation format synchronization, including discarded alternate variants."
+  "2026-10-09T17:41:05.722Z","harness:codex","Command admission must compare physical filesystem identities: Node resolves ESM modules through symlinks while argv can retain an alias, including native macOS temporary-directory paths. A zero exit is not proof that a gate ran. Keep a real direct-and-alias subprocess regression that must reach a substantive refusal, alongside the successful published-artifact matrix."
 files[21]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
@@ -178,7 +183,7 @@ tests[3]:
       created_at: "2026-10-09T16:40:08.535Z"
       source_kind: local_mutation
       source_ref: fix/custom-field-roundtrips-version-skew
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-mv13w8mn-q696ws
     kind: test
     status: failed
@@ -226,6 +231,19 @@ test_runs[4]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/workspace-compatibility.spec.ts tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts tests/unit/scripts/release/run-gates.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-migration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv19k6c9-hzw4l8
+    kind: test
+    status: passed
+    started_at: "2026-10-09T17:52:01.586Z"
+    finished_at: "2026-10-09T17:53:06.585Z"
+    recorded_at: "2026-10-09T17:53:06.585Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/workspace-compatibility.spec.ts tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts tests/unit/scripts/release/run-gates.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-migration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[4]:
   - path: CHANGELOG.md
     scope: project
@@ -238,5 +256,5 @@ docs[4]:
     note: Explicit strict format admission while raw parser inspection remains available
   - path: docs/TESTING.md
     scope: project
-close_reason: Enforce the declared workspace compatibility window and preserve unsupported storage through recovery.
+close_reason: Enforce cross-version compatibility and execute reviewed controls through native path aliases.
 body: "## Problem\nStorage carries a format_version field and migration primitives are planned, but no test answers the practical questions: what does today's build do with a workspace written by last month's build, what does last month's build do with today's, and what happens when two such agents merge branches.\n\n## Approach\nA matrix job that installs prior published releases, generates representative workspaces with them, then runs the current build's read, mutate, validate, merge, and history-verify paths against those workspaces — and the mirror direction using the current build as writer.\n\n## Field preservation\nThe critical invariant is that an older reader must not destroy fields it does not understand. Round-trip preservation of unknown fields is what makes a staggered fleet safe, and it must be asserted explicitly.\n\n## Boundary\nNot schema migration itself, which is owned separately. This proves the compatibility window; migrations move workspaces across it."

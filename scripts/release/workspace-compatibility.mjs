@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 
+/**
+ * Exercise mixed-version workspaces with real published runtimes and native Git.
+ * Reviewed controls own policy and fixtures; the working directory owns the
+ * built runtime under test, including immutable-tag recovery.
+ */
+
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 import { copyFile, mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -14,10 +21,12 @@ export function selectWorkspaceCompatibilityVersions(versions, current, policy) 
   assert.equal(policy.schema_version, 1, "Unknown compatibility policy");
   assert.equal(policy.previous_stable_releases, 2, "Compatibility requires two prior stable releases");
   assert.equal(policy.item_format_version, 1, "Update compatibility fixtures before changing the storage baseline");
+  /** Parse calendar components while refusing prereleases and arbitrary semver. */
   const numeric = (version) => {
     assert.match(version, /^\d{4}\.\d{1,2}\.\d{1,2}$/u, "Expected a stable calendar version");
     return version.split(".").map(Number);
   };
+  /** Order calendar versions numerically across different month/day widths. */
   const compare = (left, right) => {
     const a = numeric(left);
     const b = numeric(right);
@@ -43,6 +52,7 @@ export async function main() {
   const releaseCleanup = registerTempCleanup(root);
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_") && !["PM_PATH", "PM_GLOBAL_PATH"].includes(key)));
   Object.assign(env, { PM_TELEMETRY_DISABLED: "1", PM_TELEMETRY_OTEL_DISABLED: "1", PM_TELEMETRY_PROMPT: "0", PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1", PM_AUTHOR: "compatibility-fixture", FORCE_COLOR: "0" });
+  /** Run a bounded real subprocess with isolated tracker and inherited Git inputs. */
   const run = (command, args, cwd = root, extraEnv = {}) => execFileSync(command, args, { cwd, env: { ...env, ...extraEnv }, encoding: "utf8", maxBuffer: 16 * 1024 * 1024, timeout: 120_000, stdio: ["ignore", "pipe", "pipe"] }).trim();
   try {
     const versions = selectWorkspaceCompatibilityVersions(JSON.parse(run(commandFor("npm"), ["view", "@unbrained/pm-cli", "versions", "--json"])), manifest.version, policy);
@@ -64,7 +74,9 @@ export async function main() {
         await mkdir(cwd);
         const pmRoot = path.join(cwd, ".agents/pm");
         const trackerEnv = { PM_PATH: pmRoot, PM_GLOBAL_PATH: path.join(cwd, ".global") };
+        /** Invoke the selected runtime; readers disable field registrations by default. */
         const cli = (runtime, args, extensions = false) => JSON.parse(run(process.execPath, [runtime.cli, ...args, "--json", ...(extensions ? [] : ["--no-extensions"])], cwd, trackerEnv));
+        /** Exercise native repository and merge-driver behavior in this matrix row. */
         const git = (...args) => run("git", args, cwd, trackerEnv);
         cli(writer, ["init", "--defaults"]);
         const extensionRoot = path.join(pmRoot, "extensions", "compat-fields");
@@ -121,4 +133,4 @@ export async function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) await main();
