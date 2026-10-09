@@ -50,18 +50,23 @@ export async function main() {
   const policy = JSON.parse(await readFile(path.join(repoRoot, "scripts/release/workspace-compatibility-policy.json"), "utf8"));
   const root = await mkdtemp(path.join(tmpdir(), "pm-workspace-compat-"));
   const releaseCleanup = registerTempCleanup(root);
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_") && !["PM_PATH", "PM_GLOBAL_PATH"].includes(key)));
-  Object.assign(env, { PM_TELEMETRY_DISABLED: "1", PM_TELEMETRY_OTEL_DISABLED: "1", PM_TELEMETRY_PROMPT: "0", PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1", PM_AUTHOR: "compatibility-fixture", FORCE_COLOR: "0" });
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^(?:GIT_|npm_|NODE_AUTH_TOKEN$)/iu.test(key) && !["PM_PATH", "PM_GLOBAL_PATH"].includes(key)));
+  Object.assign(env, { PM_SENTRY_DISABLED: "1", PM_TELEMETRY_DISABLED: "1", PM_TELEMETRY_OTEL_DISABLED: "1", PM_TELEMETRY_PROMPT: "0", PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1", PM_AUTHOR: "compatibility-fixture", FORCE_COLOR: "0" });
   /** Run a bounded real subprocess with isolated tracker and inherited Git inputs. */
   const run = (command, args, cwd = root, extraEnv = {}) => execFileSync(command, args, { cwd, env: { ...env, ...extraEnv }, encoding: "utf8", maxBuffer: 16 * 1024 * 1024, timeout: 120_000, stdio: ["ignore", "pipe", "pipe"] }).trim();
   try {
-    const versions = selectWorkspaceCompatibilityVersions(JSON.parse(run(commandFor("npm"), ["view", "@unbrained/pm-cli", "versions", "--json"])), manifest.version, policy);
+    const userConfig = path.join(root, "npm-user.npmrc");
+    const globalConfig = path.join(root, "npm-global.npmrc");
+    await writeFile(userConfig, "");
+    await writeFile(globalConfig, "");
+    const npmArgs = ["--registry=https://registry.npmjs.org/", `--userconfig=${userConfig}`, `--globalconfig=${globalConfig}`, `--cache=${path.join(root, "npm-cache")}`];
+    const versions = selectWorkspaceCompatibilityVersions(JSON.parse(run(commandFor("npm"), ["view", "@unbrained/pm-cli", "versions", "--json", ...npmArgs])), manifest.version, policy);
     const current = { version: manifest.version, cli: path.join(workspaceRoot, "dist/cli.js"), packageRoot: workspaceRoot };
     const releases = [];
     for (const version of versions) {
       const prefix = path.join(root, `runtime-${version}`);
       await mkdir(prefix);
-      run(commandFor("npm"), ["install", "--prefix", prefix, "--ignore-scripts", "--no-audit", "--no-fund", `@unbrained/pm-cli@${version}`]);
+      run(commandFor("npm"), ["install", "--prefix", prefix, "--ignore-scripts", "--no-audit", "--no-fund", `@unbrained/pm-cli@${version}`, ...npmArgs]);
       const installed = path.join(prefix, "node_modules/@unbrained/pm-cli");
       releases.push({ version, cli: path.join(installed, "dist/cli.js"), packageRoot: installed });
     }

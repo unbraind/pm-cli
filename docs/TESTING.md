@@ -156,6 +156,11 @@ verification. Missing releases, metadata loss, or invalid merged histories fail
 the gate. CI, nightly quality, release publication, and local preflight require
 this matrix alongside the independent legacy Markdown migration check.
 
+Metadata probes and installs explicitly use the public npm registry with
+separate empty user/global configurations and a fresh temporary cache. Inherited
+npm settings and registry-auth environment variables are removed, so host
+configuration cannot change the artifacts selected by the declared window.
+
 The current item-operation boundary refuses a stored `pm_format_version`
 ahead of its supported version with `item_format_version_unsupported` and
 upgrade guidance. Reads, updates, deletion, and restoration preserve the
