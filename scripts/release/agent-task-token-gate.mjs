@@ -34,7 +34,8 @@ const TRANSCRIPT_PATH = path.join(
   "agent-task-transcripts.json",
 );
 const CLI_PATH = path.join(repoRoot, "dist", "cli.js");
-const BASELINE_VERSION = 4;
+const BASELINE_VERSION = 5;
+const COMPARISON_SCOPE = "plan_recovery_tracker_root_canonicalized";
 const REPLAY_CLOCK = "2026-08-28T00:00:00.000Z";
 const REPLAY_SEED = "agent-task-token-gate";
 
@@ -324,6 +325,8 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step, trac
       output_kind: step.expected_output_kind,
       emitted_bytes: emittedBytes,
       estimated_tokens: Math.ceil(emittedBytes / 4),
+      comparison_emitted_bytes: emittedBytes,
+      comparison_estimated_tokens: Math.ceil(emittedBytes / 4),
       accounting_receipt_bytes: 0,
       sections: { diagnostics: { bytes: emittedBytes } },
       accounting_mode: accountingMode,
@@ -344,6 +347,11 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step, trac
     step,
     trackerRoots,
   );
+  // Normalize only the three validated Plan recovery suffixes. Keep the
+  // real executable payload and its independent byte accounting untouched.
+  const comparisonPayload = expectedAccountedPlanRoot(independentlyProjectedPayload,
+    trackerRoots === undefined ? undefined : { baseline: trackerRoots.accounted, accounted: "/replay/.agents/pm" });
+  const comparisonBytes = Buffer.byteLength(`${JSON.stringify(comparisonPayload, null, 2)}\n`, "utf8");
   return {
     id: step.id,
     command: step.args.join(" "),
@@ -351,6 +359,8 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step, trac
     output_kind: step.expected_output_kind,
     emitted_bytes: receipt.total_bytes,
     estimated_tokens: receipt.total_estimated_tokens,
+    comparison_emitted_bytes: comparisonBytes,
+    comparison_estimated_tokens: Math.ceil(comparisonBytes / 4),
     accounting_receipt_bytes: receipt.accounting_receipt_bytes,
     sections: receipt.sections,
     accounting_mode: accountingMode,
@@ -415,6 +425,10 @@ function measureTask(pmRoot, baselineSteps, task) {
       .length,
     emitted_bytes: measuredSteps.reduce(
       (total, step) => total + step.emitted_bytes,
+      0,
+    ),
+    comparison_estimated_tokens: measuredSteps.reduce(
+      (total, step) => total + step.comparison_estimated_tokens,
       0,
     ),
     estimated_tokens: measuredSteps.reduce(
@@ -534,7 +548,7 @@ export function evaluateOrientationProtocolSelection(report, orientation) {
     return {
       task_id: task.id,
       command_count: task.step_count,
-      estimated_tokens: task.estimated_tokens,
+      estimated_tokens: task.comparison_estimated_tokens,
       capabilities,
       capability_evidence: capabilityEvidence,
     };
@@ -599,23 +613,28 @@ async function seedWorkspace(workspaceRoot) {
 
 function listTaskTokenBaselineFailures(task, taskLimit) {
   const failures = [];
+  if (!Number.isSafeInteger(task.comparison_estimated_tokens) || task.comparison_estimated_tokens < 0) {
+    failures.push(`task:${task.id}:invalid_comparison_measurement`);
+  }
   if (!Number.isFinite(taskLimit.max_estimated_tokens)) {
     failures.push(`task:${task.id}:missing_baseline_limit`);
-  } else if (task.estimated_tokens > taskLimit.max_estimated_tokens) {
+  } else if (task.comparison_estimated_tokens > taskLimit.max_estimated_tokens) {
     failures.push(
-      `task:${task.id}:${task.estimated_tokens}>baseline:${taskLimit.max_estimated_tokens}`,
+      `task:${task.id}:${task.comparison_estimated_tokens}>baseline:${taskLimit.max_estimated_tokens}`,
     );
   }
   const stepLimits = new Map(
     (taskLimit.steps ?? []).map((step) => [step.id, step]),
   );
   for (const step of task.steps) {
+    if (!Number.isSafeInteger(step.comparison_estimated_tokens) || step.comparison_estimated_tokens < 0)
+      failures.push(`task:${task.id}:step:${step.id}:invalid_comparison_measurement`);
     const stepLimit = stepLimits.get(step.id);
     if (!Number.isFinite(stepLimit?.max_estimated_tokens))
       failures.push(`task:${task.id}:step:${step.id}:missing_baseline`);
-    else if (step.estimated_tokens > stepLimit.max_estimated_tokens) {
+    else if (step.comparison_estimated_tokens > stepLimit.max_estimated_tokens) {
       failures.push(
-        `task:${task.id}:step:${step.id}:${step.estimated_tokens}>baseline:${stepLimit.max_estimated_tokens}`,
+        `task:${task.id}:step:${step.id}:${step.comparison_estimated_tokens}>baseline:${stepLimit.max_estimated_tokens}`,
       );
     }
     if (stepLimit && step.accounting_mode !== stepLimit.accounting_mode) {
@@ -632,13 +651,8 @@ function listTaskTokenBaselineFailures(task, taskLimit) {
   return failures;
 }
 
-/** Return task and step regressions against the published transcript baseline. */
-export function compareAgentTaskTokenBaseline(report, baseline) {
-  const failures = [];
-  if (baseline.version !== BASELINE_VERSION)
-    failures.push(`baseline_version:${baseline.version}`);
-  if (baseline.transcript_digest !== report.transcript_digest)
-    failures.push("transcript_digest:mismatch");
+/** Check the canonical orientation identity and independently measured winner ceiling. */
+function listOrientationTokenBaselineFailures(report, baseline) {
   const baselineWinnerTokens = baseline.orientation?.measured_winner_tokens;
   const reportWinnerTokens = report.orientation?.measured_winner_tokens;
   if (
@@ -647,8 +661,21 @@ export function compareAgentTaskTokenBaseline(report, baseline) {
     ![baselineWinnerTokens, reportWinnerTokens].every(Number.isFinite) ||
     baselineWinnerTokens < reportWinnerTokens
   ) {
-    failures.push("orientation:canonical_or_token_ceiling_drift");
+    return ["orientation:canonical_or_token_ceiling_drift"];
   }
+  return [];
+}
+
+/** Return task and step regressions against the published transcript baseline. */
+export function compareAgentTaskTokenBaseline(report, baseline) {
+  const failures = [];
+  if (baseline.version !== BASELINE_VERSION)
+    failures.push(`baseline_version:${baseline.version}`);
+  if (baseline.comparison_scope !== COMPARISON_SCOPE || report.comparison_scope !== COMPARISON_SCOPE)
+    failures.push("comparison_scope:mismatch");
+  if (baseline.transcript_digest !== report.transcript_digest)
+    failures.push("transcript_digest:mismatch");
+  failures.push(...listOrientationTokenBaselineFailures(report, baseline));
   const taskLimits = new Map(
     (baseline.tasks ?? []).map((task) => [task.id, task]),
   );
@@ -665,12 +692,14 @@ export function compareAgentTaskTokenBaseline(report, baseline) {
   if (!Number.isFinite(baseline.composite_max_estimated_tokens)) {
     failures.push("composite:missing_baseline_limit");
   } else if (
-    report.composite_estimated_tokens > baseline.composite_max_estimated_tokens
+    report.composite_comparison_estimated_tokens > baseline.composite_max_estimated_tokens
   ) {
     failures.push(
-      `composite:${report.composite_estimated_tokens}>baseline:${baseline.composite_max_estimated_tokens}`,
+      `composite:${report.composite_comparison_estimated_tokens}>baseline:${baseline.composite_max_estimated_tokens}`,
     );
   }
+  if (!Number.isSafeInteger(report.composite_comparison_estimated_tokens) || report.composite_comparison_estimated_tokens < 0)
+    failures.push("composite:invalid_comparison_measurement");
   return failures;
 }
 
@@ -687,19 +716,20 @@ function buildBaseline(report) {
     transcript_version: report.transcript_version,
     transcript_digest: report.transcript_digest,
     estimator: "ceil(utf8_bytes / 4)",
+    comparison_scope: COMPARISON_SCOPE,
     measurement_scope: "output_before_token_accounting",
     published_with_release: true,
     orientation: report.orientation,
     tasks: report.tasks.map((task) => ({
       id: task.id,
-      max_estimated_tokens: task.estimated_tokens,
+      max_estimated_tokens: task.comparison_estimated_tokens,
       steps: task.steps.map((step) => ({
         id: step.id,
-        max_estimated_tokens: step.estimated_tokens,
+        max_estimated_tokens: step.comparison_estimated_tokens,
         accounting_mode: step.accounting_mode,
       })),
     })),
-    composite_max_estimated_tokens: report.composite_estimated_tokens,
+    composite_max_estimated_tokens: report.composite_comparison_estimated_tokens,
   };
 }
 
@@ -714,7 +744,7 @@ export function evaluateAgentTaskTokenReport(
         ...report,
         tasks: report.tasks.map((task, index) =>
           index === 0
-            ? { ...task, estimated_tokens: task.estimated_tokens + 1_000_000 }
+            ? { ...task, comparison_estimated_tokens: task.comparison_estimated_tokens + 1_000_000 }
             : task,
         ),
       }
@@ -810,11 +840,16 @@ export async function main(argv = process.argv.slice(2)) {
       transcript_version: corpus.version,
       transcript_digest: `sha256:${createHash("sha256").update(transcriptSource).digest("hex")}`,
       estimator: "ceil(utf8_bytes / 4)",
+      comparison_scope: COMPARISON_SCOPE,
       task_count: measured.length,
       completed_task_count: measured.filter((task) => task.completed).length,
       step_count: measured.reduce((total, task) => total + task.step_count, 0),
       retry_count: measured.reduce(
         (total, task) => total + task.retry_count,
+        0,
+      ),
+      composite_comparison_estimated_tokens: measured.reduce(
+        (total, task) => total + task.comparison_estimated_tokens,
         0,
       ),
       composite_estimated_tokens: measured.reduce(

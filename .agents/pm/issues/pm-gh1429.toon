@@ -1,0 +1,83 @@
+id: pm-gh1429
+title: Exact-tag recovery must preserve the complete reviewed release-control import closure
+description: "GitHub #1429 and scheduled Auto Release run 37911930520 / downstream Release 37911971128 failed at the preserved package artifact gate: package-distribution.mjs imports ../temp-lifecycle.mjs, but the recovery workflow copies only four flat control files. Preserve reviewed controls with their full local module/assets closure and layout before any tag checkout. Prove executable recovery from a foreign directory while retaining immutable tagged build inputs and public-artifact publication refusal."
+type: Issue
+status: closed
+priority: 1
+tags[4]: acceptance,"area:release","horizon:current",regression
+created_at: "2026-10-09T10:50:57.951Z"
+updated_at: "2026-10-09T12:10:30.186Z"
+closed_at: "2026-10-09T11:59:28.137Z"
+completed_at: "2026-10-09T11:59:28.137Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Preserved reviewed controls execute from an unrelated root with all transitive local imports and required assets; recovery preserves directory topology and continues to use the reviewed artifact budgets; missing dependencies and unsafe source selections fail visibly; exact published tag recovery verifies without republishing or moving the immutable tag; hosted and local executable controls catch the original missing temp-lifecycle failure
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+resolution: "Workflow preservation retains scripts/release topology, temporary lifecycle and cleanup dependencies, reviewed budget and controls outside the source checkout. An executable workflow test packs an unrelated temporary workspace through real npm and detects physical removal of a required local import. Registered recurrence protection and justified typed links accompany the change; the prose-gap ceiling tightens 1236 to 1233 with 1233-pass/1234-fail controls."
+expected_result: Current reviewed controls execute independently of tagged source and immutable public versions are accepted without republishing.
+actual_result: "Real foreign-workspace npm artifact packing passed and the missing-module negative control failed with ERR_MODULE_NOT_FOUND. Owner-linked workflow suites, full exact coverage, artifact budget, graph composition at 1233, integrity, source assurance, context and packed consumers pass. The failed aggregate graph receipt remains retained; corrected graph and downstream mutation gates passed separately. Hosted recovery and GitHub Release advertisement are verified after main receives the reviewed controls."
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1428,blocked_by,"2026-10-09T10:50:57.951Z","harness:codex","cli:create:dep",detected
+  pm-lwnifd,recurs_from,"2026-10-09T10:50:57.951Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-10-09T10:50:57.951Z","harness:codex","cli:create:dep",detected
+  pm-xjy565,discovered_from,"2026-10-09T10:50:57.951Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,verifies,"2026-10-09T10:50:57.951Z","harness:codex","cli:create:dep",detected
+  pm-agent-token-path,related,"2026-10-09T11:52:47.546Z","harness:codex","cli:update:dep",detected
+  pm-kvxqp1,verifies,"2026-10-09T11:52:47.546Z","harness:codex","cli:update:dep",detected
+  pm-q7c36n,related,"2026-10-09T11:52:47.546Z","harness:codex","cli:update:dep",detected
+  pm-ob9z4y,verifies,"2026-10-09T11:56:25.857Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-09T10:50:57.951Z","harness:codex","{\"text\":\"Duplicate check: strict complete all-status 2908-item corpus (2602 closed, 233 open, 59 draft, 14 canceled; no omissions/unreadable rows), keyword CLI searches, and live full metadata/history reads of pm-ygli86, pm-q7c36n, pm-kvxqp1, pm-lwnifd and pm-agent-token-path. No exact active owner for this regression. Source: https://github.com/unbraind/pm-cli/issues/1429\"}"
+  "2026-10-09T10:56:36.785Z","harness:codex","TDD baseline: executable workflow preservation test runs the real Bash copy body and the real package-artifact entrypoint from a foreign temporary workspace. It fails with ERR_MODULE_NOT_FOUND for temp-lifecycle.mjs before packaging, matching hosted Release run 37911971128. Existing 30 tests still pass."
+  "2026-10-09T11:31:19.995Z","harness:codex","Cross-project intake: strict all-status corpus and live metadata/history preserve historical completed work. All 18 open GitHub issues have PM-link comments; initial open PR, Dependabot, code-scanning and secret-scanning counts were zero. Full graph audit retained 14911 deduplicated edges, 14844 informative, no ordering contradiction or isolated active item; historical hierarchy advisories and 170 missing-resolution warnings remain visible. Fresh required Sentry/telemetry gate passes with no critical/high Sentry findings, and one-day telemetry reports 4830 finishes, 0.87% failures and zero missing error-code rows. These are current observations, separate from hosted release success and permanent queue drainage."
+  "2026-10-09T11:40:53.966Z","harness:codex","Full final-source coverage passed 9958 tests with zero uncovered source counts: lines 64101/64101, statements 67275/67275, functions 13870/13870, branches 51487/51487. All owner-linked tests passed through pm test with isolated schema context. Final candidate/control npm and Bun manual sessions each passed 13 steps with real population, complete SDK read, observed refusal/recovery status and original output ceilings. The earlier full run failed a host npm-module resolution prerequisite and remains a failed receipt; enabling the installed global npm module resolved it without changing source or tests. Final static/context/packed consumer chain is running and closure awaits its result."
+  "2026-10-09T11:52:50.260Z","harness:codex","Graph admission: reviewed-control recovery shares delivery with portable transcript verification; full coverage and installed public SDK acceptance retain the completed output-budget behavior. The historical installer-diagnostic owner belongs to the same installed-consumer recovery boundary. No completed work is reopened or given an invented dependency."
+  "2026-10-09T11:56:29.333Z","harness:codex","After manually validating all eight new holder/target references using the public SDK census, graph-composition passes at 1233 rather than the previous 1236 ceiling. Tightened the existing assertion through pm assurance put, retained its historical owner and exemptions, and updated its positive/negative boundary cases to 1233 pass / 1234 fail. The earlier aggregate static attempt remains failed; all preceding source gates passed, and the graph repair plus remaining component checks are verified separately. Historical gaps remain explicit rather than receiving speculative relations."
+  "2026-10-09T12:10:30.186Z","harness:codex","Final pre-PR aggregate validation passed: fresh complete pnpm quality:static, typecheck, source exact coverage, context/token surface, doc/skill links, tracked-file secret scan, dependency audit, all linked checks, npm/npx/Bun/bunx packed consumers and 89-command package-first dogfood. Latest npm pm-changelog 2026.10.5 generated the four actual closures under Unreleased; its check passed. Final distribution 19952672 bytes is below the unchanged 20000000-byte base budget. Historical 170 missing-resolution warnings and known prose gaps remain explicit. All four implemented owners are closed/released; the separately reproduced schema-field transport owner stays open/unclaimed. Hosted review and exact-tag publication recovery remain separate upcoming verifications."
+learnings[1]{created_at,author,text}:
+  "2026-10-09T11:59:27.434Z","harness:codex","Preserve raw measurements and failure receipts as evidence. A recovery or comparison normalization must validate its exact contract before use; independently execute the real installed/packed boundary and retain a negative control. Local source acceptance, hosted review, merge, registry publication and GitHub Release advertisement are distinct claims."
+files[6]:
+  - path: .agents/pm/assurance.json
+    scope: project
+  - path: .github/workflows/release.yml
+    scope: project
+  - path: scripts/release/package-distribution.mjs
+    scope: project
+  - path: tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    note: Required workflow topology and advertisement contract
+  - path: tests/integration/registry-acceptance-workflow.spec.ts
+    scope: project
+    note: Executable preserved-control closure and real npm packaging regression
+  - path: tests/integration/release-automation-contract.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-09T11:04:44.726Z",local_mutation,fix/release-context-acceptance-control-closure
+test_runs[1]:
+  - run_id: test-local-mv0w6i8t-0abqlu
+    kind: test
+    status: passed
+    started_at: "2026-10-09T11:38:24.251Z"
+    finished_at: "2026-10-09T11:38:33.821Z"
+    recorded_at: "2026-10-09T11:38:33.821Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/QUALITY_EVIDENCE.md,project
+close_reason: Preserve the reviewed release-control import closure for immutable exact-tag recovery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: release-integrity
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts tests/integration/ci-workflow-contract.spec.ts,node scripts/release/package-artifact-gate.mjs
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-gh1429
+body: ""

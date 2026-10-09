@@ -1,0 +1,57 @@
+id: pm-release-devtool-patches
+title: Refresh eligible Node type and Greptile release-review tooling patches
+description: "Registry-current @types/node 26.6.4 and greptile 3.6.1 are compatible patch upgrades older than seven days. Upgrade these review/release development tools while preserving runtime dependencies, the declared Node floor, strict peer compatibility and the seven-day admission rule. Newer eslint/typescript-eslint/knip/marked releases remain below cooldown; Vitest 5, TypeScript 7 and npm-package-arg 14 retain their existing canonical migration owners."
+type: Chore
+status: closed
+priority: 3
+tags[3]: changed,dependencies,release-gates
+created_at: "2026-10-09T11:23:36.978Z"
+updated_at: "2026-10-09T12:10:31.883Z"
+closed_at: "2026-10-09T11:59:34.211Z"
+completed_at: "2026-10-09T11:59:34.211Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "Only eligible compatible patches enter the manifest and lockfile; strict dependency admission, audit, typecheck and full coverage pass; review CLI version resolves and mandatory gates remain unchanged."
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: "Updated @types/node to 26.6.4 and Greptile to 3.6.1 after seven-day registry publication eligibility, preserving runtime dependencies, declared runtime floor and strict peers. Existing major migration owners and fresh below-cooldown versions remain explicitly linked."
+expected_result: "Eligible compatible tooling passes type, dependency, review-CLI and full source verification without changing mandatory policy."
+actual_result: "Greptile reports 3.6.1; full audit reports no known vulnerabilities; typecheck and linked typecheck passed; source suite 9958 tests passed at exact 100/100/100/100. Strict dependency/cooldown, source assurance, mutation and packed npm/Bun checks pass. No overrides or exclusions were introduced."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-do5b,related,"2026-10-09T11:23:36.978Z","harness:codex","cli:create:dep",detected
+  pm-fokyhh,related,"2026-10-09T11:23:36.978Z","harness:codex","cli:create:dep",detected
+  pm-gh1429,discovered_from,"2026-10-09T11:23:36.978Z","harness:codex","cli:create:dep",detected
+  pm-u9d0,implements,"2026-10-09T11:23:36.978Z","harness:codex","cli:create:dep",detected
+  pm-ksr40d,related,"2026-10-09T11:52:51.059Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-09T11:52:51.059Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-09T11:23:36.978Z","harness:codex","Duplicate check: strict complete all-status corpus, exact 26.6.4/3.6.1 metadata scan and request-specific tooling dependency search read along with open/in-progress inventories. No current owner has this eligible pair as a pending refresh. Registry publication timestamps 2026-10-01T22:39:22.769Z and 2026-10-01T17:13:30.118Z exceed seven days at intake. Major migration owners pm-fokyhh, pm-ksr40d, pm-do5b and pm-t3jxjj are reused rather than duplicated."
+  "2026-10-09T11:30:31.265Z","harness:codex","Applied only @types/node 26.6.4 and greptile 3.6.1 after registry timestamp admission. Review CLI reports 3.6.1; full audit reports no known vulnerabilities. Fresh latest typescript-eslint, eslint, knip, marked and Sentry 11.5 are below the seven-day window. Existing major owners retain Vitest/CodSpeed peer, TypeScript compiler API/parser, npm-package-arg Node-floor and Sentry privacy/telemetry migration acceptance. No ignores, age exclusions, runtime dependency changes or peer overrides were added."
+  "2026-10-09T11:31:22.888Z","harness:codex","Cross-project intake: strict all-status corpus and live metadata/history preserve historical completed work. All 18 open GitHub issues have PM-link comments; initial open PR, Dependabot, code-scanning and secret-scanning counts were zero. Full graph audit retained 14911 deduplicated edges, 14844 informative, no ordering contradiction or isolated active item; historical hierarchy advisories and 170 missing-resolution warnings remain visible. Fresh required Sentry/telemetry gate passes with no critical/high Sentry findings, and one-day telemetry reports 4830 finishes, 0.87% failures and zero missing error-code rows. These are current observations, separate from hosted release success and permanent queue drainage."
+  "2026-10-09T11:40:55.327Z","harness:codex","Full final-source coverage passed 9958 tests with zero uncovered source counts: lines 64101/64101, statements 67275/67275, functions 13870/13870, branches 51487/51487. All owner-linked tests passed through pm test with isolated schema context. Final candidate/control npm and Bun manual sessions each passed 13 steps with real population, complete SDK read, observed refusal/recovery status and original output ceilings. The earlier full run failed a host npm-module resolution prerequisite and remains a failed receipt; enabling the installed global npm module resolved it without changing source or tests. Final static/context/packed consumer chain is running and closure awaits its result."
+  "2026-10-09T11:52:52.109Z","harness:codex","Graph admission: the routine compatible tooling pair is distinct from the existing Node-floor package-parser and Sentry privacy/telemetry major migrations. Linking those explicit exclusion owners preserves the dependency decision context without treating their adoption as a prerequisite."
+  "2026-10-09T12:10:31.883Z","harness:codex","Final pre-PR aggregate validation passed: fresh complete pnpm quality:static, typecheck, source exact coverage, context/token surface, doc/skill links, tracked-file secret scan, dependency audit, all linked checks, npm/npx/Bun/bunx packed consumers and 89-command package-first dogfood. Latest npm pm-changelog 2026.10.5 generated the four actual closures under Unreleased; its check passed. Final distribution 19952672 bytes is below the unchanged 20000000-byte base budget. Historical 170 missing-resolution warnings and known prose gaps remain explicit. All four implemented owners are closed/released; the separately reproduced schema-field transport owner stays open/unclaimed. Hosted review and exact-tag publication recovery remain separate upcoming verifications."
+learnings[1]{created_at,author,text}:
+  "2026-10-09T11:59:33.206Z","harness:codex","Preserve raw measurements and failure receipts as evidence. A recovery or comparison normalization must validate its exact contract before use; independently execute the real installed/packed boundary and retain a negative control. Local source acceptance, hosted review, merge, registry publication and GitHub Release advertisement are distinct claims."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,300,"harness:codex","2026-10-09T11:31:17.448Z",local_mutation,fix/release-context-acceptance-control-closure
+test_runs[1]:
+  - run_id: test-local-mv0w7k4l-pjfp5c
+    kind: test
+    status: passed
+    started_at: "2026-10-09T11:39:02.610Z"
+    finished_at: "2026-10-09T11:39:22.917Z"
+    recorded_at: "2026-10-09T11:39:22.917Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Refresh eligible compatible release-review tooling without bypassing dependency admission.
+body: ""

@@ -1,8 +1,9 @@
 {
-  "version": 4,
+  "version": 5,
   "transcript_version": 2,
   "transcript_digest": "sha256:6d4041acfaa4075dde1972d6127a74f18916f7661738b4f5d5fd47a61c179a78",
   "estimator": "ceil(utf8_bytes / 4)",
+  "comparison_scope": "plan_recovery_tracker_root_canonicalized",
   "measurement_scope": "output_before_token_accounting",
   "published_with_release": true,
   "orientation": {
@@ -12,12 +13,12 @@
       "active_ownership",
       "workspace_state"
     ],
-    "measured_winner_tokens": 1102,
+    "measured_winner_tokens": 1087,
     "protocols": [
       {
         "task_id": "orientation-context-intent",
         "command_count": 1,
-        "estimated_tokens": 1102,
+        "estimated_tokens": 1087,
         "capabilities": [
           "actionable_work",
           "active_ownership",
@@ -47,7 +48,7 @@
       {
         "task_id": "orientation-operating-rules",
         "command_count": 4,
-        "estimated_tokens": 2340,
+        "estimated_tokens": 2325,
         "capabilities": [
           "actionable_work",
           "active_ownership",
@@ -109,11 +110,11 @@
   "tasks": [
     {
       "id": "orientation-context-intent",
-      "max_estimated_tokens": 1102,
+      "max_estimated_tokens": 1087,
       "steps": [
         {
           "id": "context",
-          "max_estimated_tokens": 1102,
+          "max_estimated_tokens": 1087,
           "accounting_mode": "self_reported"
         }
       ]
@@ -136,11 +137,11 @@
     },
     {
       "id": "orientation-operating-rules",
-      "max_estimated_tokens": 2340,
+      "max_estimated_tokens": 2325,
       "steps": [
         {
           "id": "context",
-          "max_estimated_tokens": 1102,
+          "max_estimated_tokens": 1087,
           "accounting_mode": "self_reported"
         },
         {
@@ -162,7 +163,7 @@
     },
     {
       "id": "context-bootstrap",
-      "max_estimated_tokens": 2025,
+      "max_estimated_tokens": 2010,
       "steps": [
         {
           "id": "triage",
@@ -171,7 +172,7 @@
         },
         {
           "id": "orient",
-          "max_estimated_tokens": 1102,
+          "max_estimated_tokens": 1087,
           "accounting_mode": "self_reported"
         },
         {
@@ -262,7 +263,7 @@
     },
     {
       "id": "plan-execution-mutations",
-      "max_estimated_tokens": 848,
+      "max_estimated_tokens": 806,
       "steps": [
         {
           "id": "create-plan",
@@ -271,12 +272,12 @@
         },
         {
           "id": "add-step",
-          "max_estimated_tokens": 275,
+          "max_estimated_tokens": 254,
           "accounting_mode": "self_reported"
         },
         {
           "id": "complete-step",
-          "max_estimated_tokens": 274,
+          "max_estimated_tokens": 253,
           "accounting_mode": "self_reported"
         },
         {
@@ -287,5 +288,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 13882
+  "composite_max_estimated_tokens": 13795
 }

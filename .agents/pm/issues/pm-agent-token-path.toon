@@ -2,11 +2,13 @@ id: pm-agent-token-path
 title: Agent-task token ratchet changes verdict with temporary-root path length
 description: "The unchanged agent-task replay exceeds published Plan mutation and composite token ceilings when TMPDIR has a longer external path, because advertised recovery commands contain that physical path. A canonical short-root replay passes unchanged. This is a fixture portability gap; do not raise token budgets or claim a product-output regression without separating incidental root length from meaningful output."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-08T05:13:12.301Z"
-updated_at: "2026-10-08T05:52:01.837Z"
+updated_at: "2026-10-09T12:10:30.942Z"
+closed_at: "2026-10-09T11:59:31.196Z"
+completed_at: "2026-10-09T11:59:31.196Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: The same tree yields the same token-gate verdict beneath short and long safe temporary roots; independently reported emitted bytes remain truthful; recovery commands remain executable against the actual fixture; negative controls still reject real output growth.
@@ -14,18 +16,57 @@ parent: pm-u9d0
 risk: medium
 confidence: high
 severity: medium
-expected_result: Short and long safe scratch roots produce the same token-gate verdict while exact emitted-byte receipts and executable recovery targeting remain truthful.
+resolution: "Version 5 compares narrowly canonicalized Plan recovery suffixes only after exact transport accounting and payload parity pass. Reports retain raw bytes/tokens and actual executable commands. Task, step, orientation and composite comparisons use explicit versioned normalized measurements and refuse invalid values or scope drift. Composite ceiling tightens 13882 to 13795 with no increases."
+expected_result: "Physical temporary path lengths do not change the verdict, while growing semantic output, false accounting or invalid recovery still fail."
+actual_result: "Real short/long temporary-root replays both compared at 13795 tokens while raw costs remained 13887 versus 14027. Existing million-token growth control detected regression; meaningful retained path facts still increase cost. Linked gate tests, full source coverage at 100/100/100/100, strict agent-token, source assurance, context, mutation and packed consumer gates pass."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-4o7tlx,recurs_from,"2026-10-08T05:13:12.301Z","harness:codex","cli:create:dep",detected
   pm-8pnj,implements,"2026-10-08T05:13:12.301Z","harness:codex","cli:create:dep",detected
   pm-dqej6b,discovered_from,"2026-10-08T05:13:12.301Z","harness:codex","cli:create:dep",detected
   pm-95h7pg,verifies,"2026-10-08T05:52:01.494Z","harness:codex","cli:update:dep",detected
   pm-aksavu,verifies,"2026-10-08T05:52:01.494Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-08T05:13:12.301Z","harness:codex","Duplicate check: complete strict all-status 2905-item corpus and the newly created ancestor item, targeted title/description plus metadata search, refreshed open/in-progress lists, and full live pm-8pnj/pm-aksavu/pm-4o7tlx/pm-95h7pg reads. Historical fixes covered accounting validity or ambient warning/env leakage, not recovery-path length. Current evidence: longer-root Plan task 894 vs 848 tokens, add 298 vs 275, complete 297 vs 274, composite 13883 vs 13882; unchanged short-root replay exits 0. Remains open and unclaimed while the four selected fixes finish."
-files[1]{path,scope}:
-  scripts/release/agent-task-token-gate.mjs,project
-docs[1]{path,scope}:
+  "2026-10-09T11:00:44.149Z","harness:codex","TDD regression: after correcting the fixture shell quoting, the retained Plan parity test fails specifically because comparison_estimated_tokens is absent. The test compares short and long external roots, requires different actual emitted bytes, and preserves estimated_tokens=ceil(actual emitted_bytes/4). Scope is only independently validated Plan recovery suffixes, not arbitrary payload paths or contents."
+  "2026-10-09T11:06:20.862Z","harness:codex","Post-fix focused suite passed the Plan path, accounting, parity and measurement controls. Generated v5 baseline comparison scope is explicit, composite ceiling tightened from 13882 to 13795 estimated tokens and no task or step ceiling increased. Plan mutation task tightened 848 to 806. Original emitted bytes/tokens remain separately retained."
+  "2026-10-09T11:30:32.229Z","harness:codex","Real independent transcript replay under a short temporary root and a long root with spaces produced identical normalized composite comparison=13795, while exact raw composite costs remained 13887 versus 14027. The existing million-token negative control returned the expected detected regression. The negative-control wrapper returns success when detection succeeds; an initial orchestration check assumed a nonzero wrapper exit and was corrected without changing the production predicate or baseline."
+  "2026-10-09T11:31:21.627Z","harness:codex","Cross-project intake: strict all-status corpus and live metadata/history preserve historical completed work. All 18 open GitHub issues have PM-link comments; initial open PR, Dependabot, code-scanning and secret-scanning counts were zero. Full graph audit retained 14911 deduplicated edges, 14844 informative, no ordering contradiction or isolated active item; historical hierarchy advisories and 170 missing-resolution warnings remain visible. Fresh required Sentry/telemetry gate passes with no critical/high Sentry findings, and one-day telemetry reports 4830 finishes, 0.87% failures and zero missing error-code rows. These are current observations, separate from hosted release success and permanent queue drainage."
+  "2026-10-09T11:40:54.710Z","harness:codex","Full final-source coverage passed 9958 tests with zero uncovered source counts: lines 64101/64101, statements 67275/67275, functions 13870/13870, branches 51487/51487. All owner-linked tests passed through pm test with isolated schema context. Final candidate/control npm and Bun manual sessions each passed 13 steps with real population, complete SDK read, observed refusal/recovery status and original output ceilings. The earlier full run failed a host npm-module resolution prerequisite and remains a failed receipt; enabling the installed global npm module resolved it without changing source or tests. Final static/context/packed consumer chain is running and closure awaits its result."
+  "2026-10-09T12:10:30.942Z","harness:codex","Final pre-PR aggregate validation passed: fresh complete pnpm quality:static, typecheck, source exact coverage, context/token surface, doc/skill links, tracked-file secret scan, dependency audit, all linked checks, npm/npx/Bun/bunx packed consumers and 89-command package-first dogfood. Latest npm pm-changelog 2026.10.5 generated the four actual closures under Unreleased; its check passed. Final distribution 19952672 bytes is below the unchanged 20000000-byte base budget. Historical 170 missing-resolution warnings and known prose gaps remain explicit. All four implemented owners are closed/released; the separately reproduced schema-field transport owner stays open/unclaimed. Hosted review and exact-tag publication recovery remain separate upcoming verifications."
+notes[1]{created_at,author,text}:
+  "2026-10-09T11:06:17.116Z","harness:codex",Versioned comparison semantics normalize only independently checked Plan recovery tracker suffixes after exact transport accounting and payload parity pass. Real executable paths and raw byte/token receipts remain unchanged. No arbitrary string substitution or denominator exclusion is permitted.
+learnings[1]{created_at,author,text}:
+  "2026-10-09T11:59:30.421Z","harness:codex","Preserve raw measurements and failure receipts as evidence. A recovery or comparison normalization must validate its exact contract before use; independently execute the real installed/packed boundary and retain a negative control. Local source acceptance, hosted review, merge, registry publication and GitHub Release advertisement are distinct claims."
+files[2]:
+  - path: scripts/release/agent-task-token-gate.mjs
+    scope: project
+  - path: tests/unit/scripts/release/agent-task-token-gate.spec.ts
+    scope: project
+    note: Independent exact-byte and canonical comparison checks
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,project,300,"harness:codex","2026-10-09T11:04:46.273Z",local_mutation,fix/release-context-acceptance-control-closure
+test_runs[1]:
+  - run_id: test-local-mv0w7422-s9p1cy
+    kind: test
+    status: passed
+    started_at: "2026-10-09T11:38:34.333Z"
+    finished_at: "2026-10-09T11:39:02.090Z"
+    recorded_at: "2026-10-09T11:39:02.090Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
   docs/agent-task-token-baseline.json,project
+  docs/QUALITY_EVIDENCE.md,project
+close_reason: Make token comparison verdicts independent of validated Plan tracker path length.
 escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: static-quality
+  negative_control: node scripts/release/agent-task-token-gate.mjs --negative-control
+  local_checks[2]: node scripts/release/agent-task-token-gate.mjs,node scripts/run-tests.mjs test -- tests/unit/scripts/release/agent-task-token-gate.spec.ts
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-agent-token-path
 body: ""

@@ -1,7 +1,58 @@
 # Test strength and documentation content
 
 Tracked by [pm-zclzll](../.agents/pm/tasks/pm-zclzll.toon) and
-[pm-dvwm](../.agents/pm/chores/pm-dvwm.toon).
+[pm-dvwm](../.agents/pm/chores/pm-dvwm.toon). Release acceptance and token
+comparison contracts: [pm-gh1428](../.agents/pm/issues/pm-gh1428.toon),
+[pm-gh1429](../.agents/pm/issues/pm-gh1429.toon), and
+[pm-agent-token-path](../.agents/pm/issues/pm-agent-token-path.toon).
+
+## Installed context and immutable release recovery
+
+The installed-agent journey requests `context --for orient --limit 1` with an
+explicit 512-token output budget. A complete successful result must report the
+actual population: zero items before creation and one closed item after the
+lifecycle. An omitted result cannot establish either fact. When the installed
+version refuses an infeasible budget, the verifier checks exit 2, the omission
+and budget receipts, and the exact advertised `outputBudget: "unbounded"`
+recovery. It then repeats the same intent and amount with that recovery. Older
+control releases may return complete bounded context immediately. Every step
+keeps its existing character ceiling and process deadline; reports retain the
+observed exit status and all refusal/recovery output costs.
+
+Unexpected process failures retain classified status, signal, spawn error and
+both output streams, with credential redaction before 512-character excerpts.
+Unit tests own malformed receipts and failure diagnostics. Real npm/Bun
+installations and the hosted candidate/control platform matrix own compatibility
+with the actual SDK-backed CLI. A stubbed empty context object cannot satisfy
+the population assertions.
+
+Exact-tag recovery preserves reviewed artifact controls before selecting tagged
+source. The preserved directory retains `scripts/release` and its parent script
+dependencies, including temporary lifecycle and cleanup modules. The executable
+workflow regression copies those real controls, packs a foreign workspace with
+real npm, and checks the committed artifact budget. Removing a transitive import
+must fail with its original module error. Preserved controls stay outside the
+source checkout; published immutable versions are verified without republishing.
+
+## Portable agent-task token comparisons
+
+Version 5 of the agent-task baseline declares
+`comparison_scope: "plan_recovery_tracker_root_canonicalized"`. Each replay
+continues to report exact `emitted_bytes`, `estimated_tokens`, and accounting
+receipt bytes for the actual transport. Its `comparison_emitted_bytes` and
+`comparison_estimated_tokens` replace only the validated tracker suffixes in
+Plan inspection, next-action and plan-detail recovery commands with the fixed
+`/replay/.agents/pm` comparison root. The actual payload retains executable
+commands targeting its real fixture. Other facts, paths and commands remain
+part of the cost.
+
+Step, completed-task and composite ceilings use those comparison measurements.
+The orientation selector uses the same cost basis. Missing, negative,
+non-integer or non-finite measurements and mismatched comparison scopes fail
+closed. Short and long temporary roots must produce the same verdict while
+their real emitted-byte counts may differ. Output growth still fails the
+unchanged ceilings; normalization does not waive accounting, payload parity,
+required-field or executable-recovery checks.
 
 ## SDK mutation testing
 
