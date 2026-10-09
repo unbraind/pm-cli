@@ -21,7 +21,9 @@ describe("published workspace compatibility acceptance", () => {
     const hostileRoot = await harness.createTempRoot("pm-hostile-registry-");
     for (const name of ["user", "global"]) {
       const config = path.join(hostileRoot, `${name}.npmrc`);
-      await writeFile(config, "registry=http://127.0.0.1:9/\n@unbrained:registry=http://127.0.0.1:9/\n//registry.npmjs.org/:_authToken=fixture-not-a-credential\n");
+      await writeFile(config, "registry=http://127.0.0.1:9/\n@unbrained:registry=http://127.0.0.1:9/\n");
+      childProcess.execFileSync("npm", ["config", "set", "//registry.npmjs.org/:_authToken", "fixture-not-a-credential", `--userconfig=${config}`, "--location=user"], { encoding: "utf8" });
+      expect(readFileSync(config, "utf8")).toContain("fixture-not-a-credential");
       process.env[`npm_config_${name}config`] = config;
     }
     process.env.npm_config_registry = "http://127.0.0.1:9/";

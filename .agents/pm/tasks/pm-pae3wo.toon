@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[8]: added,ci,compatibility,format-version,migration,multi-agent,quality-gate,storage
 created_at: "2026-07-24T23:47:05.940Z"
-updated_at: "2026-10-09T18:52:53.322Z"
-closed_at: "2026-10-09T18:52:52.563Z"
-completed_at: "2026-10-09T18:52:52.563Z"
+updated_at: "2026-10-09T19:11:12.937Z"
+closed_at: "2026-10-09T19:11:12.328Z"
+completed_at: "2026-10-09T19:11:12.328Z"
 author: maintainer-agent
 estimated_minutes: 1500
 acceptance_criteria: "The matrix covers at least the previous two release lines writing and the current build reading, plus the reverse direction; Forward-incompatible reads fail loudly with an actionable error rather than silently misparsing or dropping fields; Backward-compatible reads preserve unknown fields on round-trip so an older reader cannot destroy a newer writer's data; Merge drivers are exercised across version skew, not only within one version; The declared compatibility window is documented and the matrix fails when the code drifts from the declaration"
@@ -21,9 +21,9 @@ why_now: "The format_version field exists and migrations are planned, but there 
 parent: pm-o2kc
 risk: medium
 confidence: high
-resolution: "Added mandatory real published-artifact compatibility against two prior stable calendar releases, public SDK reads, exact unknown-field preservation, restoration, native Git merge drivers, reconciliation and verified histories. Admit future storage markers before schema/body validation or legacy migration; preserve unsupported alternate files and valid baseline corruption recovery. Static ESM fixtures carry data-only JSON, and exact-tag recovery preserves the reviewed matrix/policy/import/assets closure while testing the selected built workspace. Canonicalize native ESM entrypoint paths and verify both direct and symlinked preserved-control invocations execute. Resolve public npm metadata/installations with explicit registry, separate empty user/global configs, a fresh cache and removed inherited npm/auth variables. Disable fixture Sentry delivery and verify isolation through real subprocess delegation under hostile host settings."
+resolution: "Added mandatory real published-artifact compatibility against two prior stable calendar releases, public SDK reads, exact unknown-field preservation, restoration, native Git merge drivers, reconciliation and verified histories. Admit future storage markers before schema/body validation or legacy migration; preserve unsupported alternate files and valid baseline corruption recovery. Static ESM fixtures carry data-only JSON, and exact-tag recovery preserves the reviewed matrix/policy/import/assets closure while testing the selected built workspace. Canonicalize native ESM entrypoint paths and verify both direct and symlinked preserved-control invocations execute. Resolve public npm metadata/installations with explicit registry, separate empty user/global configs, a fresh cache and removed inherited npm/auth variables. Disable fixture Sentry delivery and verify isolation through real subprocess delegation under hostile host settings. Hostile auth fixtures use the real npm configuration command and retain strict tracked-credential scanning without exemptions."
 expected_result: "The required matrix always exercises actual public prior releases without host registry/auth/cache influence, including native path aliases; SDK/CLI round trips, recovery and merges preserve data/history or refuse unsupported formats."
-actual_result: "Four real published-artifact rows, SDK/CLI values, restoration, native Git merge/reconciliation/history, direct/alias controls and future-format immutability pass. Real npm was redirected to a hostile endpoint before the fix; isolation now succeeds under hostile scoped/lowercase/uppercase config and fake auth. Full9967-test suite is integer-exact100/100/100/100; complete static and3 linked commands pass. Reviewed closure/changelog carry this evidence; final hosted head/bot responses are checked separately before merge."
+actual_result: "Four real published-artifact rows, SDK/CLI values, restoration, native Git merge/reconciliation/history, direct/alias controls and future-format immutability pass. Real npm was redirected to a hostile endpoint before the fix; isolation now succeeds under hostile scoped/lowercase/uppercase config and fake auth. Full9967-test suite is integer-exact100/100/100/100; complete static and3 linked commands pass. Reviewed closure/changelog carry this evidence; final hosted head/bot responses are checked separately before merge. Fixture-only scanner remediation passes the unchanged credential gate and seven existing real matrix/preserved-control tests; final hosted checks run on the reviewed new head."
 dependencies[16]:
   - id: pm-a8lnoh
     kind: related
@@ -85,7 +85,7 @@ dependencies[16]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[26]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-10-09T14:42:42.288Z","harness:codex","Implementation scope: full live metadata and history inspected. Build a checked-in compatibility window and real published-release/current-source matrix covering bidirectional read/mutate/unknown-field preservation, merge version skew, history integrity and fail-closed format versions. Initial GitHub intake: no open PRs or dependency/code/secret alerts, all 16 open issues linked to canonical PM items, npm/GitHub latest 2026.10.9, pm-changelog latest 2026.10.5."
   "2026-10-09T14:58:58.710Z","harness:codex","Compatibility implementation adds a declared two-prior-stable-release window with real installed artifacts, both writer/reader directions, public SDK reads, unknown scalar/container preservation after disabling registrations, restoration, native Git merge drivers, reconciliation and verified histories. Current runtime additionally refuses future pm_format_version before reads/update/delete/restore, preserving item and history bytes. Raw format parsing remains usable by integrity diagnostics. Existing legacy Markdown migration gate remains the independent migration keeper."
   "2026-10-09T15:21:00.799Z","harness:codex","Verification audit: initial all-source run found the two new specs exceeded the existing 120-file integration directory cap and the release-runner mocked capture lacked a receipt for the newly mandatory gate. Partitioned specs into schema/release areas; kept the cap unchanged; extended the existing runner keeper to prove --skip-compatibility cannot skip published workspace compatibility. Existing packed SDK keeper requires the installed global npm package exposed through NODE_PATH on this host. Linked runs waiting behind full-suite build ownership timed out; rerunning serialized without changing ownership or timeouts."
@@ -112,6 +112,7 @@ comments[26]{created_at,author,text}:
   "2026-10-09T18:21:00.641Z","harness:codex","Final full CodeRabbit review completed on e86adb1c9 and identified one actionable portability issue: the matrix inherits npm registry configuration and auth environment, so another host could select private/stale metadata instead of public artifacts. Reopen only this canonical owner. Extend the existing real four-row keeper with hostile registry/user/global configuration and fake credentials, prove failure before remediation, and explicitly isolate public tokenless npm resolution. Required CI/analyzers are green; no source security alert was suppressed."
   "2026-10-09T18:28:44.645Z","harness:codex","Registry-isolation TDD reproduced the finding with the real npm executable: hostile npm configuration redirected metadata to loopback port9 and failed ECONNREFUSED before the fix. The updated existing four-row keeper passes against real public artifacts despite hostile lowercase/uppercase registry settings, scoped user/global config and fake auth inputs. A call-through observation of real execFileSync verifies explicit child environments, removed npm/auth variables, forced public registry and empty separate config files; it delegates every subprocess to the actual Node API and does not mock artifacts or matrix behavior. Native direct/alias controls and type checking also pass. The matrix now uses its own temporary npm cache and disables fixture Sentry delivery."
   "2026-10-09T18:52:51.802Z","harness:codex","Public-provenance remediation verification is complete: full9967-test coverage, exact100/100/100/100 with zero uncovered counts, full static pipeline and all3 linked commands pass. The actual npm hostile-registry negative control failed before isolation and the four public SDK/CLI/native-Git/history rows pass afterward. Source/test documentation and Node API type checks pass. Existing Sentry/telemetry production actions, packed consumers and daily publication remain separate evidence; the next hosted head is reviewed before merge."
+  "2026-10-09T19:11:11.409Z","harness:codex","Round4 hosted static CI and the independent local scanner correctly refused the literal fake npm auth assignment in the new hostile-config fixture. There was no real leaked credential. Keep the scanner pattern and all credential-isolation assertions unchanged: construct the fake auth entry using the actual npm config command in the temporary fixture, and assert the fake value is present before running real public-artifact acceptance. The unchanged scanner, ESLint and existing seven-test matrix/preserved-control keepers now pass. Full9967-test coverage and static evidence precede this test-fixture-only correction; final hosted CI reruns on the new head."
 notes[2]{created_at,author,text}:
   "2026-10-09T15:08:40.542Z","harness:codex","Observed acceptance receipt: published 2026.10.7 and 2026.10.8 each passed both writer/reader directions with the 2026.10.9 source build. Real installed SDK reads, unknown typed metadata, restore, native Git drivers, reconcile without force and exact history verification all passed. The harness is grouped beside the existing compatibility-check acceptance script; its required gate is registered for CI/nightly/release and cannot be skipped in local preflight."
   "2026-10-09T16:42:49.542Z","harness:codex","Historical release-control verification link is justified by the retained executable registry-acceptance-workflow keeper: it still packs a foreign workspace using reviewed artifact budgets and detects physical removal of temp-lifecycle.mjs, now also retaining the required matrix import/assets closure. Canonical pm-gh1429 remains closed; this compatibility extension neither reopens shipped recovery work nor invents a schedule dependency."
@@ -164,7 +165,7 @@ files[21]:
     scope: project
   - path: tests/unit/scripts/release/workspace-compatibility.spec.ts
     scope: project
-tests[3]:
+tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/workspace-compatibility.spec.ts tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts tests/unit/scripts/release/run-gates.spec.ts
     scope: project
     timeout_seconds: 300
@@ -185,6 +186,13 @@ tests[3]:
     provenance:
       author: "harness:codex"
       created_at: "2026-10-09T16:40:08.535Z"
+      source_kind: local_mutation
+      source_ref: fix/custom-field-roundtrips-version-skew
+  - command: "pnpm security:scan"
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-09T19:11:10.729Z"
       source_kind: local_mutation
       source_ref: fix/custom-field-roundtrips-version-skew
 test_runs[6]:
