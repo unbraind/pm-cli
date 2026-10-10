@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Reconcile complete release ledgers with exact historical dispositions ([pm-q91qyd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon))
+- Keep installed-release init within its unchanged raw budget on macOS ([pm-release-acceptance-path-cost](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-release-acceptance-path-cost.toon))
+
+### Other
+
+- Refresh aged Unicorn 77 alongside ESLint 10.12 without changing strict lint policy ([pm-unicorn-77](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-unicorn-77.toon))
+- Reconcile release ledgers and tag origins with bounded publication and acceptance ([pm-release-ledger-origin-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-release-ledger-origin-delivery.toon))
+- Refresh eligible ESLint 10.12 for release quality gates ([pm-eslint-1012](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eslint-1012.toon))
+
 ## 2026.10.10 - 2026-10-10
 
 ### Added
@@ -122,10 +135,6 @@
 - GH-1369: Agent UX: claim --start bypasses compact mutation receipts and returns a noncanonical outer ID ([pm-gh1369](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1369.toon))
 - GH-1368: Agent UX: context next silently ignores inherited --fields and --depth options, including invalid values ([pm-gh1368](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1368.toon))
 - GH-1367: Agent UX: context handoff omission receipts suggest depth flags that do not restore omitted sections ([pm-gh1367](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1367.toon))
-
-### Other
-
-- Published artifact weight: the npm tarball ships 20MB of inline-source sourcemaps plus duplicate tsc and bundle outputs ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon))
 
 ## 2026.10.3 - 2026-10-03
 

@@ -172,6 +172,17 @@ Pipeline entrypoint:
 node scripts/release/run-release-pipeline.mjs
 ```
 
+Tracked by [pm-prrlce](../.agents/pm/issues/pm-prrlce.toon): hosted preparation
+uses `--push --defer-push` to write an exact producer binding. Auto Release uploads
+`release-producer-binding-<attempt>` before verifying and atomically pushing its
+prepared refs. Publication independently fetches the verified run's artifact and
+compares the tag name, target commit, tag object and declaration. Missing, expired,
+ambiguous or mismatched evidence fails closed; artifact retention is 90 days.
+A branch advance after sealing refuses publication rather than rebasing into a
+different target. Local `--push` refuses before Git inspection or asset mutation;
+local preparation without pushing remains supported. Historical admission remains
+limited to the reviewed exact-object inventory.
+
 The pipeline performs:
 
 1. change detection + one-release-per-day guard
@@ -421,13 +432,27 @@ maintainer supplies
 pair that acknowledgement with migration guidance, compatible extension
 version bounds where applicable, and the next eligible date-based release.
 
-5. Push branch and tag after local green.
+5. Land the implementation through a reviewed pull request, then use hosted
+   preparation for publication.
+
+Local preparation without `--push` is a diagnostic preview. Its local producer
+declaration cannot authorize publication. Once the reviewed implementation is on
+`main`, dispatch the existing Auto Release workflow from that default branch:
 
 ```bash
-git push origin main
-git tag v<version>
-git push origin v<version>
+gh workflow run auto-release.yml --ref main \
+  -f push=true -f dry_run=false -f telemetry_mode=off -f trigger_origin=operator
 ```
+
+Hosted preparation runs the mandatory gates, creates the version commit and
+annotated tag, and seals their exact producer binding in an immutable artifact
+before verifying and atomically pushing either ref. It waits for the single
+tag-driven Release workflow to publish and accept that exact package. Do not push
+locally prepared tags or invoke `npm publish` separately.
+
+If today's immutable tag already exists, use the exact-tag recovery procedure
+below. A local diagnostic tag does not prove hosted preparation or publication;
+never move a published tag or mint a second automatic version for the same UTC day.
 
 ## GitHub Workflow
 
@@ -454,7 +479,11 @@ git push origin v<version>
 - a base npm pack dry run, optional Sentry debug-ID injection, a second
   `sentry-injected` packlist budget over the exact publishable bytes, and only
   then optional Sentry release metadata/upload/finalization and the npx tarball
-  smoke test
+  smoke test. Sentry release metadata and sourcemaps are uploaded only from
+  tag sources. Recovery of an already-published version from reviewed `main`
+  preserves that version's existing Sentry commits and sourcemaps; local debug-ID
+  injection still validates the candidate artifact budget without changing the
+  published release's symbolication data.
 - generated release notes from changelog plus sanitized tracker metadata. The
   tracker read projects only release-relevant fields and explicitly removes row
   and token limits. The generator validates the completeness receipt before

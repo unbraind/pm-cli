@@ -1,9 +1,11 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const UTILS_SPECIFIER = "../../../../scripts/release/utils.mjs";
 const harness = createScriptHarness([UTILS_SPECIFIER]);
+const publishedInit = readFileSync(new URL("../../../fixtures/release-acceptance/installed-init.json", import.meta.url), "utf8");
 let fixtureCreated = false;
 let fixtureClosed = false;
 
@@ -14,7 +16,8 @@ interface RunOptions {
   npmPackage?: string;
   npmExecpath?: string | null;
   realpath?: (value: string) => string;
-  runCommand?: (command: string, args: string[]) => CommandResult;
+  runCommand?: (command: string, args: string[], execution: { env: NodeJS.ProcessEnv; inheritEnvironment?: boolean }) => CommandResult;
+  temporaryBase?: string;
   elapsedBeyondDeadline?: boolean;
 }
 
@@ -33,15 +36,15 @@ async function runAcceptance(options: RunOptions) {
   else process.env.NPM_PACKAGE = options.npmPackage;
   const fsMocks = {
     mkdirSync: vi.fn(),
-    mkdtempSync: vi.fn(() => "/tmp/installed-agent-test"),
+    mkdtempSync: vi.fn((prefix: string) => options.temporaryBase === undefined ? "/tmp/installed-agent-test" : path.join(options.temporaryBase, `${path.basename(prefix)}abcdef`)),
     readFileSync: vi.fn(() => JSON.stringify({ name: "@unbrained/pm-cli" })),
     realpathSync: vi.fn(options.realpath ?? ((value: string) => value)),
     rmSync: vi.fn(),
     writeFileSync: vi.fn(),
   };
   vi.doMock("node:fs", () => fsMocks);
-  const runCommand = vi.fn((command: string, args: string[], _execution: { env: NodeJS.ProcessEnv; inheritEnvironment?: boolean }) =>
-    (options.runCommand ?? successfulCommand)(command, args),
+  const runCommand = vi.fn((command: string, args: string[], execution: { env: NodeJS.ProcessEnv; inheritEnvironment?: boolean }) =>
+    (options.runCommand ?? successfulCommand)(command, args, execution),
   );
   vi.doMock(UTILS_SPECIFIER, async () => {
     const actual =
@@ -137,6 +140,35 @@ function successfulCommand(command: string, args: string[]): CommandResult {
 }
 
 describe("verify-installed-agent-session", () => {
+  it("retains raw init ceilings for captured public output under a macOS-length temporary base", async () => {
+    const temporaryBase = path.join(path.parse(process.cwd()).root, "private", "var", "folders", "zz", "x".repeat(39), "T");
+    for (const flags of [["--manager", "both"], ["--manager", "npm", "--global"]]) {
+      const rawCosts: number[] = [];
+      const result = await runAcceptance({
+        argv: ["--version", "2026.10.10", "--previous-version", "2026.10.9", ...flags, "--json"],
+        temporaryBase,
+        runCommand: (command, args, execution) => {
+          const receipt = successfulCommand(command, args);
+          if (args.includes("init")) {
+            expect(execution.env.PM_PATH).toBeTypeOf("string");
+            const workspace = path.dirname(path.dirname(execution.env.PM_PATH!));
+            receipt.stdout = publishedInit.replaceAll("$WORKSPACE", JSON.stringify(workspace).slice(1, -1));
+            rawCosts.push(receipt.stdout.length);
+          }
+          return receipt;
+        },
+      });
+      expect(result.failure).toBeNull();
+      const inits = result.json.sessions.map((session: { steps: { output_characters: number; maximum_output_characters: number }[] }) => session.steps[0]);
+      expect(inits.map((step: { output_characters: number }) => step.output_characters)).toEqual(rawCosts);
+      for (const step of inits) {
+        expect(step.maximum_output_characters).toBe(12_000);
+        expect(step.output_characters).toBeGreaterThan(10_000);
+        expect(step.output_characters).toBeLessThanOrEqual(12_000);
+      }
+    }
+  });
+
   it("executes advertised same-intent recovery and checks actual context populations", async () => {
     let closed = false;
     const acceptance = await runAcceptance({

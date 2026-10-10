@@ -15,6 +15,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
 
 /** Decode npm 11 and npm 12's single-package receipts. */
@@ -118,6 +119,19 @@ function stageRuntime(root, stage, manifest, ledger) {
     );
 }
 
+/** Stage first-party files with compact JSON, retaining values and readable checkout bytes. */
+function copyPublicationFile(relative, source, target) {
+  if (!relative.endsWith(".json")) {
+    cpSync(source, target);
+    return;
+  }
+  const value = JSON.parse(readFileSync(source, "utf8"));
+  const compact = `${JSON.stringify(value)}\n`;
+  if (!isDeepStrictEqual(value, JSON.parse(compact)))
+    throw new Error(`Non-lossless publication JSON: ${relative}`);
+  writeFileSync(target, compact);
+}
+
 /** Pack an isolated physical publication tree; never mutate the checkout or its node_modules. */
 export function packDistribution(root, options = {}) {
   let npm = "npm";
@@ -195,7 +209,7 @@ export function packDistribution(root, options = {}) {
       const relative = path.relative(realpathSync(root), source);
       if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
         throw new Error("Source distribution file escapes the checkout");
-      cpSync(source, target);
+      copyPublicationFile(file.path, source, target);
     }
     stageRuntime(root, stage, manifest, ledger);
     const published = structuredClone(manifest);

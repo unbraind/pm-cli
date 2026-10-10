@@ -43,6 +43,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      actions: read
     environment:
       name: release
     env:
@@ -69,6 +70,31 @@ jobs:
             echo "Exact-tag recovery must be dispatched from ${DEFAULT_BRANCH}; received ${GITHUB_REF_NAME}." >&2
             exit 2
           fi
+
+      - name: Verify upstream release origin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PROVENANCE_OUTPUT: ${{ runner.temp }}/release-publication-origin.json
+          RELEASE_RECOVERY_TRIGGER_ORIGIN: ${{ github.event_name == 'workflow_dispatch' && inputs.trigger_origin || '' }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from "node:fs";
+          import { recordReleasePublicationOrigin } from "./scripts/release/release-tag-provenance.mjs";
+          const report = recordReleasePublicationOrigin();
+          const origin = report.provenance?.trigger_origin ?? "unattributed";
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            `## Release origin\n\nUpstream declaration: ${origin}; source run verified: ${report.source_run_verified}; tag object: ${report.tag_object_sha}\n\n` +
+            `Publication event: ${report.publication_event}; recovery declaration: ${report.recovery_origin ?? "none"}\n`);
+          JS
+
+      - name: Retain publication origin evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-publication-origin-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-publication-origin.json
+          if-no-files-found: error
+          retention-days: 90
 
       - name: Preserve reviewed package artifact controls
         if: github.event_name == 'workflow_dispatch'
@@ -305,6 +331,10 @@ jobs:
           SENTRY_ORG: unbrained
           SENTRY_PROJECT: pm-cli
         run: |
+          if [ "${RECOVERY_SOURCE_MODE}" = "main" ]; then
+            echo "Already-published recovery preserves the existing Sentry release, commits and sourcemaps."
+            exit 0
+          fi
           if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
             echo "SENTRY_AUTH_TOKEN is not configured; skipping Sentry sourcemap upload."
             exit 0

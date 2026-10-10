@@ -1225,21 +1225,21 @@ describe("GitHub workflow contract", () => {
       'echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"',
       'echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"',
       "name: Resolve blocked scheduled auto-release issue",
-      "if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag",
-      "RELEASE_SHA: ${{ steps.auto_release.outputs.published_sha }}",
-      "RELEASE_TAG: ${{ steps.auto_release.outputs.published_tag }}",
+      "if: success() && github.event_name == 'schedule' && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag)",
+      "RELEASE_SHA: ${{ steps.publish_release.outputs.published_sha || steps.auto_release.outputs.published_sha }}",
+      "RELEASE_TAG: ${{ steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag }}",
       "Could not query blocked auto-release issues after successful publish; leaving release status successful.",
       "No open blocked auto-release issue found.",
       "Scheduled Auto Release succeeded and published",
       "Could not close blocked auto-release issue #${existing_issue} after successful publish; leaving release status successful.",
       'gh issue close "${existing_issue}" --comment "${body}" --reason completed',
       "name: Record resolved-issue auto-release retry success",
-      "if: \"${{ success() && github.event_name == 'issues' && steps.auto_release.outputs.published_tag }}\"",
+      "if: \"${{ success() && github.event_name == 'issues' && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag) }}\"",
       "ISSUE_NUMBER: ${{ github.event.issue.number }}",
       "Auto Release retry after blocker resolution succeeded and published",
       "Could not comment on resolved Auto Release blocker issue #${ISSUE_NUMBER}; leaving retry status successful.",
       "name: Record resolved-issue auto-release retry skip",
-      "if: \"${{ success() && github.event_name == 'issues' && !steps.auto_release.outputs.published_tag }}\"",
+      "if: \"${{ success() && github.event_name == 'issues' && !(steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag) }}\"",
       "RETRY_SKIP_REASON: ${{ steps.auto_release.outputs.retry_skip_reason || 'no_new_pushed_release_tag' }}",
       "Auto Release retry after blocker resolution completed without publishing a new tag.",
       "Retry skip reason: \\`${RETRY_SKIP_REASON}\\`",
@@ -1285,7 +1285,8 @@ describe("GitHub workflow contract", () => {
       autoReleaseWorkflow.match(
         /watch_release_workflow "\$\{RELEASE_RUN_ID\}" \|\| exit "\$\?"/gu,
       ),
-    ).toHaveLength(3);
+    ).toHaveLength(2);
+    expect(autoReleaseWorkflow).toContain('gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30');
     expect(autoReleaseWorkflow.indexOf("name: Setup Bun")).toBeLessThan(
       autoReleaseWorkflow.indexOf("name: Run auto release pipeline"),
     );

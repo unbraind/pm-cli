@@ -19,6 +19,7 @@ import {
 } from "./utils.mjs";
 import { distributionManifestPaths } from "./version-manifests.mjs";
 import { isReleaseRelevantPath } from "./release-relevance.mjs";
+import { createReleaseProvenance, parseReleaseProvenance } from "./release-tag-provenance.mjs";
 
 const releasePushToken = process.env.RELEASE_PUSH_TOKEN?.trim() ?? "";
 delete process.env.RELEASE_PUSH_TOKEN;
@@ -31,6 +32,7 @@ export function usage() {
     [--version <YYYY.M.D>]
     [--dry-run]
     [--push]
+    [--defer-push]
     [--author <name>]
     [--telemetry-mode off|best-effort|required]
     [--skip-compatibility]
@@ -42,11 +44,15 @@ Runs the end-to-end release preparation pipeline:
 2) version + changelog preparation
 3) strict quality/compatibility/reliability gates
 4) release-notes generation
-5) commit/tag/push (unless dry-run)
+5) commit/tag preparation (unless dry-run); hosted publication follows producer sealing
 
 Commits that only update .agents/pm tracker state are ignored for publish
 eligibility so post-release item closure does not trigger another package
 release.
+
+Local preparation cannot push. Hosted --push requires --defer-push and
+RELEASE_PRODUCER_BINDING_OUTPUT: upload that immutable producer binding
+before verifying and pushing the prepared refs in the Auto Release workflow.
 `);
 }
 
@@ -217,7 +223,7 @@ function isBranchBehindPushFailure(result) {
   );
 }
 
-export function pushReleaseRefs(tagName, gitOptions = {}) {
+export function pushReleaseRefs(tagName, gitOptions = {}, provenance = null) {
   const pushGitOptions = withReleasePushCredentials(gitOptions);
   const firstPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...pushGitOptions, allowFailure: true });
   if (firstPush.status === 0) {
@@ -226,6 +232,9 @@ export function pushReleaseRefs(tagName, gitOptions = {}) {
   if (!isBranchBehindPushFailure(firstPush)) {
     const detail = `${firstPush.stderr.trim()}\n${firstPush.stdout.trim()}`.trim();
     fail(`Command failed: git push --atomic origin HEAD ${tagName}\n${detail}`);
+  }
+  if (provenance !== null && provenance.event !== "local") {
+    fail("Cannot rebase a hosted release after its sealed producer binding; prepare a new candidate from the advanced default branch.");
   }
 
   console.warn("Release branch push was rejected because origin/main advanced; fetching and rebasing before retry.");
@@ -236,7 +245,8 @@ export function pushReleaseRefs(tagName, gitOptions = {}) {
     const detail = `${rebaseResult.stderr.trim()}\n${rebaseResult.stdout.trim()}`.trim();
     fail(`Command failed: git rebase origin/main\n${detail}`);
   }
-  git(["tag", "-f", tagName, "HEAD"], gitOptions);
+  if (provenance === null) git(["tag", "-f", tagName, "HEAD"], gitOptions);
+  else writeReleaseTag(tagName, provenance, gitOptions, true);
   const retryPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...pushGitOptions, allowFailure: true });
   if (retryPush.status !== 0) {
     const detail = `${retryPush.stderr.trim()}\n${retryPush.stdout.trim()}`.trim();
@@ -404,8 +414,8 @@ function maybeSkipForEmptyGeneratedChangelog(params) {
   return true;
 }
 
-/** Validate and stage all synchronized manifests, then create and optionally publish release refs. */
-function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
+/** Stage synchronized manifests and seal the exact prepared refs for hosted publication. */
+function commitPreparedRelease(targetVersion, tagName, author, provenance, deferPush) {
   const authorSlug = author.toLowerCase().replaceAll(/[^a-z0-9._-]/g, "-");
   /* c8 ignore next -- author always defaults to a non-empty slug; `|| "release-bot"` is a defensive fallback (parseFlags maps `--author ""` to the default) */
   const authorEmail = `${authorSlug || "release-bot"}@users.noreply.github.com`;
@@ -427,10 +437,26 @@ function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
     "-m",
     `chore(release): cut ${targetVersion}\n\nAutomate daily release preparation with strict quality, compatibility, and reliability gates.`,
   ], { env: gitIdentityEnv });
-  git(["tag", tagName]);
-  if (push) {
-    pushReleaseRefs(tagName, { env: gitIdentityEnv });
+  const binding = writeReleaseTag(tagName, provenance, { env: gitIdentityEnv }, false);
+  if (deferPush) writeFileSync(process.env.RELEASE_PRODUCER_BINDING_OUTPUT, `${JSON.stringify(binding)}\n`);
+}
+
+/** Rebind the target after a version commit or an unpublished rebase while retaining its reviewed source. */
+function writeReleaseTag(tagName, provenance, gitOptions, force) {
+  const targetSha = git(["rev-parse", "HEAD"], gitOptions).stdout.trim();
+  const record = parseReleaseProvenance(JSON.stringify({ ...provenance, target_sha: targetSha }), tagName, targetSha);
+  git(["tag", ...(force ? ["-f"] : []), "-a", "-m", JSON.stringify(record), tagName, "HEAD"], gitOptions);
+  return { schema: "pm-release-producer-binding/1", tag: tagName, tag_sha: targetSha, tag_object_sha: git(["rev-parse", `refs/tags/${tagName}`], gitOptions).stdout.trim(), provenance: record };
+}
+
+/** Refuse unsupported push modes before Git access and require a hosted producer-binding destination. */
+function resolveDeferredPublication(flags, dryRun) {
+  const push = flagBool(flags, "push", false);
+  const deferPush = flagBool(flags, "defer-push", false);
+  if ((push && (process.env.GITHUB_ACTIONS !== "true" || !deferPush || dryRun || !process.env.RELEASE_PRODUCER_BINDING_OUTPUT?.trim())) || (deferPush && !push)) {
+    fail("--push requires hosted deferred publication: use Auto Release to seal producer evidence before publishing refs.");
   }
+  return deferPush;
 }
 
 /**
@@ -452,7 +478,7 @@ export function runPipeline() {
 
   const outputJson = flagBool(flags, "json", false);
   const dryRun = flagBool(flags, "dry-run", false);
-  const push = flagBool(flags, "push", false);
+  const deferPush = resolveDeferredPublication(flags, dryRun);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
   const skipCompatibility = flagBool(flags, "skip-compatibility", false);
   const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
@@ -489,6 +515,8 @@ export function runPipeline() {
   }
 
   const previousVersion = readPackageVersion();
+  const sourceSha = dryRun ? null : git(["rev-parse", "HEAD"]).stdout.trim();
+  const provenance = dryRun ? null : createReleaseProvenance(`v${targetVersion}`, sourceSha, sourceSha);
 
   if (!dryRun) {
     const changelogPreparation = prepareReleaseChangelog({ targetVersion });
@@ -526,14 +554,15 @@ export function runPipeline() {
 
   const tagName = `v${targetVersion}`;
   if (!dryRun) {
-    commitAndMaybePushRelease(targetVersion, tagName, author, push);
+    commitPreparedRelease(targetVersion, tagName, author, provenance, deferPush);
   }
 
   const result = {
     ok: true,
     skipped: false,
     dry_run: dryRun,
-    pushed: push && !dryRun,
+    pushed: false,
+    push_deferred: deferPush,
     previous_version: previousVersion,
     target_version: targetVersion,
     tag: tagName,

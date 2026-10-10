@@ -180,6 +180,7 @@ jobs:
           # Gate runners write their verdict here when they fail, so the alert
           # step can name the real cause instead of the preflight state.
           RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
+          RELEASE_PRODUCER_BINDING_OUTPUT: ${{ runner.temp }}/producer-binding.json
         run: |
           set -euo pipefail
           render_recorded_failure() {
@@ -355,7 +356,7 @@ jobs:
             args+=(--dry-run)
           fi
           if [[ "${INPUT_PUSH}" == "true" ]]; then
-            args+=(--push)
+            args+=(--push --defer-push)
           fi
           PREVIOUS_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
           set +e
@@ -375,6 +376,40 @@ jobs:
             exit 0
           fi
 
+          echo "prepared_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Seal prepared release producer binding
+        if: steps.auto_release.outputs.prepared_tag != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-producer-binding-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/producer-binding.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish prepared release refs
+        id: publish_release
+        if: steps.auto_release.outputs.prepared_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PUSH_TOKEN: ${{ secrets.RELEASE_PAT || github.token }}
+          RELEASE_TAG: ${{ steps.auto_release.outputs.prepared_tag }}
+          RELEASE_PROVENANCE_OUTPUT: ${{ runner.temp }}/release-prepush-origin.json
+          RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
+        run: |
+          set -euo pipefail
+          if ! node --input-type=module <<'JS'
+          import { pushReleaseRefs } from "./scripts/release/run-release-pipeline.mjs";
+          import { recordReleasePublicationOrigin } from "./scripts/release/release-tag-provenance.mjs";
+          const report = recordReleasePublicationOrigin();
+          pushReleaseRefs(process.env.RELEASE_TAG, {}, report.provenance);
+          JS
+          then
+            node scripts/release/release-failure-record.mjs record-stage "${RELEASE_FAILURE_RECORD}" producer-binding-or-push 1
+            node scripts/release/release-failure-record.mjs "${RELEASE_FAILURE_RECORD}" >> "${GITHUB_OUTPUT}"
+            exit 1
+          fi
+          NEW_TAG="${RELEASE_TAG}"
           echo "Waiting for tag-push Release workflow for ${NEW_TAG}."
           RELEASE_RUN_ID=""
           for _attempt in $(seq 1 30); do
@@ -387,10 +422,21 @@ jobs:
           done
           if [[ -z "${RELEASE_RUN_ID}" ]]; then
             echo "Tag-push Release workflow for ${NEW_TAG} did not become visible in time."
-            record_failure_stage release-workflow-discovery 1
+            node scripts/release/release-failure-record.mjs record-stage "${RELEASE_FAILURE_RECORD}" release-workflow-discovery 1
+            node scripts/release/release-failure-record.mjs "${RELEASE_FAILURE_RECORD}" >> "${GITHUB_OUTPUT}"
             exit 1
           fi
-          watch_release_workflow "${RELEASE_RUN_ID}" || exit "$?"
+          if gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30; then
+            echo "Exact-tag publication completed."
+          else
+            watch_status=$?
+            if ! gh run view "${RELEASE_RUN_ID}" --json databaseId,status,conclusion,headSha,headBranch,event,jobs \
+              | node scripts/release/release-failure-record.mjs record-workflow "${RELEASE_FAILURE_RECORD}" release-workflow "${watch_status}"; then
+              printf '{}\n' | node scripts/release/release-failure-record.mjs record-workflow "${RELEASE_FAILURE_RECORD}" release-workflow "${watch_status}"
+            fi
+            node scripts/release/release-failure-record.mjs "${RELEASE_FAILURE_RECORD}" >> "${GITHUB_OUTPUT}"
+            exit "${watch_status}"
+          fi
           PUBLISHED_SHA="$(git rev-list -n 1 "${NEW_TAG}")"
           echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"
           echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"
@@ -402,7 +448,7 @@ jobs:
           RELEASE_OBSERVATION_PATH: ${{ runner.temp }}/release-observation.json
           RELEASE_FAILURE_RECORD: ${{ runner.temp }}/release-failure-record.json
           RELEASE_PIPELINE_REASON: ${{ steps.auto_release.outputs.pipeline_reason }}
-          RELEASE_PUBLISHED_TAG: ${{ steps.auto_release.outputs.published_tag }}
+          RELEASE_PUBLISHED_TAG: ${{ steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag }}
           RELEASE_EXISTING_TAG: ${{ steps.retry_target.outputs.existing_tag }}
           RELEASE_TRIGGER_ORIGIN: ${{ github.event_name == 'schedule' && 'native_schedule' || github.event_name == 'issues' && 'blocker_retry' || inputs.trigger_origin }}
         run: node --input-type=module -e 'import { writeReleaseObservation } from "./scripts/release/release-observation.mjs"; writeReleaseObservation();'
@@ -418,13 +464,13 @@ jobs:
           retention-days: 90
 
       - name: Resolve blocked scheduled auto-release issue
-        if: success() && github.event_name == 'schedule' && steps.auto_release.outputs.published_tag
+        if: success() && github.event_name == 'schedule' && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          RELEASE_SHA: ${{ steps.auto_release.outputs.published_sha }}
-          RELEASE_TAG: ${{ steps.auto_release.outputs.published_tag }}
+          RELEASE_SHA: ${{ steps.publish_release.outputs.published_sha || steps.auto_release.outputs.published_sha }}
+          RELEASE_TAG: ${{ steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag }}
         run: |
           set -euo pipefail
           title="Auto Release blocked: scheduled run failed"
@@ -450,13 +496,13 @@ jobs:
           fi
 
       - name: Record resolved-issue auto-release retry success
-        if: "${{ success() && github.event_name == 'issues' && steps.auto_release.outputs.published_tag }}"
+        if: "${{ success() && github.event_name == 'issues' && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag) }}"
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          RELEASE_SHA: ${{ steps.auto_release.outputs.published_sha }}
-          RELEASE_TAG: ${{ steps.auto_release.outputs.published_tag }}
+          RELEASE_SHA: ${{ steps.publish_release.outputs.published_sha || steps.auto_release.outputs.published_sha }}
+          RELEASE_TAG: ${{ steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           set -euo pipefail
@@ -472,7 +518,7 @@ jobs:
           fi
 
       - name: Record resolved-issue auto-release retry skip
-        if: "${{ success() && github.event_name == 'issues' && !steps.auto_release.outputs.published_tag }}"
+        if: "${{ success() && github.event_name == 'issues' && !(steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag) }}"
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -526,8 +572,8 @@ jobs:
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
           RELEASE_PAT_CONFIGURED: ${{ secrets.RELEASE_PAT != '' }}
           SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN != '' }}
-          RECORDED_FAILURE_STAGE: ${{ steps.auto_release.outputs.failure_stage }}
-          RECORDED_FAILURE_CAUSE: ${{ steps.auto_release.outputs.failure_cause }}
+          RECORDED_FAILURE_STAGE: ${{ steps.publish_release.outputs.failure_stage || steps.auto_release.outputs.failure_stage }}
+          RECORDED_FAILURE_CAUSE: ${{ steps.publish_release.outputs.failure_cause || steps.auto_release.outputs.failure_cause }}
         run: |
           set -euo pipefail
           title="Auto Release blocked: scheduled run failed"

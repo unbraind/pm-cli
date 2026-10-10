@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1980,
+    "covered_symbols": 1985,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1981
+    "required_symbols": 1986
   },
   "breaking_acknowledgements": [
     {
@@ -3007,6 +3007,30 @@
           "kind": "function",
           "name": "artifactKey",
           "signature": "(value: Pick<LinkedArtifact, \"path\" | \"scope\">) => string | calls: (value: Pick<LinkedArtifact, \"path\" | \"scope\">) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerException",
+          "signature": "export interface ArtifactLedgerException { identity: string; missing_from: readonly string[]; reason: string; evidence: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerFinding",
+          "signature": "export interface ArtifactLedgerFinding { identity: string; present_in: string[]; missing_from: string[]; disposition: { reason: string; evidence: string; } | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerReport",
+          "signature": "export interface ArtifactLedgerReport { schema: \"pm-artifact-ledgers/1\"; ok: boolean; counts: Record<string, number>; findings: ArtifactLedgerFinding[]; stale_exceptions: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerSnapshot",
+          "signature": "export interface ArtifactLedgerSnapshot { name: string; identities: readonly string[]; complete: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -15233,6 +15257,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "reconcileArtifactLedgers",
+          "signature": "(snapshots: readonly ArtifactLedgerSnapshot[], exceptions?: readonly ArtifactLedgerException[]) => ArtifactLedgerReport | calls: (snapshots: readonly ArtifactLedgerSnapshot[], exceptions?: readonly ArtifactLedgerException[]) => ArtifactLedgerReport"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "reconcileExtensionCapabilityUsage",
           "signature": "(loaded: ReadonlyArray<{ layer: ExtensionLayer; name: string; capabilities?: readonly string[]; }>, activation: ExtensionActivationResult) => ExtensionCapabilityUsageReconciliation[] | calls: (loaded: ReadonlyArray<{ layer: ExtensionLayer; name: string; capabilities?: readonly string[]; }>, activation: ExtensionActivationResult) => ExtensionCapabilityUsageReconciliation[]"
         },
@@ -26248,6 +26278,30 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerException",
+          "signature": "export interface ArtifactLedgerException { identity: string; missing_from: readonly string[]; reason: string; evidence: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerFinding",
+          "signature": "export interface ArtifactLedgerFinding { identity: string; present_in: string[]; missing_from: string[]; disposition: { reason: string; evidence: string; } | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerReport",
+          "signature": "export interface ArtifactLedgerReport { schema: \"pm-artifact-ledgers/1\"; ok: boolean; counts: Record<string, number>; findings: ArtifactLedgerFinding[]; stale_exceptions: string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ArtifactLedgerSnapshot",
+          "signature": "export interface ArtifactLedgerSnapshot { name: string; identities: readonly string[]; complete: boolean; }"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
           "signature": "readonly [\"list\", \"show\", \"put\", \"remove\", \"run\", \"verdicts\", \"presets\", \"apply\", \"derive\", \"promote\", \"risk\", \"lineages\"]"
@@ -27535,6 +27589,12 @@
           "kind": "function",
           "name": "readWorkspacePosition",
           "signature": "(global: GlobalOptions) => Promise<WorkspacePositionResult> | calls: (global: GlobalOptions) => Promise<WorkspacePositionResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "reconcileArtifactLedgers",
+          "signature": "(snapshots: readonly ArtifactLedgerSnapshot[], exceptions?: readonly ArtifactLedgerException[]) => ArtifactLedgerReport | calls: (snapshots: readonly ArtifactLedgerSnapshot[], exceptions?: readonly ArtifactLedgerException[]) => ArtifactLedgerReport"
         },
         {
           "classification": "supported",

@@ -1,0 +1,121 @@
+{
+  "schema": "release-ledger-exceptions/1",
+  "observed_at": "2026-10-10",
+  "owner": "pm-q91qyd",
+  "exceptions": [
+    {
+      "identity": "2026.5.23",
+      "missing_from": [
+        "delivered"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.3-2",
+      "missing_from": [
+        "delivered"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.3-3",
+      "missing_from": [
+        "delivered",
+        "documented"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.3-4",
+      "missing_from": [
+        "delivered",
+        "documented"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.3-5",
+      "missing_from": [
+        "documented"
+      ],
+      "reason": "Historical public artifact has no section in the current package-generated changelog. Retain the measured documentation gap as an explicit historical exception; no shipped content is inferred from mutable item timestamps.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.3-6",
+      "missing_from": [
+        "documented"
+      ],
+      "reason": "Historical public artifact has no section in the current package-generated changelog. Retain the measured documentation gap as an explicit historical exception; no shipped content is inferred from mutable item timestamps.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.3-7",
+      "missing_from": [
+        "documented"
+      ],
+      "reason": "Historical public artifact has no section in the current package-generated changelog. Retain the measured documentation gap as an explicit historical exception; no shipped content is inferred from mutable item timestamps.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.3-8",
+      "missing_from": [
+        "documented"
+      ],
+      "reason": "Historical public artifact has no section in the current package-generated changelog. Retain the measured documentation gap as an explicit historical exception; no shipped content is inferred from mutable item timestamps.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.4",
+      "missing_from": [
+        "documented"
+      ],
+      "reason": "Historical public artifact has no section in the current package-generated changelog. Retain the measured documentation gap as an explicit historical exception; no shipped content is inferred from mutable item timestamps.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.5.5",
+      "missing_from": [
+        "documented"
+      ],
+      "reason": "Historical public artifact has no section in the current package-generated changelog. Retain the measured documentation gap as an explicit historical exception; no shipped content is inferred from mutable item timestamps.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.6.1",
+      "missing_from": [
+        "delivered"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.6.2",
+      "missing_from": [
+        "delivered"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.7.24-2",
+      "missing_from": [
+        "delivered"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    },
+    {
+      "identity": "2026.9.24",
+      "missing_from": [
+        "delivered"
+      ],
+      "reason": "Historical prepared tag has no published registry artifact. Retain the original declaration and tag as an explicitly abandoned publication; no tag deletion or retrospective publication is performed.",
+      "evidence": "https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon"
+    }
+  ]
+}

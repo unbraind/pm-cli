@@ -13,6 +13,7 @@ import {
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
 import { packDistribution } from "../../../scripts/release/package-distribution.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
@@ -34,7 +35,7 @@ async function createBundleFixture() {
   const manifest = {
     name: "runtime-bundle-fixture",
     version: "1.0.0",
-    files: ["index.js", "runtime-dependencies.json"],
+    files: ["index.js", "runtime-dependencies.json", "metadata.json"],
     dependencies: { first: "^1.0.0", second: "^1.0.0" },
     devDependencies: { dev: "^1.0.0" },
     scripts: { prepack: "exit 97" },
@@ -63,11 +64,22 @@ async function createBundleFixture() {
     },
   };
   const ledger = { name: manifest.name, version: manifest.version, packages };
+  const metadata = {
+    extension: {
+      text: "Unicode λ and escaped \"quotes\"\n",
+      values: [null, true, 1.25, 9007199254740991],
+      nested: { preserved: "unknown field" },
+    },
+  };
   await writeFile(path.join(root, "package.json"), JSON.stringify(manifest));
   await writeFile(path.join(root, "index.js"), "export const result = 1;\n");
   await writeFile(
     path.join(root, "runtime-dependencies.json"),
-    JSON.stringify(ledger),
+    JSON.stringify(ledger, null, 2),
+  );
+  await writeFile(
+    path.join(root, "metadata.json"),
+    `${JSON.stringify(metadata, null, 2)}\n`,
   );
   for (const [location, entry] of Object.entries(packages)) {
     if (!location) continue;
@@ -90,7 +102,7 @@ async function createBundleFixture() {
     '{"name":"dev","version":"1.0.0"}',
   );
   await writeFile(path.join(dev, "private.txt"), "development-only");
-  return { root, manifest, packages, ledger };
+  return { root, manifest, packages, ledger, metadata };
 }
 
 it("packs exact physical runtime packages without development dependencies or maps and refuses installed drift", async () => {
@@ -274,8 +286,12 @@ it("uses npm's Node entrypoint on Windows and writes a real distributable tarbal
 }, 60_000);
 
 it("packs real npm artifacts through the npm 12 keyed receipt format", async () => {
-  const { root, manifest } = await createBundleFixture();
+  const { root, manifest, ledger, metadata } = await createBundleFixture();
   const destination = await harness.createTempRoot("pm-keyed-publication-");
+  const sourcePaths = ["metadata.json", "runtime-dependencies.json", "node_modules/first/package.json"];
+  const originals = await Promise.all(
+    sourcePaths.map((file) => readFile(path.join(root, file), "utf8")),
+  );
   // npm 11 returns arrays; npm 12 keys the same real packing receipt by name.
   // Preserve real child execution and filesystem output on either CI version.
   const execute = vi.fn(
@@ -310,6 +326,32 @@ it("packs real npm artifacts through the npm 12 keyed receipt format", async () 
     await readFile(path.join(destination, artifact.filename)),
   ).not.toHaveLength(0);
   expect(execute).toHaveBeenCalledTimes(2);
+  const extracted = await harness.createTempRoot("pm-keyed-extracted-");
+  await extractTar({
+    file: path.join(destination, artifact.filename),
+    cwd: extracted,
+  });
+  for (const [file, value] of [
+    ["metadata.json", metadata],
+    ["runtime-dependencies.json", ledger],
+  ] as const) {
+    const delivered = await readFile(path.join(extracted, "package", file), "utf8");
+    expect(JSON.parse(delivered)).toEqual(value);
+    expect(delivered).toBe(`${JSON.stringify(value)}\n`);
+  }
+  expect(
+    await readFile(path.join(extracted, "package/node_modules/first/package.json"), "utf8"),
+  ).toBe(originals[2]);
+  expect(
+    await Promise.all(sourcePaths.map((file) => readFile(path.join(root, file), "utf8"))),
+  ).toEqual(originals);
+}, 60_000);
+
+it.each(["{", '{"value":-0}', '{"value":1e400}'])("refuses invalid or lossy first-party JSON instead of silently changing its values: %s", async (raw) => {
+  const { root } = await createBundleFixture();
+  await writeFile(path.join(root, "metadata.json"), raw);
+  expect(() => packDistribution(root)).toThrow(/JSON|lossless/u);
+  expect(await readFile(path.join(root, "metadata.json"), "utf8")).toBe(raw);
 }, 60_000);
 
 it.each([

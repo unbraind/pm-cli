@@ -1,12 +1,14 @@
 id: pm-q91qyd
-title: "The project keeps three release ledgers that disagree in both directions: six published npm artifacts have no changelog section at all and seven git tags were never published"
+title: Reconcile complete release ledgers with exact historical dispositions
 description: "Measured 2026-07-27 by reconciling the three records the project actually maintains. CHANGELOG.md carries 69 version sections, git carries 77 release tags, and the npm registry carries 70 published versions of the package. Every pairwise comparison finds divergence, and it runs in both directions. Five versions the changelog announces to users were never published anywhere: 2026.5.23, 2026.5.3-2, 2026.6.1, 2026.6.2, and 2026.7.24-2. Eight tags exist with no changelog section: 2026.5.3-3 through 2026.5.3-8, 2026.5.4, and 2026.5.5. Most seriously, six artifacts that are installable from npm right now have no changelog entry of any kind: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, and 2026.5.5. A user can install those versions and there is no record in the repository of what is in them. Seven tags in total were declared and never delivered. The reason none of this was caught is that every existing control measures a different pair. The changelog check in CI proves the changelog matches the pm tracker, never that it matches what shipped. The release-health reminder pm-7zs0 is forward-only and same-day: it asks whether the next release advanced npm latest, so it cannot see a historical gap and demonstrably did not see any of these seven. The publish verifier checks the artifact it just pushed. Nothing ever asks the whole-history question, which is whether the set of releases the project claims to have made equals the set it can prove it made. That question is the one that matters for a record intended to stay readable for decades, and it is currently unanswered and unanswerable without an ad hoc script."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: ci,governance,provenance,release,traceability
 created_at: "2026-07-27T12:46:06.729Z"
-updated_at: "2026-09-08T13:32:06.173Z"
+updated_at: "2026-10-10T16:34:04.409Z"
+closed_at: "2026-10-10T16:34:03.812Z"
+completed_at: "2026-10-10T16:34:03.812Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A reconciliation control compares the full declared release set (changelog sections and git tags) against the full delivered set (registry versions) across all history, not only the most recent cut; Each divergence class is reported separately and named: declared-but-never-delivered, delivered-but-undocumented, and tagged-but-unsectioned, because the three have different causes and different remedies; The current 18 divergences are dispositioned individually as either a real gap to backfill or a recorded historical exception with a reason, so the baseline is explained rather than merely frozen; The control runs on a schedule and fails loudly, so a divergence introduced by a partial release is visible the same week rather than at the next manual reconciliation; The reconciliation reads the registry through the same published-artifact path the acceptance stage uses, so it is proof of delivery and not proof of intent"
@@ -17,8 +19,10 @@ why_now: The terminal release attribution backfill made the changelog authoritat
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "One reconciliation control compares changelog sections, git tags and registry versions across all history and names each divergence class separately."
-dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Retain the typed complete-set SDK evaluator, full anonymous three-ledger collector, exact historical dispositions, daily/completion reports, strict headings and native Windows provider execution. Validate malformed JavaScript collection, record and nested-array shapes before access so callers receive contextual TypeError messages without any, unsafe narrowing or production testing seams."
+expected_result: "Complete historical artifact inventories remain authoritative, all discrepancy classes and exact dispositions remain visible, and malformed SDK input refuses with useful contextual diagnostics."
+actual_result: "Live baseline144 documented/152 tagged/144 delivered with14 explicit historical gaps remains unchanged. Original source fails11 new contextual assertions; fixed source passes34 evaluator cases,103 linked contracts and independent14-case Node source-copy control. Actual npm-packed governance/aggregate consumers pass on Node24,Node26 andBun. All10104 source tests pass at exact100/100/100/100 across776 files; four type projects and complete static/docs gates pass. Immutable existing versions are untouched; new SDK source remainsUnreleased and next pushed-head CI/review is required."
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-44u3wt,discovered_from,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-7zs0,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-csuce0,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
@@ -30,6 +34,121 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,verifies,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-ygli86,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-doxj,implements,"2026-07-27T12:57:57.598Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-release-acceptance-path-cost,related,"2026-10-10T04:23:10.031Z","harness:codex","cli:update:dep",detected
+comments[13]{created_at,author,text}:
   "2026-08-01T09:53:06.976Z","harness:claude-code","Three-ledger reconciliation sampled live 2026-08-01 for the current release only, as a spot check rather than a re-run of the full divergence census. npm: @unbrained/pm-cli version 2026.8.1, dist-tags.latest 2026.8.1, time.modified 2026-08-01T02:43:26.931Z. GitHub releases: v2026.8.1 marked Latest, created 2026-08-01T02:44:13Z. Git tags: 82 total, all matching v20*, including the multi-release days v2026.7.24-2 and v2026.7.24-3 that the -N suffix scheme produces. For 2026.8.1 the three ledgers agree, and the npm publish precedes the GitHub release by 47 seconds, which is the expected ordering for the tag-push Release workflow."
+  "2026-10-10T02:18:44.727Z","harness:codex","Implementation plan: strict 2914-item all-status census has no omissions/unreadable entries and all 704 GitHub issues were checked. Reuse the existing three-ledger owner. Public SDK will reconcile caller-defined complete artifact sets with exact evidence-scoped historical exceptions; the anonymous registry/Git/changelog adapter will retain every discrepancy and fail on new drift. Negative controls include incomplete census, duplicate identities, stale exceptions and newly missing publication. No changelog generator is replaced."
+  "2026-10-10T02:40:48.244Z","harness:codex","Verification checkpoint: complete live graph audit has 2914 nodes,14962 typed edges,zero missing references,zero active isolates and zero ordering contradictions; only two documented legacy hierarchy info findings remain. Resolution validation retains the existing170 historical missing-resolution warning as debt; history drift passes. Current dependency/secret/security APIs are clear. Live one-day Sentry gate reports zero critical/high issues; telemetry gate has2.73% finish errors and zero missing-code rows. These aggregate checks do not certify exhaustive real-time delivery of every action. Initial Node26 full suite hit a30-second real scale-benchmark timeout under parallel workload; preserve that failure and compare the supported Node24 gate without changing budgets or assertions."
+  "2026-10-10T03:26:13.604Z","harness:codex","Fresh continuation evidence: graph audit reads 2,915 nodes and 14,966 typed directed edges, with zero missing references, zero active isolates, zero ordering contradictions and every terminal node reachable through the declared outcome basis. Only the two documented legacy hierarchy information classes remain. Resolution validation passes with the existing 170 historical metadata warnings; history drift and tracker health pass. All 704 GitHub issues have PM-file links in complete comment populations, and the dependency and tracked-secret scans are clear. One-day Sentry/required telemetry gate passes with zero critical/high issues, 2.73 percent seven-day finish errors and zero missing-code rows. This is aggregate evidence, not exhaustive real-time per-action delivery proof."
+  "2026-10-10T05:04:35.619Z","harness:codex","Full-source verification is green: all 10074 applicable tests pass and exact integer coverage is 100/100/100/100. The live complete anonymous census retains 144 documented, 152 tagged and 144 delivered versions, 14 individually explained historical findings and zero stale exceptions. Registry/provider, strict type consumers and native tag/source-run controls are independently verified; whole static and hosted review remain required."
+  "2026-10-10T05:44:48.961Z","harness:codex","PR #1434 round 1: CodeRabbit correctly identified independently optional heading brackets. Both opening-only and closing-only changelog forms falsely certify a version as documented. Two focused parser-boundary regressions fail on the original code (9 existing tests pass); matching bracketed and unbracketed alternatives will preserve valid dated/ordinal headings and expose malformed sections as missing documentation. Existing complete census, exceptions and output budgets remain unchanged."
+  "2026-10-10T07:55:52.348Z","harness:codex","Third full CodeRabbit review at c7fe780 found one valid Windows-specific provider-launch defect: commandFor npm yields npm.cmd, which execFileSync cannot execute directly. The hosted Linux collector remains usable, but the universal local collector must use a native Windows interpreter. Node 24.21.0 official child-process documentation independently confirms the limitation and discourages shell:true with argument arrays. The fix will use cmd.exe with the already validated restricted package identity and fixed metadata arguments, preserving anonymous npm configuration/cache, deadlines, complete inventory and error behavior. A portable provider-boundary regression will cover both launch vectors, and the existing required Windows job will run a real npm/native-Git acceptance with the original npm.cmd EINVAL negative control. Current local coverage owns the build lease, so source/test/workflow edits wait for that command to finish. The finding is reused under this canonical collector owner; no duplicate issue or claim is created."
+  "2026-10-10T08:07:39.233Z","harness:codex","Fourth review repair: original collector fails the Windows vector regression (1 failed/12 passed); repaired collector passes all 13 tests and the connected 199-test SDK/release/acceptance set. Native Linux acceptance executes real Git and public npm with blank user/global configurations, fresh disposable cache, restricted package grammar and unchanged 120s/32MiB limits; it reads all 144 public versions and proves cleanup. The deliberate one-version fixture disagreement remains red independently of successful provider collection. Required Windows CI now proves native original npm.cmd EINVAL and repaired cmd.exe execution, including paths with spaces and ampersands. No shell:true argument-array fallback, settings waiver, threshold change or production test-only seam. The previous full-source exact-100 receipt predates this MJS repair; a new complete run and actual Windows proof are still required before closure."
+  "2026-10-10T08:25:30.782Z","harness:codex","Required native Windows verification passed on PR 1434 head d908adf77 in Windows regression (Node 24), run 38036884636: direct npm.cmd produced the genuine original EINVAL, and the repaired cmd.exe request and native Git collected all 144 public registry versions with isolated configurations/cache, complex paths and cleanup. Portable intercepted launch tests remain separate evidence. All required source/platform/security contexts passed except an independent tracker prose-edge ratchet; full local all-source coverage is still running."
+  "2026-10-10T16:03:31.142Z","harness:codex","PR 1434 final included review at 929845a reports malformed public SDK exception inputs lose contextual diagnostics. Reopened the canonical ledger owner with renewed expected-result planning and claimed it normally. Extend the existing unsupported-settlement table for null/non-object exceptions and non-array missing_from values, require exact contextual errors, retain a failing-original source-copy control, then validate the unchanged complete source gate. No duplicate item or production testing seam."
+  "2026-10-10T16:08:19.340Z","harness:codex","TDD repair verified: original source fails 11 contextual-error assertions while 23 cases pass; repaired evaluator passes all 34 cases. A separate owned temporary Node24 source-copy consumer independently fails the same11 original contextual checks, passes all14 malformed-shape contracts on the repair, and retains valid complete reconciliation. Explicit runtime guards also cover malformed JavaScript collection, record and identity-array shapes consistently without any or dynamic imports. The original Array.isArray narrowing caused a temporary TypeScript implicit-any diagnostic; checks now pass through unknown without erasing the declared readonly element types. The canonical linked cohort passes99 assertions with isolated schema/source context. Full-source exact coverage and strict gates must certify this new source before closure."
+  "2026-10-10T16:08:53.564Z","harness:codex","Correction to the preceding progress count: the actual canonical linked receipt test-local-mv2l8phe-cfy4bv passes103 assertions across four files, including34 ledger cases,15 provenance,41 pipeline and13 collector cases. The earlier prose value99 was an arithmetic mistake; the recorded execution report is authoritative. Source ownership is now frozen for the complete Node24 exact-coverage run."
+  "2026-10-10T16:34:03.039Z","harness:codex","Final new-source verification: all10104 tests pass and each of776 measured source files has exact covered=total with zero skipped/uncovered counts:67814 statements,51911 branches,13978 functions,64515 lines. All four TypeScript projects, docs/skills and the complete unchanged quality:static chain pass, including strict lint, duplicates, exports, runtime lock, source docs, context/graph/integrity and bounded329-killed/seven-reviewed-equivalent mutation proof. The103 linked contracts pass. Real packed npm installation validates governance and aggregate SDK exports on Node24,Node26 andBun, each with18 contextual refusals and preserved historical disposition; both real artifact profiles pass at19973110/20214834 distribution bytes with6378 files and unchanged4731 runtime files. The first private npm attempt failed before config resolution because the same blank file served as user and global config; its failed receipt is retained and distinct owned blank configs repair the harness without source changes. Current pushed-head CI and full review will still follow; source is Unreleased and immutable registry/tag artifacts remain unchanged."
+notes[2]{created_at,author,text}:
+  "2026-10-10T02:23:29.240Z","harness:codex","2026-10-10 full-history reconciliation: 143 documented versions, 151 release tags, 143 registry versions; 14 exact discrepancies. Registry-missing historical identities: 2026.5.23, 2026.5.3-2, 2026.5.3-3, 2026.5.3-4, 2026.6.1, 2026.6.2, 2026.7.24-2, 2026.9.24. Documentation-missing published identities: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, 2026.5.5. Record each exact missing-ledger signature as a reviewed historical exception, retain the underlying gap in every report, and reject new drift or stale exceptions. The earlier 18 pairwise differences count overlapping divergence classes; this current census counts artifact identities. No publication/tag/changelog content is synthesized or rewritten to simulate historical consistency."
+  "2026-10-10T04:23:07.558Z","harness:codex","Final live anonymous public census after integrating today immutable release commit: 144 package-generated changelog sections, 152 advertised origin release tags and 144 installable public registry versions. The reusable SDK receipt is green with all 14 exact historical discrepancies still visible and individually dispositioned, all three divergence classes explicit and zero stale exceptions. Today 2026.10.10 agrees in all three ledgers; its separate macOS advertisement failure belongs to pm-release-acceptance-path-cost. No transient exception was added and no historical artifact/tag was rewritten."
+learnings[2]{created_at,author,text}:
+  "2026-10-10T08:45:04.889Z","harness:codex","A portable argument-vector regression verifies dispatch selection, but Windows .cmd compatibility also requires native Windows execution. Keep a genuine failing-original control, execute the repaired public providers without simulation, and preserve restricted package grammar, isolated configuration/cache, resource ceilings and cleanup. Prose that names historical work must also retain the corresponding typed lineage edge so context quality can detect incomplete graph intake."
+  "2026-10-10T16:34:02.435Z","harness:codex","Typed readonly parameters still need runtime shape checks for JavaScript consumers. Guard collection, record and nested array shapes before access, preserve contextual TypeError diagnostics, and prove failing-original/passing-fixed behavior through the public evaluator and actual packed SDK entrypoints. Array.isArray standard typings narrow to any[]; checking the unknown view preserves the declared readonly element types without accepting unsafe element access."
+files[11]:
+  - path: .github/workflows/ci.yml
+    scope: project
+    note: Required native Windows npm/Git provider proof with original direct-launch negative control
+  - path: .github/workflows/release-reliability.yml
+    scope: project
+  - path: config/release-ledger-exceptions.json
+    scope: project
+  - path: scripts/release/collect-release-ledgers.mjs
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/governance.ts
+    scope: project
+  - path: src/sdk/governance/artifact-ledgers.ts
+    scope: project
+  - path: tests/acceptance/release-ledger.mjs
+    scope: project
+    note: Required native Windows npm/Git provider proof with original direct-launch negative control
+  - path: tests/fixtures/release-ledgers/npm-view-12.json
+    scope: project
+  - path: tests/unit/scripts/release/collect-release-ledgers.spec.ts
+    scope: project
+  - path: tests/unit/sdk/governance/artifact-ledgers.spec.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-10-10T02:31:51.937Z",local_mutation,feat/release-origin-and-ledger-reconciliation,"Complete-set membership, exact historical signatures, anonymous provider inventory, native tag identity and retained upstream origin."
+  node tests/acceptance/release-ledger.mjs,project,240,"harness:codex","2026-10-10T08:06:10.900Z",local_mutation,feat/release-origin-and-ledger-reconciliation,Real native Git and anonymous public npm metadata with isolated roots and configurations; on Windows retain native original npm.cmd EINVAL before repaired cmd.exe launch.
+test_runs[5]:
+  - run_id: test-local-mv1xls1x-2xd027
+    kind: test
+    status: passed
+    started_at: "2026-10-10T05:05:56.835Z"
+    finished_at: "2026-10-10T05:06:12.165Z"
+    recorded_at: "2026-10-10T05:06:12.165Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv1zen1p-2evand
+    kind: test
+    status: passed
+    started_at: "2026-10-10T05:56:28.486Z"
+    finished_at: "2026-10-10T05:56:38.317Z"
+    recorded_at: "2026-10-10T05:56:38.317Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv241pqh-01ae3k
+    kind: test
+    status: passed
+    started_at: "2026-10-10T08:06:30.625Z"
+    finished_at: "2026-10-10T08:06:33.352Z"
+    recorded_at: "2026-10-10T08:06:33.352Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node tests/acceptance/release-ledger.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mv243l53-lsserr
+    kind: test
+    status: passed
+    started_at: "2026-10-10T08:07:20.631Z"
+    finished_at: "2026-10-10T08:08:00.711Z"
+    recorded_at: "2026-10-10T08:08:00.711Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2l8phe-cfy4bv
+    kind: test
+    status: passed
+    started_at: "2026-10-10T16:07:40.635Z"
+    finished_at: "2026-10-10T16:07:53.090Z"
+    recorded_at: "2026-10-10T16:07:53.090Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/RELEASE_LEDGER_RECONCILIATION.md,project
+  docs/RELEASE_RELIABILITY.md,project
+close_reason: Complete release-ledger reconciliation and contextual JavaScript input validation are implemented and independently verified.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: release-artifact-ledgers
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs coverage,"pnpm quality:static",live complete anonymous release-ledger census
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-q91qyd
 body: ""

@@ -101,3 +101,28 @@ jobs:
           path: ${{ runner.temp }}/nightly-reliability.json
           if-no-files-found: error
           retention-days: 90
+      - name: Reconcile full release ledgers
+        if: always() && steps.sdk.outcome == 'success'
+        env:
+          RELEASE_LEDGERS_OUTPUT: ${{ runner.temp }}/release-ledgers.json
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from "node:fs";
+          import { main } from "./scripts/release/collect-release-ledgers.mjs";
+          const report = main();
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            `## Full release ledgers\n\nComplete population: ${JSON.stringify(report.counts)}\n\n` +
+            `Divergence classes: ${JSON.stringify(report.classes)}\n\n` +
+            report.findings.map((finding) => `${finding.identity}: missing from ${finding.missing_from.join(", ")}; ${finding.disposition?.reason ?? "UNSETTLED"}`).join("\n\n") +
+            `\n\nStale exceptions: ${report.stale_exceptions.join(", ") || "none"}\n\n` +
+            "PM owner: [pm-q91qyd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon)\n");
+          process.exitCode = report.ok ? 0 : 1;
+          JS
+      - name: Preserve full release-ledger report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: release-ledgers-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-ledgers.json
+          if-no-files-found: error
+          retention-days: 90

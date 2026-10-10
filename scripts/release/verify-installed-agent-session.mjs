@@ -106,7 +106,7 @@ function readContext(session, label, expectedItems, expectedClosed) {
 
 /** Execute a cold SDK and CLI lifecycle with per-command output and time bounds. */
 function runAgentSession(manager, executable, installRoot, publicRegistryEnv, deadline) {
-  const workspace = path.join(installRoot, "agent-workspace");
+  const workspace = path.join(installRoot, "workspace");
   const pmRoot = path.join(workspace, ".agents", "pm");
   const evidencePath = path.join(workspace, "acceptance-evidence.txt");
   mkdirSync(workspace, { recursive: true });
@@ -322,7 +322,7 @@ function commandFailureReceipt(result, attempt) {
 
 /** Retry only a measured registry visibility delay, retaining every attempt. */
 function installAndRun(manager, packageSpec, root, publicRegistryEnv, globalInstall, deadline) {
-  const installRoot = path.join(root, `${manager}-install`);
+  const installRoot = path.join(root, manager);
   mkdirSync(installRoot, { recursive: true });
   if (manager === "bun") {
     writeFileSync(
@@ -401,7 +401,9 @@ function main() {
     return;
   }
   const { version, manager, previousVersion, globalInstall } = acceptanceOptions(flags);
-  const root = mkdtempSync(path.join(tmpdir(), "pm-cli-installed-acceptance-"));
+  // Init reports this path repeatedly. Keep the disposable layout concise so
+  // macOS temp ancestry fits the same raw-output ceiling as other platforms.
+  const root = mkdtempSync(path.join(tmpdir(), "pm-accept-"));
   const deadline = Date.now() + 13 * 60_000;
   const releaseCleanup = registerTempCleanup(root);
   try {

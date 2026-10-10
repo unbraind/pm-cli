@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { isReleaseRelevantPath } from "../../scripts/release/release-relevance.mjs";
 import { EXPECTED_QUALITY_STATIC_SCRIPT } from "../helpers/releaseContracts.js";
@@ -369,6 +369,90 @@ describe("release automation contract", () => {
     expect(gateRegistry).toContain('"GH_TOKEN": "{{release_policy_token}}"');
     expect(gates).toContain("release_policy_token: releasePolicyToken");
     expect(gates).toContain(".filter(([, value]) => value.length > 0)");
+  });
+
+  it("seals producer evidence before publishing native refs and retains downstream failure", async () => {
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/auto-release.yml"), "utf8");
+    const seal = workflow.indexOf("- name: Seal prepared release producer binding");
+    const publish = workflow.indexOf("- name: Publish prepared release refs");
+    expect(seal).toBeGreaterThan(workflow.indexOf("args+=(--push --defer-push)"));
+    expect(publish).toBeGreaterThan(seal);
+    expect(workflow.slice(seal, publish)).toContain("if-no-files-found: error");
+    expect(workflow.slice(seal, publish)).toContain("name: release-producer-binding-${{ github.run_attempt }}");
+    const block = workflow.match(/ {6}- name: Publish prepared release refs[\s\S]*? {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u)?.[1];
+    expect(block).toBeDefined();
+    const script = (block ?? "").split("\n").map((line) => line.slice(10)).join("\n");
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-producer-push-"));
+    const gitEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^GIT_/u.test(key))), GIT_AUTHOR_NAME: "fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid", GIT_COMMITTER_NAME: "fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid" };
+    /** Execute real Git operations only in the owned temporary producer repository. */
+    const git = (args: string[]) => {
+      const result = spawnSync("git", ["-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false", ...args], { cwd: root, env: gitEnv, encoding: "utf8" });
+      expect(result.status, result.stderr).toBe(0);
+      return result.stdout.trim();
+    };
+    try {
+      await mkdir(path.join(root, "scripts/release"), { recursive: true });
+      for (const file of ["scripts/temp-lifecycle.mjs", "scripts/smoke-cleanup.mjs", ...["utils", "version-manifests", "release-relevance", "release-tag-provenance", "run-release-pipeline", "release-failure-record"].map((name) => `scripts/release/${name}.mjs`)]) await copyFile(path.join(repoRoot, file), path.join(root, file));
+      git(["init", "--initial-branch=trunk", "--object-format=sha1"]);
+      git(["commit", "--allow-empty", "-m", "Reviewed source"]);
+      const sourceSha = git(["rev-parse", "HEAD"]);
+      git(["commit", "--allow-empty", "-m", "Prepared release"]);
+      const targetSha = git(["rev-parse", "HEAD"]);
+      const releaseTag = "v2026.10.10";
+      const provenance = { schema: "pm-release-provenance/1", tag: releaseTag, source_sha: sourceSha, target_sha: targetSha, event: "schedule", trigger_origin: "native_schedule", run_id: 42, run_attempt: 1, repository: "owner/project" };
+      git(["tag", "-a", "-m", JSON.stringify(provenance), releaseTag]);
+      const tagObject = git(["rev-parse", `refs/tags/${releaseTag}`]);
+      const providerFile = path.join(root, "provider.mjs");
+      await writeFile(providerFile, `import { copyFileSync, appendFileSync } from "node:fs";
+import path from "node:path";
+if (path.basename(process.execPath).replace(/\\.exe$/u, "") === "gh") {
+const args=process.argv.slice(1);
+args[0]=path.basename(args[0]);
+appendFileSync(process.env.PROVIDER_LOG, args.join(" ")+"\\n");
+if(args[0]==="api") {
+ const responses=JSON.parse(process.env.PROVIDER_RESPONSES);
+ if(!(args[1] in responses)) process.exit(97);
+ process.stdout.write(JSON.stringify(responses[args[1]]));
+} else if(args[1]==="download") copyFileSync(process.env.BINDING_SOURCE,path.join(args[args.indexOf("--dir")+1],"producer-binding.json"));
+else if(args[1]==="list") process.stdout.write(JSON.stringify([{databaseId:99,status:"queued",headBranch:process.env.RELEASE_TAG}]));
+else if(args[1]==="watch") process.exit(Number(process.env.WATCH_STATUS));
+else if(args[1]==="view") process.stdout.write(JSON.stringify({databaseId:99,status:"completed",conclusion:"failure",jobs:[{name:"Publish",conclusion:"failure",steps:[{name:"Consumer acceptance",conclusion:"failure"}]}]}));
+else process.exit(98);
+process.exit(0);
+}
+`);
+      const providerBinary = path.join(root, process.platform === "win32" ? "gh.exe" : "gh");
+      await copyFile(process.execPath, providerBinary);
+      await chmod(providerBinary, 0o755);
+      const bindingFile = path.join(root, "binding.json");
+      const failureFile = path.join(root, "failure.json");
+      const outputFile = path.join(root, "output");
+      const logFile = path.join(root, "provider.log");
+      const responses = {
+        "repos/owner/project": { default_branch: "trunk" },
+        "repos/owner/project/actions/runs/42/attempts/1": { id: 42, run_attempt: 1, event: "schedule", head_sha: sourceSha, head_branch: "trunk", path: ".github/workflows/auto-release.yml@trunk", display_title: "Auto Release (native_schedule)", repository: { full_name: "owner/project" } },
+        "repos/owner/project/actions/runs/42/artifacts?per_page=100": [{ total_count: 1, artifacts: [{ name: "release-producer-binding-1", expired: false, size_in_bytes: 1024, workflow_run: { id: 42, head_sha: sourceSha, head_branch: "trunk" } }] }],
+      };
+      for (const [index, scenario] of [{ object: sourceSha, watch: "0", status: 1 }, { object: tagObject, watch: "73", status: 73 }, { object: tagObject, watch: "0", status: 0 }].entries()) {
+        const remote = path.join(root, `remote-${index}.git`);
+        git(["init", "--bare", "--initial-branch=trunk", remote]);
+        git(index === 0 ? ["remote", "add", "origin", remote] : ["remote", "set-url", "origin", remote]);
+        await writeFile(bindingFile, JSON.stringify({ schema: "pm-release-producer-binding/1", tag: releaseTag, tag_sha: targetSha, tag_object_sha: scenario.object, provenance }));
+        await writeFile(outputFile, "");
+        await writeFile(logFile, "");
+        const result = spawnSync("bash", ["-e", "-o", "pipefail", "-c", prependFakeBinForBash(script)], { cwd: root, encoding: "utf8", env: { ...gitEnv, FAKE_BIN: root, NODE_OPTIONS: `--import=${pathToFileURL(providerFile).href}`, PROVIDER_LOG: logFile, PROVIDER_RESPONSES: JSON.stringify(responses), BINDING_SOURCE: bindingFile, WATCH_STATUS: scenario.watch, RELEASE_TAG: releaseTag, GITHUB_REPOSITORY: "owner/project", RELEASE_PROVENANCE_OUTPUT: path.join(root, "origin.json"), RELEASE_FAILURE_RECORD: failureFile, GITHUB_OUTPUT: outputFile, RELEASE_PUSH_TOKEN: "" } });
+        expect(result.status, result.stderr).toBe(scenario.status);
+        const refs = git(["--git-dir", remote, "for-each-ref", "--format=%(objectname)", "refs/tags"]).split("\n").filter(Boolean);
+        expect(refs).toEqual(index === 0 ? [] : [tagObject]);
+        if (index === 0) expect(await readFile(logFile, "utf8")).not.toContain("run list");
+        if (scenario.status !== 0) {
+          expect(JSON.parse(await readFile(failureFile, "utf8")).stage).toBe(index === 0 ? "producer-binding-or-push" : "release-workflow");
+          expect(await readFile(outputFile, "utf8")).not.toContain("published_tag=");
+        } else expect(await readFile(outputFile, "utf8")).toBe(`published_tag=${releaseTag}\npublished_sha=${targetSha}\n`);
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("executes automatic same-day recovery before build and records issue retry markers", async () => {
@@ -1099,7 +1183,7 @@ printf '%s' "\${UNEXPECTED_PATHS}"
     );
   });
 
-  it("executes exact-tag recovery source selection fail closed", async () => {
+  it("executes exact-tag recovery source selection fail closed and preserves Sentry identity", async () => {
     const workflow = await readFile(
       path.join(repoRoot, ".github/workflows/release.yml"),
       "utf8",
@@ -1113,6 +1197,15 @@ printf '%s' "\${UNEXPECTED_PATHS}"
       .map((line) => line.slice(10))
       .join("\n");
     expect(sourceSelectionScript).toBeDefined();
+    const sentryUploadStep = workflow.match(
+      / {6}- name: Upload Sentry sourcemaps[\s\S]*? {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u,
+    )?.[1];
+    expect(sentryUploadStep).toBeDefined();
+    const sentryUploadScript = sentryUploadStep
+      ?.split("\n")
+      .map((line) => line.slice(10))
+      .join("\n");
+    expect(sentryUploadScript).toBeDefined();
 
     const tempRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-release-source-selection-"),
@@ -1121,6 +1214,7 @@ printf '%s' "\${UNEXPECTED_PATHS}"
       const npmLog = path.join(tempRoot, "npm.log");
       const gitLog = path.join(tempRoot, "git.log");
       const githubEnv = path.join(tempRoot, "github.env");
+      const sentryLog = path.join(tempRoot, "sentry.log");
       await writeFile(
         path.join(tempRoot, "npm"),
         `#!/usr/bin/env bash
@@ -1144,6 +1238,15 @@ esac
       );
       await chmod(path.join(tempRoot, "npm"), 0o755);
       await chmod(path.join(tempRoot, "git"), 0o755);
+      await writeFile(
+        path.join(tempRoot, "pnpm"),
+        `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "\${SENTRY_FAKE_LOG}"
+if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
+`,
+        "utf8",
+      );
+      await chmod(path.join(tempRoot, "pnpm"), 0o755);
 
       const runScenario = (overrides: NodeJS.ProcessEnv) =>
         spawnSync(
@@ -1212,6 +1315,45 @@ esac
       expect(registryFailure.stderr).not.toContain("secret-diagnostic");
       expect(await readFile(gitLog, "utf8")).toBe("");
       expect(await readFile(githubEnv, "utf8")).toBe("");
+
+      const releaseIdentity = "pm-cli@2026.8.5";
+      const uploadCalls = [
+        `exec sentry-cli releases new ${releaseIdentity} --org unbrained --project pm-cli`,
+        `exec sentry-cli releases set-commits ${releaseIdentity} --org unbrained --project pm-cli --auto`,
+        "sentry:upload",
+        `exec sentry-cli releases finalize ${releaseIdentity} --org unbrained --project pm-cli`,
+      ];
+      for (const scenario of [
+        { mode: "main", auth: "fixture", uploadStatus: "0", status: 0, calls: [] },
+        { mode: "tag", auth: "", uploadStatus: "0", status: 0, calls: [] },
+        { mode: "tag", auth: "fixture", uploadStatus: "0", status: 0, calls: uploadCalls },
+        { mode: "tag", auth: "fixture", uploadStatus: "73", status: 73, calls: uploadCalls.slice(0, 3) },
+      ]) {
+        await writeFile(sentryLog, "", "utf8");
+        const upload = spawnSync(
+          "bash",
+          ["-e", "-o", "pipefail", "-c", prependFakeBinForBash(sentryUploadScript ?? "")],
+          {
+            cwd: repoRoot,
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              FAKE_BIN: tempRoot,
+              SENTRY_FAKE_LOG: sentryLog,
+              RELEASE_TAG: "v2026.8.5",
+              RECOVERY_SOURCE_MODE: scenario.mode,
+              SENTRY_AUTH_TOKEN: scenario.auth,
+              SENTRY_ORG: "unbrained",
+              SENTRY_PROJECT: "pm-cli",
+              UPLOAD_STATUS: scenario.uploadStatus,
+            },
+          },
+        );
+        expect(upload.status, upload.stderr).toBe(scenario.status);
+        expect(await readFile(sentryLog, "utf8")).toBe(
+          scenario.calls.length ? `${scenario.calls.join("\n")}\n` : "",
+        );
+      }
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
