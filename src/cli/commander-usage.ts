@@ -610,6 +610,7 @@ function resolveUnknownCommandCandidates(params: {
   ], params.commandPaths, params.primaryToken).filter((path) => !params.normalizedUnknown.includes(" ") || path !== params.normalizedUnknown);
 }
 
+/** Offer each installed top-level namespace once when no concrete command candidate matches. */
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
   const topLevel = [
     ...new Set(
@@ -621,6 +622,7 @@ function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
   return topLevel.sort((left, right) => left.localeCompare(right));
 }
 
+/** Put concrete help targets first; otherwise lead with complete runtime discovery before fallback namespaces. */
 function buildUnknownCommandExamples(
   suggestedPaths: string[],
   hasConcreteCandidates: boolean,
@@ -639,7 +641,7 @@ function resolveUnknownCommandPath(token: string, invocationArgv: readonly strin
   return `${invocationArgv[commandIndex]} ${token}`;
 }
 
-/** Implements build unknown command guidance from runtime for the public runtime surface of this module. */
+/** Build inspection-only recovery from installed commands, preserving explicit tracker scope in executable retries. */
 export function buildUnknownCommandGuidanceFromRuntime(
   rawMessage: string,
   root: Command,

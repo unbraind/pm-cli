@@ -9,7 +9,7 @@
     "packages/pm-governance-audit/extensions/governance-audit/normalize.ts": 18,
     "packages/pm-todos/extensions/todos/runtime.ts": 12,
     "src/cli/argv-utils.ts": 2,
-    "src/cli/commander-usage.ts": 11,
+    "src/cli/commander-usage.ts": 10,
     "src/cli/error-guidance.ts": 37,
     "src/cli/extension-command-help.ts": 40,
     "src/cli/extension-command-options.ts": 6,
