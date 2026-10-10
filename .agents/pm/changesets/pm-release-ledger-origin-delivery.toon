@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: governance,release,sdk,traceability
 created_at: "2026-10-10T02:39:21.197Z"
-updated_at: "2026-10-10T05:27:39.612Z"
+updated_at: "2026-10-10T06:12:56.814Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#4d9c20054189c916e32efbab"
 author: "harness:codex"
@@ -20,7 +20,7 @@ parent: pm-u9d0
 risk: medium
 confidence: high
 expected_result: "Every historical release discrepancy remains reconstructible through complete SDK-backed inventories and exact reviewed dispositions; new drift is rejected, and publication preserves independently verified upstream origin across preparation and recovery."
-dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-prrlce,implements,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
   pm-q91qyd,implements,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
   pm-reliability-window-delivery,discovered_from,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
@@ -31,7 +31,9 @@ dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-eslint-1012,implements,"2026-10-10T04:49:16.754Z","harness:codex","cli:update:dep",detected
   pm-cg1sjb,related,"2026-10-10T05:21:36.108Z","harness:codex","cli:update:dep",detected
   pm-dvwm,related,"2026-10-10T05:21:38.426Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+  pm-f05lsg,related,"2026-10-10T05:34:44.105Z","harness:codex","cli:update:dep",detected
+  pm-998juj,implements,"2026-10-10T05:46:01.376Z","harness:codex","cli:update:dep",detected
+comments[14]{created_at,author,text}:
   "2026-10-10T02:39:21.197Z","harness:codex","Duplicate check: complete strict all-status census read 2914 items with zero omitted or unreadable records, plus live request search and fresh open/in-progress inventories. Prior closed Changeset pm-reliability-window-delivery delivers rolling origin/nightly series, not full artifact reconciliation or tag provenance. This record is the concrete cross-owner delivery receipt and creates no duplicate issue, reopens no completed owner, and does not close residual pm-prrlce/pm-uenmu9 acceptance."
   "2026-10-10T02:43:20.720Z","harness:codex","Manual live-provider validation caught npm12 returning a one-element array for multi-field npm view JSON, while npm11 returns one object. The current adapter refuses it; preserve this failed live receipt and add captured public metadata plus strict one-result normalization rather than weakening completeness. The shared SDK behavior and native tag/remote fixtures already pass; full verification must be repeated after this provider correction and exact source-workflow binding."
   "2026-10-10T03:22:13.348Z","harness:codex","Continuation receipt: user explicitly approved takeover of these three existing claims after normal atomic claim refused the previous session identity. Fresh strict all-status read contains2915/2915 items,2610 closed,zero omissions and zero unreadable records. Complete paginated704-issue comment census has no missing PM-file links or partial comment populations. No open PRs,Dependabot,secret-scanning or code-scanning alerts. All76 focused Node24 SDK/provider/native-Git/pipeline regressions pass. Existing code and tracker work preserved; whole-source coverage and read-only health verification are running. Live ledger control independently detects today immutable tag while publication is still in flight; no exception is added for this transient state."
@@ -44,6 +46,8 @@ comments[12]{created_at,author,text}:
   "2026-10-10T05:22:32.686Z","harness:codex","Independent anonymous public baseline comparison retains the local performance limitation: published 2026.10.10 exceeds five unchanged import budgets, and this branch exceeds five in a different entrypoint set on the same busy shared host. Aggregate/core/runtime/testing measurements vary in both directions; this does not establish an intrinsic branch slowdown or certify a local pass. Both complete receipts are retained. Mandatory hosted import-cost enforcement remains required; all budgets, margins, samples, source membership and thresholds are unchanged."
   "2026-10-10T05:23:59.402Z","harness:codex","The unchanged CLI transport-floor check also fails locally for all six fixture operations under current shared-host load (get/list/context/next/create/claim). Retain this as a second local timing limitation alongside the published-baseline import comparison, not a functional failure or a passing static result. No timing baseline or ceiling is changed. Source, schema, graph, mutation, documentation, type and security components are being completed separately; hosted CI must still enforce the complete original static command."
   "2026-10-10T05:27:39.612Z","harness:codex","All non-timing static components now pass with the eligible lint tooling: strict types, docs/skills, tracked-secret scan, graph composition, immutable history and bounded mutation enforcement. Mutation census is 336 cases: 329 killed, seven explicitly reviewed equivalent, zero unexpected survivors/timeouts/errors. Full live graph has2917 nodes14983 typed directed edges, zero missing references/active isolates/order contradictions and only the two established legacy hierarchy information classes. Validation preserves170 historical resolution warnings while history drift passes. Four implementation owners remain active for exact-head hosted quality/review verification; the broader release-origin owner is open and released."
+  "2026-10-10T05:51:06.654Z","harness:codex","PR #1434 head ed33da333 completed all required hosted contexts; only Gates (static) failed on the unchanged base artifact ceiling (20,001,636 > 20,000,000), after all original import/transport budgets and bounded mutation passed. Hosted coverage and Codecov patch passed. CodeRabbit supplied one valid malformed-heading finding; failing-before/fixed-after regressions are implemented. Full review surfaces read: Sourcery quota exhausted, two Greptile expired-trial responses are availability limitations, not substantive approvals. CodeFactor Chrome PR report has no new issues (two existing repository issues retained), DeepScan exact ed33 report has zero new/fixed issues. CodSpeed reports 11 untouched CPU-simulation benchmarks and warns that createQueryFingerprint system-call time is excluded; it does not certify walltime. Fresh required Sentry/telemetry passes with zero high/critical issues, 2.73 percent finish errors and zero missing-code rows; fresh one-hour traces remain empty, so trace freshness is unverified. Five owners are now actively under verification, including reused pm-998juj for genuine artifact recurrence. Broader pm-prrlce remains open/unclaimed."
+  "2026-10-10T06:12:56.814Z","harness:codex","First review remediation is ready for a new head: mismatched changelog brackets have failing-before/passing-after controls, and lossless publication staging preserves the complete 6378-file archive with 34690 bytes saved. Both unchanged artifact profiles, native npm/Bun consumers,69 full JSON values,4731 runtime digests,strict ESLint and linked suites pass. Completed pm-998juj source work is closed and released; final hosted verification remains active here and under q91/acceptance/ESLint. All ten first-round bot comments/reviews received revision-specific reactions and acknowledgements, with the sole actionable parser thread implemented. New GH1433 remains documented/open under existing unclaimed pm-f05lsg. No new SDK publication or fresh Sentry traces are claimed."
 notes[4]{created_at,author,text}:
   "2026-10-10T02:45:10.265Z","harness:codex","Regression evidence owners: the pure artifact-ledger SDK owns membership, completeness, exact-signature and stale-policy semantics; the repository collector owns anonymous provider formatting/configuration and native remote refs; the tag verifier owns native annotation/source-run binding; existing pipeline tests own preparation, early guards and rebase orchestration. These layers test different contracts rather than duplicating SDK assertions through every adapter. No coverage ignore, denominator exclusion, lowered threshold or external-API behavior mock is introduced."
   "2026-10-10T03:31:06.000Z","harness:codex","Manual acceptance used an external temporary workspace with both PM_PATH and PM_GLOBAL_PATH isolated. An 8,873,815-byte staged runtime distribution was installed as a real package; narrow and aggregate SDK consumers pass on Node24.21, Node26.11 and Bun, including exact settled findings, stale exceptions, new drift, incomplete inventory and caller-byte preservation. Strict typed consumers compile. Installed CLI created a custom Deployment type and Task verification child with a verifies edge, recorded comments/notes/learnings, claimed/closed/released the child and verified all eight immutable history entries plus tracker validation. An initially malformed mixed bare-id/key-value dependency argument was refused without mutation and corrected using the emitted id=<id>,kind=<kind> contract. npx --no-install and bunx --bun run the installed CLI successfully. No package was published by this manual test."
@@ -51,7 +55,7 @@ notes[4]{created_at,author,text}:
   "2026-10-10T04:42:01.527Z","harness:codex","The four-worker canonical full-source run completed all 10073 applicable tests successfully (two Windows-only tests skipped on Linux). Exact integers retain a red coverage verdict: statements 67756/67756, functions 13971/13971 and lines 64469/64469; branches 51846/51847. The single missing branch is the hosted origin fallback in release-tag-provenance.mjs, not a product failure. Added a meaningful malformed-producer case that removes RELEASE_TRIGGER_ORIGIN from a hosted dispatch and proves it cannot silently default to operator. No denominator, threshold, timeout or ignore directive changes. Final full coverage must rerun and reach exact equality."
 learnings[1]{created_at,author,text}:
   "2026-10-10T03:30:23.249Z","harness:codex","Complete artifact reconciliation must preserve each discrepancy after settlement and bind exceptions to an exact missing-ledger signature. Tag-push events identify a publication request, not its upstream trigger; verify the tag-carried declaration against the original producer workflow and run attempt instead of guessing from actor or display name."
-files[21]:
+files[23]:
   - path: .github/workflows/release-reliability.yml
     scope: project
   - path: .github/workflows/release.yml
@@ -68,6 +72,8 @@ files[21]:
     scope: project
     note: Generated strict quality tool resolution
   - path: scripts/release/collect-release-ledgers.mjs
+    scope: project
+  - path: scripts/release/package-distribution.mjs
     scope: project
   - path: scripts/release/release-tag-provenance.mjs
     scope: project
@@ -86,6 +92,8 @@ files[21]:
   - path: tests/fixtures/release-acceptance/README.md
     scope: project
   - path: tests/fixtures/release-ledgers/npm-view-12.json
+    scope: project
+  - path: tests/unit/scripts/package-distribution.spec.ts
     scope: project
   - path: tests/unit/scripts/release/collect-release-ledgers.spec.ts
     scope: project

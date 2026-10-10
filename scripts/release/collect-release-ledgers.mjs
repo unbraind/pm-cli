@@ -13,7 +13,7 @@ export function releaseLedgerSnapshots(changelog, remoteTags, metadata, packageN
     [metadata] = metadata;
   }
   if (metadata?.name !== packageName || !Array.isArray(metadata.versions) || metadata.versions.length === 0 || metadata.versions.some((version) => typeof version !== "string")) throw new Error("Incomplete public registry release inventory.");
-  const documented = [...changelog.matchAll(/^## (?:\[)?(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?)(?:\])?(?:\s|$)/gmu)].map((match) => match[1]);
+  const documented = [...changelog.matchAll(/^## (?:\[(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?)\]|(\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?))(?:\s|$)/gmu)].map((match) => match[1] ?? match[2]);
   const tagged = remoteTags.split(/\r?\n/u).filter(Boolean).map((line) => {
     const match = /^[a-f\d]{40}\s+refs\/tags\/(.+)$/u.exec(line);
     if (!match) throw new Error("Malformed remote tag inventory.");

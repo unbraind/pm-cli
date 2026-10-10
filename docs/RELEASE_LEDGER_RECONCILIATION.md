@@ -113,3 +113,14 @@ output field, lifecycle assertion, deadline and ceiling. The
 [captured public output regression](../tests/fixtures/release-acceptance/README.md)
 checks the raw cost for independent control/candidate local npm, global npm and
 Bun layouts; actual installed sessions remain separate acceptance evidence.
+
+## Publication metadata weight
+
+Owner: [pm-998juj](../.agents/pm/tasks/pm-998juj.toon).
+
+The publication stage compacts first-party JSON while leaving checkout files
+readable and third-party runtime files unchanged. Every parsed value must survive
+serialization exactly; invalid JSON and lossy representations, including negative
+zero or overflowing numbers, stop packing. Real tarball regressions verify nested
+extension data, Unicode, escaped text and the runtime ledger. Both committed size
+profiles, required files and source-map exclusions remain enforced.

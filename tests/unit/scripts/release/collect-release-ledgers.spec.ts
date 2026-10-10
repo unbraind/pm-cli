@@ -18,6 +18,10 @@ describe("release ledger collection", () => {
     expect(snapshots.map((row) => row.identities)).toEqual([["2026.10.1", "2026.5.3-2"], ["2026.10.1"], ["2026.10.1"]]);
   });
 
+  it.each(["## [2026.10.1 - Broken", "## 2026.10.1] - Broken"])("does not certify a documented release from mismatched heading brackets: %s", (heading) => {
+    expect(releaseLedgerSnapshots(`${heading}\n- Change\n`, tag, metadata, "fixture").map((row) => row.identities)).toEqual([[], ["2026.10.1"], ["2026.10.1"]]);
+  });
+
   it("accepts the captured npm12 one-result response without accepting ambiguous packages", () => {
     const rows = releaseLedgerSnapshots(changelog, tag, captured.response, "@unbrained/pm-cli");
     expect(rows[2]?.identities).toEqual(captured.response[0].versions);
