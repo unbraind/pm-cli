@@ -98,10 +98,17 @@ release therefore retains both origins. A rejected atomic push can rebase and
 rebind only the unpublished tag's target while preserving its original source.
 
 Historical lightweight tags and unrelated legacy annotations stay explicitly
-unattributed. No origin is inferred from a tag-push event or actor. Local
-preparation records an operator declaration but cannot claim GitHub source-run
-verification. Tag objects are content-addressed evidence; this does not assert
-that GitHub release/tag immutability policy has been enabled.
+unattributed only when publication matches the repository, tag name and exact
+content-addressed object in the
+[frozen pre-rollout inventory](../config/release-tag-legacy.json). That reviewed
+inventory identifies all 152 origin tag objects observed before this rollout;
+it is not extended automatically. Unknown lightweight tags, unrelated new
+annotations and rewritten historical objects stop before publication, including
+operator recovery. A missing or unreadable inventory fails closed. No origin is
+inferred from a tag-push event or actor. Local preparation records an operator
+declaration but hosted publication refuses it without a hosted producer.
+Tag objects are content-addressed evidence; this does not assert that GitHub
+release/tag immutability policy has been enabled.
 
 The downstream tag-push workflow's run name still names `tag_push`; its verified
 upstream origin lives in the summary and artifact. The remaining run-name and

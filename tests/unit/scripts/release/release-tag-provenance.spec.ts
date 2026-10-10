@@ -91,13 +91,38 @@ describe("tag-carried release provenance", () => {
       expect(() => recordReleasePublicationOrigin({ ...publicationEnv, GITHUB_REPOSITORY: "other/project" }, root, execute)).toThrow("repository mismatch");
       git(["tag", "v2026.10.9"]);
       expect(readReleaseTagProvenance("v2026.10.9", root)).toMatchObject({ provenance: null, attribution: "legacy_unattributed" });
-      expect(recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.9", GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_RECOVERY_TRIGGER_ORIGIN: "operator" }, root).recovery_origin).toBe("operator");
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.9", GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_RECOVERY_TRIGGER_ORIGIN: "operator" }, root)).toThrow("historical tag object");
       git(["tag", "-a", "-m", JSON.stringify(createReleaseProvenance("v2026.10.6", sha, sha, {})), "v2026.10.6"]);
-      expect(recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.6" }, root).source_run_verified).toBe(false);
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.6" }, root)).toThrow("hosted producer");
       git(["tag", "-a", "-m", "legacy note", "v2026.10.8"]);
       expect(readReleaseTagProvenance("v2026.10.8", root).provenance).toBeNull();
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.8" }, root)).toThrow("historical tag object");
       expect(() => readReleaseTagProvenance("--bad", root)).toThrow();
       expect(() => readReleaseTagProvenance("v2026.10.7", root)).toThrow();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("recovers the exact captured historical Git object and refuses changed tags or repositories", () => {
+    const fixture = JSON.parse(readFileSync(new URL("../../../fixtures/release-ledgers/legacy-tag-commit.json", import.meta.url), "utf8")) as { tag: string; object_sha: string; commit: string };
+    const root = mkdtempSync(path.join(tmpdir(), "pm-legacy-tag-"));
+    const gitEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^GIT_/u.test(key))), GIT_AUTHOR_NAME: "fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid", GIT_COMMITTER_NAME: "fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid" };
+    const git = (args: string[]) => execFileSync("git", args, { cwd: root, env: gitEnv, encoding: "utf8" }).trim();
+    try {
+      git(["init", "--initial-branch=main"]);
+      const sha = execFileSync("git", ["hash-object", "-t", "commit", "-w", "--stdin"], { cwd: root, env: gitEnv, encoding: "utf8", input: fixture.commit }).trim();
+      expect(sha).toBe(fixture.object_sha);
+      git(["tag", fixture.tag, sha]);
+      const output = path.join(root, "origin.json");
+      const publicationEnv = { RELEASE_TAG: fixture.tag, RELEASE_PROVENANCE_OUTPUT: output, GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_RECOVERY_TRIGGER_ORIGIN: "operator", GITHUB_REPOSITORY: "unbraind/pm-cli" };
+      const report = recordReleasePublicationOrigin(publicationEnv, root);
+      expect(report).toMatchObject({ attribution: "legacy_unattributed", provenance: null, source_run_verified: false, tag_object_sha: fixture.object_sha, recovery_origin: "operator" });
+      expect(JSON.parse(readFileSync(output, "utf8"))).toEqual(report);
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, GITHUB_REPOSITORY: "other/project" }, root)).toThrow("historical tag object");
+      git(["tag", "-d", fixture.tag]);
+      git(["tag", "-a", fixture.tag, sha, "-m", "new unrelated annotation"]);
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, GITHUB_EVENT_NAME: "push" }, root)).toThrow("historical tag object");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

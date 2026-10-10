@@ -1,6 +1,6 @@
 /** Preserve upstream release declarations in content-addressed Git tag objects. */
 import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 /** Validate hosted run identity, preserving an explicit absence for local preparation. */
 function workflowIdentity(event, env) {
@@ -56,11 +56,15 @@ export function verifyReleaseSourceRun(provenance, run, defaultBranch) {
   return true;
 }
 
-/** Persist upstream attribution separately from a publication/recovery's current trigger. */
+/** Admit exact historical tag objects or verified hosted producers before publication. */
 export function recordReleasePublicationOrigin(env = process.env, cwd = process.cwd(), execute = execFileSync) {
   const report = { schema: "pm-release-publication-origin/1", ...readReleaseTagProvenance(env.RELEASE_TAG, cwd, execute), publication_event: env.GITHUB_EVENT_NAME, recovery_origin: env.RELEASE_RECOVERY_TRIGGER_ORIGIN || null, source_run_verified: false };
   writeFileSync(env.RELEASE_PROVENANCE_OUTPUT, `${JSON.stringify(report)}\n`);
-  if (report.provenance !== null && report.provenance.event !== "local") {
+  if (report.provenance === null) {
+    const historical = JSON.parse(readFileSync(new URL("../../config/release-tag-legacy.json", import.meta.url), "utf8"));
+    if (historical.repository !== env.GITHUB_REPOSITORY || historical.tag_objects[report.tag] !== report.tag_object_sha) throw new Error("Release has no supported provenance or exact historical tag object.");
+  } else {
+    if (report.provenance.event === "local") throw new Error("Publication requires hosted producer provenance.");
     if (report.provenance.repository !== env.GITHUB_REPOSITORY) throw new Error("Release provenance repository mismatch.");
     const source = report.provenance;
     const options = { cwd, encoding: "utf8", timeout: 30_000, maxBuffer: 1024 * 1024 };

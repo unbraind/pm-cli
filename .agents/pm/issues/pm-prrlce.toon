@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:release",automation,diagnostics,"horizon:current"
 created_at: "2026-09-28T15:31:49.498Z"
-updated_at: "2026-10-10T07:00:31.371Z"
+updated_at: "2026-10-10T10:29:30.579Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every Auto Release and Release run carries an explicit trigger origin (native schedule, morning dispatcher, blocker retry, operator) from a declared input and its run name, never inferred from event or actor; Release reliability reports a separate series per origin, including the dispatcher's attempts, failures and failing stages, while the native scheduled denominator stays unchanged as decided on pm-9url9h; The same-day manual follow-up of pm-uenmu9 requires an explicit follow-up request from the operator origin; negative control: a dispatcher-origin run after a same-day tag exists skips before any version mutation; The 2026-09-28 dispatcher failure is visible in the new series or recorded as an explicit pre-attribution gap"
@@ -15,7 +15,7 @@ risk: medium
 confidence: high
 severity: medium
 expected_result: A release run states who asked for it; the automatic primary path has its own measured reliability; only an explicit operator request can mint a same-day follow-up release.
-actual_result: "Previously shipped declared-origin and independent per-origin reliability series remain intact. This delivery adds tag-carried source declarations, native target/source ancestry checks, exact GitHub producer-workflow/run-attempt verification and independent operator recovery intent. A real temporary annotated tag verified against Auto Release run 38018098467 attempt 1, retaining upstream morning_dispatcher and operator recovery separately. The downstream tag-push display name and operator-only manual ordinal follow-up under pm-uenmu9 remain open; historical rolling reliability remains separately measured."
+actual_result: "Previously shipped declared-origin and independent per-origin reliability series remain intact. This delivery adds tag-carried source declarations, native target/source ancestry checks, exact authoritative-default-branch GitHub producer-workflow/run-attempt verification and independent operator recovery intent. Real temporary annotated tags verified against Auto Release run 38018098467 attempt 1 retain morning_dispatcher and operator recovery separately. Hosted admission now refuses unknown lightweight tags, unrelated annotations, local producers and rewritten historical objects; compatibility requires one of 152 reviewed exact tag/object identities and leaves historical attribution unknown. Current-source full coverage passed 10,085 tests at exact 100/100/100/100, with 85 linked focused assertions and four independent original/fixed native refusal controls. Pushed-head CI/review and existing immutable-tag recovery remain delivery gates. The downstream tag-push display name and operator-only manual ordinal follow-up under pm-uenmu9 remain open; historical rolling reliability remains separately measured."
 component: release automation
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-9url9h,discovered_from,"2026-09-28T15:31:49.498Z","harness:claude-code","cli:create:dep",detected
@@ -23,7 +23,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,discovered_from,"2026-09-28T15:32:05.324Z","harness:claude-code","cli:update:dep",detected
   pm-z329kd,discovered_from,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
   pm-uenmu9,discovered_from,"2026-09-29T09:47:31.174Z","harness:codex","cli:update:dep",detected
-comments[20]{created_at,author,text}:
+comments[25]{created_at,author,text}:
   "2026-09-29T10:00:31.279Z","harness:codex","Implemented declared Auto Release origin in workflow run names and attempt receipts; morning dispatcher now passes its own origin. Reliability collection includes schedule, dispatch, and issue runs while keeping the native scheduled policy denominator intact; the dispatcher has a separate count, failure rate, stage series, and historical unattributed-run gap. New same-day dispatcher runs take the early immutable-tag guard. Release exact-tag dispatch carries origin; tag-push runs retain tag_push provenance. Linked tests passed (72), full coverage passed 9,428 tests at 100/100/100/100, and packed npm/Bun manual acceptance passed. Remaining acceptance: per-origin reliability series for operator and blocker retry, and upstream origin propagation into tag-push Release runs; operator-only ordinal follow-up remains owned by pm-uenmu9. No hosted release run or live new-origin receipt has yet been observed."
   "2026-09-29T10:28:52.881Z","harness:codex",PR #1350 review found the new origin-bearing Release run name no longer matched exact-tag recovery selection. Added exact declared-origin run-name matching with wrong-tag and unknown-origin negative controls; focused selector tests pass. Greptile discussion #4132270479.
   "2026-09-29T12:22:02.811Z","harness:codex","PR #1350 CodeRabbit discussion #4133333546 identified that dispatcher observations used the native 02:35 UTC cron for nominal occurrence and dispatch delay. Dispatcher rows now omit those schedule-specific timing fields, retain queue delay/outcome/failure stage, and focused negative controls prove native scheduled rows still keep their timing. Documentation states the boundary."
@@ -44,14 +44,23 @@ comments[20]{created_at,author,text}:
   "2026-10-10T05:22:35.910Z","harness:codex",Current tag-provenance tranche has 77 passing PM-linked SDK/provider/native-tag/pipeline regressions and complete exact source coverage. The broader downstream run-name and operator-only follow-up acceptance is not implemented by this delivery. Return this broader owner to open and release the claim while the concrete Changeset carries review and quality verification; shipped origin-series work is preserved.
   "2026-10-10T06:54:01.391Z","harness:codex","PR #1434 second full review identified a valid producer-verification gap: workflow_dispatch accepts arbitrary refs, and exact source workflow/run/commit/origin matching currently omits head_branch. Reclaim only this tag-provenance repair tranche through the ordinary ownership command. Bind source runs to an authoritative repository default branch, with non-default and absent-branch negative controls; preserve local/legacy unattributed semantics and broader unresolved run-name/manual-ordinal acceptance."
   "2026-10-10T07:00:08.103Z","harness:codex","TDD for second review: unchanged original source fails four expected-refusal assertions for non-default producer branches and absent/empty authoritative branch metadata;14 existing assertions pass alongside the independently red invalid-JSON control fixture. Fixed source fetches the repository default_branch through the real GitHub metadata API before comparing the exact producer run attempt, supports a trunk default in the native-tag fixture, and preserves local/legacy unattributed receipts. Complete connected unit/integration suite passes197 tests, strict repository ESLint, source/SDK/package/example types and docs gates pass. A real temporary annotated tag independently verifies original run38018098467 against authoritative main metadata while preserving morning_dispatcher and operator recovery separately; forged non-default and absent-metadata comparisons refuse. No real tag, workflow dispatch or publication is changed."
-notes[1]{created_at,author,text}:
+  "2026-10-10T09:16:39.843Z","harness:codex","PR #1434 full review at ef87961ab found a valid origin-admission bypass: a newly pushed lightweight tag or unrelated annotation is accepted as legacy_unattributed, and hosted publication may continue without producer verification. Reclaim only this concrete security/compatibility tranche using the ordinary claim. Restrict legacy admission to the exact content-addressed tag objects from the complete 152-tag pre-rollout origin census; reject unknown or changed legacy objects and local-only provenance in hosted publication. Preserve historical recovery and all producer identity/default-branch checks. The broader run-name/manual-ordinal acceptance remains open. The same-day native schedule selected existing v2026.10.10 and dispatched old-main recovery 38039480065; no new version preparation occurred. Its operational outcome remains pending."
+  "2026-10-10T09:23:54.334Z","harness:codex","TDD and native acceptance for the final review: original ef87961 source fails two unit refusal assertions while 13 existing tests pass; the repair passes all 15. A separate isolated original/fixed source copy runs real Git and fails four independent original bypass assertions (new lightweight tag, unrelated annotation, local-only declaration and rewritten historical tag), then passes all four refusals with the identical harness. Replaying the captured public v2026.10.10 commit bytes reconstructs the exact Git object and preserves historical operator recovery with attribution explicitly unknown. The reviewed policy binds all 152 complete origin tag names to their exact object SHA and repository; it cannot admit a new tag or changed annotation by its date alone. Full current-source coverage and strict verification will be repeated before final delivery; prior 10084/exact100 proof remains valid only for its earlier source."
+  "2026-10-10T09:25:29.045Z","harness:codex","The admitted producer and historical compatibility boundaries now pass 200 unique connected assertions across eight files (161 plus the separate 39 artifact contracts) and 33 workflow contracts, strict repository ESLint, all four TypeScript projects, source docstring inventory, docs/skills and permissions checks. A fresh real Git plus actual GitHub API journey still independently verifies the original morning_dispatcher producer and authoritative default branch while preserving operator recovery. All new policy/fixture files are linked to this owner. The complete source is now frozen for canonical coverage with two workers and unchanged source membership/thresholds; no source edit will occur while its runner owns the build."
+  "2026-10-10T09:54:15.170Z","harness:codex","The current source coverage run failed one unchanged MCP MRTR task-transition case after 10,084 passes and emitted no valid coverage summary. Its identical isolated nine-test file subsequently passed. The failure and both receipts are retained; prior exact-100 evidence certifies only the earlier source. Investigating the existing bounded scheduling wait before choosing a safe full rerun; no threshold, timeout, coverage exclusion, or source seam was changed."
+  "2026-10-10T10:29:28.517Z","harness:codex","Final current-source verification: the unchanged complete one-worker source run passed 10,085 tests (two native-Windows cases skipped on Linux and assigned to the required Windows job), 797 files passed and one platform file skipped. Fresh coverage covers all 776 measured source files at 100/100/100/100: 67,773 statements, 51,862 branches, 13,972 functions and 64,484 lines, zero uncovered counts. The earlier two-worker MCP input-state wait failure remains retained under open pm-zlv8jl; no test membership, assertion, deadline, denominator or threshold changed. The linked third test ran in isolated project/global trackers and passed all 85 SDK/provider/tag/pipeline assertions, receipt test-local-mv294j2z-70ccka. The connected 200 assertions, 33 workflow contracts, original/fixed native bypass controls, missing/malformed policy refusals and real hosted producer verification pass. Source admission is verified; final pushed-head CI/review and exact immutable-tag operational recovery remain required."
+notes[3]{created_at,author,text}:
   "2026-09-29T10:00:32.043Z","harness:codex",A tag-push Release run currently knows only tag_push in its run name. Do not equate that with the upstream Auto Release trigger; completing the accepted provenance contract needs immutable upstream attribution through the tag or an explicitly dispatched Release workflow without duplicate publish runs.
-learnings[1]{created_at,author,text}:
+  "2026-10-10T09:36:49.416Z","harness:codex","Additional owned-temporary native Git acceptance confirms that a missing legacy inventory throws ENOENT and malformed inventory JSON throws SyntaxError before publication; both probes restore their copied inventory. The real tracker and source policy are untouched. Publication admission has no inferred date cutoff, actor inference, external authentication fallback or automatically extended compatibility set. Local tag preparation remains readable context but requires a hosted producer before new hosted publication."
+  "2026-10-10T10:08:01.540Z","harness:codex","Recovery topology was rechecked against the full Release workflow: upstream-origin admission executes from reviewed default-branch source before any unpublished exact-tag source checkout. The frozen legacy inventory therefore remains adjacent to its current first-party module, while copied package controls retain their own import topology. Existing npm publication is independently probed and skipped; legacy admission does not authorize republishing different source under an immutable version. The later nine-platform/manager recovery is still pending reviewed-main delivery."
+learnings[2]{created_at,author,text}:
   "2026-09-29T10:00:32.723Z","harness:codex","GitHub workflow_dispatch is shared by a local timer and an operator. Count dispatches by a declared origin retained in the run name and attempt receipt, not by event or actor; preserve an explicit historical gap when older runs lack attribution."
-files[17]{path,scope}:
+  "2026-10-10T09:28:02.731Z","harness:codex","Historical compatibility needs a closed, content-addressed population. A version/date boundary or a non-JSON annotation alone cannot distinguish a new tag from an old one. Bind legacy admission to the exact reviewed repository/tag/object inventory, retain unknown attribution honestly, and prove both allowed recovery and refused unknown/rewritten/local-only tags with real native Git objects. Hosted producer attribution remains a separate independently fetched run/default-branch contract."
+files[19]{path,scope}:
   .github/workflows/auto-release.yml,project
   .github/workflows/release-reliability.yml,project
   .github/workflows/release.yml,project
+  config/release-tag-legacy.json,project
   scripts/release/collect-release-reliability.mjs,project
   scripts/release/dispatch-daily-release.mjs,project
   scripts/release/release-observation.mjs,project
@@ -59,6 +68,7 @@ files[17]{path,scope}:
   scripts/release/release-run-selection.mjs,project
   scripts/release/release-tag-provenance.mjs,project
   scripts/release/run-release-pipeline.mjs,project
+  tests/fixtures/release-ledgers/legacy-tag-commit.json,project
   tests/unit/scripts/release/collect-release-reliability.spec.ts,project
   tests/unit/scripts/release/dispatch-daily-release.spec.ts,project
   tests/unit/scripts/release/release-observation.spec.ts,project
@@ -92,7 +102,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: feat/release-origin-and-ledger-reconciliation
     note: "Complete-set membership, exact historical signatures, anonymous provider inventory, native tag identity and retained upstream origin."
-test_runs[8]:
+test_runs[9]:
   - run_id: test-local-mumhi17y-rifyl0
     kind: test
     status: passed
@@ -181,6 +191,17 @@ test_runs[8]:
     started_at: "2026-10-10T07:00:09.013Z"
     finished_at: "2026-10-10T07:00:22.204Z"
     recorded_at: "2026-10-10T07:00:22.204Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv294j2z-70ccka
+    kind: test
+    status: passed
+    started_at: "2026-10-10T10:28:32.764Z"
+    finished_at: "2026-10-10T10:28:42.779Z"
+    recorded_at: "2026-10-10T10:28:42.779Z"
     passed: 1
     failed: 0
     skipped: 0

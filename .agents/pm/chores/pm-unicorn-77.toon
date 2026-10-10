@@ -1,0 +1,54 @@
+id: pm-unicorn-77
+title: Refresh aged Unicorn 77 alongside ESLint 10.12 without changing strict lint policy
+description: "The public registry reports eslint-plugin-unicorn 77.0.0 published 2026-10-03T10:47:25.784Z, with Node >=22 and ESLint >=10.4 requirements compatible with the supported Node >=22.18 floor and ESLint 10.12. Adopt it only after 2026-10-10T10:47:25.784Z and after the source-owning coverage runner finishes. Regenerate the lockfile through pnpm, inspect the complete logical dependency/integrity change, and preserve every lint rule, warning/suppression budget, release-age policy and runtime dependency contract."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-10T10:14:19.704Z"
+updated_at: "2026-10-10T11:02:21.776Z"
+closed_at: "2026-10-10T10:56:19.822Z"
+completed_at: "2026-10-10T10:56:19.822Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: "Exact public release time and engine/peer compatibility verified; adoption after the unchanged seven-day cutoff with no exclusions or overrides; complete generated-lock comparison confines changes to the requested plugin and its dependency closure; strict linked lint, type, audit, dependency-bundle, source quality and artifact gates pass; current exact source coverage and installed Node/Bun consumer proof remain valid or are repeated if application source changes; detailed evidence lands in PR #1434."
+goal: project management = context management
+objective: Keep the supported strict quality toolchain current and reproducible
+value: Eligible compatible tooling catches maintainability regressions without a second delivery PR
+why_now: Unicorn 77 reaches the existing seven-day release-age window during this connected release-governance delivery
+parent: pm-92if
+risk: low
+confidence: high
+resolution: "Adopted pinned eslint-plugin-unicorn 77.0.0 after its exact seven-day release-age cutoff with strict resolver aging. Generated and audited the complete scoped dependency closure while preserving lint rules, warning/suppression budgets, policy exclusions, production dependency snapshots and source/test membership."
+expected_result: "The supported Node/ESLint toolchain runs all unchanged strict rules with zero warnings, no vulnerabilities, compatible declarations and unchanged runtime/publication contracts."
+actual_result: "Actual installed Node >=22 / ESLint >=10.4 contracts and declaration file inspected; all four configured rule implementations present. All eight added identities independently aged at adoption; 533 surviving package integrity records unchanged and all 40 runtime snapshots identical. Linked strict lint passed, receipt test-local-mv29vewc-x5hnjp; restored serial four-project type check, zero-vulnerability audit, development-bundle admission and six static assertions pass. Artifact gate passes with 6378 files, distribution 19970826 bytes below the unchanged 20M ceiling and unchanged 4731-file runtime bundle. Same-source full coverage remains 10085 tests at exact 100/100/100/100. Retained automatic-install concurrency failure and frozen recovery without source/policy changes. Final pushed-head CI/review and final generated-changelog artifact remain required before merge."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6sqo,verifies,"2026-10-10T10:14:19.704Z","harness:codex","cli:create:dep",detected
+  pm-92if,implements,"2026-10-10T10:14:19.704Z","harness:codex","cli:create:dep",detected
+  pm-eslint-1012,discovered_from,"2026-10-10T10:14:19.704Z","harness:codex","cli:create:dep",detected
+  pm-release-ledger-origin-delivery,discovered_from,"2026-10-10T10:14:19.704Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-10T10:14:19.704Z","harness:codex","Duplicate check: complete strict 2917-item all-status full-body census, exact Unicorn 77 content scan, fresh request search and open/in-progress inventories find no canonical owner for this version. Earlier Unicorn 74/75 and ESLint refreshes are completed distinct versions, and pm-6sqo is the shipped strict-parity foundation. This item remains open and unclaimed until actual eligible editing begins; the broader CodeFactor programme is not claimed or described as complete."
+  "2026-10-10T10:55:13.125Z","harness:codex","Adopted 77.0.0 at 2026-10-10T10:47:27.884Z, after the exact 2026-10-10T10:47:25.784Z cutoff, using strict 10080-minute resolver aging. Anonymous public-registry checks confirm all eight added package identities were already seven days old at adoption. Full generated-lock comparison: 535 to 541 packages, 535 to 542 snapshots, eight added/two removed package identities, no changed surviving package/integrity records; only the requested dev importer changed. Two existing Unicorn-transitive snapshots legitimately rebind browserslist/builtin-modules, with every added identity in the plugin closure. All 40 production snapshots and production/peer importers are identical. Actual installed Node >=22 and ESLint >=10.4 contracts and all four configured rule implementations were inspected, including the published declaration file. Lint configuration, suppressions, warning budgets, release-age exclusions, runtime dependencies and source/test membership remain unchanged. Linked strict zero-warning lint passed in isolated project/global trackers, receipt test-local-mv29vewc-x5hnjp; all four TypeScript projects, zero-vulnerability audit, development-bundle admission, six complete static measurement assertions and publication-artifact gates pass. Current unchanged-source exact coverage remains 10085 passing tests at 100/100/100/100. Final pushed-head checks/review remain required."
+  "2026-10-10T11:02:21.776Z","harness:codex","Final generated-changelog artifact proof is complete: extracted the actual archive in an owned temporary directory, ran the unchanged native artifact gate before and after real offline Sentry debug-ID injection, and cleaned the owned directory without modifying checkout files. Both profiles pass with 6378 files: distribution 19971012 <= 20000000 bytes; Sentry-injected distribution 20212736 <= 20250000. The 4731-file runtime bundle remains 23334884 bytes. Supported pm-changelog 2026.10.5 generates/checks 2608 closed entries in 477232 bytes. This is artifact composition/injection evidence, not registry publication or live trace ingestion; final pushed-head review/CI still governs merge."
+notes[1]{created_at,author,text}:
+  "2026-10-10T10:55:13.703Z","harness:codex","A retained local validation failure came from overlapping pnpm 11 automatic script installs: three script starts each reported removing 39 production modules, leaving missing Node/runtime declarations and 1313 cascading type diagnostics. Strict frozen-lock restoration added the same 39 modules, and the identical four TypeScript projects passed serially with no source or type-policy changes. This is consistent with the upstream automatic-install concurrency report https://github.com/pnpm/pnpm/issues/14551; it is not evidence of a Unicorn source regression. Keep dependency installation explicit and complete, and avoid concurrent pnpm script starts while installation state is unsettled. All original failed receipts remain retained privately; no repository suppression, gate bypass or deadline increase was introduced."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "pnpm lint:eslint",project,600,"harness:codex","2026-10-10T10:18:20.063Z",local_mutation,feat/release-origin-and-ledger-reconciliation,Run unchanged strict rules with the eligible Unicorn provider
+test_runs[1]:
+  - run_id: test-local-mv29vewc-x5hnjp
+    kind: test
+    status: passed
+    started_at: "2026-10-10T10:48:53.160Z"
+    finished_at: "2026-10-10T10:49:37.068Z"
+    recorded_at: "2026-10-10T10:49:37.068Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+close_reason: Eligible strict lint provider adopted and verified in the connected delivery.
+body: ""
