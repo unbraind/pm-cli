@@ -84,8 +84,19 @@ describe("run-release-pipeline", () => {
     delete process.env.RELEASE_POLICY_TOKEN;
     vi.stubEnv("GITHUB_EVENT_NAME", undefined);
     vi.stubEnv("RELEASE_TRIGGER_ORIGIN", undefined);
+    vi.stubEnv("GITHUB_ACTIONS", undefined);
+    vi.stubEnv("RELEASE_PRODUCER_BINDING_OUTPUT", undefined);
   });
   afterEach(() => vi.unstubAllEnvs());
+  it.each([undefined, "false", "true"])("refuses unsupported --push before Git inspection or release mutation: GITHUB_ACTIONS=%s", async (hosted) => {
+    vi.stubEnv("GITHUB_ACTIONS", hosted);
+    const runCommand = baseGitMock(() => undefined);
+    mockUtils(runCommand);
+    const mod = await harness.importModule<PipelineModule>(SCRIPT, "unsupported-push");
+    process.argv = ["node", "x", "--push"];
+    expect(() => mod.runPipeline()).toThrow("hosted deferred publication");
+    expect(runCommand).not.toHaveBeenCalled();
+  });
   it.each([
     { GITHUB_EVENT_NAME: "schedule", RELEASE_TRIGGER_ORIGIN: "operator" },
     { GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_TRIGGER_ORIGIN: "unknown" },
@@ -498,9 +509,16 @@ describe("run-release-pipeline", () => {
       expect(logSpy).toHaveBeenCalledWith("Release pipeline completed for 2026.6.15 (dry run).");
     });
 
-    it("runs full non-dry-run path: changelog gen, commit, tag, push (json)", async () => {
+    it("prepares hosted release assets and producer binding before deferred publication (json)", async () => {
       const root = await harness.createTempRoot("pm-pipeline-full-");
       process.env.RELEASE_PIPELINE_OUTPUT = path.join(root, "outputs");
+      vi.stubEnv("GITHUB_ACTIONS", "true");
+      vi.stubEnv("GITHUB_EVENT_NAME", "workflow_dispatch");
+      vi.stubEnv("RELEASE_TRIGGER_ORIGIN", "operator");
+      vi.stubEnv("GITHUB_RUN_ID", "42");
+      vi.stubEnv("GITHUB_RUN_ATTEMPT", "1");
+      vi.stubEnv("GITHUB_REPOSITORY", "owner/project");
+      vi.stubEnv("RELEASE_PRODUCER_BINDING_OUTPUT", path.join(root, "producer-binding.json"));
       fs.mkdirSync(path.join(root, "packages"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
 
@@ -534,6 +552,7 @@ describe("run-release-pipeline", () => {
         "--telemetry-mode",
         "off",
         "--push",
+        "--defer-push",
         "--author",
         "Release Bot!!",
         "--release-notes-output",
@@ -543,14 +562,16 @@ describe("run-release-pipeline", () => {
       const payload = JSON.parse(String(stdoutSpy.mock.calls.at(-1)?.[0] ?? "{}"));
       expect(payload.skipped).toBe(false);
       expect(payload.target_version).toBe("2026.6.15");
-      expect(payload.pushed).toBe(true);
+      expect(payload.pushed).toBe(false);
+      expect(payload.push_deferred).toBe(true);
+      expect(JSON.parse(fs.readFileSync(process.env.RELEASE_PRODUCER_BINDING_OUTPUT!, "utf8"))).toMatchObject({ schema: "pm-release-producer-binding/1", tag: "v2026.6.15", tag_sha: "a".repeat(40), tag_object_sha: "a".repeat(40), provenance: { run_id: 42, run_attempt: 1 } });
       expect(fs.readFileSync(process.env.RELEASE_PIPELINE_OUTPUT, "utf8")).toBe("pipeline_reason=prepared\n");
       expect(gitCalls.find((c) => c[0] === "git" && c[1] === "add")).toEqual(expect.arrayContaining([
         "plugins/pm-claude/package.json", "plugins/pm-codex/package.json",
       ]));
       expect(payload.author).toBe("Release Bot!!");
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "commit")).toBe(true);
-      expect(gitCalls.some((c) => c[0] === "git" && c[1] === "push")).toBe(true);
+      expect(gitCalls.some((c) => c[0] === "git" && c[1] === "push")).toBe(false);
       const annotated = gitCalls.find((call) => call[0] === "git" && call[1] === "tag" && call.includes("-a"));
       expect(annotated).toBeDefined();
       expect(JSON.parse(annotated![annotated!.indexOf("-m") + 1])).toMatchObject({ schema: "pm-release-provenance/1", tag: "v2026.6.15", trigger_origin: "operator", source_sha: "a".repeat(40), target_sha: "a".repeat(40) });
@@ -623,6 +644,16 @@ describe("run-release-pipeline", () => {
       const call = runCommand.mock.calls.find(([, args]) => args.includes("-a"));
       expect(call?.[1]).toContain("-f");
       expect(JSON.parse(call![1][call![1].indexOf("-m") + 1])).toEqual({ ...record, target_sha: "b".repeat(40) });
+    });
+
+    it("refuses rebasing a hosted target after its producer binding has been sealed", async () => {
+      const runCommand = vi.fn(() => ({ status: 1, stdout: "", stderr: "fetch first" }));
+      mockUtils(runCommand);
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      const provenance = createReleaseProvenance("v2026.6.18", "a".repeat(40), "a".repeat(40), { GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_TRIGGER_ORIGIN: "operator", GITHUB_RUN_ID: "42", GITHUB_RUN_ATTEMPT: "1", GITHUB_REPOSITORY: "owner/project" });
+      expect(() => mod.pushReleaseRefs("v2026.6.18", {}, provenance)).toThrow("sealed producer binding");
+      expect(runCommand).toHaveBeenCalledTimes(1);
+      expect(runCommand).toHaveBeenCalledWith("git", ["push", "--atomic", "origin", "HEAD", "v2026.6.18"], expect.objectContaining({ allowFailure: true }));
     });
 
     it("scopes RELEASE_PUSH_TOKEN to git push without leaving it in child environments", async () => {

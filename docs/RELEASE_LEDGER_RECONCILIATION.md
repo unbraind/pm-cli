@@ -88,14 +88,20 @@ the tag's peeled commit and source ancestry and compares the source declaration
 with the exact GitHub run attempt, including repository, event, source SHA,
 the producer workflow path and declared Auto Release run name. It independently
 fetches the repository's default branch and requires the source run's branch to
-match it. Missing metadata and non-default dispatches stop before publication;
-the verifier never assumes the default branch is named `main`.
+match it. Auto Release uploads an immutable producer binding before pushing;
+publication independently downloads that run attempt's artifact and compares
+the exact tag name, target commit, tag object and canonical declaration. Missing,
+expired, ambiguous or mismatched evidence stops publication; the artifact is
+retained for 90 days. The verifier never assumes the default branch is named
+`main`.
 
 The separate `release-publication-origin-<run>-<attempt>` artifact retains the
 tag-object SHA, upstream declaration, independent verification result and the
 current publication/recovery trigger. An operator recovering a dispatcher
-release therefore retains both origins. A rejected atomic push can rebase and
-rebind only the unpublished tag's target while preserving its original source.
+release therefore retains both origins. A rejected atomic push after sealing
+refuses to rebase into a different target; a new preparation must establish a
+new independent binding. Local preparation remains supported without pushing;
+local `--push` refuses before Git inspection or release-asset mutation.
 
 Historical lightweight tags and unrelated legacy annotations stay explicitly
 unattributed only when publication matches the repository, tag name and exact

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-10-10T12:35:50.734Z"
+updated_at: "2026-10-10T14:47:45.935Z"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -18,7 +18,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "Real source and Sentry-injected distributions fit unchanged ceilings while retaining all first-party metadata values, runtime bytes, SDK/CLI entrypoints and install behavior; verify Sentry release symbolication against a real captured post-change error event before closing the original acceptance criteria."
-actual_result: "Lossless first-party JSON staging is implemented and verified: all 6378 archive paths, 69 parsed JSON values, 4731 runtime digests and 1578 other file bytes remain identical; 34690 bytes are saved in the paired original/candidate proof. Final current-source base 19969509 and real offline Sentry-injected 20211233 satisfy unchanged ceilings with the identical 4731-file/23334884-byte runtime closure. npm/Bun installs, Node24/26/Bun SDK clients, isolated init, npx and bunx pass. Original acceptance still requires real captured-event Sentry symbolication after this change. The CLI empty-query receipt covered unresolved issues only; an explicit resolved query returns four historical groups, latest October 7 in release 2026.10.6, whose inspected event retains seven invalid-location symbolicator diagnostics. These historical events neither establish current-candidate failure nor prove the required post-change symbolication. This broader item remains open and unclaimed; offline debug-ID injection is packaging evidence."
+actual_result: "Lossless first-party JSON staging is implemented and verified: all 6378 archive paths, 69 parsed JSON values, 4731 runtime digests and 1578 other file bytes remain identical; 34690 bytes are saved in the paired original/candidate proof. Final current-source base 19971036 and real offline Sentry-injected 20212760 satisfy unchanged ceilings with the identical 4731-file/23334884-byte runtime closure. npm/Bun installs, Node24/26/Bun SDK clients, isolated init, npx and bunx pass. Original acceptance still requires real captured-event Sentry symbolication after this change. The CLI empty-query receipt covered unresolved issues only; an explicit resolved query returns four historical groups, latest October 7 in release 2026.10.6, whose inspected event retains seven invalid-location symbolicator diagnostics. These historical events neither establish current-candidate failure nor prove the required post-change symbolication. This broader item remains open and unclaimed; offline debug-ID injection is packaging evidence. Final connected source passes 10090 tests with exact 100/100/100/100 coverage across 776 source files. Already-published main-source recovery now skips remote Sentry release metadata, commits, maps and finalization; its real Bash regression preserves tag-source upload and upload-failure propagation. Final packed-archive proof uses real offline Sentry injection, verifies both original budgets and preserves the entire checkout. Current-candidate captured-error symbolication and fresh trace visibility remain unverified."
 dependencies[6]:
   - id: pm-feecbs
     kind: related
@@ -41,7 +41,7 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[20]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-07-25T07:12:23.380Z","harness:claude-code","Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
   "2026-07-25T07:12:24.186Z","harness:claude-code","Composition evidence: npm view @unbrained/pm-cli dist.unpackedSize=40660446 dist.fileCount=1668. Local dist 31MB total: cli-bundle 12MB (182 chunks), sdk 8.7MB, cli 5.6MB, core 5.4MB, mcp 152K. 491 .js.map files total 20MB; dist/sdk splits as 2.6MB JS, 1.2MB d.ts, 5.0MB maps — the ratio is driven by tsconfig inlineSources:true. scripts sentry:upload runs 'sentry-cli sourcemaps upload --validate dist/' at release, so symbolication already has the maps out-of-band. grep across src, packages, scripts and docs finds zero references to the declared optional peer 'typebox'."
   "2026-08-03T13:32:21.580Z","harness:codex","TDD evidence: artifact negative controls reject oversize, excessive-file, source-map, missing-runtime-path, and malformed npm pack reports. Live npm pack projection passes at 15,225,239 unpacked bytes, 1,308 files, and zero .map files versus the recorded 40,660,446-byte/1,668-file baseline."
@@ -62,11 +62,14 @@ comments[20]{created_at,author,text}:
   "2026-10-10T11:34:44.996Z","harness:codex","Sentry query-scope correction: the CLI empty search used its unresolved default, so the earlier zero-row 90-day result does not establish all-status absence. An explicit fresh is:resolved query returns four historical issue groups, latest PM-CLI-3E at 2026-10-07T03:48:27Z. They are prior to the current 2026-10-10 packaging change; this still does not establish the required post-change real captured-event symbolication. The canonical item remains open/unclaimed with its original acceptance criterion unchanged. This appended correction preserves the preceding query receipt and immutable history rather than rewriting it."
   "2026-10-10T11:37:59.983Z","harness:codex","Historical real-event inspection adds concrete symbolication context: the resolved PM-CLI-3E event from 2026-10-07 belongs to pm-cli@2026.10.6 and retains seven js_invalid_sourcemap_location / invalid_location diagnostics for bundled first-party frames. This historical resolved runtime issue is not evidence that the current candidate is broken, nor a passing post-change symbolication receipt. The private inspection is reduced to event identity, release version, public bundle basenames and symbolicator diagnostics, excluding user identities and machine paths. Retain this actual acceptance limitation under this existing canonical owner; no duplicate Sentry issue, synthetic success, trace substitution or immutable-package republish."
   "2026-10-10T12:35:50.682Z","harness:codex","Correct the current actual-result projection as well as the appended query-scope notes: preserve all earlier immutable receipts while replacing the disproven all-status zero-issue assertion with explicit unresolved/resolved scope and the current final archive profiles. No acceptance criterion, historical close event or source gate is changed."
+  "2026-10-10T12:51:15.058Z","harness:codex","Pre-merge operational inspection found a concrete immutable-release Sentry identity defect: exact-tag recovery of an already published npm version retains reviewed main source, but the later Upload Sentry sourcemaps step recreates/updates pm-cli@the-tag, assigns current checkout commits, and uploads current-source maps through the package version. That source differs from the immutable installed package. The full 2918-item all-state census, focused search and current open/in-progress inventories find no separate owner for this acceptance defect; reuse this original symbolication/artifact owner and retain closed exact-tag recovery history as completed work. This item alone is actively claimed for a bounded fix: preserve Sentry release/map identity during main-source verification recovery while still executing exact tagged-source first-publication upload and preserving reliability/injection gates. Do not invoke operator recovery until this change is reviewed."
+  "2026-10-10T13:02:28.589Z","harness:codex","TDD for immutable Sentry identity: the unchanged original workflow executes releases new, set-commits, upload and finalize in already-published main-source recovery and fails the expected-empty side-effect assertion. The repaired real Bash block skips all four provider operations for main recovery, preserves tag-source uploads, skips when credentials are absent and propagates upload failure without finalization. All 24 existing workflow contracts pass on Node26; the PM-linked isolated command also passes. No captured post-change event establishes the broader symbolication acceptance criterion, so this tranche preserves that open requirement and all immutable historical close events."
+  "2026-10-10T14:47:45.935Z","harness:codex","Final current-source package receipt: base distribution 19971036 bytes <=20000000 and actual offline Sentry-injected distribution 20212760 bytes <=20250000. Both real archives retain 6378 files and the 4731-file/23334884-byte runtime closure; checkout remains unchanged. All four TypeScript projects and final canonical 10090 tests/exact 100% coverage pass. Published main-source recovery preserves immutable Sentry release metadata; source-tag upload and failure handling remain tested. This owner stays open and unclaimed because the original captured post-change error symbolication criterion and current trace visibility are not established."
 notes[1]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
 learnings[1]{created_at,author,text}:
   "2026-10-10T06:04:52.512Z","harness:codex","Compact first-party machine metadata in the publication staging copy, verify the serialized values before writing, and preserve third-party bytes. The artifact budget should reject new weight rather than grow. Real archive comparisons must retain the complete copied helper import closure; module-loading setup failures are not negative-control evidence."
-files[12]:
+files[13]:
   - path: .github/workflows/ci.yml
     scope: project
     note: mandatory PR artifact gate
@@ -93,6 +96,8 @@ files[12]:
   - path: tests/integration/ci-workflow-contract.spec.ts
     scope: project
     note: hosted gate enforcement coverage
+  - path: tests/integration/release-automation-contract.spec.ts
+    scope: project
   - path: tests/unit/scripts/bundle-cli.spec.ts
     scope: project
     note: Verify all obsolete bundle outputs are removed after a successful graph rebuild
@@ -101,7 +106,7 @@ files[12]:
   - path: tests/unit/scripts/release/package-artifact-gate.spec.ts
     scope: project
     note: fail-closed artifact negative controls
-tests[3]:
+tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts
     scope: project
     timeout_seconds: 240
@@ -122,7 +127,16 @@ tests[3]:
       source_kind: local_mutation
       source_ref: feat/release-origin-and-ledger-reconciliation
     note: "Native npm tarball contents, parsed-value preservation, checkout/runtime-byte retention and fail-closed representation controls."
-test_runs[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-10T13:01:49.936Z"
+      source_kind: local_mutation
+      source_ref: feat/release-origin-and-ledger-reconciliation
+    note: Execute real recovery-source and Sentry-upload Bash with isolated external provider effects; published recovery preserves release identity and tag upload failures stop finalization.
+test_runs[4]:
   - run_id: test-local-msdbz6wt-4n92fd
     kind: test
     status: passed
@@ -152,6 +166,17 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2elowl-m6047o
+    kind: test
+    status: passed
+    started_at: "2026-10-10T13:01:50.681Z"
+    finished_at: "2026-10-10T13:02:01.557Z"
+    recorded_at: "2026-10-10T13:02:01.557Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
 docs[4]:
   - path: CHANGELOG.md
     scope: project

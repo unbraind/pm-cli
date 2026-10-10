@@ -1,6 +1,6 @@
 /** Bind declared upstream origins to real annotated tag objects and exact workflow identities. */
 import { execFileSync, type ExecFileSyncOptionsWithStringEncoding } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -76,12 +76,22 @@ describe("tag-carried release provenance", () => {
       expect(readReleaseTagProvenance(tag, root).tag_object_sha).toBe(git(["rev-parse", `refs/tags/${tag}`]));
       const output = path.join(root, "origin.json");
       const publicationEnv = { RELEASE_TAG: tag, RELEASE_PROVENANCE_OUTPUT: output, GITHUB_EVENT_NAME: "push", GITHUB_REPOSITORY: env.GITHUB_REPOSITORY };
+      const binding = { schema: "pm-release-producer-binding/1", tag, tag_sha: sha, tag_object_sha: git(["rev-parse", `refs/tags/${tag}`]), provenance: record };
+      let downloadedBinding = JSON.stringify(binding);
+      const artifact = { name: "release-producer-binding-1", expired: false, size_in_bytes: 1024, workflow_run: { id: 42, head_sha: sha, head_branch: "trunk" } };
+      const artifactEndpoint = `repos/${env.GITHUB_REPOSITORY}/actions/runs/42/artifacts?per_page=100`;
       const responses = new Map<string, unknown>([
         [`repos/${env.GITHUB_REPOSITORY}`, { default_branch: "trunk" }],
         [`repos/${env.GITHUB_REPOSITORY}/actions/runs/42/attempts/1`, { id: 42, run_attempt: 1, event: env.GITHUB_EVENT_NAME, head_sha: sha, head_branch: "trunk", path: ".github/workflows/auto-release.yml@trunk", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: env.GITHUB_REPOSITORY } }],
+        [artifactEndpoint, [{ total_count: 1, artifacts: [artifact] }]],
       ]);
       const execute = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
         if (command !== "gh") return execFileSync(command, args, options);
+        if (args[0] === "run") {
+          expect(args).toEqual(["run", "download", "42", "--repo", env.GITHUB_REPOSITORY, "--name", artifact.name, "--dir", expect.any(String)]);
+          writeFileSync(path.join(args[args.indexOf("--dir") + 1], "producer-binding.json"), downloadedBinding);
+          return "";
+        }
         const response = responses.get(args[1]);
         if (response === undefined) throw new Error(`Unexpected provider endpoint: ${args[1]}`);
         return JSON.stringify(response);
@@ -89,11 +99,30 @@ describe("tag-carried release provenance", () => {
       const publication = recordReleasePublicationOrigin(publicationEnv, root, execute);
       expect(publication).toMatchObject({ source_run_verified: true, recovery_origin: null, publication_event: "push", provenance: { trigger_origin: "morning_dispatcher" } });
       expect(JSON.parse(readFileSync(output, "utf8"))).toEqual(publication);
+      git(["commit", "--allow-empty", "-m", "Unrelated descendant"]);
+      const copiedTag = "v2026.10.11";
+      const copiedTarget = git(["rev-parse", "HEAD"]);
+      git(["tag", "-a", "-m", JSON.stringify(createReleaseProvenance(copiedTag, sha, copiedTarget, env)), copiedTag]);
+      expect(readReleaseTagProvenance(copiedTag, root).tag_sha).toBe(copiedTarget);
+      expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: copiedTag }, root, execute)).toThrow("producer binding");
+      for (const artifacts of [[], [artifact, artifact], [{ ...artifact, expired: true }], [{ ...artifact, size_in_bytes: 4097 }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, id: 43 } }], [{ ...artifact, workflow_run: { ...artifact.workflow_run, head_sha: source } }]]) {
+        responses.set(artifactEndpoint, [{ total_count: artifacts.length, artifacts }]);
+        expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute)).toThrow("producer binding");
+        expect(JSON.parse(readFileSync(output, "utf8")).source_run_verified).toBe(false);
+      }
+      responses.set(artifactEndpoint, [{ total_count: 1, artifacts: artifact }]);
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute)).toThrow("Invalid release producer binding inventory");
+      expect(JSON.parse(readFileSync(output, "utf8"))).toMatchObject({ source_run_verified: false, producer_binding_verified: false });
+      responses.set(artifactEndpoint, [{ total_count: 1, artifacts: [artifact] }]);
+      downloadedBinding = JSON.stringify({ ...binding, extension: "x".repeat(4097) });
+      expect(() => recordReleasePublicationOrigin(publicationEnv, root, execute)).toThrow("Invalid release producer binding file");
+      expect(JSON.parse(readFileSync(output, "utf8"))).toMatchObject({ source_run_verified: false, producer_binding_verified: false });
+      downloadedBinding = JSON.stringify(binding);
       expect(() => recordReleasePublicationOrigin({ ...publicationEnv, GITHUB_REPOSITORY: "other/project" }, root, execute)).toThrow("repository mismatch");
       git(["tag", "v2026.10.9"]);
       expect(readReleaseTagProvenance("v2026.10.9", root)).toMatchObject({ provenance: null, attribution: "legacy_unattributed" });
       expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.9", GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_RECOVERY_TRIGGER_ORIGIN: "operator" }, root)).toThrow("historical tag object");
-      git(["tag", "-a", "-m", JSON.stringify(createReleaseProvenance("v2026.10.6", sha, sha, {})), "v2026.10.6"]);
+      git(["tag", "-a", "-m", JSON.stringify(createReleaseProvenance("v2026.10.6", sha, sha, {})), "v2026.10.6", sha]);
       expect(() => recordReleasePublicationOrigin({ ...publicationEnv, RELEASE_TAG: "v2026.10.6" }, root)).toThrow("hosted producer");
       git(["tag", "-a", "-m", "legacy note", "v2026.10.8"]);
       expect(readReleaseTagProvenance("v2026.10.8", root).provenance).toBeNull();

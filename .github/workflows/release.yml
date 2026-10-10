@@ -331,6 +331,10 @@ jobs:
           SENTRY_ORG: unbrained
           SENTRY_PROJECT: pm-cli
         run: |
+          if [ "${RECOVERY_SOURCE_MODE}" = "main" ]; then
+            echo "Already-published recovery preserves the existing Sentry release, commits and sourcemaps."
+            exit 0
+          fi
           if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
             echo "SENTRY_AUTH_TOKEN is not configured; skipping Sentry sourcemap upload."
             exit 0

@@ -172,6 +172,17 @@ Pipeline entrypoint:
 node scripts/release/run-release-pipeline.mjs
 ```
 
+Tracked by [pm-prrlce](../.agents/pm/issues/pm-prrlce.toon): hosted preparation
+uses `--push --defer-push` to write an exact producer binding. Auto Release uploads
+`release-producer-binding-<attempt>` before verifying and atomically pushing its
+prepared refs. Publication independently fetches the verified run's artifact and
+compares the tag name, target commit, tag object and declaration. Missing, expired,
+ambiguous or mismatched evidence fails closed; artifact retention is 90 days.
+A branch advance after sealing refuses publication rather than rebasing into a
+different target. Local `--push` refuses before Git inspection or asset mutation;
+local preparation without pushing remains supported. Historical admission remains
+limited to the reviewed exact-object inventory.
+
 The pipeline performs:
 
 1. change detection + one-release-per-day guard
@@ -454,7 +465,11 @@ git push origin v<version>
 - a base npm pack dry run, optional Sentry debug-ID injection, a second
   `sentry-injected` packlist budget over the exact publishable bytes, and only
   then optional Sentry release metadata/upload/finalization and the npx tarball
-  smoke test
+  smoke test. Sentry release metadata and sourcemaps are uploaded only from
+  tag sources. Recovery of an already-published version from reviewed `main`
+  preserves that version's existing Sentry commits and sourcemaps; local debug-ID
+  injection still validates the candidate artifact budget without changing the
+  published release's symbolication data.
 - generated release notes from changelog plus sanitized tracker metadata. The
   tracker read projects only release-relevant fields and explicitly removes row
   and token limits. The generator validates the completeness receipt before
