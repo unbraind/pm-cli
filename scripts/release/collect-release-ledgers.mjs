@@ -4,7 +4,6 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { reconcileArtifactLedgers } from "@unbrained/pm-cli/sdk/governance";
-import { commandFor } from "./utils.mjs";
 
 /** Extract release identities while rejecting duplicate section/tag declarations. */
 export function releaseLedgerSnapshots(changelog, remoteTags, metadata, packageName) {
@@ -38,7 +37,11 @@ export function collectReleaseLedgers(cwd, exceptions, execute = execFileSync) {
     writeFileSync(globalConfig, "");
     const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^(?:npm_|NODE_AUTH_TOKEN$|NPM_TOKEN$|GIT_)/iu.test(key)));
     Object.assign(env, { NPM_CONFIG_USERCONFIG: userConfig, NPM_CONFIG_GLOBALCONFIG: globalConfig, NPM_CONFIG_CACHE: path.join(temporary, "cache"), NPM_CONFIG_REGISTRY: "https://registry.npmjs.org" });
-    const metadata = JSON.parse(execute(commandFor("npm"), ["view", manifest.name, "name", "versions", "--json", "--registry=https://registry.npmjs.org"], { cwd: temporary, env, encoding: "utf8", timeout: 120_000, maxBuffer: 32 * 1024 * 1024 }));
+    const request = ["view", manifest.name, "name", "versions", "--json", "--registry=https://registry.npmjs.org"];
+    const windows = process.platform === "win32";
+    // The validated package grammar excludes shell syntax; every other token is fixed.
+    // Invoke the native interpreter directly without deprecated shell:true argument arrays.
+    const metadata = JSON.parse(execute(windows ? "cmd.exe" : "npm", windows ? ["/d", "/s", "/c", `npm.cmd ${request.join(" ")}`] : request, { cwd: temporary, env, encoding: "utf8", timeout: 120_000, maxBuffer: 32 * 1024 * 1024 }));
     const tags = execute("git", ["ls-remote", "--tags", "--refs", "origin"], { cwd, env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^GIT_/u.test(key))), encoding: "utf8", timeout: 60_000, maxBuffer: 16 * 1024 * 1024 });
     const snapshots = releaseLedgerSnapshots(readFileSync(path.join(cwd, "CHANGELOG.md"), "utf8"), tags, metadata, manifest.name);
     const report = reconcileArtifactLedgers(snapshots, exceptions);

@@ -39,6 +39,13 @@ acceptance, with explicit public registry selection, empty user/global
 configuration and a fresh temporary cache. It runs outside the checkout and
 removes inherited npm authentication/configuration. The report never archives
 credentials, command output or environment values.
+On Windows the collector invokes `cmd.exe` explicitly for npm's `.cmd` launcher.
+The package name must satisfy the restricted registry identity grammar before
+any child starts; the remaining arguments are fixed. Required Windows acceptance
+executes real Git and public npm requests from paths containing spaces and `&`,
+first proves that direct `npm.cmd` execution fails, then verifies the complete
+inventory and temporary-directory cleanup through the repaired launcher.
+No `shell: true` argument-array fallback or resource ceiling increase is used.
 The parser supports npm 11's object and npm 12's single-result array, with
 [captured public npm 12 metadata](../tests/fixtures/release-ledgers/npm-view-12.json)
 as its format regression. Multiple package results refuse evaluation.

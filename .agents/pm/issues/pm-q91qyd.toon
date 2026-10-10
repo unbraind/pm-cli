@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: ci,governance,provenance,release,traceability
 created_at: "2026-07-27T12:46:06.729Z"
-updated_at: "2026-10-10T07:03:10.102Z"
+updated_at: "2026-10-10T08:08:00.736Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#4d9c20054189c916e32efbab"
 author: "harness:claude-code"
@@ -33,29 +33,47 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-ygli86,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-doxj,implements,"2026-07-27T12:57:57.598Z","harness:claude-code","cli:update:dep",detected
   pm-release-acceptance-path-cost,related,"2026-10-10T04:23:10.031Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-08-01T09:53:06.976Z","harness:claude-code","Three-ledger reconciliation sampled live 2026-08-01 for the current release only, as a spot check rather than a re-run of the full divergence census. npm: @unbrained/pm-cli version 2026.8.1, dist-tags.latest 2026.8.1, time.modified 2026-08-01T02:43:26.931Z. GitHub releases: v2026.8.1 marked Latest, created 2026-08-01T02:44:13Z. Git tags: 82 total, all matching v20*, including the multi-release days v2026.7.24-2 and v2026.7.24-3 that the -N suffix scheme produces. For 2026.8.1 the three ledgers agree, and the npm publish precedes the GitHub release by 47 seconds, which is the expected ordering for the tag-push Release workflow."
   "2026-10-10T02:18:44.727Z","harness:codex","Implementation plan: strict 2914-item all-status census has no omissions/unreadable entries and all 704 GitHub issues were checked. Reuse the existing three-ledger owner. Public SDK will reconcile caller-defined complete artifact sets with exact evidence-scoped historical exceptions; the anonymous registry/Git/changelog adapter will retain every discrepancy and fail on new drift. Negative controls include incomplete census, duplicate identities, stale exceptions and newly missing publication. No changelog generator is replaced."
   "2026-10-10T02:40:48.244Z","harness:codex","Verification checkpoint: complete live graph audit has 2914 nodes,14962 typed edges,zero missing references,zero active isolates and zero ordering contradictions; only two documented legacy hierarchy info findings remain. Resolution validation retains the existing170 historical missing-resolution warning as debt; history drift passes. Current dependency/secret/security APIs are clear. Live one-day Sentry gate reports zero critical/high issues; telemetry gate has2.73% finish errors and zero missing-code rows. These aggregate checks do not certify exhaustive real-time delivery of every action. Initial Node26 full suite hit a30-second real scale-benchmark timeout under parallel workload; preserve that failure and compare the supported Node24 gate without changing budgets or assertions."
   "2026-10-10T03:26:13.604Z","harness:codex","Fresh continuation evidence: graph audit reads 2,915 nodes and 14,966 typed directed edges, with zero missing references, zero active isolates, zero ordering contradictions and every terminal node reachable through the declared outcome basis. Only the two documented legacy hierarchy information classes remain. Resolution validation passes with the existing 170 historical metadata warnings; history drift and tracker health pass. All 704 GitHub issues have PM-file links in complete comment populations, and the dependency and tracked-secret scans are clear. One-day Sentry/required telemetry gate passes with zero critical/high issues, 2.73 percent seven-day finish errors and zero missing-code rows. This is aggregate evidence, not exhaustive real-time per-action delivery proof."
   "2026-10-10T05:04:35.619Z","harness:codex","Full-source verification is green: all 10074 applicable tests pass and exact integer coverage is 100/100/100/100. The live complete anonymous census retains 144 documented, 152 tagged and 144 delivered versions, 14 individually explained historical findings and zero stale exceptions. Registry/provider, strict type consumers and native tag/source-run controls are independently verified; whole static and hosted review remain required."
   "2026-10-10T05:44:48.961Z","harness:codex","PR #1434 round 1: CodeRabbit correctly identified independently optional heading brackets. Both opening-only and closing-only changelog forms falsely certify a version as documented. Two focused parser-boundary regressions fail on the original code (9 existing tests pass); matching bracketed and unbracketed alternatives will preserve valid dated/ordinal headings and expose malformed sections as missing documentation. Existing complete census, exceptions and output budgets remain unchanged."
+  "2026-10-10T07:55:52.348Z","harness:codex","Third full CodeRabbit review at c7fe780 found one valid Windows-specific provider-launch defect: commandFor npm yields npm.cmd, which execFileSync cannot execute directly. The hosted Linux collector remains usable, but the universal local collector must use a native Windows interpreter. Node 24.21.0 official child-process documentation independently confirms the limitation and discourages shell:true with argument arrays. The fix will use cmd.exe with the already validated restricted package identity and fixed metadata arguments, preserving anonymous npm configuration/cache, deadlines, complete inventory and error behavior. A portable provider-boundary regression will cover both launch vectors, and the existing required Windows job will run a real npm/native-Git acceptance with the original npm.cmd EINVAL negative control. Current local coverage owns the build lease, so source/test/workflow edits wait for that command to finish. The finding is reused under this canonical collector owner; no duplicate issue or claim is created."
+  "2026-10-10T08:07:39.233Z","harness:codex","Fourth review repair: original collector fails the Windows vector regression (1 failed/12 passed); repaired collector passes all 13 tests and the connected 199-test SDK/release/acceptance set. Native Linux acceptance executes real Git and public npm with blank user/global configurations, fresh disposable cache, restricted package grammar and unchanged 120s/32MiB limits; it reads all 144 public versions and proves cleanup. The deliberate one-version fixture disagreement remains red independently of successful provider collection. Required Windows CI now proves native original npm.cmd EINVAL and repaired cmd.exe execution, including paths with spaces and ampersands. No shell:true argument-array fallback, settings waiver, threshold change or production test-only seam. The previous full-source exact-100 receipt predates this MJS repair; a new complete run and actual Windows proof are still required before closure."
 notes[2]{created_at,author,text}:
   "2026-10-10T02:23:29.240Z","harness:codex","2026-10-10 full-history reconciliation: 143 documented versions, 151 release tags, 143 registry versions; 14 exact discrepancies. Registry-missing historical identities: 2026.5.23, 2026.5.3-2, 2026.5.3-3, 2026.5.3-4, 2026.6.1, 2026.6.2, 2026.7.24-2, 2026.9.24. Documentation-missing published identities: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, 2026.5.5. Record each exact missing-ledger signature as a reviewed historical exception, retain the underlying gap in every report, and reject new drift or stale exceptions. The earlier 18 pairwise differences count overlapping divergence classes; this current census counts artifact identities. No publication/tag/changelog content is synthesized or rewritten to simulate historical consistency."
   "2026-10-10T04:23:07.558Z","harness:codex","Final live anonymous public census after integrating today immutable release commit: 144 package-generated changelog sections, 152 advertised origin release tags and 144 installable public registry versions. The reusable SDK receipt is green with all 14 exact historical discrepancies still visible and individually dispositioned, all three divergence classes explicit and zero stale exceptions. Today 2026.10.10 agrees in all three ledgers; its separate macOS advertisement failure belongs to pm-release-acceptance-path-cost. No transient exception was added and no historical artifact/tag was rewritten."
-files[9]{path,scope}:
-  .github/workflows/release-reliability.yml,project
-  config/release-ledger-exceptions.json,project
-  scripts/release/collect-release-ledgers.mjs,project
-  sdk/public-surface.json,project
-  src/sdk/governance.ts,project
-  src/sdk/governance/artifact-ledgers.ts,project
-  tests/fixtures/release-ledgers/npm-view-12.json,project
-  tests/unit/scripts/release/collect-release-ledgers.spec.ts,project
-  tests/unit/sdk/governance/artifact-ledgers.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+files[11]:
+  - path: .github/workflows/ci.yml
+    scope: project
+    note: Required native Windows npm/Git provider proof with original direct-launch negative control
+  - path: .github/workflows/release-reliability.yml
+    scope: project
+  - path: config/release-ledger-exceptions.json
+    scope: project
+  - path: scripts/release/collect-release-ledgers.mjs
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/governance.ts
+    scope: project
+  - path: src/sdk/governance/artifact-ledgers.ts
+    scope: project
+  - path: tests/acceptance/release-ledger.mjs
+    scope: project
+    note: Required native Windows npm/Git provider proof with original direct-launch negative control
+  - path: tests/fixtures/release-ledgers/npm-view-12.json
+    scope: project
+  - path: tests/unit/scripts/release/collect-release-ledgers.spec.ts
+    scope: project
+  - path: tests/unit/sdk/governance/artifact-ledgers.spec.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-10-10T02:31:51.937Z",local_mutation,feat/release-origin-and-ledger-reconciliation,"Complete-set membership, exact historical signatures, anonymous provider inventory, native tag identity and retained upstream origin."
-test_runs[2]:
+  node tests/acceptance/release-ledger.mjs,project,240,"harness:codex","2026-10-10T08:06:10.900Z",local_mutation,feat/release-origin-and-ledger-reconciliation,Real native Git and anonymous public npm metadata with isolated roots and configurations; on Windows retain native original npm.cmd EINVAL before repaired cmd.exe launch.
+test_runs[4]:
   - run_id: test-local-mv1xls1x-2xd027
     kind: test
     status: passed
@@ -73,6 +91,28 @@ test_runs[2]:
     started_at: "2026-10-10T05:56:28.486Z"
     finished_at: "2026-10-10T05:56:38.317Z"
     recorded_at: "2026-10-10T05:56:38.317Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv241pqh-01ae3k
+    kind: test
+    status: passed
+    started_at: "2026-10-10T08:06:30.625Z"
+    finished_at: "2026-10-10T08:06:33.352Z"
+    recorded_at: "2026-10-10T08:06:33.352Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node tests/acceptance/release-ledger.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mv243l53-lsserr
+    kind: test
+    status: passed
+    started_at: "2026-10-10T08:07:20.631Z"
+    finished_at: "2026-10-10T08:08:00.711Z"
+    recorded_at: "2026-10-10T08:08:00.711Z"
     passed: 1
     failed: 0
     skipped: 0

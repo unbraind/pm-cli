@@ -1,5 +1,5 @@
 /** Prove complete provider parsing and anonymous registry isolation with native Git inventory. */
-import { execFileSync } from "node:child_process";
+import { execFileSync, type ExecFileSyncOptionsWithStringEncoding } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -37,6 +37,29 @@ describe("release ledger collection", () => {
     expect(() => releaseLedgerSnapshots(changelog, `${tag}broken\n`, metadata, "fixture")).toThrow("tag inventory");
   });
 
+  it.each(["linux", "win32"])("preserves the validated metadata request through the native %s launch vector", (platform) => {
+    const root = mkdtempSync(path.join(tmpdir(), "pm-ledgers-launch-"));
+    const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
+    try {
+      writeFileSync(path.join(root, "package.json"), JSON.stringify({ name: "fixture" }));
+      writeFileSync(path.join(root, "CHANGELOG.md"), changelog);
+      Object.defineProperty(process, "platform", { value: platform, configurable: true });
+      const execute = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command === "git") return tag;
+        const request = ["view", "fixture", "name", "versions", "--json", "--registry=https://registry.npmjs.org"];
+        expect(command).toBe(platform === "win32" ? "cmd.exe" : "npm");
+        expect(args).toEqual(platform === "win32" ? ["/d", "/s", "/c", `npm.cmd ${request.join(" ")}`] : request);
+        expect(options.shell).toBeUndefined();
+        expect(options.timeout).toBe(120_000);
+        return JSON.stringify(metadata);
+      }) as typeof execFileSync;
+      expect(collectReleaseLedgers(root, [], execute)).toMatchObject({ ok: true, census_complete: true });
+    } finally {
+      Object.defineProperty(process, "platform", originalPlatform!);
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("uses real remote refs, excludes ambient registry credentials and preserves replayable drift", () => {
     const root = mkdtempSync(path.join(tmpdir(), "pm-ledgers-native-"));
     const remote = path.join(root, "remote.git");
@@ -58,8 +81,8 @@ describe("release ledger collection", () => {
       vi.stubEnv("NPM_TOKEN", "host-fixture-credential");
       const execute: typeof execFileSync = ((command, args, options) => {
         if (command === "git") return execFileSync(command, args, options);
-        expect(command).toMatch(/^npm(?:\.cmd)?$/u);
-        expect(args).toContain("--registry=https://registry.npmjs.org");
+        expect(command).toBe(process.platform === "win32" ? "cmd.exe" : "npm");
+        expect(args.join(" ")).toContain("--registry=https://registry.npmjs.org");
         expect(options?.env?.NPM_TOKEN).toBeUndefined();
         expect(options?.env?.npm_config_registry).toBeUndefined();
         npmRoot = String(options?.cwd);
@@ -83,8 +106,10 @@ describe("release ledger collection", () => {
       expect(overlap.classes).toEqual({ declared_but_never_delivered: ["2026.10.2"], delivered_but_undocumented: ["2026.10.3"], tagged_but_unsectioned: ["2026.10.3"] });
       writeFileSync(path.join(workspace, "config/release-ledger-exceptions.json"), "{}");
       expect(() => main({ RELEASE_LEDGERS_OUTPUT: output }, workspace, execute)).toThrow("policy");
-      writeFileSync(path.join(workspace, "package.json"), JSON.stringify({ name: "--bad" }));
-      expect(() => collectReleaseLedgers(workspace, [], execute)).toThrow("identity");
+      for (const name of ["--bad", "fixture&whoami", "fixture%PATH%", "fixture;whoami", "fixture|whoami"]) {
+        writeFileSync(path.join(workspace, "package.json"), JSON.stringify({ name }));
+        expect(() => collectReleaseLedgers(workspace, [], execute)).toThrow("identity");
+      }
       writeFileSync(path.join(workspace, "package.json"), JSON.stringify({ name: "fixture" }));
       expect(() => collectReleaseLedgers(workspace, [], (() => { throw new Error("Registry unavailable"); }) as typeof execFileSync)).toThrow("Registry unavailable");
     } finally {
