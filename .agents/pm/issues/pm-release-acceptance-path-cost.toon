@@ -1,12 +1,12 @@
 id: pm-release-acceptance-path-cost
-title: MacOS installed-release acceptance exceeds the init budget through verbose disposable path labels
+title: Keep installed-release init within its unchanged raw budget on macOS
 description: "Release run 38019834643 published 2026.10.10 successfully, but all three macOS registry sessions refused init at 12023 raw characters against the unchanged 12000-character ceiling; Linux and Windows passed. Init includes the owned temporary root in 26 real output locations. Shorten only disposable acceptance directory labels, retain raw measurement and all ceilings, and prove the unchanged public candidate/control lifecycle under a macOS-shaped temporary root. This is separate from the completed context-refusal recovery in pm-gh1428 and measured-token path normalization in pm-agent-token-path."
 type: Issue
 status: in_progress
 priority: 1
 tags[4]: acceptance,portability,release,token-efficiency
 created_at: "2026-10-10T03:50:00.123Z"
-updated_at: "2026-10-10T05:04:34.476Z"
+updated_at: "2026-10-10T07:03:11.834Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#4d9c20054189c916e32efbab"
 author: "harness:codex"

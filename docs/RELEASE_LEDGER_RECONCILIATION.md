@@ -78,9 +78,11 @@ New preparations create annotated tags whose bounded JSON message binds the
 declared upstream event/origin, repository, run/attempt, reviewed source commit
 and prepared target commit. Before publication, the Release workflow checks
 the tag's peeled commit and source ancestry and compares the source declaration
-with the exact GitHub run attempt, including repository, event, source SHA and
-the producer workflow path and declared Auto Release run name. A mismatch
-stops before publication.
+with the exact GitHub run attempt, including repository, event, source SHA,
+the producer workflow path and declared Auto Release run name. It independently
+fetches the repository's default branch and requires the source run's branch to
+match it. Missing metadata and non-default dispatches stop before publication;
+the verifier never assumes the default branch is named `main`.
 
 The separate `release-publication-origin-<run>-<attempt>` artifact retains the
 tag-object SHA, upstream declaration, independent verification result and the

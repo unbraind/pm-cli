@@ -34,7 +34,7 @@ it("executes preserved reviewed artifact controls with their transitive imports 
     const manifest = { name: "release-control-fixture", version: "1.0.0", files: budget.required_paths };
     for (const file of budget.required_paths) {
       await mkdir(path.dirname(path.join(workspace, file)), { recursive: true });
-      await writeFile(path.join(workspace, file), "reviewed control fixture\n");
+      await writeFile(path.join(workspace, file), file.endsWith(".json") ? JSON.stringify({ fixture: "reviewed control" }) : "reviewed control fixture\n");
     }
     await writeFile(path.join(workspace, "package.json"), JSON.stringify(manifest));
     await writeFile(path.join(workspace, "runtime-dependencies.json"), JSON.stringify({ packages: { "": manifest } }));

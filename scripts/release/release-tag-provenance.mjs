@@ -49,10 +49,10 @@ export function readReleaseTagProvenance(tag, cwd = process.cwd(), execute = exe
   return { tag, tag_sha: sha, tag_object_sha: objectSha, attribution: provenance === null ? "legacy_unattributed" : "declared_tag_provenance", provenance };
 }
 
-/** Independently bind a declared source to its authoritative original GitHub run attempt. */
-export function verifyReleaseSourceRun(provenance, run) {
+/** Bind a source run to its original identity and the repository's authoritative default branch. */
+export function verifyReleaseSourceRun(provenance, run, defaultBranch) {
   if (provenance.event === "local") return false;
-  if (run?.path !== ".github/workflows/auto-release.yml" || run.id !== provenance.run_id || run.run_attempt !== provenance.run_attempt || run.event !== provenance.event || run.head_sha !== provenance.source_sha || run.repository?.full_name !== provenance.repository || run.display_title !== `Auto Release (${provenance.trigger_origin})`) throw new Error("Release source-run provenance mismatch.");
+  if (typeof defaultBranch !== "string" || defaultBranch.length === 0 || run?.head_branch !== defaultBranch || run.path !== ".github/workflows/auto-release.yml" || run.id !== provenance.run_id || run.run_attempt !== provenance.run_attempt || run.event !== provenance.event || run.head_sha !== provenance.source_sha || run.repository?.full_name !== provenance.repository || run.display_title !== `Auto Release (${provenance.trigger_origin})`) throw new Error("Release source-run provenance mismatch.");
   return true;
 }
 
@@ -60,11 +60,13 @@ export function verifyReleaseSourceRun(provenance, run) {
 export function recordReleasePublicationOrigin(env = process.env, cwd = process.cwd(), execute = execFileSync) {
   const report = { schema: "pm-release-publication-origin/1", ...readReleaseTagProvenance(env.RELEASE_TAG, cwd, execute), publication_event: env.GITHUB_EVENT_NAME, recovery_origin: env.RELEASE_RECOVERY_TRIGGER_ORIGIN || null, source_run_verified: false };
   writeFileSync(env.RELEASE_PROVENANCE_OUTPUT, `${JSON.stringify(report)}\n`);
-  if (report.provenance !== null) {
-    if (report.provenance.event !== "local" && report.provenance.repository !== env.GITHUB_REPOSITORY) throw new Error("Release provenance repository mismatch.");
+  if (report.provenance !== null && report.provenance.event !== "local") {
+    if (report.provenance.repository !== env.GITHUB_REPOSITORY) throw new Error("Release provenance repository mismatch.");
     const source = report.provenance;
-    const run = source.event === "local" ? null : JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/attempts/${source.run_attempt}`], { cwd, encoding: "utf8", timeout: 30_000, maxBuffer: 1024 * 1024 }));
-    report.source_run_verified = verifyReleaseSourceRun(source, run);
+    const options = { cwd, encoding: "utf8", timeout: 30_000, maxBuffer: 1024 * 1024 };
+    const repository = JSON.parse(execute("gh", ["api", `repos/${source.repository}`], options));
+    const run = JSON.parse(execute("gh", ["api", `repos/${source.repository}/actions/runs/${source.run_id}/attempts/${source.run_attempt}`], options));
+    report.source_run_verified = verifyReleaseSourceRun(source, run, repository.default_branch);
   }
   writeFileSync(env.RELEASE_PROVENANCE_OUTPUT, `${JSON.stringify(report)}\n`);
   return report;

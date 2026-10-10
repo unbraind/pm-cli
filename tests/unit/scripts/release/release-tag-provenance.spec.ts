@@ -1,5 +1,5 @@
 /** Bind declared upstream origins to real annotated tag objects and exact workflow identities. */
-import { execFileSync } from "node:child_process";
+import { execFileSync, type ExecFileSyncOptionsWithStringEncoding } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -48,11 +48,17 @@ describe("tag-carried release provenance", () => {
 
   it("requires source-run identity, event, commit, repository and declared origin to agree", () => {
     const record = createReleaseProvenance(tag, source, target, env);
-    const run = { id: 42, run_attempt: 1, event: "workflow_dispatch", head_sha: source, path: ".github/workflows/auto-release.yml", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: "owner/project" } };
-    expect(verifyReleaseSourceRun(record, run)).toBe(true);
-    for (const change of [{ path: ".github/workflows/unrelated.yml" }, { id: 43 }, { run_attempt: 2 }, { event: "schedule" }, { head_sha: target }, { display_title: "Auto Release (operator)" }, { repository: { full_name: "other/project" } }]) expect(() => verifyReleaseSourceRun(record, { ...run, ...change })).toThrow();
-    expect(() => verifyReleaseSourceRun(record, null)).toThrow();
+    const run = { id: 42, run_attempt: 1, event: "workflow_dispatch", head_sha: source, head_branch: "trunk", path: ".github/workflows/auto-release.yml", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: "owner/project" } };
+    expect(verifyReleaseSourceRun(record, run, "trunk")).toBe(true);
+    for (const change of [{ path: ".github/workflows/unrelated.yml" }, { id: 43 }, { run_attempt: 2 }, { event: "schedule" }, { head_sha: target }, { head_branch: "feature" }, { head_branch: "main" }, { head_branch: undefined }, { display_title: "Auto Release (operator)" }, { repository: { full_name: "other/project" } }]) expect(() => verifyReleaseSourceRun(record, { ...run, ...change }, "trunk")).toThrow();
+    expect(() => verifyReleaseSourceRun(record, null, "trunk")).toThrow();
     expect(verifyReleaseSourceRun(createReleaseProvenance(tag, source, target, {}), null)).toBe(false);
+  });
+
+  it.each(["", null, undefined])("refuses hosted attribution without authoritative default-branch metadata: %s", (defaultBranch) => {
+    const record = createReleaseProvenance(tag, source, target, env);
+    const run = { id: 42, run_attempt: 1, event: "workflow_dispatch", head_sha: source, head_branch: "trunk", path: ".github/workflows/auto-release.yml", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: "owner/project" } };
+    expect(() => verifyReleaseSourceRun(record, run, defaultBranch)).toThrow();
   });
 
   it("reads native annotated and lightweight tags without executing annotation text", () => {
@@ -69,7 +75,16 @@ describe("tag-carried release provenance", () => {
       expect(readReleaseTagProvenance(tag, root).tag_object_sha).toBe(git(["rev-parse", `refs/tags/${tag}`]));
       const output = path.join(root, "origin.json");
       const publicationEnv = { RELEASE_TAG: tag, RELEASE_PROVENANCE_OUTPUT: output, GITHUB_EVENT_NAME: "push", GITHUB_REPOSITORY: env.GITHUB_REPOSITORY };
-      const execute: typeof execFileSync = ((command, args, options) => command === "gh" ? JSON.stringify({ id: 42, run_attempt: 1, event: env.GITHUB_EVENT_NAME, head_sha: sha, path: ".github/workflows/auto-release.yml", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: env.GITHUB_REPOSITORY } }) : execFileSync(command, args, options)) as typeof execFileSync;
+      const responses = new Map<string, unknown>([
+        [`repos/${env.GITHUB_REPOSITORY}`, { default_branch: "trunk" }],
+        [`repos/${env.GITHUB_REPOSITORY}/actions/runs/42/attempts/1`, { id: 42, run_attempt: 1, event: env.GITHUB_EVENT_NAME, head_sha: sha, head_branch: "trunk", path: ".github/workflows/auto-release.yml", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: env.GITHUB_REPOSITORY } }],
+      ]);
+      const execute = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
+        if (command !== "gh") return execFileSync(command, args, options);
+        const response = responses.get(args[1]);
+        if (response === undefined) throw new Error(`Unexpected provider endpoint: ${args[1]}`);
+        return JSON.stringify(response);
+      }) as typeof execFileSync;
       const publication = recordReleasePublicationOrigin(publicationEnv, root, execute);
       expect(publication).toMatchObject({ source_run_verified: true, recovery_origin: null, publication_event: "push", provenance: { trigger_origin: "morning_dispatcher" } });
       expect(JSON.parse(readFileSync(output, "utf8"))).toEqual(publication);
