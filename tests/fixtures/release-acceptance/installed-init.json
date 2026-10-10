@@ -1,0 +1,335 @@
+{
+  "ok": true,
+  "path": "$WORKSPACE/.agents/pm",
+  "target": {
+    "mode": "workspace-discovery",
+    "tracker_root": "$WORKSPACE/.agents/pm",
+    "workspace_root": "$WORKSPACE",
+    "discovery": "current",
+    "requested_cwd": "$WORKSPACE"
+  },
+  "settings": {
+    "version": 1,
+    "id_prefix": "accept-",
+    "ids": {
+      "token_length": 4
+    },
+    "author_default": "",
+    "agent_identity": {
+      "probes_enabled": true,
+      "identity_vocabulary": {
+        "version": 1,
+        "aliases": {}
+      },
+      "harness_signals": []
+    },
+    "mutation_guard": {
+      "require_attributed_author": false,
+      "secret_guard": "advise",
+      "stale_in_progress_hours": 72
+    },
+    "item_format": "toon",
+    "locks": {
+      "ttl_seconds": 1800,
+      "wait_ms": 3000
+    },
+    "checkpoints": {
+      "retention_days": 14
+    },
+    "output": {
+      "default_format": "toon"
+    },
+    "ux": {
+      "deprecation_hints": true
+    },
+    "history": {
+      "missing_stream": "auto_create",
+      "compact_policy": {
+        "enabled": false,
+        "max_entries": 500,
+        "trigger": "health_warn"
+      }
+    },
+    "validation": {
+      "sprint_release_format": "warn",
+      "parent_reference": "strict_error",
+      "metadata_profile": "core",
+      "metadata_required_fields": [],
+      "lifecycle_stale_blocker_reason_patterns": [
+        "no active blocker",
+        "ready for planned execution sequencing",
+        "work completed",
+        "work is closed"
+      ],
+      "lifecycle_closure_like_blocked_reason_patterns": [
+        "no active blocker because work is closed",
+        "work is closed"
+      ],
+      "lifecycle_closure_like_resolution_patterns": [
+        "closed with implementation evidence",
+        "closed with verification evidence",
+        "work completed and recorded",
+        "work is closed"
+      ],
+      "lifecycle_closure_like_actual_result_patterns": [
+        "closed and recorded",
+        "work completed",
+        "work completed and recorded"
+      ],
+      "estimate_defaults_by_type": {}
+    },
+    "governance": {
+      "preset": "minimal",
+      "ownership_enforcement": "none",
+      "create_mode_default": "progressive",
+      "close_validation_default": "off",
+      "require_close_reason": true,
+      "parent_reference": "strict_error",
+      "metadata_profile": "core",
+      "force_required_for_stale_lock": false,
+      "duplicate_detection_mode": "off",
+      "duplicate_detection_threshold": 0.8,
+      "duplicate_detection_limit": 3
+    },
+    "workflow": {
+      "definition_of_done": []
+    },
+    "testing": {
+      "record_results_to_items": false,
+      "allow_untrusted_linked_tests": false
+    },
+    "telemetry": {
+      "enabled": true,
+      "first_run_prompt_completed": false,
+      "capture_level": "redacted",
+      "endpoint": "https://pm-cli.unbrained.dev/v1/events",
+      "installation_id": "",
+      "retention_days": 365
+    },
+    "agent_guidance": {
+      "prompt_completed": false,
+      "declined": false,
+      "declined_at": "",
+      "template_version": 1,
+      "last_checked_files": []
+    },
+    "item_types": {
+      "definitions": []
+    },
+    "schema": {
+      "version": 1,
+      "files": {
+        "types": "schema/types.json",
+        "statuses": "schema/statuses.json",
+        "fields": "schema/fields.json",
+        "workflows": "schema/workflows.json"
+      },
+      "statuses": [
+        {
+          "id": "draft",
+          "roles": [
+            "draft"
+          ]
+        },
+        {
+          "id": "open",
+          "roles": [
+            "active",
+            "default_open"
+          ]
+        },
+        {
+          "id": "in_progress",
+          "aliases": [
+            "in-progress"
+          ],
+          "roles": [
+            "active"
+          ]
+        },
+        {
+          "id": "blocked",
+          "roles": [
+            "blocked"
+          ]
+        },
+        {
+          "id": "closed",
+          "roles": [
+            "terminal",
+            "terminal_done",
+            "default_close"
+          ]
+        },
+        {
+          "id": "canceled",
+          "aliases": [
+            "cancelled"
+          ],
+          "roles": [
+            "terminal",
+            "terminal_canceled",
+            "default_cancel"
+          ]
+        }
+      ],
+      "fields": [],
+      "workflow": {
+        "draft_status": "draft",
+        "open_status": "open",
+        "in_progress_status": "in_progress",
+        "blocked_status": "blocked",
+        "close_status": "closed",
+        "canceled_status": "canceled"
+      },
+      "unknown_field_policy": "allow"
+    },
+    "extensions": {
+      "enabled": [],
+      "disabled": [],
+      "policy": {
+        "mode": "off",
+        "trust_mode": "off",
+        "require_provenance": false,
+        "trusted_extensions": [],
+        "default_sandbox_profile": "none",
+        "allowed_extensions": [],
+        "blocked_extensions": [],
+        "allowed_capabilities": [],
+        "blocked_capabilities": [],
+        "allowed_surfaces": [],
+        "blocked_surfaces": [],
+        "allowed_commands": [],
+        "blocked_commands": [],
+        "allowed_actions": [],
+        "blocked_actions": [],
+        "allowed_services": [],
+        "blocked_services": [],
+        "extension_overrides": []
+      }
+    },
+    "search": {
+      "score_threshold": 0,
+      "hybrid_semantic_weight": 0.7,
+      "max_results": 50,
+      "embedding_model": "",
+      "embedding_batch_size": 32,
+      "embedding_timeout_ms": 30000,
+      "scanner_max_batch_retries": 3,
+      "provider": "",
+      "default_mode": "auto",
+      "mutation_refresh_policy": "semantic_configured",
+      "query_expansion": {
+        "enabled": false,
+        "provider": ""
+      },
+      "rerank": {
+        "enabled": false,
+        "model": "",
+        "top_k": 20
+      }
+    },
+    "providers": {
+      "openai": {
+        "base_url": "",
+        "api_key": "",
+        "model": ""
+      },
+      "ollama": {
+        "base_url": "",
+        "model": ""
+      }
+    },
+    "context": {
+      "default_depth": "brief",
+      "activity_limit": 10,
+      "stale_threshold_days": 7,
+      "sections": {
+        "hierarchy": true,
+        "activity": true,
+        "progress": true,
+        "recently_created": true,
+        "unparented": true,
+        "blockers": true,
+        "files": true,
+        "workload": true,
+        "staleness": true,
+        "tests": true
+      }
+    },
+    "vector_store": {
+      "adapter": "",
+      "collection_name": "pm_items",
+      "qdrant": {
+        "url": "",
+        "api_key": ""
+      },
+      "lancedb": {
+        "path": ""
+      }
+    }
+  },
+  "created_dirs": [
+    "$WORKSPACE/.agents/pm",
+    "$WORKSPACE/.agents/pm/epics",
+    "$WORKSPACE/.agents/pm/features",
+    "$WORKSPACE/.agents/pm/tasks",
+    "$WORKSPACE/.agents/pm/chores",
+    "$WORKSPACE/.agents/pm/issues",
+    "$WORKSPACE/.agents/pm/schema",
+    "$WORKSPACE/.agents/pm/history",
+    "$WORKSPACE/.agents/pm/search",
+    "$WORKSPACE/.agents/pm/extensions",
+    "$WORKSPACE/.agents/pm/locks",
+    "$WORKSPACE/.agents/pm/decisions",
+    "$WORKSPACE/.agents/pm/events",
+    "$WORKSPACE/.agents/pm/reminders",
+    "$WORKSPACE/.agents/pm/milestones",
+    "$WORKSPACE/.agents/pm/meetings",
+    "$WORKSPACE/.agents/pm/plans",
+    "$WORKSPACE/.agents/pm/schema/types.json",
+    "$WORKSPACE/.agents/pm/schema/statuses.json",
+    "$WORKSPACE/.agents/pm/schema/fields.json",
+    "$WORKSPACE/.agents/pm/schema/workflows.json"
+  ],
+  "warnings": [
+    "agent_guidance:missing_non_interactive",
+    "updated:gitignore:$WORKSPACE/.gitignore"
+  ],
+  "governance_preset": "minimal",
+  "wizard_used": false,
+  "next_steps": [
+    "Create your first item: pm create --type Task --title \"<title>\"",
+    "List active items: pm list",
+    "Get agent-friendly project context: pm context",
+    "Add optional packages for richer workflows: pm install calendar --project, pm install templates --project, pm install guide-shell --project",
+    "Or install everything bundled: pm init --with-packages (idempotent on re-run)",
+    "Supported agent harnesses are attributed automatically; use --author or PM_AUTHOR only when an explicit identity override is required.",
+    "Inspect workflow guidance: pm init --agent-guidance status",
+    "Add workflow guidance later: pm init --agent-guidance add"
+  ],
+  "agent_guidance": {
+    "mode": "ask",
+    "present": false,
+    "prompted": false,
+    "applied": false,
+    "skipped": false,
+    "declined": false,
+    "prompt_completed": false,
+    "template_version": 1,
+    "target_file": "AGENTS.md",
+    "checked_files": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ],
+    "files_with_guidance": [],
+    "missing_files": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ],
+    "next_steps": [
+      "Inspect workflow guidance: pm init --agent-guidance status",
+      "Add workflow guidance later: pm init --agent-guidance add"
+    ]
+  }
+}

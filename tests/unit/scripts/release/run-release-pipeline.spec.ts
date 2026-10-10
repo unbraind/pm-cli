@@ -2,7 +2,8 @@ import { Buffer } from "node:buffer";
 import path from "node:path";
 import * as fs from "node:fs";
 import type * as ReleaseUtils from "../../../../scripts/release/utils.mjs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createReleaseProvenance } from "../../../../scripts/release/release-tag-provenance.mjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness([
@@ -35,7 +36,7 @@ type PipelineModule = {
     options?: { env?: Record<string, string> } | null,
     token?: string,
   ) => { env?: Record<string, string> };
-  pushReleaseRefs: (tagName: string, options?: { env?: Record<string, string> }) => { retried: boolean };
+  pushReleaseRefs: (tagName: string, options?: { env?: Record<string, string> }, provenance?: ReturnType<typeof createReleaseProvenance>) => { retried: boolean };
   runPipeline: () => void;
 };
 
@@ -69,6 +70,7 @@ function baseGitMock(overrides: (command: string, args: string[]) => unknown | u
     if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
     if (command === "git" && args[0] === "diff") return { status: 0, stdout: "src/cli/main.ts\n", stderr: "" };
     if (command === "git" && args[0] === "tag") return { status: 0, stdout: "", stderr: "" };
+    if (command === "git" && args[0] === "rev-parse") return { status: 0, stdout: "a".repeat(40), stderr: "" };
     return { status: 0, stdout: "", stderr: "" };
   });
 }
@@ -80,6 +82,21 @@ describe("run-release-pipeline", () => {
     delete process.env.RELEASE_PIPELINE_OUTPUT;
     delete process.env.RELEASE_PUSH_TOKEN;
     delete process.env.RELEASE_POLICY_TOKEN;
+    vi.stubEnv("GITHUB_EVENT_NAME", undefined);
+    vi.stubEnv("RELEASE_TRIGGER_ORIGIN", undefined);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+  it.each([
+    { GITHUB_EVENT_NAME: "schedule", RELEASE_TRIGGER_ORIGIN: "operator" },
+    { GITHUB_EVENT_NAME: "workflow_dispatch", RELEASE_TRIGGER_ORIGIN: "unknown" },
+  ])("refuses contradictory provenance before changing release assets %j", async (env) => {
+    for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
+    const runCommand = baseGitMock(() => undefined);
+    mockUtils(runCommand);
+    const mod = await harness.importModule<PipelineModule>(SCRIPT, "invalid-origin");
+    process.argv = ["node", "x", "--push", "false"];
+    expect(() => mod.runPipeline()).toThrow("trigger origin");
+    expect(runCommand.mock.calls.some(([command]) => command !== "git")).toBe(false);
   });
   describe("exported helpers", () => {
     it("covers usage()", async () => {
@@ -489,16 +506,11 @@ describe("run-release-pipeline", () => {
 
       const gitCalls: string[][] = [];
       let rejectRuntimePin = false;
-      const runCommand = vi.fn((command: string, args: string[]) => {
+      const runCommand = baseGitMock((command: string, args: string[]) => {
         gitCalls.push([command, ...args]);
         if (rejectRuntimePin && args.join(" ") === "scripts/sync-versions.mjs check") {
           throw new Error("Missing plugin runtime pin");
         }
-        if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
-        if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
-        if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
-        if (command === "git" && args[0] === "diff") return { status: 0, stdout: "src/cli/main.ts\n", stderr: "" };
-        if (command === "git" && args[0] === "tag") return { status: 0, stdout: "", stderr: "" };
         if (args.includes("changelog") && args.includes("generate")) {
           const outPath = args[args.indexOf("--output") + 1];
           const heading = args.includes("--date-from-version")
@@ -507,7 +519,7 @@ describe("run-release-pipeline", () => {
           fs.writeFileSync(outPath, `${heading}\n\n- thing\n`, "utf8");
           return { status: 0, stdout: "", stderr: "" };
         }
-        return { status: 0, stdout: "", stderr: "" };
+        return undefined;
       });
       mockUtils(runCommand, root);
 
@@ -539,6 +551,9 @@ describe("run-release-pipeline", () => {
       expect(payload.author).toBe("Release Bot!!");
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "commit")).toBe(true);
       expect(gitCalls.some((c) => c[0] === "git" && c[1] === "push")).toBe(true);
+      const annotated = gitCalls.find((call) => call[0] === "git" && call[1] === "tag" && call.includes("-a"));
+      expect(annotated).toBeDefined();
+      expect(JSON.parse(annotated![annotated!.indexOf("-m") + 1])).toMatchObject({ schema: "pm-release-provenance/1", tag: "v2026.6.15", trigger_origin: "operator", source_sha: "a".repeat(40), target_sha: "a".repeat(40) });
       expect(fs.existsSync(path.join(root, "CHANGELOG.md"))).toBe(true);
       expect(fs.readFileSync(path.join(root, "CHANGELOG.md"), "utf8"))
         .toBe("## 2026.6.15 - 2026-06-15\n\n- thing\n");
@@ -592,6 +607,22 @@ describe("run-release-pipeline", () => {
         ["push", "--atomic", "origin", "HEAD", "v2026.6.18"],
         expect.objectContaining({ allowFailure: true }),
       );
+    });
+
+    it("retains original origin and reviewed source while rebinding an unpublished tag after rebase", async () => {
+      let pushes = 0;
+      const runCommand = vi.fn((command: string, args: string[]) => {
+        if (args[0] === "push" && ++pushes === 1) return { status: 1, stdout: "", stderr: "fetch first" };
+        return { status: 0, stdout: args[0] === "rev-parse" ? "b".repeat(40) : "", stderr: "" };
+      });
+      mockUtils(runCommand);
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const mod = await harness.importModuleStable<PipelineModule>(SCRIPT);
+      const record = createReleaseProvenance("v2026.6.18", "a".repeat(40), "a".repeat(40), {});
+      expect(mod.pushReleaseRefs("v2026.6.18", {}, record).retried).toBe(true);
+      const call = runCommand.mock.calls.find(([, args]) => args.includes("-a"));
+      expect(call?.[1]).toContain("-f");
+      expect(JSON.parse(call![1][call![1].indexOf("-m") + 1])).toEqual({ ...record, target_sha: "b".repeat(40) });
     });
 
     it("scopes RELEASE_PUSH_TOKEN to git push without leaving it in child environments", async () => {
@@ -757,6 +788,7 @@ describe("run-release-pipeline", () => {
         if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
         if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
         if (command === "git" && args[0] === "diff") return { status: 0, stdout: "src/cli/main.ts\n", stderr: "" };
+        if (command === "git" && args[0] === "rev-parse") return { status: 0, stdout: "a".repeat(40), stderr: "" };
         if (command === "git" && args[0] === "tag") return { status: 0, stdout: "", stderr: "" };
         if (args.includes("changelog") && args.includes("generate")) {
           const outPath = args[args.indexOf("--output") + 1];
@@ -779,6 +811,7 @@ describe("run-release-pipeline", () => {
       fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "2026.6.13" }), "utf8");
       const runCommand = vi.fn((command: string, args: string[]) => {
         if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
+        if (command === "git" && args[0] === "rev-parse") return { status: 0, stdout: "a".repeat(40), stderr: "" };
         if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
         if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
         if (command === "git" && args[0] === "diff") return { status: 0, stdout: "src/cli/main.ts\n", stderr: "" };
@@ -804,6 +837,7 @@ describe("run-release-pipeline", () => {
       function makeRunCommand(): ReturnType<typeof vi.fn> {
         return vi.fn((command: string, args: string[]) => {
           if (command === "git" && args[0] === "status") return { status: 0, stdout: "", stderr: "" };
+          if (command === "git" && args[0] === "rev-parse") return { status: 0, stdout: "a".repeat(40), stderr: "" };
           if (command === "git" && args[0] === "describe") return { status: 0, stdout: "v2026.6.13\n", stderr: "" };
           if (command === "git" && args[0] === "rev-list") return { status: 0, stdout: "3\n", stderr: "" };
           if (command === "git" && args[0] === "diff") return { status: 0, stdout: "src/cli/main.ts\n", stderr: "" };

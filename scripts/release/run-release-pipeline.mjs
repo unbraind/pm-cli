@@ -19,6 +19,7 @@ import {
 } from "./utils.mjs";
 import { distributionManifestPaths } from "./version-manifests.mjs";
 import { isReleaseRelevantPath } from "./release-relevance.mjs";
+import { createReleaseProvenance, parseReleaseProvenance } from "./release-tag-provenance.mjs";
 
 const releasePushToken = process.env.RELEASE_PUSH_TOKEN?.trim() ?? "";
 delete process.env.RELEASE_PUSH_TOKEN;
@@ -217,7 +218,7 @@ function isBranchBehindPushFailure(result) {
   );
 }
 
-export function pushReleaseRefs(tagName, gitOptions = {}) {
+export function pushReleaseRefs(tagName, gitOptions = {}, provenance = null) {
   const pushGitOptions = withReleasePushCredentials(gitOptions);
   const firstPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...pushGitOptions, allowFailure: true });
   if (firstPush.status === 0) {
@@ -236,7 +237,8 @@ export function pushReleaseRefs(tagName, gitOptions = {}) {
     const detail = `${rebaseResult.stderr.trim()}\n${rebaseResult.stdout.trim()}`.trim();
     fail(`Command failed: git rebase origin/main\n${detail}`);
   }
-  git(["tag", "-f", tagName, "HEAD"], gitOptions);
+  if (provenance === null) git(["tag", "-f", tagName, "HEAD"], gitOptions);
+  else writeReleaseTag(tagName, provenance, gitOptions, true);
   const retryPush = git(["push", "--atomic", "origin", "HEAD", tagName], { ...pushGitOptions, allowFailure: true });
   if (retryPush.status !== 0) {
     const detail = `${retryPush.stderr.trim()}\n${retryPush.stdout.trim()}`.trim();
@@ -405,7 +407,7 @@ function maybeSkipForEmptyGeneratedChangelog(params) {
 }
 
 /** Validate and stage all synchronized manifests, then create and optionally publish release refs. */
-function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
+function commitAndMaybePushRelease(targetVersion, tagName, author, push, provenance) {
   const authorSlug = author.toLowerCase().replaceAll(/[^a-z0-9._-]/g, "-");
   /* c8 ignore next -- author always defaults to a non-empty slug; `|| "release-bot"` is a defensive fallback (parseFlags maps `--author ""` to the default) */
   const authorEmail = `${authorSlug || "release-bot"}@users.noreply.github.com`;
@@ -427,10 +429,17 @@ function commitAndMaybePushRelease(targetVersion, tagName, author, push) {
     "-m",
     `chore(release): cut ${targetVersion}\n\nAutomate daily release preparation with strict quality, compatibility, and reliability gates.`,
   ], { env: gitIdentityEnv });
-  git(["tag", tagName]);
+  writeReleaseTag(tagName, provenance, { env: gitIdentityEnv }, false);
   if (push) {
-    pushReleaseRefs(tagName, { env: gitIdentityEnv });
+    pushReleaseRefs(tagName, { env: gitIdentityEnv }, provenance);
   }
+}
+
+/** Rebind the target after a version commit or an unpublished rebase while retaining its reviewed source. */
+function writeReleaseTag(tagName, provenance, gitOptions, force) {
+  const targetSha = git(["rev-parse", "HEAD"], gitOptions).stdout.trim();
+  const record = parseReleaseProvenance(JSON.stringify({ ...provenance, target_sha: targetSha }), tagName, targetSha);
+  git(["tag", ...(force ? ["-f"] : []), "-a", "-m", JSON.stringify(record), tagName, "HEAD"], gitOptions);
 }
 
 /**
@@ -489,6 +498,8 @@ export function runPipeline() {
   }
 
   const previousVersion = readPackageVersion();
+  const sourceSha = dryRun ? null : git(["rev-parse", "HEAD"]).stdout.trim();
+  const provenance = dryRun ? null : createReleaseProvenance(`v${targetVersion}`, sourceSha, sourceSha);
 
   if (!dryRun) {
     const changelogPreparation = prepareReleaseChangelog({ targetVersion });
@@ -526,7 +537,7 @@ export function runPipeline() {
 
   const tagName = `v${targetVersion}`;
   if (!dryRun) {
-    commitAndMaybePushRelease(targetVersion, tagName, author, push);
+    commitAndMaybePushRelease(targetVersion, tagName, author, push, provenance);
   }
 
   const result = {

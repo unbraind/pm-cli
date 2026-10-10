@@ -2,11 +2,13 @@ id: pm-q91qyd
 title: "The project keeps three release ledgers that disagree in both directions: six published npm artifacts have no changelog section at all and seven git tags were never published"
 description: "Measured 2026-07-27 by reconciling the three records the project actually maintains. CHANGELOG.md carries 69 version sections, git carries 77 release tags, and the npm registry carries 70 published versions of the package. Every pairwise comparison finds divergence, and it runs in both directions. Five versions the changelog announces to users were never published anywhere: 2026.5.23, 2026.5.3-2, 2026.6.1, 2026.6.2, and 2026.7.24-2. Eight tags exist with no changelog section: 2026.5.3-3 through 2026.5.3-8, 2026.5.4, and 2026.5.5. Most seriously, six artifacts that are installable from npm right now have no changelog entry of any kind: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, and 2026.5.5. A user can install those versions and there is no record in the repository of what is in them. Seven tags in total were declared and never delivered. The reason none of this was caught is that every existing control measures a different pair. The changelog check in CI proves the changelog matches the pm tracker, never that it matches what shipped. The release-health reminder pm-7zs0 is forward-only and same-day: it asks whether the next release advanced npm latest, so it cannot see a historical gap and demonstrably did not see any of these seven. The publish verifier checks the artifact it just pushed. Nothing ever asks the whole-history question, which is whether the set of releases the project claims to have made equals the set it can prove it made. That question is the one that matters for a record intended to stay readable for decades, and it is currently unanswered and unanswerable without an ad hoc script."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[5]: ci,governance,provenance,release,traceability
 created_at: "2026-07-27T12:46:06.729Z"
-updated_at: "2026-09-08T13:32:06.173Z"
+updated_at: "2026-10-10T03:26:13.604Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4d9c20054189c916e32efbab"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A reconciliation control compares the full declared release set (changelog sections and git tags) against the full delivered set (registry versions) across all history, not only the most recent cut; Each divergence class is reported separately and named: declared-but-never-delivered, delivered-but-undocumented, and tagged-but-unsectioned, because the three have different causes and different remedies; The current 18 divergences are dispositioned individually as either a real gap to backfill or a recorded historical exception with a reason, so the baseline is explained rather than merely frozen; The control runs on a schedule and fails loudly, so a divergence introduced by a partial release is visible the same week rather than at the next manual reconciliation; The reconciliation reads the registry through the same published-artifact path the acceptance stage uses, so it is proof of delivery and not proof of intent"
@@ -30,6 +32,34 @@ dependencies[11]{id,kind,created_at,author,source_kind,author_source}:
   pm-w7ccmv,verifies,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-ygli86,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-doxj,implements,"2026-07-27T12:57:57.598Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-08-01T09:53:06.976Z","harness:claude-code","Three-ledger reconciliation sampled live 2026-08-01 for the current release only, as a spot check rather than a re-run of the full divergence census. npm: @unbrained/pm-cli version 2026.8.1, dist-tags.latest 2026.8.1, time.modified 2026-08-01T02:43:26.931Z. GitHub releases: v2026.8.1 marked Latest, created 2026-08-01T02:44:13Z. Git tags: 82 total, all matching v20*, including the multi-release days v2026.7.24-2 and v2026.7.24-3 that the -N suffix scheme produces. For 2026.8.1 the three ledgers agree, and the npm publish precedes the GitHub release by 47 seconds, which is the expected ordering for the tag-push Release workflow."
+  "2026-10-10T02:18:44.727Z","harness:codex","Implementation plan: strict 2914-item all-status census has no omissions/unreadable entries and all 704 GitHub issues were checked. Reuse the existing three-ledger owner. Public SDK will reconcile caller-defined complete artifact sets with exact evidence-scoped historical exceptions; the anonymous registry/Git/changelog adapter will retain every discrepancy and fail on new drift. Negative controls include incomplete census, duplicate identities, stale exceptions and newly missing publication. No changelog generator is replaced."
+  "2026-10-10T02:40:48.244Z","harness:codex","Verification checkpoint: complete live graph audit has 2914 nodes,14962 typed edges,zero missing references,zero active isolates and zero ordering contradictions; only two documented legacy hierarchy info findings remain. Resolution validation retains the existing170 historical missing-resolution warning as debt; history drift passes. Current dependency/secret/security APIs are clear. Live one-day Sentry gate reports zero critical/high issues; telemetry gate has2.73% finish errors and zero missing-code rows. These aggregate checks do not certify exhaustive real-time delivery of every action. Initial Node26 full suite hit a30-second real scale-benchmark timeout under parallel workload; preserve that failure and compare the supported Node24 gate without changing budgets or assertions."
+  "2026-10-10T03:26:13.604Z","harness:codex","Fresh continuation evidence: graph audit reads 2,915 nodes and 14,966 typed directed edges, with zero missing references, zero active isolates, zero ordering contradictions and every terminal node reachable through the declared outcome basis. Only the two documented legacy hierarchy information classes remain. Resolution validation passes with the existing 170 historical metadata warnings; history drift and tracker health pass. All 704 GitHub issues have PM-file links in complete comment populations, and the dependency and tracked-secret scans are clear. One-day Sentry/required telemetry gate passes with zero critical/high issues, 2.73 percent seven-day finish errors and zero missing-code rows. This is aggregate evidence, not exhaustive real-time per-action delivery proof."
+notes[1]{created_at,author,text}:
+  "2026-10-10T02:23:29.240Z","harness:codex","2026-10-10 full-history reconciliation: 143 documented versions, 151 release tags, 143 registry versions; 14 exact discrepancies. Registry-missing historical identities: 2026.5.23, 2026.5.3-2, 2026.5.3-3, 2026.5.3-4, 2026.6.1, 2026.6.2, 2026.7.24-2, 2026.9.24. Documentation-missing published identities: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, 2026.5.5. Record each exact missing-ledger signature as a reviewed historical exception, retain the underlying gap in every report, and reject new drift or stale exceptions. The earlier 18 pairwise differences count overlapping divergence classes; this current census counts artifact identities. No publication/tag/changelog content is synthesized or rewritten to simulate historical consistency."
+files[9]{path,scope}:
+  .github/workflows/release-reliability.yml,project
+  config/release-ledger-exceptions.json,project
+  scripts/release/collect-release-ledgers.mjs,project
+  sdk/public-surface.json,project
+  src/sdk/governance.ts,project
+  src/sdk/governance/artifact-ledgers.ts,project
+  tests/fixtures/release-ledgers/npm-view-12.json,project
+  tests/unit/scripts/release/collect-release-ledgers.spec.ts,project
+  tests/unit/sdk/governance/artifact-ledgers.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-10-10T02:31:51.937Z",local_mutation,feat/release-origin-and-ledger-reconciliation,"Complete-set membership, exact historical signatures, anonymous provider inventory, native tag identity and retained upstream origin."
+docs[2]{path,scope}:
+  docs/RELEASE_LEDGER_RECONCILIATION.md,project
+  docs/RELEASE_RELIABILITY.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: release-artifact-ledgers
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs coverage,"pnpm quality:static",live complete anonymous release-ledger census
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-q91qyd
 body: ""

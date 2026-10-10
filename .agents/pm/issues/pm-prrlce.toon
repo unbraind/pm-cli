@@ -2,11 +2,13 @@ id: pm-prrlce
 title: "Release runs record no trigger origin: the 04:45 dispatcher is indistinguishable from an operator, its failures fall outside the only reliability measure, and the planned manual same-day exception keys on the same event"
 description: "Since pm-9url9h the primary daily release path is a local timer that calls gh workflow run auto-release.yml with push=true, dry_run=false and telemetry_mode=off, which is exactly what an operator re-run sends. All three 2026-09-28 release runs therefore read actor unbraind, event workflow_dispatch: dispatcher run 36371013489 failed at the Sentry gate (PM-CLI-3D, owner pm-z329kd), a later dispatch 36375818142 cut 2026.9.28 but its tag-triggered Release failed Windows npm-global acceptance (owner pm-q7c36n), and Release dispatch 36380136948 published. Which of these was the timer and which a person cannot be recovered from the run record. The rolling reliability measure (release-reliability.mjs) selects event schedule only and its collector does not even list other events (excluded_events is empty in run 36414208743, which reports 0.40 against a 0.10 policy), so the primary path has no attempts, failures or stage breakdown anywhere, and the later scheduled run records a success for a day whose automatic path failed. Separately, open pm-uenmu9 specifies the manual same-day follow-up (YYYY.M.D-N) as an explicit workflow_dispatch; with the dispatcher on the same event, the workflow cannot enforce at most one automatic release per UTC day by itself and relies on the dispatcher's client-side tag check."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[4]: "area:release",automation,diagnostics,"horizon:current"
 created_at: "2026-09-28T15:31:49.498Z"
-updated_at: "2026-10-09T20:47:41.269Z"
+updated_at: "2026-10-10T03:40:37.362Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4d9c20054189c916e32efbab"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every Auto Release and Release run carries an explicit trigger origin (native schedule, morning dispatcher, blocker retry, operator) from a declared input and its run name, never inferred from event or actor; Release reliability reports a separate series per origin, including the dispatcher's attempts, failures and failing stages, while the native scheduled denominator stays unchanged as decided on pm-9url9h; The same-day manual follow-up of pm-uenmu9 requires an explicit follow-up request from the operator origin; negative control: a dispatcher-origin run after a same-day tag exists skips before any version mutation; The 2026-09-28 dispatcher failure is visible in the new series or recorded as an explicit pre-attribution gap"
@@ -23,7 +25,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,discovered_from,"2026-09-28T15:32:05.324Z","harness:claude-code","cli:update:dep",detected
   pm-z329kd,discovered_from,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
   pm-uenmu9,discovered_from,"2026-09-29T09:47:31.174Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-09-29T10:00:31.279Z","harness:codex","Implemented declared Auto Release origin in workflow run names and attempt receipts; morning dispatcher now passes its own origin. Reliability collection includes schedule, dispatch, and issue runs while keeping the native scheduled policy denominator intact; the dispatcher has a separate count, failure rate, stage series, and historical unattributed-run gap. New same-day dispatcher runs take the early immutable-tag guard. Release exact-tag dispatch carries origin; tag-push runs retain tag_push provenance. Linked tests passed (72), full coverage passed 9,428 tests at 100/100/100/100, and packed npm/Bun manual acceptance passed. Remaining acceptance: per-origin reliability series for operator and blocker retry, and upstream origin propagation into tag-push Release runs; operator-only ordinal follow-up remains owned by pm-uenmu9. No hosted release run or live new-origin receipt has yet been observed."
   "2026-09-29T10:28:52.881Z","harness:codex",PR #1350 review found the new origin-bearing Release run name no longer matched exact-tag recovery selection. Added exact declared-origin run-name matching with wrong-tag and unknown-origin negative controls; focused selector tests pass. Greptile discussion #4132270479.
   "2026-09-29T12:22:02.811Z","harness:codex","PR #1350 CodeRabbit discussion #4133333546 identified that dispatcher observations used the native 02:35 UTC cron for nominal occurrence and dispatch delay. Dispatcher rows now omit those schedule-specific timing fields, retain queue delay/outcome/failure stage, and focused negative controls prove native scheduled rows still keep their timing. Documentation states the boundary."
@@ -36,11 +38,16 @@ comments[12]{created_at,author,text}:
   "2026-10-08T16:46:45.907Z","harness:codex","2026-10-08 live release checkpoint: hosted Release Reliability run 37770997756 reports a complete original native-schedule census of 30 attempts / six failures (20% versus unchanged 10% policy), with scheduled_failure_rate and dispatch_window violations. Latest native schedule succeeded, verified the same-day release, and arrived 409.2 minutes after nominal 02:35 UTC. The morning_dispatcher series has four attributed attempts / one failure (25%) and four explicit pre-attribution gaps; outcome_evidence_complete=false remains explicit. Current published npm package is 2026.10.8 and the actual 02:45 morning dispatcher run 37719393862 succeeded. Successful publication is separate from red rolling reliability and incomplete upstream/per-origin acceptance. No extra dispatch, republish, denominator change or relaxed policy was used; this broader item stays open/unclaimed."
   "2026-10-09T19:52:07.786Z","harness:codex","TDD: the independent declared-origin report regression fails on the shipped evaluator because operator and blocker_retry series are absent. Completing those series without changing the native scheduled denominator; shared SDK recurrence evaluation and nightly measurement are implemented alongside pm-2zjs0g. Full all-status census2912 is complete with zero omissions/unreadable records; GitHub has no open PR or security alerts."
   "2026-10-09T20:41:25.717Z","harness:codex","Concrete origin tranche is complete: native_schedule, morning_dispatcher, operator and blocker_retry each preserve independent original counts, failure stages, null-versus-zero rates and evidence completeness without changing the native scheduled denominator. Live census retained 30 original native attempts with 7 failures; declared morning_dispatcher retained 5 completed/2 failed, operator 9/1 and blocker_retry 52/51 with unrecorded failure stages explicitly unknown. This operational debt is distinct from the green candidate tree. Remaining operator-only same-day follow-up policy belongs to pm-uenmu9; upstream tag-trigger provenance remains under this broader owner. The reviewed Changeset pm-reliability-window-delivery records this actual implementation without falsely closing broader acceptance."
+  "2026-10-10T02:18:45.269Z","harness:codex","Remaining scope after full live metadata/history: retain shipped declared-origin and separate per-origin series; carry the source trigger through new annotated release tags into publication receipts with exact tag/target/source identity. Historical lightweight tags stay explicitly unattributed. Existing one-per-UTC-day and exact-tag recovery paths remain governed separately. Manual ordinal policy remains owned by pm-uenmu9."
+  "2026-10-10T02:31:55.063Z","harness:codex","Native Git and source-run keeper tests now pass: newly prepared tag objects carry explicit source declarations; publication records the peeled target, tag-object identity, source ancestry and independent GitHub run-attempt comparison. Recovery preserves the upstream origin separately from the current operator request. The tag-push run-name and actual manual ordinal path remain residual acceptance; this broader owner will not be falsely closed by the current implementation."
+  "2026-10-10T02:41:41.980Z","harness:codex","TDD security boundary: an independent source-run check with the correct id,event,head,repository and display title but an unrelated workflow path currently succeeds and fails the expected-refusal assertion. Live authoritative Actions payload confirms the original producer path is .github/workflows/auto-release.yml. Bind verification to that path as well, so a coincidentally named unrelated workflow cannot certify release origin. This strengthens tag-source verification without inferring actors or declaring all broader acceptance complete."
+  "2026-10-10T03:30:21.579Z","harness:codex","Independent negative control: an external isolated copy of the tag verifier with only the producer-workflow-path comparison removed accepts a correctly named but unrelated workflow and fails the expected-refusal assertion. The identical control passes against the current verifier. Source-run identity, event, original SHA, repository, run attempt and declared origin remain required together. This establishes regression sensitivity at the pure verifier boundary without adding a production test hook, bypassing gates or attributing historical lightweight tags. Native preparation/annotation and release rebase orchestration remain covered by their separate existing keeper tests."
+  "2026-10-10T03:40:37.361Z","harness:codex","Real-provider acceptance: in a newly created temporary Git repository, an annotated tag bound the existing source commit to the prepared release target. The verifier fetched original Auto Release run 38018098467 attempt 1 from GitHub and independently matched workflow path, repository, source SHA, event and display-title origin. The receipt retained upstream morning_dispatcher and operator recovery independently with source_run_verified=true. This acceptance tag existed only in the temporary repository; the actual published tag and daily release were untouched."
 notes[1]{created_at,author,text}:
   "2026-09-29T10:00:32.043Z","harness:codex",A tag-push Release run currently knows only tag_push in its run name. Do not equate that with the upstream Auto Release trigger; completing the accepted provenance contract needs immutable upstream attribution through the tag or an explicitly dispatched Release workflow without duplicate publish runs.
 learnings[1]{created_at,author,text}:
   "2026-09-29T10:00:32.723Z","harness:codex","GitHub workflow_dispatch is shared by a local timer and an operator. Count dispatches by a declared origin retained in the run name and attempt receipt, not by event or actor; preserve an explicit historical gap when older runs lack attribution."
-files[13]{path,scope}:
+files[17]{path,scope}:
   .github/workflows/auto-release.yml,project
   .github/workflows/release-reliability.yml,project
   .github/workflows/release.yml,project
@@ -49,14 +56,41 @@ files[13]{path,scope}:
   scripts/release/release-observation.mjs,project
   scripts/release/release-reliability.mjs,project
   scripts/release/release-run-selection.mjs,project
+  scripts/release/release-tag-provenance.mjs,project
+  scripts/release/run-release-pipeline.mjs,project
   tests/unit/scripts/release/collect-release-reliability.spec.ts,project
   tests/unit/scripts/release/dispatch-daily-release.spec.ts,project
   tests/unit/scripts/release/release-observation.spec.ts,project
   tests/unit/scripts/release/release-reliability.spec.ts,project
   tests/unit/scripts/release/release-run-selection.spec.ts,project
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,project,300,"harness:codex","2026-09-29T09:38:31.591Z",local_mutation,fix/release-origin-and-install-diagnostics
-  node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,project,300,"harness:codex","2026-09-29T10:29:04.313Z",local_mutation,fix/release-origin-and-install-diagnostics
+  tests/unit/scripts/release/release-tag-provenance.spec.ts,project
+  tests/unit/scripts/release/run-release-pipeline.spec.ts,project
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-29T09:38:31.591Z"
+      source_kind: local_mutation
+      source_ref: fix/release-origin-and-install-diagnostics
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-09-29T10:29:04.313Z"
+      source_kind: local_mutation
+      source_ref: fix/release-origin-and-install-diagnostics
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-10T02:31:54.425Z"
+      source_kind: local_mutation
+      source_ref: feat/release-origin-and-ledger-reconciliation
+    note: "Complete-set membership, exact historical signatures, anonymous provider inventory, native tag identity and retained upstream origin."
 test_runs[6]:
   - run_id: test-local-mumhi17y-rifyl0
     kind: test
@@ -129,6 +163,7 @@ test_runs[6]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/dispatch-daily-release.spec.ts tests/unit/scripts/release/release-observation.spec.ts tests/unit/scripts/release/collect-release-reliability.spec.ts tests/unit/scripts/release/release-reliability.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-run-selection.spec.ts,schema,schema,source,acknowledged
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  docs/RELEASE_LEDGER_RECONCILIATION.md,project
   docs/RELEASE_RELIABILITY.md,project
 body: ""

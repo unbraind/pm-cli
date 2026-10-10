@@ -34,6 +34,10 @@ by release preparation, not the inferred cron occurrence. A delayed run cannot
 backdate a tag. Reporting never creates, retargets, retries, or publishes a tag.
 The unchanged [release recovery rules](RELEASING.md#failure-handling) apply.
 
+The independent [full-history ledger report](RELEASE_LEDGER_RECONCILIATION.md)
+also reconciles public registry versions, release tags and generated sections.
+It preserves every historical exception and fails on new or changed drift.
+
 ## Evidence and denominator
 
 The collector paginates Auto Release runs over an explicit half-open UTC window

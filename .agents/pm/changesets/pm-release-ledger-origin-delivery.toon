@@ -1,0 +1,89 @@
+id: pm-release-ledger-origin-delivery
+title: "Reconcile release ledgers, verify tag origins and bound installed acceptance"
+description: "Connected reusable SDK artifact-ledger evaluator, full historical changelog/tag/public-registry reconciliation with exact historical dispositions, independently verified tag-carried upstream origins, and concise disposable installed-acceptance paths that preserve all raw output ceilings across macOS, npm and Bun. Implements pm-q91qyd and pm-release-acceptance-path-cost and the tag-provenance tranche of pm-prrlce; broader downstream run-name and manual ordinal ownership remains open."
+type: Changeset
+status: in_progress
+priority: 1
+tags[4]: governance,release,sdk,traceability
+created_at: "2026-10-10T02:39:21.197Z"
+updated_at: "2026-10-10T04:08:34.368Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4d9c20054189c916e32efbab"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: Complete full-history reconciliation names all divergence classes and retains exact historical dispositions; published narrow and aggregate SDK exports compile and run in isolated Node and Bun consumers; annotated preparation and rebase retain original source identity and publication independently validates its run; full-source coverage and required quality/review gates pass; manual isolated package and CLI journeys pass without publishing.
+goal: project management = context management
+objective: "Make release intent, delivery and origin reconstructible through reusable SDK context primitives"
+value: Preserves authoritative complete release history without concealing gaps or guessing trigger origin
+why_now: Canonical full census and live origin owners expose two connected remaining evidence boundaries
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: "Every historical release discrepancy remains reconstructible through complete SDK-backed inventories and exact reviewed dispositions; new drift is rejected, and publication preserves independently verified upstream origin across preparation and recovery."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-prrlce,implements,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
+  pm-q91qyd,implements,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
+  pm-reliability-window-delivery,discovered_from,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
+  pm-release-acceptance-path-cost,implements,"2026-10-10T03:50:44.329Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-10T02:39:21.197Z","harness:codex","Duplicate check: complete strict all-status census read 2914 items with zero omitted or unreadable records, plus live request search and fresh open/in-progress inventories. Prior closed Changeset pm-reliability-window-delivery delivers rolling origin/nightly series, not full artifact reconciliation or tag provenance. This record is the concrete cross-owner delivery receipt and creates no duplicate issue, reopens no completed owner, and does not close residual pm-prrlce/pm-uenmu9 acceptance."
+  "2026-10-10T02:43:20.720Z","harness:codex","Manual live-provider validation caught npm12 returning a one-element array for multi-field npm view JSON, while npm11 returns one object. The current adapter refuses it; preserve this failed live receipt and add captured public metadata plus strict one-result normalization rather than weakening completeness. The shared SDK behavior and native tag/remote fixtures already pass; full verification must be repeated after this provider correction and exact source-workflow binding."
+  "2026-10-10T03:22:13.348Z","harness:codex","Continuation receipt: user explicitly approved takeover of these three existing claims after normal atomic claim refused the previous session identity. Fresh strict all-status read contains2915/2915 items,2610 closed,zero omissions and zero unreadable records. Complete paginated704-issue comment census has no missing PM-file links or partial comment populations. No open PRs,Dependabot,secret-scanning or code-scanning alerts. All76 focused Node24 SDK/provider/native-Git/pipeline regressions pass. Existing code and tracker work preserved; whole-source coverage and read-only health verification are running. Live ledger control independently detects today immutable tag while publication is still in flight; no exception is added for this transient state."
+  "2026-10-10T03:37:00.269Z","harness:codex","Verification checkpoint: the first canonical full-source run retained a red verdict (10,071 passed, one pre-existing MRTR input-required task test did not reach its durable state; coverage output was consequently absent). The release-focused linked command was queued behind that build lease and timed out at its existing 240-second limit; its serialized rerun passes all 76 focused tests. No threshold, timeout, denominator or ignore directive was changed. Investigating the unrelated durable-task result before accepting any full-coverage claim."
+  "2026-10-10T04:04:59.922Z","harness:codex","Second canonical full-source run retained a red verdict: 10070 passed, with the ten-thousand-item aggregation and absence-tolerance default-baseline tests timing out at their existing 30000ms limits; the earlier MRTR input-required test passed. No coverage report was emitted. Final verification will use fewer worker processes to reduce contention on this host, retaining every source file, test assertion, timeout and exact integer coverage threshold. The macOS release-acceptance repair now has an independent real-provider before/after proof and a captured-output keeper regression."
+notes[3]{created_at,author,text}:
+  "2026-10-10T02:45:10.265Z","harness:codex","Regression evidence owners: the pure artifact-ledger SDK owns membership, completeness, exact-signature and stale-policy semantics; the repository collector owns anonymous provider formatting/configuration and native remote refs; the tag verifier owns native annotation/source-run binding; existing pipeline tests own preparation, early guards and rebase orchestration. These layers test different contracts rather than duplicating SDK assertions through every adapter. No coverage ignore, denominator exclusion, lowered threshold or external-API behavior mock is introduced."
+  "2026-10-10T03:31:06.000Z","harness:codex","Manual acceptance used an external temporary workspace with both PM_PATH and PM_GLOBAL_PATH isolated. An 8,873,815-byte staged runtime distribution was installed as a real package; narrow and aggregate SDK consumers pass on Node24.21, Node26.11 and Bun, including exact settled findings, stale exceptions, new drift, incomplete inventory and caller-byte preservation. Strict typed consumers compile. Installed CLI created a custom Deployment type and Task verification child with a verifies edge, recorded comments/notes/learnings, claimed/closed/released the child and verified all eight immutable history entries plus tracker validation. An initially malformed mixed bare-id/key-value dependency argument was refused without mutation and corrected using the emitted id=<id>,kind=<kind> contract. npx --no-install and bunx --bun run the installed CLI successfully. No package was published by this manual test."
+  "2026-10-10T03:58:35.135Z","harness:codex","Latest operational observation: the required Sentry/telemetry gate passes with zero critical/high Sentry findings and zero missing telemetry error-code rows. A fresh 24-hour Sentry trace query returned an empty complete population, so fresh tracing is not established. The telemetry backend independently reports recent command_start and command_finish events through 2026-10-10T03:43:53Z, and the local runtime reports a recent successful flush. This establishes fresh backend ingestion, not universal unsampled action capture or permanent queue emptiness. Existing CodeFactor generated-copy debt remains under pm-z3ez; MRTR full-suite timing evidence remains under pm-rs9vry."
+learnings[1]{created_at,author,text}:
+  "2026-10-10T03:30:23.249Z","harness:codex","Complete artifact reconciliation must preserve each discrepancy after settlement and bind exceptions to an exact missing-ledger signature. Tag-push events identify a publication request, not its upstream trigger; verify the tag-carried declaration against the original producer workflow and run attempt instead of guessing from actor or display name."
+files[18]{path,scope}:
+  .github/workflows/release-reliability.yml,project
+  .github/workflows/release.yml,project
+  config/release-ledger-exceptions.json,project
+  scripts/release/collect-release-ledgers.mjs,project
+  scripts/release/release-tag-provenance.mjs,project
+  scripts/release/run-release-pipeline.mjs,project
+  scripts/release/verify-installed-agent-session.mjs,project
+  sdk/public-surface.json,project
+  src/sdk/governance.ts,project
+  src/sdk/governance/artifact-ledgers.ts,project
+  tests/fixtures/release-acceptance/installed-init.json,project
+  tests/fixtures/release-acceptance/README.md,project
+  tests/fixtures/release-ledgers/npm-view-12.json,project
+  tests/unit/scripts/release/collect-release-ledgers.spec.ts,project
+  tests/unit/scripts/release/release-tag-provenance.spec.ts,project
+  tests/unit/scripts/release/run-release-pipeline.spec.ts,project
+  tests/unit/scripts/release/verify-installed-agent-session.spec.ts,project
+  tests/unit/sdk/governance/artifact-ledgers.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-10-10T02:56:02.229Z",local_mutation,feat/release-origin-and-ledger-reconciliation,76 independent SDK provider native-tag and release-orchestration regressions
+test_runs[2]:
+  - run_id: test-local-mv1u8474-762x6a
+    kind: test
+    status: failed
+    started_at: "2026-10-10T03:27:35.040Z"
+    finished_at: "2026-10-10T03:31:35.871Z"
+    recorded_at: "2026-10-10T03:31:35.871Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    measurements[1]{name,value,unit,threshold,recorded_at}:
+      focused_tests,76,count,76,"2026-10-10T03:31:35.871Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv1ueam1-rtbxzn
+    kind: test
+    status: passed
+    started_at: "2026-10-10T03:36:10.024Z"
+    finished_at: "2026-10-10T03:36:24.121Z"
+    recorded_at: "2026-10-10T03:36:24.121Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/RELEASE_LEDGER_RECONCILIATION.md,project
+  docs/RELEASE_RELIABILITY.md,project
+body: ""
