@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { isReleaseRelevantPath } from "../../scripts/release/release-relevance.mjs";
 import { EXPECTED_QUALITY_STATIC_SCRIPT } from "../helpers/releaseContracts.js";
@@ -381,7 +381,7 @@ describe("release automation contract", () => {
     expect(workflow.slice(seal, publish)).toContain("name: release-producer-binding-${{ github.run_attempt }}");
     const block = workflow.match(/ {6}- name: Publish prepared release refs[\s\S]*? {8}run: \|\n([\s\S]*?)(?=\n {6}- name:)/u)?.[1];
     expect(block).toBeDefined();
-    const script = block!.split("\n").map((line) => line.slice(10)).join("\n");
+    const script = (block ?? "").split("\n").map((line) => line.slice(10)).join("\n");
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-producer-push-"));
     const gitEnv = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^GIT_/u.test(key))), GIT_AUTHOR_NAME: "fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid", GIT_COMMITTER_NAME: "fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid" };
     /** Execute real Git operations only in the owned temporary producer repository. */
@@ -405,7 +405,9 @@ describe("release automation contract", () => {
       const providerFile = path.join(root, "provider.mjs");
       await writeFile(providerFile, `import { copyFileSync, appendFileSync } from "node:fs";
 import path from "node:path";
-const args=process.argv.slice(2);
+if (path.basename(process.execPath).replace(/\\.exe$/u, "") === "gh") {
+const args=process.argv.slice(1);
+args[0]=path.basename(args[0]);
 appendFileSync(process.env.PROVIDER_LOG, args.join(" ")+"\\n");
 if(args[0]==="api") {
  const responses=JSON.parse(process.env.PROVIDER_RESPONSES);
@@ -416,9 +418,12 @@ else if(args[1]==="list") process.stdout.write(JSON.stringify([{databaseId:99,st
 else if(args[1]==="watch") process.exit(Number(process.env.WATCH_STATUS));
 else if(args[1]==="view") process.stdout.write(JSON.stringify({databaseId:99,status:"completed",conclusion:"failure",jobs:[{name:"Publish",conclusion:"failure",steps:[{name:"Consumer acceptance",conclusion:"failure"}]}]}));
 else process.exit(98);
+process.exit(0);
+}
 `);
-      await writeFile(path.join(root, "gh"), '#!/usr/bin/env bash\nexec node "$GH_FAKE_SCRIPT" "$@"\n');
-      await chmod(path.join(root, "gh"), 0o755);
+      const providerBinary = path.join(root, process.platform === "win32" ? "gh.exe" : "gh");
+      await copyFile(process.execPath, providerBinary);
+      await chmod(providerBinary, 0o755);
       const bindingFile = path.join(root, "binding.json");
       const failureFile = path.join(root, "failure.json");
       const outputFile = path.join(root, "output");
@@ -435,7 +440,7 @@ else process.exit(98);
         await writeFile(bindingFile, JSON.stringify({ schema: "pm-release-producer-binding/1", tag: releaseTag, tag_sha: targetSha, tag_object_sha: scenario.object, provenance }));
         await writeFile(outputFile, "");
         await writeFile(logFile, "");
-        const result = spawnSync("bash", ["-e", "-o", "pipefail", "-c", prependFakeBinForBash(script)], { cwd: root, encoding: "utf8", env: { ...gitEnv, FAKE_BIN: root, GH_FAKE_SCRIPT: providerFile, PROVIDER_LOG: logFile, PROVIDER_RESPONSES: JSON.stringify(responses), BINDING_SOURCE: bindingFile, WATCH_STATUS: scenario.watch, RELEASE_TAG: releaseTag, GITHUB_REPOSITORY: "owner/project", RELEASE_PROVENANCE_OUTPUT: path.join(root, "origin.json"), RELEASE_FAILURE_RECORD: failureFile, GITHUB_OUTPUT: outputFile, RELEASE_PUSH_TOKEN: "" } });
+        const result = spawnSync("bash", ["-e", "-o", "pipefail", "-c", prependFakeBinForBash(script)], { cwd: root, encoding: "utf8", env: { ...gitEnv, FAKE_BIN: root, NODE_OPTIONS: `--import=${pathToFileURL(providerFile).href}`, PROVIDER_LOG: logFile, PROVIDER_RESPONSES: JSON.stringify(responses), BINDING_SOURCE: bindingFile, WATCH_STATUS: scenario.watch, RELEASE_TAG: releaseTag, GITHUB_REPOSITORY: "owner/project", RELEASE_PROVENANCE_OUTPUT: path.join(root, "origin.json"), RELEASE_FAILURE_RECORD: failureFile, GITHUB_OUTPUT: outputFile, RELEASE_PUSH_TOKEN: "" } });
         expect(result.status, result.stderr).toBe(scenario.status);
         const refs = git(["--git-dir", remote, "for-each-ref", "--format=%(objectname)", "refs/tags"]).split("\n").filter(Boolean);
         expect(refs).toEqual(index === 0 ? [] : [tagObject]);
