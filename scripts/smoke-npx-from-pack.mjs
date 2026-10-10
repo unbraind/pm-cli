@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
 import { registerTempCleanup } from "./temp-lifecycle.mjs";
+import { verifyInstalledAgentRecovery } from "./release/agent-recovery-acceptance.mjs";
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -306,6 +307,10 @@ function run() {
     assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version);
     const { commandOptions } = createPackedSmokeProject(tempRoot);
     const packages = assertPackedPackageWorkflows(runPackedPm, commandOptions);
+    verifyInstalledAgentRecovery(npx, ["--prefix", consumerRoot, "--no", "--", "pm"], commandOptions);
+    verifyInstalledAgentRecovery(bunx, ["--silent", "--bun", "--package", tarballPath, "pm"], {
+      ...commandOptions, env: { ...commandOptions.env, TMPDIR: tempRoot },
+    });
     assertPackedCalendarWorkflow(runPackedPm, commandOptions);
     const upgrade = JSON.parse(
       runPackedPm(

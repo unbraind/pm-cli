@@ -32,6 +32,8 @@ function report() {
     architecture: "x64",
     workspace_items_at_start: 1,
     iterations: 3,
+    baseline: { runs: 5, p50_ms: 40 },
+    baseline_after: { runs: 5, p50_ms: 42 },
     operations: {
       get: { ...operation },
       list: { ...operation },
@@ -115,13 +117,14 @@ describe("CLI transport-floor benchmark", () => {
     }
   });
 
-  it("runs the default measurement and committed-budget path", async () => {
+  it("runs the default measurement with isolated permissive test budgets", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-cli-real-floor-"));
     temporaryRoots.push(root);
     const budgetPath = path.join(root, "budgets.json");
     await writeFile(
       budgetPath,
       JSON.stringify({
+        baseline: { max_import_ms: 1_000_000 },
         operations: Object.fromEntries(
           ["get", "list", "context", "next", "create", "claim"].map(
             (operation) => [
@@ -136,7 +139,7 @@ describe("CLI transport-floor benchmark", () => {
       }),
     );
     await expect(
-      main(["--check", "--iterations", "1"], { budgetPath }),
+      main(["--check", "--iterations", "1"], { budgetPath, controlBudgetPath: budgetPath }),
     ).resolves.toMatchObject({ mode: "check", violations: [] });
   });
 
@@ -304,9 +307,29 @@ describe("CLI transport-floor command", () => {
         budgetPath,
         buildReport: async () => regressed,
       }),
-    ).rejects.toThrow("transport-floor gate failed");
+    ).rejects.toMatchObject({
+      code: "benchmark_product_budget_exceeded", product_admission: "failed", report: regressed,
+      runner_qualification: { status: "qualified" },
+    });
     await expect(main([])).rejects.toThrow("Usage:");
     await expect(main(["--update", "--check"])).rejects.toThrow("Usage:");
+  });
+
+  it("refuses an unqualified or missing control while retaining every product violation", async () => {
+    const baseline = report();
+    baseline.baseline_after.p50_ms = 999;
+    baseline.operations.get.min_ms = 999;
+    await expect(main(["--check"], { buildReport: async () => baseline })).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified", product_admission: "unverified", report: baseline,
+      runner_qualification: { reason: "control_over_budget" },
+      violations: expect.arrayContaining([expect.stringContaining("get: best 999ms")]),
+    });
+    baseline.operations.get.min_ms = 1;
+    baseline.baseline_after.p50_ms = Number.NaN;
+    await expect(main(["--check"], { buildReport: async () => baseline })).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified", product_admission: "unverified",
+      runner_qualification: { reason: "control_unavailable" },
+    });
   });
 
   it("executes, skips, and reports failures through the script entrypoint", async () => {

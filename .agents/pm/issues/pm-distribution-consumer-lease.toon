@@ -1,0 +1,29 @@
+id: pm-distribution-consumer-lease
+title: Protect distribution inventory and staging from concurrent dist rebuilds
+description: "The distribution packer reads the live dist tree outside the shared build/test lease. During this delivery an overlapping linked-test rebuild caused npm pack --dry-run to fail with ENOENT for a dist/cli-bundle/chunks file; packing passed when rerun after the rebuild settled. Existing completed producer/test-consumer serialization and physical runtime staging remain valid, but this additional packing consumer is not protected."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-10T19:46:26.278Z"
+updated_at: "2026-10-10T19:47:04.938Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Hold a verified consumer lease or equivalent immutable generation throughout source inventory and staging; use real independent build/pack overlap to prove no missing or mixed-generation files; retain fail-closed incomplete-generation handling and existing physical-path guards; do not replace ownership evidence with timer-only fixtures or force lock overrides.
+value: Reliable context and release evidence requires packed consumers to use a consistent tested generation.
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: Distribution inventory and materialization read one completed artifact generation even when another process rebuilds dist.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cxc4jc,discovered_from,"2026-10-10T19:46:26.278Z","harness:codex","cli:create:dep",detected
+  pm-gh1417,related,"2026-10-10T19:46:26.278Z","harness:codex","cli:create:dep",detected
+  pm-namespace-recovery-delivery,discovered_from,"2026-10-10T19:47:04.680Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-10T19:46:26.278Z","harness:codex","Duplicate check: the strict 2920-item all-status corpus plus the newly created qualification child and request-specific search found no focused distribution-consumer lease report. Full live reads confirm pm-cxc4jc completed producer/test-consumer serialization and pm-gh1417 completed runtime staging. This distinct consumer boundary was observed as ENOENT during overlapping verification and passes once serialized; it remains open and unclaimed for implementation under the existing release capability."
+files[2]{path,scope}:
+  scripts/release/package-distribution.mjs,project
+  scripts/build-lease.mjs,project
+docs[1]{path,scope}:
+  docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project
+body: ""

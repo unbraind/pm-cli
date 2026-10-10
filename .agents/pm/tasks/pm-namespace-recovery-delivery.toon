@@ -1,0 +1,63 @@
+id: pm-namespace-recovery-delivery
+title: Deliver unambiguous registry-derived namespace recovery across installed Node and Bun consumers
+description: "Execution child of the canonical recovery feature for GH-1433. Derive a canonical help retry for a misplaced registered namespace suffix, refuse ambiguous or unavailable routes and preserve nonempty item/history bytes through real installed npm/npx and Bun/bunx consumers. The parent retains the complete recovery-census programme."
+type: Task
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-10T18:34:13.033Z"
+updated_at: "2026-10-10T19:47:07.749Z"
+closed_at: "2026-10-10T19:47:06.950Z"
+completed_at: "2026-10-10T19:47:06.950Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Public SDK resolver uses installed canonical identity and refuses ambiguity; CLI JSON and text recommend inspection while preserving usage failure; real nonempty source and packed npx/bunx controls preserve authoritative bytes; existing discovery behavior and generated surface gates remain intact
+goal: project management = context management
+objective: Make a refused namespace mistake recoverable without guessing or executing a mutation
+value: Agents discover the intended registered command from a concise executable refusal
+why_now: Published 2026.10.10 reproducibly omits canonical update help for item update
+parent: pm-f05lsg
+risk: low
+confidence: high
+resolution: "Add a pure public SDK resolver for an unambiguous misplaced namespace suffix, prioritize its registered canonical command in CLI recovery and emit executable canonical help tokens. Keep unknown and ambiguous requests refused and preserve ordinary discovery behavior."
+expected_result: "A misplaced item update request remains an error but points to registered update help, with no mutation and no guessed ambiguous or unavailable route."
+actual_result: Linked17-test recovery checks and post-extraction144 focused tests passed. Final installed npm/npx and Bun/bunx receipts prove both refused namespace forms preserve authoritative item/history bytes and canonical help resolves. Nine packages and the SDK consumer pass. Every static component passes without budget inflation; the broader recovery census stays explicitly incomplete under its parent.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-do5b,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-10T18:34:13.033Z","harness:codex","Duplicate check: strict live 2918-item all-status census and request-specific searches have no focused namespace-recovery execution child. Existing pm-f05lsg remains the canonical programme/report owner. This Task records the bounded delivery and does not duplicate that feature or its complete census acceptance. Prior read-recovery and alias-help deliveries remain completed."
+  "2026-10-10T19:03:22.385Z","harness:codex","Installed current-artifact acceptance passed: npm install plus both npx bin identities, installed npx canonical retries, bunx --bun canonical retries, trusted measurement retry with an executed node:assert check, authoritative item/history byte preservation, nine bundled packages and TypeScript SDK consumer. Boundary-focused Node24 rerun passed96 tests, including docs reachability, unchanged MCP task timing, and existing flag-help ceilings. Full coverage and broad static final receipts are pending; no product, help-token, latency or RSS budget was increased."
+  "2026-10-10T19:03:23.509Z","harness:codex","Public dependency census: all current/wanted versions agree. New latest @types/node26.6.5, jscpd5.4.1, typescript-eslint8.71.1, TOON4.4.0, Knip6.41.0 and marked18.1.0 were published1.0-5.2days ago and are below the unchanged seven-day adoption window. Sentry11.6.0 is2.2days old and retains canonical migration pm-t3jxjj; Vitest/coverage5.0.3 retain pm-fokyhh and TypeScript7.0.2 retains pm-do5b. pnpm audit found zero known vulnerabilities, GitHub open PR/Dependabot/code/secret inventories were empty at intake, and every open issue had a canonical PM-link comment."
+  "2026-10-10T19:05:30.053Z","harness:codex","Remaining public major candidate npm-package-arg14.0.0 requires Node^22.22.2 or^24.15.0 or>=26, which excludes the published pm-cli minimum22.18.0; no engine-policy violation is adopted. Installed CodSpeed5.7.1 still accepts Vitest^3.2 or^4 and installed typescript-eslint8.71.0 still accepts TypeScript>=4.8.4 <6.1.0. The canonical migration conditions were rechecked live. Sentry dashboard inspection through Chrome was attempted, but the browser connection became unavailable; fresh authenticated Sentry CLI/API receipts remain the verified evidence source."
+  "2026-10-10T19:47:05.687Z","harness:codex","Final implementation and installed acceptance pass. The public SDK resolver returns only a unique canonical installed command and CLI refusals advertise help tokens without executing a mutation. Direct, installed npx and Bun/bunx checks preserve authoritative item/history bytes for help and mutating namespace refusals and execute the canonical help retry. Linked17-test evidence and post-extraction144-test focused verification pass; the complete earlier10111-test suite had exact coverage. All static components and serialized packed acceptance pass. A concurrent distribution-consumer rebuild failure is separately recorded under the release capability; the existing build serialization and runtime staging deliveries remain completed."
+files[9]{path,scope}:
+  scripts/release/agent-recovery-acceptance.mjs,project
+  scripts/smoke-npx-from-pack.mjs,project
+  sdk/public-surface.json,project
+  src/cli/commander-usage.ts,project
+  src/cli/error-guidance.ts,project
+  src/sdk/agent/command-suggestions.ts,project
+  tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/unit/cli/canonical-command-recovery.spec.ts,project
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,900,"harness:codex","2026-10-10T18:38:39.580Z",local_mutation,feat/executable-agent-recovery,Canonical recovery and nonempty byte preservation
+test_runs[1]:
+  - run_id: test-local-mv2rt5f0-ld26id
+    kind: test
+    status: passed
+    started_at: "2026-10-10T19:06:59.643Z"
+    finished_at: "2026-10-10T19:11:44.556Z"
+    recorded_at: "2026-10-10T19:11:44.556Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: Delivered unique registry-derived canonical help recovery and installed nonempty-tracker byte-preservation proof for GH1433.
+body: ""

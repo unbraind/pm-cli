@@ -2,7 +2,10 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
-const harness = createScriptHarness(["../../../scripts/smoke-cleanup.mjs"]);
+const harness = createScriptHarness([
+  "../../../scripts/smoke-cleanup.mjs",
+  "../../../scripts/release/agent-recovery-acceptance.mjs",
+]);
 
 const SCRIPT = "scripts/smoke-npx-from-pack.mjs";
 const SCRIPT_ABS = path.join(process.cwd(), "scripts/smoke-npx-from-pack.mjs");
@@ -153,6 +156,9 @@ function buildExecFileSync(responses: ExecResponses) {
 
 /** Isolate filesystem effects while retaining every smoke control-flow branch. */
 function mockFs() {
+  vi.doMock("../../../scripts/release/agent-recovery-acceptance.mjs", () => ({
+    verifyInstalledAgentRecovery: vi.fn(),
+  }));
   vi.doMock("node:fs", () => ({
     mkdirSync: vi.fn(),
     mkdtempSync: vi.fn(() => "/tmp/pm-pack-smoke"),

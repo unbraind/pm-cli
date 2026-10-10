@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 397
+- Catalog error codes: 398
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 378
-- Coverage fraction: 0.047859
+- Uncovered error codes: 379
+- Coverage fraction: 0.047739
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -319,6 +319,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `template_type_unknown` | `template_type_unknown` | uncovered | none | 0 |
 | `terminal_plan_mutation` | `terminal_plan_mutation` | uncovered | none | 0 |
 | `terminal_state_conflict` | `terminal_state_conflict` | uncovered | none | 0 |
+| `test_measure_requires_run` | `test_measure_requires_run` | uncovered | none | 0 |
 | `tracked_runtime_cache_files` | `tracked_runtime_cache_files` | uncovered | none | 0 |
 | `tracker_not_initialized` | `tracker_not_initialized` | executable | owned_state | 1 |
 | `tracker_root_missing` | `tracker_root_missing` | executable | owned_state | 1 |

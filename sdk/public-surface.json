@@ -16821,6 +16821,12 @@
           "signature": "(options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution | calls: (options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveMisnestedCommandPath",
+          "signature": "(unknownPath: string, availablePaths: readonly string[]) => string | undefined | calls: (unknownPath: string, availablePaths: readonly string[]) => string | undefined"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "resolveMissingMetadataFilters",
@@ -35849,6 +35855,7 @@
     "template_type_unknown",
     "terminal_plan_mutation",
     "terminal_state_conflict",
+    "test_measure_requires_run",
     "tracked_runtime_cache_files",
     "tracker_not_initialized",
     "tracker_root_missing",

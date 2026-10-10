@@ -1391,6 +1391,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "test_measure_requires_run",
+    meaning: "Test measure requires run condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/test/execution.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "test_measure_requires_run",
+    aliases: [],
+  },
+  {
     code: "tracked_runtime_cache_files",
     meaning: "Tracked runtime cache files condition.",
     stability: "stable",

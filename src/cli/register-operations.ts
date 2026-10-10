@@ -973,7 +973,7 @@ export function registerOperationCommands(program: Command): void {
   addLinkedTestExecutionOptions(testCommand)
     .option(
       "--measure <value>",
-      "Record name=value[,unit=...][,threshold=...] evidence; repeatable",
+      "Record name=value[,unit=...][,threshold=...]; requires --run",
       collect,
     )
     .option("--metric-below <value>", "Return evidence below name=value")

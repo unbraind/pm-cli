@@ -1,0 +1,50 @@
+id: pm-runner-qualification-delivery
+title: Preserve fail-closed startup benchmark runner qualification and complete diagnostics
+description: Bounded execution child of pm-bj7rq0 for bracketed bare-process controls and retained admission evidence. Deliver portable runner observations and explicit unsuccessful unqualified admission while preserving every existing product latency and RSS ceiling. The parent retains historical root-cause diagnosis and is not completed by this task.
+type: Task
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-10T19:33:27.145Z"
+updated_at: "2026-10-10T19:45:24.930Z"
+closed_at: "2026-10-10T19:45:24.392Z"
+completed_at: "2026-10-10T19:45:24.392Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Both SDK and CLI gates bracket their measurements with warmed bare-process controls and portable environment evidence; over-budget or missing controls fail with product admission unverified and retain the full report; qualified product regressions still fail and retain all violations; positive and negative controls pass without any product budget increase; public methodology and linked evidence document the historical diagnosis boundary.
+value: Context management needs trustworthy performance evidence that separates observed runner qualification from product admission.
+parent: pm-bj7rq0
+risk: low
+confidence: high
+resolution: SDK and CLI startup gates now retain warmed controls before and after the measured census plus portable runner observations. Missing or over-budget controls reject product admission as unverified; qualified product regressions retain all violations and fail unchanged latency and RSS budgets.
+expected_result: "Runner qualification and product admission are independently explicit; failed or missing controls never certify product success, and real product regressions remain unsuccessful."
+actual_result: "All 27 linked benchmark tests passed. Both real startup gates passed on CI Node24 with unchanged ceilings. Node26 unqualified controls and a separate qualified merge overrun remain recorded, and the parent historical-cause diagnosis remains open. Full local suite passed before the later pure argv extraction; 144 focused tests and typecheck passed afterward."
+comments[2]{created_at,author,text}:
+  "2026-10-10T19:33:27.145Z","harness:codex","Duplicate check: complete 2920-item strict all-status census plus request-specific search and open/in-progress inventories found only canonical diagnosis pm-bj7rq0 and no focused execution child. Existing implementation is already owned and claimed under that diagnosis. This child records its independently complete qualification delivery so the generated changelog reports shipped tooling without closing an unproven historical cause."
+  "2026-10-10T19:37:23.079Z","harness:codex","Final verification includes 27 benchmark tests plus the unchanged-base runtime comparison. Node26 observations include an unqualified control refusal during load and a separate qualified merge-entrypoint overrun (241 ms against226 ms), which is retained rather than treated as a pass. The SDK measurement recovery no longer imports Commander registration after pure argv extraction; focused144-test verification and typechecking pass. The historical diagnosis remains owned by pm-bj7rq0."
+files[5]{path,scope}:
+  scripts/bench/cli-transport-floor.mjs,project
+  scripts/bench/runner-qualification.mjs,project
+  scripts/bench/sdk-entrypoint-costs.mjs,project
+  tests/unit/scripts/cli-transport-floor.spec.ts,project
+  tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,900,"harness:codex","2026-10-10T19:33:31.041Z",local_mutation,feat/executable-agent-recovery,Qualified product failures and unqualified control refusals retain complete diagnostics without budget inflation
+test_runs[1]:
+  - run_id: test-local-mv2svkso-um4bis
+    kind: test
+    status: passed
+    started_at: "2026-10-10T19:41:15.723Z"
+    finished_at: "2026-10-10T19:41:37.416Z"
+    recorded_at: "2026-10-10T19:41:37.416Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/performance/runner-qualification.md,project
+  docs/TESTING.md,project
+close_reason: Implemented and verified bracketed runner controls and retained fail-closed startup diagnostics.
+body: ""

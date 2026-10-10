@@ -6,7 +6,23 @@
  * last so `log` never prefers `catalog` over item history commands.
  */
 import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
-import { PM_COMMAND_ALIAS_CONTRACTS, resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
+import { PM_COMMAND_ALIAS_CONTRACTS, resolvePmCommandAlias, resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
+
+/** Resolve a misplaced namespace suffix only when one installed canonical command owns it. */
+export function resolveMisnestedCommandPath(
+  unknownPath: string,
+  availablePaths: readonly string[],
+): string | undefined {
+  const tokens = unknownPath.trim().split(/\s+/u);
+  if (tokens.length < 2 || !availablePaths.includes(tokens[0]) || availablePaths.includes(tokens.join(" "))) return undefined;
+  const suffix = tokens.slice(1).join(" ");
+  const alias = resolvePmCommandAlias(suffix);
+  const candidates = new Set(availablePaths
+    .filter((candidate) => candidate === suffix || candidate.endsWith(` ${suffix}`) || candidate === alias?.canonical)
+    .map((candidate) => resolvePmCommandAlias(candidate)?.canonical ?? candidate)
+    .filter((candidate) => availablePaths.includes(candidate)));
+  return candidates.size === 1 ? [...candidates][0] : undefined;
+}
 
 const COMMAND_SYNONYMS: Readonly<Record<string, readonly string[]>> = {
   add: ["create", "append"],

@@ -18,6 +18,8 @@ import {
 } from "./run-scale-benchmarks.mjs";
 import { generateSyntheticWorkspace } from "./scale-workspace.mjs";
 import { registerTempOperation } from "../temp-lifecycle.mjs";
+import { measureEntrypointProcess, summarizeImportSamples } from "./sdk-entrypoint-costs.mjs";
+import { benchmarkAdmissionError, captureRunnerEnvironment, qualifyBenchmarkRunner } from "./runner-qualification.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -38,6 +40,7 @@ const documentationPath = path.join(
 const LATENCY_NOISE_MARGIN_MS = 25;
 const RSS_NOISE_MARGIN_BYTES = 512 * 1024;
 const DEFAULT_ITERATIONS = 10;
+const CONTROL_NOISE_MARGIN_MS = 30;
 const OPERATION_NAMES = Object.freeze([
   "get",
   "list",
@@ -123,6 +126,9 @@ export async function buildCliTransportFloorReport(options = {}) {
   if (!Number.isSafeInteger(iterations) || iterations < 1 || iterations > 20) {
     throw new Error("iterations must be an integer between 1 and 20");
   }
+  const environmentBefore = captureRunnerEnvironment();
+  const measureControl = options.measureControl ?? measureEntrypointProcess;
+  const beforeControl = await measureNodeControl(measureControl);
   const operations = {};
   for (const operation of OPERATION_NAMES) {
     await measureColdStartOperation(operation, iterations, options);
@@ -151,7 +157,18 @@ export async function buildCliTransportFloorReport(options = {}) {
     workspace_items_at_start: 1,
     iterations,
     operations,
+    baseline: beforeControl,
+    baseline_after: await measureNodeControl(measureControl),
+    runner_environment: { before: environmentBefore, after: captureRunnerEnvironment() },
   };
+}
+
+/** Bracket the command census with five bare-Node samples after a discarded warmup. */
+async function measureNodeControl(measure) {
+  await measure(null);
+  const samples = [];
+  for (let index = 0; index < 5; index += 1) samples.push(await measure(null));
+  return summarizeImportSamples(samples);
 }
 
 /** Build monotonic cold-start upper bounds from a measured report. */
@@ -327,12 +344,12 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   }
   const budgets = JSON.parse(await readFile(targetBudgetPath, "utf8"));
   const violations = compareCliTransportFloorBudgets(report, budgets);
-  if (violations.length > 0) {
-    throw new Error(
-      `CLI transport-floor gate failed:\n${violations.join("\n")}`,
-    );
+  const controlBudgets = JSON.parse(await readFile(options.controlBudgetPath ?? path.join(repoRoot, "scripts", "bench", "sdk-entrypoint-budgets.json"), "utf8"));
+  const qualification = qualifyBenchmarkRunner([report.baseline, report.baseline_after], controlBudgets.baseline, CONTROL_NOISE_MARGIN_MS);
+  if (violations.length > 0 || qualification.status !== "qualified") {
+    throw benchmarkAdmissionError("CLI transport-floor", report, violations, qualification);
   }
-  return { mode: parsed.mode, report, violations };
+  return { mode: parsed.mode, report, violations, runner_qualification: qualification, product_admission: "passed" };
 }
 
 /** Execute the transport-floor CLI while leaving all logic importable. */

@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runPmCli } from "../../../src/cli/main.js";
@@ -10,8 +10,51 @@ import { applyContextIntentProjection } from "../../../src/sdk/context-intent-co
 import { createTaskFixture } from "../../helpers/createTaskFixture.js";
 import { runDirectDistCli, runInProcessDistCli } from "../../helpers/cliRunner.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { verifyInstalledAgentRecovery } from "../../../scripts/release/agent-recovery-acceptance.mjs";
 
 describe("agent receipt and recovery contracts", () => {
+  it("executes the advertised recovery through a real executable and preserves authoritative bytes", async () => {
+    await withTempPmPath(async (context) => {
+      expect(verifyInstalledAgentRecovery(process.execPath, [path.resolve("dist/cli.js")], {
+        cwd: context.tempRoot, env: context.env,
+      })).toEqual({ ok: true, namespace_refusals: 2, measurement_recovery: true, authoritative_bytes_preserved: true });
+    });
+    expect(() => verifyInstalledAgentRecovery(process.execPath, ["-e", "process.stdout.write('launcher notice')", "--"], {
+      env: {},
+    })).toThrow("Missing CLI JSON response");
+  });
+
+  it("recovers misplaced namespaces and measurement prerequisites without rewriting a nonempty tracker", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-recovery", "Keep this item and its provenance intact.");
+      const historyPath = path.join(context.pmPath, "history", "pm-recovery.jsonl");
+      const before = await readFile(historyPath, "utf8");
+      for (const args of [
+        ["item", "update", "--help"], ["item", "update", "pm-recovery", "--title", "Must not execute"],
+        ["test", "pm-recovery", "--measure", "coverage=100", "--only-index", "1"],
+      ]) {
+        const refusal = await runInProcessDistCli(["--no-extensions", ...args, "--json"], { env: context.env }, runPmCli);
+        expect(refusal.code, refusal.stderr).toBe(2);
+        const envelope = JSON.parse(refusal.stderr) as JsonErrorEnvelope;
+        expect(envelope).toMatchObject({ code: args[0] === "item" ? "unknown_command" : "test_measure_requires_run" });
+        const retryArgs = envelope.recovery?.suggested_retry_args;
+        expect(retryArgs).toBeDefined();
+        expect(retryArgs).not.toContain("--force");
+        expect(retryArgs).not.toContain("--allow-untrusted-linked-tests");
+        if (args[0] === "item") {
+          expect(retryArgs).toEqual(["update", "--help"]);
+          const help = await runInProcessDistCli([...retryArgs!, "--json"], { env: context.env }, runPmCli);
+          expect(help.code).toBe(0);
+          expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "update" });
+        } else {
+          expect(retryArgs).toEqual(expect.arrayContaining(["--run", "--measure", "coverage=100", "--only-index", "1"]));
+        }
+        expect(await readFile(historyPath, "utf8")).toBe(before);
+        expect(context.runCli(["get", "pm-recovery", "--json"], { expectJson: true }).json).toMatchObject({ item: { title: "pm-recovery" } });
+      }
+    });
+  });
+
   it("attributes failed validation to its owner independently of valid argument order", async () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, "pm-attribution", "Persisted execution detail");

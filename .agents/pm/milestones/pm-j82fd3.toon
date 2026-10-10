@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,grammar,"horizon:near",milestone,outcome,token-efficiency
 created_at: "2026-07-24T23:42:39.540Z"
-updated_at: "2026-09-28T19:03:17.504Z"
+updated_at: "2026-10-10T19:31:13.316Z"
 deadline: "2026-10-31T00:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 4800
@@ -88,9 +88,10 @@ dependencies[21]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-09-28T13:20:31.247Z","harness:codex","GitHub intake 2026-09-28: https://github.com/unbraind/pm-cli/issues/1338 reports 33 of 79 command_aliases disagreeing with executable help on published 2026.9.28: 19 unresolved aliases, 12 unavailable canonical targets, and two targets that remain aliases. It also reports compact help omitting the alias table without an omission receipt while --detail full does not restore it. Counts are reporter evidence, not independently reproduced measurements. Reuse this existing alias-preserving grammar outcome owner after all-status duplicate review, including closed alias-shim and help foundations. Proposed acceptance evidence is a real isolated help/alias replay with terminal canonical resolved_path, capability/package availability provenance, and truthful omission/recovery hints; package-optional commands must be distinguished from invalid aliases. Existing execution-epic, alias-foundation, help, and transcript relationships already capture the delivery chain. No duplicate task or speculative graph depth added. Intake only; the milestone remains open and unclaimed after release."
   "2026-09-28T17:13:36.456Z","harness:codex","Active tranche 2026-09-28: full root JSON help now marks alias availability; compact root help states its omitted alias group and --all restoration; requested alias help reports the canonical resolved path. Fixed plural packages aliases to canonical package paths. Replay of 79 aliases found 69 available with zero available/help/resolved-path discrepancies. Linked tests and full 9,399-test 100/100/100/100 coverage suite passed. Broader grammar milestone remains open after this tranche."
+  "2026-10-10T19:31:13.316Z","harness:codex","GitHub issue1338 reconciliation: full live history records the delivered PR1341 alias-help tranche. The current full Node24 coverage run again passed root-help-discovery integration, which replays every currently available alias, asserts terminal canonical resolved_path, verifies unavailable aliases carry capability provenance and checks compact omission restoration. This report is completed under the existing milestone; the larger one-screen grammar/transcript outcome remains open and unclaimed. Closing the stale external report does not close that broader milestone."
 files[5]{path,scope,note}:
   src/cli/help-json-payload.ts,project,Report alias availability and accurate resolved paths in help
   src/sdk/cli-contracts/command-aliases.ts,project,Fix package alias canonical target

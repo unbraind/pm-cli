@@ -355,9 +355,36 @@ describe("runTest", () => {
           },
           { path: context.pmPath },
         ),
-      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "test_measure_requires_run",
+          flag: "--measure",
+          recovery: {
+            missing: ["--run"],
+            suggested_retry_args: [
+              "--pm-path", context.pmPath, "test", id, "--run", "--json", "--progress",
+              "--add", "command=node --version,scope=project", "--measure", "coverage=100",
+            ],
+          },
+        },
+      });
       const itemMetadata = await loadTaskMetadata(context, id);
       expect(itemMetadata.tests).toBeUndefined();
+      await expect(runTest(id, {
+        measure: ["coverage=100"], acknowledgeLinkedTests: true,
+      }, { path: context.pmPath, noExtensions: true, author: "same actor" })).rejects.toMatchObject({
+        context: { recovery: { suggested_retry_args: [
+          "--pm-path", context.pmPath, "--no-extensions", "--author", "same actor", "test", id, "--help",
+        ] } },
+      });
+      await expect(runTest(id, {
+        measure: ["coverage=100"], list: true,
+      }, { path: context.pmPath })).rejects.toMatchObject({
+        context: { recovery: { suggested_retry_args: [
+          "--pm-path", context.pmPath, "test", id, "--run", "--json", "--progress", "--measure", "coverage=100", "--list",
+        ] } },
+      });
     });
   });
 

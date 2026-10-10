@@ -45,7 +45,7 @@ import {
 } from "./argv-utils.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
-import { canonicalizeCommandSuggestions, rankCommandPaths } from "../sdk/agent/command-suggestions.js";
+import { canonicalizeCommandSuggestions, rankCommandPaths, resolveMisnestedCommandPath } from "../sdk/agent/command-suggestions.js";
 import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
@@ -632,17 +632,26 @@ function buildUnknownCommandExamples(
   return [...new Set(["pm --help --all", ...suggestedExamples])];
 }
 
+/** Recover the namespace prefix omitted by Commander's leaf-token refusal, without consuming operands. */
+function resolveUnknownCommandPath(token: string, invocationArgv: readonly string[]): string {
+  const commandIndex = findBootstrapCommandTokenIndex([...invocationArgv]);
+  if (commandIndex === undefined || invocationArgv[commandIndex + 1] !== token) return token;
+  return `${invocationArgv[commandIndex]} ${token}`;
+}
+
 /** Implements build unknown command guidance from runtime for the public runtime surface of this module. */
 export function buildUnknownCommandGuidanceFromRuntime(
   rawMessage: string,
   root: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  invocationArgv: readonly string[] = [],
 ): CommanderGuidanceContext | undefined {
   const unknownCommandMatch = rawMessage.match(/unknown command '([^']+)'/i);
   if (!unknownCommandMatch || typeof unknownCommandMatch[1] !== "string") {
     return undefined;
   }
-  const normalizedUnknown = normalizeHelpCommandPath(unknownCommandMatch[1]);
+  const unknownPath = resolveUnknownCommandPath(unknownCommandMatch[1], invocationArgv);
+  const normalizedUnknown = normalizeHelpCommandPath(unknownPath);
   if (normalizedUnknown.length === 0) {
     return undefined;
   }
@@ -669,9 +678,11 @@ export function buildUnknownCommandGuidanceFromRuntime(
     extensionDescriptors,
   });
   const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
-  const suggestedPaths = (
-    combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)
-  ).slice(0, 3);
+  const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths);
+  const suggestedPaths = [...new Set([
+    ...(misnestedPath ? [misnestedPath] : []),
+    ...(combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)),
+  ])].slice(0, 3);
   const examples = buildUnknownCommandExamples(
     suggestedPaths,
     combinedCandidates.length > 0,
@@ -682,6 +693,10 @@ export function buildUnknownCommandGuidanceFromRuntime(
       : null;
 
   return {
+    ...(misnestedPath ? {
+      suggestedRetryCommand: renderPmCommand([...misnestedPath.split(" "), "--help"]),
+      suggestedRetryArgs: [...misnestedPath.split(" "), "--help"],
+    } : {}),
     unknownCommandExamples: examples,
     unknownCommandNextSteps: [
       ...(didYouMean ? [didYouMean] : []),
@@ -1010,6 +1025,7 @@ export async function resolveCommanderUsageContext(
     message,
     rootProgram,
     extensionDescriptors,
+    invocationArgv,
   );
   const unknownOption = resolveUnknownOptionSuggestions(message, commandName);
   const splitSchemaSubcommand = resolveSplitSchemaSubcommand(
@@ -1082,6 +1098,7 @@ export async function formatCommanderUsageMessage(
     unknownSubcommandToken,
     unknownSubcommandAllowedValues,
     suggestedRetryCommand,
+    suggestedRetryArgs,
     verifiedCollectionItemId,
     failedExtensions,
   } = usageContext;
@@ -1104,6 +1121,7 @@ export async function formatCommanderUsageMessage(
       unknownSubcommandToken,
       unknownSubcommandAllowedValues,
       suggestedRetryCommand,
+      suggestedRetryArgs,
       verifiedCollectionItemId,
       failedExtensions,
     },
@@ -1156,6 +1174,7 @@ export async function formatCommanderUsageJson(
       unknownSubcommandAllowedValues:
         usageContext.unknownSubcommandAllowedValues,
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
+      suggestedRetryArgs: usageContext.suggestedRetryArgs,
       verifiedCollectionItemId: usageContext.verifiedCollectionItemId,
       failedExtensions: usageContext.failedExtensions,
     },

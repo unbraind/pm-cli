@@ -2,20 +2,85 @@ id: pm-test-measure-prerequisite
 title: Expose the test measurement run prerequisite in help and recovery
 description: "A real delivery workflow tried pm test <id> --measure focused_tests=76 and received --measure requires --run. Command help only says Record name=value evidence, and recovery points to generic item/help commands rather than an executable same-intent test retry. Preserve the fail-closed requirement, declare the prerequisite in help/contracts, and supply an actionable minimal recovery without weakening clone-local linked-test trust."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:contracts","horizon:future"
 created_at: "2026-10-09T20:48:23.014Z"
-updated_at: "2026-10-09T20:52:18.978Z"
+updated_at: "2026-10-10T19:46:31.851Z"
+closed_at: "2026-10-10T19:46:30.139Z"
+completed_at: "2026-10-10T19:46:30.139Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Help and machine contracts state the run prerequisite; a measurement-only request refuses before mutation with an executable same-intent recovery; linked-test trust and sandbox isolation remain enforced; behavioral negative controls and generated surface parity pass without token budget relaxation.
 parent: pm-n7rr
 risk: low
 confidence: high
-expected_result: An agent discovers the run prerequisite before requesting measurement evidence and receives an executable same-intent recovery while trust and sandbox safeguards remain intact
+resolution: "Declare --measure requires --run across CLI help, machine contracts and the SDK. Refuse measurement-only requests before mutation with a typed code and tokenized retry preserving tracker identity, selectors, measurements and explicit trust policy. Reuse a pure SDK argv serializer without importing Commander registration and preserve existing exported helpers."
+expected_result: Agents discover the execution prerequisite and receive an executable same-intent retry without invented measurements or weakened linked-test safeguards.
+actual_result: "107 linked tests and144 post-extraction focused tests passed; full local Node24 coverage before extraction was exact100percent across10111 passing tests. Final packed npx/bunx retries execute a trusted assertion and refusal checks preserve item/history bytes. Build, typecheck, generated surfaces and every static component passed with unchanged token, latency and RSS budgets; final-head full coverage remains a mandatory CI gate."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-reliability-window-delivery,discovered_from,"2026-10-09T20:48:23.014Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-09T20:48:23.014Z","harness:codex","Duplicate check: full 2912-item all-status corpus plus the new delivery record were checked for --measure prerequisites and conditional help/recovery coverage; no equivalent item exists. Existing pm-n7rr is the grammar umbrella and is reused as parent. This observed UX follow-up remains open and unclaimed; it is not part of the completed SDK reliability implementation."
+  "2026-10-10T18:18:21.523Z","harness:codex","Live intake: complete 2918-item all-status corpus, full item/history verification and GitHub security inventories are clean. Delivery groups SDK-owned measurement prerequisite recovery with registry-derived misplaced-namespace recovery and runner qualification diagnostics. Preserve linked-test trust, original selectors and measurement values; recovery must refuse before any write and retry without adding ownership or trust overrides."
+  "2026-10-10T18:57:24.052Z","harness:codex","Verification refinements preserve all help token ceilings: shortened CLI prerequisite wording rather than ratcheting any budget. Real installed npx uses the once-installed exact tarball consumer to avoid repeated npm reification; bunx retains a fresh owned temporary cache. The linked command now executes a real node:assert check via node -e, which works through Bunx Node compatibility shims; bare node --version under that launcher refused with Missing script, an external launcher behavior rather than a trusted-run policy failure. Refusal/retry logic and complete authoritative byte checks are shared across direct executables and packed consumers."
+  "2026-10-10T19:25:27.998Z","harness:codex","Static-gate investigation found that the measurement recovery imported the Commander registration module, pulling its runtime-primitives graph into the testing SDK. Extracting the existing pure argv builders into SDK test command-args and retaining the old registration exports preserves compatibility while removing that unnecessary framework dependency. Host control failure remains separate evidence and does not prove historical runner ownership."
+  "2026-10-10T19:46:27.546Z","harness:codex","Final local receipts: the linked measurement and existing-export compatibility runs passed 107 tests and recorded both executions. The full Node24 suite passed 10111 tests with exact100/100/100/100 coverage before the later pure argv extraction; the extraction then passed144 focused tests and typecheck. Every static component now passes, including both real Node24 startup gates, context and record integrity, and the mutation guard (329 killed plus7 recognized equivalents; zero survivors). Serialized packed npm/npx and Bun/bunx acceptance passed with nine packages and the TypeScript SDK consumer; both refused namespace forms preserve authoritative bytes and the trusted measurement recovery executes an actual assertion. Final-head full coverage is also enforced in PR CI."
+files[15]{path,scope}:
+  scripts/release/agent-recovery-acceptance.mjs,project
+  scripts/release/docstring-quality-baseline.json,project
+  scripts/smoke-npx-from-pack.mjs,project
+  src/cli/register-operations.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/registration-helpers.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/test/command-args.ts,project
+  src/sdk/test/execution.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/unit/cli/registration-helpers.spec.ts,project
+  tests/unit/commands/test/test-command.spec.ts,project
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,900,"harness:codex","2026-10-10T18:26:45.851Z",local_mutation,feat/executable-agent-recovery,Measurement prerequisite and executable refusal preservation
+  node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts,project,900,"harness:codex","2026-10-10T19:29:42.210Z",local_mutation,feat/executable-agent-recovery,Existing compatibility exports retain all linked-test argv semantics after pure SDK extraction
+test_runs[2]:
+  - run_id: test-local-mv2rtxy9-t4rd2l
+    kind: test
+    status: passed
+    started_at: "2026-10-10T19:11:45.518Z"
+    finished_at: "2026-10-10T19:12:21.537Z"
+    recorded_at: "2026-10-10T19:12:21.537Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2sv3dr-f2g8on
+    kind: test
+    status: passed
+    started_at: "2026-10-10T19:40:19.430Z"
+    finished_at: "2026-10-10T19:41:14.847Z"
+    recorded_at: "2026-10-10T19:41:14.847Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/SDK.md,project
+  docs/TESTING.md,project
+close_reason: Implemented SDK-owned measurement prerequisites and executable trust-preserving recovery with linked and installed-artifact proof.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts -t validates
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,"pnpm smoke:npx"
+  hosted_checks[2]: Gates (static),Gates (smokes)
+  owner: pm-test-measure-prerequisite
 body: ""

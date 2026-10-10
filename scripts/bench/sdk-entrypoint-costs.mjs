@@ -14,6 +14,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { benchmarkAdmissionError, captureRunnerEnvironment, qualifyBenchmarkRunner } from "./runner-qualification.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -176,6 +177,7 @@ export async function buildEntrypointCostReport(options = {}) {
     throw new Error("iterations must be an integer between 1 and 30");
   }
   const measure = options.measure ?? measureEntrypointProcess;
+  const environmentBefore = captureRunnerEnvironment();
   const baseline = await measureSamples(null, iterations, measure);
   const entrypoints = {};
   for (const [entrypoint, fileName] of Object.entries(ENTRYPOINT_FILES)) {
@@ -208,7 +210,9 @@ export async function buildEntrypointCostReport(options = {}) {
     architecture: process.arch,
     iterations,
     baseline,
+    baseline_after: await measureSamples(null, iterations, measure),
     entrypoints,
+    runner_environment: { before: environmentBefore, after: captureRunnerEnvironment() },
   };
 }
 
@@ -352,12 +356,11 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   }
   const budgets = JSON.parse(await readFile(targetBudgetPath, "utf8"));
   const violations = compareEntrypointBudgets(report, budgets);
-  if (violations.length > 0) {
-    throw new Error(
-      `SDK entrypoint import-cost gate failed:\n${violations.join("\n")}`,
-    );
+  const qualification = qualifyBenchmarkRunner([report.baseline, report.baseline_after], budgets.baseline, LATENCY_NOISE_MARGIN_MS);
+  if (violations.length > 0 || qualification.status !== "qualified") {
+    throw benchmarkAdmissionError("SDK entrypoint import-cost", report, violations, qualification);
   }
-  return { mode: parsed.mode, report, violations };
+  return { mode: parsed.mode, report, violations, runner_qualification: qualification, product_admission: "passed" };
 }
 
 /** Execute the benchmark CLI while leaving its implementation importable. */

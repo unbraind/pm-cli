@@ -14,8 +14,21 @@ import {
   runEntrypoint,
   summarizeImportSamples,
 } from "../../../scripts/bench/sdk-entrypoint-costs.mjs";
+import { qualifyBenchmarkRunner } from "../../../scripts/bench/runner-qualification.mjs";
 
 const temporaryRoots: string[] = [];
+
+it("requires usable runner controls and preserves the inclusive committed ceiling", () => {
+  const budget = { max_import_ms: 76 };
+  expect(qualifyBenchmarkRunner([{ runs: 5, p50_ms: 106 }], budget, 30)).toMatchObject({ status: "qualified" });
+  expect(qualifyBenchmarkRunner([{ runs: 5, p50_ms: 107 }], budget, 30)).toMatchObject({ status: "unqualified", reason: "control_over_budget" });
+  for (const controls of [[], [undefined], [{ runs: 0, p50_ms: 40 }], [{ runs: 1.5, p50_ms: 40 }], [{ runs: 5, p50_ms: -1 }]]) {
+    expect(qualifyBenchmarkRunner(controls, budget, 30)).toEqual({ status: "unqualified", reason: "control_unavailable" });
+  }
+  for (const invalidBudget of [undefined, { max_import_ms: -1 }]) {
+    expect(qualifyBenchmarkRunner([{ runs: 5, p50_ms: 40 }], invalidBudget, 30)).toEqual({ status: "unqualified", reason: "control_unavailable" });
+  }
+});
 
 interface ImportSummary {
   runs: number;
@@ -37,6 +50,7 @@ interface ImportReport {
     ImportSummary,
     "delta_vs_node_ms" | "reduction_vs_aggregate_percent"
   >;
+  baseline_after: { runs: number; p50_ms: number };
   entrypoints: Record<string, ImportSummary>;
 }
 
@@ -47,6 +61,7 @@ function report(): ImportReport {
     platform: "linux",
     architecture: "x64",
     iterations: 3,
+    baseline_after: { runs: 3, p50_ms: 40 },
     baseline: {
       runs: 3,
       min_ms: 40,
@@ -328,7 +343,10 @@ describe("SDK entrypoint import-cost command", () => {
         budgetPath,
         buildReport: async () => regressed,
       }),
-    ).rejects.toThrow("import-cost gate failed");
+    ).rejects.toMatchObject({
+      code: "benchmark_product_budget_exceeded", product_admission: "failed", report: regressed,
+      runner_qualification: { status: "qualified" },
+    });
     await expect(main([])).rejects.toThrow("Usage:");
     await expect(main(["--check", "--update"])).rejects.toThrow("Usage:");
     await expect(
@@ -336,6 +354,16 @@ describe("SDK entrypoint import-cost command", () => {
         buildReport: async () => structuredClone(baseline),
       }),
     ).resolves.toMatchObject({ mode: "check" });
+  });
+
+  it("never certifies product admission when the bare-process control exceeds its own budget", async () => {
+    const baseline = report();
+    baseline.baseline.p50_ms = 999;
+    await expect(main(["--check"], { buildReport: async () => baseline })).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified", product_admission: "unverified", report: baseline,
+      runner_qualification: { reason: "control_over_budget" },
+      violations: expect.arrayContaining([expect.stringContaining("bare node")]),
+    });
   });
 
   it("executes, skips, and reports failures through the script entrypoint", async () => {

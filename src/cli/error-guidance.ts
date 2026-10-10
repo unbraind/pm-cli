@@ -192,6 +192,8 @@ export interface CommanderGuidanceContext {
   unknownSubcommandAllowedValues?: string[];
   /** Value that configures or reports suggested retry command for this contract. */
   suggestedRetryCommand?: string;
+  /** Tokenized inspection retry that preserves a refusal without executing the guessed operation. */
+  suggestedRetryArgs?: string[];
   /** Existing item id verified against the selected tracker for collection recovery. */
   verifiedCollectionItemId?: string;
   /** Installed extensions whose activation failed for this invocation. */
@@ -1350,6 +1352,7 @@ function buildCommanderRecoveryPayload(
     normalized_args: normalizedArgs,
     provided_fields: providedFields,
     suggested_retry: retryCommand,
+    suggested_retry_args: context?.suggestedRetryArgs,
     ...overrides,
   });
 }
