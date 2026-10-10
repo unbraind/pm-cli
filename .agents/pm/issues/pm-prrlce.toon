@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:release",automation,diagnostics,"horizon:current"
 created_at: "2026-09-28T15:31:49.498Z"
-updated_at: "2026-10-10T10:29:30.579Z"
+updated_at: "2026-10-10T12:22:33.686Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every Auto Release and Release run carries an explicit trigger origin (native schedule, morning dispatcher, blocker retry, operator) from a declared input and its run name, never inferred from event or actor; Release reliability reports a separate series per origin, including the dispatcher's attempts, failures and failing stages, while the native scheduled denominator stays unchanged as decided on pm-9url9h; The same-day manual follow-up of pm-uenmu9 requires an explicit follow-up request from the operator origin; negative control: a dispatcher-origin run after a same-day tag exists skips before any version mutation; The 2026-09-28 dispatcher failure is visible in the new series or recorded as an explicit pre-attribution gap"
@@ -23,7 +23,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,discovered_from,"2026-09-28T15:32:05.324Z","harness:claude-code","cli:update:dep",detected
   pm-z329kd,discovered_from,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
   pm-uenmu9,discovered_from,"2026-09-29T09:47:31.174Z","harness:codex","cli:update:dep",detected
-comments[25]{created_at,author,text}:
+comments[29]{created_at,author,text}:
   "2026-09-29T10:00:31.279Z","harness:codex","Implemented declared Auto Release origin in workflow run names and attempt receipts; morning dispatcher now passes its own origin. Reliability collection includes schedule, dispatch, and issue runs while keeping the native scheduled policy denominator intact; the dispatcher has a separate count, failure rate, stage series, and historical unattributed-run gap. New same-day dispatcher runs take the early immutable-tag guard. Release exact-tag dispatch carries origin; tag-push runs retain tag_push provenance. Linked tests passed (72), full coverage passed 9,428 tests at 100/100/100/100, and packed npm/Bun manual acceptance passed. Remaining acceptance: per-origin reliability series for operator and blocker retry, and upstream origin propagation into tag-push Release runs; operator-only ordinal follow-up remains owned by pm-uenmu9. No hosted release run or live new-origin receipt has yet been observed."
   "2026-09-29T10:28:52.881Z","harness:codex",PR #1350 review found the new origin-bearing Release run name no longer matched exact-tag recovery selection. Added exact declared-origin run-name matching with wrong-tag and unknown-origin negative controls; focused selector tests pass. Greptile discussion #4132270479.
   "2026-09-29T12:22:02.811Z","harness:codex","PR #1350 CodeRabbit discussion #4133333546 identified that dispatcher observations used the native 02:35 UTC cron for nominal occurrence and dispatch delay. Dispatcher rows now omit those schedule-specific timing fields, retain queue delay/outcome/failure stage, and focused negative controls prove native scheduled rows still keep their timing. Documentation states the boundary."
@@ -49,6 +49,10 @@ comments[25]{created_at,author,text}:
   "2026-10-10T09:25:29.045Z","harness:codex","The admitted producer and historical compatibility boundaries now pass 200 unique connected assertions across eight files (161 plus the separate 39 artifact contracts) and 33 workflow contracts, strict repository ESLint, all four TypeScript projects, source docstring inventory, docs/skills and permissions checks. A fresh real Git plus actual GitHub API journey still independently verifies the original morning_dispatcher producer and authoritative default branch while preserving operator recovery. All new policy/fixture files are linked to this owner. The complete source is now frozen for canonical coverage with two workers and unchanged source membership/thresholds; no source edit will occur while its runner owns the build."
   "2026-10-10T09:54:15.170Z","harness:codex","The current source coverage run failed one unchanged MCP MRTR task-transition case after 10,084 passes and emitted no valid coverage summary. Its identical isolated nine-test file subsequently passed. The failure and both receipts are retained; prior exact-100 evidence certifies only the earlier source. Investigating the existing bounded scheduling wait before choosing a safe full rerun; no threshold, timeout, coverage exclusion, or source seam was changed."
   "2026-10-10T10:29:28.517Z","harness:codex","Final current-source verification: the unchanged complete one-worker source run passed 10,085 tests (two native-Windows cases skipped on Linux and assigned to the required Windows job), 797 files passed and one platform file skipped. Fresh coverage covers all 776 measured source files at 100/100/100/100: 67,773 statements, 51,862 branches, 13,972 functions and 64,484 lines, zero uncovered counts. The earlier two-worker MCP input-state wait failure remains retained under open pm-zlv8jl; no test membership, assertion, deadline, denominator or threshold changed. The linked third test ran in isolated project/global trackers and passed all 85 SDK/provider/tag/pipeline assertions, receipt test-local-mv294j2z-70ccka. The connected 200 assertions, 33 workflow contracts, original/fixed native bypass controls, missing/malformed policy refusals and real hosted producer verification pass. Source admission is verified; final pushed-head CI/review and exact immutable-tag operational recovery remain required."
+  "2026-10-10T11:26:25.055Z","harness:codex","PR #1434 seventh complete review found a valid GitHub provider representation: Get a workflow run attempt documents a path suffixed with the workflow ref (https://docs.github.com/en/rest/actions/workflow-runs#get-a-workflow-run-attempt). Extended the existing contract owner rather than adding duplicate tests: the authoritative non-main trunk suffix is accepted, while wrong branch suffixes, an unrelated workflow suffix and missing path metadata are refused. The actual native annotated-tag publication fixture now uses the qualified path. Identical expanded tests fail two existing cases on original source (13 pass), then all 15 pass after the bounded fix. An independent external source copy against pushed 23c30fc fails its expected-success assertion, while the identical fixed control passes and both versions refuse wrong refs. Repository/default branch, run id/attempt, event, source SHA, declared origin and native ancestry requirements remain unchanged. Full-source coverage and final gates will be repeated before pushing; no production release or tag is modified."
+  "2026-10-10T11:41:37.007Z","harness:codex","Retained operational failure: I launched the linked third cohort while the complete source coverage runner held its build consumer lease. The command produced no assertion stdout/stderr before the unchanged 240-second deadline and was recorded as timeout, receipt test-local-mv2bmn1w-plm1s9; assertion_failure=0 and tracker mismatch=false. It will be rerun serially after the full source owner finishes, without changing the timeout, selected cohort, trust mode or test assertions. The expanded verifier cohort and independent real Git/GitHub acceptance already pass; this timeout is not passing proof or a newly claimed source defect."
+  "2026-10-10T12:07:37.176Z","harness:codex","Current repaired source passes the complete canonical one-worker run: 10085 tests pass, two native-Windows cases skip only on Linux, 797 files pass and one platform file skips. The fresh exact coverage summary covers all 776 measured source files with 67773/67773 statements,51862/51862 branches,13972/13972 functions and64484/64484 lines, zero uncovered counts; no denominator, assertion, timeout or threshold changed. The independent temporary native Git/actual GitHub journey verifies original producer38018098467/1 on authoritative main, preserves morning_dispatcher and operator recovery independently, accepts the documented default-branch-qualified representation and refuses a wrong ref. The original/fixed external-copy control remains red/green. The identical linked cohort and complete strict lint/type chain are now running serially after source ownership ended. Final pushed-head review and immutable-tag operational recovery remain distinct delivery gates; broader downstream run-name/manual-ordinal criteria remain open."
+  "2026-10-10T12:22:27.743Z","harness:codex","Final qualified-workflow-path remediation: the original source fails two existing contract cases and the repair passes all 15, with a separate original/fixed source-copy negative control. Real native Git plus the actual hosted producer verifies the unsuffixed path and accepts only its authoritative default-branch qualified variant. The complete unchanged source run passes 10085 tests with exact 100/100/100/100 across 776 files (67773 statements, 51862 branches, 13972 functions, 64484 lines). The identical linked cohort passes all 85 assertions serially with receipt test-local-mv2ck302-g1qfa1; all four TypeScript projects pass. Retain the earlier pre-assertion concurrent timeout and context/graph refusals as real failed evidence. The two graph gaps now receive verified typed lineage without raising thresholds. Broader release display-name/manual-ordinal acceptance remains open; this verified implementation tranche is not closure of the entire issue."
 notes[3]{created_at,author,text}:
   "2026-09-29T10:00:32.043Z","harness:codex",A tag-push Release run currently knows only tag_push in its run name. Do not equate that with the upstream Auto Release trigger; completing the accepted provenance contract needs immutable upstream attribution through the tag or an explicitly dispatched Release workflow without duplicate publish runs.
   "2026-10-10T09:36:49.416Z","harness:codex","Additional owned-temporary native Git acceptance confirms that a missing legacy inventory throws ENOENT and malformed inventory JSON throws SyntaxError before publication; both probes restore their copied inventory. The real tracker and source policy are untouched. Publication admission has no inferred date cutoff, actor inference, external authentication fallback or automatically extended compatibility set. Local tag preparation remains readable context but requires a hosted producer before new hosted publication."
@@ -102,7 +106,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: feat/release-origin-and-ledger-reconciliation
     note: "Complete-set membership, exact historical signatures, anonymous provider inventory, native tag identity and retained upstream origin."
-test_runs[9]:
+test_runs[11]:
   - run_id: test-local-mumhi17y-rifyl0
     kind: test
     status: passed
@@ -202,6 +206,28 @@ test_runs[9]:
     started_at: "2026-10-10T10:28:32.764Z"
     finished_at: "2026-10-10T10:28:42.779Z"
     recorded_at: "2026-10-10T10:28:42.779Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2bmn1w-plm1s9
+    kind: test
+    status: failed
+    started_at: "2026-10-10T11:34:46.739Z"
+    finished_at: "2026-10-10T11:38:46.964Z"
+    recorded_at: "2026-10-10T11:38:46.964Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2ck302-g1qfa1
+    kind: test
+    status: passed
+    started_at: "2026-10-10T12:04:37.909Z"
+    finished_at: "2026-10-10T12:04:47.282Z"
+    recorded_at: "2026-10-10T12:04:47.282Z"
     passed: 1
     failed: 0
     skipped: 0

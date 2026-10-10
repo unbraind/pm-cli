@@ -52,7 +52,7 @@ export function readReleaseTagProvenance(tag, cwd = process.cwd(), execute = exe
 /** Bind a source run to its original identity and the repository's authoritative default branch. */
 export function verifyReleaseSourceRun(provenance, run, defaultBranch) {
   if (provenance.event === "local") return false;
-  if (typeof defaultBranch !== "string" || defaultBranch.length === 0 || run?.head_branch !== defaultBranch || run.path !== ".github/workflows/auto-release.yml" || run.id !== provenance.run_id || run.run_attempt !== provenance.run_attempt || run.event !== provenance.event || run.head_sha !== provenance.source_sha || run.repository?.full_name !== provenance.repository || run.display_title !== `Auto Release (${provenance.trigger_origin})`) throw new Error("Release source-run provenance mismatch.");
+  if (typeof defaultBranch !== "string" || defaultBranch.length === 0 || run?.head_branch !== defaultBranch || ![".github/workflows/auto-release.yml", `.github/workflows/auto-release.yml@${defaultBranch}`].includes(run.path) || run.id !== provenance.run_id || run.run_attempt !== provenance.run_attempt || run.event !== provenance.event || run.head_sha !== provenance.source_sha || run.repository?.full_name !== provenance.repository || run.display_title !== `Auto Release (${provenance.trigger_origin})`) throw new Error("Release source-run provenance mismatch.");
   return true;
 }
 

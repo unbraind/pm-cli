@@ -12,7 +12,6 @@
 - Refresh aged Unicorn 77 alongside ESLint 10.12 without changing strict lint policy ([pm-unicorn-77](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-unicorn-77.toon))
 - Reconcile release ledgers and tag origins with bounded publication and acceptance ([pm-release-ledger-origin-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-release-ledger-origin-delivery.toon))
 - Refresh eligible ESLint 10.12 for release quality gates ([pm-eslint-1012](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eslint-1012.toon))
-- Bound publication weight while preserving complete runtime and metadata ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon))
 
 ## 2026.10.10 - 2026-10-10
 

@@ -50,7 +50,8 @@ describe("tag-carried release provenance", () => {
     const record = createReleaseProvenance(tag, source, target, env);
     const run = { id: 42, run_attempt: 1, event: "workflow_dispatch", head_sha: source, head_branch: "trunk", path: ".github/workflows/auto-release.yml", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: "owner/project" } };
     expect(verifyReleaseSourceRun(record, run, "trunk")).toBe(true);
-    for (const change of [{ path: ".github/workflows/unrelated.yml" }, { id: 43 }, { run_attempt: 2 }, { event: "schedule" }, { head_sha: target }, { head_branch: "feature" }, { head_branch: "main" }, { head_branch: undefined }, { display_title: "Auto Release (operator)" }, { repository: { full_name: "other/project" } }]) expect(() => verifyReleaseSourceRun(record, { ...run, ...change }, "trunk")).toThrow();
+    expect(verifyReleaseSourceRun(record, { ...run, path: ".github/workflows/auto-release.yml@trunk" }, "trunk")).toBe(true);
+    for (const change of [{ path: ".github/workflows/unrelated.yml" }, { path: ".github/workflows/unrelated.yml@trunk" }, { path: ".github/workflows/auto-release.yml@main" }, { path: ".github/workflows/auto-release.yml@feature" }, { path: undefined }, { id: 43 }, { run_attempt: 2 }, { event: "schedule" }, { head_sha: target }, { head_branch: "feature" }, { head_branch: "main" }, { head_branch: undefined }, { display_title: "Auto Release (operator)" }, { repository: { full_name: "other/project" } }]) expect(() => verifyReleaseSourceRun(record, { ...run, ...change }, "trunk")).toThrow();
     expect(() => verifyReleaseSourceRun(record, null, "trunk")).toThrow();
     expect(verifyReleaseSourceRun(createReleaseProvenance(tag, source, target, {}), null)).toBe(false);
   });
@@ -77,7 +78,7 @@ describe("tag-carried release provenance", () => {
       const publicationEnv = { RELEASE_TAG: tag, RELEASE_PROVENANCE_OUTPUT: output, GITHUB_EVENT_NAME: "push", GITHUB_REPOSITORY: env.GITHUB_REPOSITORY };
       const responses = new Map<string, unknown>([
         [`repos/${env.GITHUB_REPOSITORY}`, { default_branch: "trunk" }],
-        [`repos/${env.GITHUB_REPOSITORY}/actions/runs/42/attempts/1`, { id: 42, run_attempt: 1, event: env.GITHUB_EVENT_NAME, head_sha: sha, head_branch: "trunk", path: ".github/workflows/auto-release.yml", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: env.GITHUB_REPOSITORY } }],
+        [`repos/${env.GITHUB_REPOSITORY}/actions/runs/42/attempts/1`, { id: 42, run_attempt: 1, event: env.GITHUB_EVENT_NAME, head_sha: sha, head_branch: "trunk", path: ".github/workflows/auto-release.yml@trunk", display_title: "Auto Release (morning_dispatcher)", repository: { full_name: env.GITHUB_REPOSITORY } }],
       ]);
       const execute = ((command: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding) => {
         if (command !== "gh") return execFileSync(command, args, options);
