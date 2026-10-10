@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T19:33:27.145Z"
-updated_at: "2026-10-10T19:45:24.930Z"
+updated_at: "2026-10-10T19:50:51.653Z"
 closed_at: "2026-10-10T19:45:24.392Z"
 completed_at: "2026-10-10T19:45:24.392Z"
 author: "harness:codex"
@@ -19,9 +19,10 @@ confidence: high
 resolution: SDK and CLI startup gates now retain warmed controls before and after the measured census plus portable runner observations. Missing or over-budget controls reject product admission as unverified; qualified product regressions retain all violations and fail unchanged latency and RSS budgets.
 expected_result: "Runner qualification and product admission are independently explicit; failed or missing controls never certify product success, and real product regressions remain unsuccessful."
 actual_result: "All 27 linked benchmark tests passed. Both real startup gates passed on CI Node24 with unchanged ceilings. Node26 unqualified controls and a separate qualified merge overrun remain recorded, and the parent historical-cause diagnosis remains open. Full local suite passed before the later pure argv extraction; 144 focused tests and typecheck passed afterward."
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-10T19:33:27.145Z","harness:codex","Duplicate check: complete 2920-item strict all-status census plus request-specific search and open/in-progress inventories found only canonical diagnosis pm-bj7rq0 and no focused execution child. Existing implementation is already owned and claimed under that diagnosis. This child records its independently complete qualification delivery so the generated changelog reports shipped tooling without closing an unproven historical cause."
   "2026-10-10T19:37:23.079Z","harness:codex","Final verification includes 27 benchmark tests plus the unchanged-base runtime comparison. Node26 observations include an unqualified control refusal during load and a separate qualified merge-entrypoint overrun (241 ms against226 ms), which is retained rather than treated as a pass. The SDK measurement recovery no longer imports Commander registration after pure argv extraction; focused144-test verification and typechecking pass. The historical diagnosis remains owned by pm-bj7rq0."
+  "2026-10-10T19:50:51.653Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1436 includes both bracketed startup gates, complete fail-closed reports, portable methodology, 27 linked tests and this bounded closure. Initial source commit a279913ba retains all budgets; real Node24 gates pass. Historical cause diagnosis remains open under the parent. Final-head CI and review are required before merge; the latest published changelog generator checked the Unreleased entry."
 files[5]{path,scope}:
   scripts/bench/cli-transport-floor.mjs,project
   scripts/bench/runner-qualification.mjs,project

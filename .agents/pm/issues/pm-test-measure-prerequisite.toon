@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:contracts","horizon:future"
 created_at: "2026-10-09T20:48:23.014Z"
-updated_at: "2026-10-10T19:46:31.851Z"
+updated_at: "2026-10-10T19:50:50.463Z"
 closed_at: "2026-10-10T19:46:30.139Z"
 completed_at: "2026-10-10T19:46:30.139Z"
 author: "harness:codex"
@@ -20,12 +20,13 @@ expected_result: Agents discover the execution prerequisite and receive an execu
 actual_result: "107 linked tests and144 post-extraction focused tests passed; full local Node24 coverage before extraction was exact100percent across10111 passing tests. Final packed npx/bunx retries execute a trusted assertion and refusal checks preserve item/history bytes. Build, typecheck, generated surfaces and every static component passed with unchanged token, latency and RSS budgets; final-head full coverage remains a mandatory CI gate."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-reliability-window-delivery,discovered_from,"2026-10-09T20:48:23.014Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-09T20:48:23.014Z","harness:codex","Duplicate check: full 2912-item all-status corpus plus the new delivery record were checked for --measure prerequisites and conditional help/recovery coverage; no equivalent item exists. Existing pm-n7rr is the grammar umbrella and is reused as parent. This observed UX follow-up remains open and unclaimed; it is not part of the completed SDK reliability implementation."
   "2026-10-10T18:18:21.523Z","harness:codex","Live intake: complete 2918-item all-status corpus, full item/history verification and GitHub security inventories are clean. Delivery groups SDK-owned measurement prerequisite recovery with registry-derived misplaced-namespace recovery and runner qualification diagnostics. Preserve linked-test trust, original selectors and measurement values; recovery must refuse before any write and retry without adding ownership or trust overrides."
   "2026-10-10T18:57:24.052Z","harness:codex","Verification refinements preserve all help token ceilings: shortened CLI prerequisite wording rather than ratcheting any budget. Real installed npx uses the once-installed exact tarball consumer to avoid repeated npm reification; bunx retains a fresh owned temporary cache. The linked command now executes a real node:assert check via node -e, which works through Bunx Node compatibility shims; bare node --version under that launcher refused with Missing script, an external launcher behavior rather than a trusted-run policy failure. Refusal/retry logic and complete authoritative byte checks are shared across direct executables and packed consumers."
   "2026-10-10T19:25:27.998Z","harness:codex","Static-gate investigation found that the measurement recovery imported the Commander registration module, pulling its runtime-primitives graph into the testing SDK. Extracting the existing pure argv builders into SDK test command-args and retaining the old registration exports preserves compatibility while removing that unnecessary framework dependency. Host control failure remains separate evidence and does not prove historical runner ownership."
   "2026-10-10T19:46:27.546Z","harness:codex","Final local receipts: the linked measurement and existing-export compatibility runs passed 107 tests and recorded both executions. The full Node24 suite passed 10111 tests with exact100/100/100/100 coverage before the later pure argv extraction; the extraction then passed144 focused tests and typecheck. Every static component now passes, including both real Node24 startup gates, context and record integrity, and the mutation guard (329 killed plus7 recognized equivalents; zero survivors). Serialized packed npm/npx and Bun/bunx acceptance passed with nine packages and the TypeScript SDK consumer; both refused namespace forms preserve authoritative bytes and the trusted measurement recovery executes an actual assertion. Final-head full coverage is also enforced in PR CI."
+  "2026-10-10T19:50:50.463Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1436 contains the SDK prerequisite producer, pure retry serialization, generated contracts, linked tests, installed-artifact acceptance and this immutable closure evidence. Initial source commit a279913ba is implemented and locally verified; final-head full coverage and hosted review remain required before merge. Latest pm-changelog2026.10.5 generated and checked the Unreleased entry."
 files[15]{path,scope}:
   scripts/release/agent-recovery-acceptance.mjs,project
   scripts/release/docstring-quality-baseline.json,project
