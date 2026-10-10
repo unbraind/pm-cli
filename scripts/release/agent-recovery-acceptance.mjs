@@ -35,7 +35,7 @@ export function verifyInstalledAgentRecovery(command, prefix, options) {
     const refusal = run(args, 2);
     assert.equal(refusal.code, "unknown_command");
     assert.deepEqual(refusal.recovery.suggested_retry_args, [
-      ...(args[0] === "--pm-path" ? ["--pm-path", options.env.PM_PATH] : []), "update", "--help",
+      ...(args[0] === "--pm-path" ? ["--pm-path", options.env.PM_PATH] : []), "--no-extensions", "update", "--help",
     ]);
     assert.equal(run(refusal.recovery.suggested_retry_args).resolved_path, "update");
     assert.deepEqual(readFileSync(itemPath), itemBefore);

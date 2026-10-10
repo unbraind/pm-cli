@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T18:34:13.033Z"
-updated_at: "2026-10-10T22:52:54.422Z"
-closed_at: "2026-10-10T22:52:53.215Z"
-completed_at: "2026-10-10T22:52:53.215Z"
+updated_at: "2026-10-10T23:41:20.330Z"
+closed_at: "2026-10-10T23:41:19.526Z"
+completed_at: "2026-10-10T23:41:19.526Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Public SDK resolver uses installed canonical identity and refuses ambiguity; CLI JSON and text recommend inspection while preserving usage failure; real nonempty source and packed npx/bunx controls preserve authoritative bytes; existing discovery behavior and generated surface gates remain intact
@@ -19,14 +19,14 @@ why_now: Published 2026.10.10 reproducibly omits canonical update help for item 
 parent: pm-f05lsg
 risk: low
 confidence: high
-resolution: "Delivered unique full-path canonical help recovery, installed-extension and source/executable parity, absolute normalization of selected trackers, no-extension suppression, and portable cross-spawn execution for npm.cmd/npx.cmd and bunx.exe. Added required real Windows shim and full packed acceptance to CI."
-expected_result: Advertised help resolves in the originally selected tracker without changing authoritative data; installed npm/npx and Bun/bunx launchers execute JSON operands correctly on supported platforms.
-actual_result: "41 linked namespace/launcher tests pass locally with one Windows-only case skipped. Serialized packed Linux npm/npx/Bun/bunx acceptance passes nine package installations, refusal byte preservation, real measurement retry and SDK consumers. Typecheck, audit, cooldown, zero duplication and every static gate pass. Required Windows shim/full packed CI must pass before merge."
+resolution: "Delivered unique installed-registry canonical help, full refused paths, selected-tracker normalization, explicit extension suppression and source/executable parity. Tokenized retry, rendered retry and first displayed example share context. Portable Windows npm/npx and native Bun launchers execute real JSON operands; full packed acceptance runs in the existing required Windows/Node24 consumer cell independently from source/history regressions."
+expected_result: Deterministic canonical help never changes the selected tracker or explicit extension policy; native Windows shim and full npm/npx/Bun/bunx consumers succeed and all required source/history checks complete.
+actual_result: "Independent pre-fix negatives reproduce both policy/example omissions, and current linked namespace/launcher/workflow tests pass. Current serialized Linux nine-package npx/Bun/bunx and SDK consumers pass. Prior 30e4d5b hosted native Windows shim and full packed acceptance passed; its combined job later timed out during history tests, now independently budgeted without removing any checks. Current typecheck, full static and docs links pass; fresh exact-head coverage, both Windows checks and renewed full review gate merge."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
-comments[17]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-10-10T18:34:13.033Z","harness:codex","Duplicate check: strict live 2918-item all-status census and request-specific searches have no focused namespace-recovery execution child. Existing pm-f05lsg remains the canonical programme/report owner. This Task records the bounded delivery and does not duplicate that feature or its complete census acceptance. Prior read-recovery and alias-help deliveries remain completed."
   "2026-10-10T19:03:22.385Z","harness:codex","Installed current-artifact acceptance passed: npm install plus both npx bin identities, installed npx canonical retries, bunx --bun canonical retries, trusted measurement retry with an executed node:assert check, authoritative item/history byte preservation, nine bundled packages and TypeScript SDK consumer. Boundary-focused Node24 rerun passed96 tests, including docs reachability, unchanged MCP task timing, and existing flag-help ceilings. Full coverage and broad static final receipts are pending; no product, help-token, latency or RSS budget was increased."
   "2026-10-10T19:03:23.509Z","harness:codex","Public dependency census: all current/wanted versions agree. New latest @types/node26.6.5, jscpd5.4.1, typescript-eslint8.71.1, TOON4.4.0, Knip6.41.0 and marked18.1.0 were published1.0-5.2days ago and are below the unchanged seven-day adoption window. Sentry11.6.0 is2.2days old and retains canonical migration pm-t3jxjj; Vitest/coverage5.0.3 retain pm-fokyhh and TypeScript7.0.2 retains pm-do5b. pnpm audit found zero known vulnerabilities, GitHub open PR/Dependabot/code/secret inventories were empty at intake, and every open issue had a canonical PM-link comment."
@@ -44,6 +44,9 @@ comments[17]{created_at,author,text}:
   "2026-10-10T21:10:50.747Z","harness:codex","Review documentation improvement: canonical fallback namespaces and concrete-help ordering now have semantic docstrings, and the public guidance builder explains inspection-only scope-preserving behavior. The reviewed filler baseline decreases11to10 for commander-usage; no ceiling increases. Build, ESLint, docstring gate and all18 linked tests pass. Fresh843b CI artifact confirms67922statements,64616lines,13996functions and52009branches all covered100percent; full JUnit10115tests has zero failures/errors. The next final head still requires fresh CI and full review."
   "2026-10-10T22:18:28.306Z","harness:codex","PR #1436 final-head review https://github.com/unbraind/pm-cli/pull/1436#pullrequestreview-5480989632: The packed recovery helper and smoke runner launch Windows .cmd files directly. Node requires a command interpreter for these shims; use the existing vetted cross-spawn7.0.6 version as a direct dev dependency for argument-safe portable launch and run the real complete packed acceptance in the required Windows job."
   "2026-10-10T22:50:35.587Z","harness:codex","Final-control review remediation: both installed-recovery and packed-smoke executors use pinned mature cross-spawn 7.0.6, added only as a direct development dependency. Native Windows selection distinguishes npm.cmd/npx.cmd from bunx.exe, confirmed by official Bun source. Linux packed npm/npx and Bun/bunx acceptance passes with nine bundled packages, real byte-preserving refusals, executable measurement recovery and SDK type/runtime consumers. Linked namespace and launcher tests pass. Windows CI now runs a real .cmd shim located in a spaced path, a direct-spawn negative control and full packed npm/npx/Bun/bunx acceptance with pinned Bun 1.4.0; hosted Windows proof remains pending on the next head. Job timeout grows from 12 to 20 minutes to cover this additional matrix, with no product or coverage budget changes. Audit, dependency cooldown, zero duplication, typecheck and all static gates pass."
+  "2026-10-10T23:21:47.097Z","harness:codex","Exact-head review https://github.com/unbraind/pm-cli/pull/1436#pullrequestreview-5481136765 found two valid remaining presentation boundaries: explicit --no-extensions is dropped by canonical retry argv, and the first displayed help example omits selected-tracker scope even though tokenized recovery retains it. Windows run 38093339636 completed real shim/source regression tests and the full nine-package npm/npx/Bun/bunx/SDK acceptance at 23:19 UTC; the combined regression job then timed out during later history tests. Move the already required full Windows consumer acceptance to the existing required Windows/Node24 packed-consumer matrix cell, retaining all checks and a 20-minute ceiling, and restore the regression job to its prior 12-minute bound. No product, coverage, duplication or dependency safety ratchets change."
+  "2026-10-10T23:39:07.164Z","harness:codex","Both new review omissions are confirmed by independent pre-fix negatives: explicit --no-extensions drops from retry argv, and the displayed first extension-help example omits --pm-path despite scoped tokenized recovery. Current focused tests pass 42 assertions plus one native-Windows-only skip. Canonical help now uses one policy-preserving retry constructor and renders its first example from the same tokens. Full static and typecheck pass without raising complexity, duplication, latency, RSS, control or coverage limits. Windows full packed acceptance remains intact in the existing required Windows/Node24 first-run matrix cell, with pinned pnpm/Bun and frozen dependencies; only that cell receives a 20-minute deadline, while other packed cells retain 10 minutes and source/history regression returns to 12 minutes. Prior 30e4d5b full CI coverage was exact 100 percent over 67939 statements, 64633 lines, 14001 functions and 52040 branches; fresh head checks remain required before merge."
+  "2026-10-10T23:41:18.889Z","harness:codex","Final second-review remediation verification: serialized current-source npx/Bun packed acceptance passes nine packages and the installed SDK type/runtime consumers, including preserved --no-extensions in replayed canonical help. Linked namespace, launcher and existing workflow-contract tests all pass; both pre-fix help-display negatives fail as expected. Full static/typecheck and focused docs-link gates pass with unchanged source ratchets. Required names and all six packed matrix cells remain present; the Windows/Node24 full consumer suite now has its own existing required check and a 20-minute bound, independent from the unchanged 12-minute source/history check. Next-head CI and fresh included full review remain merge requirements."
 learnings[1]{created_at,author,text}:
   "2026-10-10T20:23:36.861Z","harness:codex",The tracker selects the extension registry as well as item data. A canonical retry must retain explicit tracker scope and the complete refused namespace path; verify replay from a different default tracker and prove that explicit extension suppression still applies.
 files[17]{path,scope}:
@@ -64,10 +67,11 @@ files[17]{path,scope}:
   tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
   tests/unit/cli/canonical-command-recovery.spec.ts,project
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,900,"harness:codex","2026-10-10T18:38:39.580Z",local_mutation,feat/executable-agent-recovery,Canonical recovery and nonempty byte preservation
   node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,900,"harness:codex","2026-10-10T22:32:48.966Z",local_mutation,feat/executable-agent-recovery,Portable npm/npx/Bun process errors preserve diagnostics and Windows selects native npm.cmd/npx.cmd/bunx.exe
-test_runs[6]:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,900,"harness:codex","2026-10-10T23:38:43.630Z",local_mutation,feat/executable-agent-recovery,"Retain required workflow names, permissions, pinned actions, artifact boundaries and quality policy while placing Windows packed proof in its consumer cell"
+test_runs[7]:
   - run_id: test-local-mv2rt5f0-ld26id
     kind: test
     status: passed
@@ -135,8 +139,21 @@ test_runs[6]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv31f705-3om2q0
+    kind: test
+    status: passed
+    started_at: "2026-10-10T23:40:15.967Z"
+    finished_at: "2026-10-10T23:40:49.588Z"
+    recorded_at: "2026-10-10T23:40:49.588Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/SDK.md,project
-close_reason: SDK registry-derived canonical recovery preserves tracker scope across installed Node and Bun consumers and portable launchers.
+close_reason: "Canonical command recovery preserves tracker and extension policy across every deterministic retry representation, with full Windows acceptance placed in its required consumer check."
 body: ""

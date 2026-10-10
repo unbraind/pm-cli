@@ -3591,8 +3591,9 @@ registry only when an exact suffix under a known namespace has one owner. For
 example, `pm item update` remains refused and suggests `pm update --help`.
 Inspection does not execute the guessed mutation, and ambiguous or unavailable
 extension routes receive the usual bounded discovery guidance.
-Canonical help retry arguments retain an explicitly selected `--pm-path`, so
-inspection loads the same tracker and extension registry from any working directory.
+Canonical help retry arguments and the first displayed example retain an
+explicitly selected `--pm-path` and `--no-extensions`, so inspection uses the same
+tracker and extension policy from any working directory.
 
 `runTest(id, { measure: [...] }, global)` requires `run: true`. A missing run
 returns `test_measure_requires_run` before linked-test mutation, with an executable

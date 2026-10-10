@@ -10,8 +10,8 @@
 
 ### Other
 
-- Preserve fail-closed startup benchmark runner qualification and complete diagnostics ([pm-runner-qualification-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-runner-qualification-delivery.toon))
 - Deliver unambiguous registry-derived namespace recovery across installed Node and Bun consumers ([pm-namespace-recovery-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-namespace-recovery-delivery.toon))
+- Preserve fail-closed startup benchmark runner qualification and complete diagnostics ([pm-runner-qualification-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-runner-qualification-delivery.toon))
 - Refresh aged Unicorn 77 alongside ESLint 10.12 without changing strict lint policy ([pm-unicorn-77](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-unicorn-77.toon))
 - Reconcile release ledgers and tag origins with bounded publication and acceptance ([pm-release-ledger-origin-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-release-ledger-origin-delivery.toon))
 - Refresh eligible ESLint 10.12 for release quality gates ([pm-eslint-1012](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eslint-1012.toon))

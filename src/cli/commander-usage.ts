@@ -641,7 +641,21 @@ function resolveUnknownCommandPath(token: string, invocationArgv: readonly strin
   return `${invocationArgv[commandIndex]} ${token}`;
 }
 
-/** Build inspection-only recovery from installed commands, preserving explicit tracker scope in executable retries. */
+/** Retain the selected tracker and explicit extension suppression when replaying canonical help. */
+function buildCanonicalHelpRetryArgs(
+  canonicalPath: string | undefined,
+  invocationArgv: readonly string[],
+): string[] | undefined {
+  if (!canonicalPath) return undefined;
+  const bootstrapGlobal = parseBootstrapGlobalOptions([...invocationArgv]);
+  return [
+    ...(bootstrapGlobal.path ? ["--pm-path", resolvePmRoot(process.cwd(), bootstrapGlobal.path)] : []),
+    ...(bootstrapGlobal.noExtensions ? ["--no-extensions"] : []),
+    ...canonicalPath.split(" "), "--help",
+  ];
+}
+
+/** Build inspection-only recovery from installed commands, preserving tracker scope and explicit extension policy in executable retries. */
 export function buildUnknownCommandGuidanceFromRuntime(
   rawMessage: string,
   root: Command,
@@ -681,11 +695,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
   });
   const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
   const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths);
-  const selectedPath = parseBootstrapGlobalOptions([...invocationArgv]).path;
-  const retryArgs = misnestedPath ? [
-    ...(selectedPath ? ["--pm-path", resolvePmRoot(process.cwd(), selectedPath)] : []),
-    ...misnestedPath.split(" "), "--help",
-  ] : undefined;
+  const retryArgs = buildCanonicalHelpRetryArgs(misnestedPath, invocationArgv);
   const suggestedPaths = [...new Set([
     ...(misnestedPath ? [misnestedPath] : []),
     ...(combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)),
@@ -704,7 +714,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
       suggestedRetryCommand: renderPmCommand(retryArgs),
       suggestedRetryArgs: retryArgs,
     } : {}),
-    unknownCommandExamples: examples,
+    unknownCommandExamples: retryArgs ? [renderPmCommand(retryArgs), ...examples.slice(1)] : examples,
     unknownCommandNextSteps: [
       ...(didYouMean ? [didYouMean] : []),
       'Run "pm --help --all" to list every command available in this runtime, including active extensions.',

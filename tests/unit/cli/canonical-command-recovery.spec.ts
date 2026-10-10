@@ -26,6 +26,16 @@ describe("canonical unknown-command recovery", () => {
     expect(guidance?.suggestedRetryArgs).toEqual(["update", "--help"]);
   });
 
+  it("keeps explicit extension suppression in both canonical retry fields and the first example", () => {
+    const program = new Command().name("pm");
+    program.command("item");
+    program.command("update");
+    const guidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'item update'", program, new Map(), ["--no-extensions", "item", "update"]);
+    expect(guidance?.suggestedRetryArgs).toEqual(["--no-extensions", "update", "--help"]);
+    expect(guidance?.suggestedRetryCommand).toBe("pm --no-extensions update --help");
+    expect(guidance?.unknownCommandExamples?.[0]).toBe(guidance?.suggestedRetryCommand);
+  });
+
   it("deduplicates replacements, resolves deprecated group prefixes, and excludes unavailable targets", () => {
     expect(canonicalizeCommandSuggestions(["start-task", "claim --start", "extension doctor", "list-open", "custom"], ["claim", "package doctor", "custom"])).toEqual(["claim --start", "package doctor", "custom"]);
     expect(canonicalizeCommandSuggestions([], [])).toEqual([]);
