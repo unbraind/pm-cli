@@ -31,13 +31,30 @@ export function verifyInstalledAgentRecovery(command, prefix, options) {
   const historyPath = path.join(options.env.PM_PATH, "history", `${id}.jsonl`);
   const itemBefore = readFileSync(itemPath);
   const historyBefore = readFileSync(historyPath);
-  for (const args of [["item", "update", "--help"], ["item", "update", id, "--title", "Must not run"]]) {
+  for (const args of [["--pm-path", options.env.PM_PATH, "item", "update", "--help"], ["item", "update", id, "--title", "Must not run"]]) {
     const refusal = run(args, 2);
     assert.equal(refusal.code, "unknown_command");
-    assert.deepEqual(refusal.recovery.suggested_retry_args, ["update", "--help"]);
+    assert.deepEqual(refusal.recovery.suggested_retry_args, [
+      ...(args[0] === "--pm-path" ? ["--pm-path", options.env.PM_PATH] : []), "update", "--help",
+    ]);
     assert.equal(run(refusal.recovery.suggested_retry_args).resolved_path, "update");
     assert.deepEqual(readFileSync(itemPath), itemBefore);
     assert.deepEqual(readFileSync(historyPath), historyBefore);
+  }
+  for (const flag of ["--background", "--acknowledge-linked-tests"]) {
+    const prerequisite = run(["test", id, flag, "--measure", "coverage=100,unit=percent"], 2);
+    assert.equal(prerequisite.code, "test_measure_requires_run");
+    assert.deepEqual(readFileSync(itemPath), itemBefore);
+    assert.deepEqual(readFileSync(historyPath), historyBefore);
+    if (flag === "--background") {
+      assert(prerequisite.recovery.suggested_retry_args.includes("--background"));
+      assert(prerequisite.recovery.suggested_retry_args.includes("--run"));
+    } else {
+      assert.equal(prerequisite.next_steps.length, 3);
+      assert(prerequisite.next_steps[1].includes("--acknowledge-linked-tests"));
+      assert(prerequisite.next_steps[2].includes("--measure"));
+      assert(prerequisite.recovery.suggested_retry_args.includes("--help"));
+    }
   }
   const refusal = run(["test", id, "--measure", "coverage=100,unit=percent", "--only-index", "1"], 2);
   assert.equal(refusal.code, "test_measure_requires_run");

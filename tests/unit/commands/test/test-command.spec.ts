@@ -374,7 +374,11 @@ describe("runTest", () => {
       await expect(runTest(id, {
         measure: ["coverage=100"], acknowledgeLinkedTests: true,
       }, { path: context.pmPath, noExtensions: true, author: "same actor" })).rejects.toMatchObject({
-        context: { recovery: { suggested_retry_args: [
+        context: { nextSteps: [
+          expect.stringContaining("Review"),
+          expect.stringContaining("--acknowledge-linked-tests"),
+          expect.stringContaining("--measure coverage=100"),
+        ], recovery: { suggested_retry_args: [
           "--pm-path", context.pmPath, "--no-extensions", "--author", "same actor", "test", id, "--help",
         ] } },
       });
@@ -385,6 +389,43 @@ describe("runTest", () => {
           "--pm-path", context.pmPath, "test", id, "--run", "--json", "--progress", "--measure", "coverage=100", "--list",
         ] } },
       });
+      await expect(runTest(id, {
+        measure: ["coverage=100"], acknowledgeLinkedTests: true, author: "explicit actor",
+      }, { path: context.pmPath })).rejects.toMatchObject({
+        context: { nextSteps: [expect.any(String), expect.stringContaining('--author "explicit actor"'), expect.any(String)] },
+      });
+    });
+  });
+
+  it("executes SDK measurement recovery with numeric selectors and removals intact", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "numeric-measurement-recovery");
+      const commands = ["node -e \"console.log('first')\"", "node -e \"console.log('second')\""];
+      await runTest(id, { addJson: commands.map((command) => JSON.stringify({ command, scope: "project" })) }, { path: context.pmPath });
+      let before = await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8");
+      for (const options of [{ onlyIndex: 2 }, { removeIndex: [2] }, { onlyIndex: Number.NaN }]) {
+        const error = await runTest(id, { ...options, measure: ["coverage=100"] }, { path: context.pmPath }).catch((error: unknown) => error) as {
+          context: { recovery: { suggested_retry_args: string[] } };
+        };
+        expect(await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).toBe(before);
+        const retry = error.context.recovery.suggested_retry_args;
+        const result = context.runCli(retry, { expectJson: true });
+        if (Number.isNaN(options.onlyIndex)) {
+          expect(result.code).toBe(EXIT_CODE.USAGE);
+          expect(await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).toBe(before);
+        } else {
+          expect(result.code, result.stderr).toBe(0);
+          expect(result.json).toMatchObject({ run_results: [{ status: "passed", stdout: options.onlyIndex === 2 ? "second\n" : "first\n" }] });
+          expect((result.json as { run_results: unknown[] }).run_results).toHaveLength(1);
+          // Successful execution records evidence, so restore the next refusal's baseline.
+          if (options.onlyIndex === 2) {
+            expect((result.json as { selection: { selected_indexes: number[] } }).selection.selected_indexes).toEqual([2]);
+          } else {
+            expect(result.json).toMatchObject({ removed: 1, tests: [{ command: commands[0] }] });
+          }
+          before = await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8");
+        }
+      }
     });
   });
 

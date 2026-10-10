@@ -1240,6 +1240,7 @@ export {
   type TestResult,
   type TestRunResult,
 } from "./test/execution.js";
+export { assertTestMeasurementRun } from "./test/prerequisites.js";
 export {
   TEST_RUN_MEASUREMENT_LIMIT,
   diffTestRunMeasurements,

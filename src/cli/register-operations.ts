@@ -53,6 +53,7 @@ import {
   readOptionString,
 } from "./registration-helpers.js";
 import { registerAssuranceCommand } from "./register-assurance.js";
+import { assertTestMeasurementRun } from "../sdk/test/prerequisites.js";
 
 function resolveTelemetrySubcommand(
   namespaceOrSubcommand: string | undefined,
@@ -278,6 +279,10 @@ async function runTestCommandAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const values = collectTestMutationValues(options);
+  if (options.background === true) {
+    assertTestMeasurementRun(id, buildRunTestOptions(options, values), globalOptions,
+      resolvePmRoot(process.cwd(), globalOptions.path), true);
+  }
   validateBackgroundTestOptions(options, values);
   if (options.background === true) {
     await runBackgroundLinkedTests(id, options, globalOptions, values);

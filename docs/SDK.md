@@ -3559,7 +3559,7 @@ For SDK and automation consumers, the key runtime change is the optional `recove
 - `candidate_commands_total`
 - `candidate_commands_truncated`
 - `suggested_retry`
-- `suggested_retry_args` (execute these tokens directly instead of reparsing display text)
+- `suggested_retry_args` (pass these argument tokens to the `pm` executable instead of reparsing display text)
 
 Treat `recovery.suggested_retry` as the first-choice deterministic replay
 command when present. Generic missing-option retries preserve every original
@@ -3591,13 +3591,21 @@ registry only when an exact suffix under a known namespace has one owner. For
 example, `pm item update` remains refused and suggests `pm update --help`.
 Inspection does not execute the guessed mutation, and ambiguous or unavailable
 extension routes receive the usual bounded discovery guidance.
+Canonical help retry arguments retain an explicitly selected `--pm-path`, so
+inspection loads the same tracker and extension registry from any working directory.
 
 `runTest(id, { measure: [...] }, global)` requires `run: true`. A missing run
 returns `test_measure_requires_run` before linked-test mutation, with an executable
 retry retaining the tracker, measurements, selectors, runtime directives, and
 explicit actor. It adds no ownership or trust override. When the request also
-acknowledges trust, recovery opens help because acknowledgement and execution
-must remain separate operations.
+acknowledges trust, recovery opens help and supplies `next_steps`: review the linked
+commands, acknowledge them in a separate non-executing operation, then run the
+measurement without the acknowledgement flag. Foreground and background requests
+use the same prerequisite guard; background recovery retains `--background`.
+Package authors can call the exported `assertTestMeasurementRun(id, options,
+global, resolvedPmRoot, background?)` before dispatching their own linked-test
+runner. It validates only this prerequisite and performs no I/O; `runTest` applies
+the guard automatically before other execution and trust validation.
 
 ## Authoring Pattern
 

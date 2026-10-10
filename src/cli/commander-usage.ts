@@ -679,6 +679,11 @@ export function buildUnknownCommandGuidanceFromRuntime(
   });
   const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
   const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths);
+  const selectedPath = parseBootstrapGlobalOptions([...invocationArgv]).path;
+  const retryArgs = misnestedPath ? [
+    ...(selectedPath ? ["--pm-path", selectedPath] : []),
+    ...misnestedPath.split(" "), "--help",
+  ] : undefined;
   const suggestedPaths = [...new Set([
     ...(misnestedPath ? [misnestedPath] : []),
     ...(combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)),
@@ -693,9 +698,9 @@ export function buildUnknownCommandGuidanceFromRuntime(
       : null;
 
   return {
-    ...(misnestedPath ? {
-      suggestedRetryCommand: renderPmCommand([...misnestedPath.split(" "), "--help"]),
-      suggestedRetryArgs: [...misnestedPath.split(" "), "--help"],
+    ...(retryArgs ? {
+      suggestedRetryCommand: renderPmCommand(retryArgs),
+      suggestedRetryArgs: retryArgs,
     } : {}),
     unknownCommandExamples: examples,
     unknownCommandNextSteps: [

@@ -994,9 +994,22 @@ async function maybeLoadRuntimeExtensions(command: Command): Promise<{
 
 /* c8 ignore stop */
 
+/** Load the complete installed registry for recovery without registering guessed command handlers. */
 async function loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot: string): Promise<Map<string, ExtensionCommandHelpDescriptor>> {
   const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
   return snapshot ? new Map(snapshot.commandDescriptors) : activeRuntimeExtensionCommandDescriptors;
+}
+
+/** Include installed extension paths for refused help while honoring explicit extension suppression. */
+async function resolveHelpRecoveryDescriptors(
+  helpRequest: ReturnType<typeof parseBootstrapHelpRequest>,
+  bootstrapGlobal: ReturnType<typeof parseBootstrapGlobalOptions>,
+): Promise<Map<string, ExtensionCommandHelpDescriptor>> {
+  if (!helpRequest.requested || bootstrapGlobal.noExtensions ||
+    isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
+    return activeRuntimeExtensionCommandDescriptors;
+  }
+  return loadRuntimeExtensionCommandDescriptorsForRecovery(resolvePmRoot(process.cwd(), bootstrapGlobal.path));
 }
 
 async function executeRegisteredRuntimeMigrations(migrations: RegisteredExtensionSchemaMigrationDefinition[], pmRoot: string): Promise<string[]> {
@@ -1842,10 +1855,13 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
 
 /** Classify failed help requests by semantic operation so optional package recovery and error telemetry retain the attempted command. */
 async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code: string | undefined): Promise<void> {
-  const unknownToken = resolvePmCommandOperation(parseBootstrapHelpRequest(context.invocationArgv).commandPathTokens.join(" ")) || resolveUnknownCommanderToken(context.invocationArgv);
-  const unknownMessage = `unknown command '${unknownToken}'`;
+  const unknownPath = parseBootstrapHelpRequest(context.invocationArgv).commandPathTokens.join(" ") || resolveUnknownCommanderToken(context.invocationArgv);
+  const unknownToken = resolvePmCommandOperation(unknownPath);
+  const unknownMessage = `unknown command '${unknownPath}'`;
   const pmRoot = resolvePmRoot(process.cwd(), context.bootstrapGlobal.path);
-  const recoveryCommandDescriptors = await loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot);
+  const recoveryCommandDescriptors = context.bootstrapGlobal.noExtensions
+    ? activeRuntimeExtensionCommandDescriptors
+    : await loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot);
   const recoveryProbe = buildBootstrapActivationProbe(context.invocationArgv);
   const failedExtensions = await loadExtensionRecoveryFailures(pmRoot, {}, collectActivationCommandCandidates(recoveryProbe));
   const usageContext = await resolveCommanderUsageContext({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions });
@@ -2111,7 +2127,8 @@ async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: 
       attachRichHelpText(program, invocationArgv);
     }
     wrapProgramActionsForExtensionHandlers(program);
-    const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, invocationArgv, activeRuntimeExtensionCommandDescriptors, rawArgv);
+    const recoveryHelpDescriptors = await resolveHelpRecoveryDescriptors(helpRequest, bootstrapGlobal);
+    const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, invocationArgv, recoveryHelpDescriptors, rawArgv);
     if (renderedBootstrapJsonHelp) {
       return;
     }

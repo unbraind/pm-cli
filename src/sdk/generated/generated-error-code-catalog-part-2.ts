@@ -1398,7 +1398,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/test/execution.ts"],
+    sources: ["sdk/test/prerequisites.ts"],
     emitting_commands: ["*"],
     canonical_code: "test_measure_requires_run",
     aliases: [],

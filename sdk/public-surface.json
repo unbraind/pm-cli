@@ -3309,6 +3309,12 @@
           "signature": "(subcommand: string, dryRun: boolean) => void | calls: (subcommand: string, dryRun: boolean) => void"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertTestMeasurementRun",
+          "signature": "(id: string, options: TestCommandOptions, global: GlobalOptions, pmRoot: string, background?: boolean) => void | calls: (id: string, options: TestCommandOptions, global: GlobalOptions, pmRoot: string, background?: boolean) => void"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",

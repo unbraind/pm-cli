@@ -226,8 +226,9 @@ function assertPackedTypescriptConsumer(consumerRoot) {
   writeFileSync(
     path.join(consumerRoot, "consumer.ts"),
     [
-      'import { quoteCommandArg } from "@unbrained/pm-cli/sdk";',
+      'import { assertTestMeasurementRun, quoteCommandArg } from "@unbrained/pm-cli/sdk";',
       'export const quoted: string = quoteCommandArg("pack-smoke", "linux");',
+      'assertTestMeasurementRun("pm-consumer", { onlyIndex: 2, removeIndex: [2] }, {}, "/isolated/tracker");',
       "",
     ].join("\n"),
   );
@@ -235,6 +236,14 @@ function assertPackedTypescriptConsumer(consumerRoot) {
     path.join(consumerRoot, "cli-consumer.mjs"),
     [
       'import * as cli from "@unbrained/pm-cli/cli";',
+      'import assert from "node:assert/strict";',
+      'import { assertTestMeasurementRun, PmCliError } from "@unbrained/pm-cli/sdk";',
+      'assert.throws(() => assertTestMeasurementRun("pm-consumer", { measure: ["coverage=100"], onlyIndex: 2 }, {}, "/isolated/tracker"), (error) => {',
+      '  assert(error instanceof PmCliError);',
+      '  assert.equal(error.context.code, "test_measure_requires_run");',
+      '  assert.deepEqual(error.context.recovery.suggested_retry_args, ["--pm-path", "/isolated/tracker", "test", "pm-consumer", "--run", "--json", "--progress", "--only-index", "2", "--measure", "coverage=100"]);',
+      '  return true;',
+      '});',
       "const exportedNames = Object.keys(cli).sort();",
       'const expectedNames = ["runPmCli"];',
       "if (JSON.stringify(exportedNames) !== JSON.stringify(expectedNames)) {",

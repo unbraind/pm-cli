@@ -25212,7 +25212,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/test/execution.ts"
+        "sdk/test/prerequisites.ts"
       ],
       "stability": "provisional"
     },

@@ -102,8 +102,7 @@ import {
 } from "./measurements.js";
 import { withHostEnvironmentBoundary } from "../environment/host-environment-errors.js";
 import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
-import { buildBackgroundTestCommandArgs } from "./command-args.js";
-import { renderPmCommand } from "../command-line.js";
+import { assertTestMeasurementRun } from "./prerequisites.js";
 import {
   acknowledgeLinkedTests,
   attachLinkedTestMutationProvenance,
@@ -3489,34 +3488,6 @@ function projectTestResult(input: {
     ...(item.removed > 0 ? { removed: item.removed } : {}),
     ...measurementProjection,
   };
-}
-
-/** Refuse measurements without execution and retain the caller's selectors, identity and trust policy in recovery. */
-function assertTestMeasurementRun(
-  id: string,
-  options: TestCommandOptions,
-  global: GlobalOptions,
-  pmRoot: string,
-): void {
-  if ((options.measure?.length ?? 0) > 0 && options.run !== true) {
-    const retryArgs = ["--pm-path", pmRoot,
-      ...(global.noExtensions ? ["--no-extensions"] : []),
-      ...(global.author ? ["--author", global.author] : []),
-      ...(options.acknowledgeLinkedTests ? ["test", id, "--help"] : buildBackgroundTestCommandArgs(id, options as Record<string, unknown>)),
-      ...(options.list && !options.acknowledgeLinkedTests ? ["--list"] : []),
-    ];
-    throw new PmCliError("--measure requires --run", EXIT_CODE.USAGE, {
-      code: "test_measure_requires_run",
-      flag: "--measure",
-      required: "Run the linked tests with --run to record measurement evidence.",
-      why: "Measurements describe an executed linked-test run; recording them without execution would fabricate evidence.",
-      recovery: {
-        missing: ["--run"],
-        suggested_retry: renderPmCommand(retryArgs),
-        suggested_retry_args: retryArgs,
-      },
-    });
-  }
 }
 
 /** Implements run test for the public runtime surface of this module. */

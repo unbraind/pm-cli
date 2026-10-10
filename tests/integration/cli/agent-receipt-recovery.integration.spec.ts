@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runPmCli } from "../../../src/cli/main.js";
@@ -13,6 +13,35 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { verifyInstalledAgentRecovery } from "../../../scripts/release/agent-recovery-acceptance.mjs";
 
 describe("agent receipt and recovery contracts", () => {
+  it("replays extension help in the explicitly selected tracker from a different default tracker", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-extension-scope", "Keep the selected tracker unchanged.");
+      const extensionDir = path.join(context.tempRoot, "scoped-package");
+      await mkdir(extensionDir);
+      await writeFile(path.join(extensionDir, "manifest.json"), JSON.stringify({ name: "recoveryprobe", version: "1.0.0", entry: "index.js", capabilities: ["commands"] }));
+      await writeFile(path.join(extensionDir, "index.js"), "export default { activate(api) { api.registerCommand({ name: 'recoveryprobe scoped-help', run: () => ({ ok: true }) }); } };\n");
+      expect(context.runCli(["package", "install", extensionDir, "--json"], { expectJson: true }).code).toBe(0);
+      const otherTracker = path.join(context.tempRoot, "other-tracker");
+      expect(context.runCli(["--pm-path", otherTracker, "init", "--json"], { expectJson: true }).code).toBe(0);
+      const env = { ...context.env, PM_PATH: otherTracker };
+      const historyPath = path.join(context.pmPath, "history", "pm-extension-scope.jsonl");
+      const before = await readFile(historyPath, "utf8");
+      const refusal = runDirectDistCli(["--pm-path", context.pmPath, "item", "scoped-help", "--help", "--json"], { env, cwd: context.tempRoot });
+      expect(refusal.code, refusal.stderr).toBe(2);
+      const recovery = (JSON.parse(refusal.stderr) as JsonErrorEnvelope).recovery!;
+      expect(recovery.suggested_retry_args, refusal.stderr).toEqual(["--pm-path", context.pmPath, "recoveryprobe", "scoped-help", "--help"]);
+      const help = runDirectDistCli([...recovery.suggested_retry_args!, "--json"], { env, cwd: context.tempRoot });
+      expect(help.code, help.stderr).toBe(0);
+      expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "recoveryprobe scoped-help" });
+      const unscoped = runDirectDistCli(["recoveryprobe", "scoped-help", "--help", "--json"], { env, cwd: context.tempRoot });
+      expect(unscoped.code).toBe(2);
+      const suppressed = runDirectDistCli(["--no-extensions", "--pm-path", context.pmPath, "item", "scoped-help", "--help"], { env, cwd: context.tempRoot });
+      expect(suppressed.code).toBe(2);
+      expect(suppressed.stderr).not.toContain("recoveryprobe scoped-help");
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+    });
+  });
+
   it("executes the advertised recovery through a real executable and preserves authoritative bytes", async () => {
     await withTempPmPath(async (context) => {
       expect(verifyInstalledAgentRecovery(process.execPath, [path.resolve("dist/cli.js")], {

@@ -3,6 +3,7 @@
  *
  * Serializes linked-test execution options without loading CLI registration.
  */
+/** Append a nonempty string value, trimming the whitespace ignored by CLI option parsers. */
 function pushOptionalValueFlag(
   args: string[],
   flag: string,
@@ -18,6 +19,7 @@ function pushOptionalValueFlag(
   args.push(flag, trimmed);
 }
 
+/** Append a boolean switch only when the caller explicitly enabled it. */
 function pushOptionalBooleanFlag(
   args: string[],
   flag: string,
@@ -28,6 +30,7 @@ function pushOptionalBooleanFlag(
   }
 }
 
+/** Preserve the order of nonempty repeatable string values while omitting unrelated input types. */
 function pushRepeatableValueFlag(
   args: string[],
   flag: string,
@@ -57,9 +60,11 @@ export function buildBackgroundTestCommandArgs(
   pushRepeatableValueFlag(args, "--add", options.add);
   pushRepeatableValueFlag(args, "--add-json", options.addJson);
   pushRepeatableValueFlag(args, "--remove", options.remove);
-  pushRepeatableValueFlag(args, "--remove-index", options.removeIndex);
+  pushRepeatableValueFlag(args, "--remove-index", Array.isArray(options.removeIndex)
+    ? options.removeIndex.map((index) => typeof index === "number" ? String(index) : index)
+    : options.removeIndex);
   pushOptionalValueFlag(args, "--match", options.match);
-  pushOptionalValueFlag(args, "--only-index", options.onlyIndex);
+  pushOptionalValueFlag(args, "--only-index", typeof options.onlyIndex === "number" ? String(options.onlyIndex) : options.onlyIndex);
   pushOptionalBooleanFlag(args, "--only-last", options.onlyLast);
   pushRepeatableValueFlag(args, "--measure", options.measure);
   pushOptionalValueFlag(args, "--metric-below", options.metricBelow);
@@ -71,6 +76,7 @@ export function buildBackgroundTestCommandArgs(
   return args;
 }
 
+/** Preserve explicit runtime context, assertion policy and trust switches shared by item and tracker runs. */
 function pushSharedBackgroundTestCommandArgs(
   args: string[],
   options: Record<string, unknown>,
