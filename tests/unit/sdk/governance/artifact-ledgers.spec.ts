@@ -50,11 +50,35 @@ describe("artifact ledger reconciliation", () => {
   });
 
   it.each([
+    { rows: null, message: "Expected at least two artifact ledgers." },
+    { rows: {}, message: "Expected at least two artifact ledgers." },
+    { rows: [null, snapshots[1]!], message: "Expected unique complete artifact ledgers." },
+    { rows: [42, snapshots[1]!], message: "Expected unique complete artifact ledgers." },
+    { rows: [{ ...snapshots[0]!, identities: null }, snapshots[1]!], message: "Invalid or duplicate artifact identity." },
+    { rows: [{ ...snapshots[0]!, identities: "one" }, snapshots[1]!], message: "Invalid or duplicate artifact identity." },
+  ])("identifies malformed JavaScript inventory inputs %j", ({ rows, message }) => {
+    expect(() => reconcileArtifactLedgers(rows as unknown as ArtifactLedgerSnapshot[])).toThrow(new TypeError(message));
+  });
+
+  it.each([
     { reason: " " }, { evidence: "" }, { identity: "" }, { missing_from: [] },
     { missing_from: ["unknown"] }, { missing_from: ["tagged", "tagged"] },
     { missing_from: ["tagged", "delivered", "documented"] },
   ])("refuses unsupported settlement %j", (change) => {
     expect(() => reconcileArtifactLedgers(snapshots, [{ ...exception, ...change }])).toThrow(TypeError);
+  });
+
+  it.each([
+    { exceptions: null, message: "Expected unique evidence-backed artifact exceptions." },
+    { exceptions: {}, message: "Expected unique evidence-backed artifact exceptions." },
+    { exceptions: [null], message: "Expected unique evidence-backed artifact exceptions." },
+    { exceptions: [42], message: "Expected unique evidence-backed artifact exceptions." },
+    { exceptions: [{ ...exception, missing_from: undefined }], message: "Invalid artifact exception ledger signature." },
+    { exceptions: [{ ...exception, missing_from: null }], message: "Invalid artifact exception ledger signature." },
+    { exceptions: [{ ...exception, missing_from: "tagged" }], message: "Invalid artifact exception ledger signature." },
+    { exceptions: [{ ...exception, missing_from: {} }], message: "Invalid artifact exception ledger signature." },
+  ])("identifies malformed JavaScript exception inputs %j", ({ exceptions, message }) => {
+    expect(() => reconcileArtifactLedgers(snapshots, exceptions as unknown as ArtifactLedgerException[])).toThrow(new TypeError(message));
   });
 
   it("refuses duplicate exception identities and does not mutate caller data", () => {

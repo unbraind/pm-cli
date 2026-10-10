@@ -51,16 +51,17 @@ export interface ArtifactLedgerReport {
 }
 
 /** Require nonempty exact identities without silently trimming caller data. */
-function validIdentity(value: string): boolean {
+function validIdentity(value: unknown): boolean {
   return typeof value === "string" && value.length > 0 && value.trim() === value;
 }
 
 /** Admit complete, unambiguous inventories before computing any reconciliation verdict. */
 function inventory(snapshots: readonly ArtifactLedgerSnapshot[]): Map<string, Set<string>> {
-  if (snapshots.length < 2) throw new TypeError("Expected at least two artifact ledgers.");
+  if (!Array.isArray(snapshots as unknown) || snapshots.length < 2) throw new TypeError("Expected at least two artifact ledgers.");
   const ledgers = new Map<string, Set<string>>();
   for (const snapshot of snapshots) {
-    if (!validIdentity(snapshot.name) || ledgers.has(snapshot.name) || snapshot.complete !== true) throw new TypeError("Expected unique complete artifact ledgers.");
+    if (snapshot === null || typeof snapshot !== "object" || !validIdentity(snapshot.name) || ledgers.has(snapshot.name) || snapshot.complete !== true) throw new TypeError("Expected unique complete artifact ledgers.");
+    if (!Array.isArray(snapshot.identities as unknown)) throw new TypeError("Invalid or duplicate artifact identity.");
     const identities = new Set(snapshot.identities);
     if (identities.size !== snapshot.identities.length || snapshot.identities.some((id) => !validIdentity(id))) throw new TypeError("Invalid or duplicate artifact identity.");
     ledgers.set(snapshot.name, identities);
@@ -71,11 +72,12 @@ function inventory(snapshots: readonly ArtifactLedgerSnapshot[]): Map<string, Se
 
 /** Reject blanket, duplicate or evidence-free exceptions; retain exact signatures for comparison. */
 function settlements(exceptions: readonly ArtifactLedgerException[], names: readonly string[]): Map<string, ArtifactLedgerException> {
+  if (!Array.isArray(exceptions as unknown)) throw new TypeError("Expected unique evidence-backed artifact exceptions.");
   const accepted = new Map<string, ArtifactLedgerException>();
   for (const exception of exceptions) {
-    if (!validIdentity(exception.identity) || accepted.has(exception.identity) || !validIdentity(exception.reason) || !validIdentity(exception.evidence)) throw new TypeError("Expected unique evidence-backed artifact exceptions.");
+    if (exception === null || typeof exception !== "object" || !validIdentity(exception.identity) || accepted.has(exception.identity) || !validIdentity(exception.reason) || !validIdentity(exception.evidence)) throw new TypeError("Expected unique evidence-backed artifact exceptions.");
     const missing = exception.missing_from;
-    if (missing.length === 0 || missing.length >= names.length || new Set(missing).size !== missing.length || missing.some((name) => !names.includes(name))) throw new TypeError("Invalid artifact exception ledger signature.");
+    if (!Array.isArray(missing as unknown) || missing.length === 0 || missing.length >= names.length || new Set(missing).size !== missing.length || missing.some((name) => !names.includes(name))) throw new TypeError("Invalid artifact exception ledger signature.");
     accepted.set(exception.identity, exception);
   }
   return accepted;
@@ -86,6 +88,8 @@ function settlements(exceptions: readonly ArtifactLedgerException[], names: read
  * Preserve all discrepancies and apply a historical exception only when its
  * missing-ledger signature still matches. Reject incomplete/vacuous populations;
  * input order, a recovery or a stale exception cannot hide newly introduced drift.
+ * Validate JavaScript collection and record shapes before property access, so
+ * malformed inventories and exceptions retain field-specific TypeError diagnostics.
  */
 export function reconcileArtifactLedgers(snapshots: readonly ArtifactLedgerSnapshot[], exceptions: readonly ArtifactLedgerException[] = []): ArtifactLedgerReport {
   const ledgers = inventory(snapshots);

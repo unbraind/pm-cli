@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:release",automation,diagnostics,"horizon:current"
 created_at: "2026-09-28T15:31:49.498Z"
-updated_at: "2026-10-10T15:25:09.615Z"
+updated_at: "2026-10-10T16:34:06.627Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Every Auto Release and Release run carries an explicit trigger origin (native schedule, morning dispatcher, blocker retry, operator) from a declared input and its run name, never inferred from event or actor; Release reliability reports a separate series per origin, including the dispatcher's attempts, failures and failing stages, while the native scheduled denominator stays unchanged as decided on pm-9url9h; The same-day manual follow-up of pm-uenmu9 requires an explicit follow-up request from the operator origin; negative control: a dispatcher-origin run after a same-day tag exists skips before any version mutation; The 2026-09-28 dispatcher failure is visible in the new series or recorded as an explicit pre-attribution gap"
@@ -23,7 +23,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-q7c36n,discovered_from,"2026-09-28T15:32:05.324Z","harness:claude-code","cli:update:dep",detected
   pm-z329kd,discovered_from,"2026-09-28T15:41:04.958Z","harness:claude-code","cli:update:dep",detected
   pm-uenmu9,discovered_from,"2026-09-29T09:47:31.174Z","harness:codex","cli:update:dep",detected
-comments[35]{created_at,author,text}:
+comments[38]{created_at,author,text}:
   "2026-09-29T10:00:31.279Z","harness:codex","Implemented declared Auto Release origin in workflow run names and attempt receipts; morning dispatcher now passes its own origin. Reliability collection includes schedule, dispatch, and issue runs while keeping the native scheduled policy denominator intact; the dispatcher has a separate count, failure rate, stage series, and historical unattributed-run gap. New same-day dispatcher runs take the early immutable-tag guard. Release exact-tag dispatch carries origin; tag-push runs retain tag_push provenance. Linked tests passed (72), full coverage passed 9,428 tests at 100/100/100/100, and packed npm/Bun manual acceptance passed. Remaining acceptance: per-origin reliability series for operator and blocker retry, and upstream origin propagation into tag-push Release runs; operator-only ordinal follow-up remains owned by pm-uenmu9. No hosted release run or live new-origin receipt has yet been observed."
   "2026-09-29T10:28:52.881Z","harness:codex",PR #1350 review found the new origin-bearing Release run name no longer matched exact-tag recovery selection. Added exact declared-origin run-name matching with wrong-tag and unknown-origin negative controls; focused selector tests pass. Greptile discussion #4132270479.
   "2026-09-29T12:22:02.811Z","harness:codex","PR #1350 CodeRabbit discussion #4133333546 identified that dispatcher observations used the native 02:35 UTC cron for nominal occurrence and dispatch delay. Dispatcher rows now omit those schedule-specific timing fields, retain queue delay/outcome/failure stage, and focused negative controls prove native scheduled rows still keep their timing. Documentation states the boundary."
@@ -59,6 +59,9 @@ comments[35]{created_at,author,text}:
   "2026-10-10T14:39:49.119Z","harness:codex","Canonical all-source rerun passed all10090 tests (797 files), with two Windows-only cases retained for required native Windows execution. Every one of776 source files has exact covered=total:67810 statements,51900 branches,13978 functions and64513 lines; zero uncovered counts and unchanged100/100/100/100 gates. The earlier10090-pass/99.99%-coverage refusal remains retained; extending the existing native-Git fixture restores distinct malformed population and physically oversized valid-document refusal proof. Source-copy fault controls admit both when only their guards are removed and refuse both on current source. Current102 PM-linked release assertions, strict repository lint, corrected docs and permissions pass; four TypeScript projects are being rechecked after the small fixture extension. No production test hook, ignore directive, coverage exclusion or threshold change was added."
   "2026-10-10T15:01:09.981Z","harness:codex","Pushed head 6c339604847a4c0266c9090b5f5ab4c89420f83e completes full CodeRabbit review with no actionable findings and resolves both prior threads, but required native Windows regression fails in the new publishing fixture: Node execFileSync resolves the real gh.exe rather than its Bash fake provider, producing the missing-token refusal instead of the intended downstream exit 73. DeepScan independently reports the optional extracted Bash block accessed through a non-null assertion. Both are fixture defects; production coverage and the other required checks pass. Retain both failed receipts and repair the existing fixture under this canonical owner, without adding a duplicate item, widening production seams or weakening assertions."
   "2026-10-10T15:25:08.878Z","harness:codex","Fixture correction is implemented and locally verified. The existing real Git/Bash publisher keeper uses an owned native Node executable alias as gh/gh.exe and one top-level ESM provider preload, so both Bash and native execFileSync reach the same external-provider responses. Real refs, provenance, files and failure records remain product-owned; no test assertion, timeout or platform membership is removed. Safe null-coalescing replaces the optional extracted-block non-null access while preserving its mandatory existence assertion. Original failures remain at https://github.com/unbraind/pm-cli/actions/runs/38061188656/job/114239840914 and https://deepscan.io/dashboard/#view=project&tid=30234&pid=32092&bid=1043829&subview=pull-request&prid=2481545 (NULL_POINTER issue 236804852). The final Node24 full run passes all 10090 tests and exact 100/100/100/100 across all 776 source files; 102 linked release contracts, strict lint, four TypeScript projects and docs pass. Production source is unchanged from the prior exact Node26 run. Native Windows and DeepScan must verify the next pushed head; broader release-origin work and the first actual new sealed producer artifact remain future evidence."
+  "2026-10-10T16:03:31.728Z","harness:codex","The same final full review identifies stale local tag-push instructions in docs/RELEASING.md. Full guide and both actual workflows confirm publication now requires hosted sealed preparation and rejects local provenance. Claimed only this documentation correction normally; replace direct main/tag push guidance with the existing default-branch Auto Release dispatch, preserve local non-pushing diagnostics, immutable same-day recovery and the unmodified producer verification boundary."
+  "2026-10-10T16:08:19.955Z","harness:codex","The complete release guide now replaces direct main/local-tag publication with default-branch hosted Auto Release dispatch. It explicitly retains non-pushing local diagnostics, mandatory gates, immutable producer sealing before atomic ref push, one downstream tag publisher and exact same-day recovery. The unchanged102 linked native release contracts pass after the documentation repair. Original rejected local-push and local-provenance controls remain covered; no publication gate or workflow is weakened."
+  "2026-10-10T16:34:04.934Z","harness:codex","Hosted-publication guide repair is verified with the complete source run10104/exact100, four TypeScript projects, docs/skills, full static gates and102 linked native release contracts. The guide retains local non-pushing diagnostics but routes publication through reviewed default-branch hosted preparation, immutable producer sealing, verified atomic ref push and one tag-driven publisher. Earlier final-head Windows and DeepScan receipts are green; this new source/doc push requires fresh final checks/review. Broader origin display-name/manual-ordinal acceptance and first actual new sealed producer artifact remain future evidence. Return the completed documentation tranche to open/unclaimed without closing broader criteria."
 notes[3]{created_at,author,text}:
   "2026-09-29T10:00:32.043Z","harness:codex",A tag-push Release run currently knows only tag_push in its run name. Do not equate that with the upstream Auto Release trigger; completing the accepted provenance contract needs immutable upstream attribution through the tag or an explicitly dispatched Release workflow without duplicate publish runs.
   "2026-10-10T09:36:49.416Z","harness:codex","Additional owned-temporary native Git acceptance confirms that a missing legacy inventory throws ENOENT and malformed inventory JSON throws SyntaxError before publication; both probes restore their copied inventory. The real tracker and source policy are untouched. Publication admission has no inferred date cutoff, actor inference, external authentication fallback or automatically extended compatibility set. Local tag preparation remains readable context but requires a hosted producer before new hosted publication."
@@ -125,7 +128,7 @@ tests[4]:
       source_kind: local_mutation
       source_ref: feat/release-origin-and-ledger-reconciliation
     note: Exact immutable producer artifact admission; copied descendant/ambiguous/expired/mismatched evidence refusal; early local push refusal; native Git/Bash workflow success and downstream-failure retention plus same-day recovery.
-test_runs[14]:
+test_runs[15]:
   - run_id: test-local-mumhi17y-rifyl0
     kind: test
     status: passed
@@ -280,6 +283,17 @@ test_runs[14]:
     started_at: "2026-10-10T15:23:51.054Z"
     finished_at: "2026-10-10T15:24:02.450Z"
     recorded_at: "2026-10-10T15:24:02.450Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/registry-acceptance-workflow.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2l8zyt-jyv1ff
+    kind: test
+    status: passed
+    started_at: "2026-10-10T16:07:53.784Z"
+    finished_at: "2026-10-10T16:08:06.677Z"
+    recorded_at: "2026-10-10T16:08:06.677Z"
     passed: 1
     failed: 0
     skipped: 0

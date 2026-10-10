@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Keep installed-release init within its unchanged raw budget on macOS ([pm-release-acceptance-path-cost](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-release-acceptance-path-cost.toon))
 - Reconcile complete release ledgers with exact historical dispositions ([pm-q91qyd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon))
+- Keep installed-release init within its unchanged raw budget on macOS ([pm-release-acceptance-path-cost](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-release-acceptance-path-cost.toon))
 
 ### Other
 

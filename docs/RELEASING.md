@@ -432,13 +432,27 @@ maintainer supplies
 pair that acknowledgement with migration guidance, compatible extension
 version bounds where applicable, and the next eligible date-based release.
 
-5. Push branch and tag after local green.
+5. Land the implementation through a reviewed pull request, then use hosted
+   preparation for publication.
+
+Local preparation without `--push` is a diagnostic preview. Its local producer
+declaration cannot authorize publication. Once the reviewed implementation is on
+`main`, dispatch the existing Auto Release workflow from that default branch:
 
 ```bash
-git push origin main
-git tag v<version>
-git push origin v<version>
+gh workflow run auto-release.yml --ref main \
+  -f push=true -f dry_run=false -f telemetry_mode=off -f trigger_origin=operator
 ```
+
+Hosted preparation runs the mandatory gates, creates the version commit and
+annotated tag, and seals their exact producer binding in an immutable artifact
+before verifying and atomically pushing either ref. It waits for the single
+tag-driven Release workflow to publish and accept that exact package. Do not push
+locally prepared tags or invoke `npm publish` separately.
+
+If today's immutable tag already exists, use the exact-tag recovery procedure
+below. A local diagnostic tag does not prove hosted preparation or publication;
+never move a published tag or mint a second automatic version for the same UTC day.
 
 ## GitHub Workflow
 
