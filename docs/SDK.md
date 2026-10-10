@@ -3607,6 +3607,13 @@ global, resolvedPmRoot, background?)` before dispatching their own linked-test
 runner. It validates only this prerequisite and performs no I/O; `runTest` applies
 the guard automatically before other execution and trust validation.
 
+`runTest` also verifies execution before recording measurements. Empty or entirely
+skipped results, pre-execution refusals, failed process creation and recognised
+empty test-runner output return `test_measure_requires_execution` with a scoped
+read-only list retry. A mixed run with an executed command can retain measurements;
+an executed failing command records a failed run alongside its measurements.
+Requested link edits remain separate from the resulting measurement evidence.
+
 ## Authoring Pattern
 
 - Keep handlers deterministic and JSON-like.

@@ -35861,6 +35861,7 @@
     "template_type_unknown",
     "terminal_plan_mutation",
     "terminal_state_conflict",
+    "test_measure_requires_execution",
     "test_measure_requires_run",
     "tracked_runtime_cache_files",
     "tracker_not_initialized",

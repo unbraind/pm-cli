@@ -102,7 +102,10 @@ import {
 } from "./measurements.js";
 import { withHostEnvironmentBoundary } from "../environment/host-environment-errors.js";
 import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
-import { assertTestMeasurementRun } from "./prerequisites.js";
+import {
+  assertTestMeasurementExecution,
+  assertTestMeasurementRun,
+} from "./prerequisites.js";
 import {
   acknowledgeLinkedTests,
   attachLinkedTestMutationProvenance,
@@ -3231,7 +3234,9 @@ async function executeSelectedLinkedTests(params: {
       pmContext: runOptions.pmContextMode,
       overrideLinkedPmContext: options.overrideLinkedPmContext,
       failOnContextMismatch: options.failOnContextMismatch,
-      failOnEmptyTestRun: options.failOnEmptyTestRun,
+      failOnEmptyTestRun:
+        options.failOnEmptyTestRun === true ||
+        (options.measure?.length ?? 0) > 0,
       requireAssertionsForPm: options.requireAssertionsForPm,
       checkContext: options.checkContext,
       autoPmContext: options.autoPmContext,
@@ -3552,6 +3557,7 @@ export async function runTest(
     untrustedLinkedTestsPolicyEnabled:
       settings.testing.allow_untrusted_linked_tests,
   });
+  assertTestMeasurementExecution(id, options, global, pmRoot, runResults);
   const failureCategories = countFailureCategories(runResults);
   const failOnSkippedTriggered =
     options.run === true &&

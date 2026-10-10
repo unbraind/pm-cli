@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
+import crossSpawn from "cross-spawn";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -15,9 +15,11 @@ const REPO_ROOT = path.resolve(
 );
 const COMMAND_TIMEOUT_MS = 600_000;
 
-/** Resolve a platform-native executable name without invoking a shell. */
+/** Resolve the native package-manager shim; the portable launcher handles Windows command interpreters. */
 function resolveCommand(base) {
-  return process.platform === "win32" ? `${base}.cmd` : base;
+  return process.platform === "win32"
+    ? `${base}.${base === "bunx" ? "exe" : "cmd"}`
+    : base;
 }
 
 /** Render bounded subprocess evidence when a smoke assertion fails. */
@@ -34,12 +36,22 @@ function readCommandError(error) {
 
 /** Execute one smoke command with the shared hosted-runner timeout contract. */
 function runSmokeCommand(command, args, options = {}) {
-  return execFileSync(command, args, {
+  const result = crossSpawn.sync(command, args, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
     timeout: COMMAND_TIMEOUT_MS,
     ...options,
-  }).trim();
+  });
+  if (result.error || result.status !== 0) {
+    throw Object.assign(
+      result.error ?? new Error(`${command} failed (${String(result.status)})`),
+      {
+        stdout: result.stdout,
+        stderr: result.stderr,
+      },
+    );
+  }
+  return result.stdout.trim();
 }
 
 /** Build the current package and return the absolute packed artifact path. */
@@ -239,11 +251,11 @@ function assertPackedTypescriptConsumer(consumerRoot) {
       'import assert from "node:assert/strict";',
       'import { assertTestMeasurementRun, PmCliError } from "@unbrained/pm-cli/sdk";',
       'assert.throws(() => assertTestMeasurementRun("pm-consumer", { measure: ["coverage=100"], onlyIndex: 2 }, {}, "/isolated/tracker"), (error) => {',
-      '  assert(error instanceof PmCliError);',
+      "  assert(error instanceof PmCliError);",
       '  assert.equal(error.context.code, "test_measure_requires_run");',
       '  assert.deepEqual(error.context.recovery.suggested_retry_args, ["--pm-path", "/isolated/tracker", "test", "pm-consumer", "--run", "--json", "--progress", "--only-index", "2", "--measure", "coverage=100"]);',
-      '  return true;',
-      '});',
+      "  return true;",
+      "});",
       "const exportedNames = Object.keys(cli).sort();",
       'const expectedNames = ["runPmCli"];',
       "if (JSON.stringify(exportedNames) !== JSON.stringify(expectedNames)) {",
@@ -316,10 +328,19 @@ function run() {
     assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version);
     const { commandOptions } = createPackedSmokeProject(tempRoot);
     const packages = assertPackedPackageWorkflows(runPackedPm, commandOptions);
-    verifyInstalledAgentRecovery(npx, ["--prefix", consumerRoot, "--no", "--", "pm"], commandOptions);
-    verifyInstalledAgentRecovery(bunx, ["--silent", "--bun", "--package", tarballPath, "pm"], {
-      ...commandOptions, env: { ...commandOptions.env, TMPDIR: tempRoot },
-    });
+    verifyInstalledAgentRecovery(
+      npx,
+      ["--prefix", consumerRoot, "--no", "--", "pm"],
+      commandOptions,
+    );
+    verifyInstalledAgentRecovery(
+      bunx,
+      ["--silent", "--bun", "--package", tarballPath, "pm"],
+      {
+        ...commandOptions,
+        env: { ...commandOptions.env, TMPDIR: tempRoot },
+      },
+    );
     assertPackedCalendarWorkflow(runPackedPm, commandOptions);
     const upgrade = JSON.parse(
       runPackedPm(

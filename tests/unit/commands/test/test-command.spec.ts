@@ -27,6 +27,7 @@ import {
   resolveLinkedTestRunSelection,
 } from "../../../../src/core/test/run-selectors.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { assertTestMeasurementExecution } from "../../../../src/sdk/test/prerequisites.js";
 import {
   readSettings,
   writeSettings,
@@ -426,6 +427,73 @@ describe("runTest", () => {
           before = await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8");
         }
       }
+    });
+  });
+
+  it.each(["empty", "skipped", "untrusted", "empty-runner"])(
+    "refuses measurement evidence without execution: %s",
+    async (kind) => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, `measurement-without-execution-${kind}`);
+        await setTestResultTracking(context.pmPath, true);
+        if (kind !== "empty") {
+          const command = kind === "empty-runner"
+            ? 'node -e "console.log(\'No test files found\')"'
+            : "node --version";
+          if (kind === "skipped") {
+            await overwriteTaskTests(context, id, [{ path: "tests/legacy-path-only.spec.ts", scope: "project" }]);
+          } else {
+            await runTest(id, { addJson: [JSON.stringify({ command, scope: "project" })] }, { path: context.pmPath });
+          }
+          if (kind === "untrusted") {
+            const metadata = await loadTaskMetadata(context, id);
+            await overwriteTaskTests(context, id, (metadata.tests as Array<Record<string, unknown>>).map((entry) => ({
+              ...entry, provenance: { author: "foreign", created_at: "2026-01-01T00:00:00Z", source_kind: "local_mutation", source_ref: "foreign-branch" },
+            })));
+          }
+        }
+        const history = path.join(context.pmPath, "history", `${id}.jsonl`);
+        const before = await readFile(history, "utf8");
+        await expect(runTest(id, { run: true, measure: ["coverage=100"] }, { path: context.pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          context: { code: "test_measure_requires_execution", recovery: { suggested_retry_args: ["--pm-path", context.pmPath, "test", id, "--list", "--json"] } },
+        });
+        expect(await readFile(history, "utf8")).toBe(before);
+        expect((await loadTaskMetadata(context, id)).test_runs).toBeUndefined();
+      });
+    },
+  );
+
+  it("refuses failed process creation with scope-preserving inspection guidance", () => {
+    let refusal: unknown;
+    try {
+      assertTestMeasurementExecution("pm-spawn", { run: true, measure: ["latency=1"] }, { noExtensions: true, author: "same actor" }, "/selected/tracker", [
+        { status: "failed", stdout: "", failure_category: "spawn_error" },
+      ]);
+    } catch (error) { refusal = error; }
+    expect(refusal).toMatchObject({ context: { code: "test_measure_requires_execution", recovery: { suggested_retry_args: [
+      "--pm-path", "/selected/tracker", "--no-extensions", "--author", "same actor", "test", "pm-spawn", "--list", "--json",
+    ] } } });
+    expect(() => assertTestMeasurementExecution("pm-spawn", { measure: [] }, {}, "/selected/tracker", [])).not.toThrow();
+  });
+
+  it.each(["mixed", "failed"])("retains measurements for an executed %s run", async (kind) => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `executed-measurement-${kind}`);
+      await setTestResultTracking(context.pmPath, true);
+      const linked = await runTest(id, {
+        addJson: [JSON.stringify({ command: kind === "failed" ? 'node -e "process.exit(1)"' : "node --version", scope: "project" })],
+      }, { path: context.pmPath });
+      await overwriteTaskTests(context, id, [
+        { path: "tests/legacy-path-only.spec.ts", scope: "project" },
+        ...(linked.tests as unknown as Array<Record<string, unknown>>),
+      ]);
+      const result = await runTest(id, { run: true, measure: ["coverage=50"] }, { path: context.pmPath });
+      expect(result.measurements).toEqual([expect.objectContaining({ name: "coverage", value: 50 })]);
+      expect(result.run_results.map((entry) => entry.status)).toEqual(["skipped", kind === "failed" ? "failed" : "passed"]);
+      expect((await loadTaskMetadata(context, id)).test_runs).toEqual([expect.objectContaining({
+        status: kind === "failed" ? "failed" : "passed", measurements: [expect.objectContaining({ name: "coverage", value: 50 })],
+      })]);
     });
   });
 

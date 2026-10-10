@@ -15,6 +15,11 @@ and memory observations. `benchmark_runner_unqualified` leaves product admission
 `unverified`; it still exits unsuccessfully. A qualified runner with an over-budget
 command returns `benchmark_product_budget_exceeded` and failed admission.
 
+If the final control process fails after product measurements, its unavailable
+status and error remain in `baseline_after`; the completed report and every
+product violation remain available. Check mode rejects admission as unverified,
+and update mode refuses to write a calibration from that failed control.
+
 Control cost is never subtracted from product measurements. Pressure observations
 are diagnostic context and do not prove the cause of a failure. An unchanged base
 comparison on the same runtime helps distinguish a new regression from a runner

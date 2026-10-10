@@ -20,13 +20,28 @@ const temporaryRoots: string[] = [];
 
 it("requires usable runner controls and preserves the inclusive committed ceiling", () => {
   const budget = { max_import_ms: 76 };
-  expect(qualifyBenchmarkRunner([{ runs: 5, p50_ms: 106 }], budget, 30)).toMatchObject({ status: "qualified" });
-  expect(qualifyBenchmarkRunner([{ runs: 5, p50_ms: 107 }], budget, 30)).toMatchObject({ status: "unqualified", reason: "control_over_budget" });
-  for (const controls of [[], [undefined], [{ runs: 0, p50_ms: 40 }], [{ runs: 1.5, p50_ms: 40 }], [{ runs: 5, p50_ms: -1 }]]) {
-    expect(qualifyBenchmarkRunner(controls, budget, 30)).toEqual({ status: "unqualified", reason: "control_unavailable" });
+  expect(
+    qualifyBenchmarkRunner([{ runs: 5, p50_ms: 106 }], budget, 30),
+  ).toMatchObject({ status: "qualified" });
+  expect(
+    qualifyBenchmarkRunner([{ runs: 5, p50_ms: 107 }], budget, 30),
+  ).toMatchObject({ status: "unqualified", reason: "control_over_budget" });
+  for (const controls of [
+    [],
+    [undefined],
+    [{ runs: 0, p50_ms: 40 }],
+    [{ runs: 1.5, p50_ms: 40 }],
+    [{ runs: 5, p50_ms: -1 }],
+  ]) {
+    expect(qualifyBenchmarkRunner(controls, budget, 30)).toEqual({
+      status: "unqualified",
+      reason: "control_unavailable",
+    });
   }
   for (const invalidBudget of [undefined, { max_import_ms: -1 }]) {
-    expect(qualifyBenchmarkRunner([{ runs: 5, p50_ms: 40 }], invalidBudget, 30)).toEqual({ status: "unqualified", reason: "control_unavailable" });
+    expect(
+      qualifyBenchmarkRunner([{ runs: 5, p50_ms: 40 }], invalidBudget, 30),
+    ).toEqual({ status: "unqualified", reason: "control_unavailable" });
   }
 });
 
@@ -303,6 +318,52 @@ describe("SDK entrypoint import-cost calculations", () => {
 });
 
 describe("SDK entrypoint import-cost command", () => {
+  it.each([
+    new Error("final control process failed"),
+    "final control process failed",
+  ])(
+    "retains completed entrypoints when the final control process rejects: %s",
+    async (failure) => {
+      let controls = 0;
+      const measured = await buildEntrypointCostReport({
+        iterations: 1,
+        measure: async (modulePath: string | null) => {
+          if (modulePath === null && ++controls > 2) throw failure;
+          return { duration_ms: modulePath === null ? 40 : 60 };
+        },
+      });
+      expect(Object.keys(measured.entrypoints)).toHaveLength(10);
+      expect(measured.baseline_after).toEqual({
+        status: "unavailable",
+        error: "final control process failed",
+      });
+      await expect(
+        main(["--check"], { buildReport: async () => measured }),
+      ).rejects.toMatchObject({
+        code: "benchmark_runner_unqualified",
+        product_admission: "unverified",
+        report: measured,
+        runner_qualification: { reason: "control_unavailable" },
+      });
+      const rejectedRoot = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-rejected-calibration-"));
+      temporaryRoots.push(rejectedRoot);
+      const rejectedBudget = path.join(rejectedRoot, "budgets.json");
+      const rejectedDocumentation = path.join(rejectedRoot, "costs.md");
+      await writeFile(rejectedBudget, "preserve existing budget");
+      await writeFile(rejectedDocumentation, "preserve existing documentation");
+      await expect(main(["--update"], {
+        buildReport: async () => measured,
+        budgetPath: rejectedBudget,
+        documentationPath: rejectedDocumentation,
+      })).rejects.toMatchObject({
+        code: "benchmark_runner_unqualified",
+        report: measured,
+      });
+      expect(await readFile(rejectedBudget, "utf8")).toBe("preserve existing budget");
+      expect(await readFile(rejectedDocumentation, "utf8")).toBe("preserve existing documentation");
+    },
+  );
+
   it("writes budgets and documentation, then verifies a passing report", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-costs-"));
     temporaryRoots.push(root);
@@ -344,7 +405,9 @@ describe("SDK entrypoint import-cost command", () => {
         buildReport: async () => regressed,
       }),
     ).rejects.toMatchObject({
-      code: "benchmark_product_budget_exceeded", product_admission: "failed", report: regressed,
+      code: "benchmark_product_budget_exceeded",
+      product_admission: "failed",
+      report: regressed,
       runner_qualification: { status: "qualified" },
     });
     await expect(main([])).rejects.toThrow("Usage:");
@@ -359,10 +422,16 @@ describe("SDK entrypoint import-cost command", () => {
   it("never certifies product admission when the bare-process control exceeds its own budget", async () => {
     const baseline = report();
     baseline.baseline.p50_ms = 999;
-    await expect(main(["--check"], { buildReport: async () => baseline })).rejects.toMatchObject({
-      code: "benchmark_runner_unqualified", product_admission: "unverified", report: baseline,
+    await expect(
+      main(["--check"], { buildReport: async () => baseline }),
+    ).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified",
+      product_admission: "unverified",
+      report: baseline,
       runner_qualification: { reason: "control_over_budget" },
-      violations: expect.arrayContaining([expect.stringContaining("bare node")]),
+      violations: expect.arrayContaining([
+        expect.stringContaining("bare node"),
+      ]),
     });
   });
 

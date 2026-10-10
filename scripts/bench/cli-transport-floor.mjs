@@ -19,7 +19,7 @@ import {
 import { generateSyntheticWorkspace } from "./scale-workspace.mjs";
 import { registerTempOperation } from "../temp-lifecycle.mjs";
 import { measureEntrypointProcess, summarizeImportSamples } from "./sdk-entrypoint-costs.mjs";
-import { benchmarkAdmissionError, captureRunnerEnvironment, qualifyBenchmarkRunner } from "./runner-qualification.mjs";
+import { benchmarkAdmissionError, captureFinalRunnerControl, captureRunnerEnvironment, qualifyBenchmarkRunner } from "./runner-qualification.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -158,7 +158,7 @@ export async function buildCliTransportFloorReport(options = {}) {
     iterations,
     operations,
     baseline: beforeControl,
-    baseline_after: await measureNodeControl(measureControl),
+    baseline_after: await captureFinalRunnerControl(() => measureNodeControl(measureControl)),
     runner_environment: { before: environmentBefore, after: captureRunnerEnvironment() },
   };
 }
@@ -327,6 +327,9 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   const targetBudgetPath = options.budgetPath ?? budgetPath;
   const targetDocumentationPath =
     options.documentationPath ?? documentationPath;
+  if (parsed.mode === "update" && report.baseline_after.status === "unavailable") {
+    throw benchmarkAdmissionError("CLI transport-floor", report, [], { status: "unqualified", reason: "control_unavailable" });
+  }
   if (parsed.mode === "update") {
     await mkdir(path.dirname(targetBudgetPath), { recursive: true });
     await mkdir(path.dirname(targetDocumentationPath), { recursive: true });

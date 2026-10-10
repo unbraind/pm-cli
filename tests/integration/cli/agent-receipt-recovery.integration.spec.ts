@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runPmCli } from "../../../src/cli/main.js";
@@ -13,6 +14,37 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { verifyInstalledAgentRecovery } from "../../../scripts/release/agent-recovery-acceptance.mjs";
 
 describe("agent receipt and recovery contracts", () => {
+  it.runIf(process.platform === "win32")(
+    "executes real Windows command shims with JSON operands intact",
+    async () => {
+      await withTempPmPath(async (context) => {
+        const shimRoot = path.join(
+          context.tempRoot,
+          "command shim with spaces",
+        );
+        await mkdir(shimRoot);
+        const shim = path.join(shimRoot, "pm-recovery.cmd");
+        await writeFile(
+          shim,
+          `@"${process.execPath}" "${path.join(process.cwd(), "dist", "cli.js")}" %*\r\n`,
+        );
+        const direct = spawnSync(shim, ["--version"], { encoding: "utf8" });
+        expect(direct.error).toBeDefined();
+        expect(
+          verifyInstalledAgentRecovery(shim, [], {
+            env: context.env,
+            cwd: context.tempRoot,
+          }),
+        ).toMatchObject({
+          ok: true,
+          authoritative_bytes_preserved: true,
+          measurement_recovery: true,
+        });
+      });
+    },
+  );
+
+
   it("replays extension help in the explicitly selected tracker from a different default tracker", async () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, "pm-extension-scope", "Keep the selected tracker unchanged.");

@@ -5908,7 +5908,7 @@
           "flag": "--auto-pm-context"
         },
         {
-          "description": "Record numeric measurement evidence; requires --run.",
+          "description": "Record numeric measurement evidence; requires --run and an executed linked command.",
           "flag": "--measure",
           "list": true
         },
@@ -9610,7 +9610,7 @@
           "flag": "--auto-pm-context"
         },
         {
-          "description": "Record numeric measurement evidence; requires --run.",
+          "description": "Record numeric measurement evidence; requires --run and an executed linked command.",
           "flag": "--measure",
           "list": true
         },
@@ -25198,6 +25198,23 @@
         "core/telemetry/observability.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "test_measure_requires_execution",
+      "class": "usage",
+      "code": "test_measure_requires_execution",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Test measure requires execution condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/prerequisites.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

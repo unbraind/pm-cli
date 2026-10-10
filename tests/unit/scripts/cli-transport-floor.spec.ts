@@ -139,7 +139,10 @@ describe("CLI transport-floor benchmark", () => {
       }),
     );
     await expect(
-      main(["--check", "--iterations", "1"], { budgetPath, controlBudgetPath: budgetPath }),
+      main(["--check", "--iterations", "1"], {
+        budgetPath,
+        controlBudgetPath: budgetPath,
+      }),
     ).resolves.toMatchObject({ mode: "check", violations: [] });
   });
 
@@ -263,6 +266,48 @@ describe("CLI transport-floor benchmark", () => {
 });
 
 describe("CLI transport-floor command", () => {
+  it.each([
+    new Error("final control process failed"),
+    "final control process failed",
+  ])(
+    "retains completed operations when the final control process rejects: %s",
+    async (failure) => {
+      let controls = 0;
+      const measured = await buildCliTransportFloorReport({
+        iterations: 1,
+        measureControl: async () => {
+          if (++controls > 6) throw failure;
+          return { duration_ms: 40 };
+        },
+        measure: async () => ({
+          duration_ms: 100_000,
+          output_bytes: 40,
+          estimated_tokens: 10,
+        }),
+      });
+      expect(Object.keys(measured.operations)).toHaveLength(6);
+      expect(measured.baseline_after).toEqual({
+        status: "unavailable",
+        error: "final control process failed",
+      });
+      const checkError = await main(["--check"], { buildReport: async () => measured }).catch((error) => error);
+      expect(checkError).toMatchObject({
+        code: "benchmark_runner_unqualified",
+        product_admission: "unverified",
+        report: measured,
+        runner_qualification: { reason: "control_unavailable" },
+      });
+      expect(checkError.violations.length).toBeGreaterThan(0);
+      expect(checkError.violations).toContainEqual(expect.stringContaining(": best "));
+      await expect(
+        main(["--update"], { buildReport: async () => measured }),
+      ).rejects.toMatchObject({
+        code: "benchmark_runner_unqualified",
+        report: measured,
+      });
+    },
+  );
+
   it("writes and verifies custom budget and documentation paths", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-cli-floor-"));
     temporaryRoots.push(root);
@@ -308,7 +353,9 @@ describe("CLI transport-floor command", () => {
         buildReport: async () => regressed,
       }),
     ).rejects.toMatchObject({
-      code: "benchmark_product_budget_exceeded", product_admission: "failed", report: regressed,
+      code: "benchmark_product_budget_exceeded",
+      product_admission: "failed",
+      report: regressed,
       runner_qualification: { status: "qualified" },
     });
     await expect(main([])).rejects.toThrow("Usage:");
@@ -319,15 +366,24 @@ describe("CLI transport-floor command", () => {
     const baseline = report();
     baseline.baseline_after.p50_ms = 999;
     baseline.operations.get.min_ms = 999;
-    await expect(main(["--check"], { buildReport: async () => baseline })).rejects.toMatchObject({
-      code: "benchmark_runner_unqualified", product_admission: "unverified", report: baseline,
+    await expect(
+      main(["--check"], { buildReport: async () => baseline }),
+    ).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified",
+      product_admission: "unverified",
+      report: baseline,
       runner_qualification: { reason: "control_over_budget" },
-      violations: expect.arrayContaining([expect.stringContaining("get: best 999ms")]),
+      violations: expect.arrayContaining([
+        expect.stringContaining("get: best 999ms"),
+      ]),
     });
     baseline.operations.get.min_ms = 1;
     baseline.baseline_after.p50_ms = Number.NaN;
-    await expect(main(["--check"], { buildReport: async () => baseline })).rejects.toMatchObject({
-      code: "benchmark_runner_unqualified", product_admission: "unverified",
+    await expect(
+      main(["--check"], { buildReport: async () => baseline }),
+    ).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified",
+      product_admission: "unverified",
       runner_qualification: { reason: "control_unavailable" },
     });
   });

@@ -1,24 +1,64 @@
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
 const harness = createScriptHarness([
   "../../../scripts/smoke-cleanup.mjs",
   "../../../scripts/release/agent-recovery-acceptance.mjs",
+  "cross-spawn",
 ]);
+
+/** Adapt existing subprocess stdout fixtures to the portable launcher's synchronous result contract. */
+beforeEach(() => {
+  vi.doMock("cross-spawn", async () => {
+    const { execFileSync } = await import("node:child_process");
+    return {
+      default: {
+        sync: (command: string, args: string[], options: object) => ({
+          status: 0,
+          stdout: execFileSync(command, args, options),
+          stderr: "",
+        }),
+      },
+    };
+  });
+});
 
 const SCRIPT = "scripts/smoke-npx-from-pack.mjs";
 const SCRIPT_ABS = path.join(process.cwd(), "scripts/smoke-npx-from-pack.mjs");
 
+it.each([false, true])(
+  "retains portable launcher failure output (spawn error=%s)",
+  async (spawnError) => {
+    mockFs();
+    vi.doMock("cross-spawn", () => ({
+      default: {
+        sync: () => ({
+          status: 3,
+          error: spawnError ? new Error("process creation failed") : undefined,
+          stdout: "retained stdout",
+          stderr: "retained stderr",
+        }),
+      },
+    }));
+    process.argv = ["node", SCRIPT_ABS];
+    await expect(harness.importModule(SCRIPT)).rejects.toMatchObject({
+      stdout: "retained stdout",
+      stderr: "retained stderr",
+    });
+  },
+);
+
 /**
- * Strip the win32 `.cmd` suffix the script's `resolveCommand` appends to
+ * Strip the win32 shim or executable suffix the script's `resolveCommand` appends to
  * `npm`/`npx`/`bunx` on `process.platform === "win32"`, so these
  * `execFileSync` mocks match the spawned command on every host. Without this,
  * the default executable keys never match their `.cmd` wrappers on
  * `windows-latest`. The dedicated win32 test below keys on the `.cmd` names
  * directly.
  */
-const baseCommand = (command: string): string => command.replace(/\.cmd$/, "");
+const baseCommand = (command: string): string =>
+  command.replace(/\.(?:cmd|exe)$/, "");
 
 interface ExecResponses {
   packOutput?: string;
@@ -354,7 +394,7 @@ describe("smoke-npx-from-pack", () => {
     await expect(harness.importModule(SCRIPT)).rejects.toThrow(expected);
   });
 
-  it("resolves .cmd wrappers on win32", async () => {
+  it("resolves native Windows npm shims and the Bun executable", async () => {
     const cleanupTempRoot = vi.fn();
     vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({
       cleanupTempRoot,
@@ -384,7 +424,7 @@ describe("smoke-npx-from-pack", () => {
     expect(execFileSync.mock.calls.some((call) => call[0] === "npx.cmd")).toBe(
       true,
     );
-    expect(execFileSync.mock.calls.some((call) => call[0] === "bunx.cmd")).toBe(
+    expect(execFileSync.mock.calls.some((call) => call[0] === "bunx.exe")).toBe(
       true,
     );
   });

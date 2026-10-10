@@ -14,7 +14,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { benchmarkAdmissionError, captureRunnerEnvironment, qualifyBenchmarkRunner } from "./runner-qualification.mjs";
+import { benchmarkAdmissionError, captureFinalRunnerControl, captureRunnerEnvironment, qualifyBenchmarkRunner } from "./runner-qualification.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -210,7 +210,7 @@ export async function buildEntrypointCostReport(options = {}) {
     architecture: process.arch,
     iterations,
     baseline,
-    baseline_after: await measureSamples(null, iterations, measure),
+    baseline_after: await captureFinalRunnerControl(() => measureSamples(null, iterations, measure)),
     entrypoints,
     runner_environment: { before: environmentBefore, after: captureRunnerEnvironment() },
   };
@@ -339,6 +339,9 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   const targetBudgetPath = options.budgetPath ?? budgetPath;
   const targetDocumentationPath =
     options.documentationPath ?? documentationPath;
+  if (parsed.mode === "update" && report.baseline_after.status === "unavailable") {
+    throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [], { status: "unqualified", reason: "control_unavailable" });
+  }
   if (parsed.mode === "update") {
     await mkdir(path.dirname(targetBudgetPath), { recursive: true });
     await mkdir(path.dirname(targetDocumentationPath), { recursive: true });

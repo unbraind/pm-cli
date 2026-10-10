@@ -1,13 +1,13 @@
 /** Exercise recovery through an installed executable on an isolated nonempty tracker. Trackers: pm-f05lsg, pm-test-measure-prerequisite. */
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import crossSpawn from "cross-spawn";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 /** Run a refused invocation, execute its advertised recovery, and prove authoritative bytes are retained. */
 export function verifyInstalledAgentRecovery(command, prefix, options) {
   const run = (args, status = 0) => {
-    const result = spawnSync(command, [...prefix, "--no-extensions", ...args, "--json"], {
+    const result = crossSpawn.sync(command, [...prefix, "--no-extensions", ...args, "--json"], {
       ...options, encoding: "utf8", timeout: 120_000,
     });
     assert.equal(result.status, status, `${args[0]}: ${result.stderr}\n${result.stdout}`);

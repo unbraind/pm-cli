@@ -1,6 +1,18 @@
 /** Preserve benchmark runner evidence without subtracting its cost from product ratchets. Tracker: pm-bj7rq0. */
 import os from "node:os";
 
+/** Retain a failed final control as unavailable evidence without discarding completed product measurements. */
+export async function captureFinalRunnerControl(measure) {
+  try {
+    return await measure();
+  } catch (error) {
+    return {
+      status: "unavailable",
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 /** Capture portable scheduling and memory context; these observations do not establish a failure cause. */
 export function captureRunnerEnvironment() {
   return {
