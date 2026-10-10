@@ -2,13 +2,13 @@ id: pm-release-ledger-origin-delivery
 title: Reconcile release ledgers and tag origins with bounded publication and acceptance
 description: "Connected SDK-first release-history evaluator, complete anonymous artifact-ledger reconciliation, independently verified tag-carried producer origins, unchanged-budget macOS consumer acceptance, lossless first-party publication JSON staging and eligible strict lint tooling. Implements q91, acceptance-path, ESLint and canonical artifact-weight owners plus the tag-provenance tranche of prrlce; broader display-name/manual-ordinal release work remains open. Source, hosted quality, reviewed tracker closure and actual registry/recovery evidence retain separate boundaries."
 type: Changeset
-status: in_progress
+status: closed
 priority: 1
 tags[4]: governance,release,sdk,traceability
 created_at: "2026-10-10T02:39:21.197Z"
-updated_at: "2026-10-10T08:25:32.388Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4d9c20054189c916e32efbab"
+updated_at: "2026-10-10T08:46:49.642Z"
+closed_at: "2026-10-10T08:46:48.698Z"
+completed_at: "2026-10-10T08:46:48.698Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: Complete full-history reconciliation names all divergence classes and retains exact historical dispositions; published narrow and aggregate SDK exports compile and run in isolated Node and Bun consumers; annotated preparation and rebase retain original source identity and publication independently validates its run; full-source coverage and required quality/review gates pass; manual isolated package and CLI journeys pass without publishing.
@@ -19,7 +19,9 @@ why_now: Canonical full census and live origin owners expose two connected remai
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "Every historical release discrepancy remains reconstructible through complete SDK-backed inventories and exact reviewed dispositions; new drift is rejected, and publication preserves independently verified upstream origin across preparation and recovery."
+resolution: "Implemented complete reusable artifact-ledger reconciliation, independently default-branch-verified producer declarations on annotated tags, operator-origin preservation, bounded macOS installed acceptance, native Windows provider launch, lossless first-party publication JSON staging and eligible strict lint tooling. Connected every source/test/doc owner, exact historical disposition, review repair and optimization intake through PM."
+expected_result: "Release intent, complete historical delivery and producer origin remain reconstructible without hiding gaps; installed consumers and both publication profiles satisfy unchanged limits, with full source quality and reviewed tracker closure."
+actual_result: "All 10084 applicable tests pass with exact zero-uncovered counts: 67768 statements, 51858 branches, 13972 functions and 64481 lines; two Windows-only cases run separately in required Windows CI. All 26 effective required contexts pass at 7aede965c with zero missing contexts and no unresolved threads. Real Node24/Node26/Bun npm/Bun SDK consumers, isolated CLI custom types/typed graph/history/lifecycle/npx/bunx, native actual GitHub producer verification and npm/Git acceptance pass. Complete census retains 14 explained gaps; both unchanged publication profiles pass with full JSON/runtime equivalence. Five-source delivery closures and generated changelog receive final current-head review in this same PR. Broader origin contracts, semantic documentation debt, provider availability and unverified fresh traces remain explicit; today immutable tag recovery is an operational post-merge check, and the new SDK is Unreleased."
 dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-prrlce,implements,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
   pm-q91qyd,implements,"2026-10-10T02:39:21.197Z","harness:codex","cli:create:dep",detected
@@ -34,7 +36,7 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,related,"2026-10-10T05:34:44.105Z","harness:codex","cli:update:dep",detected
   pm-998juj,implements,"2026-10-10T05:46:01.376Z","harness:codex","cli:update:dep",detected
   pm-5t33or,related,"2026-10-10T07:32:59.270Z","harness:codex","cli:update:dep",detected
-comments[24]{created_at,author,text}:
+comments[25]{created_at,author,text}:
   "2026-10-10T02:39:21.197Z","harness:codex","Duplicate check: complete strict all-status census read 2914 items with zero omitted or unreadable records, plus live request search and fresh open/in-progress inventories. Prior closed Changeset pm-reliability-window-delivery delivers rolling origin/nightly series, not full artifact reconciliation or tag provenance. This record is the concrete cross-owner delivery receipt and creates no duplicate issue, reopens no completed owner, and does not close residual pm-prrlce/pm-uenmu9 acceptance."
   "2026-10-10T02:43:20.720Z","harness:codex","Manual live-provider validation caught npm12 returning a one-element array for multi-field npm view JSON, while npm11 returns one object. The current adapter refuses it; preserve this failed live receipt and add captured public metadata plus strict one-result normalization rather than weakening completeness. The shared SDK behavior and native tag/remote fixtures already pass; full verification must be repeated after this provider correction and exact source-workflow binding."
   "2026-10-10T03:22:13.348Z","harness:codex","Continuation receipt: user explicitly approved takeover of these three existing claims after normal atomic claim refused the previous session identity. Fresh strict all-status read contains2915/2915 items,2610 closed,zero omissions and zero unreadable records. Complete paginated704-issue comment census has no missing PM-file links or partial comment populations. No open PRs,Dependabot,secret-scanning or code-scanning alerts. All76 focused Node24 SDK/provider/native-Git/pipeline regressions pass. Existing code and tracker work preserved; whole-source coverage and read-only health verification are running. Live ledger control independently detects today immutable tag while publication is still in flight; no exception is added for this transient state."
@@ -59,6 +61,7 @@ comments[24]{created_at,author,text}:
   "2026-10-10T07:40:59.675Z","harness:codex","Third-round current-head evidence: c7fe7804ce27529863dda7bba1ad645ea3a41195 passes every one of the 26 effective required contexts, has no missing context and reports CLEAN merge state. This includes both previously failed macOS/coverage fixture jobs and the unchanged static/performance/artifact gates. Chrome independently reads the current c7fe780 DeepScan commit with zero new/fixed issues and CodeFactor PR with no issues; repository-level legacy analyzer debt remains with pm-z3ez. All 13 newly emitted or edited bot artifacts were fully read, reacted to and acknowledged by updating six existing relevant comments/threads, without creating duplicate confirmation replies. The parser and authoritative-branch threads are resolved, with CodeRabbit explicitly marking the latter addressed in c7fe780. The full-review request was rate-limited for 14 minutes, so its stale 0f3e3 risk summary is not new-head approval. After the stated reset elapsed, exactly one same-head full review was retriggered and is now watched natively. Greptile remains unavailable, and the separate lower-concurrency full local coverage run remains pending."
   "2026-10-10T08:07:42.042Z","harness:codex","Fourth review repair covers the real Windows release-ledger provider boundary, with failing-before vector controls and required real npm/Git native acceptance. Connected 199 tests, strict ESLint, all TypeScript projects, docstring inventory, docs/skills and workflow permissions pass; the semantic docstring debt owner pm-dvwm remains explicit. Native Linux acceptance collected 144 public versions with source-temporary cleanup and independently retained the fixture ledger disagreement. All c7 full-review artifacts have been read, reacted and acknowledged by updating existing replies. Full canonical coverage must be rerun for the changed collector; Windows CI and full current-head review are pending, without declaring old coverage or pre-review CLEAN state final."
   "2026-10-10T08:25:32.388Z","harness:codex","Fourth-head CI completed: native Windows npm/Git acceptance passed with the actual original EINVAL control, and no review thread remains unresolved. Static quality correctly refused one added prose-edge gap at 1234 against the unchanged 1233 ceiling: the measured contracts optimization note named its completed projection lineage without a corresponding typed graph edge. Full live lineage confirms completed prior projection work; the existing open optimization owner now records a discovered_from edge through PM, preserving both statuses and immutable history. No baseline or ceiling is changed. The remaining full-review request was rate-limited for 30 minutes; its stale risk summary is not current approval. The complete local coverage command remains pending."
+  "2026-10-10T08:45:06.350Z","harness:codex","Final source verification: unchanged canonical all-source coverage completes with 10084 passing tests, two platform-only skips, 797 passed files and one skipped file. Exact zero-uncovered counts are statements 67768/67768, branches 51858/51858, functions 13972/13972 and lines 64481/64481. Current reviewed source head 7aede965c passes all 26 effective required contexts, with no missing context and CLEAN merge state. Required real Windows npm/Git proof and the final PM-linked native test pass; the complete anonymous release census has 144 documented versions, 152 tags, 144 delivered versions, all 14 individually dispositioned gaps and zero stale exceptions. Strict full-body all-status census reads all 2917 items with zero unreadable entries or omission groups. Defect evidence gate passes for 320 governed terminal defects while retaining four existing boundary waivers and historical debt. All five newly edited/emitted fifth-round review artifacts were read, reacted and acknowledged by updating existing replies. Structured source closures and supported generated changelog will be reviewed in this same PR; immutable registry recovery and current-head full review remain separate pending operational boundaries. Recent required Sentry/telemetry passes with zero critical/high issues, zero missing-code rows and 2.75 percent seven-day finish errors; backend ingestion is recent, while the complete fresh 24-hour trace query remains empty."
 notes[4]{created_at,author,text}:
   "2026-10-10T02:45:10.265Z","harness:codex","Regression evidence owners: the pure artifact-ledger SDK owns membership, completeness, exact-signature and stale-policy semantics; the repository collector owns anonymous provider formatting/configuration and native remote refs; the tag verifier owns native annotation/source-run binding; existing pipeline tests own preparation, early guards and rebase orchestration. These layers test different contracts rather than duplicating SDK assertions through every adapter. No coverage ignore, denominator exclusion, lowered threshold or external-API behavior mock is introduced."
   "2026-10-10T03:31:06.000Z","harness:codex","Manual acceptance used an external temporary workspace with both PM_PATH and PM_GLOBAL_PATH isolated. An 8,873,815-byte staged runtime distribution was installed as a real package; narrow and aggregate SDK consumers pass on Node24.21, Node26.11 and Bun, including exact settled findings, stale exceptions, new drift, incomplete inventory and caller-byte preservation. Strict typed consumers compile. Installed CLI created a custom Deployment type and Task verification child with a verifies edge, recorded comments/notes/learnings, claimed/closed/released the child and verified all eight immutable history entries plus tracker validation. An initially malformed mixed bare-id/key-value dependency argument was refused without mutation and corrected using the emitted id=<id>,kind=<kind> contract. npx --no-install and bunx --bun run the installed CLI successfully. No package was published by this manual test."
@@ -129,7 +132,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-10-10T02:56:02.229Z",local_mutation,feat/release-origin-and-ledger-reconciliation,76 independent SDK provider native-tag and release-orchestration regressions
   node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,project,300,"harness:codex","2026-10-10T06:55:12.883Z",local_mutation,feat/release-origin-and-ledger-reconciliation,Native foreign-workspace release controls and unchanged missing-helper negative control
   node tests/acceptance/release-ledger.mjs,project,240,"harness:codex","2026-10-10T08:06:15.008Z",local_mutation,feat/release-origin-and-ledger-reconciliation,Real native Git and anonymous public npm metadata with isolated roots and configurations; on Windows retain native original npm.cmd EINVAL before repaired cmd.exe launch.
-test_runs[5]:
+test_runs[6]:
   - run_id: test-local-mv1u8474-762x6a
     kind: test
     status: failed
@@ -187,7 +190,19 @@ test_runs[5]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv25b488-uruxe5
+    kind: test
+    status: passed
+    started_at: "2026-10-10T08:41:50.045Z"
+    finished_at: "2026-10-10T08:41:51.656Z"
+    recorded_at: "2026-10-10T08:41:51.656Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node tests/acceptance/release-ledger.mjs,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/RELEASE_LEDGER_RECONCILIATION.md,project
   docs/RELEASE_RELIABILITY.md,project
+close_reason: "The connected SDK, release-origin, portability and publication implementation is verified for reviewed delivery."
 body: ""

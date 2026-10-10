@@ -2,13 +2,13 @@ id: pm-release-acceptance-path-cost
 title: Keep installed-release init within its unchanged raw budget on macOS
 description: "Release run 38019834643 published 2026.10.10 successfully, but all three macOS registry sessions refused init at 12023 raw characters against the unchanged 12000-character ceiling; Linux and Windows passed. Init includes the owned temporary root in 26 real output locations. Shorten only disposable acceptance directory labels, retain raw measurement and all ceilings, and prove the unchanged public candidate/control lifecycle under a macOS-shaped temporary root. This is separate from the completed context-refusal recovery in pm-gh1428 and measured-token path normalization in pm-agent-token-path."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: acceptance,portability,release,token-efficiency
 created_at: "2026-10-10T03:50:00.123Z"
-updated_at: "2026-10-10T07:03:11.834Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4d9c20054189c916e32efbab"
+updated_at: "2026-10-10T08:46:43.769Z"
+closed_at: "2026-10-10T08:46:42.850Z"
+completed_at: "2026-10-10T08:46:42.850Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "The retained init-output regression fails with the original directory labels and passes with concise owned labels; unchanged public control/candidate npm local, npm global and Bun sessions complete under a macOS-length temporary base with original raw ceilings and deadlines; source gates and exact full coverage pass; same-tag hosted recovery can complete without republishing the immutable package."
@@ -16,8 +16,9 @@ parent: pm-u9d0
 risk: low
 confidence: high
 severity: high
-expected_result: Real npm local/global and Bun installed candidate/control sessions satisfy the original raw init output ceiling on macOS-shaped temporary roots without weakening any measured limit or changing public CLI result facts.
-actual_result: "Published 2026.10.10 registry acceptance failed for macOS npm, npm-global and Bun at init with 12023 > 12000 characters; six Linux/Windows sessions passed and release advertisement was correctly withheld."
+resolution: "Shortened only the three owned disposable acceptance directory labels and retained a complete captured-public-output regression. Preserve every output fact, lifecycle assertion, deadline and raw ceiling; retain correct exact-tag control/helper topology."
+expected_result: "Real npm local/global and Bun candidate/control lifecycles satisfy the original 12000-character init ceiling under macOS-length ancestry, and exact-tag recovery retains immutable publication semantics."
+actual_result: "Original captured output fails at 12247 raw characters; unchanged complete output passes with concise paths. Independent anonymous 2026.10.9/2026.10.10 npm local/global and Bun sessions complete all 13 lifecycle steps under the same 63-character temporary base, saving 832 raw characters. All 42 verifier tests and canonical exact-100 source coverage pass; current macOS/platform checks pass. Production same-tag operator recovery follows merge without republishing the immutable package."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,verifies,"2026-10-10T03:50:00.123Z","harness:codex","cli:create:dep",detected
   pm-agent-token-path,discovered_from,"2026-10-10T03:50:00.123Z","harness:codex","cli:create:dep",detected
@@ -56,6 +57,7 @@ test_runs[1]:
 docs[2]{path,scope}:
   docs/RELEASE_LEDGER_RECONCILIATION.md,project
   tests/fixtures/release-acceptance/README.md,project
+close_reason: The raw installed-init path overhead is repaired within the original acceptance contract.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

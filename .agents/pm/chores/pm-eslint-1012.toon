@@ -2,20 +2,22 @@ id: pm-eslint-1012
 title: Refresh eligible ESLint 10.12 for release quality gates
 description: "The anonymous public registry reports ESLint 10.12.0 published 2026-10-02T20:08:19.213Z, beyond the repository seven-day adoption window at this intake. Its engine range preserves the documented Node floor and installed typescript-eslint supports ESLint 10. Adopt the compatible development-tool update and regenerate its lockfile through pnpm while preserving every strict rule, warning budget, source assertion, suppression baseline and required gate. Other younger updates and canonical incompatible major migrations retain their owners."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T04:49:09.803Z"
-updated_at: "2026-10-10T05:05:58.169Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4d9c20054189c916e32efbab"
+updated_at: "2026-10-10T08:46:47.763Z"
+closed_at: "2026-10-10T08:46:46.702Z"
+completed_at: "2026-10-10T08:46:46.702Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: "Verify exact public publication time, seven-day eligibility, supported Node engines and installed parser peer compatibility; update ESLint and its generated lockfile through pnpm; strict ESLint, static source quality, typecheck, security and hosted exact-source coverage pass without loosening rules or baselines; link detailed provider, files and verification evidence."
 parent: pm-92if
 risk: low
 confidence: high
-expected_result: "ESLint 10.12 executes all existing strict repository rules with zero warnings and unchanged lint, source-quality and duplication enforcement."
+resolution: "Updated ESLint 10.11 to 10.12 and generated its lockfile through pnpm after verifying the public publication time, seven-day adoption age, supported Node floor and installed TypeScript-ESLint peer range. Preserve every lint rule, warning budget, suppression baseline and dependency integrity."
+expected_result: Eligible compatible lint tooling passes unchanged strict rules and required quality/type/security/source-coverage checks without unrelated dependency or policy changes.
+actual_result: Complete lock comparison retains 535 package and snapshot identities with only the ESLint version and dependent peer-resolution keys changed; other integrity metadata is identical. Strict eslint zero-warning execution and all four TypeScript projects pass. All 535 dependencies audit with zero vulnerabilities; hosted static/security checks and canonical exact-100 coverage pass. Unsupported major migrations and younger updates retain their existing owners and cooldowns.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-940mcx,discovered_from,"2026-10-10T04:49:09.803Z","harness:codex","cli:create:dep",detected
   pm-release-ledger-origin-delivery,discovered_from,"2026-10-10T04:49:09.803Z","harness:codex","cli:create:dep",detected
@@ -42,4 +44,5 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm lint:eslint",schema,schema,source,local_source_ref
+close_reason: Eligible ESLint 10.12 executes the unchanged strict quality policy.
 body: ""

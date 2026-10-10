@@ -2,8 +2,15 @@
 
 ## Unreleased
 
+### Fixed
+
+- Keep installed-release init within its unchanged raw budget on macOS ([pm-release-acceptance-path-cost](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-release-acceptance-path-cost.toon))
+- Reconcile complete release ledgers with exact historical dispositions ([pm-q91qyd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon))
+
 ### Other
 
+- Reconcile release ledgers and tag origins with bounded publication and acceptance ([pm-release-ledger-origin-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-release-ledger-origin-delivery.toon))
+- Refresh eligible ESLint 10.12 for release quality gates ([pm-eslint-1012](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eslint-1012.toon))
 - Bound publication weight while preserving complete runtime and metadata ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon))
 
 ## 2026.10.10 - 2026-10-10

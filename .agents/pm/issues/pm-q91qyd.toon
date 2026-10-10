@@ -2,13 +2,13 @@ id: pm-q91qyd
 title: Reconcile complete release ledgers with exact historical dispositions
 description: "Measured 2026-07-27 by reconciling the three records the project actually maintains. CHANGELOG.md carries 69 version sections, git carries 77 release tags, and the npm registry carries 70 published versions of the package. Every pairwise comparison finds divergence, and it runs in both directions. Five versions the changelog announces to users were never published anywhere: 2026.5.23, 2026.5.3-2, 2026.6.1, 2026.6.2, and 2026.7.24-2. Eight tags exist with no changelog section: 2026.5.3-3 through 2026.5.3-8, 2026.5.4, and 2026.5.5. Most seriously, six artifacts that are installable from npm right now have no changelog entry of any kind: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, and 2026.5.5. A user can install those versions and there is no record in the repository of what is in them. Seven tags in total were declared and never delivered. The reason none of this was caught is that every existing control measures a different pair. The changelog check in CI proves the changelog matches the pm tracker, never that it matches what shipped. The release-health reminder pm-7zs0 is forward-only and same-day: it asks whether the next release advanced npm latest, so it cannot see a historical gap and demonstrably did not see any of these seven. The publish verifier checks the artifact it just pushed. Nothing ever asks the whole-history question, which is whether the set of releases the project claims to have made equals the set it can prove it made. That question is the one that matters for a record intended to stay readable for decades, and it is currently unanswered and unanswerable without an ad hoc script."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: ci,governance,provenance,release,traceability
 created_at: "2026-07-27T12:46:06.729Z"
-updated_at: "2026-10-10T08:25:30.782Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4d9c20054189c916e32efbab"
+updated_at: "2026-10-10T08:46:41.907Z"
+closed_at: "2026-10-10T08:46:41.236Z"
+completed_at: "2026-10-10T08:46:41.236Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "A reconciliation control compares the full declared release set (changelog sections and git tags) against the full delivered set (registry versions) across all history, not only the most recent cut; Each divergence class is reported separately and named: declared-but-never-delivered, delivered-but-undocumented, and tagged-but-unsectioned, because the three have different causes and different remedies; The current 18 divergences are dispositioned individually as either a real gap to backfill or a recorded historical exception with a reason, so the baseline is explained rather than merely frozen; The control runs on a schedule and fails loudly, so a divergence introduced by a partial release is visible the same week rather than at the next manual reconciliation; The reconciliation reads the registry through the same published-artifact path the acceptance stage uses, so it is proof of delivery and not proof of intent"
@@ -19,7 +19,9 @@ why_now: The terminal release attribution backfill made the changelog authoritat
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "One reconciliation control compares changelog sections, git tags and registry versions across all history and names each divergence class separately."
+resolution: "Added the pure typed SDK artifact-ledger evaluator and complete anonymous changelog/origin/npm collector, exact historical exception policy, daily/completion reliability artifacts, strict dated-heading parsing and native Windows metadata execution. Preserve every settled gap and refuse new drift, incomplete input and stale exceptions."
+expected_result: "Complete all-history inventories identify each divergence class, explain historical gaps individually and fail new or stale drift through the existing scheduled control."
+actual_result: "Live anonymous census passes with 144 documented versions, 152 origin tags, 144 public versions, 14 visible individually dispositioned findings and zero stale exceptions. Connected 199 tests and native Git/public npm acceptance pass; required Windows CI proves original EINVAL then repaired execution. Canonical all-source coverage is exactly 100/100/100/100 with 10084 passing tests; all 26 effective required checks pass at 7aede965c. New SDK implementation remains Unreleased; no historical tag/artifact is rewritten."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-44u3wt,discovered_from,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
   pm-7zs0,related,"2026-07-27T12:48:04.274Z","harness:claude-code","cli:update:dep",detected
@@ -46,6 +48,8 @@ comments[9]{created_at,author,text}:
 notes[2]{created_at,author,text}:
   "2026-10-10T02:23:29.240Z","harness:codex","2026-10-10 full-history reconciliation: 143 documented versions, 151 release tags, 143 registry versions; 14 exact discrepancies. Registry-missing historical identities: 2026.5.23, 2026.5.3-2, 2026.5.3-3, 2026.5.3-4, 2026.6.1, 2026.6.2, 2026.7.24-2, 2026.9.24. Documentation-missing published identities: 2026.5.3-5, 2026.5.3-6, 2026.5.3-7, 2026.5.3-8, 2026.5.4, 2026.5.5. Record each exact missing-ledger signature as a reviewed historical exception, retain the underlying gap in every report, and reject new drift or stale exceptions. The earlier 18 pairwise differences count overlapping divergence classes; this current census counts artifact identities. No publication/tag/changelog content is synthesized or rewritten to simulate historical consistency."
   "2026-10-10T04:23:07.558Z","harness:codex","Final live anonymous public census after integrating today immutable release commit: 144 package-generated changelog sections, 152 advertised origin release tags and 144 installable public registry versions. The reusable SDK receipt is green with all 14 exact historical discrepancies still visible and individually dispositioned, all three divergence classes explicit and zero stale exceptions. Today 2026.10.10 agrees in all three ledgers; its separate macOS advertisement failure belongs to pm-release-acceptance-path-cost. No transient exception was added and no historical artifact/tag was rewritten."
+learnings[1]{created_at,author,text}:
+  "2026-10-10T08:45:04.889Z","harness:codex","A portable argument-vector regression verifies dispatch selection, but Windows .cmd compatibility also requires native Windows execution. Keep a genuine failing-original control, execute the repaired public providers without simulation, and preserve restricted package grammar, isolated configuration/cache, resource ceilings and cleanup. Prose that names historical work must also retain the corresponding typed lineage edge so context quality can detect incomplete graph intake."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project
@@ -122,6 +126,7 @@ test_runs[4]:
 docs[2]{path,scope}:
   docs/RELEASE_LEDGER_RECONCILIATION.md,project
   docs/RELEASE_RELIABILITY.md,project
+close_reason: Complete historical artifact inventories and exact dispositions are implemented and verified.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
