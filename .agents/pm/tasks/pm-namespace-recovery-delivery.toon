@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T18:34:13.033Z"
-updated_at: "2026-10-10T20:35:06.457Z"
-closed_at: "2026-10-10T20:35:04.978Z"
-completed_at: "2026-10-10T20:35:04.978Z"
+updated_at: "2026-10-10T20:57:07.751Z"
+closed_at: "2026-10-10T20:57:07.032Z"
+completed_at: "2026-10-10T20:57:07.032Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Public SDK resolver uses installed canonical identity and refuses ambiguity; CLI JSON and text recommend inspection while preserving usage failure; real nonempty source and packed npx/bunx controls preserve authoritative bytes; existing discovery behavior and generated surface gates remain intact
@@ -19,14 +19,14 @@ why_now: Published 2026.10.10 reproducibly omits canonical update help for item 
 parent: pm-f05lsg
 risk: low
 confidence: high
-resolution: "Canonical SDK command recovery now preserves explicit tracker scope and full refused help paths, includes the selected installed extension registry, and honors explicit extension suppression. Retry tokens are documented as arguments to pm, while guessed mutations remain refused."
-expected_result: "An unambiguous installed misplaced command advertises canonical help that executes in the selected tracker from any working directory, preserves item/history bytes, and never silently executes a guessed mutation."
-actual_result: "All 18 linked recovery tests pass, including selected-extension/default-tracker negative controls and suppression. Packed npx and bunx scoped help recovery preserves authoritative bytes and runs canonical inspection. Source/contracts/SDK boundary, unchanged token and performance budgets, tracker/graph/record assurance and mutation gates pass; final-head CI/review is required before merge."
+resolution: "Normalize explicit tracker selection through the SDK to an absolute root, preserve complete refused paths and the selected extension registry, honor suppression, and verify equivalent source/executable tokenized help recovery."
+expected_result: "Canonical inspection replays against the selected tracker from another cwd/default tracker, leaves authoritative bytes unchanged, and agrees between SDK source and installed executables. Merge requires exact 100 percent coverage of the final head."
+actual_result: "All 18 linked tests pass including source/executable parity, relative tracker selection and replay from a different cwd. Packed npx and bunx relative-path recovery passes for 9 packages. The prior head CI exposed exactly one scoped-retry branch not instrumented by subprocess tests; the added source parity path exercises it. Existing complete static, 199 measurement tests and SDK consumer proofs are retained; fresh exact final-head CI coverage/review is mandatory before merge."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-10-10T18:34:13.033Z","harness:codex","Duplicate check: strict live 2918-item all-status census and request-specific searches have no focused namespace-recovery execution child. Existing pm-f05lsg remains the canonical programme/report owner. This Task records the bounded delivery and does not duplicate that feature or its complete census acceptance. Prior read-recovery and alias-help deliveries remain completed."
   "2026-10-10T19:03:22.385Z","harness:codex","Installed current-artifact acceptance passed: npm install plus both npx bin identities, installed npx canonical retries, bunx --bun canonical retries, trusted measurement retry with an executed node:assert check, authoritative item/history byte preservation, nine bundled packages and TypeScript SDK consumer. Boundary-focused Node24 rerun passed96 tests, including docs reachability, unchanged MCP task timing, and existing flag-help ceilings. Full coverage and broad static final receipts are pending; no product, help-token, latency or RSS budget was increased."
   "2026-10-10T19:03:23.509Z","harness:codex","Public dependency census: all current/wanted versions agree. New latest @types/node26.6.5, jscpd5.4.1, typescript-eslint8.71.1, TOON4.4.0, Knip6.41.0 and marked18.1.0 were published1.0-5.2days ago and are below the unchanged seven-day adoption window. Sentry11.6.0 is2.2days old and retains canonical migration pm-t3jxjj; Vitest/coverage5.0.3 retain pm-fokyhh and TypeScript7.0.2 retains pm-do5b. pnpm audit found zero known vulnerabilities, GitHub open PR/Dependabot/code/secret inventories were empty at intake, and every open issue had a canonical PM-link comment."
@@ -37,6 +37,9 @@ comments[10]{created_at,author,text}:
   "2026-10-10T20:13:28.175Z","harness:codex","The new selected-tracker extension regression also reproduced a bootstrap-help path bug: help reduced a refused multi-token path to its leaf and omitted argv when deriving recovery. The canonical route was therefore absent even before tracker preservation. Fix both help entry points to retain the full refused path, alongside scoped retry tokens; negative control confirmed extension help fails from the unrelated default tracker."
   "2026-10-10T20:23:03.715Z","harness:codex","Review regressions now cover a package installed in the explicitly selected tracker while PM_PATH points elsewhere: advertised canonical help succeeds with selected scope, the unscoped command fails, and explicit --no-extensions suppresses the installed route. Refused help retains the full namespace path; item/history preservation and SDK/CLI refusal behavior passed the 366-test focused review suite."
   "2026-10-10T20:35:02.606Z","harness:codex","Review remediation verified: the linked canonical recovery and real-CLI integration run passes 18 tests, including a nonempty explicitly selected extension tracker, a different default tracker, and --no-extensions suppression. Refused requests preserve authoritative item/history bytes. Both packed npx and bunx consumers replay scoped canonical help successfully. Full static gates pass with unchanged budgets; final-head CI/review remains a required merge condition."
+  "2026-10-10T20:46:44.522Z","harness:codex","Final self-review found a remaining boundary to verify: selected --pm-path is copied raw, so a relative tracker path in retry arguments changes meaning when executed from another working directory. The live closed delivery record requires selected-tracker replay from any working directory; reopen this unmerged delivery to resolve explicit tracker scope to its absolute SDK root and prove the relative-path case."
+  "2026-10-10T20:50:32.889Z","harness:codex","The relative-path negative control failed at 3b7dafa24 as expected: .agents/pm was advertised instead of the selected absolute tracker. Resolving the explicit path with the existing SDK resolvePmRoot fixes replay. All 18 linked namespace tests now pass while executing the advertised extension help from a different cwd/default tracker; packed npx and bunx also pass with a relative tracker selection and 9 packages. ESLint/build pass; no new API, budget or trust-policy change was needed."
+  "2026-10-10T20:57:06.341Z","harness:codex","CI receipt for published head 3b7dafa24: all 67,922 statements, 64,616 lines and 13,996 functions are covered; exactly one of 52,009 branches was uncovered, at commander-usage.ts scoped retry. This is the real executable/source instrumentation boundary, not a behavior failure or a lowered threshold. The existing installed-extension integration now asserts source/executable retry parity for the same relative path and passes all 18 linked tests. Fresh final-head exact coverage remains mandatory before merge."
 learnings[1]{created_at,author,text}:
   "2026-10-10T20:23:36.861Z","harness:codex",The tracker selects the extension registry as well as item data. A canonical retry must retain explicit tracker scope and the complete refused namespace path; verify replay from a different default tracker and prove that explicit extension suppression still applies.
 files[13]{path,scope}:
@@ -55,7 +58,7 @@ files[13]{path,scope}:
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project,900,"harness:codex","2026-10-10T18:38:39.580Z",local_mutation,feat/executable-agent-recovery,Canonical recovery and nonempty byte preservation
-test_runs[2]:
+test_runs[4]:
   - run_id: test-local-mv2rt5f0-ld26id
     kind: test
     status: passed
@@ -78,8 +81,30 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2v8ou7-n6vq80
+    kind: test
+    status: passed
+    started_at: "2026-10-10T20:47:25.893Z"
+    finished_at: "2026-10-10T20:47:48.415Z"
+    recorded_at: "2026-10-10T20:47:48.415Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv2visbx-5slrfh
+    kind: test
+    status: passed
+    started_at: "2026-10-10T20:55:17.718Z"
+    finished_at: "2026-10-10T20:55:39.501Z"
+    recorded_at: "2026-10-10T20:55:39.501Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/SDK.md,project
-close_reason: Completed scoped canonical help recovery and review remediation for installed command namespaces.
+close_reason: Completed absolute/relative scoped canonical recovery with source and installed-executable parity.
 body: ""

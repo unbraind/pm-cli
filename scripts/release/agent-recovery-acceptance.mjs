@@ -31,7 +31,7 @@ export function verifyInstalledAgentRecovery(command, prefix, options) {
   const historyPath = path.join(options.env.PM_PATH, "history", `${id}.jsonl`);
   const itemBefore = readFileSync(itemPath);
   const historyBefore = readFileSync(historyPath);
-  for (const args of [["--pm-path", options.env.PM_PATH, "item", "update", "--help"], ["item", "update", id, "--title", "Must not run"]]) {
+  for (const args of [["--pm-path", path.relative(options.cwd, options.env.PM_PATH), "item", "update", "--help"], ["item", "update", id, "--title", "Must not run"]]) {
     const refusal = run(args, 2);
     assert.equal(refusal.code, "unknown_command");
     assert.deepEqual(refusal.recovery.suggested_retry_args, [

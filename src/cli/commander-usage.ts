@@ -681,7 +681,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
   const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths);
   const selectedPath = parseBootstrapGlobalOptions([...invocationArgv]).path;
   const retryArgs = misnestedPath ? [
-    ...(selectedPath ? ["--pm-path", selectedPath] : []),
+    ...(selectedPath ? ["--pm-path", resolvePmRoot(process.cwd(), selectedPath)] : []),
     ...misnestedPath.split(" "), "--help",
   ] : undefined;
   const suggestedPaths = [...new Set([

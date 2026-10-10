@@ -26,11 +26,15 @@ describe("agent receipt and recovery contracts", () => {
       const env = { ...context.env, PM_PATH: otherTracker };
       const historyPath = path.join(context.pmPath, "history", "pm-extension-scope.jsonl");
       const before = await readFile(historyPath, "utf8");
-      const refusal = runDirectDistCli(["--pm-path", context.pmPath, "item", "scoped-help", "--help", "--json"], { env, cwd: context.tempRoot });
+      const refusedArgs = ["--pm-path", path.relative(context.tempRoot, context.pmPath), "item", "scoped-help", "--help", "--json"];
+      const refusal = runDirectDistCli(refusedArgs, { env, cwd: context.tempRoot });
       expect(refusal.code, refusal.stderr).toBe(2);
       const recovery = (JSON.parse(refusal.stderr) as JsonErrorEnvelope).recovery!;
       expect(recovery.suggested_retry_args, refusal.stderr).toEqual(["--pm-path", context.pmPath, "recoveryprobe", "scoped-help", "--help"]);
-      const help = runDirectDistCli([...recovery.suggested_retry_args!, "--json"], { env, cwd: context.tempRoot });
+      const sourceRefusal = await runInProcessDistCli(refusedArgs, { env, cwd: context.tempRoot }, runPmCli);
+      expect(sourceRefusal.code, sourceRefusal.stderr).toBe(2);
+      expect((JSON.parse(sourceRefusal.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(recovery.suggested_retry_args);
+      const help = runDirectDistCli([...recovery.suggested_retry_args!, "--json"], { env, cwd: otherTracker });
       expect(help.code, help.stderr).toBe(0);
       expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "recoveryprobe scoped-help" });
       const unscoped = runDirectDistCli(["recoveryprobe", "scoped-help", "--help", "--json"], { env, cwd: context.tempRoot });
