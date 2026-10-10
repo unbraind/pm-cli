@@ -25,7 +25,7 @@ describe("tag-carried release provenance", () => {
 
   it.each([
     { RELEASE_TRIGGER_ORIGIN: "operator", GITHUB_EVENT_NAME: "schedule" },
-    { RELEASE_TRIGGER_ORIGIN: "unknown" }, { GITHUB_EVENT_NAME: "push" },
+    { RELEASE_TRIGGER_ORIGIN: "unknown" }, { RELEASE_TRIGGER_ORIGIN: undefined }, { GITHUB_EVENT_NAME: "push" },
     { GITHUB_RUN_ID: "0" }, { GITHUB_RUN_ATTEMPT: "1.5" },
     { GITHUB_REPOSITORY: "invalid" },
   ])("refuses contradictory or malformed source declarations %j", (change) => {

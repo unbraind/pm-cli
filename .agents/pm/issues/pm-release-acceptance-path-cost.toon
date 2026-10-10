@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: acceptance,portability,release,token-efficiency
 created_at: "2026-10-10T03:50:00.123Z"
-updated_at: "2026-10-10T04:08:42.868Z"
+updated_at: "2026-10-10T05:04:34.476Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#4d9c20054189c916e32efbab"
 author: "harness:codex"
@@ -23,13 +23,17 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-agent-token-path,discovered_from,"2026-10-10T03:50:00.123Z","harness:codex","cli:create:dep",detected
   pm-gh1428,recurs_from,"2026-10-10T03:50:00.123Z","harness:codex","cli:create:dep",detected
   pm-release-ledger-origin-delivery,discovered_from,"2026-10-10T03:50:00.123Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-10T03:50:00.123Z","harness:codex","Duplicate check: strict complete 2915-item all-status census plus fresh keyword search, open and in-progress inventories, full live reads of closed pm-gh1428 and pm-agent-token-path; neither owns this specific raw init-path overhead failure. Source: https://github.com/unbraind/pm-cli/actions/runs/38019834643. The completed source publication does not imply the cross-platform release acceptance passed."
   "2026-10-10T03:51:51.020Z","harness:codex","Independent pre-fix control reproduced the production failure using the real anonymous public 2026.10.9 control and 2026.10.10 candidate under a 63-character temporary base: original verifier refused npm init at 12195 > 12000 raw characters. A first copied-control launch failed on a missing adjacent cleanup helper and is discarded as setup evidence, not regression proof. Correcting the dependency topology produced the intended budget failure. The same isolated harness now tests shortening only owned directory labels; output limits, raw measurements, deadlines, SDK facts and public package bytes remain unchanged."
   "2026-10-10T03:56:08.661Z","harness:codex","Post-fix independent real-provider replay passes public 2026.10.9 control and 2026.10.10 candidate through npm local, Bun and npm global under the same 63-character temporary base, with 13 lifecycle steps per session. Global init costs are 11363 and 11389 raw characters against the unchanged 12000 ceiling. This is real output reduction from concise owned directory labels, not comparison normalization, an increased ceiling, a skipped agent-guidance step or fabricated output. The production edit and retained regression are queued until the source-owning coverage command completes."
   "2026-10-10T04:08:23.795Z","harness:codex","TDD receipt: the retained captured-public-output test fails against the original source at 12247 > 12000 raw init characters, while all 41 existing verifier tests pass. The source repair changes only three disposable directory labels (root, manager directory and workspace); every ceiling, raw measurement, lifecycle assertion and deadline is unchanged. The independent real anonymous package control/candidate journeys already pass with this layout. The public fixture retains the complete result and substitutes only its private workspace path."
-notes[1]{created_at,author,text}:
+  "2026-10-10T05:04:34.476Z","harness:codex",Canonical complete source coverage passes at exact 100/100/100/100 with all 10074 applicable tests passing. All retained raw ceilings and deadlines remain unchanged. This verifies the source repair and keeper alongside the separate real anonymous npm local/global and Bun control/candidate journeys; actual same-tag hosted recovery will run only after the reviewed changes merge.
+notes[2]{created_at,author,text}:
   "2026-10-10T04:00:29.803Z","harness:codex","The captured anonymous public 2026.10.10 init receipt contains 26 references to the actual workspace path. A 63-character base plus the original labels yields 12221 raw characters; the concise-layout candidate yields 11389, an 832-character reduction. The previous 2026.10.9 control yields 11363. Keep the full settings, created directories, target identity, warnings, agent-guidance facts and next steps intact; the retained fixture substitutes only its private workspace root for deterministic replay and records raw emitted lengths."
+  "2026-10-10T04:23:13.531Z","harness:codex",Production source and retained TDD keeper now pass. The original captured output fails at 12247 raw characters under the deterministic macOS-shaped base; the same unabridged output with concise labels stays below 12000 for every independent previous-version/candidate manager layout. Full 118-test connected suite and linked installed-session verifier pass. Source and strict SDK/type/package/example TypeScript checks pass. Real anonymous published control/candidate npm local/global and Bun journeys passed separately; exact full-source coverage and same-tag hosted recovery remain pending.
+learnings[1]{created_at,author,text}:
+  "2026-10-10T04:11:54.592Z","harness:codex","When complete CLI guidance repeats the workspace identity, private test directory names become part of the measured raw token cost. Keep owned disposable layouts concise and retain captured provider output plus actual cross-runtime consumer sessions; never normalize away the cost or raise the acceptance ceiling to conceal an infrastructure-dependent failure."
 files[4]{path,scope}:
   scripts/release/verify-installed-agent-session.mjs,project
   tests/fixtures/release-acceptance/installed-init.json,project

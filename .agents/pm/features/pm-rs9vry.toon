@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[8]: 2026-07-28,"area:mcp","area:sdk",conformance,protocol,release-gate,security,stateless
 created_at: "2026-08-25T05:06:28.595Z"
-updated_at: "2026-10-10T03:56:54.116Z"
+updated_at: "2026-10-10T04:21:06.820Z"
 deadline: "2026-12-31T00:00:00.000Z"
 author: "harness:codex"
 estimated_minutes: 2400
@@ -19,11 +19,12 @@ parent: pm-5k4v
 risk: critical
 confidence: high
 expected_result: "Every 2026-07-28 requirement maps to an owner, implementation, positive and negative test, documentation and release gate, and the released artifact proves conformance end to end."
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-08-25T05:06:28.595Z","harness:codex","cli:create:dep",detected
   pm-a8zm,discovered_from,"2026-08-25T05:06:28.595Z","harness:codex","cli:create:dep",detected
   pm-kl11,supersedes,"2026-08-25T05:06:28.595Z","harness:codex","cli:create:dep",detected
   pm-s00mpf,implements,"2026-08-25T05:14:56.434Z","harness:codex","cli:update:dep",detected
+  pm-tm6h9x,verifies,"2026-10-10T04:21:04.047Z","harness:codex","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-08-25T05:06:28.595Z","harness:codex","Duplicate check evidence: inspected all 2543 items and 54141 history events; searched every lifecycle state for 2026-07-28 stateless discover subscriptions MRTR tasks caching headers authorization schema and deprecations; reviewed all 33 existing MCP children. No item owns this protocol revision. Official source: https://modelcontextprotocol.io/specification/2026-07-28"
   "2026-08-28T20:39:18.520Z","harness:codex","Live standards review confirms MCP 2026-07-28 remains the normative implemented baseline for this programme. The official post-release roadmap is now separated into pm-opw1l3 rather than being misrepresented as part of the released specification: pm-ngofg9 event-driven messaging, pm-mrh0ae HTTP-native transport convergence, pm-gstv4k agent identity and delegation, pm-3g3f8z progressive discovery and canonical tool results, pm-4fwn0o server cards, and pm-pbo502 continuous upstream conformance ingestion. Each item is typed to its existing canonical owners and current-spec evidence."

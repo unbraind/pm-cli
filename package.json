@@ -244,7 +244,7 @@
     "@types/npm-package-arg": "^6.1.4",
     "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "0.28.2",
-    "eslint": "^10.11.0",
+    "eslint": "^10.12.0",
     "eslint-plugin-sonarjs": "^4.2.2",
     "eslint-plugin-unicorn": "76.0.0",
     "fast-check": "^4.10.2",

@@ -1,0 +1,45 @@
+id: pm-eslint-1012
+title: Refresh eligible ESLint 10.12 for release quality gates
+description: "The anonymous public registry reports ESLint 10.12.0 published 2026-10-02T20:08:19.213Z, beyond the repository seven-day adoption window at this intake. Its engine range preserves the documented Node floor and installed typescript-eslint supports ESLint 10. Adopt the compatible development-tool update and regenerate its lockfile through pnpm while preserving every strict rule, warning budget, source assertion, suppression baseline and required gate. Other younger updates and canonical incompatible major migrations retain their owners."
+type: Chore
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-10T04:49:09.803Z"
+updated_at: "2026-10-10T05:05:58.169Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4d9c20054189c916e32efbab"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: "Verify exact public publication time, seven-day eligibility, supported Node engines and installed parser peer compatibility; update ESLint and its generated lockfile through pnpm; strict ESLint, static source quality, typecheck, security and hosted exact-source coverage pass without loosening rules or baselines; link detailed provider, files and verification evidence."
+parent: pm-92if
+risk: low
+confidence: high
+expected_result: "ESLint 10.12 executes all existing strict repository rules with zero warnings and unchanged lint, source-quality and duplication enforcement."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-940mcx,discovered_from,"2026-10-10T04:49:09.803Z","harness:codex","cli:create:dep",detected
+  pm-release-ledger-origin-delivery,discovered_from,"2026-10-10T04:49:09.803Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-10T04:49:09.803Z","harness:codex","Duplicate check: complete strict 2916-item all-status census plus fresh ESLint 10.12 search and open/in-progress inventories find no owner for this version. Closed pm-940mcx owns the completed 10.9.0 refresh, not this exact eligible release. Current/wanted output alone is not a release-age verdict; the complete anonymous public time inventory establishes 10.12.0 eligibility. Adoption waits for the source-owning coverage command to finish."
+  "2026-10-10T05:05:58.169Z","harness:codex","Generated pnpm update is strictly scoped: one package identity changed from ESLint 10.11.0 to 10.12.0; all other package identities and integrity metadata are unchanged. The complete lockfile retains 535 packages and 535 snapshots; only ESLint peer-resolution keys move. Updated lock SHA-256 is 33132f8ba8e8c35855595e2751ec2531e684e1a534de52bbcd8e60416c1da507. Linked strict eslint . --max-warnings=0 passes with no configuration, warning budget, suppression or rule changes. Full static/type/security and hosted verification follow."
+notes[2]{created_at,author,text}:
+  "2026-10-10T04:50:54.849Z","harness:codex","Provider eligibility: ESLint 10.12.0 was published October 2 at 20:08:19 UTC; its ^20.19.0 || ^22.13.0 || >=24 engines preserve the published >=22.18.0 floor. Installed typescript-eslint 8.71.0 declares ESLint ^8.57 || ^9 || ^10. Full current lockfile parsed before generated mutation: 270 package entries and importer peer/version metadata retained privately for comparison; no credential-bearing registry URLs. Newer TypeScript-ESLint, Knip, Marked, TOON and Unicorn candidates remain inside seven days at intake. Sentry, Vitest, TypeScript and package-parser majors retain canonical compatibility/privacy owners."
+  "2026-10-10T04:52:34.731Z","harness:codex","Correction to the preceding lockfile-count sentence: the complete parsed pre-mutation file contains 535 package entries and 535 snapshot entries, with one importer, 5013 lines and 171008 bytes. The mistaken 270 count is not the machine receipt. SHA-256 11e73ee0ab05f3db6888526f976afdf28283ebadcacb4b87812b07166e17086a identifies the fully parsed input; no credential-bearing registry URLs were found."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "pnpm lint:eslint",project,600,"harness:codex","2026-10-10T04:49:22.917Z",local_mutation,feat/release-origin-and-ledger-reconciliation,Execute unchanged strict rules and zero-warning enforcement with the eligible ESLint tool update
+test_runs[1]:
+  - run_id: test-local-mv1xl9tr-1fkfsp
+    kind: test
+    status: passed
+    started_at: "2026-10-10T05:04:47.607Z"
+    finished_at: "2026-10-10T05:05:48.543Z"
+    recorded_at: "2026-10-10T05:05:48.543Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+body: ""
