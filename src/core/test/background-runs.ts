@@ -495,6 +495,7 @@ function readCount(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
+/** Derive worker totals from aggregate or per-test receipts, counting refusals as unsuccessful runs. */
 function evaluateWorkerResult(
   kind: BackgroundTestRunKind,
   payload: unknown,

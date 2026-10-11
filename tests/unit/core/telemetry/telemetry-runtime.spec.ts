@@ -164,13 +164,14 @@ async function setTelemetryCaptureLevel(globalRoot: string, level: "minimal" | "
 
 describe("core/telemetry/runtime", () => {
   it.each(["minimal", "redacted", "max"] as const)(
-    "redacts JSON metadata edits in start and parse-error inputs at %s capture",
+    "redacts metadata patches and exact selectors in start and parse-error inputs at %s capture",
     (captureLevel) => {
       const canary = "synthetic-private-metadata-value";
       const patch = JSON.stringify({ env_set: { TOKEN: canary } });
       const malformedPatch = `{"env_set":{"TOKEN":"${canary}"`;
-      const args = ["--set-json", patch, `--set-json=${patch}`, `--set_json=${patch}`];
-      const options = { setJson: patch, set_json: patch, title: "Safe summary" };
+      const selector = `command=echo ${canary}`;
+      const args = ["--set-json", patch, `--set-json=${patch}`, `--set_json=${patch}`, "--update", selector, `--update=${selector}`];
+      const options = { setJson: patch, set_json: patch, update: selector, title: "Safe summary" };
       const sourceContext = { source_context: "test" as const, source_context_source: "inferred" as const };
       const common = {
         captureLevel, pmVersion: "candidate", sourceContext,
@@ -179,7 +180,7 @@ describe("core/telemetry/runtime", () => {
       const start = _testOnly.buildCommandStartPayload({
         ...common, context: { command: "test", args, options, global: {} },
       });
-      const errorOptions = { setJson: malformedPatch, set_json: malformedPatch };
+      const errorOptions = { setJson: malformedPatch, set_json: malformedPatch, update: selector };
       const error = _testOnly.buildCommandErrorPayload({
         ...common, command: "test", commandTaxonomy: "test", commandResolution: "native",
         resolutionStage: "parse", args: ["--set-json", malformedPatch, `--set-json=${malformedPatch}`],
@@ -197,10 +198,36 @@ describe("core/telemetry/runtime", () => {
         expect(error).not.toHaveProperty("attempted_args");
         expect(error).not.toHaveProperty("attempted_options");
       } else {
-        expect(start.command_args).toEqual(["--set-json", "[redacted]", "--set-json=[redacted]", "--set_json=[redacted]"]);
-        expect(start.command_options).toEqual({ setJson: "[redacted]", set_json: "[redacted]", title: "Safe summary" });
+        expect(start.command_args).toEqual(["--set-json", "[redacted]", "--set-json=[redacted]", "--set_json=[redacted]", "--update", "[redacted]", "--update=[redacted]"]);
+        expect(start.command_options).toEqual({ setJson: "[redacted]", set_json: "[redacted]", update: "[redacted]", title: "Safe summary" });
         expect(error.attempted_args).toEqual(["--set-json", "[redacted]", "--set-json=[redacted]"]);
-        expect(error.attempted_options).toEqual({ setJson: "[redacted]", set_json: "[redacted]" });
+        expect(error.attempted_options).toEqual({ setJson: "[redacted]", set_json: "[redacted]", update: "[redacted]" });
+      }
+    },
+  );
+
+  it.each(["minimal", "redacted", "max"] as const)(
+    "omits full linked-test metadata from finish previews at %s capture without changing the receipt",
+    (captureLevel) => {
+      const canary = "synthetic-private-linked-test-note";
+      const result = { ok: true, changed: true, count: 1, updated_index: 1, tests: [{ command: `echo ${canary}`, note: canary }] };
+      const original = structuredClone(result);
+      const finish = _testOnly.buildCommandFinishPayload({
+        captureLevel, pmVersion: "candidate",
+        sourceContext: { source_context: "test", source_context_source: "inferred" },
+        outcome: { ok: true, result }, durationMs: 1, startedAt: "2026-01-01T00:00:00.000Z",
+        command: "test", installationId: "synthetic-install", commandTaxonomy: "test",
+        exitCode: 0, commandResolution: "success", resolutionStage: "execute",
+      });
+      expect(JSON.stringify(finish)).not.toContain(canary);
+      expect(result).toEqual(original);
+      if (captureLevel === "minimal") {
+        expect(finish).not.toHaveProperty("result_summary");
+      } else {
+        expect(finish.result_summary).toEqual({
+          type: "object", key_count: 4, keys_preview: ["changed", "count", "ok", "updated_index"],
+          preview: { changed: true, count: 1, ok: true, updated_index: 1 },
+        });
       }
     },
   );

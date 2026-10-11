@@ -421,6 +421,7 @@ function resolveTrackedRunId(kind: "test" | "test-all"): string {
   return `${kind}-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Count execution refusals alongside failures while keeping skipped runs separate. */
 function summarizeRunResultStatuses(results: TestRunResult[]): {
   passed: number;
   failed: number;
@@ -1616,6 +1617,7 @@ export function classifyLinkedTestFailure(
   return "assertion_failure";
 }
 
+/** Initialize every public failure category so aggregate receipts retain a stable exhaustive shape. */
 function createEmptyFailureCategoryCounts(): Record<
   LinkedTestFailureCategory,
   number
@@ -2654,6 +2656,7 @@ function resolvePmContextMismatchFailure(params: {
   );
 }
 
+/** Stop before execution on the first safety, trust, context or required-assertion admission failure. */
 function resolveLinkedTestPreflightResult(params: {
   linkedTest: LinkedTest;
   executionContext: NonNullable<TestRunResult["execution_context"]>;

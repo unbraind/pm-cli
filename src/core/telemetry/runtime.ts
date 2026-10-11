@@ -143,6 +143,7 @@ const REDACTION_INPUT_KEYS = new Set([
   // Serialized metadata can contain arbitrary environment values, even on parse failure.
   "setjson",
   "set_json",
+  "update",
 ]);
 const SENSITIVE_INLINE_KEY_PATTERN =
   "(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|session|credentials|bearer|literals?|regex(?:es)?|replacements?)";
@@ -1208,7 +1209,7 @@ function buildOtelSpanRequest(
   return { endpoint, payload };
 }
 
-/** Build a bounded, capture-level-sanitized result preview. Omit undefined object values as JSON does so optional fields cannot prevent completion telemetry. */
+/** Build a bounded telemetry-only preview, omitting linked-test collections and undefined fields while preserving the caller's receipt. */
 function summarizeResult(
   result: unknown,
   captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",
@@ -1233,7 +1234,7 @@ function summarizeResult(
   }
   if (typeof result === "object") {
     const record = result as Record<string, unknown>;
-    const keys = Object.keys(record).sort((left, right) =>
+    const keys = Object.keys(record).filter((key) => key !== "tests").sort((left, right) =>
       left.localeCompare(right),
     );
     const sanitized: Record<string, unknown> = {};
