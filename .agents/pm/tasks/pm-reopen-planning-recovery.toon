@@ -1,0 +1,26 @@
+id: pm-reopen-planning-recovery
+title: Expose active planning recovery when a canonical item is reopened
+description: "Normal item reopen archives and clears expected_result, then claim --start accepts the item while active tracker assurance requires a nonempty expected result. The current reopen help offers only its own help example and no planning recovery. Add SDK-owned structured recovery or a declared explicit planning input that lets an operator restore the intended active expected result while preserving immutable previous-terminal evidence."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-11T05:28:30.227Z"
+updated_at: "2026-10-11T05:28:30.227Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Real isolated reopen/claim/help journey discloses the required planning recovery; explicit current expectation is preserved; previous terminal fields remain immutable in history; existing active metadata gates remain unchanged
+goal: project management = context management
+objective: Make recurrence reopening disclose the active planning prerequisite
+value: Self-improvement iterations remain actionable and pass existing planning assurance
+why_now: Canonical publication guard recurrence twice cleared expected_result and the static gate correctly refused until explicit planning was restored
+parent: pm-f05lsg
+risk: low
+confidence: high
+expected_result: Advertised reopening recovery restores the requested active planning expectation and retains complete prior terminal history
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-g8jp,discovered_from,"2026-10-11T05:28:30.227Z","harness:codex","cli:create:dep",detected
+  pm-publication-acceptance-fence,discovered_from,"2026-10-11T05:28:30.227Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-11T05:28:30.227Z","harness:codex","Duplicate intake: request-specific live reopen/expected searches, strict complete2924-item all-status corpus, current open/in-progress lists, full closed reopen lineage and live reopen help found no focused owner for active planning recovery. Completed clear-terminal implementation remains completed. This enhancement is open and unclaimed; no source work is started."
+body: ""

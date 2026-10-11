@@ -1,0 +1,61 @@
+id: pm-automatic-release-alerts
+title: Include declared morning automation in daily release blocker alerts and successful recovery
+description: "Actual morning_dispatcher run38106151668 failed when signed npm2026.10.11 metadata remained unavailable, but Alert on blocked scheduled auto-release was skipped because its condition includes schedule and issues only. Successful blocker resolution is likewise schedule-only. Complete all-status census2922 plus live morning search and full pm-prrlce/pm-wzmbvn history found the broader origin parent but no concrete active alert owner. Preserve completed propagation-budget work and all source-origin verification."
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-11T04:07:31.782Z"
+updated_at: "2026-10-11T04:45:07.289Z"
+closed_at: "2026-10-11T04:45:06.192Z"
+completed_at: "2026-10-11T04:45:06.192Z"
+author: "harness:codex"
+estimated_minutes: 40
+acceptance_criteria: Native schedule and declared morning dispatcher failures open or update the canonical daily blocker; their successful exact-tag recovery closes it; operator dispatch is excluded; stale blocker supersession and trigger-origin diagnostics are preserved; source conditions and native Bash negative controls prove the event matrix.
+parent: pm-prrlce
+risk: low
+confidence: high
+resolution: "Extended automatic blocker failure/success conditions to native schedule and explicitly declared morning dispatcher, retaining operator exclusion, issue retry lifecycle, stale daily supersession and origin diagnostics with real workflow/Bash regression proof."
+expected_result: "Native and morning automatic failures are reported, verified recovery closes their blocker, and operator dispatch remains outside this lifecycle."
+actual_result: "19linked workflow tests pass; independent original source and Bash controls reproduce the omission, corrected event matrix and stale supersession pass, source/types/docs/integrity/mutation and9packed npm/Bun consumers are verified. Actual accepted-but-unavailable daily publication remains independently tracked under release health."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,discovered_from,"2026-10-11T04:41:28.633Z","harness:codex","cli:update:dep",detected
+  pm-qawd,discovered_from,"2026-10-11T04:41:28.633Z","harness:codex","cli:update:dep",detected
+  pm-wzmbvn,discovered_from,"2026-10-11T04:41:28.633Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-11T04:07:31.782Z","harness:codex","Duplicate check: complete all-status census2922 and live pm search morning dispatcher plus open/in_progress lists and full canonical parent/history show pm-prrlce remains the broader owner; pm-wzmbvn is completed15-minute propagation work and pm-qawd is completed issue-permission work. This child owns only the newly observed automatic-origin alert and resolution gap."
+  "2026-10-11T04:09:35.697Z","harness:codex","Regression proof: the new source-condition matrix fails on the shipped schedule-only workflow because a successful morning_dispatcher recovery cannot resolve its blocker (1failed/16passed). Repaired workflow includes only native schedule and explicitly declared workflow_dispatch/morning_dispatcher for automatic failure and success lifecycle; issue-trigger retry retains its own lifecycle, operator and unrelated events remain excluded. Real Bash bodies with a mock GitHub boundary prove both automatic origins supersede yesterday’s blocker and retain explicit origin diagnostics. Full linked workflow suite passes18tests. Actual accepted-but-unavailable publication report is https://github.com/unbraind/pm-cli/issues/1437 with a corresponding PM-link comment; no republish or tag change."
+  "2026-10-11T04:24:16.613Z","harness:codex","Full static verification exposed missing risk/confidence planning on this newly created owner. Supplied low risk/high confidence through the CLI; preserve the failed gate evidence and repeat the unchanged full gate after connected release repairs. This is a tracker planning correction, not a relaxed assurance policy."
+  "2026-10-11T04:45:02.631Z","harness:codex","Final source verification:19linked workflow tests pass with source-condition and real Bash regressions; types/docs/skills, source quality, original SDK/CLI budgets, graph and record integrity, all336mutation controls and serialized9-package npm/npx/Bun/bunx acceptance pass. Earlier risk/planning and qualified transport failures remain documented; transport alone passes unchanged and graph gaps were repaired with typed edges. Reviewed delivery includes files/docs/test/history links and canonical external report GH1437. Hosted current-head checks/full review remain required after push; this source closure does not claim npm11is publicly available."
+files[2]{path,scope}:
+  .github/workflows/auto-release.yml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/integration/ci-workflow-contract.spec.ts,project,"harness:codex","2026-10-11T04:07:39.417Z",local_mutation,feat/executable-agent-recovery
+test_runs[2]:
+  - run_id: test-local-mv3b0a34-y3rch2
+    kind: test
+    status: passed
+    started_at: "2026-10-11T04:08:59.350Z"
+    finished_at: "2026-10-11T04:09:09.904Z"
+    recorded_at: "2026-10-11T04:09:09.904Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3bkyvv-asuy0t
+    kind: test
+    status: passed
+    started_at: "2026-10-11T04:25:06.347Z"
+    finished_at: "2026-10-11T04:25:15.163Z"
+    recorded_at: "2026-10-11T04:25:15.163Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/RELEASING.md,project
+close_reason: Both declared automatic origins now report and resolve verified daily blockers.
+body: ""

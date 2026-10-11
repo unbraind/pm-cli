@@ -45,7 +45,7 @@ import {
 } from "./argv-utils.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
-import { canonicalizeCommandSuggestions, rankCommandPaths } from "../sdk/agent/command-suggestions.js";
+import { canonicalizeCommandSuggestions, rankCommandPaths, resolveMisnestedCommandPath } from "../sdk/agent/command-suggestions.js";
 import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
@@ -610,6 +610,7 @@ function resolveUnknownCommandCandidates(params: {
   ], params.commandPaths, params.primaryToken).filter((path) => !params.normalizedUnknown.includes(" ") || path !== params.normalizedUnknown);
 }
 
+/** Offer each installed top-level namespace once when no concrete command candidate matches. */
 function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
   const topLevel = [
     ...new Set(
@@ -621,6 +622,7 @@ function resolveUnknownCommandFallbacks(commandPaths: string[]): string[] {
   return topLevel.sort((left, right) => left.localeCompare(right));
 }
 
+/** Put concrete help targets first; otherwise lead with complete runtime discovery before fallback namespaces. */
 function buildUnknownCommandExamples(
   suggestedPaths: string[],
   hasConcreteCandidates: boolean,
@@ -632,21 +634,51 @@ function buildUnknownCommandExamples(
   return [...new Set(["pm --help --all", ...suggestedExamples])];
 }
 
-/** Implements build unknown command guidance from runtime for the public runtime surface of this module. */
+/** Recover the namespace prefix omitted by Commander's leaf-token refusal, without consuming operands. */
+function resolveUnknownCommandPath(token: string, invocationArgv: readonly string[], commandPaths: readonly string[]): string {
+  let commandIndex = findBootstrapCommandTokenIndex([...invocationArgv]);
+  const path: string[] = [];
+  while (commandIndex !== undefined) {
+    path.push(invocationArgv[commandIndex]);
+    if (invocationArgv[commandIndex] === token) return path.join(" ");
+    if (!commandPaths.includes(path.join(" "))) return token;
+    const offset = findBootstrapCommandTokenIndex(invocationArgv.slice(commandIndex + 1));
+    commandIndex = offset === undefined ? undefined : commandIndex + 1 + offset;
+  }
+  return token;
+}
+
+/** Retain the selected tracker and explicit extension suppression when replaying canonical help. */
+function buildCanonicalHelpRetryArgs(
+  canonicalPath: string | undefined,
+  invocationArgv: readonly string[],
+): string[] | undefined {
+  if (!canonicalPath) return undefined;
+  const bootstrapGlobal = parseBootstrapGlobalOptions([...invocationArgv]);
+  return [
+    ...(bootstrapGlobal.path ? ["--pm-path", resolvePmRoot(process.cwd(), bootstrapGlobal.path)] : []),
+    ...(bootstrapGlobal.noExtensions ? ["--no-extensions"] : []),
+    ...canonicalPath.split(" "), "--help",
+  ];
+}
+
+/** Build inspection-only recovery from installed commands, preserving tracker scope and explicit extension policy in executable retries. */
 export function buildUnknownCommandGuidanceFromRuntime(
   rawMessage: string,
   root: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+  invocationArgv: readonly string[] = [],
 ): CommanderGuidanceContext | undefined {
   const unknownCommandMatch = rawMessage.match(/unknown command '([^']+)'/i);
   if (!unknownCommandMatch || typeof unknownCommandMatch[1] !== "string") {
     return undefined;
   }
-  const normalizedUnknown = normalizeHelpCommandPath(unknownCommandMatch[1]);
+  const commandPaths = collectRuntimeCommandPaths(root, extensionDescriptors);
+  const unknownPath = resolveUnknownCommandPath(unknownCommandMatch[1], invocationArgv, commandPaths);
+  const normalizedUnknown = normalizeHelpCommandPath(unknownPath);
   if (normalizedUnknown.length === 0) {
     return undefined;
   }
-  const commandPaths = collectRuntimeCommandPaths(root, extensionDescriptors);
   if (commandPaths.length === 0) {
     return undefined;
   }
@@ -669,9 +701,12 @@ export function buildUnknownCommandGuidanceFromRuntime(
     extensionDescriptors,
   });
   const fallbackTopLevel = resolveUnknownCommandFallbacks(commandPaths);
-  const suggestedPaths = (
-    combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)
-  ).slice(0, 3);
+  const misnestedPath = resolveMisnestedCommandPath(normalizedUnknown, commandPaths);
+  const retryArgs = buildCanonicalHelpRetryArgs(misnestedPath, invocationArgv);
+  const suggestedPaths = [...new Set([
+    ...(misnestedPath ? [misnestedPath] : []),
+    ...(combinedCandidates.length > 0 ? combinedCandidates : canonicalizeCommandSuggestions(fallbackTopLevel, commandPaths)),
+  ])].slice(0, 3);
   const examples = buildUnknownCommandExamples(
     suggestedPaths,
     combinedCandidates.length > 0,
@@ -682,7 +717,11 @@ export function buildUnknownCommandGuidanceFromRuntime(
       : null;
 
   return {
-    unknownCommandExamples: examples,
+    ...(retryArgs ? {
+      suggestedRetryCommand: renderPmCommand(retryArgs),
+      suggestedRetryArgs: retryArgs,
+    } : {}),
+    unknownCommandExamples: retryArgs ? [renderPmCommand(retryArgs), ...examples.slice(1)] : examples,
     unknownCommandNextSteps: [
       ...(didYouMean ? [didYouMean] : []),
       'Run "pm --help --all" to list every command available in this runtime, including active extensions.',
@@ -986,6 +1025,7 @@ export async function resolveCommanderUsageContext(
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   guidanceOverrides: Partial<CommanderGuidanceContext> = {},
+  invocationArgs: readonly string[] = process.argv.slice(2),
 ): Promise<CommanderUsageContext> {
   const rawMessage =
     typeof error === "object" && error !== null
@@ -993,7 +1033,7 @@ export async function resolveCommanderUsageContext(
       : undefined;
   const message = rawMessage ?? "Invalid command usage";
   const invocationArgv = normalizeBootstrapInvocation(
-    process.argv.slice(2),
+    [...invocationArgs],
   ).argv;
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
   const commandName = resolveRecoveryCommandName(message, invocationArgv, rootProgram, extensionDescriptors);
@@ -1010,6 +1050,7 @@ export async function resolveCommanderUsageContext(
     message,
     rootProgram,
     extensionDescriptors,
+    invocationArgv,
   );
   const unknownOption = resolveUnknownOptionSuggestions(message, commandName);
   const splitSchemaSubcommand = resolveSplitSchemaSubcommand(
@@ -1057,12 +1098,14 @@ export async function formatCommanderUsageMessage(
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   guidanceOverrides: Partial<CommanderGuidanceContext> = {},
+  invocationArgs: readonly string[] = process.argv.slice(2),
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(
     error,
     rootProgram,
     extensionDescriptors,
     guidanceOverrides,
+    invocationArgs,
   );
   const {
     message,
@@ -1082,6 +1125,7 @@ export async function formatCommanderUsageMessage(
     unknownSubcommandToken,
     unknownSubcommandAllowedValues,
     suggestedRetryCommand,
+    suggestedRetryArgs,
     verifiedCollectionItemId,
     failedExtensions,
   } = usageContext;
@@ -1104,6 +1148,7 @@ export async function formatCommanderUsageMessage(
       unknownSubcommandToken,
       unknownSubcommandAllowedValues,
       suggestedRetryCommand,
+      suggestedRetryArgs,
       verifiedCollectionItemId,
       failedExtensions,
     },
@@ -1126,12 +1171,14 @@ export async function formatCommanderUsageJson(
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   lean = false,
   guidanceOverrides: Partial<CommanderGuidanceContext> = {},
+  invocationArgs: readonly string[] = process.argv.slice(2),
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(
     error,
     rootProgram,
     extensionDescriptors,
     guidanceOverrides,
+    invocationArgs,
   );
   const envelope = formatCommanderErrorForJson(
     usageContext.message,
@@ -1156,6 +1203,7 @@ export async function formatCommanderUsageJson(
       unknownSubcommandAllowedValues:
         usageContext.unknownSubcommandAllowedValues,
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
+      suggestedRetryArgs: usageContext.suggestedRetryArgs,
       verifiedCollectionItemId: usageContext.verifiedCollectionItemId,
       failedExtensions: usageContext.failedExtensions,
     },

@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
 import { glob } from "tinyglobby";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
@@ -1225,7 +1226,7 @@ describe("GitHub workflow contract", () => {
       'echo "published_tag=${NEW_TAG}" >> "${GITHUB_OUTPUT}"',
       'echo "published_sha=${PUBLISHED_SHA}" >> "${GITHUB_OUTPUT}"',
       "name: Resolve blocked scheduled auto-release issue",
-      "if: success() && github.event_name == 'schedule' && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag)",
+      "if: success() && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.trigger_origin == 'morning_dispatcher')) && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag)",
       "RELEASE_SHA: ${{ steps.publish_release.outputs.published_sha || steps.auto_release.outputs.published_sha }}",
       "RELEASE_TAG: ${{ steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag }}",
       "Could not query blocked auto-release issues after successful publish; leaving release status successful.",
@@ -1249,7 +1250,7 @@ describe("GitHub workflow contract", () => {
       "The retry was skipped because this blocker issue already recorded a current-day retry attempt.",
       "The retry completed but found no new pushed release tag",
       "name: Alert on blocked scheduled auto-release",
-      "if: \"${{ failure() && (github.event_name == 'schedule' || github.event_name == 'issues') }}\"",
+      "if: \"${{ failure() && (github.event_name == 'schedule' || github.event_name == 'issues' || (github.event_name == 'workflow_dispatch' && inputs.trigger_origin == 'morning_dispatcher')) }}\"",
       "GH_TOKEN: ${{ github.token }}",
       "RELEASE_SHA: ${{ github.sha }}",
       "CLOSED_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}",
@@ -1272,6 +1273,7 @@ describe("GitHub workflow contract", () => {
       "detected_cause:",
       "RELEASE_PAT is missing from the release environment; ${release_path_description} cannot push the checked version commit/tag to protected main.",
       "Trigger: \\`${GITHUB_EVENT_NAME}\\`",
+      "Origin: \\`${RELEASE_TRIGGER_ORIGIN}\\`",
       "Common causes:",
       "Post-publish package execution or GitHub Release verification failed after npm accepted the package.",
       'gh issue list --state open --search "\\"${title}\\" in:title"',
@@ -1305,6 +1307,98 @@ describe("GitHub workflow contract", () => {
     expect(autoReleaseWorkflow).not.toContain(
       "token: ${{ secrets.RELEASE_PAT || github.token }}",
     );
+  });
+
+  it("serializes tag pushes and exact-tag dispatches in one publication group", async () => {
+    const workflow = parse(await readFile(
+      path.join(repoRoot, ".github/workflows/release.yml"), "utf8",
+    )) as { concurrency: { group: string; "cancel-in-progress": boolean } };
+    const expression = workflow.concurrency.group.match(/\$\{\{([\s\S]*)\}\}/u)?.[1];
+    expect(expression).toBeDefined();
+    const group = (event: string, tag: string) => runInNewContext(expression!, {
+      github: { event_name: event, ref: `refs/tags/${tag}`, ref_name: tag }, inputs: { tag },
+    }, { timeout: 1000 });
+    expect(group("push", "v2026.10.11")).toBe(group("workflow_dispatch", "v2026.10.11"));
+    expect(group("push", "v2026.10.11")).not.toBe(group("workflow_dispatch", "v2026.10.12"));
+    expect(workflow.concurrency["cancel-in-progress"]).toBe(false);
+  });
+
+  it("reports and resolves blockers for both automatic daily release origins", async () => {
+    const workflow = parse(await readFile(
+      path.join(repoRoot, ".github/workflows/auto-release.yml"), "utf8",
+    )) as { jobs: { "auto-release": { steps: Array<{ name: string; if?: string }> } } };
+    const steps = workflow.jobs["auto-release"].steps;
+    const alert = steps.find((step) => step.name === "Alert on blocked scheduled auto-release");
+    const resolve = steps.find((step) => step.name === "Resolve blocked scheduled auto-release issue");
+    for (const [event, origin, automatic, retry] of [
+      ["schedule", "native_schedule", true, false],
+      ["workflow_dispatch", "morning_dispatcher", true, false],
+      ["workflow_dispatch", "operator", false, false],
+      ["workflow_dispatch", "", false, false],
+      ["issues", "blocker_retry", false, true],
+      ["push", "morning_dispatcher", false, false],
+    ] as const) {
+      for (const failed of [false, true]) {
+        for (const published of [false, true]) {
+          for (const publishedBy of ["publish_release", "auto_release"]) {
+            const context = {
+              github: { event_name: event }, inputs: { trigger_origin: origin },
+              failure: () => failed, success: () => !failed,
+              steps: Object.fromEntries(["publish_release", "auto_release"].map((name) => [
+                name, { outputs: { published_tag: published && name === publishedBy ? "v2026.10.11" : "" } },
+              ])),
+            };
+            const evaluate = (condition: string | undefined): boolean => Boolean(runInNewContext(
+              condition?.replace(/^\$\{\{\s*|\s*\}\}$/gu, "") ?? "false", context,
+              { timeout: 1000 },
+            ));
+            expect(evaluate(alert?.if), `${event}/${origin}: alert`).toBe(failed && (automatic || retry));
+            expect(evaluate(resolve?.if), `${event}/${origin}: resolve`).toBe(!failed && automatic && published);
+          }
+        }
+      }
+    }
+  });
+
+  it("supersedes a stale daily blocker from either automatic origin", async () => {
+    const workflow = parse(await readFile(
+      path.join(repoRoot, ".github/workflows/auto-release.yml"), "utf8",
+    )) as { jobs: { "auto-release": { steps: Array<{ name: string; run?: string }> } } };
+    const script = workflow.jobs["auto-release"].steps.find(
+      (step) => step.name === "Alert on blocked scheduled auto-release",
+    )?.run;
+    expect(script).toBeTypeOf("string");
+    for (const [event, origin] of [
+      ["schedule", "native_schedule"], ["workflow_dispatch", "morning_dispatcher"],
+    ]) {
+      await withTempDir("pm-release-alert-", async (root) => {
+        execFileSync("bash", ["-euo", "pipefail", "-s"], {
+          cwd: root, encoding: "utf8", timeout: 10_000,
+          env: {
+            ...process.env, GITHUB_EVENT_NAME: event, RELEASE_TRIGGER_ORIGIN: origin,
+            RUN_URL: "https://github.com/example/project/actions/runs/1", RELEASE_SHA: "fixture",
+            CLOSED_ISSUE_NUMBER: "", INPUT_PUSH: "true", INPUT_DRY_RUN: "false",
+            RELEASE_PAT_CONFIGURED: "true", SENTRY_PERSONAL_ADMIN_TOKEN_CONFIGURED: "true",
+          },
+          input: `gh() {
+            printf '%s\\n' "$*" >> calls
+            case "$1 $2" in
+              'issue list') printf '41\\n' ;;
+              'issue view') printf '2026-10-10T00:00:00Z\\n' ;;
+              'issue close'|'issue create'|'issue comment') ;;
+              *) return 9 ;;
+            esac
+          }
+          date() { printf '2026-10-11\\n'; }
+          ${script}`,
+        });
+        const calls = await readFile(path.join(root, "calls"), "utf8");
+        expect(calls).toContain("issue close 41 --comment Superseded");
+        expect(calls).toContain("issue create --title Auto Release blocked");
+        expect(calls).toContain(`Origin: \`${origin}\``);
+        expect(calls).not.toContain("issue comment 41");
+      });
+    }
   });
 
   it("keeps security workflow downloads pinned and hash-verified", async () => {

@@ -31,6 +31,29 @@ function prependFakeBinForBash(script: string): string {
   ].join("\n");
 }
 
+/** Install a native provider executable so Node and Bash resolve the same isolated fake. */
+async function installPublicationProviderFixture(root: string): Promise<string> {
+  const binary = path.join(root, process.platform === "win32" ? "gh.exe" : "gh");
+  const provider = path.join(root, "publication-provider.mjs");
+  await copyFile(process.execPath, binary);
+  await chmod(binary, 0o755);
+  await writeFile(provider, `import path from "node:path";
+if (path.basename(process.execPath).replace(/\\.exe$/u, "") === "gh") {
+  if (path.basename(process.argv[1]) !== "api") process.exit(97);
+  const endpoint = process.argv[2];
+  if (endpoint === "repos/fixture/project/actions/workflows/release.yml/runs?per_page=100") {
+    process.stdout.write(JSON.stringify([{ total_count: 1, workflow_runs: [{ id: 1,
+      created_at: "2026-08-05T10:00:00Z", status: "completed", conclusion: "failure", event: "push",
+      head_branch: process.env.RELEASE_TAG, head_sha: "0449d15f045f881a574248d35774a656a8b1e55b" }] }]));
+  } else if (endpoint === "repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100") {
+    process.stdout.write(process.env.PRIOR_JOBS);
+  } else process.exit(98);
+  process.exit(0);
+}
+`, "utf8");
+  return `${process.env.NODE_OPTIONS ?? ""} --import=${pathToFileURL(provider).href}`.trim();
+}
+
 describe("release automation contract", () => {
   it("keeps package scripts aligned with local release parity workflow", async () => {
     const packageJsonRaw = await readFile(
@@ -1229,7 +1252,7 @@ exit "\${PROBE_STATUS}"
         `#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "\${GIT_FAKE_LOG}"
 case "$1" in
-  rev-parse) printf '%s\\n' "0449d15f0d34d15f0d34d15f0d34d15f0d34d15" ;;
+  rev-parse) printf '%s\\n' "0449d15f045f881a574248d35774a656a8b1e55b" ;;
   checkout) ;;
   *) exit 97 ;;
 esac
@@ -1238,6 +1261,7 @@ esac
       );
       await chmod(path.join(tempRoot, "npm"), 0o755);
       await chmod(path.join(tempRoot, "git"), 0o755);
+      const providerOptions = await installPublicationProviderFixture(tempRoot);
       await writeFile(
         path.join(tempRoot, "pnpm"),
         `#!/usr/bin/env bash
@@ -1258,10 +1282,15 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
             env: {
               ...process.env,
               FAKE_BIN: tempRoot,
+            NODE_OPTIONS: providerOptions,
               RELEASE_TAG: "v2026.8.5",
               DEFAULT_BRANCH: "main",
               GITHUB_ENV: githubEnv,
               RUNNER_TEMP: tempRoot,
+              GITHUB_REPOSITORY: "fixture/project",
+              PRIOR_JOBS: JSON.stringify([{ total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+                { name: "Publish to npm", status: "completed", conclusion: "skipped" },
+              ] }] }]),
               NPM_FAKE_LOG: npmLog,
               GIT_FAKE_LOG: gitLog,
               PROBE_STATUS: "0",
@@ -1287,13 +1316,25 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
         PROBE_STATUS: "1",
         PROBE_OUTPUT: "npm error code ETARGET",
       });
-      expect(missingVersion.status).toBe(0);
+      expect(missingVersion.status, missingVersion.stderr).toBe(0);
       expect(await readFile(githubEnv, "utf8")).toBe(
         "RECOVERY_SOURCE_MODE=tag\n",
       );
       expect(await readFile(gitLog, "utf8")).toContain(
-        "checkout --detach 0449d15f0d34d15f0d34d15f0d34d15f0d34d15",
+        "checkout --detach 0449d15f045f881a574248d35774a656a8b1e55b",
       );
+      await writeFile(gitLog, "", "utf8");
+      await writeFile(githubEnv, "", "utf8");
+      const acceptedButMissing = runScenario({
+        PROBE_STATUS: "1", PROBE_OUTPUT: "npm error code E404",
+        PRIOR_JOBS: JSON.stringify([{ total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+          { name: "Publish to npm", status: "completed", conclusion: "success" },
+        ] }] }]),
+      });
+      expect(acceptedButMissing.status).toBe(1);
+      expect(acceptedButMissing.stderr).toContain("previously accepted");
+      expect(await readFile(gitLog, "utf8")).not.toContain("checkout");
+      expect(await readFile(githubEnv, "utf8")).toBe("");
       await writeFile(npmLog, "", "utf8");
       await writeFile(gitLog, "", "utf8");
       await writeFile(githubEnv, "", "utf8");
@@ -1415,6 +1456,9 @@ esac
         "utf8",
       );
       await chmod(fakeNpm, 0o755);
+      const providerOptions = await installPublicationProviderFixture(tempRoot);
+      await writeFile(path.join(tempRoot, "git"), "#!/usr/bin/env bash\nprintf '0449d15f045f881a574248d35774a656a8b1e55b\\n'\n", "utf8");
+      await chmod(path.join(tempRoot, "git"), 0o755);
 
       const runScenario = (overrides: NodeJS.ProcessEnv) =>
         spawnSync("bash", ["-c", prependFakeBinForBash(publishScript ?? "")], {
@@ -1423,6 +1467,7 @@ esac
           env: {
             ...process.env,
             FAKE_BIN: tempRoot,
+            NODE_OPTIONS: providerOptions,
             RELEASE_TAG: "v2026.7.27",
             RELEASE_VERSION: "2026.7.27",
             RUNNER_TEMP: tempRoot,
@@ -1431,6 +1476,11 @@ esac
             NPM_PACKAGE: "@unbrained/pm-cli",
             NPM_FAKE_LOG: npmLog,
             PACKAGE_DISTRIBUTION: distributionScript,
+            RELEASE_PUBLICATION_ADMISSION: path.join(repoRoot, "scripts/release/release-run-selection.mjs"),
+            DEFAULT_BRANCH: "main", GITHUB_REPOSITORY: "fixture/project",
+            PRIOR_JOBS: JSON.stringify([{ total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+              { name: "Publish to npm", status: "completed", conclusion: "skipped" },
+            ] }] }]),
             DISTRIBUTION_LOG: distributionLog,
             DISTRIBUTION_STATUS: "0",
             TARGET_VERSION_STATUS: "1",
@@ -1440,7 +1490,7 @@ esac
         });
 
       const publicPackage = runScenario({});
-      expect(publicPackage.status).toBe(0);
+      expect(publicPackage.status, publicPackage.stderr).toBe(0);
       expect(publicPackage.stdout).toContain(
         "@unbrained/pm-cli is publicly available but 2026.7.27 is not; publishing.",
       );
@@ -1453,6 +1503,20 @@ esac
         `publish ${tempRoot}/publication.tgz --access public --provenance --tag latest`,
       );
       expect(invocations).not.toContain("access set");
+
+      for (const event of ["push", "workflow_dispatch"]) {
+        await writeFile(npmLog, "", "utf8");
+        await writeFile(distributionLog, "", "utf8");
+        const accepted = runScenario({ GITHUB_EVENT_NAME: event, PRIOR_JOBS: JSON.stringify([
+          { total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+            { name: "Publish to npm", status: "completed", conclusion: "success" },
+          ] }] },
+        ]) });
+        expect(accepted.status).toBe(1);
+        expect(accepted.stderr).toContain("previously accepted");
+        expect(await readFile(npmLog, "utf8")).not.toContain("publish ");
+        expect(await readFile(distributionLog, "utf8")).toBe("");
+      }
 
       await writeFile(npmLog, "", "utf8");
       const packedFailure = runScenario({ DISTRIBUTION_STATUS: "1" });

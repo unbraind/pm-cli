@@ -79,6 +79,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
+      cross-spawn:
+        specifier: 7.0.6
+        version: 7.0.6
       esbuild:
         specifier: '>=0.28.2 <0.29.0'
         version: 0.28.2

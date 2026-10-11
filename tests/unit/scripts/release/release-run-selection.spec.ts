@@ -11,10 +11,114 @@ import {
   RELEASE_RUN_SELECTION_SCHEMA,
   main,
   selectAuthoritativeReleaseRun,
+  assertNoAcceptedPublication,
+  rejectAcceptedPublication,
 } from "../../../../scripts/release/release-run-selection.mjs";
 
 const tag = "v2026.8.5";
 const tagSha = "0449d15f045f881a574248d35774a656a8b1e55b";
+
+describe("accepted publication admission", () => {
+  const options = { tag, tagSha, defaultBranch: "main" };
+  const jobs = (conclusion: string, id = 10, total = 1) => [{ total_count: total, jobs: [{ id, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+    { name: "Publish to npm", status: "completed", conclusion },
+  ] }] }];
+
+  it("refuses an accepted earlier attempt even when the newest attempt skipped publishing", () => {
+    expect(() => assertNoAcceptedPublication([run({})], options, () => [
+      ...jobs("skipped", 10, 2), ...jobs("success", 11, 2),
+    ])).toThrow("previously accepted");
+    expect(() => assertNoAcceptedPublication([run({})], options, () => jobs("failure"))).not.toThrow();
+  });
+
+  it("matches exact tag and source identity without treating another release as accepted", () => {
+    const load = vi.fn(() => jobs("success"));
+    expect(() => assertNoAcceptedPublication([
+      run({ headBranch: "v2026.8.6" }), run({ headSha: "f".repeat(40) }),
+      run({ event: "workflow_dispatch", headBranch: "feature", displayTitle: `Release ${tag}` }),
+    ], options, load)).not.toThrow();
+    expect(load).not.toHaveBeenCalled();
+    expect(() => assertNoAcceptedPublication([run({
+      event: "workflow_dispatch", headBranch: "main", displayTitle: `Release ${tag} (operator)`,
+    })], options, load)).toThrow("previously accepted");
+  });
+
+  it("excludes only the current attempt while retaining previous accepted attempts of the same run", () => {
+    const current = { total_count: 1, jobs: [{ id: 20, name: "Build, Test, Publish", run_id: 1, run_attempt: 2, steps: [] }] };
+    const active = { ...options, currentRunId: 1, currentAttempt: 2 };
+    expect(() => assertNoAcceptedPublication([run({})], active, () => [current])).not.toThrow();
+    expect(() => assertNoAcceptedPublication([run({})], active, () => [{ ...current, total_count: 2 }, ...jobs("success", 10, 2)])).toThrow("previously accepted");
+    expect(() => assertNoAcceptedPublication([run({})], { ...active, currentAttempt: 0 }, () => [current])).toThrow();
+    expect(() => assertNoAcceptedPublication([run({})], options, () => [{ total_count: 1, jobs: [{ ...jobs("skipped")[0]!.jobs[0], run_id: 2 }] }])).toThrow("identity");
+  });
+
+  it("refuses incomplete inventories, missing jobs and unavailable provider evidence", () => {
+    for (const runs of [null, [{}], [run({ event: "" })],
+      [run({ headSha: "" })], [run({ headBranch: "" })], [run({ status: "" })],
+      [run({ event: "workflow_dispatch", displayTitle: undefined })]]) {
+      expect(() => assertNoAcceptedPublication(runs, options, () => jobs("skipped"))).toThrow();
+    }
+    const singleJob = (job: Record<string, unknown> | null) => [{ total_count: 1, jobs: [job] }];
+    for (const pages of [null, [], [{}], [{ total_count: 0, jobs: [] }],
+      singleJob(null), singleJob({ id: 10, name: "Build, Test, Publish" }),
+      singleJob({ id: 10, name: "another job" }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [null, { name: "Publish to npm" }] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed" }] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed", conclusion: "unrecognized" }] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "unknown" }] })]) {
+      expect(() => assertNoAcceptedPublication([run({})], options, () => pages)).toThrow();
+    }
+    expect(() => assertNoAcceptedPublication([run({})], options, () => { throw new Error("provider unavailable"); })).toThrow("provider unavailable");
+  });
+
+  it("queries only the explicit Release workflow and all prior job attempts", () => {
+    const execute = vi.fn().mockReturnValueOnce(JSON.stringify([runPage([run({})])])).mockReturnValueOnce(JSON.stringify(jobs("skipped")));
+    const argv = ["--tag", tag, "--tag-sha", tagSha, "--default-branch", "main"];
+    rejectAcceptedPublication(argv, { GITHUB_REPOSITORY: "fixture/project" }, execute);
+    expect(execute.mock.calls[0]?.[1]).toEqual(["api", "repos/fixture/project/actions/workflows/release.yml/runs?per_page=100", "--paginate", "--slurp"]);
+    expect(execute.mock.calls[1]?.[1]).toEqual(["api", "repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100", "--paginate", "--slurp"]);
+    expect(() => rejectAcceptedPublication(argv, {}, execute)).toThrow("explicit GitHub repository");
+    expect(() => rejectAcceptedPublication(argv, { GITHUB_REPOSITORY: "fixture/project" }, () => "invalid-json")).toThrow();
+  });
+
+  it("refuses partial or duplicate job pages before an omitted accepted attempt can be admitted", () => {
+    const skipped = { id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1,
+      steps: [{ name: "Publish to npm", status: "completed", conclusion: "skipped" }] };
+    for (const pages of [[{ total_count: 2, jobs: [skipped] }],
+      [{ total_count: 2, jobs: [skipped] }, { total_count: 2, jobs: [skipped] }],
+      [{ total_count: 2, jobs: [skipped] }, { total_count: 1, jobs: [] }]]) {
+      expect(() => assertNoAcceptedPublication([run({})], options, () => pages)).toThrow();
+    }
+    expect(() => assertNoAcceptedPublication([run({})], options, () => [
+      { total_count: 2, jobs: [skipped] }, { total_count: 2, jobs: [{ ...skipped, id: 11, run_attempt: 2,
+        steps: [{ name: "Publish to npm", status: "completed", conclusion: "success" }] }] },
+    ])).toThrow("previously accepted");
+  });
+
+  it("retains accepted evidence after more than 1000 unrelated runs and validates pagination receipts", () => {
+    const unrelated = Array.from({ length: 1001 }, (_, i) => run({ databaseId: i + 10, headBranch: "v2026.8.6" }));
+    const pages = [runPage(unrelated, 1002), runPage([run({})], 1002)];
+    const argv = ["--tag", tag, "--tag-sha", tagSha, "--default-branch", "main"];
+    const execute = vi.fn().mockReturnValueOnce(JSON.stringify(pages)).mockReturnValueOnce(JSON.stringify(jobs("success")));
+    expect(() => rejectAcceptedPublication(argv, { GITHUB_REPOSITORY: "fixture/project" }, execute)).toThrow("previously accepted");
+    for (const invalid of [null, [], [null], [{}], [{ workflow_runs: [], total_count: -1 }],
+      [{ workflow_runs: [null], total_count: 1 }],
+      [runPage([run({})], 2)], [runPage([run({})], 1), runPage([], 2)],
+      [runPage([run({})], 2), runPage([run({})], 2)]]) {
+      expect(() => rejectAcceptedPublication(argv, { GITHUB_REPOSITORY: "fixture/project" }, () => JSON.stringify(invalid))).toThrow();
+    }
+    const current = vi.fn().mockReturnValueOnce(JSON.stringify([runPage([run({})])])).mockReturnValueOnce(JSON.stringify(jobs("skipped")));
+    expect(() => rejectAcceptedPublication(argv, { GITHUB_REPOSITORY: "fixture/project", GITHUB_RUN_ID: "1", GITHUB_RUN_ATTEMPT: "2" }, current)).not.toThrow();
+    expect(() => rejectAcceptedPublication(argv, { GITHUB_REPOSITORY: "fixture/project" }, () => JSON.stringify([runPage([])]))).not.toThrow();
+  });
+});
+
+function runPage(runs: Record<string, unknown>[], total = runs.length) {
+  return { total_count: total, workflow_runs: runs.map((r) => ({ id: r.databaseId, created_at: r.createdAt,
+    status: r.status, conclusion: r.conclusion, event: r.event, head_branch: r.headBranch,
+    head_sha: r.headSha, display_title: r.displayTitle })) };
+}
 
 function run(overrides: Record<string, unknown>): Record<string, unknown> {
   return {

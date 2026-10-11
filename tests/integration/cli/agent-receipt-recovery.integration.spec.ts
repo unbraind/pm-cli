@@ -1,4 +1,6 @@
-import { writeFile } from "node:fs/promises";
+import assert from "node:assert/strict";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runPmCli } from "../../../src/cli/main.js";
@@ -10,8 +12,159 @@ import { applyContextIntentProjection } from "../../../src/sdk/context-intent-co
 import { createTaskFixture } from "../../helpers/createTaskFixture.js";
 import { runDirectDistCli, runInProcessDistCli } from "../../helpers/cliRunner.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { verifyInstalledAgentRecovery } from "../../../scripts/release/agent-recovery-acceptance.mjs";
 
 describe("agent receipt and recovery contracts", () => {
+  it.runIf(process.platform === "win32")(
+    "executes real Windows command shims with JSON operands intact",
+    async () => {
+      await withTempPmPath(async (context) => {
+        const shimRoot = path.join(
+          context.tempRoot,
+          "command shim with spaces",
+        );
+        await mkdir(shimRoot);
+        const shim = path.join(shimRoot, "pm-recovery.cmd");
+        await writeFile(
+          shim,
+          `@"${process.execPath}" "${path.join(process.cwd(), "dist", "cli.js")}" %*\r\n`,
+        );
+        const direct = spawnSync(shim, ["--version"], { encoding: "utf8" });
+        expect(direct.error).toBeDefined();
+        expect(
+          verifyInstalledAgentRecovery(shim, [], {
+            env: context.env,
+            cwd: context.tempRoot,
+          }),
+        ).toMatchObject({
+          ok: true,
+          authoritative_bytes_preserved: true,
+          measurement_recovery: true,
+        });
+      });
+    },
+  );
+
+
+  it("replays extension help in the explicitly selected tracker from a different default tracker", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-extension-scope", "Keep the selected tracker unchanged.");
+      const extensionDir = path.join(context.tempRoot, "scoped-package");
+      const activationMarker = path.join(context.tempRoot, "extension-activation.txt");
+      await mkdir(extensionDir);
+      await writeFile(path.join(extensionDir, "manifest.json"), JSON.stringify({ name: "recoveryprobe", version: "1.0.0", entry: "index.js", capabilities: ["commands"] }));
+      await writeFile(path.join(extensionDir, "index.js"), `import { appendFileSync } from 'node:fs'; const marker = ${JSON.stringify(activationMarker)}; appendFileSync(marker, 'module loaded\\n'); export default { activate(api) { appendFileSync(marker, 'activated\\n'); for (const name of ['recoveryprobe scoped-help', 'recoveryprobe subgroup inspect', 'subgroup misplaced']) api.registerCommand({ name, run: () => ({ ok: true }) }); } };\n`);
+      expect(context.runCli(["package", "install", extensionDir, "--json"], { expectJson: true }).code).toBe(0);
+      const otherTracker = path.join(context.tempRoot, "other-tracker");
+      expect(context.runCli(["--pm-path", otherTracker, "init", "--json"], { expectJson: true }).code).toBe(0);
+      const env = { ...context.env, PM_PATH: otherTracker };
+      const historyPath = path.join(context.pmPath, "history", "pm-extension-scope.jsonl");
+      const before = await readFile(historyPath, "utf8");
+      const refusedArgs = ["--pm-path", path.relative(context.tempRoot, context.pmPath), "item", "scoped-help", "--help", "--json"];
+      const refusal = runDirectDistCli(refusedArgs, { env, cwd: context.tempRoot });
+      expect(refusal.code, refusal.stderr).toBe(2);
+      const recovery = (JSON.parse(refusal.stderr) as JsonErrorEnvelope).recovery!;
+      expect(recovery.suggested_retry_args, refusal.stderr).toEqual(["--pm-path", context.pmPath, "recoveryprobe", "scoped-help", "--help"]);
+      expect((JSON.parse(refusal.stderr) as JsonErrorEnvelope).examples?.[0]).toBe(recovery.suggested_retry);
+      const sourceRefusal = await runInProcessDistCli(refusedArgs, { env, cwd: context.tempRoot }, runPmCli);
+      expect(sourceRefusal.code, sourceRefusal.stderr).toBe(2);
+      expect((JSON.parse(sourceRefusal.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(recovery.suggested_retry_args);
+      const help = runDirectDistCli([...recovery.suggested_retry_args!, "--json"], { env, cwd: otherTracker });
+      expect(help.code, help.stderr).toBe(0);
+      expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "recoveryprobe scoped-help" });
+      const nestedArgs = ["--pm-path", context.pmPath, "recoveryprobe", "subgroup", "misplaced", "--help", "--json"];
+      const nested = runDirectDistCli(nestedArgs, { env, cwd: context.tempRoot });
+      expect(nested.code, nested.stderr).toBe(2);
+      const nestedRetry = (JSON.parse(nested.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args;
+      expect(nestedRetry, nested.stderr).toEqual(["--pm-path", context.pmPath, "subgroup", "misplaced", "--help"]);
+      assert(nestedRetry, "Missing nested command recovery arguments");
+      const sourceNested = await runInProcessDistCli(nestedArgs, { env, cwd: context.tempRoot }, runPmCli);
+      expect(sourceNested.code, sourceNested.stderr).toBe(2);
+      expect((JSON.parse(sourceNested.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(nestedRetry);
+      const nestedHelp = runDirectDistCli([...nestedRetry, "--json"], { env, cwd: otherTracker });
+      expect(nestedHelp.code, nestedHelp.stderr).toBe(0);
+      expect(JSON.parse(nestedHelp.stdout)).toMatchObject({ resolved_path: "subgroup misplaced" });
+      for (const [invocation, expectedRetry] of [
+        [refusedArgs, recovery.suggested_retry_args!],
+        [["--no-extensions", "--pm-path", context.pmPath, "item", "update", "--help", "--json"], ["--pm-path", context.pmPath, "--no-extensions", "update", "--help"]],
+      ]) {
+        for (const json of [true, false]) {
+          const isolatedInvocation = await runInProcessDistCli(["stats"], { env, cwd: context.tempRoot }, async () => {
+            await runPmCli(json ? invocation : invocation.filter((arg) => arg !== "--json"));
+          });
+          expect(isolatedInvocation.code, isolatedInvocation.stderr).toBe(2);
+          if (json) expect((JSON.parse(isolatedInvocation.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(expectedRetry);
+          else {
+            expect(isolatedInvocation.stderr).toContain(context.pmPath);
+            if (expectedRetry.includes("--no-extensions")) expect(isolatedInvocation.stderr).toContain("--no-extensions");
+          }
+        }
+      }
+      const unscoped = runDirectDistCli(["recoveryprobe", "scoped-help", "--help", "--json"], { env, cwd: context.tempRoot });
+      expect(unscoped.code).toBe(2);
+      const suppressed = runDirectDistCli(["--no-extensions", "--pm-path", context.pmPath, "item", "scoped-help", "--help"], { env, cwd: context.tempRoot });
+      expect(suppressed.code).toBe(2);
+      expect(suppressed.stderr).not.toContain("recoveryprobe scoped-help");
+      expect(await readFile(activationMarker, "utf8")).toContain("activated");
+      await writeFile(activationMarker, "");
+      for (const json of [true, false]) {
+        const args = ["--no-extensions", "--pm-path", context.pmPath, "item", "update", "--help", ...(json ? ["--json"] : [])];
+        const executable = runDirectDistCli(args, { env, cwd: context.tempRoot });
+        expect(executable.code, executable.stderr).toBe(2);
+        const source = await runInProcessDistCli(args, { env, cwd: context.tempRoot }, runPmCli);
+        expect(source.code, source.stderr).toBe(2);
+      }
+      expect(await readFile(activationMarker, "utf8")).toBe("");
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+    });
+  });
+
+  it("executes the advertised recovery through a real executable and preserves authoritative bytes", async () => {
+    await withTempPmPath(async (context) => {
+      expect(verifyInstalledAgentRecovery(process.execPath, [path.resolve("dist/cli.js")], {
+        cwd: context.tempRoot, env: context.env,
+      })).toEqual({ ok: true, namespace_refusals: 2, measurement_recovery: true, authoritative_bytes_preserved: true });
+      expect(() => verifyInstalledAgentRecovery(path.join(context.tempRoot, "missing-launcher"), [], {
+        env: {},
+      })).toThrow("ENOENT");
+    });
+    expect(() => verifyInstalledAgentRecovery(process.execPath, ["-e", "process.stdout.write('launcher notice')", "--"], {
+      env: {},
+    })).toThrow("Missing CLI JSON response");
+  });
+
+  it("recovers misplaced namespaces and measurement prerequisites without rewriting a nonempty tracker", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-recovery", "Keep this item and its provenance intact.");
+      const historyPath = path.join(context.pmPath, "history", "pm-recovery.jsonl");
+      const before = await readFile(historyPath, "utf8");
+      for (const args of [
+        ["item", "update", "--help"], ["item", "update", "pm-recovery", "--title", "Must not execute"],
+        ["test", "pm-recovery", "--measure", "coverage=100", "--only-index", "1"],
+      ]) {
+        const refusal = await runInProcessDistCli(["--no-extensions", ...args, "--json"], { env: context.env }, runPmCli);
+        expect(refusal.code, refusal.stderr).toBe(2);
+        const envelope = JSON.parse(refusal.stderr) as JsonErrorEnvelope;
+        expect(envelope).toMatchObject({ code: args[0] === "item" ? "unknown_command" : "test_measure_requires_run" });
+        const retryArgs = envelope.recovery?.suggested_retry_args;
+        expect(retryArgs).toBeDefined();
+        expect(retryArgs).not.toContain("--force");
+        expect(retryArgs).not.toContain("--allow-untrusted-linked-tests");
+        if (args[0] === "item") {
+          expect(retryArgs).toEqual(["--no-extensions", "update", "--help"]);
+          expect(envelope.examples?.[0]).toBe("pm --no-extensions update --help");
+          const help = await runInProcessDistCli([...retryArgs!, "--json"], { env: context.env }, runPmCli);
+          expect(help.code).toBe(0);
+          expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "update" });
+        } else {
+          expect(retryArgs).toEqual(expect.arrayContaining(["--run", "--measure", "coverage=100", "--only-index", "1"]));
+        }
+        expect(await readFile(historyPath, "utf8")).toBe(before);
+        expect(context.runCli(["get", "pm-recovery", "--json"], { expectJson: true }).json).toMatchObject({ item: { title: "pm-recovery" } });
+      }
+    });
+  });
+
   it("attributes failed validation to its owner independently of valid argument order", async () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, "pm-attribution", "Persisted execution detail");

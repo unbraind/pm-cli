@@ -1099,6 +1099,12 @@ describe("operation command actions", () => {
     await expect(runCli("test", "pm-1", "--background")).rejects.toThrow(
       "--background requires --run",
     );
+    await expect(runCli("test", "pm-1", "--background", "--measure", "coverage=100")).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      context: { code: "test_measure_requires_run", recovery: {
+        suggested_retry_args: expect.arrayContaining(["--run", "--background", "--measure", "coverage=100"]),
+      } },
+    });
     await expect(
       runCli("test", "pm-1", "--background", "--run", "--add", "x"),
     ).rejects.toThrow("does not support --add");

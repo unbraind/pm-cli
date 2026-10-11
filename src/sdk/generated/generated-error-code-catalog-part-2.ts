@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_reconcile_receipt_evidence_untrusted",
-    meaning: "Merge reconcile receipt evidence untrusted condition.",
-    stability: "provisional",
-    exit_code: 4,
-    class: "conflict",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/history-repair.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_reconcile_receipt_evidence_untrusted",
-    aliases: [],
-  },
-  {
     code: "merge_root_not_found",
     meaning: "Merge root not found condition.",
     stability: "stable",
@@ -1388,6 +1375,32 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["core/telemetry/observability.ts"],
     emitting_commands: ["*"],
     canonical_code: "terminal_state_conflict",
+    aliases: [],
+  },
+  {
+    code: "test_measure_requires_execution",
+    meaning: "Test measure requires execution condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/test/prerequisites.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "test_measure_requires_execution",
+    aliases: [],
+  },
+  {
+    code: "test_measure_requires_run",
+    meaning: "Test measure requires run condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/test/prerequisites.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "test_measure_requires_run",
     aliases: [],
   },
   {

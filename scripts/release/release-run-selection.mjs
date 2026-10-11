@@ -10,6 +10,7 @@
  * stale failures; without one, an active run wins over the latest terminal run.
  */
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 /** Schema tag for machine-readable selection receipts. */
@@ -178,6 +179,97 @@ export function selectAuthoritativeReleaseRun(runs, options) {
   };
 }
 
+/** Require a complete, structurally valid inventory before matching release identity. */
+function validatePublicationInventory(runs) {
+  if (!Array.isArray(runs) || runs.some((run) =>
+    normalizedCandidate(run) === null || !["push", "workflow_dispatch"].includes(run.event) ||
+    !/^[0-9a-f]{40}$/u.test(text(run.headSha)) || text(run.headBranch) === "" ||
+    text(run.status) === "" || (run.event === "workflow_dispatch" && typeof run.displayTitle !== "string"))) {
+    throw new Error("Incomplete or malformed Release workflow inventory; publication admission refused.");
+  }
+}
+
+/** Validate complete provider pagination before matching any publication identity. */
+function completePublicationInventory(pages, field) {
+  if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) =>
+    !Array.isArray(page?.[field]) || !Number.isSafeInteger(page.total_count) || page.total_count < 0 ||
+    page.total_count !== pages[0].total_count)) {
+    throw new Error("Incomplete or malformed Release pagination; publication admission refused.");
+  }
+  const items = pages.flatMap((page) => page[field]);
+  if (items.length !== pages[0].total_count || items.some((item) => !numericRunId(item?.id)) ||
+    new Set(items.map((item) => item.id)).size !== items.length) {
+    throw new Error("Incomplete or duplicate Release pagination; publication admission refused.");
+  }
+  return items;
+}
+
+/** Adapt a validated workflow inventory to the existing authoritative selector. */
+function publicationRunInventory(pages) {
+  return completePublicationInventory(pages, "workflow_runs").map((run) => ({
+    databaseId: run.id, createdAt: run.created_at, status: run.status, conclusion: run.conclusion,
+    event: run.event, headBranch: run.head_branch, headSha: run.head_sha, displayTitle: run.display_title,
+  }));
+}
+
+/** Require authoritative run-attempt identity on every canonical publication job. */
+function publicationJobCandidates(pages, runId) {
+  const candidates = completePublicationInventory(pages, "jobs").filter((job) => job.name === "Build, Test, Publish");
+  if (candidates.length === 0 || candidates.some((job) => job.run_id !== runId || !numericRunId(job.run_attempt))) {
+    throw new Error("Missing or mismatched Release job-attempt identity; publication admission refused.");
+  }
+  return candidates;
+}
+
+/** Require a known publication stage with complete step status and terminal conclusions. */
+function validPublicationSteps(job) {
+  return Array.isArray(job.steps) && job.steps.some((step) => step?.name === "Publish to npm") &&
+    job.steps.every((step) => step && text(step.name) !== "" &&
+      ["queued", "in_progress", "completed"].includes(step.status) &&
+      (step.status !== "completed" || ["success", "failure", "neutral", "cancelled", "skipped",
+        "timed_out", "action_required", "stale", "startup_failure"].includes(step.conclusion)));
+}
+
+/** Refuse first-publication recovery when any exact-tag attempt already accepted npm publication. */
+export function assertNoAcceptedPublication(runs, options, loadJobs) {
+  validateOptions(options);
+  if (options.currentRunId !== undefined && (!numericRunId(options.currentRunId) || !numericRunId(options.currentAttempt))) {
+    throw new Error("Invalid current run-attempt identity; publication admission refused.");
+  }
+  validatePublicationInventory(runs);
+  for (const run of runs) {
+    if (!selectAuthoritativeReleaseRun([run], options).selected) continue;
+    const candidates = publicationJobCandidates(loadJobs(run.databaseId), run.databaseId);
+    const jobs = candidates.filter((job) => !(job.run_id === options.currentRunId && job.run_attempt === options.currentAttempt));
+    if (jobs.some((job) => !validPublicationSteps(job))) {
+      throw new Error("Missing Release publication job evidence; publication admission refused.");
+    }
+    if (jobs.some((job) => job.steps.some((step) => step?.name === "Publish to npm" &&
+      step.status === "completed" && step.conclusion === "success"))) {
+      throw new Error(`npm publication was previously accepted by exact-tag Release run ${run.databaseId}; wait for public availability or inspect npm processing before recovery.`);
+    }
+  }
+}
+
+/** Inspect complete earlier attempts from the authoritative Release workflow before allowing first publication. */
+export function rejectAcceptedPublication(argv = process.argv.slice(2), env = process.env, execute = execFileSync) {
+  const repository = text(env.GITHUB_REPOSITORY);
+  if (!/^[\w.-]+\/[\w.-]+$/u.test(repository)) throw new Error("Expected an explicit GitHub repository.");
+  const options = {
+    tag: flagValue(argv, "tag"), tagSha: flagValue(argv, "tag-sha"), defaultBranch: flagValue(argv, "default-branch"),
+    currentRunId: env.GITHUB_RUN_ID === undefined ? undefined : Number(env.GITHUB_RUN_ID),
+    currentAttempt: env.GITHUB_RUN_ATTEMPT === undefined ? undefined : Number(env.GITHUB_RUN_ATTEMPT),
+  };
+  validateOptions(options);
+  const command = (args) => JSON.parse(execute("gh", args, { encoding: "utf8", timeout: 60_000, maxBuffer: 64 * 1024 * 1024 }));
+  const runs = publicationRunInventory(command([
+    "api", `repos/${repository}/actions/workflows/release.yml/runs?per_page=100`, "--paginate", "--slurp",
+  ]));
+  assertNoAcceptedPublication(runs, options, (id) => command([
+    "api", `repos/${repository}/actions/runs/${id}/jobs?filter=all&per_page=100`, "--paginate", "--slurp",
+  ]));
+}
+
 function flagValue(argv, name) {
   const index = argv.indexOf(`--${name}`);
   const value = index >= 0 ? argv[index + 1] : undefined;
@@ -229,7 +321,8 @@ export function main(
 /* c8 ignore start -- the CLI wrapper is exercised by workflow integration; unit tests call main directly */
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    main();
+    if (process.argv.includes("--reject-accepted-publication")) rejectAcceptedPublication();
+    else main();
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

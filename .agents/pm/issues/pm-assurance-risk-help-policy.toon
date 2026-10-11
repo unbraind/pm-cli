@@ -1,0 +1,23 @@
+id: pm-assurance-risk-help-policy
+title: Make assurance risk help include the required recurrence policy
+description: "Observed during recovery delivery: pm assurance risk --help advertises a definition containing only change.files. Executing that exact example returns invalid_argument_value with defect recurrence policy must be an object. Supplying the existing config/defect-recurrence-policy.json as definition.policy succeeds and selects18 relevant recurrence families for the current patch. Fix discovery and prerequisite recovery without fabricating policy or weakening recurrence gates."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-10T19:11:49.975Z"
+updated_at: "2026-10-10T19:11:49.975Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Help and contracts disclose policy plus change input; advertised example executes on an isolated nonempty tracker; missing policy returns precise executable recovery; original runtime and token ceilings are preserved
+goal: project management = context management
+objective: Make the documented risk command executable using only its declared help
+value: Self-improvement risk selection can run without inspecting source for omitted prerequisites
+why_now: The current help example reproducibly refuses because definition.policy is absent
+parent: pm-f05lsg
+risk: low
+confidence: high
+expected_result: "A copyable risk example supplies or locates a valid policy, and a missing policy names its recovery before any mutation"
+comments[1]{created_at,author,text}:
+  "2026-10-10T19:11:49.975Z","harness:codex","Duplicate check: strict live all-status2918-item corpus including terminal data plus request-specific assurance risk help policy search found no focused owner for the missing-policy example. Existing pm-f05lsg is retained as the recovery programme parent; no completed assurance primitive is reopened. Reproduction was read-only, and no implementation is claimed or in progress for this new issue."
+body: ""

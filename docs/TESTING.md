@@ -735,6 +735,16 @@ transient process logs are gone.
 
 ## Linked-Test Assertions
 
+Tracked by [pm-test-measure-prerequisite](../.agents/pm/issues/pm-test-measure-prerequisite.toon):
+`--measure` requires `--run`, as declared by CLI help and machine contracts.
+A measurement-only request refuses before writing item or history data. Its
+tokenized recovery preserves measurement values and run selectors and keeps
+clone-local command trust enforced. Measurement evidence describes execution;
+it cannot be added to an item without running its linked tests.
+
+See [startup runner qualification](performance/runner-qualification.md) for the
+independent control measurements retained by the SDK and CLI performance gates.
+
 Linked tests can include assertion metadata:
 
 ```bash

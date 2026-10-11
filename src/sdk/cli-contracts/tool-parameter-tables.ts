@@ -1610,7 +1610,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   measure: {
     description:
-      "Repeatable numeric run evidence in name=value[,unit=...][,threshold=...] form.",
+      "Repeatable numeric run evidence in name=value[,unit=...][,threshold=...] form; requires run=true.",
     examples: [["coverage=100,unit=percent,threshold=100"]],
   },
   metricBelow: {

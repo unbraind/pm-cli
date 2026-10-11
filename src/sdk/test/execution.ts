@@ -103,6 +103,10 @@ import {
 import { withHostEnvironmentBoundary } from "../environment/host-environment-errors.js";
 import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
 import {
+  assertTestMeasurementExecution,
+  assertTestMeasurementRun,
+} from "./prerequisites.js";
+import {
   acknowledgeLinkedTests,
   attachLinkedTestMutationProvenance,
   resolveLinkedTestSourceRef,
@@ -289,7 +293,7 @@ export interface TestCommandOptions {
   message?: string;
   /** Value that configures or reports force for this contract. */
   force?: boolean;
-  /** Repeatable `name=value[,unit=...][,threshold=...]` numeric evidence. */
+  /** Repeatable `name=value[,unit=...][,threshold=...]` numeric evidence; requires run=true. */
   measure?: string[];
   /** Filter recorded evidence below `name=value`. */
   metricBelow?: string;
@@ -3230,7 +3234,9 @@ async function executeSelectedLinkedTests(params: {
       pmContext: runOptions.pmContextMode,
       overrideLinkedPmContext: options.overrideLinkedPmContext,
       failOnContextMismatch: options.failOnContextMismatch,
-      failOnEmptyTestRun: options.failOnEmptyTestRun,
+      failOnEmptyTestRun:
+        options.failOnEmptyTestRun === true ||
+        (options.measure?.length ?? 0) > 0,
       requireAssertionsForPm: options.requireAssertionsForPm,
       checkContext: options.checkContext,
       autoPmContext: options.autoPmContext,
@@ -3499,9 +3505,7 @@ export async function runTest(
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
-  if ((options.measure?.length ?? 0) > 0 && options.run !== true) {
-    throw new PmCliError("--measure requires --run", EXIT_CODE.USAGE);
-  }
+  assertTestMeasurementRun(id, options, global, pmRoot);
   parseTestRunMeasurements(options.measure, "validation");
   buildTestMeasurementProjection(options, [], undefined);
   const typeRegistry = resolveItemTypeRegistry(
@@ -3553,6 +3557,7 @@ export async function runTest(
     untrustedLinkedTestsPolicyEnabled:
       settings.testing.allow_untrusted_linked_tests,
   });
+  assertTestMeasurementExecution(id, options, global, pmRoot, runResults);
   const failureCategories = countFailureCategories(runResults);
   const failOnSkippedTriggered =
     options.run === true &&
