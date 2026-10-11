@@ -355,11 +355,17 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [], qualification);
   }
   if (parsed.mode === "update") {
+    const proposedBudgets = buildEntrypointBudgets(report);
+    if (proposedBudgets.baseline.max_import_ms > budgets.baseline.max_import_ms) {
+      throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [
+        `bare node control ceiling: proposed ${proposedBudgets.baseline.max_import_ms}ms > existing ${budgets.baseline.max_import_ms}ms`,
+      ], qualification);
+    }
     await mkdir(path.dirname(targetBudgetPath), { recursive: true });
     await mkdir(path.dirname(targetDocumentationPath), { recursive: true });
     await writeFile(
       targetBudgetPath,
-      `${JSON.stringify(buildEntrypointBudgets(report), null, 2)}\n`,
+      `${JSON.stringify(proposedBudgets, null, 2)}\n`,
       "utf8",
     );
     await writeFile(

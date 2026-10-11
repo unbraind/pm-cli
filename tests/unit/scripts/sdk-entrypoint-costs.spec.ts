@@ -318,6 +318,25 @@ describe("SDK entrypoint import-cost calculations", () => {
 });
 
 describe("SDK entrypoint import-cost command", () => {
+  it("refuses a higher control ceiling even when both medians qualify", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-control-ratchet-"));
+    temporaryRoots.push(root);
+    const budgetPath = path.join(root, "budgets.json");
+    const documentationPath = path.join(root, "costs.md");
+    const originalBudget = JSON.stringify(buildEntrypointBudgets(report()));
+    await writeFile(budgetPath, originalBudget);
+    await writeFile(documentationPath, "preserve existing documentation");
+    const measured = report();
+    measured.baseline.p95_ms = 999;
+    await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => measured })).rejects.toMatchObject({
+      code: "benchmark_product_budget_exceeded", report: measured, runner_qualification: { status: "qualified" },
+    });
+    expect(await readFile(budgetPath, "utf8")).toBe(originalBudget);
+    expect(await readFile(documentationPath, "utf8")).toBe("preserve existing documentation");
+    await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => report() })).resolves.toMatchObject({ mode: "update" });
+    expect(JSON.parse(await readFile(budgetPath, "utf8")).baseline.max_import_ms).toBe(60);
+  });
+
   it.each(["baseline", "baseline_after"] as const)("preserves existing calibration when %s is available but over budget", async (control) => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-unqualified-update-"));
     temporaryRoots.push(root);

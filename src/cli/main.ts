@@ -1863,7 +1863,9 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     ? activeRuntimeExtensionCommandDescriptors
     : await loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot);
   const recoveryProbe = buildBootstrapActivationProbe(context.invocationArgv);
-  const failedExtensions = await loadExtensionRecoveryFailures(pmRoot, {}, collectActivationCommandCandidates(recoveryProbe));
+  const failedExtensions = context.bootstrapGlobal.noExtensions
+    ? []
+    : await loadExtensionRecoveryFailures(pmRoot, {}, collectActivationCommandCandidates(recoveryProbe));
   const usageContext = await resolveCommanderUsageContext({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.invocationArgv);
   const classification = classifyCommanderError(usageContext.message, usageContext.commandName, usageContext.allowedTypes, {
     unknownCommandExamples: usageContext.unknownCommandExamples,

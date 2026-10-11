@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T18:34:13.033Z"
-updated_at: "2026-10-11T01:40:07.609Z"
-closed_at: "2026-10-11T01:40:06.940Z"
-completed_at: "2026-10-11T01:40:06.940Z"
+updated_at: "2026-10-11T02:27:14.264Z"
+closed_at: "2026-10-11T02:27:13.654Z"
+completed_at: "2026-10-11T02:27:13.654Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Public SDK resolver uses installed canonical identity and refuses ambiguity; CLI JSON and text recommend inspection while preserving usage failure; real nonempty source and packed npx/bunx controls preserve authoritative bytes; existing discovery behavior and generated surface gates remain intact
@@ -19,14 +19,14 @@ why_now: Published 2026.10.10 reproducibly omits canonical update help for item 
 parent: pm-f05lsg
 risk: low
 confidence: high
-resolution: "Delivered longest unambiguous installed-suffix recovery across registered namespaces, tracker/extension-preserving tokenized and rendered help, native Windows launchers and independent required full consumer proof. Usage resolution and both text/JSON formatters now receive the explicit invocation from runPmCli instead of requiring callers to replace ambient process.argv; unknown-help and ordinary parser errors share this boundary."
-expected_result: "Sequential in-process callers retain actual command registry, selected tracker and extension policy across every help/usage retry even with unrelated ambient argv; canonical recovery refuses ambiguity and leaves authoritative history unchanged."
-actual_result: "The independent pre-fix ambient-argv test fails; current namespace linked suites pass 194 assertions plus one Windows-only skip, with real executable/source and in-process text/JSON context parity and immutable item/history proof. Complete static/typecheck, final lint/docs and nine-package packed npm/Bun/SDK acceptance pass. DeepScan remains required and undisclosed on the prior head; fresh next-head all-required checks and full review gate merge without waiver."
+resolution: "Delivered longest unambiguous installed-suffix namespace recovery, tracker/extension-preserving tokenized and rendered help, explicit in-process invocation propagation, portable Windows launchers and independent full consumer proof. Unknown-help extension-failure loading now honors --no-extensions, preserving enabled recovery and avoiding module loading or activation under suppression."
+expected_result: "Explicit extension suppression prevents installed module loading and activation for refused help in executable and source JSON/text modes, while enabled canonical recovery and selected-tracker byte preservation remain intact."
+actual_result: "The pre-fix marker regression records module loading and activations; the repaired four source/executable JSON/text requests leave the marker empty. Four linked commands pass 194 assertions plus one Windows-only skip, full static/typecheck/docs pass and nine-package npm/Bun/SDK acceptance passes. Fresh next-head CI and renewed full review remain merge requirements."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-do5b,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-10T19:40:32.690Z","harness:codex","cli:update:dep",detected
-comments[30]{created_at,author,text}:
+comments[33]{created_at,author,text}:
   "2026-10-10T18:34:13.033Z","harness:codex","Duplicate check: strict live 2918-item all-status census and request-specific searches have no focused namespace-recovery execution child. Existing pm-f05lsg remains the canonical programme/report owner. This Task records the bounded delivery and does not duplicate that feature or its complete census acceptance. Prior read-recovery and alias-help deliveries remain completed."
   "2026-10-10T19:03:22.385Z","harness:codex","Installed current-artifact acceptance passed: npm install plus both npx bin identities, installed npx canonical retries, bunx --bun canonical retries, trusted measurement retry with an executed node:assert check, authoritative item/history byte preservation, nine bundled packages and TypeScript SDK consumer. Boundary-focused Node24 rerun passed96 tests, including docs reachability, unchanged MCP task timing, and existing flag-help ceilings. Full coverage and broad static final receipts are pending; no product, help-token, latency or RSS budget was increased."
   "2026-10-10T19:03:23.509Z","harness:codex","Public dependency census: all current/wanted versions agree. New latest @types/node26.6.5, jscpd5.4.1, typescript-eslint8.71.1, TOON4.4.0, Knip6.41.0 and marked18.1.0 were published1.0-5.2days ago and are below the unchanged seven-day adoption window. Sentry11.6.0 is2.2days old and retains canonical migration pm-t3jxjj; Vitest/coverage5.0.3 retain pm-fokyhh and TypeScript7.0.2 retains pm-do5b. pnpm audit found zero known vulnerabilities, GitHub open PR/Dependabot/code/secret inventories were empty at intake, and every open issue had a canonical PM-link comment."
@@ -57,6 +57,9 @@ comments[30]{created_at,author,text}:
   "2026-10-11T01:25:42.044Z","harness:codex","Independent pre-fix invocation with ambient stats argv fails to retain the explicit extension tracker. Current source execution receives actual invocation args throughout unknown-help and ordinary parser usage resolution and both text/JSON formatters; tests preserve selected tracker and explicit --no-extensions under unrelated ambient argv, without changing the shared test transport. Focused runner/namespace suites pass 55 with one Windows-only skip and typecheck passes; complete static and linked/packed gates remain pending."
   "2026-10-11T01:34:23.454Z","harness:codex","Expanded usage-owner verification passes 155 assertions with one Windows-only skip, including parser usage, subcommand and unknown-option contracts plus canonical and executable/source recovery. Added this existing usage regression family as a linked command. The three-token executable fixture now asserts the optional retry arguments exist before spreading them, giving a direct contract failure rather than an incidental TypeError; no test paths or analyzer rules are excluded. Full production static pipeline passes unchanged limits, and the final fixture lint and docs links pass. External DeepScan remains a required next-head check with its rule undisclosed."
   "2026-10-11T01:40:05.776Z","harness:codex","Final caller-context remediation verification: the pre-fix ambient-argv negative fails; current explicit invocation tests preserve selected tracker and --no-extensions in text and JSON under unrelated process.argv. Four linked commands pass 194 assertions plus one native-Windows-only skip; related usage family passes 155 assertions including the common recovery integration. Complete production static/typecheck, final fixture lint and docs links pass. Serialized nine-package npm/npx/Bun/bunx/SDK consumers pass. Optional nested retry arguments are explicitly asserted before replay; no analyzer exclusion, budget waiver or DeepScan rule attribution is made. Next-head required analyzer and full review results remain merge requirements."
+  "2026-10-11T02:14:13.258Z","harness:codex","PR #1436 full review at b07c19d3853d1cc60a12e61d7cf7e6b4ce4d6d88, https://github.com/unbraind/pm-cli/pull/1436#discussion_r4239948595: handleUnknownHelpCommandError correctly suppresses descriptor loading but still invokes loadExtensionRecoveryFailures, which can activate installed extensions. Reopen this owner for a real module/activation marker negative through source and executable help; skip failure loading under explicit suppression and retain enabled recovery."
+  "2026-10-11T02:15:52.952Z","harness:codex","Independent pre-fix installed-extension marker regression records module loaded plus two activations after explicitly suppressed help. Current source and executable JSON/text help requests leave that marker empty, while enabled recovery still proves activation and authoritative history bytes remain intact. Suppression now skips loadExtensionRecoveryFailures as well as descriptor loading. The focused integration and SDK/CLI runner commands pass 44 assertions with one Windows-only skip."
+  "2026-10-11T02:27:12.972Z","harness:codex","Final suppression remediation receipts: an installed extension writes module/activation markers under suppressed help before the fix; current executable and source JSON/text help leave the marker empty, while enabled recovery still activates and selected-tracker history remains unchanged. All four linked commands pass 194 assertions plus one Windows-only skip. Full static/typecheck, docs links and serialized nine-package npm/npx/Bun/bunx/SDK acceptance pass. Fresh next-head analyzer checks and full review remain mandatory."
 learnings[1]{created_at,author,text}:
   "2026-10-10T20:23:36.861Z","harness:codex",The tracker selects the extension registry as well as item data. A canonical retry must retain explicit tracker scope and the complete refused namespace path; verify replay from a different default tracker and prove that explicit extension suppression still applies.
 files[17]{path,scope}:
@@ -112,7 +115,7 @@ tests[4]:
       created_at: "2026-10-11T01:34:22.833Z"
       source_kind: local_mutation
       source_ref: feat/executable-agent-recovery
-test_runs[10]:
+test_runs[11]:
   - run_id: test-local-mv2rt5f0-ld26id
     kind: test
     status: passed
@@ -233,8 +236,22 @@ test_runs[10]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/subcommand-recovery-guidance.spec.ts tests/unit/cli/unknown-option-scope-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv37av0y-0sz0ky
+    kind: test
+    status: passed
+    started_at: "2026-10-11T02:24:33.983Z"
+    finished_at: "2026-10-11T02:25:25.138Z"
+    recorded_at: "2026-10-11T02:25:25.138Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/canonical-command-recovery.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/subcommand-recovery-guidance.spec.ts tests/unit/cli/unknown-option-scope-contract.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/SDK.md,project
-close_reason: Canonical help recovery retains the complete registered path and actual caller context through source/executable and in-process formatting.
+close_reason: Canonical help recovery retains the actual caller context and explicit extension suppression without loading or activating installed packages.
 body: ""

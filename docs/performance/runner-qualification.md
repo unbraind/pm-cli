@@ -23,7 +23,10 @@ Calibration also requires both available controls to qualify against the existin
 SDK control budget before any budget or documentation write. A new SDK calibration
 target uses the committed control budget; an existing target retains its own
 prior control ceiling for admission. An unqualified runner cannot raise its own ceiling
-to certify its measurements.
+to certify its measurements. Even qualified controls cannot increase the prior
+control ceiling: update mode compares the proposed p95-derived ceiling with the
+existing ceiling and refuses an increase before creating directories or writing
+calibration files. Equal or reduced ceilings remain admissible.
 
 Control cost is never subtracted from product measurements. Pressure observations
 are diagnostic context and do not prove the cause of a failure. An unchanged base

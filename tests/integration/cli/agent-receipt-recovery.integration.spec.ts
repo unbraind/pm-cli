@@ -50,9 +50,10 @@ describe("agent receipt and recovery contracts", () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, "pm-extension-scope", "Keep the selected tracker unchanged.");
       const extensionDir = path.join(context.tempRoot, "scoped-package");
+      const activationMarker = path.join(context.tempRoot, "extension-activation.txt");
       await mkdir(extensionDir);
       await writeFile(path.join(extensionDir, "manifest.json"), JSON.stringify({ name: "recoveryprobe", version: "1.0.0", entry: "index.js", capabilities: ["commands"] }));
-      await writeFile(path.join(extensionDir, "index.js"), "export default { activate(api) { for (const name of ['recoveryprobe scoped-help', 'recoveryprobe subgroup inspect', 'subgroup misplaced']) api.registerCommand({ name, run: () => ({ ok: true }) }); } };\n");
+      await writeFile(path.join(extensionDir, "index.js"), `import { appendFileSync } from 'node:fs'; const marker = ${JSON.stringify(activationMarker)}; appendFileSync(marker, 'module loaded\\n'); export default { activate(api) { appendFileSync(marker, 'activated\\n'); for (const name of ['recoveryprobe scoped-help', 'recoveryprobe subgroup inspect', 'subgroup misplaced']) api.registerCommand({ name, run: () => ({ ok: true }) }); } };\n`);
       expect(context.runCli(["package", "install", extensionDir, "--json"], { expectJson: true }).code).toBe(0);
       const otherTracker = path.join(context.tempRoot, "other-tracker");
       expect(context.runCli(["--pm-path", otherTracker, "init", "--json"], { expectJson: true }).code).toBe(0);
@@ -104,6 +105,16 @@ describe("agent receipt and recovery contracts", () => {
       const suppressed = runDirectDistCli(["--no-extensions", "--pm-path", context.pmPath, "item", "scoped-help", "--help"], { env, cwd: context.tempRoot });
       expect(suppressed.code).toBe(2);
       expect(suppressed.stderr).not.toContain("recoveryprobe scoped-help");
+      expect(await readFile(activationMarker, "utf8")).toContain("activated");
+      await writeFile(activationMarker, "");
+      for (const json of [true, false]) {
+        const args = ["--no-extensions", "--pm-path", context.pmPath, "item", "update", "--help", ...(json ? ["--json"] : [])];
+        const executable = runDirectDistCli(args, { env, cwd: context.tempRoot });
+        expect(executable.code, executable.stderr).toBe(2);
+        const source = await runInProcessDistCli(args, { env, cwd: context.tempRoot }, runPmCli);
+        expect(source.code, source.stderr).toBe(2);
+      }
+      expect(await readFile(activationMarker, "utf8")).toBe("");
       expect(await readFile(historyPath, "utf8")).toBe(before);
     });
   });
