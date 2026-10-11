@@ -9,6 +9,10 @@ describe("canonical unknown-command recovery", () => {
     expect(resolveMisnestedCommandPath("item update", paths)).toBe("update");
     expect(resolveMisnestedCommandPath("item config", paths)).toBe("workspace config");
     expect(resolveMisnestedCommandPath("workspace tests", paths)).toBe("item test");
+    expect(resolveMisnestedCommandPath("workspace config update", paths)).toBe("update");
+    expect(resolveMisnestedCommandPath("workspace config update", [...paths, "config update"])).toBe("config update");
+    expect(resolveMisnestedCommandPath("workspace config update", [...paths, "config update", "extension config update"])).toBeUndefined();
+    expect(resolveMisnestedCommandPath("workspace missing update", paths)).toBeUndefined();
     for (const unknown of ["update", "missing update", "item unavailable", "item test", ""]) {
       expect(resolveMisnestedCommandPath(unknown, paths)).toBeUndefined();
     }
@@ -34,6 +38,24 @@ describe("canonical unknown-command recovery", () => {
     expect(guidance?.suggestedRetryArgs).toEqual(["--no-extensions", "update", "--help"]);
     expect(guidance?.suggestedRetryCommand).toBe("pm --no-extensions update --help");
     expect(guidance?.unknownCommandExamples?.[0]).toBe(guidance?.suggestedRetryCommand);
+  });
+
+  it("retains every registered namespace before a refused leaf while excluding flag values and trailing operands", () => {
+    const program = new Command().name("pm");
+    program.command("workspace").command("config");
+    program.command("config").command("update");
+    const guidance = buildUnknownCommandGuidanceFromRuntime("unknown command 'update'", program, new Map(), [
+      "--author", "update", "--no-extensions", "workspace", "--json", "config", "update", "operand", "--title", "update",
+    ]);
+    expect(guidance?.suggestedRetryArgs).toEqual(["--no-extensions", "config", "update", "--help"]);
+    expect(guidance?.unknownCommandExamples?.[0]).toBe("pm --no-extensions config update --help");
+    const rootOnly = new Command().name("pm");
+    rootOnly.command("workspace").command("config");
+    rootOnly.command("update");
+    expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'update'", rootOnly, new Map(), ["workspace", "config", "update"])?.suggestedRetryArgs).toEqual(["update", "--help"]);
+    for (const argv of [[], ["--"], ["workspace", "config"], ["missing", "config", "update"], ["workspace", "operand", "update"], ["workspace", "--", "config", "update"]]) {
+      expect(buildUnknownCommandGuidanceFromRuntime("unknown command 'update'", program, new Map(), argv)?.suggestedRetryArgs).toBeUndefined();
+    }
   });
 
   it("deduplicates replacements, resolves deprecated group prefixes, and excludes unavailable targets", () => {

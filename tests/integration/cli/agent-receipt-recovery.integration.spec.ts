@@ -51,7 +51,7 @@ describe("agent receipt and recovery contracts", () => {
       const extensionDir = path.join(context.tempRoot, "scoped-package");
       await mkdir(extensionDir);
       await writeFile(path.join(extensionDir, "manifest.json"), JSON.stringify({ name: "recoveryprobe", version: "1.0.0", entry: "index.js", capabilities: ["commands"] }));
-      await writeFile(path.join(extensionDir, "index.js"), "export default { activate(api) { api.registerCommand({ name: 'recoveryprobe scoped-help', run: () => ({ ok: true }) }); } };\n");
+      await writeFile(path.join(extensionDir, "index.js"), "export default { activate(api) { for (const name of ['recoveryprobe scoped-help', 'recoveryprobe subgroup inspect', 'subgroup misplaced']) api.registerCommand({ name, run: () => ({ ok: true }) }); } };\n");
       expect(context.runCli(["package", "install", extensionDir, "--json"], { expectJson: true }).code).toBe(0);
       const otherTracker = path.join(context.tempRoot, "other-tracker");
       expect(context.runCli(["--pm-path", otherTracker, "init", "--json"], { expectJson: true }).code).toBe(0);
@@ -70,6 +70,17 @@ describe("agent receipt and recovery contracts", () => {
       const help = runDirectDistCli([...recovery.suggested_retry_args!, "--json"], { env, cwd: otherTracker });
       expect(help.code, help.stderr).toBe(0);
       expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "recoveryprobe scoped-help" });
+      const nestedArgs = ["--pm-path", context.pmPath, "recoveryprobe", "subgroup", "misplaced", "--help", "--json"];
+      const nested = runDirectDistCli(nestedArgs, { env, cwd: context.tempRoot });
+      expect(nested.code, nested.stderr).toBe(2);
+      const nestedRetry = (JSON.parse(nested.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args;
+      expect(nestedRetry, nested.stderr).toEqual(["--pm-path", context.pmPath, "subgroup", "misplaced", "--help"]);
+      const sourceNested = await runInProcessDistCli(nestedArgs, { env, cwd: context.tempRoot }, runPmCli);
+      expect(sourceNested.code, sourceNested.stderr).toBe(2);
+      expect((JSON.parse(sourceNested.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(nestedRetry);
+      const nestedHelp = runDirectDistCli([...nestedRetry!, "--json"], { env, cwd: otherTracker });
+      expect(nestedHelp.code, nestedHelp.stderr).toBe(0);
+      expect(JSON.parse(nestedHelp.stdout)).toMatchObject({ resolved_path: "subgroup misplaced" });
       const unscoped = runDirectDistCli(["recoveryprobe", "scoped-help", "--help", "--json"], { env, cwd: context.tempRoot });
       expect(unscoped.code).toBe(2);
       const suppressed = runDirectDistCli(["--no-extensions", "--pm-path", context.pmPath, "item", "scoped-help", "--help"], { env, cwd: context.tempRoot });

@@ -635,10 +635,17 @@ function buildUnknownCommandExamples(
 }
 
 /** Recover the namespace prefix omitted by Commander's leaf-token refusal, without consuming operands. */
-function resolveUnknownCommandPath(token: string, invocationArgv: readonly string[]): string {
-  const commandIndex = findBootstrapCommandTokenIndex([...invocationArgv]);
-  if (commandIndex === undefined || invocationArgv[commandIndex + 1] !== token) return token;
-  return `${invocationArgv[commandIndex]} ${token}`;
+function resolveUnknownCommandPath(token: string, invocationArgv: readonly string[], commandPaths: readonly string[]): string {
+  let commandIndex = findBootstrapCommandTokenIndex([...invocationArgv]);
+  const path: string[] = [];
+  while (commandIndex !== undefined) {
+    path.push(invocationArgv[commandIndex]);
+    if (invocationArgv[commandIndex] === token) return path.join(" ");
+    if (!commandPaths.includes(path.join(" "))) return token;
+    const offset = findBootstrapCommandTokenIndex(invocationArgv.slice(commandIndex + 1));
+    commandIndex = offset === undefined ? undefined : commandIndex + 1 + offset;
+  }
+  return token;
 }
 
 /** Retain the selected tracker and explicit extension suppression when replaying canonical help. */
@@ -666,12 +673,12 @@ export function buildUnknownCommandGuidanceFromRuntime(
   if (!unknownCommandMatch || typeof unknownCommandMatch[1] !== "string") {
     return undefined;
   }
-  const unknownPath = resolveUnknownCommandPath(unknownCommandMatch[1], invocationArgv);
+  const commandPaths = collectRuntimeCommandPaths(root, extensionDescriptors);
+  const unknownPath = resolveUnknownCommandPath(unknownCommandMatch[1], invocationArgv, commandPaths);
   const normalizedUnknown = normalizeHelpCommandPath(unknownPath);
   if (normalizedUnknown.length === 0) {
     return undefined;
   }
-  const commandPaths = collectRuntimeCommandPaths(root, extensionDescriptors);
   if (commandPaths.length === 0) {
     return undefined;
   }

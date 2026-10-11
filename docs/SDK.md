@@ -3589,6 +3589,9 @@ Tracked by [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon) and
 `resolveMisnestedCommandPath` derives a canonical path from the installed command
 registry only when an exact suffix under a known namespace has one owner. For
 example, `pm item update` remains refused and suggests `pm update --help`.
+Nested refusals retain every registered namespace segment and prefer the longest
+matching suffix. A shorter suffix is considered only across registered prefixes;
+an ambiguous longer match never falls back to a guessed shorter command.
 Inspection does not execute the guessed mutation, and ambiguous or unavailable
 extension routes receive the usual bounded discovery guidance.
 Canonical help retry arguments and the first displayed example retain an
