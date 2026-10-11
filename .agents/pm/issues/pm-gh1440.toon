@@ -1,0 +1,21 @@
+id: pm-gh1440
+title: "GH-1440: validate linked-test context at write time and distinguish execution refusals"
+description: "GitHub issue https://github.com/unbraind/pm-cli/issues/1440 reports that a linked command using pm_context_mode=none with the default source workspace is accepted when added and later refused as assertion_failure with exit_code=1 even though the subprocess never ran. Existing none-mode execution isolation from pm-t05d8d remains completed; this new work concerns write-time validation and truthful refusal classification across CLI, SDK and persisted legacy records."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-11T09:41:41.702Z"
+updated_at: "2026-10-11T09:42:43.545Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Both add transports and SDK mutations reject none mode without an isolated or snapshot workspace and preserve tracker/history bytes on refusal; legacy invalid records remain non-executable and report a typed config refusal with null exit status; real executed command failures retain assertion_failure and their actual exit codes; public SDK types, contracts, JSON/TOON output, docs and installed Node/Bun behavior agree."
+parent: pm-xp1xsw
+risk: medium
+confidence: medium
+expected_result: Invalid linked context combinations are refused before metadata persistence with a concrete isolated or snapshot recovery; execution still safely rejects legacy invalid records using a configuration-refusal category and no fabricated subprocess exit status.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-t05d8d,discovered_from,"2026-10-11T09:42:43.270Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-11T09:41:41.702Z","harness:codex","Duplicate check: read the complete live 2927-item corpus without omissions, current open/in-progress lists, request-specific search, and full live pm-t05d8d and pm-xp1xsw records/comments/history. No existing item covers this distinct write-time and result-classification report. GH-1440 arrived during the final audit after PR1439 merged. This item is open and unclaimed for future implementation; no source repair or reproduction beyond the supplied report is claimed."
+body: ""
