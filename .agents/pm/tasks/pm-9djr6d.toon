@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-11T15:39:56.760Z"
-updated_at: "2026-10-11T20:40:48.664Z"
-closed_at: "2026-10-11T20:20:41.839Z"
-completed_at: "2026-10-11T20:20:41.839Z"
+updated_at: "2026-10-11T21:37:46.126Z"
+closed_at: "2026-10-11T21:27:44.906Z"
+completed_at: "2026-10-11T21:27:44.906Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: CLI and SDK edit one linked test by exact selector or one-based index; unchanged fields and original provenance survive; changed edit writes one field-level history event and editor metadata; equal retry preserves authoritative bytes; absent or ambiguous selectors refuse without mutation; invalid context patches are refused before persistence; command changes require fresh provenance/trust rather than preserving authorization; packed Node and Bun transports agree.
@@ -16,9 +16,9 @@ goal: project management = context management
 parent: pm-gh1381
 risk: medium
 confidence: high
-resolution: "SDK-owned metadata patches preserve order, command, creation provenance, trust and atomic history. CLI and MCP share selectors. Telemetry redacts serialized edits and exact-command selectors and omits linked-test collections from finish previews, while public receipts and digests remain intact."
-expected_result: "Edit one linked test without reconstructing it or changing provenance, with useful telemetry that excludes arbitrary edit metadata and selector text."
-actual_result: "All three linked commands pass. Canonical coverage passes 10,169 tests in 798 files with exact statements 68098/68098, branches 52238/52238, functions 14041/14041 and lines 64757/64757. All 51 runtime tests pass after pre-fix controls reproduce both review findings. Typecheck, ESLint and docstring quality pass; final static/archive evidence follows before reviewed push."
+resolution: "SDK metadata editing preserves order, command, creation provenance, trust and atomic history. CLI and MCP share selectors. Input and finish telemetry obey privacy boundaries without changing public receipts. Edits refuse supplied metric filters before persistence instead of silently ignoring them."
+expected_result: "Correct one linked test without reconstructing it, preserve trust and provenance, exclude private metadata from telemetry, and refuse incompatible execution or report options before writes."
+actual_result: "All three linked commands pass. Canonical coverage passes 10,170 tests in798 files with exact statements68098/68098, branches52238/52238, functions14041/14041 and lines64757/64757. The pre-fix metric regression reproduces silent mutation; SDK and CLI now refuse both provided filters, including empty SDK values, with unchanged authoritative bytes. Typecheck passes. Final static and archive evidence follows before reviewed push."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-bjpo,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
   pm-do5b,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
@@ -27,7 +27,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-kmwdpa,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
-comments[22]{created_at,author,text}:
+comments[26]{created_at,author,text}:
   "2026-10-11T15:39:56.760Z","harness:codex","Duplicate check: complete live 2928-item all-status corpus, request-specific searches, open and in-progress inventories plus full pm-gh1381 and pm-bjpo reads and history show GH1419 retained on the broader feature with no independently closeable editor task. This generated child materializes that existing acceptance for complete delivery alongside pm-gh1440; it does not duplicate the stable fragment resolver or whole-collection replacement."
   "2026-10-11T15:48:37.799Z","harness:codex","SDK editor design: resolve exact command/path or current one-based index under the item lock; whitelist explicitly supplied metadata fields; preserve command and immutable provenance; optional null clearing; retain list position; one tests_update event with structured edited index/fields; append editor identity/time only for semantic changes. Command changes are refused and require normal unlink/link provenance. Parent pm-gh1381 continues to own durable fragment addressing."
   "2026-10-11T15:51:38.868Z","harness:codex","Focused repaired cohort passes88 assertions across four files, including five new real SDK/CLI persistence and refusal scenarios. Actual history emits granular note/timeout patches and preserves semantic no-op bytes. Static lint identified adapter complexity growth; extracted transport projection and shared edit-usage admission without adding test-only production exports or lowering quality thresholds. Full source and packed acceptance remain pending."
@@ -50,6 +50,10 @@ comments[22]{created_at,author,text}:
   "2026-10-11T20:20:41.152Z","harness:codex","Revised-source verification: all three linked commands pass with observed exit0. Canonical sandboxed coverage passes 10,169 tests in 798 files in 759.54 seconds, with exact statements 68098/68098, branches 52238/52238, functions 14041/14041 and lines 64757/64757. Full typecheck, ESLint and docstring quality pass. Live npm confirms upstream pm-changelog 2026.10.5 remains latest. Four review control failures disappear after selector redaction and telemetry-only collection omission; public receipts are unchanged. Final whole-static, regenerated-changelog and packed consumer receipts will be appended before the next reviewed push."
   "2026-10-11T20:30:20.792Z","harness:codex","Whole-static rerun stopped at the qualified transport-floor benchmark: best next447ms exceeds440ms and create408ms exceeds398ms; control36ms remains within106ms. Independent archive staging overlapped the measurement, but that is not a proven exemption. Preserve the failure receipt and rerun the timing gate in isolation with unchanged budgets, then complete canonical static validation before pushing. Base archive creation and offline Sentry injection succeed."
   "2026-10-11T20:40:48.054Z","harness:codex","Final reviewed-source receipts now pass: canonical pnpm quality:static completed without concurrent archive work, including unchanged transport limits, tracker/graph/record integrity, SDK snapshots, grammar and bounded mutation controls. Final base archive is19996958/20000000 bytes; real offline Sentry-injected profile is20241114/20250000 bytes, with1655 distribution and4731 runtime files. Installed Node24, Node26 and Bun consumers verify SDK atomicity/provenance/no-op/admission/history plus metadata and selector redaction, omitted finish metadata, unchanged public receipts and all capture levels; strict external TypeScript declarations pass. The earlier qualified timing failure and isolated successful control remain retained. Latest upstream changelog generation/check passes and complete live PM inventory reports zero in-progress items. Fresh hosted checks, both actionable inline resolutions and one full review of the new head follow the push; no new publication is claimed."
+  "2026-10-11T21:13:35.588Z","harness:codex","Final full review on b914441 confirms the privacy fixes and sufficient docstrings, but identifies one valid usage gap: edit intake returns before applying metricBelow or metricDiff, silently ignoring those provided execution/report filters. Reject each supplied filter in the shared SDK edit-usage admission, including empty string values, before any item lock or persistence. Verify direct SDK and CLI error behavior plus byte-identical item/history; keep the same canonical editor owner and combined delivery."
+  "2026-10-11T21:14:59.919Z","harness:codex","Metric-filter regression reproduces the old silent mutation before the guard and passes afterward. Six real integration scenarios now cover direct SDK usage errors for metricBelow/metricDiff, including empty values, and CLI exit2 for both flags, with byte-identical item/history after every refusal. The edit guide documents separation from measurements and metric filters. Canonical coverage and TypeScript checking are running; only this editor item is claimed and in progress."
+  "2026-10-11T21:27:44.247Z","harness:codex","Metric-filter follow-up source proof: all three item-linked commands pass with observed exit0. Canonical sandboxed coverage passes 10,170 tests in798 files in737.73 seconds, with exact statements68098/68098, branches52238/52238, functions14041/14041 and lines64757/64757. Typecheck passes. The regression reproduces silent mutation before the fix and requires usage exit2 plus identical item/history bytes afterward across SDK and CLI. Only supplied metric-filter combinations change admission; valid metadata edits and measurement/report behavior remain covered. Complete static and regenerated-changelog package receipts follow closure before the next push."
+  "2026-10-11T21:37:46.126Z","harness:codex","Final metric-admission delivery receipts: canonical pnpm quality:static passes in full with unchanged transport limits and bounded mutation controls. Generated changelog and check pass using latest upstream pm-changelog 2026.10.5. Base archive is 19,997,183/20,000,000 bytes; real offline Sentry-injected archive is 20,241,339/20,250,000 bytes, retaining 1655 distribution and 4731 runtime files. Fresh installed Node24, Node26 and Bun consumers verify metric-edit refusals with unchanged bytes, SDK metadata/provenance/no-op/admission/history, all privacy capture levels and unchanged public receipts. Strict external TypeScript declarations compile. Complete live PM inventory reports zero in-progress items. Hosted checks and one fresh full review of the next exact head remain required; no new public version is claimed."
 learnings[3]{created_at,author,text}:
   "2026-10-11T16:53:36.730Z","harness:codex","Compare edited metadata in its storage-normalized form before deciding whether to write. A semantic retry must preserve authoritative bytes, history and original creation provenance; editor stamps describe the revision rather than replacing provenance."
   "2026-10-11T19:23:22.400Z","harness:codex",New metadata transports need explicit telemetry input classification and failure-payload coverage before publication; preserving a correlation digest does not require retaining arbitrary serialized metadata. A shared capture-level table can prove both confidentiality and useful diagnostics without sending synthetic input to production.
@@ -129,7 +133,7 @@ tests[3]:
       created_at: "2026-10-11T19:14:09.444Z"
       source_kind: local_mutation
       source_ref: feat/linked-test-edits-and-refusals
-test_runs[5]:
+test_runs[6]:
   - run_id: test-local-mv418nof-z0dimw
     kind: test
     status: failed
@@ -189,10 +193,23 @@ test_runs[5]:
       node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/register-operations.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-runtime.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv4c3le8-nux6dd
+    kind: test
+    status: passed
+    started_at: "2026-10-11T21:27:02.443Z"
+    finished_at: "2026-10-11T21:27:30.320Z"
+    recorded_at: "2026-10-11T21:27:30.320Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/register-operations.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-runtime.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project
   docs/LINKED_TEST_EDITS.md,project
   docs/SDK_EVIDENCE_TRACEABILITY.md,project
   docs/TESTING.md,project
-close_reason: Implemented atomic linked-test metadata editing and verified all review privacy safeguards
+close_reason: "Implemented and verified atomic metadata editing, privacy safeguards and complete edit-option admission"
 body: ""

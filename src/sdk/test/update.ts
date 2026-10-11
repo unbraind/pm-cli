@@ -78,9 +78,10 @@ export function parseLinkedTestUpdateOptions(options: { update?: string; updateI
 /** Keep metadata editing a separate atomic operation from execution or other collection changes. */
 export function assertLinkedTestEditUsage(options: TestCommandOptions): void {
   if ([options.run, options.acknowledgeLinkedTests,
+    options.metricBelow !== undefined, options.metricDiff !== undefined,
     (options.add?.length ?? 0) > 0, (options.addJson?.length ?? 0) > 0,
     (options.remove?.length ?? 0) > 0, (options.removeIndex?.length ?? 0) > 0].some(Boolean)) {
-    throw new PmCliError("Edit linked-test metadata separately from additions, removals, execution and trust acknowledgement", EXIT_CODE.USAGE);
+    throw new PmCliError("Edit linked-test metadata separately from additions, removals, execution, metric filters and trust acknowledgement", EXIT_CODE.USAGE);
   }
 }
 

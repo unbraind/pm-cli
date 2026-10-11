@@ -112,6 +112,22 @@ describe("linked-test editing and configuration admission", () => {
     });
   });
 
+  it("refuses metric filters on edits through SDK and CLI before persistence", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "edit option admission", createMode: "progressive" });
+      await runTest(id, { add: ["command=node -e 1,note=original"] }, { path: context.pmPath });
+      const before = await capture(context, id);
+      for (const filters of [{ metricBelow: "latency=10" }, { metricDiff: "latency" }, { metricBelow: "" }, { metricDiff: "" }]) {
+        await expect(runTest(id, { updateIndex: 1, setJson: '{"note":"wrong"}', ...filters }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: 2 });
+        expect(await capture(context, id)).toEqual(before);
+      }
+      for (const filter of [["--metric-below", "latency=10"], ["--metric-diff", "latency"]]) {
+        expect(context.runCli(["test", id, "--update-index", "1", "--set-json", '{"note":"wrong"}', ...filter, "--json"]).code).toBe(2);
+        expect(await capture(context, id)).toEqual(before);
+      }
+    });
+  });
+
   it("refuses absent, ambiguous and unsafe patches atomically and supports explicit clearing", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "atomic selectors", createMode: "progressive" });
