@@ -597,23 +597,17 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   ordinal recovery version. Rerun `.github/workflows/release.yml` with
   `workflow_dispatch` and `tag=v<version>` (or close the current bot-created
   blocker once to trigger the guarded exact-run recovery). The workflow skips
-  duplicate npm publication for an anonymously visible version. Before
-  installing or running gates, dispatch performs an isolated anonymous
-  exact-version probe. An
-  existing version keeps the reviewed dispatch-time `main` source and cannot
-  be republished. A definitive missing-version response pins the checkout to
-  the existing immutable tag only after inspecting prior exact-tag Release
-  attempts. A successful earlier `Publish to npm` step refuses first-publication
-  recovery while metadata remains unavailable; npm acceptance can precede
-  public availability. Missing, incomplete or unavailable workflow evidence
-  also refuses recovery. See [pm-publication-acceptance-fence](../.agents/pm/issues/pm-publication-acceptance-fence.toon).
-  Admission reads every unfiltered workflow-run page and verifies the provider's
-  total count and unique run identities before inspecting matching attempts.
-  An incomplete or inconsistent pagination receipt refuses publication.
-  The same check runs immediately before first publication, retaining reviewed
-  controls outside any recovery checkout. Tag-push and dispatch runs share one
-  exact-tag concurrency group. Only the current run attempt is excluded from
-  prior-publication evidence; earlier attempts of that run are still checked.
+  npm publication for a version visible to its isolated anonymous probe, keeping
+  reviewed dispatch-time `main`. A definitive missing-version response can pin
+  source to the immutable tag only after admission reads every unfiltered
+  Release workflow page, validates totals and unique run identities, and checks
+  matching job attempts. Prior successful `Publish to npm` evidence refuses
+  publication while metadata is unavailable: acceptance can precede visibility.
+  Unavailable, malformed, incomplete or inconsistent evidence also refuses it.
+  Only the executing attempt is excluded; its earlier attempts remain checked.
+  This admission check also runs before first publication, using reviewed
+  controls retained outside recovery checkout. Push and dispatch publishers
+  share exact-tag concurrency. See [pm-publication-acceptance-fence](../.agents/pm/issues/pm-publication-acceptance-fence.toon).
   A never-published tag then reapplies the version guard, installs the managed
   changelog extension, regenerates the package changelog with the tagged
   checkout's canonical policy under a tracked-path mutation guard, and permits
