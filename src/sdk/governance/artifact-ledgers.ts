@@ -63,7 +63,7 @@ function inventory(snapshots: readonly ArtifactLedgerSnapshot[]): Map<string, Se
     if (snapshot === null || typeof snapshot !== "object" || !validIdentity(snapshot.name) || ledgers.has(snapshot.name) || snapshot.complete !== true) throw new TypeError("Expected unique complete artifact ledgers.");
     if (!Array.isArray(snapshot.identities as unknown)) throw new TypeError("Invalid or duplicate artifact identity.");
     const identities = new Set(snapshot.identities);
-    if (identities.size !== snapshot.identities.length || snapshot.identities.some((id) => !validIdentity(id))) throw new TypeError("Invalid or duplicate artifact identity.");
+    if (identities.size !== snapshot.identities.length || [...identities].some((id) => !validIdentity(id))) throw new TypeError("Invalid or duplicate artifact identity.");
     ledgers.set(snapshot.name, identities);
   }
   if ([...ledgers.values()].every((identities) => identities.size === 0)) throw new TypeError("Empty inventories cannot establish artifact reconciliation.");
@@ -77,7 +77,7 @@ function settlements(exceptions: readonly ArtifactLedgerException[], names: read
   for (const exception of exceptions) {
     if (exception === null || typeof exception !== "object" || !validIdentity(exception.identity) || accepted.has(exception.identity) || !validIdentity(exception.reason) || !validIdentity(exception.evidence)) throw new TypeError("Expected unique evidence-backed artifact exceptions.");
     const missing = exception.missing_from;
-    if (!Array.isArray(missing as unknown) || missing.length === 0 || missing.length >= names.length || new Set(missing).size !== missing.length || missing.some((name) => !names.includes(name))) throw new TypeError("Invalid artifact exception ledger signature.");
+    if (!Array.isArray(missing as unknown) || missing.length === 0 || missing.length >= names.length || new Set(missing).size !== missing.length || [...missing].some((name) => !names.includes(name))) throw new TypeError("Invalid artifact exception ledger signature.");
     accepted.set(exception.identity, exception);
   }
   return accepted;

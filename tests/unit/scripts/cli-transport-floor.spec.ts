@@ -97,11 +97,17 @@ describe("CLI transport-floor benchmark", () => {
 
   it("uses ten default samples and a warmup in distinct workspaces per operation", async () => {
     const sampleRoots = new Set<string>();
+    let controls = 0;
     const defaultIterations = await buildCliTransportFloorReport({
+      measureControl: async () => {
+        controls += 1;
+        return { duration_ms: 40 };
+      },
       measure: async (
         _args: string[],
         environment: { workspaceRoot: string },
       ) => {
+        expect(controls).toBe(6);
         sampleRoots.add(environment.workspaceRoot);
         return {
           duration_ms: 100,
@@ -112,6 +118,11 @@ describe("CLI transport-floor benchmark", () => {
     });
     expect(defaultIterations.iterations).toBe(10);
     expect(sampleRoots.size).toBe(66);
+    expect(controls).toBe(12);
+    expect(defaultIterations).toMatchObject({
+      baseline: { runs: 5 },
+      baseline_after: { runs: 5 },
+    });
     for (const operation of Object.values(defaultIterations.operations)) {
       expect(operation).toMatchObject({ runs: 10 });
     }

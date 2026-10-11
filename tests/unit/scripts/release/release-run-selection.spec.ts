@@ -114,12 +114,14 @@ describe("accepted publication admission", () => {
   });
 });
 
+/** Adapt CLI-shaped fixtures to REST pages while retaining deliberately inconsistent provider totals. */
 function runPage(runs: Record<string, unknown>[], total = runs.length) {
   return { total_count: total, workflow_runs: runs.map((r) => ({ id: r.databaseId, created_at: r.createdAt,
     status: r.status, conclusion: r.conclusion, event: r.event, head_branch: r.headBranch,
     head_sha: r.headSha, display_title: r.displayTitle })) };
 }
 
+/** Supply a complete release identity whose explicit overrides isolate each candidate rejection boundary. */
 function run(overrides: Record<string, unknown>): Record<string, unknown> {
   return {
     databaseId: 1,

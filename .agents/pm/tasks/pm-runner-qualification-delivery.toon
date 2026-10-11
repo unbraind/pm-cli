@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T19:33:27.145Z"
-updated_at: "2026-10-11T03:34:31.659Z"
-closed_at: "2026-10-11T03:34:30.945Z"
-completed_at: "2026-10-11T03:34:30.945Z"
+updated_at: "2026-10-11T09:19:44.900Z"
+closed_at: "2026-10-11T09:19:44.353Z"
+completed_at: "2026-10-11T09:19:44.353Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Both SDK and CLI gates bracket their measurements with warmed bare-process controls and portable environment evidence; over-budget or missing controls fail with product admission unverified and retain the full report; qualified product regressions still fail and retain all violations; positive and negative controls pass without any product budget increase; public methodology and linked evidence document the historical diagnosis boundary.
@@ -16,10 +16,10 @@ value: Context management needs trustworthy performance evidence that separates 
 parent: pm-bj7rq0
 risk: low
 confidence: high
-resolution: "Bracketed SDK/CLI measurements with complete runner diagnostics, prior-policy qualification before calibration and refusal of increased proposed control ceilings before mkdir/writes. Control-ceiling refusal now reports benchmark_control_budget_increase and leaves product admission unverified, retaining qualified runner evidence and original report without claiming a measured product failure."
-expected_result: Qualified control-ceiling refusals disclose their own code and unverified product admission; genuine product failures and unqualified runners preserve their classifications and all rejected calibrations preserve original files.
-actual_result: Independent previous classification assertion fails; current 36 linked runner tests pass with complete reports and byte preservation. Full static/typecheck/docs and serialized nine-package version2026.10.11 npm/Bun/SDK acceptance pass. No committed budget or calibration table changed; fresh hosted checks and full review remain mandatory.
-comments[14]{created_at,author,text}:
+resolution: "Preserved independent before/after runner qualification and complete diagnostics; isolated the ten-sample orchestration unit test through its existing control-measurement callback, retaining distinct SDK-generated workspaces and actual runtime coverage in independent tests and production gates."
+expected_result: "Ten samples and one warmup per operation use distinct workspaces, six control calls precede all samples and six follow them, and real runner qualification remains independently enforced with unchanged budgets."
+actual_result: "The sandboxed, acknowledged linked suite passed 36 tests. The orchestration test asserts 66 distinct real workspaces, six before and six after controls and five recorded samples per control. Focused ESLint and all four typecheck projects passed. Final hosted Windows validation remains a PR merge gate."
+comments[16]{created_at,author,text}:
   "2026-10-10T19:33:27.145Z","harness:codex","Duplicate check: complete 2920-item strict all-status census plus request-specific search and open/in-progress inventories found only canonical diagnosis pm-bj7rq0 and no focused execution child. Existing implementation is already owned and claimed under that diagnosis. This child records its independently complete qualification delivery so the generated changelog reports shipped tooling without closing an unproven historical cause."
   "2026-10-10T19:37:23.079Z","harness:codex","Final verification includes 27 benchmark tests plus the unchanged-base runtime comparison. Node26 observations include an unqualified control refusal during load and a separate qualified merge-entrypoint overrun (241 ms against226 ms), which is retained rather than treated as a pass. The SDK measurement recovery no longer imports Commander registration after pure argv extraction; focused144-test verification and typechecking pass. The historical diagnosis remains owned by pm-bj7rq0."
   "2026-10-10T19:50:51.653Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1436 includes both bracketed startup gates, complete fail-closed reports, portable methodology, 27 linked tests and this bounded closure. Initial source commit a279913ba retains all budgets; real Node24 gates pass. Historical cause diagnosis remains open under the parent. Final-head CI and review are required before merge; the latest published changelog generator checked the Unreleased entry."
@@ -34,6 +34,8 @@ comments[14]{created_at,author,text}:
   "2026-10-11T03:16:02.390Z","harness:codex","PR #1436 full review at 0fafb51020df68a2b423bf0541ac6e33a5150504, https://github.com/unbraind/pm-cli/pull/1436#discussion_r4240078399: a qualified control-ceiling ratchet refusal must disclose its own code and leave product admission unverified instead of claiming measured product failure. Reopen this owner for distinct internal calibration classification and behavioral assertions; all budget policies remain unchanged."
   "2026-10-11T03:20:32.134Z","harness:codex","Control-ceiling refusal now emits benchmark_control_budget_increase with product_admission=unverified while retaining qualified runner evidence, full report and byte-preserving calibration refusal. Ordinary qualified product regressions and unqualified runners retain their existing classifications. The independent previous classification assertion fails before the fix and passes afterward; no budget, margin or calibrated table is changed."
   "2026-10-11T03:34:30.276Z","harness:codex","Final classification receipts: control-ceiling update refusal uses benchmark_control_budget_increase and unverified product admission with a qualified runner, while actual product violations and unqualified controls keep their established codes/states. The pre-fix classification assertion fails; all 36 linked runner tests pass. Full static/typecheck and version2026.10.11 nine-package npm/Bun/SDK consumers pass. Existing control/product budget JSON, scheduler margins and calibrated tables remain unchanged. Fresh next-head CI and full review remain mandatory."
+  "2026-10-11T09:13:24.060Z","harness:codex","Live8d Windows receipt: tests/unit/scripts/cli-transport-floor.spec.ts default-ten-samples case exceeds its unchanged30second deadline;1952cases pass/12skip and one fails. The test already replaces product measurement but leaves the newly bracketed native Node controls real. Source inspection confirms the existing measureControl callback supports isolating those unrelated timing samples; the independent default-measurement integration case still executes real controls and CLI subprocesses. Preserve all66real workspaces,10samples per operation,12control calls,30second test limit,12minute Windows job and all production budgets. This is test-scope isolation, not an asserted product startup cause or a timeout increase."
+  "2026-10-11T09:19:24.214Z","harness:codex","Verification: the acknowledged, sandboxed linked suite passed all 36 tests across cli-transport-floor and sdk-entrypoint-costs. The sampling orchestration test now injects the existing measureControl callback, asserts six controls before all 66 distinct SDK workspaces and twelve controls overall, and retains ten samples plus warmup per operation. Independent real-control execution and production benchmark gates remain unchanged. The hosted Windows Node 24 check will independently validate the final PR head; no runtime or test deadline, RSS ceiling, performance budget or runner margin was increased."
 files[5]{path,scope}:
   scripts/bench/cli-transport-floor.mjs,project
   scripts/bench/runner-qualification.mjs,project
@@ -42,7 +44,7 @@ files[5]{path,scope}:
   tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,900,"harness:codex","2026-10-10T19:33:31.041Z",local_mutation,feat/executable-agent-recovery,Qualified product failures and unqualified control refusals retain complete diagnostics without budget inflation
-test_runs[6]:
+test_runs[8]:
   - run_id: test-local-mv2svkso-um4bis
     kind: test
     status: passed
@@ -109,9 +111,31 @@ test_runs[6]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3lvjrt-ypvol7
+    kind: test
+    status: failed
+    started_at: "2026-10-11T09:13:24.819Z"
+    finished_at: "2026-10-11T09:13:24.953Z"
+    recorded_at: "2026-10-11T09:13:24.953Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,foreign_source_ref
+  - run_id: test-local-mv3lwdva-hgiqns
+    kind: test
+    status: passed
+    started_at: "2026-10-11T09:13:45.113Z"
+    finished_at: "2026-10-11T09:14:03.958Z"
+    recorded_at: "2026-10-11T09:14:03.958Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,acknowledged
 docs[3]{path,scope}:
   CHANGELOG.md,project
   docs/performance/runner-qualification.md,project
   docs/TESTING.md,project
-close_reason: "Runner qualification and control-ceiling calibration refusal retain distinct, truthful admission diagnostics without weakened budgets."
+close_reason: Qualified-runner delivery and sampling isolation verified without changing runtime or test budgets.
 body: ""

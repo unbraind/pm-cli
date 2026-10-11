@@ -1,0 +1,45 @@
+id: pm-ledger-sparse-delivery
+title: Reject sparse artifact ledger inputs through both public SDK exports
+description: "Extend the existing complete-set reconciliation contract for GH1438: reject actual JavaScript holes in artifact identities and exception membership before admitting counts or finding records. Preserve all dense-input and historical-disposition behavior, original released evidence and immutable daily package identities."
+type: Changeset
+status: closed
+priority: 1
+tags[2]: fix,sdk
+created_at: "2026-10-11T07:38:34.006Z"
+updated_at: "2026-10-11T08:08:56.976Z"
+closed_at: "2026-10-11T08:04:46.429Z"
+completed_at: "2026-10-11T08:04:46.429Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Four real sparse-array controls fail on original source and pass on repair; both installed public SDK exports reject malformed inputs; unchanged full coverage and release quality gates pass.
+parent: pm-q91qyd
+risk: medium
+confidence: high
+resolution: "Refuse sparse JavaScript identity arrays and exception membership arrays through both public SDK exports before computing reconciliation counts or findings. Extend canonical malformed-input tables without changing dense contracts, public APIs, runtime support, thresholds or collection ownership."
+expected_result: Published-package consumers of governance and aggregate SDK entrypoints receive contextual refusals for sparse arrays and unchanged dense receipts.
+actual_result: "Four original regressions fail before and pass after;107linked and10149full-suite tests pass at100/100/100/100,all4type projects and complete unchanged static gates pass. Original installed11fails8sparse assertions while the local unreleased packed repair passes26assertions each onNode24/Node26/Bun. Final generated-artifact and exact-head hosted review checks remain mandatory before merge."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-q91qyd,implements,"2026-10-11T07:38:34.006Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-11T07:38:34.006Z","harness:codex","Duplicate-check evidence: complete2925-item all-status census, request-specific sparse-artifact search, fresh open and in-progress inventories and full canonical pm-q91qyd metadata/comments/history were inspected. GH1438 has no existing sparse admission delivery. Retain pm-q91qyd as canonical recurrence owner and this child as the separately releasable post-2026.10.11 changeset so the earlier shipped repair is not relabeled as new work. Existing regression tables now fail exactly4new assertions while34dense controls pass before the fix."
+  "2026-10-11T07:41:06.954Z","harness:codex","Pre-fix and repaired receipts use identical real sparse fixtures and the isolated repository runner: original source fails exactly4contextual TypeError assertions while34dense contracts pass; corrected source passes38ledger cases and107linked contracts across4files. Identity validation now checks values materialized by the existing Set, and exception validation spreads every membership slot before Array.some. No new public API, injected testing seam, mutable-provider call, collection mutation, exclusion or threshold change is introduced. Full-source coverage, strict gates and real installed public-export consumers remain required before closure."
+  "2026-10-11T08:04:45.802Z","harness:codex","Delivery proof: identical4sparse regressions fail before and pass after the two admission corrections;107linked tests pass. Original installed public11 passes18dense controls but fails8sparse assertions across both exports; unreleased packed repair passes26assertions per runtime onNode24/Node26/Bun. Full suite10149passes/3platform skips has exact100percent across68013statements/52132branches/14024functions/64689lines and780source files. All4TypeScript projects and full unchanged static/qualified performance/mutation gates pass. Pre-closure packed artifact is8850212compressed/43334578unpacked bytes with6383files and passes original budgets. Final changelog regeneration and hosted exact-head checks are required before merge; public11is immutable and this source improvement awaits the next normal daily cut."
+files[2]{path,scope}:
+  src/sdk/governance/artifact-ledgers.ts,project
+  tests/unit/sdk/governance/artifact-ledgers.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,project,240,"harness:codex","2026-10-11T07:38:55.469Z",local_mutation,chore/recovery-release-closeout
+test_runs[1]:
+  - run_id: test-local-mv3ii9vn-8kh4z3
+    kind: test
+    status: passed
+    started_at: "2026-10-11T07:38:56.107Z"
+    finished_at: "2026-10-11T07:39:06.755Z"
+    recorded_at: "2026-10-11T07:39:06.755Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/artifact-ledgers.spec.ts tests/unit/scripts/release/collect-release-ledgers.spec.ts tests/unit/scripts/release/release-tag-provenance.spec.ts tests/unit/scripts/release/run-release-pipeline.spec.ts,schema,schema,source,local_source_ref
+close_reason: Post-release sparse ledger admission repair is fully implemented and locally verified.
+body: ""

@@ -56,6 +56,8 @@ describe("artifact ledger reconciliation", () => {
     { rows: [42, snapshots[1]!], message: "Expected unique complete artifact ledgers." },
     { rows: [{ ...snapshots[0]!, identities: null }, snapshots[1]!], message: "Invalid or duplicate artifact identity." },
     { rows: [{ ...snapshots[0]!, identities: "one" }, snapshots[1]!], message: "Invalid or duplicate artifact identity." },
+    { rows: snapshots.map((row) => ({ ...row, identities: Array<string>(1) })), message: "Invalid or duplicate artifact identity." },
+    { rows: snapshots.map((row) => ({ ...row, identities: Object.assign(Array<string>(2), { 0: "one" }) })), message: "Invalid or duplicate artifact identity." },
   ])("identifies malformed JavaScript inventory inputs %j", ({ rows, message }) => {
     expect(() => reconcileArtifactLedgers(rows as unknown as ArtifactLedgerSnapshot[])).toThrow(new TypeError(message));
   });
@@ -77,6 +79,8 @@ describe("artifact ledger reconciliation", () => {
     { exceptions: [{ ...exception, missing_from: null }], message: "Invalid artifact exception ledger signature." },
     { exceptions: [{ ...exception, missing_from: "tagged" }], message: "Invalid artifact exception ledger signature." },
     { exceptions: [{ ...exception, missing_from: {} }], message: "Invalid artifact exception ledger signature." },
+    { exceptions: [{ ...exception, missing_from: Array<string>(1) }], message: "Invalid artifact exception ledger signature." },
+    { exceptions: [{ ...exception, missing_from: Object.assign(Array<string>(2), { 0: "tagged" }) }], message: "Invalid artifact exception ledger signature." },
   ])("identifies malformed JavaScript exception inputs %j", ({ exceptions, message }) => {
     expect(() => reconcileArtifactLedgers(snapshots, exceptions as unknown as ArtifactLedgerException[])).toThrow(new TypeError(message));
   });
