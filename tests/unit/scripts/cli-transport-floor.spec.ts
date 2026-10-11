@@ -266,6 +266,25 @@ describe("CLI transport-floor benchmark", () => {
 });
 
 describe("CLI transport-floor command", () => {
+  it.each(["baseline", "baseline_after"] as const)("preserves existing calibration when %s is available but over budget", async (control) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-cli-unqualified-update-"));
+    temporaryRoots.push(root);
+    const budgetPath = path.join(root, "budgets.json");
+    const documentationPath = path.join(root, "floor.md");
+    const controlBudgetPath = path.join(root, "sdk-control.json");
+    const originalBudget = JSON.stringify(buildCliTransportFloorBudgets(report()));
+    await writeFile(budgetPath, originalBudget);
+    await writeFile(controlBudgetPath, JSON.stringify({ baseline: { max_import_ms: 76 } }));
+    await writeFile(documentationPath, "preserve existing documentation");
+    const measured = report();
+    measured[control].p50_ms = 999;
+    await expect(main(["--update"], { budgetPath, documentationPath, controlBudgetPath, buildReport: async () => measured })).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified", report: measured, runner_qualification: { reason: "control_over_budget" },
+    });
+    expect(await readFile(budgetPath, "utf8")).toBe(originalBudget);
+    expect(await readFile(documentationPath, "utf8")).toBe("preserve existing documentation");
+  });
+
   it.each([
     new Error("final control process failed"),
     "final control process failed",

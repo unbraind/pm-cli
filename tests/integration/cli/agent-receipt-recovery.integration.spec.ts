@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -75,12 +76,29 @@ describe("agent receipt and recovery contracts", () => {
       expect(nested.code, nested.stderr).toBe(2);
       const nestedRetry = (JSON.parse(nested.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args;
       expect(nestedRetry, nested.stderr).toEqual(["--pm-path", context.pmPath, "subgroup", "misplaced", "--help"]);
+      assert(nestedRetry, "Missing nested command recovery arguments");
       const sourceNested = await runInProcessDistCli(nestedArgs, { env, cwd: context.tempRoot }, runPmCli);
       expect(sourceNested.code, sourceNested.stderr).toBe(2);
       expect((JSON.parse(sourceNested.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(nestedRetry);
-      const nestedHelp = runDirectDistCli([...nestedRetry!, "--json"], { env, cwd: otherTracker });
+      const nestedHelp = runDirectDistCli([...nestedRetry, "--json"], { env, cwd: otherTracker });
       expect(nestedHelp.code, nestedHelp.stderr).toBe(0);
       expect(JSON.parse(nestedHelp.stdout)).toMatchObject({ resolved_path: "subgroup misplaced" });
+      for (const [invocation, expectedRetry] of [
+        [refusedArgs, recovery.suggested_retry_args!],
+        [["--no-extensions", "--pm-path", context.pmPath, "item", "update", "--help", "--json"], ["--pm-path", context.pmPath, "--no-extensions", "update", "--help"]],
+      ]) {
+        for (const json of [true, false]) {
+          const isolatedInvocation = await runInProcessDistCli(["stats"], { env, cwd: context.tempRoot }, async () => {
+            await runPmCli(json ? invocation : invocation.filter((arg) => arg !== "--json"));
+          });
+          expect(isolatedInvocation.code, isolatedInvocation.stderr).toBe(2);
+          if (json) expect((JSON.parse(isolatedInvocation.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(expectedRetry);
+          else {
+            expect(isolatedInvocation.stderr).toContain(context.pmPath);
+            if (expectedRetry.includes("--no-extensions")) expect(isolatedInvocation.stderr).toContain("--no-extensions");
+          }
+        }
+      }
       const unscoped = runDirectDistCli(["recoveryprobe", "scoped-help", "--help", "--json"], { env, cwd: context.tempRoot });
       expect(unscoped.code).toBe(2);
       const suppressed = runDirectDistCli(["--no-extensions", "--pm-path", context.pmPath, "item", "scoped-help", "--help"], { env, cwd: context.tempRoot });

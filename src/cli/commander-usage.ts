@@ -1025,6 +1025,7 @@ export async function resolveCommanderUsageContext(
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   guidanceOverrides: Partial<CommanderGuidanceContext> = {},
+  invocationArgs: readonly string[] = process.argv.slice(2),
 ): Promise<CommanderUsageContext> {
   const rawMessage =
     typeof error === "object" && error !== null
@@ -1032,7 +1033,7 @@ export async function resolveCommanderUsageContext(
       : undefined;
   const message = rawMessage ?? "Invalid command usage";
   const invocationArgv = normalizeBootstrapInvocation(
-    process.argv.slice(2),
+    [...invocationArgs],
   ).argv;
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
   const commandName = resolveRecoveryCommandName(message, invocationArgv, rootProgram, extensionDescriptors);
@@ -1097,12 +1098,14 @@ export async function formatCommanderUsageMessage(
   rootProgram: Command,
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   guidanceOverrides: Partial<CommanderGuidanceContext> = {},
+  invocationArgs: readonly string[] = process.argv.slice(2),
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(
     error,
     rootProgram,
     extensionDescriptors,
     guidanceOverrides,
+    invocationArgs,
   );
   const {
     message,
@@ -1168,12 +1171,14 @@ export async function formatCommanderUsageJson(
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
   lean = false,
   guidanceOverrides: Partial<CommanderGuidanceContext> = {},
+  invocationArgs: readonly string[] = process.argv.slice(2),
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(
     error,
     rootProgram,
     extensionDescriptors,
     guidanceOverrides,
+    invocationArgs,
   );
   const envelope = formatCommanderErrorForJson(
     usageContext.message,

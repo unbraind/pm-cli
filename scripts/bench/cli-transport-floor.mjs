@@ -327,8 +327,10 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   const targetBudgetPath = options.budgetPath ?? budgetPath;
   const targetDocumentationPath =
     options.documentationPath ?? documentationPath;
-  if (parsed.mode === "update" && report.baseline_after.status === "unavailable") {
-    throw benchmarkAdmissionError("CLI transport-floor", report, [], { status: "unqualified", reason: "control_unavailable" });
+  const controlBudgets = JSON.parse(await readFile(options.controlBudgetPath ?? path.join(repoRoot, "scripts", "bench", "sdk-entrypoint-budgets.json"), "utf8"));
+  const qualification = qualifyBenchmarkRunner([report.baseline, report.baseline_after], controlBudgets.baseline, CONTROL_NOISE_MARGIN_MS);
+  if (parsed.mode === "update" && qualification.status !== "qualified") {
+    throw benchmarkAdmissionError("CLI transport-floor", report, [], qualification);
   }
   if (parsed.mode === "update") {
     await mkdir(path.dirname(targetBudgetPath), { recursive: true });
@@ -347,8 +349,6 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   }
   const budgets = JSON.parse(await readFile(targetBudgetPath, "utf8"));
   const violations = compareCliTransportFloorBudgets(report, budgets);
-  const controlBudgets = JSON.parse(await readFile(options.controlBudgetPath ?? path.join(repoRoot, "scripts", "bench", "sdk-entrypoint-budgets.json"), "utf8"));
-  const qualification = qualifyBenchmarkRunner([report.baseline, report.baseline_after], controlBudgets.baseline, CONTROL_NOISE_MARGIN_MS);
   if (violations.length > 0 || qualification.status !== "qualified") {
     throw benchmarkAdmissionError("CLI transport-floor", report, violations, qualification);
   }

@@ -330,6 +330,16 @@ function parseArguments(argv) {
   };
 }
 
+/** Read the existing target policy, using the committed control only when creating a new calibration target. */
+async function readEntrypointBudgets(targetBudgetPath, creating) {
+  try {
+    return JSON.parse(await readFile(targetBudgetPath, "utf8"));
+  } catch (error) {
+    if (!creating || error.code !== "ENOENT") throw error;
+    return JSON.parse(await readFile(budgetPath, "utf8"));
+  }
+}
+
 /** Run the entrypoint import-cost benchmark command. */
 export async function main(argv = process.argv.slice(2), options = {}) {
   const parsed = parseArguments(argv);
@@ -339,8 +349,10 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   const targetBudgetPath = options.budgetPath ?? budgetPath;
   const targetDocumentationPath =
     options.documentationPath ?? documentationPath;
-  if (parsed.mode === "update" && report.baseline_after.status === "unavailable") {
-    throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [], { status: "unqualified", reason: "control_unavailable" });
+  const budgets = await readEntrypointBudgets(targetBudgetPath, parsed.mode === "update");
+  const qualification = qualifyBenchmarkRunner([report.baseline, report.baseline_after], budgets.baseline, LATENCY_NOISE_MARGIN_MS);
+  if (parsed.mode === "update" && qualification.status !== "qualified") {
+    throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [], qualification);
   }
   if (parsed.mode === "update") {
     await mkdir(path.dirname(targetBudgetPath), { recursive: true });
@@ -357,9 +369,7 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     );
     return { mode: parsed.mode, report, violations: [] };
   }
-  const budgets = JSON.parse(await readFile(targetBudgetPath, "utf8"));
   const violations = compareEntrypointBudgets(report, budgets);
-  const qualification = qualifyBenchmarkRunner([report.baseline, report.baseline_after], budgets.baseline, LATENCY_NOISE_MARGIN_MS);
   if (violations.length > 0 || qualification.status !== "qualified") {
     throw benchmarkAdmissionError("SDK entrypoint import-cost", report, violations, qualification);
   }

@@ -3597,6 +3597,9 @@ extension routes receive the usual bounded discovery guidance.
 Canonical help retry arguments and the first displayed example retain an
 explicitly selected `--pm-path` and `--no-extensions`, so inspection uses the same
 tracker and extension policy from any working directory.
+In-process callers of `runPmCli(args)` do not need to replace `process.argv`:
+usage and help recovery use the supplied invocation for command selection,
+tracker scope, extension policy and both text and JSON formatting.
 
 `runTest(id, { measure: [...] }, global)` requires `run: true`. A missing run
 returns `test_measure_requires_run` before linked-test mutation, with an executable

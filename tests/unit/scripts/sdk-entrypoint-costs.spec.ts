@@ -318,6 +318,24 @@ describe("SDK entrypoint import-cost calculations", () => {
 });
 
 describe("SDK entrypoint import-cost command", () => {
+  it.each(["baseline", "baseline_after"] as const)("preserves existing calibration when %s is available but over budget", async (control) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-unqualified-update-"));
+    temporaryRoots.push(root);
+    const budgetPath = path.join(root, "budgets.json");
+    const documentationPath = path.join(root, "costs.md");
+    const originalBudget = JSON.stringify(buildEntrypointBudgets(report()));
+    await writeFile(budgetPath, originalBudget);
+    await writeFile(documentationPath, "preserve existing documentation");
+    const measured = report();
+    measured[control].p50_ms = 999;
+    if (control === "baseline") measured.baseline.p95_ms = 999;
+    await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => measured })).rejects.toMatchObject({
+      code: "benchmark_runner_unqualified", report: measured, runner_qualification: { reason: "control_over_budget" },
+    });
+    expect(await readFile(budgetPath, "utf8")).toBe(originalBudget);
+    expect(await readFile(documentationPath, "utf8")).toBe("preserve existing documentation");
+  });
+
   it.each([
     new Error("final control process failed"),
     "final control process failed",
@@ -349,7 +367,8 @@ describe("SDK entrypoint import-cost command", () => {
       temporaryRoots.push(rejectedRoot);
       const rejectedBudget = path.join(rejectedRoot, "budgets.json");
       const rejectedDocumentation = path.join(rejectedRoot, "costs.md");
-      await writeFile(rejectedBudget, "preserve existing budget");
+      const originalBudget = JSON.stringify(buildEntrypointBudgets(report()));
+      await writeFile(rejectedBudget, originalBudget);
       await writeFile(rejectedDocumentation, "preserve existing documentation");
       await expect(main(["--update"], {
         buildReport: async () => measured,
@@ -359,7 +378,7 @@ describe("SDK entrypoint import-cost command", () => {
         code: "benchmark_runner_unqualified",
         report: measured,
       });
-      expect(await readFile(rejectedBudget, "utf8")).toBe("preserve existing budget");
+      expect(await readFile(rejectedBudget, "utf8")).toBe(originalBudget);
       expect(await readFile(rejectedDocumentation, "utf8")).toBe("preserve existing documentation");
     },
   );
@@ -412,6 +431,10 @@ describe("SDK entrypoint import-cost command", () => {
     });
     await expect(main([])).rejects.toThrow("Usage:");
     await expect(main(["--check", "--update"])).rejects.toThrow("Usage:");
+    await expect(main(["--check"], { budgetPath: path.join(root, "missing.json"), buildReport: async () => baseline })).rejects.toMatchObject({ code: "ENOENT" });
+    const malformedBudget = path.join(root, "malformed.json");
+    await writeFile(malformedBudget, "invalid budget JSON");
+    await expect(main(["--update"], { budgetPath: malformedBudget, documentationPath: path.join(root, "invalid-costs.md"), buildReport: async () => baseline })).rejects.toThrow();
     await expect(
       main(["--check", "--iterations", "7"], {
         buildReport: async () => structuredClone(baseline),

@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T19:33:27.145Z"
-updated_at: "2026-10-10T22:52:56.662Z"
-closed_at: "2026-10-10T22:52:55.603Z"
-completed_at: "2026-10-10T22:52:55.603Z"
+updated_at: "2026-10-11T01:40:04.908Z"
+closed_at: "2026-10-11T01:40:04.270Z"
+completed_at: "2026-10-11T01:40:04.270Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Both SDK and CLI gates bracket their measurements with warmed bare-process controls and portable environment evidence; over-budget or missing controls fail with product admission unverified and retain the full report; qualified product regressions still fail and retain all violations; positive and negative controls pass without any product budget increase; public methodology and linked evidence document the historical diagnosis boundary.
@@ -16,15 +16,18 @@ value: Context management needs trustworthy performance evidence that separates 
 parent: pm-bj7rq0
 risk: low
 confidence: high
-resolution: "Bracketed SDK and CLI product measurements with independent warmed bare-Node controls and portable environment evidence. Final-control failures preserve completed reports and violations, report product admission unverified, and refuse calibration without writing existing budgets or docs. Qualified product failures still enforce unchanged ratchets."
-expected_result: No unsuccessful or unavailable runner control certifies product admission or silently recalibrates budgets; complete measured product evidence remains diagnosable.
-actual_result: "31 linked runner regressions pass, including Error/string final-control rejection, retained product violations and unchanged calibration files. Real SDK and CLI gates qualify this runner and pass unchanged budgets. Full static and typecheck pass; mutation audit 336 total, 329 killed, 7 equivalent, zero failures. Historical cause remains open in the canonical parent."
-comments[5]{created_at,author,text}:
+resolution: Bracketed SDK and CLI product measurements with independent warmed controls; retained complete reports on final-control failure; classified unqualified product admission as unverified; and now require both available controls to qualify against the prior SDK baseline ceiling before any update-mode mkdir or write. A new SDK target uses committed control policy; malformed or missing policy fails closed without calibration writes.
+expected_result: "Slow, unavailable or invalid runner controls cannot certify product measurements or create/replace SDK and CLI calibration files; qualified checks keep all latency/RSS/control ratchets unchanged."
+actual_result: "Four pre-fix available-control calibration tests fail; current 35 runner regressions pass and preserve budget/docs bytes on both before/after control refusal. Complete static/typecheck and delta lint pass, serialized nine-package npm/Bun/SDK consumers pass, and existing committed budgets/performance tables remain unchanged. Next-head hosted CI and full review gate merge."
+comments[8]{created_at,author,text}:
   "2026-10-10T19:33:27.145Z","harness:codex","Duplicate check: complete 2920-item strict all-status census plus request-specific search and open/in-progress inventories found only canonical diagnosis pm-bj7rq0 and no focused execution child. Existing implementation is already owned and claimed under that diagnosis. This child records its independently complete qualification delivery so the generated changelog reports shipped tooling without closing an unproven historical cause."
   "2026-10-10T19:37:23.079Z","harness:codex","Final verification includes 27 benchmark tests plus the unchanged-base runtime comparison. Node26 observations include an unqualified control refusal during load and a separate qualified merge-entrypoint overrun (241 ms against226 ms), which is retained rather than treated as a pass. The SDK measurement recovery no longer imports Commander registration after pure argv extraction; focused144-test verification and typechecking pass. The historical diagnosis remains owned by pm-bj7rq0."
   "2026-10-10T19:50:51.653Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1436 includes both bracketed startup gates, complete fail-closed reports, portable methodology, 27 linked tests and this bounded closure. Initial source commit a279913ba retains all budgets; real Node24 gates pass. Historical cause diagnosis remains open under the parent. Final-head CI and review are required before merge; the latest published changelog generator checked the Unreleased entry."
   "2026-10-10T22:18:25.834Z","harness:codex","PR #1436 final-head review https://github.com/unbraind/pm-cli/pull/1436#pullrequestreview-5480989632: A rejected final bare-Node control currently rejects the report builder after product measurements, losing completed diagnostics. Capture unavailable final-control evidence and preserve unsuccessful product admission."
   "2026-10-10T22:50:36.497Z","harness:codex","Final-control review remediation: both benchmark builders retain every completed operation or entrypoint when the final bare-Node control rejects, recording unavailable status and the original diagnostic. Check admission remains unsuccessful and unqualified with product admission unverified, while preserving product violations; calibration refuses before rewriting existing budget or documentation files. Error and string-rejection regressions pass for both builders. All 31 linked runner tests pass; real SDK and CLI benchmark gates qualify this runner and pass unchanged latency/RSS/30ms-control margins. Typecheck and all static gates pass, including zero duplicated blocks and mutation audit 336 total / 329 killed / 7 verified equivalent / 0 failures. Historical startup-cause attribution remains in the open parent lineage."
+  "2026-10-11T01:22:17.899Z","harness:codex","Full review b6af17a4-5495-4dbf-af35-c25e096af957 covers base c233923 through 1cd68972a and identifies an update-mode admission gap: current guards reject unavailable final controls but permit available controls above the existing ceiling. Reopened and claimed only this runner delivery for real before/after calibration preservation tests and qualification before writes; no committed latency/RSS/control ratchets will be raised."
+  "2026-10-11T01:25:41.304Z","harness:codex","Independent pre-fix negatives fail for both baseline and baseline_after over-budget controls in SDK and CLI update mode (four real calibration-writing regressions). Current repaired command tests reject before writing and preserve existing JSON budgets and documentation byte-for-byte. SDK admission loads the existing target policy, or committed control policy for a new target; CLI uses the SDK control budget. Both controls must qualify before mkdir or writes. Missing/malformed policy remains fail-closed. No committed budget or performance documentation calibration value was modified."
+  "2026-10-11T01:40:03.697Z","harness:codex","Final review remediation verification: four pre-fix calibration negatives fail as expected; current 35 runner regressions pass, including valid high-p95 SDK controls and byte-for-byte preservation of existing calibration targets. Existing full static/typecheck and final delta lint pass without altered ratchets. Current serialized packed nine-package npm/npx/Bun/bunx/SDK acceptance passes. Committed SDK/CLI budget JSON and calibrated performance tables have no diff. Fresh next-head CI and renewed full review remain mandatory."
 files[5]{path,scope}:
   scripts/bench/cli-transport-floor.mjs,project
   scripts/bench/runner-qualification.mjs,project
@@ -33,7 +36,7 @@ files[5]{path,scope}:
   tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,900,"harness:codex","2026-10-10T19:33:31.041Z",local_mutation,feat/executable-agent-recovery,Qualified product failures and unqualified control refusals retain complete diagnostics without budget inflation
-test_runs[2]:
+test_runs[4]:
   - run_id: test-local-mv2svkso-um4bis
     kind: test
     status: passed
@@ -56,9 +59,31 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv35iww4-4wj026
+    kind: test
+    status: passed
+    started_at: "2026-10-11T01:35:22.073Z"
+    finished_at: "2026-10-11T01:35:41.572Z"
+    recorded_at: "2026-10-11T01:35:41.572Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv35lv3g-i7j98z
+    kind: test
+    status: passed
+    started_at: "2026-10-11T01:37:26.357Z"
+    finished_at: "2026-10-11T01:37:59.212Z"
+    recorded_at: "2026-10-11T01:37:59.212Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   CHANGELOG.md,project
   docs/performance/runner-qualification.md,project
   docs/TESTING.md,project
-close_reason: Benchmark admission retains complete product diagnostics when runner controls are unqualified or unavailable.
+close_reason: "Both runner controls must qualify against existing policy before calibration writes, with complete fail-closed diagnostics and preserved existing files."
 body: ""
