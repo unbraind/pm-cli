@@ -10,9 +10,9 @@
 
 ### Other
 
+- Preserve fail-closed startup benchmark runner qualification and complete diagnostics ([pm-runner-qualification-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-runner-qualification-delivery.toon))
 - Include declared morning automation in daily release blocker alerts and successful recovery ([pm-automatic-release-alerts](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-automatic-release-alerts.toon))
 - Deliver unambiguous registry-derived namespace recovery across installed Node and Bun consumers ([pm-namespace-recovery-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-namespace-recovery-delivery.toon))
-- Preserve fail-closed startup benchmark runner qualification and complete diagnostics ([pm-runner-qualification-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-runner-qualification-delivery.toon))
 
 ## 2026.10.11 - 2026-10-11
 
