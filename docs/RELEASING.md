@@ -148,8 +148,13 @@ configuration belong in private operator documentation.
 - protected-branch pushes require `RELEASE_PAT`; Auto Release fails fast before the expensive release gates when `push=true`, `dry_run=false`, and that secret is not configured
 - release reliability gating requires `SENTRY_PERSONAL_ADMIN_TOKEN` for issue-threshold checks; Auto Release fails before creating the version commit/tag when the token is missing and `push=true`, while sourcemap upload remains optional through `SENTRY_AUTH_TOKEN`
 - after creating and pushing a new tag, auto-release waits for the tag-push `.github/workflows/release.yml` run to finish instead of dispatching a second publish workflow
-- scheduled failure issues include the preflight state (`push`, `dry_run`, `release_pat_configured`, and `sentry_personal_admin_token_configured`) plus a detected cause so agents can distinguish missing release secrets from Sentry gate failures without scanning the full workflow log first
-- when scheduled failures continue across multiple UTC days, auto-release supersedes a stale open blocker with a fresh current-day blocker so same-day retry detection follows the latest scheduled failure
+- native scheduled and declared morning-dispatcher failures open or update the
+  same daily blocker with trigger origin, preflight state (`push`, `dry_run`,
+  `release_pat_configured`, and `sentry_personal_admin_token_configured`) and
+  detected cause. Successful automatic recovery closes it only after exact
+  publication verification; operator dispatch does not manage this lifecycle.
+  This behavior is tracked by [pm-automatic-release-alerts](../.agents/pm/tasks/pm-automatic-release-alerts.toon).
+- when either automatic origin fails across multiple UTC days, auto-release supersedes a stale open blocker with a fresh current-day blocker so same-day retry detection follows the latest automatic failure
 - closing the exact bot-created `Auto Release blocked: scheduled run failed`
   issue as a maintainer or agent records a same-day retry marker, then either
   retries preparation when no tag exists or watches an active exact-tag Release
@@ -597,7 +602,16 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   exact-version probe. An
   existing version keeps the reviewed dispatch-time `main` source and cannot
   be republished. A definitive missing-version response pins the checkout to
-  the existing immutable tag, reapplies the version guard, installs the managed
+  the existing immutable tag only after inspecting prior exact-tag Release
+  attempts. A successful earlier `Publish to npm` step refuses first-publication
+  recovery while metadata remains unavailable; npm acceptance can precede
+  public availability. Missing, incomplete or unavailable workflow evidence
+  also refuses recovery. See [pm-publication-acceptance-fence](../.agents/pm/issues/pm-publication-acceptance-fence.toon).
+  The same check runs immediately before first publication, retaining reviewed
+  controls outside any recovery checkout. Tag-push and dispatch runs share one
+  exact-tag concurrency group. Only the current run attempt is excluded from
+  prior-publication evidence; earlier attempts of that run are still checked.
+  A never-published tag then reapplies the version guard, installs the managed
   changelog extension, regenerates the package changelog with the tagged
   checkout's canonical policy under a tracked-path mutation guard, and permits
   first publication only from that tagged source. Ordinary tag-push releases

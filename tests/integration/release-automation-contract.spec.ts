@@ -1229,7 +1229,7 @@ exit "\${PROBE_STATUS}"
         `#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "\${GIT_FAKE_LOG}"
 case "$1" in
-  rev-parse) printf '%s\\n' "0449d15f0d34d15f0d34d15f0d34d15f0d34d15" ;;
+  rev-parse) printf '%s\\n' "0449d15f045f881a574248d35774a656a8b1e55b" ;;
   checkout) ;;
   *) exit 97 ;;
 esac
@@ -1238,6 +1238,14 @@ esac
       );
       await chmod(path.join(tempRoot, "npm"), 0o755);
       await chmod(path.join(tempRoot, "git"), 0o755);
+      await writeFile(path.join(tempRoot, "gh"), `#!/usr/bin/env bash
+case "$1 $2" in
+  'run list') printf '%s\\n' '[{"databaseId":1,"createdAt":"2026-08-05T10:00:00Z","status":"completed","conclusion":"failure","event":"push","headBranch":"v2026.8.5","headSha":"0449d15f045f881a574248d35774a656a8b1e55b"}]' ;;
+  'api repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100') printf '%s\\n' "\${PRIOR_JOBS}" ;;
+  *) exit 97 ;;
+esac
+`, "utf8");
+      await chmod(path.join(tempRoot, "gh"), 0o755);
       await writeFile(
         path.join(tempRoot, "pnpm"),
         `#!/usr/bin/env bash
@@ -1262,6 +1270,10 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
               DEFAULT_BRANCH: "main",
               GITHUB_ENV: githubEnv,
               RUNNER_TEMP: tempRoot,
+              GITHUB_REPOSITORY: "fixture/project",
+              PRIOR_JOBS: JSON.stringify([{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+                { name: "Publish to npm", status: "completed", conclusion: "skipped" },
+              ] }] }]),
               NPM_FAKE_LOG: npmLog,
               GIT_FAKE_LOG: gitLog,
               PROBE_STATUS: "0",
@@ -1287,13 +1299,25 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
         PROBE_STATUS: "1",
         PROBE_OUTPUT: "npm error code ETARGET",
       });
-      expect(missingVersion.status).toBe(0);
+      expect(missingVersion.status, missingVersion.stderr).toBe(0);
       expect(await readFile(githubEnv, "utf8")).toBe(
         "RECOVERY_SOURCE_MODE=tag\n",
       );
       expect(await readFile(gitLog, "utf8")).toContain(
-        "checkout --detach 0449d15f0d34d15f0d34d15f0d34d15f0d34d15",
+        "checkout --detach 0449d15f045f881a574248d35774a656a8b1e55b",
       );
+      await writeFile(gitLog, "", "utf8");
+      await writeFile(githubEnv, "", "utf8");
+      const acceptedButMissing = runScenario({
+        PROBE_STATUS: "1", PROBE_OUTPUT: "npm error code E404",
+        PRIOR_JOBS: JSON.stringify([{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+          { name: "Publish to npm", status: "completed", conclusion: "success" },
+        ] }] }]),
+      });
+      expect(acceptedButMissing.status).toBe(1);
+      expect(acceptedButMissing.stderr).toContain("previously accepted");
+      expect(await readFile(gitLog, "utf8")).not.toContain("checkout");
+      expect(await readFile(githubEnv, "utf8")).toBe("");
       await writeFile(npmLog, "", "utf8");
       await writeFile(gitLog, "", "utf8");
       await writeFile(githubEnv, "", "utf8");
@@ -1415,6 +1439,16 @@ esac
         "utf8",
       );
       await chmod(fakeNpm, 0o755);
+      await writeFile(path.join(tempRoot, "gh"), `#!/usr/bin/env bash
+case "$1 $2" in
+  'run list') printf '[{"databaseId":1,"createdAt":"2026-07-27T10:00:00Z","status":"completed","conclusion":"failure","event":"push","headBranch":"%s","headSha":"0449d15f045f881a574248d35774a656a8b1e55b"}]\\n' "$RELEASE_TAG" ;;
+  'api repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100') printf '%s\\n' "$PRIOR_JOBS" ;;
+  *) exit 97 ;;
+esac
+`, "utf8");
+      await writeFile(path.join(tempRoot, "git"), "#!/usr/bin/env bash\nprintf '0449d15f045f881a574248d35774a656a8b1e55b\\n'\n", "utf8");
+      await chmod(path.join(tempRoot, "gh"), 0o755);
+      await chmod(path.join(tempRoot, "git"), 0o755);
 
       const runScenario = (overrides: NodeJS.ProcessEnv) =>
         spawnSync("bash", ["-c", prependFakeBinForBash(publishScript ?? "")], {
@@ -1431,6 +1465,11 @@ esac
             NPM_PACKAGE: "@unbrained/pm-cli",
             NPM_FAKE_LOG: npmLog,
             PACKAGE_DISTRIBUTION: distributionScript,
+            RELEASE_PUBLICATION_ADMISSION: path.join(repoRoot, "scripts/release/release-run-selection.mjs"),
+            DEFAULT_BRANCH: "main", GITHUB_REPOSITORY: "fixture/project",
+            PRIOR_JOBS: JSON.stringify([{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+              { name: "Publish to npm", status: "completed", conclusion: "skipped" },
+            ] }] }]),
             DISTRIBUTION_LOG: distributionLog,
             DISTRIBUTION_STATUS: "0",
             TARGET_VERSION_STATUS: "1",
@@ -1440,7 +1479,7 @@ esac
         });
 
       const publicPackage = runScenario({});
-      expect(publicPackage.status).toBe(0);
+      expect(publicPackage.status, publicPackage.stderr).toBe(0);
       expect(publicPackage.stdout).toContain(
         "@unbrained/pm-cli is publicly available but 2026.7.27 is not; publishing.",
       );
@@ -1453,6 +1492,20 @@ esac
         `publish ${tempRoot}/publication.tgz --access public --provenance --tag latest`,
       );
       expect(invocations).not.toContain("access set");
+
+      for (const event of ["push", "workflow_dispatch"]) {
+        await writeFile(npmLog, "", "utf8");
+        await writeFile(distributionLog, "", "utf8");
+        const accepted = runScenario({ GITHUB_EVENT_NAME: event, PRIOR_JOBS: JSON.stringify([
+          { jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+            { name: "Publish to npm", status: "completed", conclusion: "success" },
+          ] }] },
+        ]) });
+        expect(accepted.status).toBe(1);
+        expect(accepted.stderr).toContain("previously accepted");
+        expect(await readFile(npmLog, "utf8")).not.toContain("publish ");
+        expect(await readFile(distributionLog, "utf8")).toBe("");
+      }
 
       await writeFile(npmLog, "", "utf8");
       const packedFailure = runScenario({ DISTRIBUTION_STATUS: "1" });

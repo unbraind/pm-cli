@@ -1,0 +1,112 @@
+id: pm-publication-acceptance-fence
+title: Prevent exact-tag recovery from republishing an accepted npm version while public metadata is unavailable
+description: "Actual Release38107714902 accepted signed npm2026.10.11 at03:45:06UTC while anonymous metadata and tarball remained404 at04:15. Existing Select exact-tag recovery source treats E404 as unpublished and permits first publication from the tag without inspecting earlier successful Publish to npm steps. Preserve existing exact tag/source identity and registry gating; introduce authoritative prior-publication admission before the checkout changes."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-11T04:17:35.484Z"
+updated_at: "2026-10-11T04:49:39.038Z"
+closed_at: "2026-10-11T04:49:38.154Z"
+completed_at: "2026-10-11T04:49:38.154Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "Anonymous E404 after an authoritative successful same-tag Publish to npm step refuses first-publication recovery before checkout or gates; all prior matching run attempts are inspected; unrelated tags, workflows or branch identities cannot certify accepted publication; unavailable or malformed provider evidence refuses; genuinely never-published exact-tag recovery remains supported; actual failed daily run is independently replayed."
+parent: pm-u9d0
+risk: low
+confidence: high
+severity: high
+resolution: "Fence exact-tag recovery source selection and first publication using complete matching Release job-attempt evidence, known statuses/conclusions and authoritative identity; retain reviewed controls across old tag checkout and serialize tag-push/dispatch publishers. Exclude only the exact current attempt and preserve all earlier accepted attempts."
+expected_result: Accepted or unknown terminal publication evidence refuses first publication; complete known never-published evidence supports recovery.
+actual_result: "58linked regressions, strict ESLint and unchanged16complexity ceiling pass after the final unknown-conclusion repair. Original/corrected native publisher, concurrency and actual immutable11GitHub replay establish the refusal; source/types/docs/SDK/CLI budget components, graph/integrity,336mutations and9packed consumers passed before this enum-only refinement. The earlier qualified performance failure and graph correction remain recorded; current-head hosted checks/full review and actual public availability remain required."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
+  pm-release-ledger-origin-delivery,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
+  pm-wzmbvn,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-11T04:17:35.484Z","harness:codex","Duplicate check: complete all-status2922 census and live accepted-publication search/open/in_progress lists find no existing pending-publication fence. Full pm-wzmbvn history describes completed15-minute propagation budget; full pm-7zs0 is the open release-health observer; pm-release-ledger-origin-delivery is completed source-origin delivery. Reuse pm-u9d0 release lineage and link the actual GH1437 report without reopening those completed implementations."
+  "2026-10-11T04:24:15.944Z","harness:codex","The independent original workflow admits accepted-but-missing publication (1failed/24passed). Actual-provider replay against immutable261a2e8f9ca235c42465bf26b8df2cbbc98d2228 now refuses precisely because Release38107714902 already accepted its npm publish step. The guard inspects jobs across all attempts using GitHub filter=all; verified actual job payload carries run_id/run_attempt, so only the currently executing attempt can be excluded while prior accepted attempts remain visible. Extend the same admission immediately before npm publication, retain the reviewed control outside any immutable-source checkout, and unify push/dispatch concurrency on the exact tag. This prevents overlapping exact-tag publishers and tag-push reruns from bypassing the accepted-publication fence. Existing short native fake SHA was corrected to a valid40-character fixture without loosening source validation; its earlier failure remains recorded."
+  "2026-10-11T04:25:50.552Z","harness:codex","Complete final linked admission/automation/workflow suite passes58tests; the independent native original publisher actually attempts npm publication against a fake accepted-but-unavailable registry, while the identical corrected workflow refuses before packing or publishing. Independent expression replay proves original push/dispatch groups differ and corrected exact-tag groups match. Authoritative run_id/run_attempt metadata excludes only the current attempt; malformed inventories, missing publication stages, incomplete job identity, unknown status and missing terminal conclusions all refuse. Real immutable11run independently supplied the prior accepted publication verdict; no live publication, retry or tag mutation was sent."
+  "2026-10-11T04:30:01.607Z","harness:codex","The unchanged repository-static-quality gate rejected the first admission implementation at CodeFactor complexity32 above the existing16ceiling. Refactored inventory shape, authoritative job-attempt identity and publication-stage completeness into separate private validators; the identical21-file parity scan now has zero violations at16. No threshold, suppression or product semantics changed. The complete58 linked release regressions are repeated after this refactor; full static verification remains required before closeout."
+  "2026-10-11T04:37:58.107Z","harness:codex","After the complexity repair, full source, types, docs, static quality, SDK surface and10entrypoint costs pass. The unchanged CLI transport gate reports qualified controls31/43ms but product next/create/claim exceed their existing440/398/415ms best-run bounds (561/443/425ms) while recorded load rises2.58 to7.05. Preserve this as a genuine failed qualified product verdict; release-only scripts do not change CLI source and no margin or policy is changed. Replay the identical CLI gate alone once to distinguish a reproducible product regression from this concurrent observation; green source delivery is not yet claimed."
+  "2026-10-11T04:41:31.939Z","harness:codex","The identical isolated CLI transport replay passes all6 operations with unchanged policy; the prior qualified failure is retained and no timing cause is asserted. The next graph gate found six newly mentioned canonical item pairs without typed relationships. Added discovered_from edges for the concrete recurrence and prior implementation lineage through pm update --dep, preserving all existing edges and the1233ceiling. Repeat graph/integrity/mutation and serialized9-package acceptance to finish the unchanged gate sequence."
+  "2026-10-11T04:49:37.288Z","harness:codex","Final explicit malformed-data control admitted a completed publication step with an unrecognized conclusion. Reopened/claimed only this owner normally, required a known terminal conclusion, and reran the unchanged58-test linked release suite plus full strict ESLint and21-file CodeFactor parity at16; all pass. Previous close evidence remains immutable and this new close records the refinement. Correct canonical pnpm changelog:pm generation restores repository exclusions and stable item links; the earlier generic generator command was operator misuse, not a pm-changelog defect."
+files[5]{path,scope}:
+  .github/workflows/release.yml,project
+  scripts/release/release-run-selection.mjs,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/integration/release-automation-contract.spec.ts,project
+  tests/unit/scripts/release/release-run-selection.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,"harness:codex","2026-10-11T04:17:42.080Z",local_mutation,feat/executable-agent-recovery
+test_runs[6]:
+  - run_id: test-local-mv3becww-1srdgg
+    kind: test
+    status: failed
+    started_at: "2026-10-11T04:19:55.963Z"
+    finished_at: "2026-10-11T04:20:06.751Z"
+    recorded_at: "2026-10-11T04:20:06.751Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3bfuta-n3mvzw
+    kind: test
+    status: passed
+    started_at: "2026-10-11T04:21:06.664Z"
+    finished_at: "2026-10-11T04:21:16.606Z"
+    recorded_at: "2026-10-11T04:21:16.606Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3bjhkc-kqzfcp
+    kind: test
+    status: passed
+    started_at: "2026-10-11T04:23:54.683Z"
+    finished_at: "2026-10-11T04:24:06.059Z"
+    recorded_at: "2026-10-11T04:24:06.059Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3bkr54-2j9lva
+    kind: test
+    status: passed
+    started_at: "2026-10-11T04:24:54.493Z"
+    finished_at: "2026-10-11T04:25:05.128Z"
+    recorded_at: "2026-10-11T04:25:05.128Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3bqpzb-8rhg9p
+    kind: test
+    status: passed
+    started_at: "2026-10-11T04:29:32.659Z"
+    finished_at: "2026-10-11T04:29:43.559Z"
+    recorded_at: "2026-10-11T04:29:43.559Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3cesez-qtz86v
+    kind: test
+    status: passed
+    started_at: "2026-10-11T04:48:14.695Z"
+    finished_at: "2026-10-11T04:48:26.459Z"
+    recorded_at: "2026-10-11T04:48:26.459Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/RELEASING.md,project
+close_reason: Authoritative accepted and unknown terminal publication evidence now refuse first publication safely.
+body: ""

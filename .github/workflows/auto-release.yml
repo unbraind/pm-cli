@@ -464,7 +464,7 @@ jobs:
           retention-days: 90
 
       - name: Resolve blocked scheduled auto-release issue
-        if: success() && github.event_name == 'schedule' && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag)
+        if: success() && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.trigger_origin == 'morning_dispatcher')) && (steps.publish_release.outputs.published_tag || steps.auto_release.outputs.published_tag)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -560,13 +560,14 @@ jobs:
           fi
 
       - name: Alert on blocked scheduled auto-release
-        if: "${{ failure() && (github.event_name == 'schedule' || github.event_name == 'issues') }}"
+        if: "${{ failure() && (github.event_name == 'schedule' || github.event_name == 'issues' || (github.event_name == 'workflow_dispatch' && inputs.trigger_origin == 'morning_dispatcher')) }}"
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RELEASE_SHA: ${{ github.sha }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TRIGGER_ORIGIN: ${{ github.event_name == 'schedule' && 'native_schedule' || github.event_name == 'issues' && 'blocker_retry' || inputs.trigger_origin }}
           CLOSED_ISSUE_NUMBER: ${{ github.event.issue.number || '' }}
           INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && (inputs.push && 'true' || 'false') || 'true' }}
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
@@ -581,7 +582,7 @@ jobs:
           if [[ -z "${existing_issue}" ]]; then
             existing_issue="$(gh issue list --state open --search "\"${title}\" in:title" --json number --jq '.[0].number // empty')"
           fi
-          if [[ -n "${existing_issue}" && "${GITHUB_EVENT_NAME}" == "schedule" ]]; then
+          if [[ -n "${existing_issue}" && ( "${GITHUB_EVENT_NAME}" == "schedule" || "${RELEASE_TRIGGER_ORIGIN}" == "morning_dispatcher" ) ]]; then
             existing_created_at="$(gh issue view "${existing_issue}" --json createdAt --jq '.createdAt // ""' 2>/dev/null || true)"
             existing_created_day="${existing_created_at%%T*}"
             current_day="$(date -u +%F)"
@@ -620,6 +621,7 @@ jobs:
           Run: ${RUN_URL}
           Commit: ${RELEASE_SHA}
           Trigger: \`${GITHUB_EVENT_NAME}\`
+          Origin: \`${RELEASE_TRIGGER_ORIGIN}\`
 
           Detected preflight state:
           - push: \`${INPUT_PUSH}\`
