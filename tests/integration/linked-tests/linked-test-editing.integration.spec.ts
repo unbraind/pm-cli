@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runTest } from "../../../src/sdk/test/execution.js";
+import { runTest, type TestCommandOptions } from "../../../src/sdk/test/execution.js";
 import { runTestAll } from "../../../src/sdk/test/batch.js";
 import { updateLinkedTest, type LinkedTestMetadataPatch, type LinkedTestUpdateSelector } from "../../../src/sdk/test/update.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
@@ -112,17 +112,45 @@ describe("linked-test editing and configuration admission", () => {
     });
   });
 
-  it("refuses metric filters on edits through SDK and CLI before persistence", async () => {
+  it.each([
+    { flag: "--list", args: [], options: { list: true } },
+    { flag: "--timeout", args: ["60"], options: { timeout: "60" } },
+    { flag: "--timeout", args: [""], options: { timeout: "" } },
+    { flag: "--progress", args: [], options: { progress: true } },
+    { flag: "--metric-below", args: ["latency=10"], options: { metricBelow: "latency=10" } },
+    { flag: "--metric-below", args: [""], options: { metricBelow: "" } },
+    { flag: "--metric-diff", args: ["latency"], options: { metricDiff: "latency" } },
+    { flag: "--metric-diff", args: [""], options: { metricDiff: "" } },
+  ])("refuses $flag $args on edits through SDK and CLI before persistence", async ({ flag, args, options }) => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "edit option admission", createMode: "progressive" });
       await runTest(id, { add: ["command=node -e 1,note=original"] }, { path: context.pmPath });
       const before = await capture(context, id);
-      for (const filters of [{ metricBelow: "latency=10" }, { metricDiff: "latency" }, { metricBelow: "" }, { metricDiff: "" }]) {
-        await expect(runTest(id, { updateIndex: 1, setJson: '{"note":"wrong"}', ...filters }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: 2 });
-        expect(await capture(context, id)).toEqual(before);
-      }
-      for (const filter of [["--metric-below", "latency=10"], ["--metric-diff", "latency"]]) {
-        expect(context.runCli(["test", id, "--update-index", "1", "--set-json", '{"note":"wrong"}', ...filter, "--json"]).code).toBe(2);
+      await expect(runTest(id, { updateIndex: 1, setJson: '{"note":"wrong"}', ...options }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: 2 });
+      expect(await capture(context, id)).toEqual(before);
+      expect(context.runCli(["test", id, "--update-index", "1", "--set-json", '{"note":"wrong"}', flag, ...args, "--json"]).code).toBe(2);
+      expect(await capture(context, id)).toEqual(before);
+    });
+  });
+
+  it("refuses every other active run directive and collection operation on metadata edits", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "complete edit admission", createMode: "progressive" });
+      await runTest(id, { add: ["command=node -e 1,note=original"] }, { path: context.pmPath });
+      const before = await capture(context, id);
+      const incompatible = [
+        { run: true }, { match: "node" }, { onlyIndex: 1 }, { onlyLast: true },
+        { envSet: ["FLAG=1"] }, { envClear: ["FLAG"] }, { sharedHostSafe: true },
+        { pmContext: "none" }, { overrideLinkedPmContext: true },
+        { workspaceContext: "snapshot" }, { overrideLinkedWorkspaceContext: true },
+        { allowUntrustedLinkedTests: true }, { acknowledgeLinkedTests: true },
+        { failOnContextMismatch: true }, { failOnSkipped: true }, { failOnEmptyTestRun: true },
+        { requireAssertionsForPm: true }, { checkContext: true }, { autoPmContext: true },
+        { measure: ["latency=10"] }, { add: ["node -e 2"] },
+        { addJson: ['{"command":"node -e 2"}'] }, { remove: ["command=node -e 1"] }, { removeIndex: [1] },
+      ] satisfies TestCommandOptions[];
+      for (const options of incompatible) {
+        await expect(runTest(id, { updateIndex: 1, setJson: '{"note":"wrong"}', ...options }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: 2 });
         expect(await capture(context, id)).toEqual(before);
       }
     });

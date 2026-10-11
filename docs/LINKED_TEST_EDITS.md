@@ -30,8 +30,10 @@ Absent selectors and ambiguous command/path matches refuse the whole edit and
 retain authoritative bytes; ambiguity names matching indexes. An index addresses
 the current list position. Durable metadata-fragment references remain tracked
 separately by [pm-gh1381](../.agents/pm/features/pm-gh1381.toon).
-Apply edits separately from additions, removals, execution, measurements,
-metric filters and trust acknowledgment.
+Apply edits separately from listing, additions, removals, execution options,
+measurements, metric filters and trust acknowledgment. Run-level `--timeout`
+and `--progress` are refused on edits; change stored `timeout_seconds` in the
+metadata patch when needed. `--list` remains a separate read-only operation.
 
 The public SDK owns the same operation:
 

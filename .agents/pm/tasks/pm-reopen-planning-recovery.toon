@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-11T05:28:30.227Z"
-updated_at: "2026-10-11T05:28:30.227Z"
+updated_at: "2026-10-11T22:51:16.787Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Real isolated reopen/claim/help journey discloses the required planning recovery; explicit current expectation is preserved; previous terminal fields remain immutable in history; existing active metadata gates remain unchanged
@@ -18,9 +18,11 @@ parent: pm-f05lsg
 risk: low
 confidence: high
 expected_result: Advertised reopening recovery restores the requested active planning expectation and retains complete prior terminal history
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-g8jp,discovered_from,"2026-10-11T05:28:30.227Z","harness:codex","cli:create:dep",detected
   pm-publication-acceptance-fence,discovered_from,"2026-10-11T05:28:30.227Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-9djr6d,related,"2026-10-11T22:51:16.506Z","harness:codex","evidence:pr-1444-reopen-quality",detected
+comments[2]{created_at,author,text}:
   "2026-10-11T05:28:30.227Z","harness:codex","Duplicate intake: request-specific live reopen/expected searches, strict complete2924-item all-status corpus, current open/in-progress lists, full closed reopen lineage and live reopen help found no focused owner for active planning recovery. Completed clear-terminal implementation remains completed. This enhancement is open and unclaimed; no source work is started."
+  "2026-10-11T22:43:59.439Z","harness:codex","Additional dogfood recurrence during PR #1444 / pm-9djr6d: normal reopen archived and cleared expected_result, claim --start succeeded, and the unchanged canonical static tracker gate then failed active-missing-expected-result-zero with pm-9djr6d as its only contributor. The current acceptance criterion was restored with pm update --expected-result before rerunning. Full live owner/history verification confirms this existing open, unclaimed task owns the recovery enhancement; no duplicate item or additional in-progress claim was created. Preserve previous-terminal evidence while advertising the planning restoration step."
 body: ""
