@@ -140,6 +140,9 @@ const REDACTION_INPUT_KEYS = new Set([
   "regexes",
   "replacement",
   "replacements",
+  // Serialized metadata can contain arbitrary environment values, even on parse failure.
+  "setjson",
+  "set_json",
 ]);
 const SENSITIVE_INLINE_KEY_PATTERN =
   "(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|session|credentials|bearer|literals?|regex(?:es)?|replacements?)";

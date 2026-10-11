@@ -163,6 +163,48 @@ async function setTelemetryCaptureLevel(globalRoot: string, level: "minimal" | "
 }
 
 describe("core/telemetry/runtime", () => {
+  it.each(["minimal", "redacted", "max"] as const)(
+    "redacts JSON metadata edits in start and parse-error inputs at %s capture",
+    (captureLevel) => {
+      const canary = "synthetic-private-metadata-value";
+      const patch = JSON.stringify({ env_set: { TOKEN: canary } });
+      const malformedPatch = `{"env_set":{"TOKEN":"${canary}"`;
+      const args = ["--set-json", patch, `--set-json=${patch}`, `--set_json=${patch}`];
+      const options = { setJson: patch, set_json: patch, title: "Safe summary" };
+      const sourceContext = { source_context: "test" as const, source_context_source: "inferred" as const };
+      const common = {
+        captureLevel, pmVersion: "candidate", sourceContext,
+        pmRootHash: "synthetic-root", cwdHash: "synthetic-cwd", installationId: "synthetic-install",
+      };
+      const start = _testOnly.buildCommandStartPayload({
+        ...common, context: { command: "test", args, options, global: {} },
+      });
+      const errorOptions = { setJson: malformedPatch, set_json: malformedPatch };
+      const error = _testOnly.buildCommandErrorPayload({
+        ...common, command: "test", commandTaxonomy: "test", commandResolution: "native",
+        resolutionStage: "parse", args: ["--set-json", malformedPatch, `--set-json=${malformedPatch}`],
+        options: errorOptions, errorCode: "usage", errorMessage: "Invalid metadata",
+        errorCategory: "usage", exitCode: 2,
+      });
+
+      expect(JSON.stringify(start)).not.toContain(canary);
+      expect(JSON.stringify(error)).not.toContain(canary);
+      expect(start.command_options_digest).toBe(_testOnly.hashTelemetryValue("synthetic-install", options));
+      expect(error.attempted_options_digest).toBe(_testOnly.hashTelemetryValue("synthetic-install", errorOptions));
+      if (captureLevel === "minimal") {
+        expect(start).not.toHaveProperty("command_args");
+        expect(start).not.toHaveProperty("command_options");
+        expect(error).not.toHaveProperty("attempted_args");
+        expect(error).not.toHaveProperty("attempted_options");
+      } else {
+        expect(start.command_args).toEqual(["--set-json", "[redacted]", "--set-json=[redacted]", "--set_json=[redacted]"]);
+        expect(start.command_options).toEqual({ setJson: "[redacted]", set_json: "[redacted]", title: "Safe summary" });
+        expect(error.attempted_args).toEqual(["--set-json", "[redacted]", "--set-json=[redacted]"]);
+        expect(error.attempted_options).toEqual({ setJson: "[redacted]", set_json: "[redacted]" });
+      }
+    },
+  );
+
   afterEach(() => {
     for (const [key, value] of ORIGINAL_ENV_VALUES) {
       restoreEnvValue(key, value);

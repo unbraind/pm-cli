@@ -84,6 +84,7 @@ export function assertLinkedTestEditUsage(options: TestCommandOptions): void {
   }
 }
 
+/** Select exactly one current entry under the mutation lock, refusing absent or ambiguous matches. */
 function selectIndex(tests: LinkedTest[], selector: LinkedTestUpdateSelector): number {
   if (typeof selector !== "object" || selector === null || Array.isArray(selector)) {
     throw new PmCliError("Select one linked test by index, command, or path", EXIT_CODE.USAGE);
@@ -110,6 +111,7 @@ function selectIndex(tests: LinkedTest[], selector: LinkedTestUpdateSelector): n
   throw new PmCliError("No linked test matched the update selector", EXIT_CODE.NOT_FOUND, { code: "linked_test_update_no_match", required: "List linked tests and select a current command, path, or --update-index." });
 }
 
+/** Validate and normalize explicit metadata fields before deriving a patch that retains creation provenance. */
 function applyPatch(test: LinkedTest, patch: LinkedTestMetadataPatch): { test: LinkedTest; fields: string[] } {
   if (typeof patch !== "object" || patch === null || Array.isArray(patch)) {
     throw new PmCliError("Linked-test metadata patch must be a JSON object", EXIT_CODE.USAGE);

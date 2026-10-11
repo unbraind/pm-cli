@@ -104,6 +104,7 @@ function collectTestMutationValues(options: Record<string, unknown>): {
   };
 }
 
+/** Refuse mutations and trust acknowledgement before scheduling an execution-only background run. */
 function validateBackgroundTestOptions(
   options: Record<string, unknown>,
   values: {
@@ -178,6 +179,7 @@ function buildTestEditOptions(options: Record<string, unknown>) {
   };
 }
 
+/** Translate CLI option values into the shared SDK linked-test action contract. */
 function buildRunTestOptions(
   options: Record<string, unknown>,
   values: {
@@ -248,6 +250,7 @@ export const _testOnlyRegisterOperations = {
   validateBackgroundTestOptions,
 };
 
+/** Run the shared action, invalidate changed views and propagate unsuccessful execution or refusal gates. */
 async function runForegroundLinkedTests(
   id: string,
   options: Record<string, unknown>,
@@ -283,6 +286,7 @@ async function runForegroundLinkedTests(
   }
 }
 
+/** Apply scheduling admission before dispatching the foreground or background linked-test action. */
 async function runTestCommandAction(
   id: string,
   options: Record<string, unknown>,
