@@ -1,0 +1,24 @@
+id: pm-pftgcz
+title: "GH-1443: align item and history union ordering and provenance during lossless merges"
+description: "Published 2026.10.10 reporter describes a lossless completed Git merge whose item/history differ in comment order and docs/tests provenance labels, causing hash drift and exact receipt refusal. Reproduce canonical equality before implementation."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-11T18:21:52.755Z"
+updated_at: "2026-10-11T18:21:52.755Z"
+author: "harness:codex"
+estimated_minutes: 480
+acceptance_criteria: Real isolated Git branches reproduce comment/test union divergence; item/history canonical order and provenance match; all values and creation/editor provenance survive; exact receipt settlement without force and byte-stable retry pass; retained reordered values are diagnosed accurately; prior abort and rebase controls remain valid
+goal: project management = context management
+parent: pm-gh1405
+risk: high
+confidence: medium
+expected_result: Lossless completed merges retain identical item/history order and provenance and reconcile without force or weaker exact receipt proof.
+actual_result: "Reporter observed 51 retained comments and 8 retained tests, differing order/provenance, hash drift and no_receipt_set_proves_snapshot. Independent local reproduction is pending."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9djr6d,discovered_from,"2026-10-11T18:21:52.755Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-11T18:21:52.755Z","harness:codex","Duplicate check: complete all-status corpus, fresh merge-order/provenance and exact receipt searches, open/in_progress inventory, and full live parent metadata/history found no completed-merge ordering owner. The parent has delivered the distinct plain-merge-abort lifecycle. Entire new GitHub report imported; this intake stays open and unclaimed while the four-item delivery proceeds. No force settlement or foreign-repository mutation performed."
+escape_class: production_defect
+body: "Source: https://github.com/unbraind/pm-cli/issues/1443\n\n## Summary\n\nOn pm 2026.10.10, an ordinary `git merge origin/main` with pm's merge drivers installed left one item whose file and history disagree. The merge was lossless: both sides hold the same 51 comments and 8 tests. But the **item** driver and the **history** driver placed one union-merged comment at different positions, and two docs/tests provenance entries got `source_kind: \"local_mutation\"` in the file but `\"merge_union\"` in the history replay. As a result:\n\n- `pm history <id> --verify` → `current_item_hash_mismatch`\n- `pm health` → `merge_receipts_pending:2`, `history_drift_hash_mismatch:<id>` (CI red)\n- `pm merge reconcile` → `failed: Merge receipt evidence ... does not prove the exact item snapshot (no_receipt_set_proves_snapshot)`\n\nThe only way out was `pm merge reconcile --force`. It reports `discarded_events` for a `comment_add` and a `tests_add`, even though both values are present in the kept on-disk item, which reads like data loss to an agent. A follow-up `pm restore <id> <latest>` is not a remedy either: it makes the file match, but the new entry's `before_hash` records the drifted file, so the chain still breaks (`before_hash_mismatch`).\n\n## Shape that reproduced it (real repo: unbraind/pm-web#175)\n\n- Item `pm-web-s99c`, 116 history entries. Both branches had appended comments (`comment_add`) and one branch had a `tests_add` since the merge base.\n- Merge drivers installed (`merge.pm-item-toon`, `merge.pm-history`), receipts written for the item and for a second item, `pm-web-cqwm`. `pm-web-cqwm` reconciled from trusted driver evidence; `pm-web-s99c` could not.\n- Diff between the file and `pm get <id> --at 116 --full`: the same multiset of comments (one 2026-10-07 comment sits in a different position), plus `source_kind` `merge_union` vs `local_mutation` on two linked docs/tests entries.\n\n## Expected\n\n1. The item driver and the history driver should produce the same canonical ordering for union-merged collections (comments, docs, tests) and the same provenance labels, so a lossless merge always reconciles without `--force`.\n2. If they ever diverge only in order or provenance (same multiset), `pm merge reconcile` could recognise that as \"equivalent snapshot\" and settle the receipt.\n3. `--force` output should not list `discarded_events` for values that are still present in the kept item. It could report \"reordered\" instead, so agents don't think data was lost.\n\nRelated, all closed: #1036, #1104, #1144, #1170, #1200, #1405. This is the same family on a current version, triggered by ordering/provenance divergence rather than missing receipts."

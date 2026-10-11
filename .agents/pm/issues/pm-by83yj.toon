@@ -1,0 +1,25 @@
+id: pm-by83yj
+title: Core external-reference refusal recommends a flag absent from the CLI lexicon
+description: "Current checkout create --stdin-json refuses an external_ref field as core_item_field_requires_dedicated_flag and recommends pm update <id> --external-ref <value>. Following that recovery fails because --external-ref is declared nowhere, including update. The refusal cannot supply its promised recovery."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-11T18:27:26.645Z"
+updated_at: "2026-10-11T18:27:26.645Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce in an isolated initialized tracker with unchanged-byte refusal evidence; align external-reference mutation support with public SDK contracts; generated help/contracts and actual dispatch agree; a negative control detects ghost recovery flags; all reserved-field recovery recommendations use declared executable paths
+goal: project management = context management
+parent: pm-wg07
+risk: low
+confidence: high
+expected_result: Every reserved-core-field refusal names an executable supported write path or truthfully states that no CLI mutation path is available.
+actual_result: create --stdin-json advertises update --external-ref; following it exits 2 with a declared_nowhere unknown-option refusal.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-f05lsg,related,"2026-10-11T18:27:26.645Z","harness:codex","cli:create:dep",detected
+  pm-pftgcz,discovered_from,"2026-10-11T18:27:26.645Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-11T18:27:26.645Z","harness:codex","Duplicate check: full all-status corpus plus current exact external_ref/dedicated-flag search and open/in_progress inventories found no existing orphan external-reference recovery owner. Full public-surface parent metadata/history was read. Directly observed both refusal stages during GitHub intake. This issue stays open and unclaimed; current metadata-editor delivery does not claim the broader recovery contract fixed."
+escape_class: production_defect
+body: "Observed while importing a new GitHub report on the current 2026.10.11 checkout. A JSON external_ref fails before creation; source URL intake succeeds when retained in body. The recommended update --external-ref fails as declared_nowhere. Verify the intended SDK/CLI external-reference write contract and provide a reachable recovery; do not invent a flag, add a blanket field override, or weaken reserved-field guards."
