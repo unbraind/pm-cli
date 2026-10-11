@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Reject sparse artifact ledger inputs through both public SDK exports ([pm-ledger-sparse-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-ledger-sparse-delivery.toon))
 - Prevent exact-tag recovery from republishing an accepted npm version while public metadata is unavailable ([pm-publication-acceptance-fence](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-publication-acceptance-fence.toon))
 - Expose the test measurement run prerequisite in help and recovery ([pm-test-measure-prerequisite](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-test-measure-prerequisite.toon))
 

@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-11T04:17:35.484Z"
-updated_at: "2026-10-11T06:11:23.141Z"
-closed_at: "2026-10-11T06:11:22.509Z"
-completed_at: "2026-10-11T06:11:22.509Z"
+updated_at: "2026-10-11T07:16:16.056Z"
+closed_at: "2026-10-11T07:16:15.377Z"
+completed_at: "2026-10-11T07:16:15.377Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "Anonymous E404 after an authoritative successful same-tag Publish to npm step refuses first-publication recovery before checkout or gates; all prior matching run attempts are inspected; unrelated tags, workflows or branch identities cannot certify accepted publication; unavailable or malformed provider evidence refuses; genuinely never-published exact-tag recovery remains supported; actual failed daily run is independently replayed."
@@ -16,14 +16,14 @@ parent: pm-u9d0
 risk: low
 confidence: high
 severity: high
-resolution: "Share complete pagination validation across workflow and all-attempt job inventories, requiring matching totals, unique positive provider identities and consistent pages before filtering or accepting first-publication evidence. Preserve immutable exact-tag identity and every prior attempt."
-expected_result: "Partial, duplicate, inconsistent, malformed or accepted provider evidence refuses first publication, including omitted or later-page earlier attempts, without changing runtime or artifact budgets."
-actual_result: "60 linked release tests and focused exact123/123statements,141/141branches,39/39functions,111/111lines pass; original partial job evidence fails its negative control. Real GitHub all-attempt replay refuses accepted11. Types, lint, source-quality and docs checks pass; the preceding f0f head has allfive hosted workflows green and its sole valid review finding is fixed. New-head CI, included review and existing-tag installed distribution receipts remain required."
+resolution: "Document REST fixture adaptation and deliberate total inconsistencies, plus complete candidate identity and explicit rejection overrides, while preserving the delivered publication admission implementation."
+expected_result: "Reviewers can see the independent fixture control purpose, and all release-selection behavior remains unchanged."
+actual_result: "Two fixture helper docstrings are added; Node24 build and all16 unchanged release-selection regressions pass. Primary PR1436 has full exact100percent coverage, all26 required checks and an included0-actionable full review; independent release recovery and final closeout checks are tracked in the same lineage."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
   pm-release-ledger-origin-delivery,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
   pm-wzmbvn,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-11T04:17:35.484Z","harness:codex","Duplicate check: complete all-status2922 census and live accepted-publication search/open/in_progress lists find no existing pending-publication fence. Full pm-wzmbvn history describes completed15-minute propagation budget; full pm-7zs0 is the open release-health observer; pm-release-ledger-origin-delivery is completed source-origin delivery. Reuse pm-u9d0 release lineage and link the actual GH1437 report without reopening those completed implementations."
   "2026-10-11T04:24:15.944Z","harness:codex","The independent original workflow admits accepted-but-missing publication (1failed/24passed). Actual-provider replay against immutable261a2e8f9ca235c42465bf26b8df2cbbc98d2228 now refuses precisely because Release38107714902 already accepted its npm publish step. The guard inspects jobs across all attempts using GitHub filter=all; verified actual job payload carries run_id/run_attempt, so only the currently executing attempt can be excluded while prior accepted attempts remain visible. Extend the same admission immediately before npm publication, retain the reviewed control outside any immutable-source checkout, and unify push/dispatch concurrency on the exact tag. This prevents overlapping exact-tag publishers and tag-push reruns from bypassing the accepted-publication fence. Existing short native fake SHA was corrected to a valid40-character fixture without loosening source validation; its earlier failure remains recorded."
   "2026-10-11T04:25:50.552Z","harness:codex","Complete final linked admission/automation/workflow suite passes58tests; the independent native original publisher actually attempts npm publication against a fake accepted-but-unavailable registry, while the identical corrected workflow refuses before packing or publishing. Independent expression replay proves original push/dispatch groups differ and corrected exact-tag groups match. Authoritative run_id/run_attempt metadata excludes only the current attempt; malformed inventories, missing publication stages, incomplete job identity, unknown status and missing terminal conclusions all refuse. Real immutable11run independently supplied the prior accepted publication verdict; no live publication, retry or tag mutation was sent."
@@ -39,6 +39,7 @@ comments[15]{created_at,author,text}:
   "2026-10-11T05:49:37.938Z","harness:codex","Consolidated repeated recovery prose while retaining anonymous main/tag selection, every-page total/identity validation, prior accepted/unknown refusal, exact-attempt exclusion, retained controls, same-tag concurrency, tracked changelog guard and all tracker links. Real Node24 build, original artifact gate and docs/skills check pass; the unchanged HTTP discovery regression file also passes locally. The Windows observation remains unqualified as to cause and must pass a fresh native head. No timeout, artifact ceiling, package feature, declaration or export was changed."
   "2026-10-11T06:07:00.312Z","harness:codex","Included final-head review f4433257-2f9f-4751-9eb1-e47c31b70e57 identified a valid partial-job-inventory gap: a reported total2 with one skipped canonical job was admitted, potentially omitting an accepted earlier attempt. Reopen only this owner, share complete pagination validation for workflow and job receipts, and add partial/duplicate/inconsistent earlier-attempt controls. Current f0f143ad0deba7b5c14c76c7a90ce6af2896c080 native check watcher ended incomplete with no failed checks, rather than reporting a code failure; a fresh exact-head check completion is still required."
   "2026-10-11T06:11:21.845Z","harness:codex","Complete shared provider inventory now validates workflow and all-attempt job totals, positive unique ids and consistent pagination before filtering publication jobs. The new original-code partial-receipt control fails as expected; corrected partial/duplicate/inconsistent receipts refuse and a later-page accepted attempt remains visible. All60 linked release regressions and focused exact coverage123/123statements,141/141branches,39/39functions,111/111lines pass. Final types, strict ESLint and full static source-quality checks pass; actual three-job GitHub inventory including the original accepted stage refuses first publication. Previous f0f head has allfive workflows successful, including native Windows replay, and no remaining actionable review threads after the one valid finding is acknowledged/resolved. This source refinement requires fresh hosted final-head checks and a new included full review."
+  "2026-10-11T07:16:14.693Z","harness:codex","Advisory fixture documentation cleanup after merged PR1436: document why the REST page adapter retains intentionally inconsistent totals and why candidate overrides start from complete release identity. These two existing helper docstrings improve review discovery without altering tests or runtime behavior. Build and the unchanged16-test release selection suite pass. The source publication fence remains the fully delivered and reviewed implementation; this ordinary main-based followup also carries independent operational receipts rather than writing post-merge evidence directly to main."
 files[5]{path,scope}:
   .github/workflows/release.yml,project
   scripts/release/release-run-selection.mjs,project
@@ -138,7 +139,7 @@ test_runs[8]:
       node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/RELEASING.md,project
-close_reason: Every run and job pagination receipt is now validated before publication admission.
+close_reason: Publication fixture helpers now document their independent provider and identity controls.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
