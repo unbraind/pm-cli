@@ -44,9 +44,10 @@ export function qualifyBenchmarkRunner(controls, budget, noiseMarginMs) {
 }
 
 /** Keep failed admission unsuccessful and retain the complete report instead of discarding diagnostics. */
-export function benchmarkAdmissionError(label, report, violations, qualification) {
-  const productAdmission = qualification.status === "qualified" ? "failed" : "unverified";
-  const code = qualification.status === "qualified" ? "benchmark_product_budget_exceeded" : "benchmark_runner_unqualified";
+export function benchmarkAdmissionError(label, report, violations, qualification, refusal = "product") {
+  const controlCeilingRefused = refusal === "control_ceiling";
+  const productAdmission = !controlCeilingRefused && qualification.status === "qualified" ? "failed" : "unverified";
+  const code = controlCeilingRefused ? "benchmark_control_budget_increase" : qualification.status === "qualified" ? "benchmark_product_budget_exceeded" : "benchmark_runner_unqualified";
   return Object.assign(new Error(`${label} gate failed:\n${violations.join("\n")}\n${JSON.stringify({ code, product_admission: productAdmission, runner_qualification: qualification, report })}`), {
     code,
     product_admission: productAdmission,

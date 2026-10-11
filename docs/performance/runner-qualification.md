@@ -27,6 +27,8 @@ to certify its measurements. Even qualified controls cannot increase the prior
 control ceiling: update mode compares the proposed p95-derived ceiling with the
 existing ceiling and refuses an increase before creating directories or writing
 calibration files. Equal or reduced ceilings remain admissible.
+This refusal returns `benchmark_control_budget_increase` with product admission
+`unverified`; a qualified control does not establish a measured product failure.
 
 Control cost is never subtracted from product measurements. Pressure observations
 are diagnostic context and do not prove the cause of a failure. An unchanged base

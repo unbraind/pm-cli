@@ -10,7 +10,7 @@ export function verifyInstalledAgentRecovery(command, prefix, options) {
     const result = crossSpawn.sync(command, [...prefix, "--no-extensions", ...args, "--json"], {
       ...options, encoding: "utf8", timeout: 120_000,
     });
-    assert.equal(result.status, status, `${args[0]}: ${result.stderr}\n${result.stdout}`);
+    assert.equal(result.status, status, `${args[0]}: ${result.error ?? ""}\n${result.stderr}\n${result.stdout}`);
     const output = status === 0 ? result.stdout : result.stderr;
     // Launchers may prepend notices; the CLI emits one complete JSON document.
     const jsonStart = output.search(/^\s*\{/m);

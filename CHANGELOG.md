@@ -1,17 +1,25 @@
 # Changelog
 
-## 2026.10.11 - 2026-10-11
+## Unreleased
 
 ### Fixed
 
 - Expose the test measurement run prerequisite in help and recovery ([pm-test-measure-prerequisite](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-test-measure-prerequisite.toon))
-- Reconcile complete release ledgers with exact historical dispositions ([pm-q91qyd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon))
-- Keep installed-release init within its unchanged raw budget on macOS ([pm-release-acceptance-path-cost](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-release-acceptance-path-cost.toon))
 
 ### Other
 
 - Deliver unambiguous registry-derived namespace recovery across installed Node and Bun consumers ([pm-namespace-recovery-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-namespace-recovery-delivery.toon))
 - Preserve fail-closed startup benchmark runner qualification and complete diagnostics ([pm-runner-qualification-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-runner-qualification-delivery.toon))
+
+## 2026.10.11 - 2026-10-11
+
+### Fixed
+
+- Reconcile complete release ledgers with exact historical dispositions ([pm-q91qyd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-q91qyd.toon))
+- Keep installed-release init within its unchanged raw budget on macOS ([pm-release-acceptance-path-cost](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-release-acceptance-path-cost.toon))
+
+### Other
+
 - Refresh aged Unicorn 77 alongside ESLint 10.12 without changing strict lint policy ([pm-unicorn-77](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-unicorn-77.toon))
 - Reconcile release ledgers and tag origins with bounded publication and acceptance ([pm-release-ledger-origin-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-release-ledger-origin-delivery.toon))
 - Refresh eligible ESLint 10.12 for release quality gates ([pm-eslint-1012](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eslint-1012.toon))

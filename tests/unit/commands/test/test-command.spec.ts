@@ -430,7 +430,7 @@ describe("runTest", () => {
     });
   });
 
-  it.each(["empty", "skipped", "untrusted", "empty-runner"])(
+  it.each(["empty", "skipped", "untrusted", "empty-runner", "failed-empty-stdout", "failed-empty-stderr"])(
     "refuses measurement evidence without execution: %s",
     async (kind) => {
       await withTempPmPath(async (context) => {
@@ -439,6 +439,8 @@ describe("runTest", () => {
         if (kind !== "empty") {
           const command = kind === "empty-runner"
             ? 'node -e "console.log(\'No test files found\')"'
+            : kind.startsWith("failed-empty-")
+              ? `node -e "console.${kind === "failed-empty-stderr" ? "error" : "log"}('No test files found'); process.exit(1)"`
             : "node --version";
           if (kind === "skipped") {
             await overwriteTaskTests(context, id, [{ path: "tests/legacy-path-only.spec.ts", scope: "project" }]);
@@ -475,6 +477,9 @@ describe("runTest", () => {
       "--pm-path", "/selected/tracker", "--no-extensions", "--author", "same actor", "test", "pm-spawn", "--list", "--json",
     ] } } });
     expect(() => assertTestMeasurementExecution("pm-spawn", { measure: [] }, {}, "/selected/tracker", [])).not.toThrow();
+    expect(() => assertTestMeasurementExecution("pm-failed", { measure: ["coverage=50"] }, {}, "/selected/tracker", [
+      { status: "failed", stdout: "assertion failed", failure_category: "assertion_failure" },
+    ])).not.toThrow();
   });
 
   it.each(["mixed", "failed"])("retains measurements for an executed %s run", async (kind) => {

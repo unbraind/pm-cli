@@ -359,7 +359,7 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     if (proposedBudgets.baseline.max_import_ms > budgets.baseline.max_import_ms) {
       throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [
         `bare node control ceiling: proposed ${proposedBudgets.baseline.max_import_ms}ms > existing ${budgets.baseline.max_import_ms}ms`,
-      ], qualification);
+      ], qualification, "control_ceiling");
     }
     await mkdir(path.dirname(targetBudgetPath), { recursive: true });
     await mkdir(path.dirname(targetDocumentationPath), { recursive: true });

@@ -329,7 +329,7 @@ describe("SDK entrypoint import-cost command", () => {
     const measured = report();
     measured.baseline.p95_ms = 999;
     await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => measured })).rejects.toMatchObject({
-      code: "benchmark_product_budget_exceeded", report: measured, runner_qualification: { status: "qualified" },
+      code: "benchmark_control_budget_increase", product_admission: "unverified", report: measured, runner_qualification: { status: "qualified" },
     });
     expect(await readFile(budgetPath, "utf8")).toBe(originalBudget);
     expect(await readFile(documentationPath, "utf8")).toBe("preserve existing documentation");

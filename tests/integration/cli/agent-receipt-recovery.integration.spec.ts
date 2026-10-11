@@ -124,6 +124,9 @@ describe("agent receipt and recovery contracts", () => {
       expect(verifyInstalledAgentRecovery(process.execPath, [path.resolve("dist/cli.js")], {
         cwd: context.tempRoot, env: context.env,
       })).toEqual({ ok: true, namespace_refusals: 2, measurement_recovery: true, authoritative_bytes_preserved: true });
+      expect(() => verifyInstalledAgentRecovery(path.join(context.tempRoot, "missing-launcher"), [], {
+        env: {},
+      })).toThrow("ENOENT");
     });
     expect(() => verifyInstalledAgentRecovery(process.execPath, ["-e", "process.stdout.write('launcher notice')", "--"], {
       env: {},

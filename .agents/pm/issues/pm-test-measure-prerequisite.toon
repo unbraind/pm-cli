@@ -6,21 +6,21 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"area:contracts","horizon:future"
 created_at: "2026-10-09T20:48:23.014Z"
-updated_at: "2026-10-10T22:52:51.585Z"
-closed_at: "2026-10-10T22:52:50.245Z"
-completed_at: "2026-10-10T22:52:50.245Z"
+updated_at: "2026-10-11T03:34:29.612Z"
+closed_at: "2026-10-11T03:34:28.904Z"
+completed_at: "2026-10-11T03:34:28.904Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Help and machine contracts state the run prerequisite; a measurement-only request refuses before mutation with an executable same-intent recovery; linked-test trust and sandbox isolation remain enforced; behavioral negative controls and generated surface parity pass without token budget relaxation.
 parent: pm-n7rr
 risk: low
 confidence: high
-resolution: "Delivered the pure public SDK run guard, numeric-selector/tracker/actor/background-preserving argv recovery, separate acknowledgement guidance, and post-execution refusal of empty, skipped, untrusted, spawn-error and recognized zero-test runs before measured summaries are recorded."
-expected_result: Measurement evidence corresponds to an executed linked command; refusals preserve authoritative bytes and provide safe scoped recovery; actual passed and failed executions retain valid metrics.
-actual_result: "206 linked measurement/dispatch/serializer tests pass, including pre-fix negative controls and byte-preserving execution refusals. Typecheck, all static gates, generated contracts/catalog/census and additive SDK snapshot pass. Packed npm/npx/Bun/bunx assertions and public SDK type/runtime proof pass. Fresh required exact coverage is enforced before PR merge."
+resolution: "Delivered the pure public SDK run prerequisite with selector/tracker/actor/background-preserving recovery and separate trust acknowledgement. The execution prerequisite excludes empty, skipped, untrusted and spawn failures, and reuses authoritative empty-summary detection across stdout/stderr even on failed exits before stored measurement summaries change."
+expected_result: Empty summaries cannot support measurement evidence regardless of exit status or output stream; genuine executed failures and mixed selections retain valid measurements and refused calls preserve authoritative history.
+actual_result: "Four pre-fix remediation regressions fail, including both failed-empty output streams. All 208 linked measurement/serializer/dispatch tests pass with history and stored-summary preservation. Full static/typecheck/docs and serialized nine-package version2026.10.11 npm/Bun/SDK consumers pass; final-head hosted gates and renewed full review remain mandatory."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-reliability-window-delivery,discovered_from,"2026-10-09T20:48:23.014Z","harness:codex","cli:create:dep",detected
-comments[11]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-10-09T20:48:23.014Z","harness:codex","Duplicate check: full 2912-item all-status corpus plus the new delivery record were checked for --measure prerequisites and conditional help/recovery coverage; no equivalent item exists. Existing pm-n7rr is the grammar umbrella and is reused as parent. This observed UX follow-up remains open and unclaimed; it is not part of the completed SDK reliability implementation."
   "2026-10-10T18:18:21.523Z","harness:codex","Live intake: complete 2918-item all-status corpus, full item/history verification and GitHub security inventories are clean. Delivery groups SDK-owned measurement prerequisite recovery with registry-derived misplaced-namespace recovery and runner qualification diagnostics. Preserve linked-test trust, original selectors and measurement values; recovery must refuse before any write and retry without adding ownership or trust overrides."
   "2026-10-10T18:57:24.052Z","harness:codex","Verification refinements preserve all help token ceilings: shortened CLI prerequisite wording rather than ratcheting any budget. Real installed npx uses the once-installed exact tarball consumer to avoid repeated npm reification; bunx retains a fresh owned temporary cache. The linked command now executes a real node:assert check via node -e, which works through Bunx Node compatibility shims; bare node --version under that launcher refused with Missing script, an external launcher behavior rather than a trusted-run policy failure. Refusal/retry logic and complete authoritative byte checks are shared across direct executables and packed consumers."
@@ -32,6 +32,9 @@ comments[11]{created_at,author,text}:
   "2026-10-10T20:35:01.998Z","harness:codex","Review remediation verified: 366 focused tests pass; all 3 linked runs pass (72 SDK/real-CLI tests, 37 serializer tests, 90 dispatch tests). Serialized packed npm/npx and Bun/bunx acceptance passes for 9 packages, with installed SDK declaration compilation and a real public-guard typed refusal. Static source, SDK import boundary, contracts, token/grammar, tracker/graph/record assurance, unchanged qualified SDK/CLI performance budgets and mutation gates pass after regenerating the guard source attribution. Published PR head 2e59d2 already passed exact 100/100/100/100 CI coverage; the next head must pass fresh coverage before merge. No trust or ownership override was added."
   "2026-10-10T22:18:31.102Z","harness:codex","PR #1436 final-head review https://github.com/unbraind/pm-cli/pull/1436#pullrequestreview-5480989632: runTest accepts --run --measure with empty or skipped results and buildTrackedTestRunSummary stores the supplied measurements. Require actual execution evidence before recording measurements, retaining read-only refusal recovery and trust policy."
   "2026-10-10T22:50:34.917Z","harness:codex","Final-control review remediation: e54eb10 pre-fix negative controls reproduced fabricated measurements with no links, a legacy path-only skipped selection, an untrusted command and a recognized zero-test runner. The corrected skipped fixture uses imported metadata as existing skip tests do; its independent detached pre-fix execution resolved ok=true with a skipped result and a stored coverage=100 measurement. The SDK now refuses these runs with test_measure_requires_execution before recording summaries, preserves history bytes, and provides selected-tracker read-only inspection argv. Mixed real/skipped and executed failed commands retain measurements and correct result status. All linked tests pass, including 206 measurement/dispatch/serializer assertions; typecheck and the complete static pipeline pass after regenerated contracts, catalog, refusal census and additive SDK error-code snapshot. Required exact coverage remains a fresh CI obligation for the next published head."
+  "2026-10-11T03:16:00.410Z","harness:codex","PR #1436 full review at 0fafb51020df68a2b423bf0541ac6e33a5150504, https://github.com/unbraind/pm-cli/pull/1436#discussion_r4240078408: a No test files found command exiting 1 is classified assertion_failure and bypasses the measurement empty-run exclusion. Reopen this owner, reproduce with real stdout and stderr failure commands, reuse the existing authoritative empty-output detector, and preserve executed-failure/mixed evidence."
+  "2026-10-11T03:20:31.497Z","harness:codex","Four independent pre-fix regressions fail: failed-empty stdout, failed-empty stderr, control-ceiling classification and omitted launcher ENOENT. Measurement now reuses detectEmptyLinkedTestRun in the execution prerequisite, so empty summaries are authoritative across both output streams and failed exits; a genuine executed stdout-only failure still supports measurement evidence. Focused corrected commands pass 117 assertions with one Windows-only skip; existing history and stored-summary preservation assertions remain enabled."
+  "2026-10-11T03:34:28.294Z","harness:codex","Final failed-empty remediation receipts: the independent previous implementation resolves failed empty stdout and stderr runs with stored measurements; corrected requests refuse test_measure_requires_execution and preserve history/summary bytes. All three linked runs pass 208 tests, including genuinely executed failures and mixed selections. Full static/typecheck, docs links and serialized nine-package 2026.10.11 npm/npx/Bun/bunx/SDK consumers pass without altered budgets or trust. The existing empty-summary detector remains shared rather than copied; fresh final-head hosted checks and full review are required."
 learnings[1]{created_at,author,text}:
   "2026-10-10T20:23:36.196Z","harness:codex","Executable recovery must preserve the SDK value domain, including numeric test indexes. Validate shared execution prerequisites before alternate CLI dispatch paths, export reusable guards through the SDK, and keep acknowledgement distinct from execution so a recovery suggestion cannot confer trust."
 files[20]{path,scope}:
@@ -82,7 +85,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: feat/executable-agent-recovery
     note: Background measurement refusal uses the shared SDK guard before dispatch
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-mv2rtxy9-t4rd2l
     kind: test
     status: passed
@@ -132,12 +135,25 @@ test_runs[4]:
       node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv39nedr-br5gnc
+    kind: test
+    status: passed
+    started_at: "2026-10-11T03:30:23.144Z"
+    finished_at: "2026-10-11T03:31:09.326Z"
+    recorded_at: "2026-10-11T03:31:09.326Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/register-commands.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope}:
   CHANGELOG.md,project
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   docs/SDK.md,project
   docs/TESTING.md,project
-close_reason: "Linked measurements now require both run intent and real command execution, with typed executable recovery and immutable evidence."
+close_reason: "Measured linked tests require run intent and actual execution, including refusal of empty summaries on failed exits."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

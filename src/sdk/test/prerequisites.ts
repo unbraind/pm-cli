@@ -9,6 +9,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { renderPmCommand } from "../command-line.js";
 import { buildBackgroundTestCommandArgs } from "./command-args.js";
 import type { TestCommandOptions, TestRunResult } from "./execution.js";
+import { detectEmptyLinkedTestRun } from "./execution-receipts.js";
 
 /** Admit measurements only after real command execution, excluding preflight, spawn and recognised empty-run failures. */
 export function assertTestMeasurementExecution(
@@ -24,7 +25,8 @@ export function assertTestMeasurementExecution(
       (result) =>
         typeof result.stdout === "string" &&
         result.failure_category !== "spawn_error" &&
-        result.failure_category !== "empty_run",
+        result.failure_category !== "empty_run" &&
+        detectEmptyLinkedTestRun(result.stdout, result.stderr ?? "") === null,
     )
   )
     return;
