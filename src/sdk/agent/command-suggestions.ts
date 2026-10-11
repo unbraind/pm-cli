@@ -14,7 +14,7 @@ export function resolveMisnestedCommandPath(
   availablePaths: readonly string[],
 ): string | undefined {
   const tokens = unknownPath.trim().split(/\s+/u);
-  if (tokens.length < 2 || !availablePaths.includes(tokens[0]) || availablePaths.includes(tokens.join(" "))) return undefined;
+  if (tokens.length < 2 || availablePaths.includes(tokens.join(" "))) return undefined;
   for (let namespaceLength = 1; namespaceLength < tokens.length; namespaceLength += 1) {
     if (!availablePaths.includes(tokens.slice(0, namespaceLength).join(" "))) return undefined;
     const suffix = tokens.slice(namespaceLength).join(" ");
