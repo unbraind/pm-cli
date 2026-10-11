@@ -521,8 +521,7 @@ describe("command grammar gate", () => {
     expect(result.exitCode).toBe(1);
   });
 
-  it("does not duplicate a declared signature for an inactive package command", async () => {
-    const inactiveCommand = "search-advanced";
+  it.each(["search-advanced", "cal", "calendar"])("retains one declaration for inactive package command %s", async (inactiveCommand) => {
     const result = await runGrammarGate(
       liveCommandSummaries.filter(({ command }) => command !== inactiveCommand),
       {
@@ -540,5 +539,21 @@ describe("command grammar gate", () => {
       },
     });
     expect(result.exitCode ?? 0).toBe(0);
+  });
+
+  it.each([
+    ["cal", false], ["cal", true], ["calendar", false], ["calendar", true],
+  ] as const)("independently validates active %s required=%s package arguments", async (command, required) => {
+    const summaries = liveCommandSummaries.map((row) => row.command === command
+      ? { command, positionals: [{ name: "view", required: false, variadic: false, value_kind: "string", polymorphic: true }] }
+      : row);
+    const result = await runGrammarGate(summaries, {
+      argumentOverrides: { [command]: [{ name: "view", required, variadic: false }] },
+    });
+    expect(result.report.ok).toBe(!required);
+    expect(result.report.positionals.findings).toEqual(required
+      ? [expect.objectContaining({ code: "positional_signature_mismatch", command })]
+      : []);
+    expect(result.exitCode ?? 0).toBe(required ? 1 : 0);
   });
 });

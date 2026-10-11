@@ -2,6 +2,9 @@
 
 The supported programmatic surface is `@unbrained/pm-cli/sdk`.
 
+API reference consolidation is tracked by
+[pm-4g4qv0](../.agents/pm/tasks/pm-4g4qv0.toon).
+
 Current SDK initialization and migration additions are tracked by
 [pm-1w3ljt](../.agents/pm/issues/pm-1w3ljt.toon) and
 [pm-s79kel](../.agents/pm/issues/pm-s79kel.toon). Tiered entrypoints and the
@@ -175,200 +178,37 @@ ungoverned.
 
 ## Public Exports
 
-Source of truth:
+The published [SDK surface snapshot](../sdk/public-surface.json) records every
+export, subpath, signature and support classification. Import its installed copy
+from `@unbrained/pm-cli/sdk/public-surface.json` when building discovery or
+compatibility tooling. It is generated from the package export map and checked
+against declarations; consumers do not need a second manually maintained list
+of symbols. Start with `PmClient` for typed actions, then choose a narrow
+entrypoint from [Import Surfaces](#import-surfaces) for direct primitives.
 
-- [`src/sdk/index.ts`](../src/sdk/index.ts)
-- [`src/sdk/authoring.ts`](../src/sdk/authoring.ts)
-- [`src/sdk/contracts.ts`](../src/sdk/contracts.ts)
-- [`src/sdk/core.ts`](../src/sdk/core.ts)
-- [`src/sdk/governance.ts`](../src/sdk/governance.ts)
-- [`src/sdk/graph.ts`](../src/sdk/graph.ts)
-- [`src/sdk/merge.ts`](../src/sdk/merge.ts)
-- [`src/sdk/query.ts`](../src/sdk/query.ts)
-- [`src/sdk/runtime.ts`](../src/sdk/runtime.ts)
-- [`src/sdk/annotations.ts`](../src/sdk/annotations.ts)
-- [`src/sdk/linked-artifacts.ts`](../src/sdk/linked-artifacts.ts)
-- [`src/sdk/files.ts`](../src/sdk/files.ts)
-- [`src/sdk/docs.ts`](../src/sdk/docs.ts)
-- [`src/sdk/dependencies.ts`](../src/sdk/dependencies.ts)
-- [`src/sdk/actionability.ts`](../src/sdk/actionability.ts)
-- [`src/sdk/schema.ts`](../src/sdk/schema.ts)
-- [`src/sdk/schema-migration.ts`](../src/sdk/schema-migration.ts)
-- [`src/sdk/relationships.ts`](../src/sdk/relationships.ts)
-- [`src/sdk/graph/index.ts`](../src/sdk/graph/index.ts)
-- [`src/sdk/graph/assembly.ts`](../src/sdk/graph/assembly.ts)
-- [`src/sdk/graph/traversal.ts`](../src/sdk/graph/traversal.ts)
-- [`src/sdk/graph/analytics.ts`](../src/sdk/graph/analytics.ts)
-- [`src/sdk/graph/governance.ts`](../src/sdk/graph/governance.ts)
-- [`src/sdk/graph/remediation.ts`](../src/sdk/graph/remediation.ts)
-- [`src/sdk/graph/cache.ts`](../src/sdk/graph/cache.ts)
-- [`src/sdk/graph/durable-cache.ts`](../src/sdk/graph/durable-cache.ts)
-- [`src/sdk/graph/adapter.ts`](../src/sdk/graph/adapter.ts)
-- [`src/sdk/graph/conformance.ts`](../src/sdk/graph/conformance.ts)
-- [`src/sdk/graph/mutation-advisory.ts`](../src/sdk/graph/mutation-advisory.ts)
-- [`src/sdk/graph/run.ts`](../src/sdk/graph/run.ts)
-- [`src/sdk/relationship-history.ts`](../src/sdk/relationship-history.ts)
-- [`src/sdk/relationship-context.ts`](../src/sdk/relationship-context.ts)
-- [`src/sdk/context-signal-store.ts`](../src/sdk/context-signal-store.ts)
-- [`src/sdk/workspace-memory.ts`](../src/sdk/workspace-memory.ts)
-- [`src/sdk/item-metadata-index.ts`](../src/sdk/item-metadata-index.ts)
-- [`src/sdk/governance/validate.ts`](../src/sdk/governance/validate.ts)
-- [`src/sdk/governance/health.ts`](../src/sdk/governance/health.ts)
-- [`src/sdk/governance/gc.ts`](../src/sdk/governance/gc.ts)
-- [`src/sdk/merge/index.ts`](../src/sdk/merge/index.ts)
-- [`src/sdk/workspace-transaction-gc.ts`](../src/sdk/workspace-transaction-gc.ts)
-- [`src/sdk/query/list.ts`](../src/sdk/query/list.ts)
-- [`src/sdk/query/complete-list.ts`](../src/sdk/query/complete-list.ts)
-- [`src/sdk/query/search.ts`](../src/sdk/query/search.ts)
-- [`src/sdk/query/search-pagination.ts`](../src/sdk/query/search-pagination.ts)
-- [`src/sdk/query/search-rendering.ts`](../src/sdk/query/search-rendering.ts)
-- [`src/sdk/query/item-filter-options.ts`](../src/sdk/query/item-filter-options.ts)
-- [`src/sdk/query/parsers.ts`](../src/sdk/query/parsers.ts)
-- [`src/sdk/test/execution.ts`](../src/sdk/test/execution.ts)
-- [`src/sdk/test/batch.ts`](../src/sdk/test/batch.ts)
-- [`src/sdk/test/runs.ts`](../src/sdk/test/runs.ts)
-- [`src/sdk/test/parsers.ts`](../src/sdk/test/parsers.ts)
-- [`src/sdk/eval.ts`](../src/sdk/eval.ts)
-- [`src/sdk/telemetry.ts`](../src/sdk/telemetry.ts)
-- [`src/sdk/stats.ts`](../src/sdk/stats.ts)
-- [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
-- [`src/sdk/cli-bootstrap.ts`](../src/sdk/cli-bootstrap.ts)
-- [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
-- [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
-- [`src/sdk/structured-mutations.ts`](../src/sdk/structured-mutations.ts)
+Use these focused guides to choose the primitive and understand its policy:
 
-Common authoring exports:
+| Capability | Reference |
+| --- | --- |
+| Item lifecycle, schema, profiles and initialization | [Customization primitives](SDK_CUSTOMIZATION_PRIMITIVES.md), [Lifecycle](SDK_LIFECYCLE.md) |
+| History, whole-item input, transactions and previews | [Audited mutations](SDK_AUDITED_MUTATIONS.md), [Atomic transactions](#atomic-workspace-transactions), [Schema evolution](#schema-evolution-and-workspace-history) |
+| Context ranking, packing, memory and evaluation | [Context relevance](#context-relevance-and-evaluation), [Context coordination](SDK_CONTEXT_COORDINATION.md) |
+| Annotations, linked files/docs and dependencies | [Linked resources](#linked-resources-and-dependency-governance), [Evidence contracts](SDK_CONTEXT_EVIDENCE_CONTRACTS.md) |
+| Relationships, graph queries, adapters and federation | [Relationship graph](RELATIONSHIP_GRAPH.md) |
+| Merge drivers and immutable history convergence | [Merge safety](MERGE_SAFETY.md) |
+| Execution, diagnostics and linked tests | [Execution](#execution-and-diagnostics), [Linked-test edits](LINKED_TEST_EDITS.md) |
+| Plans and materialization | [Plan workflows](#plan-workflows) |
+| Extension builders and declarative packages | [Authoring builders](#authoring-builders), [Declarative authoring](#declarative-authoring) |
+| Package installation, activation and upgrade | [Extensions](EXTENSIONS.md), [Runtime boundaries](SDK_RUNTIME_BOUNDARIES.md) |
+| Flags, output budgets and deterministic refusals | [Flag contracts](#flag-contracts), [Output budgets](#agent-output-budgets-and-discovery), [Expected errors](#expected-cli-errors) |
+| Package and extension assertions | [Testing helpers](#testing-helpers) |
 
-- `defineExtension`
-- `composeExtension` / `deriveExtensionCapabilities`
-- `mergeExtensionBlueprints` (combine partial blueprints into one for modular authoring)
-- `composeExtensionPackage` (author-once capstone: returns both the module and its synthesized manifest)
-- `synthesizeExtensionManifest` (generate a complete least-privilege manifest from a blueprint)
-- `describeExtensionBlueprint` (static surface map of a blueprint) / `lintExtensionBlueprint` (author-time preflight)
-- Blueprint lint treats host-owned global long flags and malformed long syntax as
-  blocking errors. Exhaustive `ExtensionBlueprintLintCode` consumers must
-  handle `host_owned_flag_collision` and `malformed_long_flag`; both include
-  the same remediation used by runtime activation.
-- `renderExtensionSurfaceMarkdown` (render a describe summary to a drift-free Markdown reference doc for a package README)
-- `checkExtensionManifestCompatibility` (author-time `pm_min_version`/`pm_max_version` check against a target pm version)
-- `inspectExtensionManifestSchema` / `lintExtensionManifestSchema` (pure raw-manifest schema inspection and actionable finding boundary)
-- `preflightExtension` (one-call capstone: lint + manifest synthesis + version-compat in a single consolidated report)
-- `RESERVED_ITEM_FIELD_NAMES` (the shared runtime/authoring denylist); `lintExtensionBlueprint`, preflight, and the test harness reject blueprint item fields that shadow these metadata keys before publication
-- `EXTENSION_CAPABILITIES`
-- `EXTENSION_CAPABILITY_CONTRACT`
-- `EXTENSION_CAPABILITY_CONTRACT_VERSION`
-- `EXTENSION_CAPABILITY_LEGACY_ALIASES`
-- `EXTENSION_POLICY_MODES`
-- `EXTENSION_POLICY_SURFACES`
-- `EXTENSION_TRUST_MODES`
-- `EXTENSION_SANDBOX_PROFILES`
-- `PM_CLI_EXPECTED_ERROR_NAME`
-- `createPmCliExpectedError`
-- `isPmCliExpectedError`
-- `suppressHostOutput` / `isHostOutputSuppressed` / `SUPPRESS_HOST_OUTPUT_MARKER`
-  for extension commands that already wrote streaming, binary, or otherwise
-  pre-rendered output and must prevent a second host render
-
-Registration builders (`define*`, zero-cost identity — see [Authoring Builders](#authoring-builders)):
-
-- `defineCommand` / `defineFlag` / `defineItemType` / `defineItemField` / `defineMigration`
-- `defineProjectProfile` (archetype bundle of types/statuses/fields/workflows/config/templates/packages — powers `pm profile`)
-- `defineSearchProvider` / `defineVectorStoreAdapter`
-- `defineCommandOverride` / `defineParserOverride` / `definePreflightOverride` / `defineServiceOverride` / `defineRendererOverride`
-- `defineImporter` / `defineExporter`
-- `defineBeforeCommandHook` / `defineAfterCommandHook` / `defineOnWriteHook` / `defineOnReadHook` / `defineOnIndexHook`
-
-Project profiles:
-
-- `defineProjectProfile` / `BUILTIN_PROFILES` / `PROFILE_NAMES` / `resolveProfile` / `listProfiles` / `normalizeProfileName`
-- `describeProjectProfile` (pure composition summary — per-dimension counts plus resolved entry identifiers; the project-profile analogue of `describeExtensionBlueprint`) and `describeProfileComposition`
-- `lintProjectProfile` (pure, tracker-independent author-time consistency check that grades findings `error`/`warning` across every dimension — invalid/duplicate types, statuses, fields; workflows governing undeclared types or referencing undeclared statuses; unknown/invalid config knobs; templates creating undeclared types; empty package specs) and its `ProjectProfileLintReport` / `ProjectProfileLintFinding` types
-- `assertProjectProfile` (the throwing test counterpart: fails on any `error` finding, or on warnings too with `{ strict: true }` — the profile analogue of `assertExtensionBlueprint`)
-- `planProfileApplication` (pure, idempotent diff of a profile against the current tracker state) and its `ProfileApplicationPlan` / `ProfileCurrentState` types
-- The bundled [pm-kanban exemplar](../packages/pm-kanban/README.md) ships a complete archetype as an installable package: it registers the live schema (`Card` type + flow fields) and exports a `ProjectProfileDefinition` the planner can stage, all on public SDK primitives.
-
-Author-time lifecycle: `defineProjectProfile` → `lintProjectProfile` / `assertProjectProfile` (validate before registering) → `api.registerProfile` → `describeProjectProfile` / `planProfileApplication` (preview) → `pm profile apply`. Validate a profile in a package test before it ships:
-
-```ts
-import { assertProjectProfile } from "@unbrained/pm-cli/sdk/testing";
-
-assertProjectProfile(kanbanProfile); // throws on any error finding
-```
-
-Package manifest exports:
-
-- `PM_PACKAGE_RESOURCE_KINDS` (`extensions`, `docs`, `examples`, `assets`, `prompts`)
-- `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`
-- `readPmPackageManifest`
-- `collectPackageExtensionDirectories`
-
-Storage format-version exports (under `@unbrained/pm-cli/sdk/runtime`):
-
-- `CURRENT_ITEM_FORMAT_VERSION` / `BASELINE_ITEM_FORMAT_VERSION`
-- `effectiveItemFormatVersion` (resolve an item's stored version; absent means the baseline)
-- `normalizeItemFormatVersion` (persisted form; the baseline is dropped so it is never serialized)
-- `classifyItemFormatVersion` (`current` / `outdated` / `ahead`)
-- `scanItemFormatVersions` (partition items into outdated/ahead reference lists)
-
-Command/action contract exports:
-
-- `PmClient` / `runAction` (high-level in-process action execution for custom tools, bots, CI, and embedded runtimes)
-- Typed read primitives on `PmClient`: `get` (including `GetOptions.at` point-in-time reads), `list`, `listAllComplete`, `search`, `context`, `next`, `aggregate`, `stats`, and `duplicates`; direct `getItemAt` reconstructs a canonical historical document without mutation. `listAllComplete` forces an all-status, full, strict, unbounded read and fails closed unless the returned envelope proves source completeness, unique ids, exact counts, no pagination, no field or budget omission, and no session projection. `duplicates` performs one bounded all-status metadata sweep and returns deterministic canonical-candidate and close-command guidance without mutating items.
-- Read primitive option/result contracts: `GetOptions` / `GetResult`, `ListOptions` / `ListResult`, `SearchOptions` / `SearchResult`, `ContextOptions` / `ContextResult`, `NextOptions` / `NextResult`, `AggregateOptions` / `AggregateResult`, `StatsCommandOptions` / `StatsResult`. Standard and brief `get` projections omit note bodies but expose `item.notes_count`; deep/full reads return the notes themselves, and narrow consumers can request `notes_count` explicitly.
-- Stream projection primitive: `serializeNdjsonRows` frames SDK-owned object rows as newline-delimited JSON without a trailing newline and rejects scalar/array rows, so package transports can match list/search/context CLI semantics without importing presentation code.
-- Context relevance primitives: `buildItemContextRelevanceCandidates`, `buildContextSignalSnapshot`, `ContextSignalStore`, `JsonFileContextSignalStoreAdapter`, `parseContextSignalSnapshot`, `defaultScoreContextCandidates`, `scoreContextCandidates`, `scoreContextCandidatesWithActiveExtensions`, `evaluateContextRanking`, `runContextEvaluationScenario`, `runContextEvaluationCorpus`, and `summarizeContextEvaluationReports`
-- Context relevance contracts: `ContextRelevanceCandidate`, `ContextRelevanceSignals`, `ContextSignalSnapshot`, `ContextSignalStoreAdapter`, `ContextSignalStoreReadResult`, `ContextRelevanceScorer`, `ContextRelevanceReport`, `ContextEvaluationReader`, `ContextEvaluationScenario`, `ContextEvaluationScenarioReport`, `ContextEvaluationThresholds`, and `ContextEvaluationCorpusReport`
-- Context packing and feedback primitives: `packContextCandidates`, `recordContextUsageServing`, `recordContextUsageTouch`, `recordContextUsageTouches`, and `readContextUsageAffinity`
-- Large-workspace memory primitives: `buildWorkspaceMemorySnapshot`, `readWorkspaceMemory`, `selectWorkspaceMemoryRollups`, and `searchWorkspaceMemory` build cursor-bound, rebuildable calendar-epoch and epic-lineage summaries. The stock `context` and `search` results attach matching bounded rollups automatically at 10,000 items; smaller projects skip the artifact entirely.
-- Persistent metadata-query primitives: `queryItemMetadataIndex` with `ItemMetadataIndexQuery` / `ItemMetadataIndexQueryResult` executes bounded status/type/id/parent/assignee/sprint/release/priority windows without materializing the JSON metadata corpus. It returns `null` on absent, stale, or corrupt derived state so custom hosts can fall back to authoritative reads.
-- Schema-evolution primitives: `planSchemaEvolutionMigration` and `runSchemaEvolutionMigration`, plus `PmClient.schemaRenameType`, `schemaRenameField`, and `schemaRemapStatus`, provide deterministic dry-run plans, collision refusal, index-backed candidate selection, per-item immutable history, and crash-resumable workspace transactions.
-- Workspace audit primitives: `appendWorkspaceHistoryChange`, `writeWorkspaceJsonWithHistory`, `inspectWorkspaceHistoryState`, `reconcileWorkspaceJsonHistory`, `restoreWorkspaceJsonFromHistory`, `getWorkspaceHistoryPath`, and `WORKSPACE_HISTORY_ID` let package-owned singleton JSON mutations share the CLI's verified `HistoryEntry` stream, prove replay-to-disk agreement, and recover forward without inventing an unaudited side log or rewriting history.
-- Typed annotation and relationship primitives on `PmClient`: `comments`, `notes`, `learnings`, `files`, `filesDiscover`, `docs`, `deps`, `graph`, and `append`
-- Workspace graph-query runner: `runGraph` (with `GraphCommandOptions`, `GraphResult`, and per-subcommand envelopes) resolves the workspace relationship graph through the shared fingerprint-keyed cache and dispatches bounded `ancestors`/`descendants`/`predecessors`/`successors`/`paths`/`impact`/`analyze`/`audit`/`communities`/`redundancy`/`dominators`/`slack`/`centrality`/`articulation`/`plan` queries with counts-first cost, truncation, and cache metadata; the `pm graph` CLI command and `pm_graph` MCP tool are thin adapters over it.
-- Structural graph analytics: `detectRelationshipCommunities` (deterministic label-propagation clustering with `maxIterations`/`minSize` bounds and convergence reporting), `findRedundantRelationshipEdges` (transitive-reduction scan that joins each directed ordering or hierarchy kind with its inverse spelling and returns witness paths), and `computeRelationshipDominators` (Cooper–Harvey–Kennedy immediate dominators with per-node gating weights for bottleneck ranking) — all deterministic, cancellable, and cost-metered like every other graph query.
-- Planning and fragility analytics: `analyzeRelationshipSchedule` (Critical Path Method over the order-bearing DAG — earliest/latest start, total float, critical-task classification, and makespan with unit durations, reusing the exact execution forward pass), `computeRelationshipCentrality` (exact Brandes betweenness, Wasserman–Faust closeness, undirected degree, and precedence-oriented dependency fan-in/fan-out per node), and `findRelationshipCutStructure` (iterative Tarjan articulation points and bridges — the single points of failure in the knowledge graph). `forEachMatchedRelationshipEdge` is the shared kind-matched, self-loop-skipping edge iterator these builders reuse. All are deterministic and exact on the bounded workspace.
-- Incremental graph cache: `WorkspaceGraphCache`, `workspaceGraphCache`, `resetWorkspaceGraphCache`, and `computeWorkspaceGraphFingerprint` reuse the assembled workspace graph and memoize deterministic query results under a fingerprint that digests every relationship-relevant item field (id, title, status and terminal classification, item type, parent, legacy blocker, structured dependencies), so long-lived hosts stop paying full-workspace assembly per bounded query; `GraphCacheMetadata` reports assembly/result hit-or-miss on every `runGraph` envelope.
-- Durable graph index: `openDurableGraphCache`, `persistDurableGraphResult`, `clearDurableGraphCache`, `durableGraphCacheStatus`, `shouldPersistDurableGraphCache`, and the `durableGraphCachePath`/`graphAuditBaselinePath` locators persist fingerprint-keyed deterministic query results across processes under `runtime/graph-cache.json` — atomic writes, corrupt-tolerant decode, bounded retention, never authoritative (rebuildable from item storage), optional below the `GRAPH_DURABLE_CACHE_MIN_ITEMS` threshold; `pm graph index` is the maintenance surface and `cache.durable` the per-envelope observability.
-- Temporal audit census: `RelationshipAuditSnapshot`, `diffRelationshipAuditSnapshots`, `saveGraphAuditBaseline`, and `loadGraphAuditBaseline` persist and compare point-in-time governance censuses (signed per-code and per-profile deltas, `same_snapshot` fingerprint equality) behind `pm graph audit --save-baseline` and the automatic `baseline` drift block on later audits.
-- Storage-integrity and coverage governance: `collectDuplicateDependencyRows` reports raw same-identity dependency rows duplicated on one holder; `collectOrderingStorageContradictions` reports exact scalar blocker plus opposite-precedence structured rows before graph normalization; `RelationshipCoverageProfile` separates diagnostic `nodes`/`edges` from invariant-bearing `recorded_nodes`/`informative_edges` and independent redundancy/contradiction debt counts; `coverage_by_type` breaks active connectivity down per item type, and `RelationshipAuditOptions.isolateExemptTypes` suppresses coverage findings for policy-valid disconnected types.
-- Incremental mutation advisory: `collectNewOrderingCycleWarnings` detects newly created ordering cycles component-scoped around the changed item over a lightweight per-snapshot ordering digraph and emits exact newly stored scalar-versus-structured contradiction evidence before the derived cycle warning (shared registry and `collectOrderingCycles` Tarjan semantics with the audit; no full workspace assembly per mutation).
-- Remediation planning: `planRelationshipRemediation` (with `RelationshipRemediationPlan`, `RelationshipRemediationStep`, and operation/confidence/code contracts) derives exact dry-run `remove`/`retype`/`supersede`/`waive`/`investigate` proposals from governance-audit findings and witnessed redundancy rows — evidence-backed, confidence-rated, and never auto-applied.
-- Annotation and relationship option/result contracts: `CommentsCommandOptions` / `CommentsResult`, `NotesCommandOptions` / `NotesResult`, `LearningsCommandOptions` / `LearningsResult`, `FilesCommandOptions` / `FilesResult`, `FilesDiscoverOptions` / `FilesDiscoverResult`, `DocsCommandOptions` / `DocsResult`, `DepsCommandOptions` / `DepsResult`, `AppendCommandOptions` / `AppendResult`
-- Annotation kernel primitives: `resolveAnnotationInput`, `runAnnotationCommand`, `resolveAnnotationIndex`, `parseAnnotationTextInput`, `limitAnnotationEntries`, `readAnnotationEntries`, `wrapOwnershipConflict`, `isErrnoError`, and their typed input/config/result contracts
-- Linked-resource kernel primitives: `runFiles`, `runFilesDiscover`, `runDocs`, `runDeps`, `runLinkedArtifacts`, `assertLinkedArtifactMutationIsUnambiguous`, parsing/normalization/path-validation helpers, and their typed contracts. The CLI files/docs/deps modules are presentation-only re-exports of these SDK implementations. A transaction that resolves one path into both its add and remove sets fails before item or history mutation; split an intentional replacement into two commands so its context remains explicit.
-- Actionability primitives: `collectBlockedByIds`, `resolveItemBlockers`, `collectDependencyBlockedIds`, and `computeActionabilityReport` expose the same edge-aware blocked/ready definition used by `pm next`, `pm context`, and `pm list --status blocked`. Embedded schedulers can therefore classify custom lifecycle schemas without importing CLI or core modules.
-- Dependency-governance primitives: `collectDanglingDependencyReferences`, `collectMissingDependencyTargetIds`, and `assembleWorkspaceRelationshipGraph` normalize hierarchy, scalar blockers, and structured dependencies into one graph while partitioning missing targets into actionable active holders, informational terminal-history holders, and the legacy `no-active-blocker` sentinel without mutating stored history.
-- Relationship graph primitives: `RelationshipKindRegistry`, `createRelationshipKindRegistry`, `assertRelationshipEdgeAllowed`, `RelationshipGraph`, `RelationshipEventLog`, `RelationshipEventStore`, `planRelationshipEventBackfill`, `buildRelationshipContext`, `buildDepsRelationshipContext`, `hierarchyAncestors`, `hierarchyDescendants`, `orderingPredecessors`, `orderingSuccessors`, `enumerateRelationshipPaths`, `auditWorkspaceRelationshipGraph`, `isOrderingRelationshipKind`, and `dependencyToRelationship` provide application-defined edge semantics, durable replay, deterministic legacy migration, bounded semantic traversal, policy-aware governance, and explainable context queries. Mutation adapters should call `assertRelationshipEdgeAllowed` with the active registry before persistence; it resolves aliases and honors custom `allowSelf` definitions while built-in self edges fail before item or history writes. `RelationshipEventLog.stream/project` and their durable-store equivalents page immutable prefixes and fold them into deterministic application state with exact version, processed-count, and as-of metadata. `RelationshipEventStore.appendBatch` validates a complete import under one cross-process lock and atomically publishes it; `skip_identical` resume mode rejects same-id semantic collisions. `RelationshipGraphAdapter`, `createRelationshipGraphSnapshot`, `syncRelationshipGraphAdapter`, `loadRelationshipGraphAdapter`, and `federateRelationshipGraphSnapshots` form the backend-neutral content-addressed projection boundary for database or remote graph packages. `MemoryRelationshipGraphAdapter`, `assertRelationshipGraphAdapterConformance`, and `createRelationshipGraphScaleFixture` give package authors a reference implementation, reusable compatibility contract, and lazy deterministic fixtures through one million nodes. See [Relationship graph semantics](RELATIONSHIP_GRAPH.md).
-- Built-in `recurs_from` records that the source is a later occurrence of the target. Its registry contract is directed, `source_after_target`, non-ordering, many-to-many, and persistent across terminal lifecycle states. Local mutation paths enforce strictly later source `created_at` metadata before item or history persistence and return structured source/target evidence when chronology is equal, reversed, or unverifiable. It therefore connects an incident family for traversal and analytics without reclassifying `supersedes` replacements or `duplicate_of` identity collapse.
-- Atomic application transactions: `commitWorkspaceTransaction` coordinates ordered, idempotent item and relationship mutations under one workspace writer lock and a durable replay journal. Interrupted work resumes from step inspection; ordinary failures append reverse-order compensations without rewriting immutable histories.
-- Multi-branch merge primitives: `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, and `runMergeReconcile` provide the same field-aware item, hash-chain-preserving history, sequence-renumbering relationship-event, key-level configuration, and audited post-merge repair-and-verify semantics as `pm merge`; `installMergeFence` and `findGitWorkspaceRoot` let custom init hosts install the same contract with explicit roots, while `buildMergeAttributePatterns`, `refreshMergeAttributeFenceIfInstalled`, and `auditMergeAttributeFence` expose fence coverage, refresh, and validation. See [Multi-Branch Merge Safety](MERGE_SAFETY.md).
-- Dependency provenance primitives: `EXTERNAL_DEPENDENCY_SOURCE_KIND`, `EXTERNAL_DEPENDENCY_SOURCE_KIND_ALIAS`, `isExternalDependencySourceKind`, and `normalizeDependencySeedId` let custom importers preserve cross-workspace dependency ids explicitly while retaining local prefix normalization for ordinary seeds. `source_kind: "external"` is the human-facing alias and persists canonically as `global`; a `blocked_by` row with that provenance is a real external predecessor, so graph governance does not require a fabricated local item or misreport `stale_lifecycle_block`. Newly created dependency rows also carry the effective `author`, `author_source` (`asserted` or `detected`), and a mutation `source_kind`; legacy rows remain readable without invented provenance. Tracked by [pm-6sc8jq](../.agents/pm/issues/pm-6sc8jq.toon).
-- Terminal-create primitive: `CreateCommandOptions.closeReason` and `completedAt` allow importers to create an already-terminal item in the same atomic item/history transaction while preserving the source completion time separately from the local `closed_at` mutation time. The equivalent CLI flags are `--close-reason` and `--completed-at`; direct JSON documents map `close_reason` and `completed_at` to the same SDK operation. A missing governed reason returns `close_reason_required` with same-command `pm create` recovery examples. Tracked by [pm-ykdt4m](../.agents/pm/issues/pm-ykdt4m.toon) and [pm-5uclvd](../.agents/pm/issues/pm-5uclvd.toon).
-- Compile-cache lifecycle primitive: `pruneCompileCacheGenerations` bounds pm-owned Node bytecode caches to the current package generation; embedded hosts can apply the same upgrade cleanup without importing the executable entrypoint.
-- Typed mutation inputs (pm-x29o / GH-601): `PmCreateActionOptions`, `PmUpdateActionOptions`, and `PmCloseActionOptions` (`PmClientCloseActionOptions` on the client method) strip the permissive custom-field index signature from the executable command-option contracts, retaining their exact public keys and value types without a second hand-written shape; the free `create`/`update`/`close` functions and `PmClient` methods share those types. `PmUpdateManyActionOptions`, `PmCloseManyActionOptions`, and `OptionsFromContracts` cover flat action-contract composition. Field typos, object values, invalid scalar kinds, and MCP-only aliases on a `PmClient` command-option bag fail `tsc` under strict. Runtime-schema custom fields use the repeatable `field` option and `PmClient.run` remains the wide escape hatch. Projected list rows expose the typed `ListProjectedItemCore` fields (`row.id` is `string | undefined`, never `unknown`).
-- Typed customization primitives on `PmClient`: `init`, `config`, `schema`, `schemaList`, `schemaShow`, `schemaAddType`, `schemaRemoveType`, `schemaAddStatus`, `schemaRemoveStatus`, `schemaAddField`, `schemaRemoveField`, `schemaListFields`, `schemaShowField`, `schemaApplyPreset`, `schemaInferTypes`, `schemaShowStatus`, `profile`, `profileList`, `profileShow`, `profileApply`, and `profileLint`
-- Workspace-scaffold primitives: `ensurePmGitignore` and `getPmGitignoreBlock` let custom tools apply the same idempotent runtime/search cache policy as `pm init` without importing CLI internals. Fresh Git-backed `init` also installs the merge fence by default; `InitCommandOptions.mergeFence = false` is the explicit opt-out.
-- Schema-evolution primitives: `planSchemaEvolutionMigration`, `runSchemaEvolutionMigration`, and `deriveSchemaEvolutionMigrationId` provide deterministic dry-run plans and crash-resumable execution. Migration ids are optional: execution derives a workspace-and-normalized-request-bound id, while `migrationId` remains an authoritative override for orchestrators that already own idempotency keys.
-- Customization primitive option/result contracts: `InitCommandOptions` / `InitResult`, `ConfigCommandOptions` / `ConfigResult`, `SchemaSubcommand` / `SchemaResult` / `SchemaInspectResult`, `SchemaListResult`, `SchemaShowResult`, `SchemaAddTypeResult`, `SchemaRemoveTypeResult`, `SchemaAddStatusResult`, `SchemaRemoveStatusResult`, `SchemaAddFieldResult`, `SchemaRemoveFieldResult`, `SchemaListFieldsResult`, `SchemaShowFieldResult`, `SchemaApplyPresetResult`, `SchemaAddTypeInferResult`, `SchemaShowStatusResult`, `ProfileSubcommand` / `ProfileResult`, `ProfileListResult`, `ProfileShowResult`, `ProfileApplyResult`, `ProfileLintResult`
-- Typed governance and maintenance primitives on `PmClient`: `validate`, `health`, `gc`, `historyRedact`, `historyRepair`, `historyRepairAll`, `historyCompact`, and `historyCompactBulk`
-- Governance and maintenance option/result contracts: `ValidateCommandOptions` / `ValidateResult`, `RunHealthOptions` / `HealthResult`, `GcCommandOptions` / `GcResult`, `HistoryRedactCommandOptions` / `HistoryRedactResult`, `HistoryRepairCommandOptions` / `HistoryRepairResult` / `HistoryRepairAllResult`, and `HistoryCompactCommandOptions` / `HistoryCompactResult` / `HistoryCompactBulkCommandOptions` / `HistoryCompactBulkResult`
-- Direct governance engines: `runValidate`, `runHealth`, and `runGc` are public SDK exports used by the CLI compatibility adapters and by custom policy engines that already own `GlobalOptions`. `runValidate({ counts: true })` and `projectValidateCounts` preserve statuses, warning codes, and scalar count/total maps while removing diagnostic row arrays. Their structured results are identical to CLI JSON output; no shell process or private core import is required.
-- Execution and diagnostics engines: `runTest`, `runLinkedTests`, `runTestAll`, `runStartBackgroundRun`, `runTestRunsList`, `runTestRunsStatus`, `runTestRunsLogs`, `runTestRunsStop`, `runTestRunsResume`, `runTestRunsWorker`, `runEval`, `runTelemetry`, and `runStats`. Their CLI modules are compatibility re-exports of SDK-owned implementations.
-- Execution and diagnostics contracts: `TestCommandOptions` / `TestResult` / `TestRunResult`, `TestAllCommandOptions` / `TestAllResult`, `StartBackgroundRunCommandOptions` / `StartBackgroundRunResult`, `TestRuns*CommandOptions`, `EvalOptions` / `EvalResult`, `TelemetryCommandOptions` / `TelemetrySubcommand`, and `StatsCommandOptions` / `StatsResult`.
-- Linked-test authoring primitives: `parseLinkedTestJsonEntries`, the `parseLinkedTest*` field parsers, `LINKED_TEST_PM_CONTEXT_MODE_VALUES`, `LINKED_TEST_PROTECTED_ENV_KEYS`, `classifyLinkedTestFailure`, `countFailureCategories`, and `summarizeContextPreflight` let custom hosts validate, execute, classify, and report linked tests without duplicating CLI policy.
-- Agent command primitives: `normalizeItemAddressInvocation` and `supportsItemIdAlias` project one item-id grammar across CLI adapters; `renderMissingOptionRetry`, `resolveMissingOptionPlaceholder`, and `resolveRecoveryCommandName` preserve attempted argv, derive enum/boolean/scalar recovery arity from flag contracts, and identify the actual command without mistaking a global option value for one; `createUnknownSubcommandError` provides one typed positional refusal with complete allowed values and deterministic nearest retry; `rankCommandPaths` and `scoreCommandPathMatch` provide deterministic synonym/edit-distance/substring ranking; `resolveCreateExplicitEmptyFlag` and `supportsCreateExplicitEmpty` model a considered-but-empty strict repeatable input without inventing metadata or graph edges.
-- Positional grammar primitives: `PM_COMMAND_POSITIONAL_CONTRACTS` declares every core and known-package command signature as ordered, typed slots; `PM_POSITIONAL_ACTION_CONTRACTS` promotes positional plan and assurance actions into discoverable virtual command paths with action-scoped flags, examples, and intent. `resolvePmCommandPositionalContract`, `resolvePmPositionalActionContract`, and `verifyPmCommandPositionalContracts` let custom hosts resolve or fail-closed compare the same signatures emitted by runtime contracts. The grammar receipt ratchets distinct semantic shapes through `positional_shape_budget` so a new arity cannot silently expand agent context.
-- MCP/CLI option parity primitive: `verifyToolOptionCliParity` compares one `ToolOptionFlagContract` table with its executable `CliFlagContract` table. It fails when the transport-selected canonical flag is absent or when a parameter such as `linkedFile` cannot be invoked using its kebab-case CLI spelling (`--linked-file`) canonically or through a registered alias. Core create/update parity is part of the required command-grammar gate.
-- Refusal reachability primitives: generated `PmErrorCodeContract.owned_states` declarations bind stable codes to concrete states, probe ids, entrypoints, and exit classes; `verifyPmRefusalReachability` compares those declarations with real CLI, SDK, MCP, or package observations and fails closed for missing, duplicate, wrong-entrypoint, mismatched, or undeclared probes.
-- Typed plan workflow primitives on `PmClient`: `plan`, `planCreate`, `planShow`, `planAddStep`, `planUpdateStep`, `planCompleteStep`, `planBlockStep`, `planReorderStep`, `planRemoveStep`, `planLink`, `planUnlink`, `planDecision`, `planDiscovery`, `planValidation`, `planResume`, `planApprove`, and `planMaterialize`
-- Plan contracts: `PlanSubcommand`, `PlanCommandOptions`, `PlanCommandResult`, `PlanResultPlan`, `PlanStepSummary`, `PlanShowDepth`, and `PlanTemplateName`
-- Typed package and extension lifecycle primitives on `PmClient`: `extension`, `extensionList`, `extensionActivate`, `extensionDeactivate`, `package`, `packageList`, `packageInstall`, `packageUninstall`, `packageDoctor`, `packageManage`, `packageDescribe`, `packageReload`, `packageCatalog`, `packageActivate`, `packageDeactivate`, `packageMigrate`, and `upgrade`; one-shot `extensionMigrate` and `packageMigrate` helpers mirror those lifecycle actions.
-- Lifecycle primitive option/result contracts: `ExtensionCommandOptions` / `ExtensionCommandResult`, `PackageCommandOptions` / `PackageCommandResult`, `UpgradeCommandOptions` / `UpgradeResult`
-- `PM_CORE_COMMAND_NAMES`
-- `PM_TOOL_ACTIONS`
-- `PM_TOOL_PARAMETERS_SCHEMA`
-- `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
-- `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
+`PmClient.run` is the wide action adapter; typed convenience methods retain their
+exact option contracts. Runtime custom fields use repeatable `field` assignments.
+New symbols require classified surface evidence, and exhaustive consumers must
+follow the migration guidance for changed unions or error codes. The shared
+[primitive inventory](SDK_PRIMITIVE_INVENTORY.md) records CLI/MCP ownership:
+presentation modules import the SDK and have zero private-core edges.
 
 ### Build an entire custom project tool
 
@@ -1064,54 +904,12 @@ the lower-level `runAction`) from `@unbrained/pm-cli/sdk/runtime`. It uses the
 same compact, extension-aware dispatcher as the MCP `pm_run` tool:
 
 ```ts
-import { PmClient, runAction } from "@unbrained/pm-cli/sdk/runtime";
+import { PmClient } from "@unbrained/pm-cli/sdk/runtime";
 
-const pm = new PmClient({
-  pmRoot: "/path/to/project/.agents/pm",
-  author: "ci-agent",
-});
-
-const created = await pm.create({
-  title: "Investigate release drift",
-  type: "Task",
-  status: "open",
-  createMode: "progressive",
-});
-await pm.claim(created.item.id, { author: "ci-agent" });
-await pm.update(created.item.id, { status: "in_progress" });
-const open = await pm.list({ status: "open", limit: "20" });
-const recommendation = await pm.next({ readyOnly: true });
-const grouped = await pm.aggregate({ groupBy: "status", count: true });
-const stats = await pm.stats({ metadataCoverage: true });
-await pm.comments(created.item.id, { add: "Investigation context captured." });
-await pm.files(created.item.id, { add: ["src/index.ts"], note: "entrypoint" });
-await pm.docs(created.item.id, {
-  add: ["docs/SDK.md"],
-  note: "authoring reference",
-});
-const graph = await pm.deps(created.item.id, {
-  format: "context",
-  maxDepth: 3,
-  nodeLimit: 20,
-  edgeLimit: 40,
-  tokenBudget: 800,
-});
-const types = await pm.schemaList();
-const profiles = await pm.profileList();
-const validation = await pm.validate({ checkResolution: true });
-const health = await pm.health({ checkOnly: true, summary: true });
-const packages = await pm.packageList({ project: true });
-const doctor = await pm.packageDoctor({ project: true, isolated: true });
-const plannedUpgrade = await pm.upgrade(undefined, {
-  dryRun: true,
-  cliOnly: true,
-});
-
-await runAction({
-  action: "context",
-  path: "/path/to/project/.agents/pm",
-  options: { limit: "10" },
-});
+const pm = new PmClient({ pmRoot: "/workspace/.agents/pm" });
+const corpus = await pm.listAllComplete({ includeBody: true });
+const context = await pm.context({ limit: "10" });
+await pm.run("test", { id: "pm-example", options: { run: true } });
 ```
 
 Mutation convenience methods default to compact changed-field output for agent
@@ -1994,41 +1792,42 @@ Custom tools can evaluate the same behavior without shelling out:
 
 ```ts
 import {
-  PmClient,
-  runContextEvaluationCorpus,
-  type ContextEvaluationScenario,
-  type ContextEvaluationThresholds,
+  runContextEvaluationCorpus, isReadOutputBudgetExceeded,
+  type ContextEvaluationReader,
 } from "@unbrained/pm-cli/sdk";
 
-const pm = new PmClient({
-  pmRoot: ".agents/pm",
-  author: "context-quality-ci",
-});
-
-const scenarios: ContextEvaluationScenario[] = [
-  {
-    id: "returning-agent",
-    surface: "context",
-    options: { limit: "5" },
-    judgments: { "pm-current": 3, "pm-support": 2 },
-    required_ids: ["pm-current"],
-    continuity_ids: ["pm-current", "pm-support"],
-    token_budget: 1200,
-    rationale: "Resume claimed work with its supporting context.",
+const reader: ContextEvaluationReader = {
+  context: async options => {
+    const result = await pm.context(options);
+    if (isReadOutputBudgetExceeded(result)) throw new Error("Cannot grade omitted context");
+    return { ...result };
   },
-];
-
-const thresholds: ContextEvaluationThresholds = {
-  ndcg: 0.9,
-  reciprocal_rank: 0.9,
-  required_recall: 1,
-  continuity_coverage: 1,
-  token_budget_adherence: 1,
+  next: async options => {
+    const result = await pm.next(options);
+    if (isReadOutputBudgetExceeded(result)) throw new Error("Cannot grade omitted next");
+    return { ...result };
+  },
 };
 
-const report = await runContextEvaluationCorpus(scenarios, pm, thresholds);
+const report = await runContextEvaluationCorpus([{
+  id: "returning-agent",
+  surface: "context",
+  options: { limit: "5" },
+  judgments: { "pm-current": 3, "pm-support": 2 },
+  required_ids: ["pm-current"],
+  continuity_ids: ["pm-current", "pm-support"],
+  token_budget: 1200,
+  rationale: "Resume claimed work with its supporting context.",
+}], reader, {
+  ndcg: 0.9, reciprocal_rank: 0.9, required_recall: 1,
+  continuity_coverage: 1, token_budget_adherence: 1,
+});
 if (!report.passed) throw new Error(report.failures.join(", "));
 ```
+
+The adapter preserves the whole packet and refuses a universal budget omission
+before scoring. Direct reader-type composition is tracked by
+[pm-i4kxx1](../.agents/pm/tasks/pm-i4kxx1.toon).
 
 The evaluator calls only the public `context()` / `next()` reader contract. It
 scores nDCG, reciprocal rank, required-item recall, returning-agent continuity,
@@ -2839,389 +2638,92 @@ summarizes as empty and lints clean. In a package test, `assertExtensionBlueprin
 
 ## Testing Helpers
 
-Package tests can assert registration contracts without depending on Vitest-specific
-helpers. Every assertion normalizes the expected name, returns the matched registration
-entry, and throws an `Error` that lists what _is_ available when the expectation is
-missing. They are exported from both `@unbrained/pm-cli/sdk/testing` and the main
-`@unbrained/pm-cli/sdk` barrel.
+Use `@unbrained/pm-cli/sdk/testing` for package assertions and runtime invocation.
+The aggregate SDK also exports these helpers. Assertions normalize names, return
+the matched entry, and throw with the available registrations when a match is
+missing. Named expectations use `{ name }`; historical surface-specific aliases
+remain supported. Optional `extensionName` limits a match to one extension.
+The published surface snapshot contains the complete helper signatures.
 
-Every named assertion accepts the canonical `{ name: ... }` expectation key.
-The historical surface-specific keys (`command`, `targetCommand`, `provider`,
-`adapter`, `importer`, `exporter`, `field`, `itemType`, `migration`, `profile`,
-`format`, `service`) remain supported aliases for existing packages.
-
-Activate an in-memory extension module without private loader imports:
+Prefer `createExtensionTestHarness` when testing a package. Its bound methods
+select the correct registry, preventing accidental use of a command registry for
+hooks or services:
 
 ```ts
-import {
-  activateExtensionForTest,
-  assertRegisteredCommandContract,
-} from "@unbrained/pm-cli/sdk/testing";
+import { createExtensionTestHarness } from "@unbrained/pm-cli/sdk/testing";
 
-const activation = await activateExtensionForTest({
-  manifest: {
-    name: "hello-ext",
-    version: "0.1.0",
-    entry: "./index.ts",
-    priority: 0,
-    capabilities: ["commands", "schema"],
-  },
-  activate(api) {
-    api.registerCommand({
-      name: "hello",
-      action: "hello",
-      description: "Return a deterministic hello payload.",
-      flags: [{ long: "--name", value_type: "string" }],
-      run: async () => ({ ok: true }),
-    });
-  },
+const ext = await createExtensionTestHarness(extensionModule, {
+  capabilities: ["commands", "schema"],
 });
-
-assertRegisteredCommandContract(activation.registrations, {
-  name: "hello",
-  action: "hello",
-  flags: ["--name"],
-});
+try {
+  ext.assertCommandContract({ name: "hello", action: "hello", flags: ["--name"] });
+  const invocation = await ext.runCommand({
+    command: "hello", options: { name: "ada" },
+  });
+  // invocation.handled and invocation.result are the real dispatch receipt.
+} finally {
+  await ext.deactivate();
+}
 ```
 
-`activateExtensionForTest` uses the real pm activation engine and capability
-guardrails, but it does not discover files or install packages. Use it for unit
-tests of extension registration shape; keep `pm package doctor` and runtime
-contracts in integration tests.
+`activateExtensionForTest` is the lower-level in-memory activation primitive. It
+uses the real capability guardrails, without filesystem discovery or package
+installation. Keep `pm package doctor` and runtime contract checks in integration
+tests: registration shape alone does not prove an install works.
 
-For declarative (`composeExtension`) packages, `assertExtensionBlueprint(blueprint, options?)`
-is the `assert*` family member that preflights the blueprint _without_ activating
-it — it runs `lintExtensionBlueprint` and throws if any finding is error-severity
-(today: a capability a surface exercises but the declared set omits, which would
-fail activation with `extension_capability_missing`). It returns the full
-`ExtensionBlueprintLintResult` on success so a test can still inspect advisory
-warnings:
+Author-time checks run without activation:
 
-```ts
-import { assertExtensionBlueprint } from "@unbrained/pm-cli/sdk/testing";
-
-// Throws if the blueprint and its declared capabilities have drifted; otherwise
-// returns the lint result (including any non-blocking warnings) for inspection.
-const report = assertExtensionBlueprint(blueprint);
-```
-
-`assertExtensionManifestMatchesBlueprint(manifest, blueprint)` is the **strict**
-bookend to that lenient preflight: where `assertExtensionBlueprint` only fails on
-an _undeclared_ capability and merely warns on an unused one, this assertion fails
-on **both** — so a hand-maintained `manifest.json` stays exactly the least-privilege
-set the blueprint requires (assert what `synthesizeExtensionManifest` would
-otherwise generate). Only `capabilities` are reconciled, since that is the one
-manifest field a blueprint determines:
+- `assertExtensionBlueprint` returns `lintExtensionBlueprint` findings and
+  throws on errors; undeclared capabilities block, while unused capabilities
+  remain advisory.
+- `assertExtensionManifestMatchesBlueprint` requires the manifest capability
+  set to match exactly, failing for both missing and unused declarations. It
+  reconciles capabilities only, the field the blueprint determines.
+- `checkExtensionManifestCompatibility` returns per-bound findings against a
+  target `pmVersion`. `assertExtensionManifestCompatible` throws for malformed
+  bounds, an unmet minimum, or a maximum exceeded in block mode; unchecked and
+  exceeded-warning outcomes remain advisory.
+- `lintExtensionManifestSchema` inspects vocabulary alone, with stable
+  `manifest_unknown_key` and `no_version_bounds_declared` findings.
+- `preflightExtension` composes blueprint lint, optional identity-based
+  least-privilege manifest synthesis, and optional target compatibility. Its
+  report retains the original stage results plus source-tagged findings.
+  `assertExtensionPreflight` throws for every blocking finding and returns the
+  report otherwise. Without an identity, target checks use the blueprint's
+  manifest mirror.
 
 ```ts
-import { assertExtensionManifestMatchesBlueprint } from "@unbrained/pm-cli/sdk/testing";
-
-// Throws if manifest.capabilities is missing any capability the blueprint uses, or
-// declares any the blueprint never exercises. Returns { used, declared, missing,
-// unused, findings } on an exact match.
-assertExtensionManifestMatchesBlueprint(manifest, blueprint);
-```
-
-Where the blueprint guards `capabilities`, a manifest's `pm_min_version` /
-`pm_max_version` bounds guard _which pm CLI versions the package supports_.
-Tracker references: `pm-knma` introduced `checkExtensionManifestCompatibility`;
-`pm-hng2` introduced `assertExtensionManifestCompatible`.
-`checkExtensionManifestCompatibility(manifest, { pmVersion, pmMaxVersionExceededMode? })`
-is the author-time inverse of the loader's runtime version gate: it takes the pm
-version you target and returns structured per-bound findings (the same
-`extension_pm_*_version_*` outcomes the loader emits), so you can verify the window
-without installing the package against a real CLI. `assertExtensionManifestCompatible`
-is the throwing CI guard — it fails on a blocking incompatibility (a malformed
-bound, a `pm_min_version` the target is below, or a `block`-mode `pm_max_version`
-the target exceeds) and stays quiet on advisory `*_unchecked` / `*_exceeded_warn`
-warnings, which still load:
-
-Use `lintExtensionManifestSchema(manifest)` when only the manifest vocabulary is
-in scope. It returns stable `manifest_unknown_key` and
-`no_version_bounds_declared` findings without requiring a target pm version.
-Compatibility results retain the existing combined `findings` array, while the
-dedicated lint result gives SDK, CLI, and MCP adapters a stable schema-only
-boundary.
-
-```ts
-import {
-  checkExtensionManifestCompatibility,
-  lintExtensionManifestSchema,
-} from "@unbrained/pm-cli/sdk";
-import { assertExtensionManifestCompatible } from "@unbrained/pm-cli/sdk/testing";
-
-// Inspect every bound outcome against a target version…
-const report = checkExtensionManifestCompatibility(manifest, {
-  pmVersion: "2026.6.23",
-});
-//   report.compatible === false, report.findings[0].code === "pm_min_version_unmet", …
-
-const schema = lintExtensionManifestSchema(manifest);
-//   schema.ok === false, schema.findings[0].path === "compatibility", …
-
-// …or fail the package's own suite when a bound would block the load.
-assertExtensionManifestCompatible(manifest, { pmVersion: "2026.6.23" });
-```
-
-Tracked: [pm-ozaf](../.agents/pm/features/pm-ozaf.toon).
-
-`preflightExtension(blueprint, { identity?, target?, declaredCapabilities? })` is the
-author-time **capstone** that runs all of the above in one call — the static analog
-of `createExtensionTestHarness`, which unified the runtime-test helpers. Rather than
-chaining `lintExtensionBlueprint`, `synthesizeExtensionManifest`, and
-`checkExtensionManifestCompatibility` (and reconciling their separate results)
-before publishing, you read one `ExtensionPreflightReport`: the blueprint is always
-linted; when `identity` is given the complete least-privilege manifest is synthesized
-and returned; when `target` is given the synthesized bounds (or, absent an identity,
-the blueprint's in-module `manifest` mirror) are version-checked. The per-stage
-results are exposed unmodified (`report.blueprint` / `report.manifest` /
-`report.compatibility`) alongside a flattened `report.findings` where each entry is
-tagged by `source` (`"blueprint"` | `"compatibility"`); `report.ok` is `false` if any
-stage produced an `error`. `assertExtensionPreflight(blueprint, options?)` is the
-throwing one-line CI guard over it — it fails listing every blocking finding tagged
-`[source:code]` and stays quiet on advisory warnings, returning the full report on
-success:
-
-```ts
-import { preflightExtension } from "@unbrained/pm-cli/sdk";
 import { assertExtensionPreflight } from "@unbrained/pm-cli/sdk/testing";
 
-// Inspect every author-time stage in one report…
-const report = preflightExtension(blueprint, {
-  identity: {
-    name: "command-kit",
-    version: "1.0.0",
-    entry: "./index.ts",
-    priority: 0,
-  },
-  target: { pmVersion: "2026.6.23" },
-});
-//   report.manifest.capabilities (derived), report.compatibility.compatible, report.findings[]
-
-// …or guard the whole package in one CI line.
-assertExtensionPreflight(blueprint, {
-  identity: {
-    name: "command-kit",
-    version: "1.0.0",
-    entry: "./index.ts",
-    priority: 0,
-  },
-  target: { pmVersion: "2026.6.23" },
+const report = assertExtensionPreflight(blueprint, {
+  identity: { name: "command-kit", version: "1.0.0", entry: "./index.ts", priority: 0 },
+  target: { pmVersion: "2026.10.11" },
 });
 ```
 
-Invoke a registered command handler to assert its behavior (not just that it was
-registered). `runRegisteredCommandForTest` dispatches through pm's real engine and
-returns the `CommandHandlerResult`:
+When a custom harness needs individual registries, use this ownership map:
 
-```ts
-import { runRegisteredCommandForTest } from "@unbrained/pm-cli/sdk/testing";
+| Surface | Registry from `activateExtensionForTest` | Assertion / invocation |
+| --- | --- | --- |
+| Commands, schema types/fields, migrations, importers/exporters, search/vector providers | `registrations` | `assertRegisteredCommandContract`, corresponding `assertRegistered*` |
+| Command overrides | `commands` | `assertRegisteredCommandOverride`, `runRegisteredCommandOverrideForTest` |
+| Parser overrides | `parsers` | `assertRegisteredParserOverride`, `runRegisteredParserOverrideForTest` |
+| Preflight overrides | `preflight` | `assertRegisteredPreflightOverride`, `runRegisteredPreflightOverrideForTest` |
+| Renderers | `renderers` | `assertRegisteredRendererOverride`, `runRegisteredRendererOverrideForTest` |
+| Services | `services` | `assertRegisteredServiceOverride`, `runRegisteredServiceOverrideForTest` |
+| Lifecycle hooks | `hooks` | `assertRegisteredHook`, `runRegisteredHookForTest` |
 
-const invocation = await runRegisteredCommandForTest(activation.commands, {
-  command: "hello",
-  options: { name: "ada" },
-});
-
-// invocation.handled === true; invocation.result is the handler's return value.
-```
-
-Importers and exporters get dedicated name-based helpers so tests never hand-build
-the `"<name> import"` / `"<name> export"` command path. Pass the whole `activation`
-and the registration name:
-
-```ts
-import {
-  runRegisteredImporterForTest,
-  runRegisteredExporterForTest,
-} from "@unbrained/pm-cli/sdk/testing";
-
-const imported = await runRegisteredImporterForTest(activation, {
-  importer: "csv",
-  options: { rows: 3 },
-});
-const exported = await runRegisteredExporterForTest(activation, {
-  exporter: "csv",
-});
-
-// Both return a CommandHandlerResult: imported.result is the importer's return value.
-```
-
-Fire a registered lifecycle hook to assert its behavior (the `context` is
-type-safe per `kind`). A clean run returns `[]`; a hook that throws contributes a
-single `extension_hook_failed:*` warning while the others still run:
-
-```ts
-import { runRegisteredHookForTest } from "@unbrained/pm-cli/sdk/testing";
-
-const warnings = await runRegisteredHookForTest(activation.hooks, {
-  kind: "after_command",
-  context: { command: "close", args: ["pm-1a2b"], pm_root: "", ok: true },
-});
-// warnings === [] when every after_command hook ran cleanly.
-```
-
-The override surfaces have parallel invoke helpers that delegate to pm's real
-runners and return the override result verbatim, after guarding that a matching
-override is registered for the target (command / format / service):
-
-```ts
-import {
-  runRegisteredParserOverrideForTest,
-  runRegisteredCommandOverrideForTest,
-  runRegisteredRendererOverrideForTest,
-  runRegisteredServiceOverrideForTest,
-  runRegisteredPreflightOverrideForTest,
-} from "@unbrained/pm-cli/sdk/testing";
-
-const parsed = await runRegisteredParserOverrideForTest(activation.parsers, {
-  command: "deploy",
-  args: ["staging"],
-  options: {},
-  global: {},
-  pm_root: "",
-});
-// parsed.overridden === true; parsed.context holds the rewritten args/options.
-
-const rendered = await runRegisteredRendererOverrideForTest(
-  activation.renderers,
-  {
-    format: "toon",
-    result: { id: "pm-1a2b" },
-  },
-);
-// rendered.rendered is the custom string the override produced.
-```
-
-Assert a command registration contract:
-
-```ts
-import { assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
-
-assertRegisteredCommandContract(activation.registrations, {
-  name: "hello",
-  action: "hello",
-  flags: ["--name"],
-});
-```
-
-Assert importer, exporter, and search-provider registrations against an
-`ExtensionRegistrationRegistry` (from `activation.registrations`). The optional
-`extensionName` narrows the match to a single extension:
-
-```ts
-import {
-  assertRegisteredExporter,
-  assertRegisteredImporter,
-  assertRegisteredSearchProvider,
-  assertRegisteredVectorStoreAdapter,
-} from "@unbrained/pm-cli/sdk/testing";
-
-assertRegisteredImporter(activation.registrations, { name: "jsonl" });
-assertRegisteredExporter(activation.registrations, {
-  name: "jsonl",
-  extensionName: "my-ext",
-});
-assertRegisteredSearchProvider(activation.registrations, {
-  name: "semantic-local",
-});
-assertRegisteredVectorStoreAdapter(activation.registrations, {
-  name: "pinecone",
-});
-```
-
-Use `assertRegisteredVectorStoreAdapter` for packages that call
-`registerVectorStoreAdapter`. It proves the semantic-storage integration is
-present without importing private registry internals or configuring a live
-vector store in unit tests.
-
-Assert package-owned schema registrations the same way. This lets packages prove
-their custom project-management primitives without importing private registry
-types or reading generated schema files:
-
-```ts
-import {
-  assertRegisteredItemField,
-  assertRegisteredItemType,
-} from "@unbrained/pm-cli/sdk/testing";
-
-assertRegisteredItemField(activation.registrations, {
-  name: "severity",
-  extensionName: "incident-ext",
-  type: "string",
-});
-assertRegisteredItemType(activation.registrations, {
-  name: "Incident",
-  folder: "incidents",
-});
-```
-
-Hooks are surfaced via `activation.hooks` (an `ExtensionHookRegistry`), not the command
-registry, so `assertRegisteredHook` takes the hook registry and a lifecycle `kind`
-(`before_command` | `after_command` | `on_read` | `on_write` | `on_index`):
-
-```ts
-import { assertRegisteredHook } from "@unbrained/pm-cli/sdk/testing";
-
-const hook = assertRegisteredHook(activation.hooks, {
-  kind: "on_write",
-  extensionName: "my-ext",
-});
-// hook.run is the registered OnWriteHook handler
-```
-
-Override registrations from `registerCommand(command, override)`, `registerParser`,
-`registerPreflight`, and `registerRenderer` live on `activation.commands`,
-`activation.parsers`, `activation.preflight`, and `activation.renderers` (not the
-registration registry). Each override helper takes the matching registry and
-returns the registered entry (so you can invoke `entry.run` directly):
-
-```ts
-import {
-  assertRegisteredCommandOverride,
-  assertRegisteredParserOverride,
-  assertRegisteredPreflightOverride,
-  assertRegisteredRendererOverride,
-} from "@unbrained/pm-cli/sdk/testing";
-
-assertRegisteredCommandOverride(activation.commands, { name: "list" });
-assertRegisteredParserOverride(activation.parsers, {
-  name: "list",
-  extensionName: "my-ext",
-});
-assertRegisteredPreflightOverride(activation.preflight); // preflight overrides are global (no command)
-assertRegisteredRendererOverride(activation.renderers, { name: "toon" });
-```
-
-Service overrides from `registerService(service, override)` live on
-`activation.services` (an `ExtensionServiceRegistry`), so
-`assertRegisteredServiceOverride` takes the service registry and a known service
-name (`output_format` | `error_format` | `help_format` | `lock_acquire` |
-`lock_release` | `history_append` | `item_store_write` | `item_store_delete`):
-
-```ts
-import { assertRegisteredServiceOverride } from "@unbrained/pm-cli/sdk/testing";
-
-const service = assertRegisteredServiceOverride(activation.services, {
-  name: "output_format",
-  extensionName: "my-ext",
-});
-// service.run is the registered ServiceOverride handler
-```
-
-Schema migrations from `registerMigration(definition)` live on
-`activation.registrations.migrations`. `assertRegisteredMigration` matches by the
-migration `id` and can additionally assert the `mandatory` governance flag (an
-unset flag is treated as non-mandatory):
-
-```ts
-import { assertRegisteredMigration } from "@unbrained/pm-cli/sdk/testing";
-
-const migration = assertRegisteredMigration(activation.registrations, {
-  name: "backfill-severity",
-  mandatory: true,
-});
-// migration.definition is the normalized SchemaMigrationDefinition
-```
+`runRegisteredCommandForTest` uses the real dispatcher and returns
+`CommandHandlerResult`. Importer/exporter invocation helpers accept the whole
+activation plus a registration name, constructing the command path themselves.
+Override invocation helpers first require a matching registration, then return
+the real runner result. Hook expectations use lifecycle `kind`; a clean hook run
+returns no warnings, while a thrown hook contributes `extension_hook_failed:*`
+and other hooks continue. Preflight overrides are global. Renderer expectations
+use format and service expectations use a supported service name.
+`assertRegisteredMigration` matches migration id and can require `mandatory`;
+an unset flag is non-mandatory. Schema and vector-adapter assertions prove
+registrations without private imports, generated schema reads or live services.
 
 ### Project profiles (`registerProfile`)
 

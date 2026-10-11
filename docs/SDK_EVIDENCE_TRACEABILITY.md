@@ -58,6 +58,10 @@ not contain the rationale and graph fields required to support the answer.
 
 ## SDK and MCP
 
+[Linked-test metadata edits](LINKED_TEST_EDITS.md) provide a public SDK operation
+for correcting one test while retaining its position, original provenance and
+immutable history, with matching CLI and MCP action options.
+
 The public SDK exposes both reusable-client and one-shot forms:
 
 ```ts

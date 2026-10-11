@@ -1,0 +1,61 @@
+id: pm-kki6bf
+title: Declare calendar package positional signatures in the SDK grammar census
+description: "The installed pm-calendar package exposes cal [view] and calendar [view], including date anchors, but neither command appears in the SDK destination/positional table. The independent static gate fails with two stale_observed_signature findings (231 declared versus 233 observed). Declare both package-owned commands and their existing optional view shape without raising budgets or changing runtime behavior; prove active and inactive package census and arity-drift negative controls."
+type: Issue
+status: closed
+priority: 1
+tags[3]: "area:contracts","area:sdk",package-authoring
+created_at: "2026-10-11T17:21:51.652Z"
+updated_at: "2026-10-11T18:12:47.565Z"
+closed_at: "2026-10-11T18:08:03.872Z"
+completed_at: "2026-10-11T18:08:03.872Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Declare both calendar package spellings with their independently observed optional view/date slot; active arity drift fails; inactive declarations remain once; the 233-signature live census passes with 20 shapes under the unchanged 21-shape budget
+goal: project management = context management
+parent: pm-ya7x55
+risk: low
+confidence: high
+resolution: "Both cal and calendar have package-owned destination rows and the existing optional polymorphic view/date positional slot. Active help arity drift fails and inactive declarations remain once, without runtime behavior changes or budget increases."
+expected_result: Exhaustive SDK grammar matches installed packages and continues to reject undeclared or mismatched signatures.
+actual_result: "Canonical sandboxed coverage passes 10,163 tests across 798 files with exact statements 68097/68097, branches 52238/52238, functions 14040/14040 and lines 64757/64757. Typecheck and all static subgates pass after planning-field and typed-edge repairs, including graph/record assurance and mutation controls. The independently observed installed-package census is 233/233 signatures, zero findings and 20/21 shapes. Linked active/inactive calendar and arity-drift controls pass within the 36-case focused cohort; no runtime calendar behavior or grammar ceiling changed."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9djr6d,discovered_from,"2026-10-11T17:48:15.072Z","harness:codex","cli:update:dep",detected
+  pm-ya7x55,implements,"2026-10-11T17:48:15.072Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-11T17:21:51.652Z","harness:codex","Duplicate check: complete all-status corpus (2928 items, no omissions) plus fresh calendar positional search and open/in_progress inventories; no existing item describes this package-signature omission. Full live pm-ya7x55 resolution/comments and 131-event history confirm the original positional-contract delivery shipped in PR #1059; this is a distinct package registration recurrence. No closed work reopened."
+  "2026-10-11T17:22:49.143Z","harness:codex",Implementation adds both existing package-owned calendar spellings and their optional polymorphic view/date slot to the exhaustive SDK tables. The independent gate tests exercise active optional versus required arity and inactive-package declaration retention for each spelling. No grammar ceiling was raised; runtime calendar behavior is unchanged.
+  "2026-10-11T17:53:48.221Z","harness:codex","Final source verification: canonical sandboxed coverage (--maxWorkers=8 --retry=1) passed 10,163 tests in 798 files; exact statements 68097/68097, branches 52238/52238, functions 14040/14040 and lines 64757/64757. Full TypeScript check passed. The independent installed-package grammar census is 233/233, zero findings, 20/21 shapes. Pre-closure archives containing the latest SDK guide and calendar declarations pass unchanged base 19,995,781/20,000,000 bytes and real offline Sentry-injected 20,239,937/20,250,000 bytes, preserving 1655 first-party and 4731 runtime files. Blocking tracker-quality metadata findings have been repaired through pm; final complete static execution and post-closure generated-changelog archives are still pending, so these are source/pre-closure receipts rather than publication claims."
+  "2026-10-11T18:12:47.565Z","harness:codex","Reviewed-delivery completion receipts: latest upstream pm-changelog 2026.10.5 generates and checks the four new entries under Unreleased, preserving prior release buckets. Final generated-changelog archives pass unchanged base 19996491/20000000 and real offline Sentry-injected 20240647/20250000 first-party byte ceilings; both retain all 1655 distribution and 4731 runtime files. Final tarball passes Node 24.21/26.9 and Bun 1.4.2 metadata/provenance/no-op/admission/CLI/history acceptance, public calendar signature checks and strict documentation TypeScript compilation. Live required Sentry/telemetry gate passes: 14-day Sentry critical/high/total 0/0/0, 7-day finish error rate 2.92%, missing failure codes 0. Validation is successful with inherited 170 historical resolution-field warnings; all four new closures contain immutable resolution/expected/actual evidence. No in-progress items remain. Hosted exact-head review/checks and merge are still pending, and public 2026.10.11 acceptance remains prior-release channel evidence."
+learnings[1]{created_at,author,text}:
+  "2026-10-11T17:53:49.246Z","harness:codex",A bundled package command may already be executable while absent from the SDK grammar census. Verify live structured help independently for every active spelling and retain declarations when a package is inactive; use the same arity-drift negative control instead of increasing grammar budgets.
+files[3]{path,scope}:
+  src/sdk/cli-contracts/grammar-contracts.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,300,"harness:codex","2026-10-11T17:22:20.840Z",local_mutation,feat/linked-test-edits-and-refusals
+test_runs[1]:
+  - run_id: test-local-mv43fkcs-53lo3x
+    kind: test
+    status: passed
+    started_at: "2026-10-11T17:24:25.978Z"
+    finished_at: "2026-10-11T17:24:52.299Z"
+    recorded_at: "2026-10-11T17:24:52.299Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/command-grammar-gate.spec.ts tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: Declared installed calendar positional signatures and verified independent package grammar conformance
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: command-grammar
+  negative_control: node scripts/run-tests.mjs test tests/unit/scripts/release/command-grammar-gate.spec.ts
+  local_checks[2]: "pnpm quality:static",node scripts/run-tests.mjs coverage --maxWorkers=8 --retry=1
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+  owner: pm-kki6bf
+body: ""

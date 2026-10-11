@@ -5842,6 +5842,15 @@
           "repeatable": true
         },
         {
+          "flag": "--update"
+        },
+        {
+          "flag": "--update-index"
+        },
+        {
+          "flag": "--set-json"
+        },
+        {
           "flag": "--run"
         },
         {
@@ -9542,6 +9551,15 @@
         {
           "flag": "--remove-index",
           "repeatable": true
+        },
+        {
+          "flag": "--update"
+        },
+        {
+          "flag": "--update-index"
+        },
+        {
+          "flag": "--set-json"
         },
         {
           "flag": "--run"
@@ -22879,6 +22897,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "linked_test_context_invalid",
+      "class": "usage",
+      "code": "linked_test_context_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked test context invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/entry.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "linked_test_remove_no_match",
       "class": "not_found",
       "code": "linked_test_remove_no_match",
@@ -22891,6 +22926,40 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/test/execution.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "linked_test_update_ambiguous",
+      "class": "usage",
+      "code": "linked_test_update_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked test update ambiguous condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "linked_test_update_no_match",
+      "class": "not_found",
+      "code": "linked_test_update_no_match",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Linked test update no match condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/update.ts"
       ],
       "stability": "provisional"
     },
@@ -28276,6 +28345,22 @@
         "target": "package"
       },
       {
+        "command": "cal",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "pm-o3fh",
+        "reason": "",
+        "target": "package calendar"
+      },
+      {
+        "command": "calendar",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "pm-o3fh",
+        "reason": "",
+        "target": "package calendar"
+      },
+      {
         "command": "event",
         "disposition": "package_owned",
         "noun": "package",
@@ -30489,6 +30574,30 @@
       {
         "command": "changelog generate",
         "slots": []
+      },
+      {
+        "command": "cal",
+        "slots": [
+          {
+            "name": "view",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "calendar",
+        "slots": [
+          {
+            "name": "view",
+            "polymorphic": true,
+            "required": false,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "event",
@@ -40136,6 +40245,14 @@
           {
             "not": {
               "required": [
+                "update",
+                "updateIndex"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
                 "acknowledgeLinkedTests",
                 "run"
               ]
@@ -40416,6 +40533,13 @@
             "description": "Run.",
             "type": "boolean"
           },
+          "setJson": {
+            "description": "Explicit JSON metadata patch for update or updateIndex. Null clears optional fields; command and provenance are immutable.",
+            "examples": [
+              "{\"note\":\"focused regression\",\"timeout_seconds\":120}"
+            ],
+            "type": "string"
+          },
           "sharedHostSafe": {
             "description": "Apply additive shared-host-safe runtime defaults during linked-test execution.",
             "type": "boolean"
@@ -40441,6 +40565,29 @@
           "tokenAccounting": {
             "description": "Attach the same bounded per-section token-cost receipt emitted by CLI --token-accounting.",
             "type": "boolean"
+          },
+          "update": {
+            "description": "Edit one linked test by exact command, command=<value>, or path=<value>, with setJson; ambiguous matches refuse without changes.",
+            "examples": [
+              "node scripts/run-tests.mjs test",
+              "path=tests/example.spec.ts"
+            ],
+            "type": "string"
+          },
+          "updateIndex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Edit one linked test at its current 1-based list position with setJson, preserving order and original command provenance.",
+            "examples": [
+              1,
+              "2"
+            ]
           },
           "workspaceContext": {
             "description": "Source-workspace mode: source preserves read-only source context, isolated omits it for self-sandboxing commands, and snapshot runs from a temporary workspace paired with the selected tracker sandbox.",
@@ -58819,6 +58966,14 @@
           {
             "not": {
               "required": [
+                "update",
+                "updateIndex"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
                 "acknowledgeLinkedTests",
                 "run"
               ]
@@ -59102,6 +59257,13 @@
             "description": "Run.",
             "type": "boolean"
           },
+          "setJson": {
+            "description": "Explicit JSON metadata patch for update or updateIndex. Null clears optional fields; command and provenance are immutable.",
+            "examples": [
+              "{\"note\":\"focused regression\",\"timeout_seconds\":120}"
+            ],
+            "type": "string"
+          },
           "sharedHostSafe": {
             "description": "Apply additive shared-host-safe runtime defaults during linked-test execution.",
             "type": "boolean"
@@ -59127,6 +59289,29 @@
           "tokenAccounting": {
             "description": "Request a bounded transport-level receipt for output emitted by a compatible CLI or MCP host.",
             "type": "boolean"
+          },
+          "update": {
+            "description": "Edit one linked test by exact command, command=<value>, or path=<value>, with setJson; ambiguous matches refuse without changes.",
+            "examples": [
+              "node scripts/run-tests.mjs test",
+              "path=tests/example.spec.ts"
+            ],
+            "type": "string"
+          },
+          "updateIndex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Edit one linked test at its current 1-based list position with setJson, preserving order and original command provenance.",
+            "examples": [
+              1,
+              "2"
+            ]
           },
           "workspaceContext": {
             "description": "Source-workspace mode: source preserves read-only source context, isolated omits it for self-sandboxing commands, and snapshot runs from a temporary workspace paired with the selected tracker sandbox.",

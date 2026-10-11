@@ -1,0 +1,123 @@
+id: pm-9djr6d
+title: Edit linked-test metadata in place with preserved provenance and atomic history
+description: "Implement the complete GH1419 linked-test editor under the existing universal metadata reference lineage. Patch only explicit supported metadata fields; retain list position, immutable creation provenance and unchanged fields; stamp editor identity and time; reject empty or ambiguous selectors atomically; expose the same SDK operation through CLI and MCP."
+type: Task
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-11T15:39:56.760Z"
+updated_at: "2026-10-11T18:12:45.693Z"
+closed_at: "2026-10-11T18:07:59.143Z"
+completed_at: "2026-10-11T18:07:59.143Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: CLI and SDK edit one linked test by exact selector or one-based index; unchanged fields and original provenance survive; changed edit writes one field-level history event and editor metadata; equal retry preserves authoritative bytes; absent or ambiguous selectors refuse without mutation; invalid context patches are refused before persistence; command changes require fresh provenance/trust rather than preserving authorization; packed Node and Bun transports agree.
+goal: project management = context management
+parent: pm-gh1381
+risk: medium
+confidence: high
+resolution: "One locked metadata patch preserves list order, command and original provenance, stamps the editor, emits granular tests_update history and skips normalized no-op writes. Exact index/command/path selectors and malformed edits fail atomically."
+expected_result: "Correct metadata without recreating a test or losing provenance, with consistent typed SDK and transport behavior."
+actual_result: "Canonical sandboxed coverage passes 10,163 tests across 798 files with exact statements 68097/68097, branches 52238/52238, functions 14040/14040 and lines 64757/64757. Typecheck and all static subgates pass after planning-field and typed-edge repairs, including graph/record assurance and mutation controls. Linked editor and transport regressions, packed Node 24/26 and Bun consumers, strict declarations, npx/bunx smoke, history verification and four-direction published workspace compatibility pass; invalid and no-op edits retain authoritative bytes."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bjpo,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
+  pm-do5b,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
+  pm-gh1440,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
+  pm-kmwdpa,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
+  "2026-10-11T15:39:56.760Z","harness:codex","Duplicate check: complete live 2928-item all-status corpus, request-specific searches, open and in-progress inventories plus full pm-gh1381 and pm-bjpo reads and history show GH1419 retained on the broader feature with no independently closeable editor task. This generated child materializes that existing acceptance for complete delivery alongside pm-gh1440; it does not duplicate the stable fragment resolver or whole-collection replacement."
+  "2026-10-11T15:48:37.799Z","harness:codex","SDK editor design: resolve exact command/path or current one-based index under the item lock; whitelist explicitly supplied metadata fields; preserve command and immutable provenance; optional null clearing; retain list position; one tests_update event with structured edited index/fields; append editor identity/time only for semantic changes. Command changes are refused and require normal unlink/link provenance. Parent pm-gh1381 continues to own durable fragment addressing."
+  "2026-10-11T15:51:38.868Z","harness:codex","Focused repaired cohort passes88 assertions across four files, including five new real SDK/CLI persistence and refusal scenarios. Actual history emits granular note/timeout patches and preserves semantic no-op bytes. Static lint identified adapter complexity growth; extracted transport projection and shared edit-usage admission without adding test-only production exports or lowering quality thresholds. Full source and packed acceptance remain pending."
+  "2026-10-11T16:02:38.509Z","harness:codex","SDK admission coverage exposed a semantic no-op risk: parser normalization alone does not match storage list normalization. Metadata comparisons now reuse the storage normalizer, and a repeated patch with duplicate/whitespace assertion strings retains exact item and history bytes. Direct SDK and CLI transport selectors, optional-field clearing, missing/ambiguous matches, malformed patches and empty collections are covered by atomic byte checks. Full source coverage and unchanged static gates are running under the supported Node24 profile."
+  "2026-10-11T16:05:41.022Z","harness:codex","External census 2026-10-11: no open PRs or GitHub Dependabot/code-scanning/secret-scanning alerts; all 17 open GitHub issues were read with paginated comments. Existing issues already have canonical PM links, and new GH-1442 is recorded as generated Feature pm-kmwdpa for configurable generated-ID defaults, explicit overrides and audited migrations, remaining unclaimed. Available minor/patch updates for Node types, jscpd, TypeScript-ESLint, TOON, knip and marked are each below the unchanged seven-day cooldown. Major migrations retain their existing owners pm-t3jxjj, pm-fokyhh, pm-ksr40d and pm-do5b; live registry confirms CodSpeed excludes Vitest5, npm-package-arg14 excludes the promised >=22.18.0 floor, and TypeScript-ESLint excludes TypeScript7. No incompatible adoption or cooldown/peer bypass is performed. One real list action was correlated end-to-end to stored command_start and command_finish events at the current version, received within one second; explicit flush physically drained the captured local queue. This scoped proof is not exhaustive delivery of all sampled user actions."
+  "2026-10-11T16:16:04.149Z","harness:codex","First whole-source Node24 execution retained nine failures across five files: the added integration file crossed the unchanged 120-file cap; three new executable flags lacked invocation declarations; their help exceeded the unchanged 1163-token test-command budget; background refusal wording broke a compatibility assertion; and the test-all mismatch fixture expected the old fabricated failure. The new test moved into a focused subdirectory, flags now have declarations, help is shortened without raising budgets, compatibility wording is retained, and aggregate expectations require null child exit plus config_refusal. Linked command changes use remove/add with new creation provenance because command text is intentionally immutable in the metadata editor. Canonical coverage remains unproven until the corrected full rerun succeeds."
+  "2026-10-11T16:17:48.091Z","harness:codex","Canonical flag-count admission requires an explicit feature allowance: this editor adds exactly three options (two selectors and one JSON patch) to test and its existing item-test alias. The tracked maximum changes from 53 to exactly 56 with no spare allowance, matching prior reasoned feature additions; default-visible core nouns do not grow. The separate help-token maximum remains 1163 and the complete help has been shortened to fit it. Generated invocation declarations, SDK/CLI snapshots and lexicon budgets are part of this reviewed change; future untracked growth and negative controls remain fail-closed."
+  "2026-10-11T16:39:30.620Z","harness:codex","Linked verification now passes after running outside the full-suite build lease: five editor integration cases and the separate 139-case execution/context cohort. Earlier recorded linked timeouts occurred while those commands were queued behind full coverage, not while test cases ran; they remain in immutable history. Packed external consumers pass on Node 24, Node 26 and Bun 1.4.2, including strict TypeScript declarations and byte-preserving no-op/invalid edits."
+  "2026-10-11T16:57:08.340Z","harness:codex",The complete 10154-test cohort passed; exact coverage correctly held at 52235/52238 branches because source-level CLI adapter edit forwarding lacked direct transport cases (subprocess integration exercises built code). Added a three-row adapter table for exact command and string/numeric index inputs without a new production seam. SDK/core coverage was already exact. A complete combined rerun will certify the final denominator.
+  "2026-10-11T17:53:45.234Z","harness:codex","Final source verification: canonical sandboxed coverage (--maxWorkers=8 --retry=1) passed 10,163 tests in 798 files; exact statements 68097/68097, branches 52238/52238, functions 14040/14040 and lines 64757/64757. Full TypeScript check passed. The independent installed-package grammar census is 233/233, zero findings, 20/21 shapes. Pre-closure archives containing the latest SDK guide and calendar declarations pass unchanged base 19,995,781/20,000,000 bytes and real offline Sentry-injected 20,239,937/20,250,000 bytes, preserving 1655 first-party and 4731 runtime files. Blocking tracker-quality metadata findings have been repaired through pm; final complete static execution and post-closure generated-changelog archives are still pending, so these are source/pre-closure receipts rather than publication claims."
+  "2026-10-11T18:12:45.693Z","harness:codex","Reviewed-delivery completion receipts: latest upstream pm-changelog 2026.10.5 generates and checks the four new entries under Unreleased, preserving prior release buckets. Final generated-changelog archives pass unchanged base 19996491/20000000 and real offline Sentry-injected 20240647/20250000 first-party byte ceilings; both retain all 1655 distribution and 4731 runtime files. Final tarball passes Node 24.21/26.9 and Bun 1.4.2 metadata/provenance/no-op/admission/CLI/history acceptance, public calendar signature checks and strict documentation TypeScript compilation. Live required Sentry/telemetry gate passes: 14-day Sentry critical/high/total 0/0/0, 7-day finish error rate 2.92%, missing failure codes 0. Validation is successful with inherited 170 historical resolution-field warnings; all four new closures contain immutable resolution/expected/actual evidence. No in-progress items remain. Hosted exact-head review/checks and merge are still pending, and public 2026.10.11 acceptance remains prior-release channel evidence."
+learnings[1]{created_at,author,text}:
+  "2026-10-11T16:53:36.730Z","harness:codex","Compare edited metadata in its storage-normalized form before deciding whether to write. A semantic retry must preserve authoritative bytes, history and original creation provenance; editor stamps describe the revision rather than replacing provenance."
+files[18]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  sdk/public-surface.json,project
+  src/cli/register-operations.ts,project
+  src/core/history/event-classification.ts,project
+  src/core/item/item-format.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/core.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/index.ts,project
+  src/sdk/test/update.ts,project
+  src/types.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/linked-tests/linked-test-editing.integration.spec.ts,project
+  tests/unit/cli/register-operations.spec.ts,project
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-11T16:16:02.597Z"
+      source_kind: local_mutation
+      source_ref: feat/linked-test-edits-and-refusals
+    updated_by: "harness:codex"
+    updated_at: "2026-10-11T16:37:09.245Z"
+    note: 5 editor integration cases; separate 139-case focused cohort and packed-consumer receipts are recorded in comments
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/register-operations.spec.ts
+    scope: project
+    timeout_seconds: 120
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-11T16:56:02.288Z"
+      source_kind: local_mutation
+      source_ref: feat/linked-test-edits-and-refusals
+test_runs[3]:
+  - run_id: test-local-mv418nof-z0dimw
+    kind: test
+    status: failed
+    started_at: "2026-10-11T16:19:30.055Z"
+    finished_at: "2026-10-11T16:23:30.783Z"
+    recorded_at: "2026-10-11T16:23:30.783Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv41qyqe-0u4cwo
+    kind: test
+    status: passed
+    started_at: "2026-10-11T16:37:11.211Z"
+    finished_at: "2026-10-11T16:37:44.918Z"
+    recorded_at: "2026-10-11T16:37:44.918Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv42g464-hylv6j
+    kind: test
+    status: passed
+    started_at: "2026-10-11T16:57:07.026Z"
+    finished_at: "2026-10-11T16:57:18.364Z"
+    recorded_at: "2026-10-11T16:57:18.364Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/register-operations.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  docs/LINKED_TEST_EDITS.md,project
+  docs/SDK_EVIDENCE_TRACEABILITY.md,project
+  docs/TESTING.md,project
+close_reason: Implemented atomic linked-test metadata editing through the shared SDK and existing CLI/MCP action surface
+body: ""

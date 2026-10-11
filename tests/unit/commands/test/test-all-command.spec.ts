@@ -1053,7 +1053,7 @@ describe("runTestAll", () => {
         .find((entry) =>
           entry.command?.includes("list-all --type Task --limit 201 --json"),
         );
-      expect(withoutOverrideEntry?.status).toBe("failed");
+      expect(withoutOverrideEntry).toMatchObject({ status: "refused", failure_category: "config_refusal", exit_code: null });
       expect(withoutOverrideEntry?.execution_context?.pm_context_mode).toBe(
         "schema",
       );

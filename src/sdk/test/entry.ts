@@ -6,6 +6,23 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { looksLikeStructuredKeyValueEntry } from "../../core/item/parse.js";
+import type { LinkedTest } from "../../types/index.js";
+
+/** Refuse an unbound tracker context before a linked-test mutation can persist it. */
+export function assertLinkedTestContext(test: LinkedTest): void {
+  if (test.pm_context_mode !== "none" ||
+      test.workspace_context_mode === "isolated" ||
+      test.workspace_context_mode === "snapshot") return;
+  throw new PmCliError(
+    "pm_context_mode=none requires workspace_context_mode=isolated or snapshot so implicit tracker discovery cannot reach the source workspace.",
+    EXIT_CODE.USAGE,
+    {
+      code: "linked_test_context_invalid",
+      required: "Set workspace_context_mode to isolated or snapshot when pm_context_mode is none.",
+      examples: [`pm test <id> --add-json '${JSON.stringify({ command: test.command, pm_context_mode: "none", workspace_context_mode: "isolated" })}'`],
+    },
+  );
+}
 
 // Keys accepted inside a structured linked-test entry. `cmd` is an alias for
 // `command`; everything else maps 1:1 to a LinkedTest field.

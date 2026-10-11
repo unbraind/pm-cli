@@ -1182,6 +1182,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "addJson",
         "remove",
         "removeIndex",
+        "update",
+        "updateIndex",
+        "setJson",
         "run",
         "match",
         "onlyIndex",
@@ -1210,6 +1213,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       mutuallyExclusive: [
+        ["update", "updateIndex"],
         ["acknowledgeLinkedTests", "run"],
         ["acknowledgeLinkedTests", "background"],
       ],

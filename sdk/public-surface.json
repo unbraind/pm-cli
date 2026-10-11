@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1985,
+    "covered_symbols": 1990,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1986
+    "required_symbols": 1991
   },
   "breaking_acknowledgements": [
     {
@@ -2258,6 +2258,20 @@
       ],
       "package_version": "2026.10.9",
       "reason": "Add optional resolved workspace fields to the full-item adapter; existing three-argument calls keep their contract, while declared metadata now follows schema option names and explicit aliases."
+    },
+    {
+      "changes": [
+        "signature ./sdk:LinkedTest",
+        "signature ./sdk:LinkedTestFailureCategory",
+        "signature ./sdk:MAINTENANCE_HISTORY_OPERATIONS",
+        "signature ./sdk:TestCommandOptions",
+        "signature ./sdk:TestResult",
+        "signature ./sdk:TestRunResult",
+        "signature ./sdk/runtime:LinkedTest",
+        "signature ./sdk/runtime:MAINTENANCE_HISTORY_OPERATIONS"
+      ],
+      "package_version": "2026.10.11",
+      "reason": "pm-gh1440 and pm-9djr6d: add metadata editor/options/receipts and editor stamps; intentionally distinguish nonexecuted configuration refusals with status=refused, config_refusal and null child exit; document consumer handling in LINKED_TEST_EDITS.md"
     }
   ],
   "entrypoints": {
@@ -10230,7 +10244,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedTest",
-          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\" | \"none\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
+          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\" | \"none\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; updated_by?: string; updated_at?: string; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -10242,7 +10256,13 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "LinkedTestFailureCategory",
-          "signature": "export type LinkedTestFailureCategory = \"infra_collision\" | \"trust_refusal\" | \"assertion_failure\" | \"empty_run\" | \"timeout\" | \"max_buffer\" | \"spawn_error\" | \"signal\";"
+          "signature": "export type LinkedTestFailureCategory = \"infra_collision\" | \"trust_refusal\" | \"config_refusal\" | \"assertion_failure\" | \"empty_run\" | \"timeout\" | \"max_buffer\" | \"spawn_error\" | \"signal\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "LinkedTestMetadataPatch",
+          "signature": "export type LinkedTestMetadataPatch = { [K in keyof Omit<LinkedTest, \"command\" | \"provenance\" | \"provenance_invalid\" | \"updated_by\" | \"updated_at\">]?: K extends \"scope\" ? LinkedTest[K] : LinkedTest[K] | null; };"
         },
         {
           "classification": "advanced_export",
@@ -10261,6 +10281,12 @@
           "kind": "function",
           "name": "linkedTestTrustFingerprint",
           "signature": "(test: LinkedTest) => string | calls: (test: LinkedTest) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "LinkedTestUpdateSelector",
+          "signature": "export type LinkedTestUpdateSelector = { index: number; } | { command: string; } | { path: string; };"
         },
         {
           "classification": "advanced_export",
@@ -10686,7 +10712,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "MAINTENANCE_HISTORY_OPERATIONS",
-          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"tests_update\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "advanced_export",
@@ -19674,7 +19700,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestCommandOptions",
-          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; removeIndex?: Array<string | number>; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; workspaceContext?: string; overrideLinkedWorkspaceContext?: boolean; allowUntrustedLinkedTests?: boolean; acknowledgeLinkedTests?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
+          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; removeIndex?: Array<string | number>; update?: string; updateIndex?: string | number; setJson?: string; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; workspaceContext?: string; overrideLinkedWorkspaceContext?: boolean; allowUntrustedLinkedTests?: boolean; acknowledgeLinkedTests?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
         },
         {
           "classification": "supported",
@@ -19686,7 +19712,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestResult",
-          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; evidence_recording?: { recorded: boolean; reason: \"recorded\" | \"tracking_disabled\" | \"write_failed\"; run_id: string; recovery_command?: string; }; count: number; removed?: number; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
+          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; evidence_recording?: { recorded: boolean; reason: \"recorded\" | \"tracking_disabled\" | \"write_failed\"; run_id: string; recovery_command?: string; }; count: number; removed?: number; updated_index?: number; updated_fields?: string[]; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
         },
         {
           "classification": "advanced_export",
@@ -19698,7 +19724,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestRunResult",
-          "signature": "export interface TestRunResult { command?: string; path?: string; status: \"passed\" | \"failed\" | \"skipped\"; exit_code?: number; failure_category?: LinkedTestFailureCategory; execution_receipt?: { code: string; stream: \"stdout\" | \"stderr\"; }; execution_context?: { requested_pm_context_mode: LinkedTestPmContextMode; pm_context_mode: LinkedTestPmContextMode; auto_pm_context_applied: boolean; is_pm_command: boolean; is_pm_tracker_read_command: boolean; source_project_pm_path: string; sandbox_project_pm_path: string; source_global_pm_path: string; sandbox_global_pm_path: string; source_project_item_count: number; sandbox_project_item_count: number; source_global_item_count: number; sandbox_global_item_count: number; mismatch_detected: boolean; project_extensions_seeded: boolean; global_extensions_seeded: boolean; requested_workspace_context_mode: LinkedTestWorkspaceContextMode; workspace_context_mode: LinkedTestWorkspaceContextMode; working_directory: string; source_workspace_root: string; trust: LinkedTestTrustDecision; }; stdout?: string; stderr?: string; error?: string; }"
+          "signature": "export interface TestRunResult { command?: string; path?: string; status: \"passed\" | \"failed\" | \"skipped\" | \"refused\"; exit_code?: number | null; failure_category?: LinkedTestFailureCategory; execution_receipt?: { code: string; stream: \"stdout\" | \"stderr\"; }; execution_context?: { requested_pm_context_mode: LinkedTestPmContextMode; pm_context_mode: LinkedTestPmContextMode; auto_pm_context_applied: boolean; is_pm_command: boolean; is_pm_tracker_read_command: boolean; source_project_pm_path: string; sandbox_project_pm_path: string; source_global_pm_path: string; sandbox_global_pm_path: string; source_project_item_count: number; sandbox_project_item_count: number; source_global_item_count: number; sandbox_global_item_count: number; mismatch_detected: boolean; project_extensions_seeded: boolean; global_extensions_seeded: boolean; requested_workspace_context_mode: LinkedTestWorkspaceContextMode; workspace_context_mode: LinkedTestWorkspaceContextMode; working_directory: string; source_workspace_root: string; trust: LinkedTestTrustDecision; }; stdout?: string; stderr?: string; error?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -20131,6 +20157,24 @@
           "kind": "interface",
           "name": "UpdateCommandOptions",
           "signature": "export interface UpdateCommandOptions extends MutationMetadataCommandOptions, SharedLinkedResourceOptions, SharedLinkedResourceClearOptions { title?: string; description?: string; body?: string; documentAnnotationSnapshot?: Partial<Record<\"comments\" | \"notes\" | \"learnings\", unknown[]>>; status?: string; closeReason?: string; completedAt?: string; priority?: string | number; type?: string; tags?: string; addTags?: string[]; removeTags?: string[]; addAc?: string[]; removeAc?: string[]; force?: boolean; allowMissingParent?: boolean; allowUnresolvedDeps?: boolean; depRemove?: string[]; replaceDeps?: boolean; replaceTests?: boolean; replaceFiles?: boolean; replaceDocs?: boolean; runtimeFieldCommands?: Array<\"update\" | \"update_many\">; [key: string]: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "updateLinkedTest",
+          "signature": "(id: string, options: UpdateLinkedTestOptions, global?: GlobalOptions) => Promise<UpdateLinkedTestResult> | calls: (id: string, options: UpdateLinkedTestOptions, global?: GlobalOptions) => Promise<UpdateLinkedTestResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpdateLinkedTestOptions",
+          "signature": "export interface UpdateLinkedTestOptions { selector: LinkedTestUpdateSelector; patch: LinkedTestMetadataPatch; author?: string; message?: string; force?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpdateLinkedTestResult",
+          "signature": "export interface UpdateLinkedTestResult { ok: true; id: string; tests: LinkedTest[]; changed: boolean; count: number; updated_index: number; updated_fields: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -25600,6 +25644,18 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "LinkedTestMetadataPatch",
+          "signature": "export type LinkedTestMetadataPatch = { [K in keyof Omit<LinkedTest, \"command\" | \"provenance\" | \"provenance_invalid\" | \"updated_by\" | \"updated_at\">]?: K extends \"scope\" ? LinkedTest[K] : LinkedTest[K] | null; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "LinkedTestUpdateSelector",
+          "signature": "export type LinkedTestUpdateSelector = { index: number; } | { command: string; } | { path: string; };"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "list",
           "signature": "<Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options> | calls: <Options extends ReadOptions<ListOptions> = ListOptions>(options?: Options, clientOptions?: PmClientOptions) => ReadPromise<ListResult, Options>"
@@ -26179,6 +26235,24 @@
           "kind": "function",
           "name": "update",
           "signature": "(id: string, options?: PmUpdateActionOptions, clientOptions?: PmClientOptions) => Promise<UpdateResult> | calls: (id: string, options?: PmUpdateActionOptions, clientOptions?: PmClientOptions) => Promise<UpdateResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "updateLinkedTest",
+          "signature": "(id: string, options: UpdateLinkedTestOptions, global?: GlobalOptions) => Promise<UpdateLinkedTestResult> | calls: (id: string, options: UpdateLinkedTestOptions, global?: GlobalOptions) => Promise<UpdateLinkedTestResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpdateLinkedTestOptions",
+          "signature": "export interface UpdateLinkedTestOptions { selector: LinkedTestUpdateSelector; patch: LinkedTestMetadataPatch; author?: string; message?: string; force?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "UpdateLinkedTestResult",
+          "signature": "export interface UpdateLinkedTestResult { ok: true; id: string; tests: LinkedTest[]; changed: boolean; count: number; updated_index: number; updated_fields: string[]; }"
         },
         {
           "classification": "supported",
@@ -32958,7 +33032,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedTest",
-          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\" | \"none\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
+          "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\" | \"none\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; updated_by?: string; updated_at?: string; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
         },
         {
           "classification": "supported",
@@ -33084,7 +33158,7 @@
           "classification": "advanced_export",
           "kind": "value",
           "name": "MAINTENANCE_HISTORY_OPERATIONS",
-          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"update_audit\", \"update_ownership_bypass\"]"
+          "signature": "readonly [\"docs_add\", \"files_add\", \"history:author-acknowledge\", \"history_author_acknowledge\", \"history_compact\", \"history_compact_baseline\", \"history_redact\", \"history_repair\", \"history_salvage\", \"normalize\", \"release\", \"test_run_track\", \"tests_add\", \"tests_remove\", \"tests_update\", \"update_audit\", \"update_ownership_bypass\"]"
         },
         {
           "classification": "supported",
@@ -35727,7 +35801,10 @@
     "item_not_found",
     "likely_duplicate",
     "linked_artifact_mutation_conflict",
+    "linked_test_context_invalid",
     "linked_test_remove_no_match",
+    "linked_test_update_ambiguous",
+    "linked_test_update_no_match",
     "linked_test_value_not_quoted",
     "list_source_incomplete",
     "local_package_archive_unsafe",

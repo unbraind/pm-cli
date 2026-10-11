@@ -214,6 +214,8 @@ export function listPmFlagSpellingInventory(): readonly PmFlagSpellingInventoryE
 // and claim; aliases remain free and every future increase still fails closed.
 // pm-5bsofk adds one install planning opt-in to each executable install surface.
 // pm-gh1392 adds exactly one explicit no-network freshness opt-out, with no spare allowance.
+// pm-9djr6d adds exactly two edit selectors and one JSON metadata patch option;
+// the test help-token ceiling stays unchanged and no spare flag allowance is added.
 const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   init: 30,
   // pm-yql1: the item namespace exposes only the twenty shared global flags.
@@ -278,7 +280,7 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   docs: 30,
   deps: 32,
   plan: 109,
-  test: 53,
+  test: 56,
   "test-all": 40,
   telemetry: 21,
   stats: 29,

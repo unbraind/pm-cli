@@ -1,0 +1,52 @@
+id: pm-4g4qv0
+title: Keep linked-test SDK delivery within publication budgets using authoritative API references
+description: "The new linked-test SDK primitive raises the first-party packed distribution to 20036151 bytes above the unchanged 20000000-byte base ceiling. Consolidate the duplicated static/runtime SDK inventory around the published public-surface manifest and existing focused contract guides, preserving headings, executable APIs, type declarations, runtime closure and distinct examples."
+type: Task
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-11T16:28:58.551Z"
+updated_at: "2026-10-11T18:12:46.934Z"
+closed_at: "2026-10-11T18:08:02.572Z"
+completed_at: "2026-10-11T18:08:02.572Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: Reduce real base and Sentry-injected distribution bytes below unchanged ceilings; preserve every public export and required archive file; retain SDK section anchors and route each capability to authoritative typed metadata and focused guides; build and documentation links pass; packed Node and Bun consumers and publication gate pass
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: "Consolidated duplicated SDK export/assertion inventories around the shipped public-surface snapshot, focused guides and registry ownership map. Preserved all SDK exports, runtime files, declarations, documentation headings and substantive transaction/context safety contracts; corrected the context-evaluation example with a typed budget-refusal guard."
+expected_result: Base and real Sentry-injected archives fit existing limits without removing SDK capabilities or runtime closure.
+actual_result: "Canonical sandboxed coverage passes 10,163 tests across 798 files with exact statements 68097/68097, branches 52238/52238, functions 14040/14040 and lines 64757/64757. Typecheck and all static subgates pass after planning-field and typed-edge repairs, including graph/record assurance and mutation controls. All 40 SDK guide headings remain and the typed documentation adapter compiles against packed declarations. Latest source/pre-closure archives pass unchanged base 19995781/20000000 bytes and real offline Sentry-injected 20239937/20250000 bytes with 1655 first-party and 4731 runtime files. Post-closure changelog/archive validation belongs to the reviewed delivery, not a publication claim."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9djr6d,related,"2026-10-11T16:28:58.551Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-11T16:28:58.551Z","harness:codex","Duplicate check: complete all-status corpus, live publication-size SDK search, current open/in-progress inventories and full pm-998juj metadata/history were read. The canonical weight/symbolication owner remains open with its real-event acceptance. This concrete delivery task covers the newly reproduced 20036151>20000000 archive regression, without closing broader Sentry symbolication work or weakening any budget."
+  "2026-10-11T16:36:43.639Z","harness:codex","Consolidated duplicated export and assertion inventories into the shipped API snapshot, focused guide routing and a registry ownership map. All SDK subpaths, declarations, runtime files and documentation anchors remain. Transaction recovery, preview safety, schema evolution and context semantics remain documented. Publication byte ceilings are unchanged."
+  "2026-10-11T16:39:33.370Z","harness:codex","Packed artifact now passes the unchanged base budget: first-party distribution 19994516/20000000 bytes with 1655/1800 files; bundled runtime 23334884/25000000 bytes with 4731/5000 files. SDK exports, declarations and runtime closure remain shipped. Documentation links pass. Final reviewed changelog will also be included in the artifact receipt before closeout."
+  "2026-10-11T17:53:47.388Z","harness:codex","Final source verification: canonical sandboxed coverage (--maxWorkers=8 --retry=1) passed 10,163 tests in 798 files; exact statements 68097/68097, branches 52238/52238, functions 14040/14040 and lines 64757/64757. Full TypeScript check passed. The independent installed-package grammar census is 233/233, zero findings, 20/21 shapes. Pre-closure archives containing the latest SDK guide and calendar declarations pass unchanged base 19,995,781/20,000,000 bytes and real offline Sentry-injected 20,239,937/20,250,000 bytes, preserving 1655 first-party and 4731 runtime files. Blocking tracker-quality metadata findings have been repaired through pm; final complete static execution and post-closure generated-changelog archives are still pending, so these are source/pre-closure receipts rather than publication claims."
+  "2026-10-11T18:12:46.934Z","harness:codex","Reviewed-delivery completion receipts: latest upstream pm-changelog 2026.10.5 generates and checks the four new entries under Unreleased, preserving prior release buckets. Final generated-changelog archives pass unchanged base 19996491/20000000 and real offline Sentry-injected 20240647/20250000 first-party byte ceilings; both retain all 1655 distribution and 4731 runtime files. Final tarball passes Node 24.21/26.9 and Bun 1.4.2 metadata/provenance/no-op/admission/CLI/history acceptance, public calendar signature checks and strict documentation TypeScript compilation. Live required Sentry/telemetry gate passes: 14-day Sentry critical/high/total 0/0/0, 7-day finish error rate 2.92%, missing failure codes 0. Validation is successful with inherited 170 historical resolution-field warnings; all four new closures contain immutable resolution/expected/actual evidence. No in-progress items remain. Hosted exact-head review/checks and merge are still pending, and public 2026.10.11 acceptance remains prior-release channel evidence."
+learnings[1]{created_at,author,text}:
+  "2026-10-11T16:53:38.404Z","harness:codex","A packed distribution budget covers SDK declarations, bundles and documentation together. Route repeated symbol inventories to the shipped compatibility snapshot and concise ownership maps, then verify base and real offline debug-ID-injected archives without enlarging ceilings."
+files[1]{path,scope}:
+  docs/SDK.md,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/docs-skills-gate.mjs --links-only --json,project,120,"harness:codex","2026-10-11T16:37:23.661Z",local_mutation,feat/linked-test-edits-and-refusals
+  node scripts/release/package-artifact-gate.mjs,project,300,"harness:codex","2026-10-11T16:37:27.073Z",local_mutation,feat/linked-test-edits-and-refusals
+test_runs[1]:
+  - run_id: test-local-mv41szgi-8bdyok
+    kind: test
+    status: passed
+    started_at: "2026-10-11T16:38:52.809Z"
+    finished_at: "2026-10-11T16:39:19.169Z"
+    recorded_at: "2026-10-11T16:39:19.169Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs --links-only --json,schema,schema,source,local_source_ref
+      node scripts/release/package-artifact-gate.mjs,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Restored unchanged SDK publication budgets through authoritative API-reference routing
+body: ""

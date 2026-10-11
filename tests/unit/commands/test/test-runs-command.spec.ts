@@ -893,11 +893,11 @@ describe("background test run lifecycle", () => {
     });
     expect(
       backgroundRunsTestOnly.evaluateWorkerResult("test", {
-        run_results: [null, "bad", { status: "failed" }, { status: "unknown" }],
+        run_results: [null, "bad", { status: "failed" }, { status: "refused", exit_code: null }, { status: "unknown" }],
         fail_on_skipped_triggered: true,
       }),
     ).toMatchObject({
-      summary: { passed: 0, failed: 1, skipped: 1, fail_on_skipped_triggered: true },
+      summary: { passed: 0, failed: 2, skipped: 1, fail_on_skipped_triggered: true },
     });
     expect(backgroundRunsTestOnly.evaluateWorkerResult("test-all", { totals: { passed: "1" } })).toMatchObject({
       summary: { passed: 0, failed: 0, skipped: 0 },

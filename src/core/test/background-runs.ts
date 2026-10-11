@@ -543,7 +543,7 @@ function evaluateWorkerResult(
       passed += 1;
       continue;
     }
-    if (status === "failed") {
+    if (status === "failed" || status === "refused") {
       failed += 1;
       continue;
     }

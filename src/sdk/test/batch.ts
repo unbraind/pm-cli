@@ -365,7 +365,7 @@ const countStatuses = (
       passed += 1;
       continue;
     }
-    if (result.status === "failed") {
+    if (result.status === "failed" || result.status === "refused") {
       failed += 1;
       continue;
     }

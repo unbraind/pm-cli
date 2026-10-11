@@ -126,13 +126,14 @@ function validateBackgroundTestOptions(
     );
   }
   if (
+    options.update !== undefined || options.updateIndex !== undefined || options.setJson !== undefined ||
     values.addValues.length > 0 ||
     values.addJsonValues.length > 0 ||
     values.removeValues.length > 0 ||
     values.removeIndexValues.length > 0
   ) {
     throw new PmCliError(
-      "--background does not support --add/--add-json/--remove/--remove-index; update linked tests first, then run in background",
+      "--background does not support --add/--add-json/--remove/--remove-index or metadata edits; update linked tests first, then run in background",
       EXIT_CODE.USAGE,
     );
   }
@@ -168,6 +169,15 @@ async function runBackgroundLinkedTests(
   printResult(result, globalOptions);
 }
 
+/** Preserve the edit transport fields without duplicating SDK selection or patch validation. */
+function buildTestEditOptions(options: Record<string, unknown>) {
+  return {
+    update: typeof options.update === "string" ? options.update : undefined,
+    updateIndex: typeof options.updateIndex === "string" || typeof options.updateIndex === "number" ? options.updateIndex : undefined,
+    setJson: typeof options.setJson === "string" ? options.setJson : undefined,
+  };
+}
+
 function buildRunTestOptions(
   options: Record<string, unknown>,
   values: {
@@ -182,6 +192,7 @@ function buildRunTestOptions(
     addJson: values.addJsonValues,
     remove: values.removeValues,
     removeIndex: values.removeIndexValues,
+    ...buildTestEditOptions(options),
     list: Boolean(options.list),
     run: Boolean(options.run),
     match: typeof options.match === "string" ? options.match : undefined,
@@ -254,6 +265,7 @@ async function runForegroundLinkedTests(
     globalOptions,
   );
   if (
+    options.update !== undefined || options.updateIndex !== undefined || options.setJson !== undefined ||
     values.addValues.length > 0 ||
     values.addJsonValues.length > 0 ||
     values.removeValues.length > 0 ||
@@ -264,7 +276,7 @@ async function runForegroundLinkedTests(
   }
   printResult(result, globalOptions);
   if (
-    result.run_results.some((entry) => entry.status === "failed") ||
+    result.run_results.some((entry) => entry.status === "failed" || entry.status === "refused") ||
     result.fail_on_skipped_triggered === true
   ) {
     process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
@@ -872,21 +884,21 @@ function addLinkedTestExecutionOptions(command: Command): Command {
     .option("--timeout <seconds>", "Default run timeout in seconds")
     .option(
       "--progress",
-      "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)",
+      "Emit stderr progress (automatic in TTY)",
     )
     .option(
       "--env-set <value>",
-      "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)",
+      "Set run environment (KEY=VALUE, repeatable)",
       collect,
     )
     .option(
       "--env-clear <value>",
-      "Clear environment variable(s) for linked-test runs (NAME, repeatable)",
+      "Clear run environment (NAME, repeatable)",
       collect,
     )
     .option(
       "--shared-host-safe",
-      "Apply additive shared-host-safe runtime defaults for linked-test runs",
+      "Apply additive shared-host-safe run defaults",
     )
     .option(
       "--pm-context <mode>",
@@ -894,7 +906,7 @@ function addLinkedTestExecutionOptions(command: Command): Command {
     )
     .option(
       "--override-linked-pm-context",
-      "Force run-level --pm-context to override per-linked-test pm_context_mode metadata",
+      "Override stored context with --pm-context",
     )
     .option(
       "--workspace-context <mode>",
@@ -902,7 +914,7 @@ function addLinkedTestExecutionOptions(command: Command): Command {
     )
     .option(
       "--override-linked-workspace-context",
-      "Force run-level --workspace-context over per-linked-test metadata",
+      "Override stored context with --workspace-context",
     )
     .option(
       "--allow-untrusted-linked-tests",
@@ -918,7 +930,7 @@ function addLinkedTestExecutionOptions(command: Command): Command {
     )
     .option(
       "--fail-on-empty-test-run",
-      "Treat successful linked-test commands that report zero executed tests as failures",
+      "Fail successful commands reporting zero executed tests",
     )
     .option(
       "--require-assertions-for-pm",
@@ -926,11 +938,11 @@ function addLinkedTestExecutionOptions(command: Command): Command {
     )
     .option(
       "--check-context",
-      "Preflight linked PM command context diagnostics before executing commands",
+      "Check PM context before execution",
     )
     .option(
       "--auto-pm-context",
-      "Auto-remediate PM tracker-read context mismatches by routing those linked commands through tracker context",
+      "Route mismatched PM tracker reads through tracker context",
     );
 }
 
@@ -952,28 +964,31 @@ export function registerOperationCommands(program: Command): void {
     )
     .option(
       "--remove <value>",
-      "Remove linked test entry by exact command/path (command=<value> and path=<value> preserve commas and equals signs; or - for stdin)",
+      "Remove exact command/path (command=<value>, path=<value>, or stdin -)",
       collect,
     )
     .option(
       "--remove-index <n>",
-      "Remove the 1-based linked-test index from --list order (repeatable)",
+      "Remove 1-based --list position (repeatable)",
       collect,
     )
     .option("--list", "List linked tests without mutating")
+    .option("--update <value>", "Edit exact command or path=<value>")
+    .option("--update-index <n>", "Edit current 1-based --list position")
+    .option("--set-json <value>", "Metadata patch; null clears optional fields")
     .option("--run", "Run linked test commands")
     .option(
       "--match <value>",
-      "Run only linked tests whose command/path contains this substring",
+      "Run matching command/path substring",
     )
     .option(
       "--only-index <n>",
-      "Run only the 1-based linked-test index from --list order",
+      "Run 1-based --list position",
     )
-    .option("--only-last", "Run only the most recently added linked test");
+    .option("--only-last", "Run most recently added test");
   testCommand.option(
     "--acknowledge-linked-tests",
-    "Trust the item's current linked commands in this clone without executing them",
+    "Trust current commands in this clone without execution",
   );
   addLinkedTestExecutionOptions(testCommand)
     .option(
