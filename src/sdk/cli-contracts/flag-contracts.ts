@@ -1063,7 +1063,7 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--require-assertions-for-pm" },
   { flag: "--check-context" },
   { flag: "--auto-pm-context" },
-  { flag: "--measure", list: true },
+  { flag: "--measure", list: true, description: "Record numeric measurement evidence; requires --run and an executed linked command." },
   { flag: "--metric-below" },
   { flag: "--metric-diff" },
   { flag: "--author" },

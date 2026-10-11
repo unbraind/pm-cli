@@ -753,11 +753,12 @@ export async function maybeRenderBootstrapJsonHelp(
   );
   if (!targetCommand) {
     if (!bootstrapGlobal.quiet) {
-      const unknownMessage = `unknown command '${resolvePmCommandOperation(helpRequest.commandPathTokens.join(" "))}'`;
+      const unknownMessage = `unknown command '${helpRequest.commandPathTokens.join(" ")}'`;
       const runtimeContext = buildUnknownCommandGuidanceFromRuntime(
         unknownMessage,
         rootProgram,
         extensionDescriptors,
+        argv,
       );
       const envelope = formatCommanderErrorForJson(
         unknownMessage,

@@ -3559,6 +3559,7 @@ For SDK and automation consumers, the key runtime change is the optional `recove
 - `candidate_commands_total`
 - `candidate_commands_truncated`
 - `suggested_retry`
+- `suggested_retry_args` (pass these argument tokens to the `pm` executable instead of reparsing display text)
 
 Treat `recovery.suggested_retry` as the first-choice deterministic replay
 command when present. Generic missing-option retries preserve every original
@@ -3582,6 +3583,45 @@ shared vocabulary and include explicit total/truncation metadata. They are
 contract-discovery hints, not permission to change the requested operation.
 Unknown positional subcommands expose the complete `allowed_values` vocabulary
 and use `suggested_retry` only when a deterministic nearby value exists.
+
+Tracked by [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon) and
+[pm-test-measure-prerequisite](../.agents/pm/issues/pm-test-measure-prerequisite.toon):
+`resolveMisnestedCommandPath` derives a canonical path from the installed command
+registry only when an exact suffix under a known namespace has one owner. For
+example, `pm item update` remains refused and suggests `pm update --help`.
+Nested refusals retain every registered namespace segment and prefer the longest
+matching suffix. A shorter suffix is considered only across registered prefixes;
+an ambiguous longer match never falls back to a guessed shorter command.
+Inspection does not execute the guessed mutation, and ambiguous or unavailable
+extension routes receive the usual bounded discovery guidance.
+Canonical help retry arguments and the first displayed example retain an
+explicitly selected `--pm-path` and `--no-extensions`, so inspection uses the same
+tracker and extension policy from any working directory.
+In-process callers of `runPmCli(args)` do not need to replace `process.argv`:
+usage and help recovery use the supplied invocation for command selection,
+tracker scope, extension policy and both text and JSON formatting.
+
+`runTest(id, { measure: [...] }, global)` requires `run: true`. A missing run
+returns `test_measure_requires_run` before linked-test mutation, with an executable
+retry retaining the tracker, measurements, selectors, runtime directives, and
+explicit actor. It adds no ownership or trust override. When the request also
+acknowledges trust, recovery opens help and supplies `next_steps`: review the linked
+commands, acknowledge them in a separate non-executing operation, then run the
+measurement without the acknowledgement flag. Foreground and background requests
+use the same prerequisite guard; background recovery retains `--background`.
+Package authors can call the exported `assertTestMeasurementRun(id, options,
+global, resolvedPmRoot, background?)` before dispatching their own linked-test
+runner. It validates only this prerequisite and performs no I/O; `runTest` applies
+the guard automatically before other execution and trust validation.
+
+`runTest` also verifies execution before recording measurements. Empty or entirely
+skipped results, pre-execution refusals, failed process creation and recognised
+empty test-runner output return `test_measure_requires_execution` with a scoped
+read-only list retry. Empty summaries in either output stream refuse even when
+the command exits unsuccessfully, preserving stored measurements and history.
+A mixed run with an executed command can retain measurements;
+an executed failing command records a failed run alongside its measurements.
+Requested link edits remain separate from the resulting measurement evidence.
 
 ## Authoring Pattern
 

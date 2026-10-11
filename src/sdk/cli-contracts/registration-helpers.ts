@@ -43,6 +43,11 @@ import type { ListOptions, runList } from "../query/list.js";
 import type { NextOptions } from "../query/next.js";
 import type { runActivity } from "../query/activity.js";
 
+export {
+  buildBackgroundTestCommandArgs,
+  buildBackgroundTestAllCommandArgs,
+} from "../test/command-args.js";
+
 export { setActiveCommandResult };
 
 export { printError, printResult, writeStdout };
@@ -249,51 +254,6 @@ export function collect(
   return next;
 }
 
-function pushOptionalValueFlag(
-  args: string[],
-  flag: string,
-  value: unknown,
-): void {
-  if (typeof value !== "string") {
-    return;
-  }
-  const trimmed = value.trim();
-  if (trimmed.length === 0) {
-    return;
-  }
-  args.push(flag, trimmed);
-}
-
-function pushOptionalBooleanFlag(
-  args: string[],
-  flag: string,
-  value: unknown,
-): void {
-  if (value === true) {
-    args.push(flag);
-  }
-}
-
-function pushRepeatableValueFlag(
-  args: string[],
-  flag: string,
-  values: unknown,
-): void {
-  if (!Array.isArray(values)) {
-    return;
-  }
-  for (const value of values) {
-    if (typeof value !== "string") {
-      continue;
-    }
-    const trimmed = value.trim();
-    if (trimmed.length === 0) {
-      continue;
-    }
-    args.push(flag, trimmed);
-  }
-}
-
 function optionTrue(
   options: Record<string, unknown>,
   key: string,
@@ -373,86 +333,6 @@ function copyUnknownOptions(
     }
     target[key] = value;
   }
-}
-
-/** Implements build background test command args for the public runtime surface of this module. */
-export function buildBackgroundTestCommandArgs(
-  id: string,
-  options: Record<string, unknown>,
-): string[] {
-  const args: string[] = ["test", id, "--run", "--json", "--progress"];
-  pushRepeatableValueFlag(args, "--add", options.add);
-  pushRepeatableValueFlag(args, "--add-json", options.addJson);
-  pushRepeatableValueFlag(args, "--remove", options.remove);
-  pushRepeatableValueFlag(args, "--remove-index", options.removeIndex);
-  pushOptionalValueFlag(args, "--match", options.match);
-  pushOptionalValueFlag(args, "--only-index", options.onlyIndex);
-  pushOptionalBooleanFlag(args, "--only-last", options.onlyLast);
-  pushRepeatableValueFlag(args, "--measure", options.measure);
-  pushOptionalValueFlag(args, "--metric-below", options.metricBelow);
-  pushOptionalValueFlag(args, "--metric-diff", options.metricDiff);
-  pushSharedBackgroundTestCommandArgs(args, options);
-  pushOptionalValueFlag(args, "--author", options.author);
-  pushOptionalValueFlag(args, "--message", options.message);
-  pushOptionalBooleanFlag(args, "--force", options.force);
-  return args;
-}
-
-function pushSharedBackgroundTestCommandArgs(
-  args: string[],
-  options: Record<string, unknown>,
-): void {
-  pushOptionalValueFlag(args, "--timeout", options.timeout);
-  pushRepeatableValueFlag(args, "--env-set", options.envSet);
-  pushRepeatableValueFlag(args, "--env-clear", options.envClear);
-  pushOptionalBooleanFlag(args, "--shared-host-safe", options.sharedHostSafe);
-  pushOptionalValueFlag(args, "--pm-context", options.pmContext);
-  pushOptionalBooleanFlag(
-    args,
-    "--override-linked-pm-context",
-    options.overrideLinkedPmContext,
-  );
-  pushOptionalValueFlag(args, "--workspace-context", options.workspaceContext);
-  pushOptionalBooleanFlag(
-    args,
-    "--override-linked-workspace-context",
-    options.overrideLinkedWorkspaceContext,
-  );
-  pushOptionalBooleanFlag(
-    args,
-    "--allow-untrusted-linked-tests",
-    options.allowUntrustedLinkedTests,
-  );
-  pushOptionalBooleanFlag(
-    args,
-    "--fail-on-context-mismatch",
-    options.failOnContextMismatch,
-  );
-  pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
-  pushOptionalBooleanFlag(
-    args,
-    "--fail-on-empty-test-run",
-    options.failOnEmptyTestRun,
-  );
-  pushOptionalBooleanFlag(
-    args,
-    "--require-assertions-for-pm",
-    options.requireAssertionsForPm,
-  );
-  pushOptionalBooleanFlag(args, "--check-context", options.checkContext);
-  pushOptionalBooleanFlag(args, "--auto-pm-context", options.autoPmContext);
-}
-
-/** Implements build background test all command args for the public runtime surface of this module. */
-export function buildBackgroundTestAllCommandArgs(
-  options: Record<string, unknown>,
-): string[] {
-  const args: string[] = ["test-all", "--json", "--progress"];
-  pushOptionalValueFlag(args, "--status", options.status);
-  pushOptionalValueFlag(args, "--limit", options.limit);
-  pushOptionalValueFlag(args, "--offset", options.offset);
-  pushSharedBackgroundTestCommandArgs(args, options);
-  return args;
 }
 
 /** Implements format hook warnings for the public runtime surface of this module. */

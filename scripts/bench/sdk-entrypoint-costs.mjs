@@ -14,6 +14,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { benchmarkAdmissionError, captureFinalRunnerControl, captureRunnerEnvironment, qualifyBenchmarkRunner } from "./runner-qualification.mjs";
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -176,6 +177,7 @@ export async function buildEntrypointCostReport(options = {}) {
     throw new Error("iterations must be an integer between 1 and 30");
   }
   const measure = options.measure ?? measureEntrypointProcess;
+  const environmentBefore = captureRunnerEnvironment();
   const baseline = await measureSamples(null, iterations, measure);
   const entrypoints = {};
   for (const [entrypoint, fileName] of Object.entries(ENTRYPOINT_FILES)) {
@@ -208,7 +210,9 @@ export async function buildEntrypointCostReport(options = {}) {
     architecture: process.arch,
     iterations,
     baseline,
+    baseline_after: await captureFinalRunnerControl(() => measureSamples(null, iterations, measure)),
     entrypoints,
+    runner_environment: { before: environmentBefore, after: captureRunnerEnvironment() },
   };
 }
 
@@ -326,6 +330,16 @@ function parseArguments(argv) {
   };
 }
 
+/** Read the existing target policy, using the committed control only when creating a new calibration target. */
+async function readEntrypointBudgets(targetBudgetPath, creating) {
+  try {
+    return JSON.parse(await readFile(targetBudgetPath, "utf8"));
+  } catch (error) {
+    if (!creating || error.code !== "ENOENT") throw error;
+    return JSON.parse(await readFile(budgetPath, "utf8"));
+  }
+}
+
 /** Run the entrypoint import-cost benchmark command. */
 export async function main(argv = process.argv.slice(2), options = {}) {
   const parsed = parseArguments(argv);
@@ -335,12 +349,23 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   const targetBudgetPath = options.budgetPath ?? budgetPath;
   const targetDocumentationPath =
     options.documentationPath ?? documentationPath;
+  const budgets = await readEntrypointBudgets(targetBudgetPath, parsed.mode === "update");
+  const qualification = qualifyBenchmarkRunner([report.baseline, report.baseline_after], budgets.baseline, LATENCY_NOISE_MARGIN_MS);
+  if (parsed.mode === "update" && qualification.status !== "qualified") {
+    throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [], qualification);
+  }
   if (parsed.mode === "update") {
+    const proposedBudgets = buildEntrypointBudgets(report);
+    if (proposedBudgets.baseline.max_import_ms > budgets.baseline.max_import_ms) {
+      throw benchmarkAdmissionError("SDK entrypoint import-cost", report, [
+        `bare node control ceiling: proposed ${proposedBudgets.baseline.max_import_ms}ms > existing ${budgets.baseline.max_import_ms}ms`,
+      ], qualification, "control_ceiling");
+    }
     await mkdir(path.dirname(targetBudgetPath), { recursive: true });
     await mkdir(path.dirname(targetDocumentationPath), { recursive: true });
     await writeFile(
       targetBudgetPath,
-      `${JSON.stringify(buildEntrypointBudgets(report), null, 2)}\n`,
+      `${JSON.stringify(proposedBudgets, null, 2)}\n`,
       "utf8",
     );
     await writeFile(
@@ -350,14 +375,11 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     );
     return { mode: parsed.mode, report, violations: [] };
   }
-  const budgets = JSON.parse(await readFile(targetBudgetPath, "utf8"));
   const violations = compareEntrypointBudgets(report, budgets);
-  if (violations.length > 0) {
-    throw new Error(
-      `SDK entrypoint import-cost gate failed:\n${violations.join("\n")}`,
-    );
+  if (violations.length > 0 || qualification.status !== "qualified") {
+    throw benchmarkAdmissionError("SDK entrypoint import-cost", report, violations, qualification);
   }
-  return { mode: parsed.mode, report, violations };
+  return { mode: parsed.mode, report, violations, runner_qualification: qualification, product_admission: "passed" };
 }
 
 /** Execute the benchmark CLI while leaving its implementation importable. */

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-09-28T09:03:03.344Z"
+updated_at: "2026-10-10T19:45:27.180Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -19,13 +19,39 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-09-28T06:20:35.648Z","harness:codex","text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
   "2026-09-28T08:54:59.030Z","harness:codex","Additional live evidence 2026-09-28: during Plan receipt/evidence-note delivery, the static SDK entrypoint gate failed sdk/merge median-of-five at 240 ms against the unchanged 226 ms ceiling. Full-suite invocation-profile also exceeded its scheduling margin and two source scans hit 30-second timeouts while a separate tracker assurance scan ran; all three tests passed unchanged in a focused rerun without that competing scan. This is correlation, not causal attribution. Isolated SDK/transport reruns are pending; no performance ratchet was changed."
   "2026-09-28T09:03:00.923Z","harness:codex","Untouched-base comparison completed in a separate temporary clone at f3163466b with the same installed dependencies and Node 26.9.0. Base SDK import gate failed aggregate 514/500 ms and merge 252/226 ms; base CLI failed get 388/362, next 448/440, create 403/398 ms. Candidate isolated Node 26 rerun failed merge 232/226 and five CLI operations. Candidate Node 24.12.0 passed all 10 SDK imports; CLI failures moved to list 432/419, context 442/433, claim 425/415 ms. This confirms admission failures also exist on the unchanged base, not a clean local performance qualification. It does not identify the cause or exclude smaller regressions. Preserve all budgets; use hosted exact-head checks and continue this canonical diagnosis separately."
-files[2]{path,scope}:
+  "2026-10-10T18:18:22.918Z","harness:codex","Active diagnosis: capture supported runtime, pressure and bare-process controls with fresh isolated SDK/CLI transport measurements; compare unchanged base and candidate without relaxing latency/RSS budgets. A runner qualification refusal must stay unsuccessful and must never certify product admission. Historical failure causes remain unproven until controlled evidence identifies them."
+  "2026-10-10T18:25:09.780Z","harness:codex","Untouched-base c233923c8a262b90dcf44de083619543d960074c isolated Node26.9.0 measurements: zero SDK or CLI budget violations. Bare Node p50 46ms/p95 51ms. CLI best get315/list323/context368/next398/create347/claim352ms; p95 values span481-660ms. Available parallelism8, load averaged2.57-2.92, free memory14.5-14.7GB. All committed latency/RSS ceilings remain unchanged. This qualifies the current base and exposes variability; it does not establish the historical failure mechanism."
+  "2026-10-10T18:28:28.770Z","harness:codex","Negative-control proof: an isolated copy of the untouched base benchmark, with synthetic product observations within all budgets and bare-process medians999ms, returned successful admission without qualification. The new regression requires an explicit unsuccessful benchmark_runner_unqualified result and retains the complete report. Qualified over-budget product controls independently remain unsuccessful; no latency or RSS budget was increased."
+  "2026-10-10T18:39:50.766Z","harness:codex","Candidate live pressure observation: a focused test alongside packed consumers retained zero CLI product-budget violations but bracketed bare-Node p50 controls157ms/99ms, against the unchanged106ms qualification ceiling. The gate correctly refused with benchmark_runner_unqualified and product_admission=unverified; load-average snapshots9.03/10.98 are observations, not proof of historical causation. The real measurement test uses isolated explicitly permissive fixture budgets to avoid turning a unit suite into host admission; production ceilings are unchanged."
+  "2026-10-10T19:14:53.064Z","harness:codex","Candidate control classification passes the linked27-test benchmark suite and the full10111-test exact-coverage suite. Bracketed bare-process controls, complete report retention and explicit unsuccessful unqualified admission are implemented. The pressure observation and unchanged-base comparison do not identify the earlier historical overrun cause; this canonical diagnosis retains that acceptance boundary and will return open/unclaimed after delivery rather than closing a partially proven cause. All committed latency/RSS budgets are unchanged."
+  "2026-10-10T19:45:25.604Z","harness:codex","The complete qualification diagnostics and public methodology are verified and closed in the execution child. Both real SDK and CLI startup gates pass on Node24 with unchanged budgets; the separate Node26 qualified merge overrun is retained. Historical failure causation remains unproven, so this diagnosis returns open and unclaimed rather than overstating the completed child."
+files[6]{path,scope}:
   scripts/bench/cli-transport-budgets.json,project
   scripts/bench/cli-transport-floor.mjs,project
-docs[1]{path,scope}:
+  scripts/bench/runner-qualification.mjs,project
+  scripts/bench/sdk-entrypoint-costs.mjs,project
+  tests/unit/scripts/cli-transport-floor.spec.ts,project
+  tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,900,"harness:codex","2026-10-10T18:26:47.322Z",local_mutation,feat/executable-agent-recovery,Separate runner qualification and product admission with retained fail-closed diagnostics
+test_runs[1]:
+  - run_id: test-local-mv2rulsx-dp8j2s
+    kind: test
+    status: passed
+    started_at: "2026-10-10T19:12:22.260Z"
+    finished_at: "2026-10-10T19:12:52.449Z"
+    recorded_at: "2026-10-10T19:12:52.449Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
   docs/ECOSYSTEM_PLANNING_REVIEW.md,project
+  docs/performance/runner-qualification.md,project
+  docs/TESTING.md,project
 body: ""

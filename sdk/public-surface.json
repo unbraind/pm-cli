@@ -3309,6 +3309,12 @@
           "signature": "(subcommand: string, dryRun: boolean) => void | calls: (subcommand: string, dryRun: boolean) => void"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertTestMeasurementRun",
+          "signature": "(id: string, options: TestCommandOptions, global: GlobalOptions, pmRoot: string, background?: boolean) => void | calls: (id: string, options: TestCommandOptions, global: GlobalOptions, pmRoot: string, background?: boolean) => void"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "ASSURANCE_ACTIONS",
@@ -16819,6 +16825,12 @@
           "kind": "function",
           "name": "resolveMergeInstallContext",
           "signature": "(options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution | calls: (options: { cwd: string; explicitPath?: string; dryRun: boolean; environment: Readonly<Record<string, string | undefined>>; }) => MergeInstallContextResolution"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveMisnestedCommandPath",
+          "signature": "(unknownPath: string, availablePaths: readonly string[]) => string | undefined | calls: (unknownPath: string, availablePaths: readonly string[]) => string | undefined"
         },
         {
           "classification": "supported",
@@ -35849,6 +35861,8 @@
     "template_type_unknown",
     "terminal_plan_mutation",
     "terminal_state_conflict",
+    "test_measure_requires_execution",
+    "test_measure_requires_run",
     "tracked_runtime_cache_files",
     "tracker_not_initialized",
     "tracker_root_missing",
