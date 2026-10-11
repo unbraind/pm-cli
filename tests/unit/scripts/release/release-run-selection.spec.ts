@@ -20,13 +20,13 @@ const tagSha = "0449d15f045f881a574248d35774a656a8b1e55b";
 
 describe("accepted publication admission", () => {
   const options = { tag, tagSha, defaultBranch: "main" };
-  const jobs = (conclusion: string) => [{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+  const jobs = (conclusion: string, id = 10, total = 1) => [{ total_count: total, jobs: [{ id, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
     { name: "Publish to npm", status: "completed", conclusion },
   ] }] }];
 
   it("refuses an accepted earlier attempt even when the newest attempt skipped publishing", () => {
     expect(() => assertNoAcceptedPublication([run({})], options, () => [
-      ...jobs("skipped"), ...jobs("success"),
+      ...jobs("skipped", 10, 2), ...jobs("success", 11, 2),
     ])).toThrow("previously accepted");
     expect(() => assertNoAcceptedPublication([run({})], options, () => jobs("failure"))).not.toThrow();
   });
@@ -44,12 +44,12 @@ describe("accepted publication admission", () => {
   });
 
   it("excludes only the current attempt while retaining previous accepted attempts of the same run", () => {
-    const current = { jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 2, steps: [] }] };
+    const current = { total_count: 1, jobs: [{ id: 20, name: "Build, Test, Publish", run_id: 1, run_attempt: 2, steps: [] }] };
     const active = { ...options, currentRunId: 1, currentAttempt: 2 };
     expect(() => assertNoAcceptedPublication([run({})], active, () => [current])).not.toThrow();
-    expect(() => assertNoAcceptedPublication([run({})], active, () => [current, ...jobs("success")])).toThrow("previously accepted");
+    expect(() => assertNoAcceptedPublication([run({})], active, () => [{ ...current, total_count: 2 }, ...jobs("success", 10, 2)])).toThrow("previously accepted");
     expect(() => assertNoAcceptedPublication([run({})], { ...active, currentAttempt: 0 }, () => [current])).toThrow();
-    expect(() => assertNoAcceptedPublication([run({})], options, () => [{ jobs: [{ ...jobs("skipped")[0]!.jobs[0], run_id: 2 }] }])).toThrow("identity");
+    expect(() => assertNoAcceptedPublication([run({})], options, () => [{ total_count: 1, jobs: [{ ...jobs("skipped")[0]!.jobs[0], run_id: 2 }] }])).toThrow("identity");
   });
 
   it("refuses incomplete inventories, missing jobs and unavailable provider evidence", () => {
@@ -58,12 +58,15 @@ describe("accepted publication admission", () => {
       [run({ event: "workflow_dispatch", displayTitle: undefined })]]) {
       expect(() => assertNoAcceptedPublication(runs, options, () => jobs("skipped"))).toThrow();
     }
-    for (const pages of [null, [], [{}], [{ jobs: [] }], [{ jobs: [{ name: "Build, Test, Publish" }] }],
-      [{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [] }] }],
-      [{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [null, { name: "Publish to npm" }] }] }],
-      [{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed" }] }] }],
-      [{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed", conclusion: "unrecognized" }] }] }],
-      [{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "unknown" }] }] }]]) {
+    const singleJob = (job: Record<string, unknown> | null) => [{ total_count: 1, jobs: [job] }];
+    for (const pages of [null, [], [{}], [{ total_count: 0, jobs: [] }],
+      singleJob(null), singleJob({ id: 10, name: "Build, Test, Publish" }),
+      singleJob({ id: 10, name: "another job" }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [null, { name: "Publish to npm" }] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed" }] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed", conclusion: "unrecognized" }] }),
+      singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "unknown" }] })]) {
       expect(() => assertNoAcceptedPublication([run({})], options, () => pages)).toThrow();
     }
     expect(() => assertNoAcceptedPublication([run({})], options, () => { throw new Error("provider unavailable"); })).toThrow("provider unavailable");
@@ -77,6 +80,20 @@ describe("accepted publication admission", () => {
     expect(execute.mock.calls[1]?.[1]).toEqual(["api", "repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100", "--paginate", "--slurp"]);
     expect(() => rejectAcceptedPublication(argv, {}, execute)).toThrow("explicit GitHub repository");
     expect(() => rejectAcceptedPublication(argv, { GITHUB_REPOSITORY: "fixture/project" }, () => "invalid-json")).toThrow();
+  });
+
+  it("refuses partial or duplicate job pages before an omitted accepted attempt can be admitted", () => {
+    const skipped = { id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1,
+      steps: [{ name: "Publish to npm", status: "completed", conclusion: "skipped" }] };
+    for (const pages of [[{ total_count: 2, jobs: [skipped] }],
+      [{ total_count: 2, jobs: [skipped] }, { total_count: 2, jobs: [skipped] }],
+      [{ total_count: 2, jobs: [skipped] }, { total_count: 1, jobs: [] }]]) {
+      expect(() => assertNoAcceptedPublication([run({})], options, () => pages)).toThrow();
+    }
+    expect(() => assertNoAcceptedPublication([run({})], options, () => [
+      { total_count: 2, jobs: [skipped] }, { total_count: 2, jobs: [{ ...skipped, id: 11, run_attempt: 2,
+        steps: [{ name: "Publish to npm", status: "completed", conclusion: "success" }] }] },
+    ])).toThrow("previously accepted");
   });
 
   it("retains accepted evidence after more than 1000 unrelated runs and validates pagination receipts", () => {

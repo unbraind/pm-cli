@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-11T04:17:35.484Z"
-updated_at: "2026-10-11T05:49:39.468Z"
-closed_at: "2026-10-11T05:49:38.669Z"
-completed_at: "2026-10-11T05:49:38.669Z"
+updated_at: "2026-10-11T06:11:23.141Z"
+closed_at: "2026-10-11T06:11:22.509Z"
+completed_at: "2026-10-11T06:11:22.509Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "Anonymous E404 after an authoritative successful same-tag Publish to npm step refuses first-publication recovery before checkout or gates; all prior matching run attempts are inspected; unrelated tags, workflows or branch identities cannot certify accepted publication; unavailable or malformed provider evidence refuses; genuinely never-published exact-tag recovery remains supported; actual failed daily run is independently replayed."
@@ -16,14 +16,14 @@ parent: pm-u9d0
 risk: low
 confidence: high
 severity: high
-resolution: "Deliver complete paginated authoritative publication admission, portable native provider isolation and exact source coverage. Consolidate duplicated recovery documentation while preserving all operating contracts and immutable source/publication safeguards."
-expected_result: "Accepted or incomplete evidence refuses publication, complete evidence supports guarded exact-tag recovery, and the full documented artifact remains within unchanged size limits."
-actual_result: 59 linked release regressions and exact full5ed-source100percent coverage pass; real paginated provider replay refuses accepted11. Final documentation build/artifact/docs checks and unchanged HTTP regression replay pass. Prior91-byte artifact excess and native Windows readiness observation are retained; fresh final-head hosted checks and full review remain required.
+resolution: "Share complete pagination validation across workflow and all-attempt job inventories, requiring matching totals, unique positive provider identities and consistent pages before filtering or accepting first-publication evidence. Preserve immutable exact-tag identity and every prior attempt."
+expected_result: "Partial, duplicate, inconsistent, malformed or accepted provider evidence refuses first publication, including omitted or later-page earlier attempts, without changing runtime or artifact budgets."
+actual_result: "60 linked release tests and focused exact123/123statements,141/141branches,39/39functions,111/111lines pass; original partial job evidence fails its negative control. Real GitHub all-attempt replay refuses accepted11. Types, lint, source-quality and docs checks pass; the preceding f0f head has allfive hosted workflows green and its sole valid review finding is fixed. New-head CI, included review and existing-tag installed distribution receipts remain required."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
   pm-release-ledger-origin-delivery,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
   pm-wzmbvn,discovered_from,"2026-10-11T04:41:29.493Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-10-11T04:17:35.484Z","harness:codex","Duplicate check: complete all-status2922 census and live accepted-publication search/open/in_progress lists find no existing pending-publication fence. Full pm-wzmbvn history describes completed15-minute propagation budget; full pm-7zs0 is the open release-health observer; pm-release-ledger-origin-delivery is completed source-origin delivery. Reuse pm-u9d0 release lineage and link the actual GH1437 report without reopening those completed implementations."
   "2026-10-11T04:24:15.944Z","harness:codex","The independent original workflow admits accepted-but-missing publication (1failed/24passed). Actual-provider replay against immutable261a2e8f9ca235c42465bf26b8df2cbbc98d2228 now refuses precisely because Release38107714902 already accepted its npm publish step. The guard inspects jobs across all attempts using GitHub filter=all; verified actual job payload carries run_id/run_attempt, so only the currently executing attempt can be excluded while prior accepted attempts remain visible. Extend the same admission immediately before npm publication, retain the reviewed control outside any immutable-source checkout, and unify push/dispatch concurrency on the exact tag. This prevents overlapping exact-tag publishers and tag-push reruns from bypassing the accepted-publication fence. Existing short native fake SHA was corrected to a valid40-character fixture without loosening source validation; its earlier failure remains recorded."
   "2026-10-11T04:25:50.552Z","harness:codex","Complete final linked admission/automation/workflow suite passes58tests; the independent native original publisher actually attempts npm publication against a fake accepted-but-unavailable registry, while the identical corrected workflow refuses before packing or publishing. Independent expression replay proves original push/dispatch groups differ and corrected exact-tag groups match. Authoritative run_id/run_attempt metadata excludes only the current attempt; malformed inventories, missing publication stages, incomplete job identity, unknown status and missing terminal conclusions all refuse. Real immutable11run independently supplied the prior accepted publication verdict; no live publication, retry or tag mutation was sent."
@@ -37,6 +37,8 @@ comments[13]{created_at,author,text}:
   "2026-10-11T05:28:43.484Z","harness:codex","Review remediation complete: unfiltered REST pagination validates total count and unique identities, and the1002-run last-page accepted-evidence control passes. Copied native gh/gh.exe fixtures intercept Node and Bash without network access. All59 linked release tests and focused exact100percent source coverage pass; final typecheck passes. Full local static wrapper reached the restored active-planning boundary; the unchanged remaining context/registry/public SDK/10entrypoint/6CLI transport/graph/history/mutation checks complete successfully (context retains an existing warning, exit0). Both full-review findings are acknowledged once and resolved. Structured production escape and gate-strengthened evidence are recorded. The new active-planning recovery enhancement is retained open/unclaimed in the canonical recovery programme; no scope or policy is waived. Final-head hosted full coverage and Windows proof remain required after push."
   "2026-10-11T05:48:04.485Z","harness:codex","Exact 5ed3be663bbcf46e283bced255ad50537414c4f4 full coverage passes68016/68016statements,64689/64689lines,14025/14025functions,52136/52136branches, and all6 packed platform cells pass. The static artifact projection exceeds its20000000-byte first-party ceiling by91bytes; the newly added recovery documentation repeats refusal and attempt semantics, so consolidate those sentences without removing contracts or raising budgets. The native Windows HTTP invalid-discovery control instead timed out on readiness; the identical39-test file passed on previous a2e739c837db5d245c2fbd9a57179cacab4f3990. Preserve this observation and require fresh native replay on the next head without increasing readiness or test limits."
   "2026-10-11T05:49:37.938Z","harness:codex","Consolidated repeated recovery prose while retaining anonymous main/tag selection, every-page total/identity validation, prior accepted/unknown refusal, exact-attempt exclusion, retained controls, same-tag concurrency, tracked changelog guard and all tracker links. Real Node24 build, original artifact gate and docs/skills check pass; the unchanged HTTP discovery regression file also passes locally. The Windows observation remains unqualified as to cause and must pass a fresh native head. No timeout, artifact ceiling, package feature, declaration or export was changed."
+  "2026-10-11T06:07:00.312Z","harness:codex","Included final-head review f4433257-2f9f-4751-9eb1-e47c31b70e57 identified a valid partial-job-inventory gap: a reported total2 with one skipped canonical job was admitted, potentially omitting an accepted earlier attempt. Reopen only this owner, share complete pagination validation for workflow and job receipts, and add partial/duplicate/inconsistent earlier-attempt controls. Current f0f143ad0deba7b5c14c76c7a90ce6af2896c080 native check watcher ended incomplete with no failed checks, rather than reporting a code failure; a fresh exact-head check completion is still required."
+  "2026-10-11T06:11:21.845Z","harness:codex","Complete shared provider inventory now validates workflow and all-attempt job totals, positive unique ids and consistent pagination before filtering publication jobs. The new original-code partial-receipt control fails as expected; corrected partial/duplicate/inconsistent receipts refuse and a later-page accepted attempt remains visible. All60 linked release regressions and focused exact coverage123/123statements,141/141branches,39/39functions,111/111lines pass. Final types, strict ESLint and full static source-quality checks pass; actual three-job GitHub inventory including the original accepted stage refuses first publication. Previous f0f head has allfive workflows successful, including native Windows replay, and no remaining actionable review threads after the one valid finding is acknowledged/resolved. This source refinement requires fresh hosted final-head checks and a new included full review."
 files[5]{path,scope}:
   .github/workflows/release.yml,project
   scripts/release/release-run-selection.mjs,project
@@ -45,7 +47,7 @@ files[5]{path,scope}:
   tests/unit/scripts/release/release-run-selection.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,"harness:codex","2026-10-11T04:17:42.080Z",local_mutation,feat/executable-agent-recovery
-test_runs[7]:
+test_runs[8]:
   - run_id: test-local-mv3becww-1srdgg
     kind: test
     status: failed
@@ -123,9 +125,20 @@ test_runs[7]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv3fd6zj-k5qmfl
+    kind: test
+    status: passed
+    started_at: "2026-10-11T06:10:59.296Z"
+    finished_at: "2026-10-11T06:11:10.879Z"
+    recorded_at: "2026-10-11T06:11:10.879Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/release/release-run-selection.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/RELEASING.md,project
-close_reason: Publication admission and complete recovery documentation fit the unchanged artifact contract.
+close_reason: Every run and job pagination receipt is now validated before publication admission.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

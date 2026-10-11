@@ -1288,7 +1288,7 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
               GITHUB_ENV: githubEnv,
               RUNNER_TEMP: tempRoot,
               GITHUB_REPOSITORY: "fixture/project",
-              PRIOR_JOBS: JSON.stringify([{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+              PRIOR_JOBS: JSON.stringify([{ total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
                 { name: "Publish to npm", status: "completed", conclusion: "skipped" },
               ] }] }]),
               NPM_FAKE_LOG: npmLog,
@@ -1327,7 +1327,7 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
       await writeFile(githubEnv, "", "utf8");
       const acceptedButMissing = runScenario({
         PROBE_STATUS: "1", PROBE_OUTPUT: "npm error code E404",
-        PRIOR_JOBS: JSON.stringify([{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+        PRIOR_JOBS: JSON.stringify([{ total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
           { name: "Publish to npm", status: "completed", conclusion: "success" },
         ] }] }]),
       });
@@ -1478,7 +1478,7 @@ esac
             PACKAGE_DISTRIBUTION: distributionScript,
             RELEASE_PUBLICATION_ADMISSION: path.join(repoRoot, "scripts/release/release-run-selection.mjs"),
             DEFAULT_BRANCH: "main", GITHUB_REPOSITORY: "fixture/project",
-            PRIOR_JOBS: JSON.stringify([{ jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+            PRIOR_JOBS: JSON.stringify([{ total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
               { name: "Publish to npm", status: "completed", conclusion: "skipped" },
             ] }] }]),
             DISTRIBUTION_LOG: distributionLog,
@@ -1508,7 +1508,7 @@ esac
         await writeFile(npmLog, "", "utf8");
         await writeFile(distributionLog, "", "utf8");
         const accepted = runScenario({ GITHUB_EVENT_NAME: event, PRIOR_JOBS: JSON.stringify([
-          { jobs: [{ name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
+          { total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
             { name: "Publish to npm", status: "completed", conclusion: "success" },
           ] }] },
         ]) });

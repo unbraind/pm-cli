@@ -189,28 +189,32 @@ function validatePublicationInventory(runs) {
   }
 }
 
-/** Validate complete unfiltered REST pagination before adapting provider field names. */
-function publicationRunInventory(pages) {
+/** Validate complete provider pagination before matching any publication identity. */
+function completePublicationInventory(pages, field) {
   if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) =>
-    !Array.isArray(page?.workflow_runs) || !Number.isSafeInteger(page.total_count) || page.total_count < 0 ||
+    !Array.isArray(page?.[field]) || !Number.isSafeInteger(page.total_count) || page.total_count < 0 ||
     page.total_count !== pages[0].total_count)) {
-    throw new Error("Incomplete or malformed Release workflow pages; publication admission refused.");
+    throw new Error("Incomplete or malformed Release pagination; publication admission refused.");
   }
-  const runs = pages.flatMap((page) => page.workflow_runs);
-  if (runs.length !== pages[0].total_count || new Set(runs.map((run) => run?.id)).size !== runs.length) {
-    throw new Error("Incomplete or duplicate Release workflow pagination; publication admission refused.");
+  const items = pages.flatMap((page) => page[field]);
+  if (items.length !== pages[0].total_count || items.some((item) => !numericRunId(item?.id)) ||
+    new Set(items.map((item) => item.id)).size !== items.length) {
+    throw new Error("Incomplete or duplicate Release pagination; publication admission refused.");
   }
-  return runs.map((run) => ({ databaseId: run?.id, createdAt: run?.created_at, status: run?.status,
-    conclusion: run?.conclusion, event: run?.event, headBranch: run?.head_branch,
-    headSha: run?.head_sha, displayTitle: run?.display_title }));
+  return items;
+}
+
+/** Adapt a validated workflow inventory to the existing authoritative selector. */
+function publicationRunInventory(pages) {
+  return completePublicationInventory(pages, "workflow_runs").map((run) => ({
+    databaseId: run.id, createdAt: run.created_at, status: run.status, conclusion: run.conclusion,
+    event: run.event, headBranch: run.head_branch, headSha: run.head_sha, displayTitle: run.display_title,
+  }));
 }
 
 /** Require authoritative run-attempt identity on every canonical publication job. */
 function publicationJobCandidates(pages, runId) {
-  if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) => !Array.isArray(page?.jobs))) {
-    throw new Error("Malformed Release job evidence; publication admission refused.");
-  }
-  const candidates = pages.flatMap((page) => page.jobs).filter((job) => job?.name === "Build, Test, Publish");
+  const candidates = completePublicationInventory(pages, "jobs").filter((job) => job.name === "Build, Test, Publish");
   if (candidates.length === 0 || candidates.some((job) => job.run_id !== runId || !numericRunId(job.run_attempt))) {
     throw new Error("Missing or mismatched Release job-attempt identity; publication admission refused.");
   }

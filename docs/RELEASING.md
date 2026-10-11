@@ -599,9 +599,9 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   blocker once to trigger the guarded exact-run recovery). The workflow skips
   npm publication for a version visible to its isolated anonymous probe, keeping
   reviewed dispatch-time `main`. A definitive missing-version response can pin
-  source to the immutable tag only after admission reads every unfiltered
-  Release workflow page, validates totals and unique run identities, and checks
-  matching job attempts. Prior successful `Publish to npm` evidence refuses
+  source to the immutable tag only after admission reads complete workflow and
+  job inventories, validates totals and unique identities, and checks matching
+  attempts. Prior successful `Publish to npm` evidence refuses
   publication while metadata is unavailable: acceptance can precede visibility.
   Unavailable, malformed, incomplete or inconsistent evidence also refuses it.
   Only the executing attempt is excluded; its earlier attempts remain checked.
