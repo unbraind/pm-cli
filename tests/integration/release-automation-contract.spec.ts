@@ -31,6 +31,29 @@ function prependFakeBinForBash(script: string): string {
   ].join("\n");
 }
 
+/** Install a native provider executable so Node and Bash resolve the same isolated fake. */
+async function installPublicationProviderFixture(root: string): Promise<string> {
+  const binary = path.join(root, process.platform === "win32" ? "gh.exe" : "gh");
+  const provider = path.join(root, "publication-provider.mjs");
+  await copyFile(process.execPath, binary);
+  await chmod(binary, 0o755);
+  await writeFile(provider, `import path from "node:path";
+if (path.basename(process.execPath).replace(/\\.exe$/u, "") === "gh") {
+  if (path.basename(process.argv[1]) !== "api") process.exit(97);
+  const endpoint = process.argv[2];
+  if (endpoint === "repos/fixture/project/actions/workflows/release.yml/runs?per_page=100") {
+    process.stdout.write(JSON.stringify([{ total_count: 1, workflow_runs: [{ id: 1,
+      created_at: "2026-08-05T10:00:00Z", status: "completed", conclusion: "failure", event: "push",
+      head_branch: process.env.RELEASE_TAG, head_sha: "0449d15f045f881a574248d35774a656a8b1e55b" }] }]));
+  } else if (endpoint === "repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100") {
+    process.stdout.write(process.env.PRIOR_JOBS);
+  } else process.exit(98);
+  process.exit(0);
+}
+`, "utf8");
+  return `${process.env.NODE_OPTIONS ?? ""} --import=${pathToFileURL(provider).href}`.trim();
+}
+
 describe("release automation contract", () => {
   it("keeps package scripts aligned with local release parity workflow", async () => {
     const packageJsonRaw = await readFile(
@@ -1238,14 +1261,7 @@ esac
       );
       await chmod(path.join(tempRoot, "npm"), 0o755);
       await chmod(path.join(tempRoot, "git"), 0o755);
-      await writeFile(path.join(tempRoot, "gh"), `#!/usr/bin/env bash
-case "$1 $2" in
-  'run list') printf '%s\\n' '[{"databaseId":1,"createdAt":"2026-08-05T10:00:00Z","status":"completed","conclusion":"failure","event":"push","headBranch":"v2026.8.5","headSha":"0449d15f045f881a574248d35774a656a8b1e55b"}]' ;;
-  'api repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100') printf '%s\\n' "\${PRIOR_JOBS}" ;;
-  *) exit 97 ;;
-esac
-`, "utf8");
-      await chmod(path.join(tempRoot, "gh"), 0o755);
+      const providerOptions = await installPublicationProviderFixture(tempRoot);
       await writeFile(
         path.join(tempRoot, "pnpm"),
         `#!/usr/bin/env bash
@@ -1266,6 +1282,7 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
             env: {
               ...process.env,
               FAKE_BIN: tempRoot,
+            NODE_OPTIONS: providerOptions,
               RELEASE_TAG: "v2026.8.5",
               DEFAULT_BRANCH: "main",
               GITHUB_ENV: githubEnv,
@@ -1439,15 +1456,8 @@ esac
         "utf8",
       );
       await chmod(fakeNpm, 0o755);
-      await writeFile(path.join(tempRoot, "gh"), `#!/usr/bin/env bash
-case "$1 $2" in
-  'run list') printf '[{"databaseId":1,"createdAt":"2026-07-27T10:00:00Z","status":"completed","conclusion":"failure","event":"push","headBranch":"%s","headSha":"0449d15f045f881a574248d35774a656a8b1e55b"}]\\n' "$RELEASE_TAG" ;;
-  'api repos/fixture/project/actions/runs/1/jobs?filter=all&per_page=100') printf '%s\\n' "$PRIOR_JOBS" ;;
-  *) exit 97 ;;
-esac
-`, "utf8");
+      const providerOptions = await installPublicationProviderFixture(tempRoot);
       await writeFile(path.join(tempRoot, "git"), "#!/usr/bin/env bash\nprintf '0449d15f045f881a574248d35774a656a8b1e55b\\n'\n", "utf8");
-      await chmod(path.join(tempRoot, "gh"), 0o755);
       await chmod(path.join(tempRoot, "git"), 0o755);
 
       const runScenario = (overrides: NodeJS.ProcessEnv) =>
@@ -1457,6 +1467,7 @@ esac
           env: {
             ...process.env,
             FAKE_BIN: tempRoot,
+            NODE_OPTIONS: providerOptions,
             RELEASE_TAG: "v2026.7.27",
             RELEASE_VERSION: "2026.7.27",
             RUNNER_TEMP: tempRoot,

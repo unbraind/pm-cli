@@ -607,6 +607,9 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   recovery while metadata remains unavailable; npm acceptance can precede
   public availability. Missing, incomplete or unavailable workflow evidence
   also refuses recovery. See [pm-publication-acceptance-fence](../.agents/pm/issues/pm-publication-acceptance-fence.toon).
+  Admission reads every unfiltered workflow-run page and verifies the provider's
+  total count and unique run identities before inspecting matching attempts.
+  An incomplete or inconsistent pagination receipt refuses publication.
   The same check runs immediately before first publication, retaining reviewed
   controls outside any recovery checkout. Tag-push and dispatch runs share one
   exact-tag concurrency group. Only the current run attempt is excluded from

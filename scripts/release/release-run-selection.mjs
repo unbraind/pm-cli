@@ -181,12 +181,28 @@ export function selectAuthoritativeReleaseRun(runs, options) {
 
 /** Require a complete, structurally valid inventory before matching release identity. */
 function validatePublicationInventory(runs) {
-  if (!Array.isArray(runs) || runs.length >= 1000 || runs.some((run) =>
+  if (!Array.isArray(runs) || runs.some((run) =>
     normalizedCandidate(run) === null || !["push", "workflow_dispatch"].includes(run.event) ||
     !/^[0-9a-f]{40}$/u.test(text(run.headSha)) || text(run.headBranch) === "" ||
     text(run.status) === "" || (run.event === "workflow_dispatch" && typeof run.displayTitle !== "string"))) {
     throw new Error("Incomplete or malformed Release workflow inventory; publication admission refused.");
   }
+}
+
+/** Validate complete unfiltered REST pagination before adapting provider field names. */
+function publicationRunInventory(pages) {
+  if (!Array.isArray(pages) || pages.length === 0 || pages.some((page) =>
+    !Array.isArray(page?.workflow_runs) || !Number.isSafeInteger(page.total_count) || page.total_count < 0 ||
+    page.total_count !== pages[0].total_count)) {
+    throw new Error("Incomplete or malformed Release workflow pages; publication admission refused.");
+  }
+  const runs = pages.flatMap((page) => page.workflow_runs);
+  if (runs.length !== pages[0].total_count || new Set(runs.map((run) => run?.id)).size !== runs.length) {
+    throw new Error("Incomplete or duplicate Release workflow pagination; publication admission refused.");
+  }
+  return runs.map((run) => ({ databaseId: run?.id, createdAt: run?.created_at, status: run?.status,
+    conclusion: run?.conclusion, event: run?.event, headBranch: run?.head_branch,
+    headSha: run?.head_sha, displayTitle: run?.display_title }));
 }
 
 /** Require authoritative run-attempt identity on every canonical publication job. */
@@ -242,7 +258,9 @@ export function rejectAcceptedPublication(argv = process.argv.slice(2), env = pr
   };
   validateOptions(options);
   const command = (args) => JSON.parse(execute("gh", args, { encoding: "utf8", timeout: 60_000, maxBuffer: 64 * 1024 * 1024 }));
-  const runs = command(["run", "list", "--repo", repository, "--workflow", "release.yml", "--limit", "1000", "--json", "databaseId,createdAt,status,conclusion,event,headBranch,headSha,displayTitle"]);
+  const runs = publicationRunInventory(command([
+    "api", `repos/${repository}/actions/workflows/release.yml/runs?per_page=100`, "--paginate", "--slurp",
+  ]));
   assertNoAcceptedPublication(runs, options, (id) => command([
     "api", `repos/${repository}/actions/runs/${id}/jobs?filter=all&per_page=100`, "--paginate", "--slurp",
   ]));
