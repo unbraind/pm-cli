@@ -487,6 +487,17 @@ it("binds inherited packing leases to their source workspace and preserves both 
   });
 }, 60_000);
 
+it.each(["missing", "non-directory"])("packs independently when the inherited owner path is %s", async (state) => {
+  const { root } = await createBundleFixture();
+  const retired = path.join(root, "retired-owner");
+  if (state === "non-directory") await writeFile(retired, "preserved foreign file");
+  vi.stubEnv("PM_BUILD_CONSUMER_LEASE", "former-owner-token");
+  vi.stubEnv("PM_BUILD_CONSUMER_LEASE_ROOT", state === "missing" ? retired : path.join(retired, "workspace"));
+  expect((await packDistribution(root)).name).toBe("runtime-bundle-fixture");
+  await expect(readFile(path.join(root, ".cache/build-lease/owner.json"))).rejects.toMatchObject({ code: "ENOENT" });
+  if (state === "non-directory") expect(await readFile(retired, "utf8")).toBe("preserved foreign file");
+});
+
 it("waits for an independent real build to finish before inventorying and packing one generation", async () => {
   const { root, manifest } = await createBundleFixture();
   const destination = await harness.createTempRoot("pm-overlap-artifact-");

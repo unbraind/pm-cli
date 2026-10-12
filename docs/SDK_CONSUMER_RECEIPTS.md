@@ -52,7 +52,9 @@ inherited lease receipt and the live owner's receipt validates. Validation runne
 Linked commands cannot override lease controls through stored environment
 directives. Snapshot and isolated execution clear both inherited lease variables,
 keeping source ownership and its workspace path outside those child contexts.
-Foreign workspaces acquire their own lease. Interrupted builds retain an incomplete
+Foreign workspaces acquire their own lease. An inherited owner path that no
+longer resolves also takes this independent path; it never authorizes token reuse.
+Interrupted builds retain an incomplete
 marker and are refused until a complete rebuild succeeds. Packing never steals
 a lease by age or removes another owner's receipt. Source-path checks, exact
 runtime-ledger verification, and lossless metadata staging remain enforced.

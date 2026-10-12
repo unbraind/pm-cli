@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Preserve documented SDK schema field types through typed helpers ([pm-ty5i58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ty5i58.toon))
 - Protect distribution inventory and staging from concurrent dist rebuilds ([pm-distribution-consumer-lease](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-distribution-consumer-lease.toon))
+- Preserve documented SDK schema field types through typed helpers ([pm-ty5i58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ty5i58.toon))
 - Core external-reference refusal recommends a flag absent from the CLI lexicon ([pm-by83yj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-by83yj.toon))
 - GH-1443: align item and history union ordering and provenance during lossless merges ([pm-pftgcz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pftgcz.toon))
 - Make assurance risk help include the required recurrence policy ([pm-assurance-risk-help-policy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-assurance-risk-help-policy.toon))

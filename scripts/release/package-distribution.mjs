@@ -249,7 +249,14 @@ export async function packDistribution(root, options = {}) {
   const physicalRoot = realpathSync(root);
   const token = process.env.PM_BUILD_CONSUMER_LEASE;
   const ownerRoot = process.env.PM_BUILD_CONSUMER_LEASE_ROOT ?? path.resolve(import.meta.dirname, "../..");
-  const inherited = token && physicalRoot === realpathSync(ownerRoot) ? token : undefined;
+  let inherited;
+  if (token) {
+    try {
+      if (physicalRoot === realpathSync(ownerRoot)) inherited = token;
+    } catch {
+      // An unresolvable parent never authorizes inheritance; acquire independent ownership.
+    }
+  }
   return withBuildLease(physicalRoot, () => packLeasedDistribution(physicalRoot, options), { inherited });
 }
 

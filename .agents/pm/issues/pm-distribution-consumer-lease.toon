@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T19:46:26.278Z"
-updated_at: "2026-10-12T15:05:14.488Z"
-closed_at: "2026-10-12T15:05:13.748Z"
-completed_at: "2026-10-12T15:05:13.748Z"
+updated_at: "2026-10-12T15:32:01.354Z"
+closed_at: "2026-10-12T15:32:00.744Z"
+completed_at: "2026-10-12T15:32:00.744Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Hold a verified consumer lease or equivalent immutable generation throughout source inventory and staging; use real independent build/pack overlap to prove no missing or mixed-generation files; retain fail-closed incomplete-generation handling and existing physical-path guards; do not replace ownership evidence with timer-only fixtures or force lock overrides.
@@ -16,14 +16,14 @@ value: Reliable context and release evidence requires packed consumers to use a 
 parent: pm-u9d0
 risk: medium
 confidence: high
-resolution: "Hold verified workspace-bound consumer ownership throughout distribution inventory, staging and packing; refuse incomplete generations and isolate inherited controls outside source execution."
-expected_result: "Concurrent builds cannot create missing or mixed-generation distributions, and owner receipts are never stolen or removed."
-actual_result: "Actual independent build/pack overlap yields both generation-2 archive files; removing only the lease fails the contention assertion. Incomplete, invalid, nested and foreign-root receipts preserve ownership. Copied release imports, protected linked environment controls and Node/Bun/native platform consumers pass. Base and injected artifacts stay within all unchanged size/file/map budgets."
+resolution: "Lease complete distribution packing; scope inherited tokens to a resolvable matching workspace, otherwise acquire independent ownership; preserve live-token and incomplete-generation validation."
+expected_result: "Concurrent rebuilds never produce mixed artifacts, and deleted or invalid inherited owner paths cannot block unrelated valid workspaces or authorize token reuse."
+actual_result: "Real independent producer/packer contention and its lease-removal negative control pass. Both deleted and non-directory owner regressions fail before the review fix and pass afterward. All 52 packing/ownership assertions and all three linked command groups pass, with invalid matching tokens and original owner/file bytes preserved. Structured production-defect gate evidence is now complete; final exact-head native/coverage checks are required before merge."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-cxc4jc,discovered_from,"2026-10-10T19:46:26.278Z","harness:codex","cli:create:dep",detected
   pm-gh1417,related,"2026-10-10T19:46:26.278Z","harness:codex","cli:create:dep",detected
   pm-namespace-recovery-delivery,discovered_from,"2026-10-10T19:47:04.680Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-10T19:46:26.278Z","harness:codex","Duplicate check: the strict 2920-item all-status corpus plus the newly created qualification child and request-specific search found no focused distribution-consumer lease report. Full live reads confirm pm-cxc4jc completed producer/test-consumer serialization and pm-gh1417 completed runtime staging. This distinct consumer boundary was observed as ENOENT during overlapping verification and passes once serialized; it remains open and unclaimed for implementation under the existing release capability."
   "2026-10-12T09:52:31.603Z","harness:codex","Implementation scope: extend the existing verified build-consumer lease across publication source inventory and materialization, reject incomplete build generations, and preserve physical-path/runtime ledger admission. Prove serialization with independent real build/pack processes and ownership barriers rather than time-based overlap assumptions."
   "2026-10-12T10:14:30.874Z","harness:codex","Independent real-process acceptance passes: actual build.mjs runs owned fixture stages while the separate packer proves EEXIST contention against that live PID/token, then both archive files equal generation two. An isolated copy with only withBuildLease removed fails this exact assertion. Incomplete-build and invalid inherited-token controls preserve their marker/owner bytes; existing runtime-ledger,physical-path,lossless-JSON and Windows launcher tests pass. Base package budget remains unchanged at19908805 first-party bytes and1658 files; runtime closure23387074 bytes/4745 files."
@@ -31,6 +31,8 @@ comments[7]{created_at,author,text}:
   "2026-10-12T11:33:17.249Z","harness:codex","The new workspace-bound lease metadata must not expose its source path or reusable token to snapshot/isolated linked commands. A native child probe demonstrates the pre-fix leak (true:false:false:true:true instead of true:false:false:false:false). SDK execution now removes both controls for non-source modes, and stored environment directives reserve both names. This is part of the introduced lease protocol, not a claim that the older completed source-context delivery was unimplemented."
   "2026-10-12T11:35:53.274Z","harness:codex",The same strengthened native mode test now passes after source lease token+root removal from snapshot/isolated children. Existing source execution retains its host lease controls; both names are reserved from stored env-set/env-clear directives. Focused SDK/transport/packing checks pass88 assertions. The final full suite uses the verified absolute Node24.21.0 executable with its bundled npm; prior shell-selected Node26 runs are retained as unsuccessful evidence and not reused as coverage proof.
   "2026-10-12T15:05:12.901Z","harness:codex","Verified implementation head 7411d7ee6e29b288eba2b7222e294a31d74635fc: CI run 38264143222 is successful, all 26 required contexts are present and passed, GitHub merge state is CLEAN, and no inline review threads remain. Accepted CodeRabbit release-summary feedback is corrected. Sourcery/Cubic limits and the expired Greptile trial are availability limitations, not approvals. Closure and the latest package-generated changelog remain in the reviewed final push."
+  "2026-10-12T15:27:50.934Z","harness:codex","Both terminal defect-gate findings belong to this item: escape_class and gate_evidence were absent at the first closure. Reopened and claimed the same canonical owner, supplied the production-defect classification and structured independently strengthened boundary evidence through PM, and preserved the prior close event. The valid CodeRabbit issue is separate: a deleted or non-directory inherited workspace path must not prevent independent packing of a valid root; matching live-token validation must remain fail-closed."
+  "2026-10-12T15:30:42.054Z","harness:codex","Independent missing-owner and non-directory-owner cases both fail before the review fix with ENOENT/ENOTDIR. The repaired helper acquires independent ownership for those valid roots, releases only its own lease and preserves the unrelated file; all 52 distribution/ownership assertions pass, including matched invalid-token refusal, incomplete-marker preservation, real build overlap and live parent receipt retention. No lock override or ownership-validation bypass is added."
 learnings[1]{created_at,author,text}:
   "2026-10-12T10:16:52.147Z","harness:codex",An artifact consumer must retain producer ownership across source inventory and staging. Verify overlap with live PID/token contention and independent processes; file-copy completion or sleeps alone do not establish a consistent generation.
 files[11]{path,scope}:
@@ -49,7 +51,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/build-lease.spec.ts,project,240,"harness:codex","2026-10-12T09:57:23.344Z",local_mutation,fix/sdk-consumer-contracts-oct12
   node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/integration/registry-acceptance-workflow.spec.ts,project,240,"harness:codex","2026-10-12T10:54:35.538Z",local_mutation,fix/sdk-consumer-contracts-oct12
   node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/commands/test/linked-test-parsers.spec.ts,project,240,"harness:codex","2026-10-12T11:33:17.849Z",local_mutation,fix/sdk-consumer-contracts-oct12
-test_runs[2]:
+test_runs[3]:
   - run_id: test-all-local-mv53ba67-iemu1w
     kind: test-all
     status: passed
@@ -78,9 +80,30 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/build-lease.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/integration/registry-acceptance-workflow.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/commands/test/linked-test-parsers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv5essjc-32rhho
+    kind: test
+    status: passed
+    started_at: "2026-10-12T15:30:08.895Z"
+    finished_at: "2026-10-12T15:30:51.384Z"
+    recorded_at: "2026-10-12T15:30:51.384Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/build-lease.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/run-tests.spec.ts tests/integration/registry-acceptance-workflow.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/commands/test/linked-test-parsers.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   docs/SDK_CONSUMER_RECEIPTS.md,project
-close_reason: Implementation and recorded acceptance completed in reviewed PR 1451.
+close_reason: Initial implementation and accepted review edge case are verified.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: distribution-consumer-generation
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/build-lease.spec.ts,node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/commands/test/linked-test-parsers.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[4]: Gates (coverage),Gates (static),Windows regression (Node 24),"Packed first run (windows-latest, Node 24)"
+  owner: pm-distribution-consumer-lease
 body: ""
