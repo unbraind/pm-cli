@@ -290,7 +290,7 @@ describe("public merge-safety SDK primitives", () => {
     expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
   });
 
-  it("refuses a history union when reanchoring would skip a branch patch effect", () => {
+  it.each(["nested", "root"])("refuses scalar rebase failure before positional fallback (%s)", (mode) => {
     const empty: ItemDocument = {
       metadata: {} as ItemDocument["metadata"],
       body: "",
@@ -301,15 +301,15 @@ describe("public merge-safety SDK primitives", () => {
       unknown
     >;
     baseMetadata.review = { stable: "base" };
+    baseDocument.metadata.comments = [{ created_at: "2026-08-30T00:00:00.000Z", author: "base", text: "Base" }];
     const oursDocument = structuredClone(baseDocument);
     delete (oursDocument.metadata as unknown as Record<string, unknown>).review;
     oursDocument.metadata.updated_at = "2026-08-30T00:01:00.000Z";
+    oursDocument.metadata.comments!.unshift({ created_at: "2026-08-29T00:00:00.000Z", author: "ours", text: "Earlier" });
     const theirsDocument = structuredClone(baseDocument);
-    (theirsDocument.metadata as unknown as Record<string, unknown>).review = {
-      stable: "base",
-      detail: "theirs",
-    };
+    (theirsDocument.metadata as unknown as Record<string, unknown>).review = mode === "root" ? "later root replacement" : { stable: "base", detail: "theirs" };
     theirsDocument.metadata.updated_at = "2026-08-30T00:02:00.000Z";
+    theirsDocument.metadata.comments!.push({ created_at: "2026-08-31T00:00:00.000Z", author: "theirs", text: "Later" });
     const create = createHistoryEntry({
       nowIso: "2026-08-30T00:00:00.000Z",
       author: "seed",
@@ -338,7 +338,13 @@ describe("public merge-safety SDK primitives", () => {
         historyEntriesToRaw([create, ours]),
         historyEntriesToRaw([create, theirs]),
       ),
-    ).toThrow(/cannot preserve 1 patch operation/i);
+    ).toThrow(/cannot rebase a scalar patch/i);
+
+    if (mode === "nested") {
+      const oursImport = sealHistoryRecord({ ...create, op: "import", author: "ours-import" });
+      const theirsImport = sealHistoryRecord({ ...create, op: "import", author: "theirs-import" });
+      expect(() => mergeHistoryStreams("", historyEntriesToRaw([oursImport, ours]), historyEntriesToRaw([theirsImport, theirs]))).toThrow(/cannot preserve 1 patch operation/i);
+    }
   });
 
   it("covers identical and one-sided history merges plus malformed inputs", () => {

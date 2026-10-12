@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Make assurance risk help include the required recurrence policy ([pm-assurance-risk-help-policy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-assurance-risk-help-policy.toon))
 - GH-1443: align item and history union ordering and provenance during lossless merges ([pm-pftgcz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pftgcz.toon))
+- Make assurance risk help include the required recurrence policy ([pm-assurance-risk-help-policy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-assurance-risk-help-policy.toon))
 
 ### Other
 

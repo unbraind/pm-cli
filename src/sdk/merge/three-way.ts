@@ -266,7 +266,9 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
       return root !== "metadata" || !unionFields.has(field);
     });
     const scalar = tryApplyReplayPatch(current, scalarPatch);
-    if (!scalar.ok) return entry.patch;
+    if (!scalar.ok) {
+      throw new PmCliError("History union cannot rebase a scalar patch onto the merged replay position; leave the file unresolved for manual recovery.", EXIT_CODE.GENERIC_FAILURE);
+    }
     const merged = mergeItemMetadataRecords(prefix.metadata, oursState.metadata, theirsState.metadata, "ours", "latest_document_update",
       String(oursState.metadata.updated_at), String(theirsState.metadata.updated_at));
     const next = scalar.document;
