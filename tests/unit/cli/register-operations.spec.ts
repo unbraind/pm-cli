@@ -35,6 +35,15 @@ describe("operation registration adapters", () => {
     ).toBeUndefined();
   });
 
+  it.each([
+    { update: "command=node scripts/check.mjs", setJson: '{"note":"verified"}' },
+    { updateIndex: "1", setJson: '{"note":null}' },
+    { updateIndex: 1, setJson: '{"timeout_seconds":30}' },
+  ])("forwards explicit linked-test metadata edits to the SDK: %j", (options) => {
+    expect(_testOnlyRegisterOperations.buildRunTestOptions(options, emptyValues))
+      .toMatchObject(options);
+  });
+
   it("forwards test-all workspace trust controls in foreground mode", () => {
     expect(
       _testOnlyRegisterOperations.buildRunTestAllOptions({

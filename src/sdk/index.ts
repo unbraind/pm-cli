@@ -1285,6 +1285,13 @@ export {
   type LinkedTestTrustDecision,
 } from "./test/trust.js";
 export {
+  updateLinkedTest,
+  type LinkedTestUpdateSelector,
+  type LinkedTestMetadataPatch,
+  type UpdateLinkedTestOptions,
+  type UpdateLinkedTestResult,
+} from "./test/update.js";
+export {
   runStartBackgroundRun,
   runTestRunsWorker,
   type StartBackgroundRunCommandOptions,

@@ -9,6 +9,7 @@ import {
   findLinkedTestExecutionReceipt,
 } from "./execution-receipts.js";
 import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
+import { updateLinkedTest, parseLinkedTestUpdateOptions, assertLinkedTestEditUsage } from "./update.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -243,6 +244,12 @@ export interface TestCommandOptions {
   remove?: string[];
   /** Remove linked tests by their stable 1-based list position. */
   removeIndex?: Array<string | number>;
+  /** Exact command=<value> or path=<value> selector for a metadata edit. */
+  update?: string;
+  /** One-based linked-test position for a metadata edit. */
+  updateIndex?: string | number;
+  /** JSON object containing explicit metadata changes; null clears optional fields. */
+  setJson?: string;
   /** Value that configures or reports list for this contract. */
   list?: boolean;
   /** Value that configures or reports run for this contract. */
@@ -305,6 +312,7 @@ export interface TestCommandOptions {
 export type LinkedTestFailureCategory =
   | "infra_collision"
   | "trust_refusal"
+  | "config_refusal"
   | "assertion_failure"
   | "empty_run"
   | "timeout"
@@ -319,9 +327,9 @@ export interface TestRunResult {
   /** Filesystem path used for path resolution. */
   path?: string;
   /** Lifecycle state reported for status. */
-  status: "passed" | "failed" | "skipped";
+  status: "passed" | "failed" | "skipped" | "refused";
   /** Value that configures or reports exit code for this contract. */
-  exit_code?: number;
+  exit_code?: number | null;
   /** Value that configures or reports failure category for this contract. */
   failure_category?: LinkedTestFailureCategory;
   /** Recognized runner summary proving execution, including the stream that supplied it. */
@@ -393,6 +401,10 @@ export interface TestResult {
   count: number;
   /** Number of linked-test entries removed by this mutation. */
   removed?: number;
+  /** One-based position selected by an explicit linked-test metadata edit. */
+  updated_index?: number;
+  /** Normalized metadata fields changed by an explicit edit. */
+  updated_fields?: string[];
   /** Measurements supplied for the current producing run. */
   measurements?: TestRunMeasurement[];
   /** Existing and current measurements below the selected threshold. */
@@ -409,6 +421,7 @@ function resolveTrackedRunId(kind: "test" | "test-all"): string {
   return `${kind}-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Count execution refusals alongside failures while keeping skipped runs separate. */
 function summarizeRunResultStatuses(results: TestRunResult[]): {
   passed: number;
   failed: number;
@@ -422,7 +435,7 @@ function summarizeRunResultStatuses(results: TestRunResult[]): {
       passed += 1;
       continue;
     }
-    if (entry.status === "failed") {
+    if (entry.status === "failed" || entry.status === "refused") {
       failed += 1;
       continue;
     }
@@ -1604,6 +1617,7 @@ export function classifyLinkedTestFailure(
   return "assertion_failure";
 }
 
+/** Initialize every public failure category so aggregate receipts retain a stable exhaustive shape. */
 function createEmptyFailureCategoryCounts(): Record<
   LinkedTestFailureCategory,
   number
@@ -1611,6 +1625,7 @@ function createEmptyFailureCategoryCounts(): Record<
   return {
     infra_collision: 0,
     trust_refusal: 0,
+    config_refusal: 0,
     assertion_failure: 0,
     empty_run: 0,
     timeout: 0,
@@ -1626,7 +1641,7 @@ export function countFailureCategories(
 ): Record<LinkedTestFailureCategory, number> {
   const counts = createEmptyFailureCategoryCounts();
   for (const result of runResults) {
-    if (result.status !== "failed" || !result.failure_category) {
+    if ((result.status !== "failed" && result.status !== "refused") || !result.failure_category) {
       continue;
     }
     counts[result.failure_category] += 1;
@@ -2581,20 +2596,30 @@ function resolveUnboundPmContextFailure(params: {
 }): TestRunResult | null {
   if (params.executionContext.pm_context_mode !== "none") return null;
   if (params.executionContext.workspace_context_mode === "source") {
-    return buildLinkedTestAssertionFailureResult(
+    return buildLinkedTestConfigurationRefusalResult(
       params.linkedTest,
       params.executionContext,
       "pm_context_mode=none requires workspace_context_mode=isolated or snapshot so implicit tracker discovery cannot reach the source workspace.",
     );
   }
   if (params.executionContext.is_pm_command) {
-    return buildLinkedTestAssertionFailureResult(
+    return buildLinkedTestConfigurationRefusalResult(
       params.linkedTest,
       params.executionContext,
       "pm_context_mode=none is for self-isolating SDK tests; direct PM commands require schema, tracker, or auto context.",
     );
   }
   return null;
+}
+
+/** Report an execution configuration refusal without inventing a child-process exit. */
+function buildLinkedTestConfigurationRefusalResult(
+  linkedTest: LinkedTest,
+  executionContext: NonNullable<TestRunResult["execution_context"]>,
+  error: string,
+): TestRunResult {
+  return { command: linkedTest.command, path: linkedTest.path, status: "refused", exit_code: null,
+    failure_category: "config_refusal", execution_context: executionContext, error };
 }
 
 /** Explain a seeded-tracker mismatch before a linked PM command runs. */
@@ -2623,7 +2648,7 @@ function resolvePmContextMismatchFailure(params: {
     params.options?.checkContext === true
       ? "Linked test preflight PM context mismatch detected"
       : "Linked test PM context mismatch detected";
-  return buildLinkedTestAssertionFailureResult(
+  return buildLinkedTestConfigurationRefusalResult(
     params.linkedTest,
     params.executionContext,
     `${mismatchPrefix} (source_project_items=${params.executionContext.source_project_item_count}, ` +
@@ -2631,6 +2656,7 @@ function resolvePmContextMismatchFailure(params: {
   );
 }
 
+/** Stop before execution on the first safety, trust, context or required-assertion admission failure. */
 function resolveLinkedTestPreflightResult(params: {
   linkedTest: LinkedTest;
   executionContext: NonNullable<TestRunResult["execution_context"]>;
@@ -2651,7 +2677,7 @@ function resolveLinkedTestPreflightResult(params: {
     params.executionContext.is_pm_command &&
     !hasLinkedTestAssertions(params.linkedTest)
   ) {
-    return buildLinkedTestAssertionFailureResult(
+    return buildLinkedTestConfigurationRefusalResult(
       params.linkedTest,
       params.executionContext,
       "Linked PM command requires assertions when --require-assertions-for-pm is enabled.",
@@ -3470,7 +3496,7 @@ function projectTestResult(input: {
   } = input;
   return {
     ok:
-      runResults.every((entry) => entry.status !== "failed") &&
+      runResults.every((entry) => entry.status !== "failed" && entry.status !== "refused") &&
       failOnSkippedTriggered !== true,
     id: item.itemId,
     tests: item.tests,
@@ -3501,6 +3527,14 @@ export async function runTest(
   options: TestCommandOptions,
   global: GlobalOptions,
 ): Promise<TestResult> {
+  const edit = parseLinkedTestUpdateOptions(options);
+  if (edit) {
+    assertLinkedTestEditUsage(options);
+    assertTestRunFlagUsage(options);
+    assertTestMeasurementRun(id, options, global, resolvePmRoot(process.cwd(), global.path));
+    const result = await updateLinkedTest(id, { ...edit, author: options.author, message: options.message, force: options.force }, global);
+    return { ...result, run_results: [], failure_categories: countFailureCategories([]) };
+  }
   const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);

@@ -1246,7 +1246,8 @@ function normalizeLinkedTestProvenance(
   };
 }
 
-function normalizeLinkedTest(value: LinkedTest): LinkedTest {
+/** Normalize one linked-test entry consistently for storage and metadata comparisons. */
+export function normalizeLinkedTest(value: LinkedTest): LinkedTest {
   const test: LinkedTest = {
     command: value.command?.trim() || undefined,
     path: value.path ? normalizePathValue(value.path) : undefined,
@@ -1265,6 +1266,8 @@ function normalizeLinkedTest(value: LinkedTest): LinkedTest {
       value.provenance,
       value.provenance_invalid,
     ),
+    updated_by: trimStringOrUndefined(value.updated_by),
+    updated_at: trimStringOrUndefined(value.updated_at),
     env_set: normalizeStringRecord(value.env_set),
     env_clear: normalizeTrimmedStringList(value.env_clear),
     shared_host_safe: value.shared_host_safe === true ? true : undefined,

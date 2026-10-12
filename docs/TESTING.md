@@ -506,6 +506,9 @@ the descriptor registry does not yet know about.
 
 ## Linked Tests
 
+For in-place metadata corrections and context admission/refusal semantics, see
+[Linked-test edits](LINKED_TEST_EDITS.md).
+
 Add tests to the item that owns the work:
 
 ```bash

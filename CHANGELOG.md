@@ -4,12 +4,16 @@
 
 ### Fixed
 
+- GH-1440: validate linked-test context at write time and distinguish execution refusals ([pm-gh1440](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1440.toon))
+- Declare calendar package positional signatures in the SDK grammar census ([pm-kki6bf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kki6bf.toon))
 - Reject sparse artifact ledger inputs through both public SDK exports ([pm-ledger-sparse-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-ledger-sparse-delivery.toon))
 - Prevent exact-tag recovery from republishing an accepted npm version while public metadata is unavailable ([pm-publication-acceptance-fence](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-publication-acceptance-fence.toon))
 - Expose the test measurement run prerequisite in help and recovery ([pm-test-measure-prerequisite](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-test-measure-prerequisite.toon))
 
 ### Other
 
+- Edit linked-test metadata in place with preserved provenance and atomic history ([pm-9djr6d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-9djr6d.toon))
+- Keep linked-test SDK delivery within publication budgets using authoritative API references ([pm-4g4qv0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4g4qv0.toon))
 - Preserve fail-closed startup benchmark runner qualification and complete diagnostics ([pm-runner-qualification-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-runner-qualification-delivery.toon))
 - Include declared morning automation in daily release blocker alerts and successful recovery ([pm-automatic-release-alerts](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-automatic-release-alerts.toon))
 - Deliver unambiguous registry-derived namespace recovery across installed Node and Bun consumers ([pm-namespace-recovery-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-namespace-recovery-delivery.toon))

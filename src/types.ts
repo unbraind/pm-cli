@@ -358,6 +358,10 @@ export interface LinkedTest {
   provenance?: LinkedTestProvenance;
   /** Explicit fail-closed marker retained when stored provenance is malformed. */
   provenance_invalid?: true;
+  /** Author of the most recent explicit metadata edit; creation provenance is retained. */
+  updated_by?: string;
+  /** ISO timestamp of the most recent explicit metadata edit. */
+  updated_at?: string;
   /** Value that configures or reports env set for this contract. */
   env_set?: Record<string, string>;
   /** Value that configures or reports env clear for this contract. */

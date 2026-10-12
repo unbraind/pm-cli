@@ -28,6 +28,7 @@ export const MAINTENANCE_HISTORY_OPERATIONS = [
   "test_run_track",
   "tests_add",
   "tests_remove",
+  "tests_update",
   "update_audit",
   "update_ownership_bypass",
 ] as const;

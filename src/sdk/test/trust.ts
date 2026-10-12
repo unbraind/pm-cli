@@ -20,6 +20,7 @@ import type {
   LinkedTest,
   LinkedTestProvenance,
 } from "../../types/index.js";
+import { assertLinkedTestContext } from "./entry.js";
 
 const execFileAsync = promisify(execFile);
 const LINKED_TEST_TRUST_LEDGER_VERSION = 1;
@@ -168,6 +169,7 @@ export async function attachLinkedTestMutationProvenance(
   createdAt: string,
 ): Promise<LinkedTest[] | undefined> {
   if (!tests || tests.length === 0) return tests;
+  for (const test of tests) assertLinkedTestContext(test);
   const sourceWorkspaceRoot = resolveLinkedTestSourceWorkspaceRoot();
   return attachLinkedTestProvenance(
     tests,

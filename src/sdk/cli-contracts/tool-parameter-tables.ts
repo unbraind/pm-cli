@@ -390,6 +390,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     type: "array",
     items: { anyOf: [{ type: "string" }, { type: "number" }] },
   },
+  updateIndex: { anyOf: [{ type: "string" }, { type: "number" }] },
+  setJson: { type: "string" },
+  update: { type: "string" },
   onlyLast: { type: "boolean" },
   envSet: { type: "array", items: { type: "string" } },
   envClear: { type: "array", items: { type: "string" } },
@@ -1540,6 +1543,21 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Remove linked tests by their 1-based positions from pm test <id> --list order; repeatable and lossless for commands containing commas or equals signs.",
     examples: [[1], ["2", "4"]],
+  },
+  update: {
+    description:
+      "Edit one linked test by exact command, command=<value>, or path=<value>, with setJson; ambiguous matches refuse without changes.",
+    examples: ["node scripts/run-tests.mjs test", "path=tests/example.spec.ts"],
+  },
+  updateIndex: {
+    description:
+      "Edit one linked test at its current 1-based list position with setJson, preserving order and original command provenance.",
+    examples: [1, "2"],
+  },
+  setJson: {
+    description:
+      "Explicit JSON metadata patch for update or updateIndex. Null clears optional fields; command and provenance are immutable.",
+    examples: ['{"note":"focused regression","timeout_seconds":120}'],
   },
   onlyLast: {
     description: "Run only the most recently added linked-test entry.",

@@ -400,8 +400,9 @@ describe("linked-test workspace and trust contracts", () => {
       });
       expect(source.code).toBe(5);
       expect((source.json as TestEnvelope).run_results[0]).toMatchObject({
-        status: "failed",
-        failure_category: "assertion_failure",
+        status: "refused",
+        failure_category: "config_refusal",
+        exit_code: null,
         error: expect.stringContaining("workspace_context_mode"),
       });
 
@@ -417,8 +418,9 @@ describe("linked-test workspace and trust contracts", () => {
       });
       expect(directPm.code).toBe(5);
       expect((directPm.json as TestEnvelope).run_results[0]).toMatchObject({
-        status: "failed",
-        failure_category: "assertion_failure",
+        status: "refused",
+        failure_category: "config_refusal",
+        exit_code: null,
         error: expect.stringContaining("direct PM commands"),
       });
     });

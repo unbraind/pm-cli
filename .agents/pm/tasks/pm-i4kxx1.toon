@@ -1,0 +1,23 @@
+id: pm-i4kxx1
+title: Accept universal SDK read receipts in the public context evaluation reader
+description: "Strict compilation against the candidate packed SDK proves that PmClient cannot satisfy ContextEvaluationReader: context/next return a universal result that may contain output_budget_exceeded, even for an unbounded request when shared budgets bind. The existing documentation passes PmClient directly. A guard-aware adapter can make the example correct now, but the evaluator should compose with the public reader contract itself and refuse omitted data before grading."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-11T17:04:26.652Z"
+updated_at: "2026-10-11T17:48:14.455Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Direct PmClient and structural reader integrations compile without casts; context and next results retain universal budget refusal types; infeasible or shared-budget omissions fail explicitly before scoring instead of being treated as empty ranked context; complete results preserve metrics and attribution; published Node/Bun and strict TypeScript consumers prove the contract
+parent: pm-atfm
+risk: medium
+confidence: high
+expected_result: Public evaluator readers compose directly with PmClient while handling typed budget refusals before scoring.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4g4qv0,discovered_from,"2026-10-11T17:04:26.652Z","harness:codex","cli:create:dep",detected
+  pm-atfm,implements,"2026-10-11T17:48:14.139Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-11T17:04:26.652Z","harness:codex","Duplicate check: complete all-status corpus, exact ContextEvaluationReader keyword search (zero hits), evaluation/PmClient searches, fresh open and active inventories, and full live pm-atfm metadata/comments/raw history were inspected. The completed runner lineage remains completed. This new task tracks the reproduced universal-read composition gap under the canonical evaluation feature; it stays open and unclaimed while the connected documentation supplies a typed fail-closed adapter."
+  "2026-10-11T17:06:33.841Z","harness:codex","Additional strict consumer evidence: after narrowing the budget-refusal variant with isReadOutputBudgetExceeded, ContextResult and NextResult still fail the reader interface because its string index signature excludes those exported interfaces. A typed adapter that guards refusals and returns a shallow object copy composes without casts while preserving every packet field. This is a structural type and refusal-contract gap, not a claim that the completed evaluation algorithm is unfinished."
+body: ""

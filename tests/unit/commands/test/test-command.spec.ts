@@ -2969,7 +2969,7 @@ describe("runTest", () => {
       );
       expect(schemaMode.run_results).toHaveLength(1);
       const schemaResult = schemaMode.run_results[0];
-      expect(schemaResult?.status).toBe("failed");
+      expect(schemaResult).toMatchObject({ status: "refused", failure_category: "config_refusal", exit_code: null });
       expect(schemaResult?.execution_context).toMatchObject({
         pm_context_mode: "schema",
         is_pm_command: true,
@@ -2990,7 +2990,7 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(schemaPreflight.run_results[0]?.status).toBe("failed");
+      expect(schemaPreflight.run_results[0]).toMatchObject({ status: "refused", failure_category: "config_refusal", exit_code: null });
       expect(schemaPreflight.run_results[0]?.error ?? "").toContain(
         "preflight PM context mismatch",
       );
@@ -3031,7 +3031,7 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(strictMismatch.run_results[0]?.status).toBe("failed");
+      expect(strictMismatch.run_results[0]).toMatchObject({ status: "refused", failure_category: "config_refusal", exit_code: null });
       expect(strictMismatch.run_results[0]?.error ?? "").toContain(
         "context mismatch",
       );
@@ -3111,7 +3111,7 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(perTestSchemaOverride.run_results[0]?.status).toBe("failed");
+      expect(perTestSchemaOverride.run_results[0]).toMatchObject({ status: "refused", failure_category: "config_refusal", exit_code: null });
       expect(
         perTestSchemaOverride.run_results[0]?.execution_context
           ?.pm_context_mode,
@@ -3214,7 +3214,7 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
-      expect(strictPmAssertions.run_results[0]?.status).toBe("failed");
+      expect(strictPmAssertions.run_results[0]).toMatchObject({ status: "refused", failure_category: "config_refusal", exit_code: null });
       expect(strictPmAssertions.run_results[0]?.error ?? "").toContain(
         "requires assertions",
       );
