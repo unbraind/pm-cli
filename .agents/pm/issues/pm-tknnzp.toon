@@ -1,32 +1,38 @@
 id: pm-tknnzp
-title: Preserve reviewed legacy merge receipts across SDK upgrades
+title: Expose safe reviewed migration for historical merge receipts
 description: GitHub 1446 reports that unchanged pm-beads receipts reviewed by older merge_reconcile events are gated again after upgrading from 2026.10.8 to 2026.10.9. The advertised dry-run cannot prove snapshots and omits the documented force-review recovery. Reproduce on immutable downstream data and determine the compatible settled-receipt and recovery contract without destructive receipt cleanup.
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-12T13:31:52.812Z"
-updated_at: "2026-10-12T18:26:07.859Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#da6c4a524d0c5025cfe0e34b"
+updated_at: "2026-10-12T20:08:20.520Z"
+closed_at: "2026-10-12T19:53:16.197Z"
+completed_at: "2026-10-12T19:53:16.197Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Reproduce 2026.10.8, 2026.10.9 and current SDK against isolated exact downstream data; distinguish historical reviewed receipt proof from unreviewed decisions; preserve immutable evidence and unchanged bytes on refusals; any force review guidance names its audit requirements; independent regressions and all-source coverage pass."
 parent: pm-atfm
 risk: medium
 confidence: medium
-expected_result: Reviewed legacy receipts retain auditable settlement or have explicit safe migration guidance before a strict health gate changes.
+resolution: Dry-run and health recovery name the explicitly reviewed force/message migration and its limitations. Unsealed historical audit context remains unauthenticated and pending; explicit fixture review appends modern sealed settlement evidence while preserving the old event context and timestamp.
+expected_result: Receipt inspection never trusts item-state-only hashes as audit authentication or rewrites evidence; historical or compacted receipt proof gets an actionable reviewed migration path.
+actual_result: "Both published2026.10.8 and2026.10.9 gate all eight exact downstream receipts, so the reported version contrast is unconfirmed. The unsafe source8eb1e56 negative control fails both captured cases; final39-case regressions, linked tests, four typechecks and packed Node24/26/Bun consumers pass. Matching and forged unsealed contexts remain pending on unchanged reads; isolated explicit migration seals and clears captured lossy/lossless receipts. No real downstream data was force-reconciled."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-ao0bu9,discovered_from,"2026-10-12T13:31:52.812Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-12T13:31:52.812Z","harness:codex","Duplicate check: complete all-status census and fresh merge-receipt/reconcile searches plus open/in_progress inventories found completed prior recovery fixes but no exact active owner for the newly reported upgrade regression. Full pm-ao0bu9 metadata, comments, resolution and history were read. Keep this item open and unclaimed while the connected SDK consumer delivery proceeds."
   "2026-10-12T16:50:44.838Z","harness:codex","Investigation: read current report1446 and canonical completed receipt-preview lineage. Reproduce only in isolated immutable downstream copies, preserving legacy evidence. Delivery includes compatible settlement recognition and explicit audited refusal recovery; no force repair of production trackers is authorized or needed."
   "2026-10-12T17:02:24.755Z","harness:codex","Captured immutable public25561a2receipt/summary projections reproduce2settlement failures before and pass after the compatibility fix. Verified source history pins record-seal introduction to182639fa3 at2026-09-03T06:15:48Z. Matching old unsealed audits are accepted only under that historical schema and verified item chain; modern unsealed, malformed, mismatched, new-policy and compacted-away audit evidence stays pending. Exact installed2026.10.8 and2026.10.9 both currently report3lossy/5lossless pending receipts on25561a2, so this independent reproduction does not confirm the issue report's version8-versus9 contrast. Modern snapshot proof safeguards remain intact; no real downstream force repair was performed."
   "2026-10-12T17:27:59.496Z","harness:codex","Final compatibility review also checks malformed optional summary fields: omission is a supported legacy schema state, while explicit null values and competing preference keys must remain distinguishable from omission. Strengthen those controls through the same captured receipt boundary before final delivery; do not add test-only production seams or rewrite historical records."
   "2026-10-12T17:49:56.054Z","harness:codex","Independent additional control: both captured receipt tests fail when explicit null participation is treated as omission. The corrected reader defaults only undefined fields and rejects competing preferred/requested_preference keys. All normalization remains read-only and exact identity/hash comparison still decides settlement. Simplified eligibility checks retain every historical bound and modern-evidence exclusion without raising complexity ceilings."
-learnings[1]{created_at,author,text}:
+  "2026-10-12T19:33:19.942Z","harness:codex","PR1453 CodeRabbit security review is accepted: legacy item-state hashes do not authenticate audit context, so the proposed automatic unsealed settlement compatibility is insufficient even when receipt summaries match. Keep unsealed receipts pending, preserve read bytes and immutable old events, and require explicit reviewed migration to append a modern sealed audit. The original acceptance criteria allow reviewed migration guidance; independent tests must reject context-only tampering that still passes the legacy item chain."
+  "2026-10-12T19:51:23.220Z","harness:codex","Final review correction: the automatic six-of-eight legacy retention proposal was removed. Item-state-only history hashes cannot authenticate merge audit context; all unsealed or compacted receipts stay pending until explicit reviewed migration appends a modern sealed audit. A negative control against source8eb1e56 fails both captured-receipt cases; the corrected six-file regression run passes39 tests. Matching and forged unsealed contexts preserve read bytes and remain pending, dry-run names the exact force/message recovery, and isolated explicit review clears each captured lossy/lossless receipt with a sealed current audit while preserving the old event context and timestamp. Public packed consumers repeat this migration on Node24, Node26 and Bun. The reported8-versus9 boundary remains unconfirmed: both installed public versions gate the same eight receipts."
+learnings[2]{created_at,author,text}:
   "2026-10-12T17:24:29.676Z","harness:codex",Preserve historical reviewed context only when matching audit evidence remains verifiable. Older unsealed schemas need a bounded compatibility rule; compacted-away audit context cannot be inferred from a reconciled flag and requires an explicit audited review disposition.
-files[5]{path,scope}:
+  "2026-10-12T19:51:23.961Z","harness:codex","A valid legacy item-state hash chain does not authenticate audit context. Require complete sealed record coverage for settlement fields; when historical evidence lacks it, preserve read bytes and use an explicit new reviewed audit rather than normalizing unauthenticated context into authority."
+files[6]{path,scope}:
+  CHANGELOG.md,project
   src/core/diagnostics/remediation.ts,project
   src/sdk/merge/receipts.ts,project
   src/sdk/merge/reconcile.ts,project
@@ -34,7 +40,7 @@ files[5]{path,scope}:
   tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts,project,240,"harness:codex","2026-10-12T17:00:03.980Z",local_mutation,fix/sdk-relationship-receipt-compatibility
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mv5l273f-f9ic18
     kind: test
     status: passed
@@ -46,8 +52,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+  - run_id: test-local-mv5nwkwh-p5icr6
+    kind: test
+    status: passed
+    started_at: "2026-10-12T19:45:27.156Z"
+    finished_at: "2026-10-12T19:45:44.657Z"
+    recorded_at: "2026-10-12T19:45:44.657Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/MERGE_SAFETY.md,project
+close_reason: Verified safe historical receipt recovery and explicit sealed-audit migration
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

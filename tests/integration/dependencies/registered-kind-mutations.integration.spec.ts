@@ -48,6 +48,8 @@ describe("registered relationship mutation admission", () => {
         { cwd: context.tempRoot, env: context.env, timeout: 20_000 },
       )));
       expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+      const rejected = results.find((result) => result.status === "rejected") as PromiseRejectedResult;
+      expect(JSON.parse(rejected.reason.stderr)).toMatchObject({ code: "dependency_cardinality_created" });
       const stored = ["pm-writer-a", "pm-writer-b"].map((id) => context.runCli(["get", id, "--full", "--json"], { expectJson: true }));
       expect(stored.every((result) => result.code === 0)).toBe(true);
       expect(stored.flatMap((result) => (result.json as { item: { dependencies?: unknown[] } }).item.dependencies ?? [])).toHaveLength(1);
@@ -105,6 +107,9 @@ describe("registered relationship mutation admission", () => {
       await runUpdate(target.item.id, { depRemove: [`id=${source.item.id},kind=PRECEDES-SHIP`] }, global);
       const bulk = await runUpdateMany({ list: { ids: [target.item.id] }, update: { dep: [`id=${source.item.id},kind=precedes_ship`] } }, global);
       expect(bulk.updated_count).toBe(1);
+      const storedBulk = context.runCli(["get", target.item.id, "--full", "--json"], { expectJson: true });
+      expect(storedBulk.code, storedBulk.stderr).toBe(0);
+      expect(storedBulk.json).toMatchObject({ item: { dependencies: [{ kind: "ships_before" }] } });
       const before = await itemBytes(context, source.item.id);
       resetActiveExtensionRuntimeState();
       await expect(runUpdate(source.item.id, { dep: [`id=${target.item.id},kind=ships_before`] }, global)).rejects.toMatchObject({
