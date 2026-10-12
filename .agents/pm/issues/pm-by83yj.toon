@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-11T18:27:26.645Z"
-updated_at: "2026-10-12T13:45:57.159Z"
+updated_at: "2026-10-12T14:31:04.515Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
 author: "harness:codex"
@@ -21,11 +21,12 @@ actual_result: create --stdin-json advertises update --external-ref; following i
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,related,"2026-10-11T18:27:26.645Z","harness:codex","cli:create:dep",detected
   pm-pftgcz,discovered_from,"2026-10-11T18:27:26.645Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-11T18:27:26.645Z","harness:codex","Duplicate check: full all-status corpus plus current exact external_ref/dedicated-flag search and open/in_progress inventories found no existing orphan external-reference recovery owner. Full public-surface parent metadata/history was read. Directly observed both refusal stages during GitHub intake. This issue stays open and unclaimed; current metadata-editor delivery does not claim the broader recovery contract fixed."
   "2026-10-12T09:52:30.253Z","harness:codex","Implementation scope: remove synthesized reserved-field flags and route recovery from the real command registration contracts. external_ref has no dedicated create/update/close flag; preserve imported metadata compatibility and state that limitation truthfully instead of inventing a new transport mutation. Inventory every reserved core field so ghost flags cannot recur."
   "2026-10-12T10:16:50.698Z","harness:codex","All73 reserved core storage fields are now tested against executable create/update registrations. Direct CLI stdin create/update external_ref refusals preserve existing item+history bytes, emit no invented flag, and identify the missing dedicated mutation path. An isolated pre-fix-style synthesized --external-ref mutant fails the independent external_ref table row. Structured gate-strengthening evidence binds this regression and native transport checks; ordinary SDK imports/legacy stored references remain unchanged."
   "2026-10-12T10:54:38.138Z","harness:codex","Collection semantics are now single-sourced with structured item IO: dependencies/dep,comments/comment,type_options/typeOption and all other collection mappings come from one SDK-owned data table. Three independent collection-route assertions fail before this refinement and pass afterward; scalar routes and truthful unsupported external_ref refusal stay intact. The integration moved to tests/integration/sdk to preserve the unchanged120-file directory cap, with linked command replacement recorded through PM history."
+  "2026-10-12T14:05:47.528Z","harness:codex","The exact initial PR head is pushed as 1451. Reserved-field negative controls, unchanged-byte create/update refusals, structured mutation routes, strict SDK contract/type checks, and refreshed refusal census are included in the reviewed delivery. Chrome DeepScan shows dc5cf03f353f4ace8371095c2b30405963efce6a with zero new issues; remaining hosted coverage/native checks and reviewer feedback are awaited before immutable closure."
 learnings[1]{created_at,author,text}:
   "2026-10-12T10:16:51.395Z","harness:codex",Storage field spelling is not a CLI mutation contract. Recovery must derive routes from executable registrations and state unavailable routes explicitly; create/update/close can have different support.
 files[9]{path,scope}:
@@ -81,6 +82,6 @@ gate_evidence:
   gate_id: core-field-recovery-contract
   negative_control: "node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts -t \"never invents a mutation flag for reserved core field external_ref\""
   local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage
-  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Native Windows regression
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
   owner: pm-by83yj
 body: "Observed while importing a new GitHub report on the current 2026.10.11 checkout. A JSON external_ref fails before creation; source URL intake succeeds when retained in body. The recommended update --external-ref fails as declared_nowhere. Verify the intended SDK/CLI external-reference write contract and provide a reachable recovery; do not invent a flag, add a blanket field override, or weaken reserved-field guards."

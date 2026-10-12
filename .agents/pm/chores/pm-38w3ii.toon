@@ -1,0 +1,21 @@
+id: pm-38w3ii
+title: Adopt immutable TruffleHog 3.98.0 after the release-age boundary
+description: "Dependabot PR 1449 includes TruffleHog 3.98.0, published 2026-10-05T17:39:02Z. It becomes eligible at 2026-10-12T17:39:02Z under the unchanged seven-day policy. The connected SDK delivery adopts the older eligible CodSpeed update separately; keep this exact scanner pin as a visible open follow-up without hiding it in completed dependency work."
+type: Chore
+status: open
+priority: 3
+tags: []
+created_at: "2026-10-12T14:28:16.814Z"
+updated_at: "2026-10-12T14:28:16.814Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "Recheck exact official tag/commit and seven-day eligibility; update only the immutable scanner pin and relevant workflow contract; native actionlint, permissions, secret scanning and hosted security checks pass; record source and checks through PM before close."
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: The eligible scanner pin is adopted with verified-secret scanning and fail-on-scan-error behavior preserved.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-98f0ec,related,"2026-10-12T14:28:16.814Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-12T14:28:16.814Z","harness:codex","Duplicate check: complete all-status census plus fresh exact-version search and open/in_progress inventories found the eligible-only refresh record but no open scanner adoption owner. Preserve its eligible updates as completed work and isolate this below-cooldown version as a linked open follow-up. This item is not claimed or started."
+body: "Proposal: https://github.com/unbraind/pm-cli/pull/1449. Official release: https://github.com/trufflesecurity/trufflehog/releases/tag/v3.98.0. Proposed immutable action commit: 0186870afd2c4a90def791d80260923ba583d076. Current 3.97.9 has no reported vulnerability and verified scanning remains enabled. No ignore rule or cooldown exception is introduced."

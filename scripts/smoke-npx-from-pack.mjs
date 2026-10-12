@@ -18,7 +18,7 @@ const COMMAND_TIMEOUT_MS = 600_000;
 /** Resolve the native package-manager shim; the portable launcher handles Windows command interpreters. */
 function resolveCommand(base) {
   return process.platform === "win32"
-    ? `${base}.${base === "bunx" ? "exe" : "cmd"}`
+    ? `${base}.${base === "bunx" || base === "bun" ? "exe" : "cmd"}`
     : base;
 }
 

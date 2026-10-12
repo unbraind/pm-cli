@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-11T17:04:26.652Z"
-updated_at: "2026-10-12T13:59:36.581Z"
+updated_at: "2026-10-12T14:36:15.784Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
 author: "harness:codex"
@@ -19,7 +19,7 @@ expected_result: Public evaluator readers compose directly with PmClient while h
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4g4qv0,discovered_from,"2026-10-11T17:04:26.652Z","harness:codex","cli:create:dep",detected
   pm-atfm,implements,"2026-10-11T17:48:14.139Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-11T17:04:26.652Z","harness:codex","Duplicate check: complete all-status corpus, exact ContextEvaluationReader keyword search (zero hits), evaluation/PmClient searches, fresh open and active inventories, and full live pm-atfm metadata/comments/raw history were inspected. The completed runner lineage remains completed. This new task tracks the reproduced universal-read composition gap under the canonical evaluation feature; it stays open and unclaimed while the connected documentation supplies a typed fail-closed adapter."
   "2026-10-11T17:06:33.841Z","harness:codex","Additional strict consumer evidence: after narrowing the budget-refusal variant with isReadOutputBudgetExceeded, ContextResult and NextResult still fail the reader interface because its string index signature excludes those exported interfaces. A typed adapter that guards refusals and returns a shallow object copy composes without casts while preserving every packet field. This is a structural type and refusal-contract gap, not a claim that the completed evaluation algorithm is unfinished."
   "2026-10-12T09:52:28.534Z","harness:codex","Regression established before implementation: both context and next universal budget omissions resolve into apparently successful empty quality reports (2 independent assertions fail,17 existing assertions pass). Strict consumer compilation separately rejects direct PmClient assignment to ContextEvaluationReader. Implement omission-aware reader composition with unchanged ranking metrics and token thresholds."
@@ -27,9 +27,11 @@ comments[7]{created_at,author,text}:
   "2026-10-12T11:40:33.759Z","harness:codex",Current external package audit observed a new latest pm-changelog2026.10.12 after the initial2026.10.5 census. Installed the actual latest through the package-owned CLI lifecycle and verified deep activation; final changelog generation/check will use that release. Exact v2026.10.12 pm-cli producer binding and public distribution remain independently verified; no manual release or second tag was requested.
   "2026-10-12T11:52:22.086Z","harness:codex","Verified absolute Node24 full-source run passes10295 functional assertions with three platform skips. Exact coverage refuses one previously unexercised branch: an explicitly complete context-intent receipt. The existing legitimate empty/no-ranking scenario now asserts that complete receipt remains evaluable. No coverage membership or100pct threshold changes; final whole-source verification will supply the accepted coverage receipt. Static duplicate scanners report0 clones, and generated refusal census is refreshed from the actual reserved lease controls."
   "2026-10-12T13:49:09.783Z","harness:codex","Detailed V8 diagnostics explain the remaining guard counter: an inline compound condition produces a negative residual false-branch count despite covered success/refusal scenarios. Naming the omission state before the guard retains identical logic and all three receipt checks; the same diagnostic reports positive guard counts 4/6. No coverage ignore, inclusion filter, denominator policy, threshold, or test-only seam is changed. Final complete coverage still must accept the integrated source."
+  "2026-10-12T14:25:44.438Z","harness:codex","First hosted exact-head inventory: all required contexts are present; only Packed first run (windows-latest, Node 24) fails. Its actual log reaches the added installed evaluator fixture and reports spawnSync bun.cmd ENOENT. Bun provides bun.exe on this runner; the shared resolver previously special-cased only bunx. Strengthened the existing Windows subprocess contract to require bun.exe for the evaluator fixture: it fails before the correction. Expand the native Bun executable family, preserve npm/npx .cmd shims, and await fresh hosted native acceptance."
+  "2026-10-12T14:36:15.784Z","harness:codex","Windows launcher correction passes all 23 smoke-script contract assertions, including the strengthened evaluator bun.exe route and unchanged npm/npx .cmd behavior. All five PM-linked commands pass after the correction: omission unit checks, strict TypeScript, real packed npm/npx/Bun/bunx and typed/evaluator consumers, direct SDK integration, and portable subprocess contracts. Before this launcher-only correction, the integrated source passed 10295 assertions with exact coverage 68263 statements, 52353 branches, 14075 functions, and 64892 lines. Final hosted coverage and native Windows acceptance must bind the corrected head."
 learnings[1]{created_at,author,text}:
   "2026-10-12T10:16:52.893Z","harness:codex","Context evaluation must reject a whole-result omission before scoring. Empty context and omitted context are different observations, and unbounded per-read output does not bypass a shared session budget."
-files[9]{path,scope}:
+files[10]{path,scope}:
   scripts/smoke-npx-from-pack.mjs,project
   sdk/public-surface.json,project
   src/sdk/context-relevance.ts,project
@@ -38,13 +40,15 @@ files[9]{path,scope}:
   tests/fixtures/read-output/evaluation-consumer.mjs,project
   tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,project
   tests/types/read-output-contracts.test-d.ts,project
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project
   tests/unit/sdk/context-relevance.spec.ts,project
-tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[5]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts,project,240,"harness:codex","2026-10-12T09:57:22.099Z",local_mutation,fix/sdk-consumer-contracts-oct12
   pnpm typecheck,project,240,"harness:codex","2026-10-12T10:08:50.944Z",local_mutation,fix/sdk-consumer-contracts-oct12
   "pnpm smoke:npx",project,600,"harness:codex","2026-10-12T10:08:51.531Z",local_mutation,fix/sdk-consumer-contracts-oct12
   node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,project,240,"harness:codex","2026-10-12T10:53:10.751Z",local_mutation,fix/sdk-consumer-contracts-oct12
-test_runs[3]:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,240,"harness:codex","2026-10-12T14:24:29.536Z",local_mutation,fix/sdk-consumer-contracts-oct12
+test_runs[4]:
   - run_id: test-all-local-mv53ba67-iemu1w
     kind: test-all
     status: passed
@@ -115,6 +119,21 @@ test_runs[3]:
       pnpm typecheck,schema,schema,source,local_source_ref
       "pnpm smoke:npx",schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv5cqt8o-yssm3b
+    kind: test
+    status: passed
+    started_at: "2026-10-12T14:31:11.542Z"
+    finished_at: "2026-10-12T14:33:19.752Z"
+    recorded_at: "2026-10-12T14:33:19.752Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/SDK_CONSUMER_RECEIPTS.md,project
   docs/SDK.md,project

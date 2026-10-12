@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-12T10:11:33.548Z"
-updated_at: "2026-10-12T13:48:56.140Z"
+updated_at: "2026-10-12T14:05:46.581Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
 author: "harness:codex"
@@ -20,9 +20,10 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-by83yj,related,"2026-10-12T13:18:55.393Z","harness:codex","cli:update:dep",detected
   pm-eonv,discovered_from,"2026-10-12T13:33:37.146Z","harness:codex","cli:update:dep",detected
   pm-z3ez,related,"2026-10-12T13:33:37.146Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-12T10:11:33.548Z","harness:codex","Duplicate-check evidence: strict complete2936-item all-status census, fresh commander-usage keyword and duplicate/recovery searches plus current open/active inventories and full pm-92if metadata/history were read. Completed pm-eonv and generated-copy owner pm-z3ez remain canonical separate work. Chrome read-only CodeFactor main inspection reports the new minor20-line clone at1111-1130/1133-1153; no existing exact active implementation owner was found."
   "2026-10-12T10:14:32.798Z","harness:codex","Removed the handwritten20-line recovery clone using the existing CommanderUsageContext structural contract, preserving every field and both renderers. Existing linked CLI error/guidance suite passes; no new implementation-mirroring test was added. Chrome main baseline is A with3 duplicate groups; the2 standalone generated plugin groups remain under pm-z3ez and GitHub1311/1312,distinct from this repair. Await exact revised-head hosted analysis."
+  "2026-10-12T14:05:46.581Z","harness:codex",Read-only Chrome inspection of CodeFactor PR 1451 reports No issues found. The PR is bound to source head dc5cf03f353f4ace8371095c2b30405963efce6a by its GitHub check metadata; the old main baseline still lists three findings before merge. DeepScan Chrome shows this exact commit and zero new issues/zero fixed issues. Existing generated-plugin duplication remains separately owned; no analyzer suppression or quality-budget change was introduced.
 files[2]{path,scope}:
   src/cli/commander-usage.ts,project
   tests/unit/cli/cli-main-errors.spec.ts,project

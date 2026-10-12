@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-12T13:31:06.760Z"
-updated_at: "2026-10-12T14:01:00.714Z"
+updated_at: "2026-10-12T14:08:31.976Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
 author: "harness:codex"
@@ -23,6 +23,8 @@ comments[3]{created_at,author,text}:
   "2026-10-12T13:31:06.760Z","harness:codex","Duplicate check: complete all-status corpus plus fresh schemaAddField/fieldType search and open/in_progress inventories found no active owner. Closed pm-vhbf and earlier custom-field fixes remain completed historical lineage. This SDK consumer defect fits the current connected primitive/customization delivery."
   "2026-10-12T13:36:55.817Z","harness:codex","Independent current-source control strengthens the existing SDK customization suite to assert the actual documented number type. Before the fix it fails deterministically: expected number, received string. The typed helper spreads type unchanged into an action whose field-type input is fieldType. Translate this option at the typed-helper boundary, preserving direct generic action input and omitted-type defaults; functional exports delegate to that same helper. Strengthened direct consumers also read persisted schemas and coerce numeric/boolean/string custom values."
   "2026-10-12T14:01:00.714Z","harness:codex","Integrated direct and functional SDK customization tests pass. The latest pm-i4kxx1 linked run also passes real packed Node and Bun registration, persisted number/boolean/default-string definitions, dynamic-option coercion, evaluator composition, strict installed TypeScript, and npm/npx/Bun/bunx workflows. The first packed attempt correctly rejected my fixture using extension field assignments for schema-managed fields; corrected the fixture to declared dynamic option names, documented that namespace distinction, and reran the complete acceptance without weakening production validation. Full static and mutation gates pass; exact final coverage is pending."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T14:08:31.976Z","harness:codex","Assert actual persisted field types and downstream coercion when verifying typed schema convenience methods; checking only a returned key misses option translation defects. Schema-managed dynamic mutation options and extension field assignments are separate contracts, so installed fixtures must use the registered command option names."
 files[3]{path,scope}:
   src/sdk/runtime.ts,project
   tests/fixtures/read-output/evaluation-consumer.mjs,project

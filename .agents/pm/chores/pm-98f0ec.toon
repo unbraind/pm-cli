@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-12T10:06:18.935Z"
-updated_at: "2026-10-12T14:01:01.310Z"
+updated_at: "2026-10-12T14:31:04.445Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
 author: "harness:codex"
@@ -19,14 +19,16 @@ expected_result: Compatible SDK tooling and Sentry runtime are current within th
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-i4kxx1,related,"2026-10-12T13:18:54.553Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-12T13:33:35.190Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-12T10:06:18.935Z","harness:codex","Duplicate check: strict2936-item complete all-status corpus plus fresh Sentry10.76/Knip6.39 search and open/in_progress inventories found no active owner for these exact eligible versions. Prior Sentry/Knip upgrades are closed and remain shipped. npm publication dates are Sentry10.76.0 2026-10-02T14:59:27.597Z and Knip6.39.0 2026-09-30T12:46:34.940Z; their Node engines support the declared floor. Major Sentry11,Vitest5,TypeScript7 and npm-package-arg14 remain under existing owners."
   "2026-10-12T10:14:31.695Z","harness:codex",Eligible Sentry10.76.0 and Knip6.39.0 are installed with unchanged cooldown and strict peer policy. Maintained runtime-lock apply regenerated the complete40-package production ledger from the tested pnpm graph. PM-linked audit and Sentry suites pass; public artifact and installed npm/npx/Bun/bunx/SDK consumers pass. All other newer same-major candidates remain below7days; major migrations retain existing owners. No known pnpm vulnerability and zero open GitHub security alerts or dependency PRs were observed.
   "2026-10-12T10:54:38.868Z","harness:codex","The broad suite identified its explicit approved Sentry declaration pin still asserting10.75.1. Updated that agreement to the now packed-consumer-verified10.76.0, retaining exact pin enforcement and existing strict TypeScript acceptance. The unrelated Homebrew Node26 npm-location refusal was reproduced in an isolated current-source copy; the unchanged full continuation journey passes with explicit npm resolution,including Node and Bun consumers. Final full coverage uses installed Node24 rather than weakening test assertions or package admission."
   "2026-10-12T13:18:58.254Z","harness:codex","New live Dependabot intake: PR 1447 proposes exactly Knip 6.39.0 already adopted in this branch; PR 1449 groups immutable CodSpeed 5.4.0 (published 2026-10-02T16:16:16Z, eligible) with TruffleHog 3.98.0 (published 2026-10-05T17:39:02Z, not yet seven days at inspection). Adopt the eligible CodSpeed pin with the existing simulation/cache workflow contract; defer the scanner pin until 2026-10-12T17:39:02Z under this recorded refresh lineage. Current TruffleHog 3.97.9 remains verified and no security finding is hidden. PR 1448 is the existing Sentry 11 privacy/telemetry migration owner pm-t3jxjj. All three PRs will carry canonical item links; no duplicate item or dependency ignore rule is introduced."
   "2026-10-12T13:35:14.410Z","harness:codex","Static readiness findings were missing metadata on the two newly created chores; repaired through ordinary PM updates with risk, confidence, and estimates. The graph parity gate also found exactly three new prose-only references: dependency refresh to the Sentry major owner, and recovery-clone intake to prior recovery work and the generated-plugin owner. Added the meaningful typed relationships, retaining every original comment and the unchanged prose-gap ceiling. The complete live census is now 2940 readable items with no omissions; graph-composition passes its nine assertions."
   "2026-10-12T14:01:01.310Z","harness:codex","Final integrated static pipeline passes with unchanged strict policies: eligible dependency audit and runtime ledger, docstrings/dead exports, ESLint, zero handwritten clones, workflow permissions/cooldown, generated contracts/capabilities/error catalog, SDK surface and entrypoint/transport costs, tracker/graph/history assurance, and the 336-mutant gate (329 killed plus 7 classified equivalents). Latest pm-changelog 2026.10.12 generates the current closed-item changelog unchanged before reviewed closure."
-files[6]{path,scope}:
+  "2026-10-12T14:31:04.445Z","harness:codex","The below-cooldown TruffleHog 3.98.0 adoption now has canonical open follow-up pm-38w3ii, linked as related to this eligible-only refresh. This keeps deferred scanner work discoverable after this completed dependency delivery closes. Edited the existing PR 1449 mapping comment to name both owners instead of adding a duplicate."
+files[7]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
   .github/workflows/codspeed.yml,project
   package.json,project
   pnpm-lock.yaml,project
