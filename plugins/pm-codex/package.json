@@ -2,8 +2,8 @@
   "name": "pm-codex-runtime",
   "private": true,
   "type": "module",
-  "version": "2026.10.11",
+  "version": "2026.10.12",
   "dependencies": {
-    "@unbrained/pm-cli": "2026.10.11"
+    "@unbrained/pm-cli": "2026.10.12"
   }
 }
