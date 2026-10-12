@@ -32,13 +32,28 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("requires a patch with either linked-test selector and rejects dual selectors", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("test") as {
+      allOf: Array<{ if?: { required?: string[] }; then?: unknown; not?: unknown }>;
+    };
+    for (const selector of ["update", "updateIndex"]) {
+      const dependency = schema.allOf.find((entry) => entry.if?.required?.includes(selector));
+      expect(dependency?.if).toEqual({ required: [selector] });
+      expect(dependency?.then).toEqual({ anyOf: [{ required: ["setJson"] }] });
+    }
+    const patchDependency = schema.allOf.find((entry) => entry.if?.required?.includes("setJson"));
+    expect(patchDependency?.if).toEqual({ required: ["setJson"] });
+    expect(patchDependency?.then).toEqual({ anyOf: [{ required: ["update"] }, { required: ["updateIndex"] }] });
+    expect(schema.allOf).toContainEqual({ not: { required: ["update", "updateIndex"] } });
+  });
+
   it("accepts workflow policy definitions as objects or JSON strings", () => {
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema("schema") as SchemaWithProperties;
     expect(schema.properties?.definition).toMatchObject({ type: ["object", "string"] });
     expect(PM_TOOL_PARAMETER_PROPERTIES.definition).toEqual({ type: "object" });
   });
   it("versions install planning and explicit claim receipt projections", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.21.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.21.1");
     for (const action of ["extension", "package", "extension-manage", "package-manage"] as const) {
       const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
       expect(schema.properties?.offline, action).toMatchObject({ type: "boolean" });

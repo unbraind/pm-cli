@@ -1,7 +1,38 @@
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
-import { normalizeStructuredLinkedTestEntry } from "../../../../src/sdk/test/entry.js";
+import { assertLinkedTestContext, normalizeStructuredLinkedTestEntry } from "../../../../src/sdk/test/entry.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
+
+describe("linked-test context recovery", () => {
+  it.skipIf(process.platform === "win32").each([
+    "node --version",
+    "node -e 'console.log(\"quoted\", \"$HOME\", \"$(printf changed)\", \"`printf changed`\")'",
+  ])("preserves the complete command as one JSON argument: %s", (command) => {
+    let captured: unknown;
+    try {
+      assertLinkedTestContext({ command, pm_context_mode: "none" });
+    } catch (error) {
+      captured = error;
+    }
+    expect(captured).toBeInstanceOf(PmCliError);
+    const example = (captured as PmCliError).context.examples?.[0];
+    expect(example).toBeDefined();
+    // Record shell-parsed argv without invoking pm or executing the linked test.
+    const result = spawnSync("sh", ["-c", `pm() { printf '%s\\0' "$@"; }\n${example}`], {
+      encoding: "utf8",
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const args = result.stdout.split("\0").slice(0, -1);
+    expect(args.slice(0, 3)).toEqual(["test", "<id>", "--add-json"]);
+    expect(args).toHaveLength(4);
+    expect(JSON.parse(args[3])).toEqual({
+      command,
+      pm_context_mode: "none",
+      workspace_context_mode: "isolated",
+    });
+  });
+});
 
 describe("linked-test-entry.normalizeStructuredLinkedTestEntry", () => {
   it("keeps recognized keys (case-insensitive)", () => {

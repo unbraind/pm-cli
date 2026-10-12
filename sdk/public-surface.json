@@ -2272,6 +2272,14 @@
       ],
       "package_version": "2026.10.11",
       "reason": "pm-gh1440 and pm-9djr6d: add metadata editor/options/receipts and editor stamps; intentionally distinguish nonexecuted configuration refusals with status=refused, config_refusal and null child exit; document consumer handling in LINKED_TEST_EDITS.md"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.10.11",
+      "reason": "Schema version literal advances from 4.21.0 to 4.21.1 for edit dependency validation; runtime-valid selector and patch requests remain accepted."
     }
   ],
   "entrypoints": {
@@ -12962,7 +12970,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.21.0\""
+          "signature": "\"4.21.1\""
         },
         {
           "classification": "contract_data",
@@ -23732,7 +23740,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.21.0\""
+          "signature": "\"4.21.1\""
         },
         {
           "classification": "contract_data",

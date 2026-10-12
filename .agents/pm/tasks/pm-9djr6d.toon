@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-11T15:39:56.760Z"
-updated_at: "2026-10-11T23:08:46.912Z"
-closed_at: "2026-10-11T23:08:46.223Z"
-completed_at: "2026-10-11T23:08:46.223Z"
+updated_at: "2026-10-12T00:09:31.090Z"
+closed_at: "2026-10-12T00:07:02.970Z"
+completed_at: "2026-10-12T00:07:02.970Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: CLI and SDK edit one linked test by exact selector or one-based index; unchanged fields and original provenance survive; changed edit writes one field-level history event and editor metadata; equal retry preserves authoritative bytes; absent or ambiguous selectors refuse without mutation; invalid context patches are refused before persistence; command changes require fresh provenance/trust rather than preserving authorization; packed Node and Bun transports agree.
@@ -16,9 +16,9 @@ goal: project management = context management
 parent: pm-gh1381
 risk: medium
 confidence: high
-resolution: "SDK metadata editing preserves ordering, immutable creation provenance, trust and atomic history. CLI and MCP share selectors. Telemetry protects serialized metadata and command selectors and omits full linked-test previews. Edits refuse listing, run-level timeout/progress and all incompatible execution or report controls before persistence."
-expected_result: "Correct a linked test without reconstruction or privacy exposure; preserve item/history bytes for read-only, execution, report and collection conflicts while retaining valid mutation controls."
-actual_result: "Pre-fix controls reproduced four writes from list, valid/empty timeout and progress. All 14 SDK/CLI integration cases and 24 other active option combinations now pass with refusal byte preservation. All 10,178 tests, exact 100% coverage, typecheck, three linked commands, canonical static quality, packed Node 24/26/Bun consumers and strict external types pass. Base/Sentry-injected publication sizes pass unchanged ceilings; recent Sentry/telemetry passes with 0 issues, 2.95% finish errors and no missing failure codes."
+resolution: "Delivered SDK-first in-place metadata updates with explicit selectors and supported patches, preserved order and creation provenance, editor stamps, atomic history, byte-stable no-op retries, read-only/execution/mutation admission checks, sensitive-input and finish-preview telemetry protection, and paired MCP selector/patch dependencies."
+expected_result: "SDK, CLI and MCP edits preserve metadata invariants, reject incompatible or incomplete requests, and pass unchanged repository quality and coverage gates."
+actual_result: "14 integration cases, full 10,181-test suite and exact all-source 100/100/100/100 coverage pass; final focused 32 tests and 9 independent schema vectors pass. Typecheck and canonical static quality pass; schema and public declaration snapshots are regenerated and classified."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-bjpo,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
   pm-do5b,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
@@ -27,7 +27,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-kmwdpa,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-11T18:01:32.503Z","harness:codex","cli:update:dep",detected
-comments[30]{created_at,author,text}:
+comments[33]{created_at,author,text}:
   "2026-10-11T15:39:56.760Z","harness:codex","Duplicate check: complete live 2928-item all-status corpus, request-specific searches, open and in-progress inventories plus full pm-gh1381 and pm-bjpo reads and history show GH1419 retained on the broader feature with no independently closeable editor task. This generated child materializes that existing acceptance for complete delivery alongside pm-gh1440; it does not duplicate the stable fragment resolver or whole-collection replacement."
   "2026-10-11T15:48:37.799Z","harness:codex","SDK editor design: resolve exact command/path or current one-based index under the item lock; whitelist explicitly supplied metadata fields; preserve command and immutable provenance; optional null clearing; retain list position; one tests_update event with structured edited index/fields; append editor identity/time only for semantic changes. Command changes are refused and require normal unlink/link provenance. Parent pm-gh1381 continues to own durable fragment addressing."
   "2026-10-11T15:51:38.868Z","harness:codex","Focused repaired cohort passes88 assertions across four files, including five new real SDK/CLI persistence and refusal scenarios. Actual history emits granular note/timeout patches and preserves semantic no-op bytes. Static lint identified adapter complexity growth; extracted transport projection and shared edit-usage admission without adding test-only production exports or lowering quality thresholds. Full source and packed acceptance remain pending."
@@ -58,12 +58,15 @@ comments[30]{created_at,author,text}:
   "2026-10-11T22:23:29.941Z","harness:codex","Pre-fix control reproduces four invalid mutations: listing, a normal timeout, an empty timeout and progress all resolve with changed=true (4 failures/10 passes). After the SDK admission fix all 14 integration cases pass through SDK and CLI with item/history bytes preserved. Audited every TestCommandOptions field: all 24 other active execution, collection, measurement and trust controls already refuse through shared preflights and now have one persistence-boundary regression table; author/message/force remain intentional mutation controls. No new production export or test-only seam."
   "2026-10-11T22:42:54.605Z","harness:codex","Canonical source verification passed 10,178 tests in 798 files with exact statements 68098/68098, branches 52238/52238, functions 14041/14041 and lines 64757/64757. Typecheck and all three item-linked commands pass. The first static run stopped only at active-missing-expected-result-zero for this reopened item; restored the current acceptance criterion through pm update and retained the failed receipt before rerunning, without changing limits or source."
   "2026-10-11T23:08:44.156Z","harness:codex","Final read-only admission remediation passes the unchanged canonical pnpm quality:static chain after restoring explicit active expected_result and adding the genuine evidence-backed relationship for the existing reopen recovery recurrence. All 10,178 source tests pass with exact 100/100/100/100 coverage, full typecheck and three linked commands. Real packed Node 24/26 and Bun consumers pass editor ordering/provenance/no-op/refusal/CLI/history and all three privacy capture levels; strict external TypeScript consumers pass. Base distribution is 19,997,557/20,000,000 bytes and clean real offline Sentry-injected distribution is 20,241,713/20,250,000 bytes. A stale temporary-copy failure was retained, then resolved using a fresh isolated distribution; no product budget or dependency changed. Fresh required Sentry/telemetry passes: 0 recent Sentry issues, 2.95% finish-error rate and 0 failures missing an error code."
+  "2026-10-11T23:43:10.626Z","harness:codex","Review remediation: missing selector/patch dependency reproduced against the published action-scoped schema. Added conditional requirements for both update and updateIndex, with setJson requiring either selector; dual selectors remain exclusive. Schema version advances to 4.21.1. The new contract regression failed before the fix and passes afterward; actual JSON Schema validation and full delivery gates follow."
+  "2026-10-12T00:07:00.255Z","harness:codex","Final review remediation verified: the new schema dependency regression and both shell recovery regressions failed before their fixes. The final focused cohort passes 32 tests; independent Ajv validation accepts both complete selector forms and normal listing/run requests while refusing four incomplete or ambiguous vectors (9 total). Full canonical Node 24 coverage passes 10,181 tests with 3 skips across 799 files and exact unchanged totals: statements 68,098, branches 52,238, functions 14,041, lines 64,757, all covered. Typecheck and the complete canonical pnpm quality:static pass with unchanged thresholds. A test-only no-thenable lint failure was corrected by asserting the published dependency branches directly, without adding suppression debt. Schema version-literal advancement to 4.21.1 is explicitly classified in the SDK snapshot; valid runtime edit requests retain compatibility."
+  "2026-10-12T00:09:31.090Z","harness:codex","Final installable publication proof: the actual isolated tarball passes public core/aggregate SDK and PmClient editing, ordering/provenance, byte-stable no-op, atomic option/context refusal, history, all 9 schema vectors, and real shell recovery roundtrip on Node 24.21.0, Node 26.9.0 and Bun 1.4.2. All three runtimes pass minimal/redacted/max synthetic telemetry checks with zero network calls and no exposure of patch/selector or finish metadata. Strict external TypeScript consumer and documentation examples compile; npx and bunx execute the installed candidate. Final base distribution 19,998,699/20,000,000 bytes and pristine offline Sentry-injected distribution 20,241,491/20,250,000 bytes pass unchanged budgets and file ceilings, with no source maps. Latest upstream pm-changelog 2026.10.5 generated the reviewed projection and check passes (only expected close-order sorting changed). Candidate source is unreleased; no immutable public version was republished."
 learnings[4]{created_at,author,text}:
   "2026-10-11T16:53:36.730Z","harness:codex","Compare edited metadata in its storage-normalized form before deciding whether to write. A semantic retry must preserve authoritative bytes, history and original creation provenance; editor stamps describe the revision rather than replacing provenance."
   "2026-10-11T19:23:22.400Z","harness:codex",New metadata transports need explicit telemetry input classification and failure-payload coverage before publication; preserving a correlation digest does not require retaining arbitrary serialized metadata. A shared capture-level table can prove both confidentiality and useful diagnostics without sending synthetic input to production.
   "2026-10-11T20:40:48.664Z","harness:codex","For new metadata transports, validate telemetry start, parse-error and finish payloads independently: redact free-form selectors and serialized patches, keep full user receipts out of telemetry previews, and retain safe counts and correlation digests. Test every configured capture level with local synthetic values and preserve a pre-fix failure control."
   "2026-10-11T22:42:54.041Z","harness:codex","Audit the complete action option contract when adding mutation admission: read-only intent, run controls, report filters and collection changes must refuse before persistence. Reopening clears prior terminal expected/actual evidence; restore an explicit current expected result before active tracker-quality gates."
-files[22]:
+files[23]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
   - path: sdk/public-surface.json
@@ -110,7 +113,9 @@ files[22]:
     scope: project
   - path: tests/unit/core/telemetry/telemetry-runtime.spec.ts
     scope: project
-tests[3]:
+  - path: tests/unit/sdk/action-schema-parity.spec.ts
+    scope: project
+tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts
     scope: project
     timeout_seconds: 240
@@ -120,8 +125,8 @@ tests[3]:
       source_kind: local_mutation
       source_ref: feat/linked-test-edits-and-refusals
     updated_by: "harness:codex"
-    updated_at: "2026-10-11T16:37:09.245Z"
-    note: 5 editor integration cases; separate 139-case focused cohort and packed-consumer receipts are recorded in comments
+    updated_at: "2026-10-12T00:06:59.771Z"
+    note: 14 editor integration cases including exhaustive active-option refusal coverage; full suite and packaged runtime evidence are recorded in comments.
   - command: node scripts/run-tests.mjs test -- tests/unit/cli/register-operations.spec.ts
     scope: project
     timeout_seconds: 120
@@ -138,7 +143,15 @@ tests[3]:
       created_at: "2026-10-11T19:14:09.444Z"
       source_kind: local_mutation
       source_ref: feat/linked-test-edits-and-refusals
-test_runs[7]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts
+    scope: project
+    timeout_seconds: 120
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-11T23:43:09.591Z"
+      source_kind: local_mutation
+      source_ref: feat/linked-test-edits-and-refusals
+test_runs[8]:
   - run_id: test-local-mv418nof-z0dimw
     kind: test
     status: failed
@@ -224,10 +237,21 @@ test_runs[7]:
       node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/register-operations.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-runtime.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv4gzlsx-jxv0jc
+    kind: test
+    status: passed
+    started_at: "2026-10-11T23:44:12.416Z"
+    finished_at: "2026-10-11T23:44:22.305Z"
+    recorded_at: "2026-10-11T23:44:22.305Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project
   docs/LINKED_TEST_EDITS.md,project
   docs/SDK_EVIDENCE_TRACEABILITY.md,project
   docs/TESTING.md,project
-close_reason: Implemented and verified complete linked-test edit admission and telemetry privacy
+close_reason: Complete SDK linked-test editor and all actionable review remediation
 body: ""

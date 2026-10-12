@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- Declare calendar package positional signatures in the SDK grammar census ([pm-kki6bf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kki6bf.toon))
 - GH-1440: validate linked-test context at write time and distinguish execution refusals ([pm-gh1440](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1440.toon))
+- Declare calendar package positional signatures in the SDK grammar census ([pm-kki6bf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kki6bf.toon))
 - Reject sparse artifact ledger inputs through both public SDK exports ([pm-ledger-sparse-delivery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/changesets/pm-ledger-sparse-delivery.toon))
 - Prevent exact-tag recovery from republishing an accepted npm version while public metadata is unavailable ([pm-publication-acceptance-fence](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-publication-acceptance-fence.toon))
 - Expose the test measurement run prerequisite in help and recovery ([pm-test-measure-prerequisite](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-test-measure-prerequisite.toon))

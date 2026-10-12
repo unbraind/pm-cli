@@ -40243,6 +40243,59 @@
         "additionalProperties": true,
         "allOf": [
           {
+            "if": {
+              "required": [
+                "update"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "setJson"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "updateIndex"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "setJson"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "setJson"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "update"
+                  ]
+                },
+                {
+                  "required": [
+                    "updateIndex"
+                  ]
+                }
+              ]
+            }
+          },
+          {
             "not": {
               "required": [
                 "update",
@@ -58964,6 +59017,59 @@
         "additionalProperties": false,
         "allOf": [
           {
+            "if": {
+              "required": [
+                "update"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "setJson"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "updateIndex"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "setJson"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "setJson"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "update"
+                  ]
+                },
+                {
+                  "required": [
+                    "updateIndex"
+                  ]
+                }
+              ]
+            }
+          },
+          {
             "not": {
               "required": [
                 "update",
@@ -63609,10 +63715,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.21.0"
+    "x-schema-version": "4.21.1"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.21.0",
+  "schema_version": "4.21.1",
   "selected": {
     "action": null,
     "availability_only": false,
