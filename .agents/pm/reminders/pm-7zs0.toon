@@ -6,9 +6,9 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-11T09:51:51.137Z"
+updated_at: "2026-10-12T04:53:24.046Z"
 reminders[1]{at,text}:
-  "2026-10-12T06:00:00.000Z","Verify the next eligible daily cut after PR1439: immutable tag ancestry and npm latest with npm npx Bun and bunx acceptance; distinguish scheduled skips from publication and rearm after proof."
+  "2026-10-13T06:00:00.000Z","Verify the next eligible daily cut after the merge/recovery/declaration delivery: one immutable tag and npm latest with npm npx Bun and bunx acceptance and rearm after proof."
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
@@ -16,6 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
+actual_result: October12 v2026.10.12 tag-push Release38198571599 and anonymous published-release verification pass; the new candidate remains separately unmerged and unreleased.
 dependencies[13]:
   - id: pm-7n5a
     kind: related
@@ -83,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[208]{created_at,author,text}:
+comments[210]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -292,6 +293,8 @@ comments[208]{created_at,author,text}:
   "2026-10-11T09:45:35.163Z","harness:codex","Post-merge Release Reliability run38129016750 completed with the historical rolling release and nightly policy red; downloaded original artifacts confirm a complete census, original failures and unchanged thresholds. The independent release-artifact ledger report passes with no findings. This operational history is distinct from the passing exact candidate/source checks and the successful nine-cell registry recovery. The report must remain red until its measured window meets policy; a manual recovery does not rewrite the failed morning attempt, old native dispatch delay, missing scheduled occurrence or nightly history. Causes remain unknown unless separately evidenced. No additional automatic version or publication was created by the issue-closure retry, which skipped preparation on main887129dd9476de300bc2adc13edf3ac64f8ee228. The next eligible check remains scheduled for October12 at06:00UTC."
   "2026-10-11T09:45:56.467Z","harness:codex","Correction to the preceding ledger wording: release-ledgers.json passes with 12 explicit, historically settled findings and zero unsettled findings; it does not contain an empty findings array. The current release census is complete with 7 failed of 30 completed attempts (23.33 percent), policy violations scheduled_failure_rate and dispatch_window, and outcome_evidence_complete=false retained. The nightly window has 29 completed attempts for each recurring Linux/macOS family, including 6 macOS Node24 failures, and 4 of 17 failures in each Windows Node24 shard. These are the downloaded run38129016750 values, distinct from earlier windows and from current candidate acceptance."
   "2026-10-11T09:51:49.948Z","harness:codex","Completed merged-main verification for 887129dd9476de300bc2adc13edf3ac64f8ee228: CI38129004684, CodeQL38129004600, Security38129004682, Docs38129004687, CodSpeed38129004680 and OSSF Scorecard38129004665 all finished successfully. Release Reliability38129016750 remains the separately recorded rolling-policy failure; Auto Release blocker_retry38129005433 skipped preparation. Anonymous registry reads reconfirm latest pm-cli2026.10.11 with unchanged SHA1 abde7d39ec2681a3f03cd31e36ace7800990209a and latest external pm-changelog2026.10.5. Current source changes remain Unreleased for the next normal daily cut; no second automatic release, republish or tag movement is claimed or performed."
+  "2026-10-12T04:50:29.681Z","harness:codex","October12 live publication proof: morning_dispatcher Auto Release38197011075 created the single immutable v2026.10.12 tag at 50efecd7e65908d01ded487a0c9e8e1c0fce343e. Tag-push Release38198571599 completed successfully; the shared anonymous published-release verifier passed npm metadata, immutable package/executor and GitHub Release checks for2026.10.12. This is publication of the preexisting main source, distinct from the still-unmerged merge/recovery/declaration candidate. Retain historical rolling reliability failures; a successful current cut does not erase the recorded failure denominator. Rearm the same reminder for the next eligible date, without creating a duplicate monitor or a second release."
+  "2026-10-12T04:53:22.529Z","harness:codex","Rearm correction: the first attempt combined mutually exclusive clear-reminders and reminder flags and was refused without changing the calendar. The declared --reminder setter alone then atomically replaced the single reminder. Full live readback verifies exactly one reminder at2026-10-13T06:00:00.000Z and the current published-release observation. No duplicate monitor or reminder remains."
 notes[10]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

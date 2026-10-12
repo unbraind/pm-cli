@@ -2,11 +2,13 @@ id: pm-reopen-planning-recovery
 title: Expose active planning recovery when a canonical item is reopened
 description: "Normal item reopen archives and clears expected_result, then claim --start accepts the item while active tracker assurance requires a nonempty expected result. The current reopen help offers only its own help example and no planning recovery. Add SDK-owned structured recovery or a declared explicit planning input that lets an operator restore the intended active expected result while preserving immutable previous-terminal evidence."
 type: Task
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-11T05:28:30.227Z"
-updated_at: "2026-10-11T22:51:16.787Z"
+updated_at: "2026-10-12T05:35:05.418Z"
+closed_at: "2026-10-12T05:35:04.663Z"
+completed_at: "2026-10-12T05:35:04.663Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Real isolated reopen/claim/help journey discloses the required planning recovery; explicit current expectation is preserved; previous terminal fields remain immutable in history; existing active metadata gates remain unchanged
@@ -17,12 +19,48 @@ why_now: Canonical publication guard recurrence twice cleared expected_result an
 parent: pm-f05lsg
 risk: low
 confidence: high
-expected_result: Advertised reopening recovery restores the requested active planning expectation and retains complete prior terminal history
+resolution: "Expose optional expectedResult through the SDK, CLI aliases and MCP; preserve it atomically during reopening and return same-tracker planning recovery when omitted, retaining immutable previous-terminal evidence."
+expected_result: Reopening advertises or accepts the current active expectation without inferring it from the prior closure or weakening active planning assurance.
+actual_result: "SDK and real CLI/MCP journeys, both linked commands, packed Node/Bun clients and strict TypeScript pass; the advertised recovery executes, canonical and short flags preserve the expectation, and blank input refuses before history writes. Full source coverage is exact 100/100/100/100."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-g8jp,discovered_from,"2026-10-11T05:28:30.227Z","harness:codex","cli:create:dep",detected
   pm-publication-acceptance-fence,discovered_from,"2026-10-11T05:28:30.227Z","harness:codex","cli:create:dep",detected
   pm-9djr6d,related,"2026-10-11T22:51:16.506Z","harness:codex","evidence:pr-1444-reopen-quality",detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-11T05:28:30.227Z","harness:codex","Duplicate intake: request-specific live reopen/expected searches, strict complete2924-item all-status corpus, current open/in-progress lists, full closed reopen lineage and live reopen help found no focused owner for active planning recovery. Completed clear-terminal implementation remains completed. This enhancement is open and unclaimed; no source work is started."
   "2026-10-11T22:43:59.439Z","harness:codex","Additional dogfood recurrence during PR #1444 / pm-9djr6d: normal reopen archived and cleared expected_result, claim --start succeeded, and the unchanged canonical static tracker gate then failed active-missing-expected-result-zero with pm-9djr6d as its only contributor. The current acceptance criterion was restored with pm update --expected-result before rerunning. Full live owner/history verification confirms this existing open, unclaimed task owns the recovery enhancement; no duplicate item or additional in-progress claim was created. Preserve previous-terminal evidence while advertising the planning restoration step."
+  "2026-10-12T03:33:38.734Z","harness:codex","SDK, CLI and generic MCP dispatch preserve an explicit current expectedResult atomically while retaining the prior terminal expectation in immutable recurrence context. Without input, the compact receipt advertises a same-tracker update argument vector; its placeholder is replaced and executed in isolated tests and installed Node/Bun consumers. Blank explicit expectations refuse before history writes. Current help advertises the planning prerequisite and examples. Public optional-field signature changes carry a reviewed compatibility rationale; unchanged active metadata gates remain enforced."
+  "2026-10-12T05:00:39.170Z","harness:codex","The new real CLI transport assertion exposed an actual alias gap: declaring --expected in the runtime contract did not register it on the nested item-reopen Commander node. The thin adapter now registers the alias and forwards it with canonical-option precedence. Source-level adapter tests verify canonical and alias options, while the isolated real CLI journey verifies the alias writes the active expectation and archives the earlier terminal value. This is a transport correction, not a relaxed coverage gate or removal of advertised functionality."
+  "2026-10-12T05:35:01.332Z","harness:codex","Final acceptance: both linked SDK/reopen and source CLI adapter commands pass with immutable test_runs evidence. Exact whole-source coverage is 100/100/100/100; SDK contracts, surface snapshot, four-project TypeScript and transport gates pass. Fresh packed Node and Bun clients verify explicit expectation, immutable prior-terminal expectation and execution of the advertised same-tracker update recovery. Both canonical and --expected alias transports pass; blank explicit input refuses before mutation. These optional SDK additions remain a source candidate until reviewed merge and the next daily publication."
+notes[2]{created_at,author,text}:
+  "2026-10-12T03:06:14.623Z","harness:codex","SDK compatibility review: expectedResult and recovery are optional additions. Existing reopen calls still archive terminal fields and return recurrence evidence; an explicit current expectation is written atomically with reopen. The conservative public-surface signature gate requires a recorded rationale for interface changes even when fields are optional. Consume these changes in the next eligible calendar release, preserving existing immutable daily artifacts."
+  "2026-10-12T05:05:43.824Z","harness:codex","Linked-test command identity is immutable: the attempted command-field edit was refused with no mutation. Keep the original SDK/reopen journey link and add the distinct CLI adapter suite as a separate runnable link. This preserves original command provenance and avoids unsupported delete/recreate or identity rewriting."
+files[8]{path,scope}:
+  src/cli/help-content.ts,project
+  src/cli/register-structured-mutation.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/lifecycle/reopen.ts,project
+  tests/integration/reopen-contract.integration.spec.ts,project
+  tests/unit/cli/structured-mutation-registration.spec.ts,project
+  tests/unit/sdk/recovery/reopen.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/reopen.spec.ts tests/integration/reopen-contract.integration.spec.ts,project,120,"harness:codex","2026-10-12T03:04:57.316Z",local_mutation,fix/lossless-merge-and-planning-recovery
+  node scripts/run-tests.mjs test -- tests/unit/cli/structured-mutation-registration.spec.ts,project,120,"harness:codex","2026-10-12T05:05:42.801Z",local_mutation,fix/lossless-merge-and-planning-recovery
+test_runs[1]:
+  - run_id: test-local-mv4tbca5-kxfhqw
+    kind: test
+    status: passed
+    started_at: "2026-10-12T05:29:11.216Z"
+    finished_at: "2026-10-12T05:29:25.229Z"
+    recorded_at: "2026-10-12T05:29:25.229Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/reopen.spec.ts tests/integration/reopen-contract.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/structured-mutation-registration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/RECURRENCE_RECOVERY_CONTRACTS.md,project
+close_reason: Verified atomic current expectation and executable recurrence planning recovery
 body: ""

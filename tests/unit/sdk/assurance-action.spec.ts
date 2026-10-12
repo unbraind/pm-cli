@@ -870,6 +870,10 @@ describe("assurance action transport", () => {
           { path: pmPath },
         ),
       ).rejects.toThrow("request.change must be an object");
+      await expect(runAssuranceAction({ action: "risk", definition: { change: { files: [] } } }, { path: pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: { required: expect.stringContaining("definition.policy"), recovery: { suggested_retry_args: ["assurance", "risk", "--help"] } },
+      });
       const throwingDefinition = new Proxy(
         {},
         {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AssuranceGateVerdict } from "../../src/sdk/governance/assurance.js";
+import { resolvePmPositionalActionContract } from "../../src/sdk/cli-contracts/grammar-contracts.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const measurement = {
@@ -30,6 +31,21 @@ const gate = {
 };
 
 describe("assurance CLI integration", () => {
+  it("executes the advertised risk definition and discloses policy recovery", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["create", "--type", "Task", "--title", "Nonempty risk tracker", "--create-mode", "progressive"]).code).toBe(0);
+      const example = resolvePmPositionalActionContract("assurance risk")!.example;
+      const definition = example.slice(example.indexOf("--definition '") + "--definition '".length, -1);
+      const help = context.runCli(["assurance", "risk", "--help"]);
+      expect(help.stdout).toContain(example);
+      expect(context.runCli(["assurance", "risk", "--definition", definition, "--json"], { expectJson: true }).code).toBe(0);
+      const missing = context.runCli(["assurance", "risk", "--definition", '{"change":{"files":[]}}', "--json"], { expectJson: true });
+      expect(missing.code).toBe(2);
+      const error = JSON.parse(missing.stderr);
+      expect(error).toMatchObject({ required: expect.stringContaining("definition.policy"), recovery: { suggested_retry_args: ["assurance", "risk", "--help"] } });
+      expect(context.runCli(error.recovery.suggested_retry_args).code).toBe(0);
+    });
+  });
   it("explains change risk through the public CLI action", async () => {
     await withTempPmPath(async (context) => {
       const request = {

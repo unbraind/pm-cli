@@ -37,11 +37,13 @@ async function runItemReopenAction(
   command: Command,
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
+  const expectedResult = options.expectedResult ?? options.expected;
   const result = await runReopen(
     id,
     reason,
     {
       status: typeof options.status === "string" ? options.status : undefined,
+      expectedResult: typeof expectedResult === "string" ? expectedResult : undefined,
       author:
         typeof options.author === "string"
           ? options.author
@@ -244,6 +246,8 @@ export function registerStructuredMutationCommands(program: Command): void {
   itemCommand
     .command("reopen <id> <reason>")
     .option("--status <value>", "Active target status: open or in_progress")
+    .option("--expected-result <value>", "Current active planning expectation; otherwise the receipt offers recovery")
+    .option("--expected <value>", "Alias for --expected-result")
     .option("--message <value>", "Human-readable recurrence history message")
     .option("--force", "Override ownership or stale-lock conflicts")
     .option("--author <value>", "Mutation author")

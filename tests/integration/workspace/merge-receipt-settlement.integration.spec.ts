@@ -70,9 +70,12 @@ describe("merge receipt settlement across worktrees", () => {
       expect(await readFile(observerHistoryPath, "utf8")).toBe(before);
       const health = await runHealth({ path: observerPmRoot }, { full: true, checkOnly: true });
       expect(health.checks.find((check) => check.name === "history_drift")?.details).toMatchObject({
-        merge_receipt_attributed_items: [id],
-        remediation_map: { history_drift_merge_receipt: "pm merge reconcile" },
+        merge_receipt_attributed_items: [],
+        counts: { hash_mismatches: 0, chain_mismatches: 0 },
       });
+      expect((await inspectMergeReceiptEvidence(observer, { pmRoot: observerPmRoot })).receipts).toMatchObject([
+        { id: receipt.id, state: "pending" },
+      ]);
       expect(await readFile(observerHistoryPath, "utf8")).toBe(before);
       await writeFile(observerReceiptPath, pendingDurable);
       const mainReceiptPath = path.join(context.pmPath, "merge-receipts", `${receipt.id}.json`);

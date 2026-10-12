@@ -548,6 +548,15 @@ function parseRecurrenceActionRequest(
       ? parseDefectRecurrenceCoverageRequest(definition)
       : parseDefectChangeRiskRequest(definition);
   } catch (error: unknown) {
+    if (input.action === "risk" && error instanceof TypeError && error.message === "defect recurrence policy must be an object") {
+      throw new PmCliError(error.message, EXIT_CODE.USAGE, {
+        required: "Supply definition.policy with the project's declared recurrence policy and definition.change with the proposed change; no policy is inferred.",
+        recovery: {
+          suggested_retry: `pm assurance ${input.action} --help`,
+          suggested_retry_args: ["assurance", input.action, "--help"],
+        },
+      });
+    }
     return throwRiskUsageError(error);
   }
 }

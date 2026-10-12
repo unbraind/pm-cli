@@ -19,6 +19,7 @@ import {
 } from "../../../src/core/history/history.js";
 import {
   historyEntriesToRaw,
+  reanchorHistoryEntries,
   verifyHistoryChain,
 } from "../../../src/core/history/replay.js";
 import {
@@ -77,6 +78,44 @@ describe("public merge-safety SDK primitives", () => {
         }),
       ),
     );
+  });
+
+  it("retains cumulative branch collections when a writer's later event has an earlier clock", () => {
+    const base = item("base", "2026-07-19T00:00:00.000Z");
+    base.metadata.acceptance_criteria = "Base criterion";
+    const first = structuredClone(base);
+    first.metadata.comments = [{ created_at: "2026-07-19T00:01:00.000Z", author: "ours", text: "First" }];
+    first.metadata.acceptance_criteria += "; First criterion";
+    const second = structuredClone(first);
+    second.metadata.comments!.push({ created_at: "2026-07-19T00:02:00.000Z", author: "ours", text: "Second" });
+    const other = structuredClone(base);
+    other.metadata.comments = [{ created_at: "2026-07-19T00:03:00.000Z", author: "theirs", text: "Other" }];
+    other.metadata.acceptance_criteria += "; Other criterion";
+    const entry = (before: ItemDocument, after: ItemDocument, ts: string, author: string, op = "update") => createHistoryEntry({ before, after, nowIso: ts, author, op });
+    const seed = entry({ metadata: {} as ItemDocument["metadata"], body: "" }, base, "2026-07-19T00:00:00.000Z", "seed", "create");
+    const merged = mergeHistoryStreams(historyEntriesToRaw([seed]),
+      historyEntriesToRaw([seed, entry(base, first, "2026-07-19T00:04:00.000Z", "ours"), entry(first, second, "2026-07-19T00:01:00.000Z", "ours")]),
+      historyEntriesToRaw([seed, entry(base, other, "2026-07-19T00:03:00.000Z", "theirs")]));
+    const entries = merged.merged.trim().split("\n").map((line) => JSON.parse(line));
+    expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
+    const replay = reanchorHistoryEntries(entries).finalDocument;
+    expect((replay.metadata.comments as Array<{ text: string }>).map((comment) => comment.text)).toEqual(["First", "Second", "Other"]);
+    expect(replay.metadata.acceptance_criteria).toBe("Base criterion; First criterion; Other criterion");
+  });
+
+  it("refuses invalid original branch coordinates and preserves prefixless legacy merge behavior", () => {
+    const empty = { metadata: {} as ItemDocument["metadata"], body: "" };
+    const base = item("base", "2026-07-19T00:00:00.000Z");
+    const ours = item("ours", "2026-07-19T00:01:00.000Z");
+    const theirs = item("theirs", "2026-07-19T00:02:00.000Z");
+    const seed = createHistoryEntry({ before: empty, after: base, nowIso: base.metadata.updated_at, author: "seed", op: "create" });
+    const left = createHistoryEntry({ before: base, after: ours, nowIso: ours.metadata.updated_at, author: "ours", op: "update" });
+    const invalid = sealHistoryRecord({ ...left, author: "theirs", patch: [{ op: "replace", path: "/metadata/missing/detail", value: "invalid" }] });
+    expect(() => mergeHistoryStreams(historyEntriesToRaw([seed]), historyEntriesToRaw([seed, left]), historyEntriesToRaw([seed, invalid]))).toThrow("does not apply in its original branch");
+    const imported = [ours, theirs].map((after) => createHistoryEntry({ before: empty, after, nowIso: after.metadata.updated_at, author: after.metadata.title, op: "import" }));
+    const legacy = mergeHistoryStreams("", historyEntriesToRaw([imported[0]]), historyEntriesToRaw([imported[1]]));
+    expect(legacy.entries_total).toBe(2);
+    expect(verifyHistoryChain(legacy.merged.trim().split("\n").map((line) => JSON.parse(line)))).toEqual({ ok: true, errors: [] });
   });
 
   it("merges concurrent item collection appends and recomputes TOON headers", () => {

@@ -2280,6 +2280,18 @@
       ],
       "package_version": "2026.10.11",
       "reason": "Schema version literal advances from 4.21.0 to 4.21.1 for edit dependency validation; runtime-valid selector and patch requests remain accepted."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ReopenCommandOptions",
+        "signature ./sdk:ReopenResult",
+        "signature ./sdk/core:ReopenCommandOptions",
+        "signature ./sdk/core:ReopenResult",
+        "signature ./sdk/runtime:ReopenCommandOptions",
+        "signature ./sdk/runtime:ReopenResult"
+      ],
+      "package_version": "2026.10.11",
+      "reason": "Reopen options and results gain optional planning input and recovery. Existing callers remain valid; terminal expectations remain archived and the next calendar release adds explicit active planning guidance."
     }
   ],
   "entrypoints": {
@@ -16414,13 +16426,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
-          "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface ReopenCommandOptions { status?: string; expectedResult?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
-          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
+          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -26026,13 +26038,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
-          "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface ReopenCommandOptions { status?: string; expectedResult?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
-          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
+          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "supported",
@@ -33904,13 +33916,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
-          "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface ReopenCommandOptions { status?: string; expectedResult?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
-          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
+          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",

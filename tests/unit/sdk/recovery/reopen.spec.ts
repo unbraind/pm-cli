@@ -192,6 +192,9 @@ describe("runReopen", () => {
         },
       });
       expect(history[1].message).toBeUndefined();
+      await runClose(created.item.id, "Second occurrence resolved", {}, { path: context.pmPath });
+      await expect(runReopen(created.item.id, "Third occurrence", { expectedResult: " " }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      expect(await readHistoryEntries(getHistoryPath(context.pmPath, created.item.id), created.item.id)).toHaveLength(4);
     });
   });
 

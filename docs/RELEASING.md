@@ -437,6 +437,12 @@ maintainer supplies
 pair that acknowledgement with migration guidance, compatible extension
 version bounds where applicable, and the next eligible date-based release.
 
+Build finalization removes redundant indentation from emitted `.d.ts` files
+([pm-chw71s](../.agents/pm/tasks/pm-chw71s.toon)). String and template type
+contents, comments, JSDoc, symbols and module boundaries retain their original
+tokens. Source declarations remain readable, and packed TypeScript consumers
+verify the emitted surface before publication. Artifact ceilings remain unchanged.
+
 5. Land the implementation through a reviewed pull request, then use hosted
    preparation for publication.
 

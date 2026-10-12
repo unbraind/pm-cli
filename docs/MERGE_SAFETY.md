@@ -210,6 +210,18 @@ pm merge report --include-reconciled
 
 The underlying public SDK exports are `mergeItemDocuments`, `mergeHistoryStreams`, `mergeRelationshipEventStreams`, `mergeJsonDocuments`, `runMergeDriver`, `runMergeInstall`, `installMergeFence`, `findGitWorkspaceRoot`, `runMergeReconcile`, `runMergeReceiptReport`, `runMergeReceiptEvidenceReport`, `inspectMergeReceiptEvidence`, `listMergeReceipts`, `auditMergeDriverConfiguration`, `refreshMergeAttributeFenceIfInstalled`, `buildMergeAttributePatterns`, and `auditMergeAttributeFence` from `@unbrained/pm-cli/sdk`. `installMergeFence` accepts explicit tracker and workspace roots, so custom init hosts do not depend on process cwd or CLI globals.
 
+Collection projection is tracked by [pm-pftgcz](../.agents/pm/issues/pm-pftgcz.toon).
+History union reconstructs each event in its original branch before merging
+collection values with the item driver's shared policy. Positional comment,
+doc and test patches from an earlier reconciliation therefore cannot overwrite
+an unrelated entry at the same array index on another branch. Original event
+attribution and patches remain in sealed rewrite evidence; replayed collections
+use the canonical item order and receiving-side linked-test provenance.
+The SDK reanchor primitive accepts `projectPatch` for this explicit projection
+boundary. It retains the replaced patch rather than erasing its source.
+Exact receipt settlement still requires an authoritative matching snapshot,
+and newly merged executable tests still require clone-local trust acknowledgement.
+
 `listMergeReceipts` is the compatibility projection for callers that only need
 validated receipts. It cannot distinguish an empty evidence store from a store
 whose candidates were all rejected. Gates and diagnostic integrations should

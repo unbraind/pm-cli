@@ -9,9 +9,15 @@
  * definition for multi-branch agent workflows.
  */
 import {
+  cloneEmptyReplayDocument,
   historyEntriesToRaw,
+  normalizeReplayPatchOps,
   reanchorHistoryEntries,
+  toReplayDocument,
+  tryApplyReplayPatch,
+  type ReplayDocument,
 } from "../../core/history/replay.js";
+import jsonPatch from "fast-json-patch";
 import {
   canonicalDocument,
   parseItemDocument,
@@ -26,6 +32,7 @@ import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { compareTimestampStrings } from "../../core/shared/time.js";
 import type {
   HistoryEntry,
+  HistoryPatchOp,
   ItemDocument,
   ItemMetadata,
   LinkedTest,
@@ -164,6 +171,66 @@ function commonHistoryPrefixLength(
   return shared;
 }
 
+/** Retain one cumulative document per branch, avoiding a full snapshot for every event. */
+interface HistoryBranchProjection {
+  entries: HistoryEntry[];
+  positions: Map<string, number>;
+  index: number;
+  document: ReplayDocument;
+}
+
+/** Index original event coordinates while retaining only the current branch document. */
+function createHistoryBranchProjection(entries: HistoryEntry[]): HistoryBranchProjection {
+  return { entries, positions: new Map(entries.map((entry, index) => [historyEntryIdentity(entry), index])),
+    index: -1, document: cloneEmptyReplayDocument() };
+}
+
+/** Advance original branch causality monotonically even when host clocks order its events differently. */
+function advanceHistoryBranch(state: HistoryBranchProjection, target: number | undefined): ReplayDocument {
+  const end = target ?? state.index;
+  while (state.index < end) {
+    const applied = tryApplyReplayPatch(state.document, state.entries[state.index + 1].patch);
+    if (!applied.ok) {
+      throw new PmCliError("History union cannot preserve a patch that does not apply in its original branch.", EXIT_CODE.GENERIC_FAILURE);
+    }
+    state.document = applied.document;
+    state.index += 1;
+  }
+  return state.document;
+}
+
+/** Rebase collection effects from branch snapshots rather than replaying stale array positions. */
+function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[], shared: number): NonNullable<Parameters<typeof reanchorHistoryEntries>[2]>["projectPatch"] {
+  if (shared === 0) return undefined;
+  const oursBranch = createHistoryBranchProjection(ours);
+  const theirsBranch = createHistoryBranchProjection(theirs);
+  const prefix = advanceHistoryBranch(oursBranch, shared - 1);
+  advanceHistoryBranch(theirsBranch, shared - 1);
+  let position = 0;
+  const unionFields = new Set<string>([...ITEM_UNION_COLLECTION_FIELDS, ...ITEM_UNION_DELIMITED_FIELDS]);
+  return (entry, current) => {
+    if (position++ < shared) return entry.patch;
+    const identity = historyEntryIdentity(entry);
+    const oursState = advanceHistoryBranch(oursBranch, oursBranch.positions.get(identity));
+    const theirsState = advanceHistoryBranch(theirsBranch, theirsBranch.positions.get(identity));
+    const scalarPatch = normalizeReplayPatchOps(entry.patch).filter((operation) => {
+      const [root, field] = operation.path.slice(1).split("/");
+      return root !== "metadata" || !unionFields.has(field);
+    });
+    const scalar = tryApplyReplayPatch(current, scalarPatch);
+    if (!scalar.ok) return entry.patch;
+    const merged = mergeItemMetadataRecords(prefix.metadata, oursState.metadata, theirsState.metadata, "ours", "latest_document_update",
+      String(oursState.metadata.updated_at), String(theirsState.metadata.updated_at));
+    const next = scalar.document;
+    for (const field of unionFields) {
+      if (Object.hasOwn(merged.merged, field)) next.metadata[field] = merged.merged[field];
+      else delete next.metadata[field];
+    }
+    const canonical = toReplayDocument({ metadata: next.metadata as ItemMetadata, body: next.body });
+    return jsonPatch.compare(current, canonical) as HistoryPatchOp[];
+  };
+}
+
 /**
  * Deterministically merge two diverged versions of one append-only history
  * JSONL stream. Identical streams and one-sided fast-forwards keep the winning
@@ -256,7 +323,7 @@ export function mergeHistoryStreams(
   const reanchored = reanchorHistoryEntries(
     [...ours.slice(0, shared), ...mergedSuffix],
     undefined,
-    { continuousHashSurface: true },
+    { continuousHashSurface: true, projectPatch: historyUnionPatchProjection(ours, theirs, shared) },
   );
   if (reanchored.skippedOps > 0) {
     throw new PmCliError(

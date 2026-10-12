@@ -6,6 +6,8 @@ Tracked by [pm-83cz0o](../.agents/pm/features/pm-83cz0o.toon),
 [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), and
 [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon).
 
+Planning recovery: [pm-reopen-planning-recovery](../.agents/pm/tasks/pm-reopen-planning-recovery.toon).
+
 ## Agent Quick Context
 
 - Reuse an active matching item; reopen a terminal matching item.
@@ -21,7 +23,8 @@ Tracked by [pm-83cz0o](../.agents/pm/features/pm-83cz0o.toon),
 
 ```bash
 pm item reopen pm-a1b2 "The production failure recurred after deployment"
-pm item reopen pm-a1b2 "The customer reproduced the issue" --status in_progress
+pm item reopen pm-a1b2 "The customer reproduced the issue" --status in_progress \
+  --expected-result "The recurrence is repaired and its regression passes"
 ```
 
 The command accepts only the workspace open or in-progress status. While
@@ -31,6 +34,15 @@ state change to the normal update pipeline. Active metadata drops stale
 `closed_at`, `completed_at`, `close_reason`, `resolution`, `expected_result`,
 `actual_result`, and `fixed_version` values. Earlier history retains the exact
 closure values.
+
+Supply `--expected-result` (`--expected`) for the current active expectation.
+The SDK option and MCP parameter are `expectedResult`. This explicitly supplied
+planning value survives the reopen, while the previous terminal expectation
+remains in `recurrence.previous_terminal` and immutable history. Without the
+option, the compact receipt supplies `recovery.suggested_retry_args` for an
+update of the same tracker and item. Replace its outcome placeholder before
+executing it, then claim/start the item. Reopening does not infer a new
+expectation from the old closure or relax active planning assurance.
 
 Compact output keeps the recurrence receipt because the prior and next status,
 reason, and terminal evidence are the proof that this was a recurrence rather
@@ -47,7 +59,7 @@ const pm = new PmClient({ pmRoot: "/workspace/.agents/pm" });
 const viaClient = await pm.reopen(
   "pm-a1b2",
   "The production failure recurred",
-  { status: "in_progress" },
+  { status: "in_progress", expectedResult: "The recurrence regression passes" },
 );
 
 const viaFunction = await reopen(

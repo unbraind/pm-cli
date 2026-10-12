@@ -7,6 +7,8 @@
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import type { PmCliErrorRecoveryPayload } from "../../core/shared/errors.js";
+import { renderPmCommand } from "../command-line.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
@@ -23,6 +25,8 @@ export type { PreviousTerminalEvidence } from "./update.js";
 export interface ReopenCommandOptions {
   /** Active target status; only the workspace open or in-progress status is allowed. */
   status?: string;
+  /** Current active planning expectation, replacing the archived terminal expectation. */
+  expectedResult?: string;
   /** Explicit mutation author override. */
   author?: string;
   /** Optional human-readable history message in addition to structured recurrence context. */
@@ -53,6 +57,8 @@ export interface ReopenResult {
   warnings: string[];
   /** Immutable recurrence transition receipt. */
   recurrence: RecurrenceReceipt;
+  /** Executable planning recovery when the caller has not supplied a current expectation. */
+  recovery?: PmCliErrorRecoveryPayload;
 }
 
 /** Reopen terminal work through the canonical update mutation and history path. */
@@ -78,6 +84,10 @@ export async function runReopen(
     );
   }
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const expectedResult = options.expectedResult?.trim();
+  if (expectedResult !== undefined && expectedResult.length === 0) {
+    throw new PmCliError("Reopen expected result must describe the current active outcome.", EXIT_CODE.USAGE);
+  }
   const statusRegistry = resolveRuntimeStatusRegistry(
     (await readSettings(pmRoot)).schema,
   );
@@ -112,10 +122,11 @@ export async function runReopen(
     id,
     {
       status: targetStatus,
+      expectedResult,
       unset: [
         "close-reason",
         "resolution",
-        "expected-result",
+        ...(expectedResult === undefined ? ["expected-result"] : []),
         "actual-result",
         "fixed-version",
       ],
@@ -131,5 +142,12 @@ export async function runReopen(
     changed_fields: update.changed_fields,
     warnings: update.warnings,
     recurrence: update.lifecycle_transition,
+    ...(expectedResult === undefined ? {
+      recovery: {
+        missing: ["expected_result"],
+        suggested_retry_args: ["--pm-path", pmRoot, "update", id, "--expected-result", "<current expected outcome>"],
+        suggested_retry: renderPmCommand(["--pm-path", pmRoot, "update", id, "--expected-result", "<current expected outcome>"]),
+      },
+    } : {}),
   };
 }

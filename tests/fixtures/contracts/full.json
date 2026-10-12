@@ -5805,6 +5805,13 @@
           "value_name": "open|in_progress"
         },
         {
+          "aliases": [
+            "--expected"
+          ],
+          "flag": "--expected-result",
+          "value_name": "value"
+        },
+        {
           "flag": "--message",
           "value_name": "value"
         },
@@ -47937,6 +47944,10 @@
           },
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+            "type": "string"
+          },
+          "expectedResult": {
+            "description": "Expected Result.",
             "type": "string"
           },
           "force": {

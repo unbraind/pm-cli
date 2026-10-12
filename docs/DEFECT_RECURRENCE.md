@@ -51,6 +51,13 @@ Each report explains its exact matching signals, returns deduplicated local and 
 
 `assurance risk` accepts one JSON request through the same `definition` transport already used by SDK and MCP hosts:
 
+Discovery recovery is tracked by [pm-assurance-risk-help-policy](../.agents/pm/issues/pm-assurance-risk-help-policy.toon).
+Both `policy` and `change` are required. Help includes an executable minimal
+example with an explicitly empty family list; it demonstrates the request
+shape and makes no project coverage claim. Use the project's declared policy
+for real decisions, as below. A missing or invalid policy object returns
+structured help recovery without choosing a policy on the caller's behalf.
+
 ```bash
 risk_request=$(jq -cn \
   --slurpfile policy config/defect-recurrence-policy.json \
