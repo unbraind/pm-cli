@@ -2,13 +2,13 @@ id: pm-distribution-consumer-lease
 title: Protect distribution inventory and staging from concurrent dist rebuilds
 description: "The distribution packer reads the live dist tree outside the shared build/test lease. During this delivery an overlapping linked-test rebuild caused npm pack --dry-run to fail with ENOENT for a dist/cli-bundle/chunks file; packing passed when rerun after the rebuild settled. Existing completed producer/test-consumer serialization and physical runtime staging remain valid, but this additional packing consumer is not protected."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T19:46:26.278Z"
-updated_at: "2026-10-12T13:46:38.764Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
+updated_at: "2026-10-12T15:05:14.488Z"
+closed_at: "2026-10-12T15:05:13.748Z"
+completed_at: "2026-10-12T15:05:13.748Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Hold a verified consumer lease or equivalent immutable generation throughout source inventory and staging; use real independent build/pack overlap to prove no missing or mixed-generation files; retain fail-closed incomplete-generation handling and existing physical-path guards; do not replace ownership evidence with timer-only fixtures or force lock overrides.
@@ -16,18 +16,21 @@ value: Reliable context and release evidence requires packed consumers to use a 
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: Distribution inventory and materialization read one completed artifact generation even when another process rebuilds dist.
+resolution: "Hold verified workspace-bound consumer ownership throughout distribution inventory, staging and packing; refuse incomplete generations and isolate inherited controls outside source execution."
+expected_result: "Concurrent builds cannot create missing or mixed-generation distributions, and owner receipts are never stolen or removed."
+actual_result: "Actual independent build/pack overlap yields both generation-2 archive files; removing only the lease fails the contention assertion. Incomplete, invalid, nested and foreign-root receipts preserve ownership. Copied release imports, protected linked environment controls and Node/Bun/native platform consumers pass. Base and injected artifacts stay within all unchanged size/file/map budgets."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-cxc4jc,discovered_from,"2026-10-10T19:46:26.278Z","harness:codex","cli:create:dep",detected
   pm-gh1417,related,"2026-10-10T19:46:26.278Z","harness:codex","cli:create:dep",detected
   pm-namespace-recovery-delivery,discovered_from,"2026-10-10T19:47:04.680Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-10T19:46:26.278Z","harness:codex","Duplicate check: the strict 2920-item all-status corpus plus the newly created qualification child and request-specific search found no focused distribution-consumer lease report. Full live reads confirm pm-cxc4jc completed producer/test-consumer serialization and pm-gh1417 completed runtime staging. This distinct consumer boundary was observed as ENOENT during overlapping verification and passes once serialized; it remains open and unclaimed for implementation under the existing release capability."
   "2026-10-12T09:52:31.603Z","harness:codex","Implementation scope: extend the existing verified build-consumer lease across publication source inventory and materialization, reject incomplete build generations, and preserve physical-path/runtime ledger admission. Prove serialization with independent real build/pack processes and ownership barriers rather than time-based overlap assumptions."
   "2026-10-12T10:14:30.874Z","harness:codex","Independent real-process acceptance passes: actual build.mjs runs owned fixture stages while the separate packer proves EEXIST contention against that live PID/token, then both archive files equal generation two. An isolated copy with only withBuildLease removed fails this exact assertion. Incomplete-build and invalid inherited-token controls preserve their marker/owner bytes; existing runtime-ledger,physical-path,lossless-JSON and Windows launcher tests pass. Base package budget remains unchanged at19908805 first-party bytes and1658 files; runtime closure23387074 bytes/4745 files."
   "2026-10-12T10:54:37.467Z","harness:codex","Broad verification caught the new packer import missing from preserved release controls. The reviewed release workflow now copies build-lease beside temp-lifecycle, and native foreign-workspace execution passes. Further independent ownership tests reproduced and repaired ambient-token reuse in a foreign cwd: runners now carry an explicit physical workspace binding, legacy tokens use the script workspace, foreign roots acquire independent leases, valid nested reads retain the original owner bytes, and invalid matching-root tokens still refuse. Isolated pre-fix run fails5 exact assertions/119 passes; identical repaired source passes182. Integrated Node24 regression passes220 assertions across8 files,including CI directory-density and the approved Sentry declaration pin."
   "2026-10-12T11:33:17.249Z","harness:codex","The new workspace-bound lease metadata must not expose its source path or reusable token to snapshot/isolated linked commands. A native child probe demonstrates the pre-fix leak (true:false:false:true:true instead of true:false:false:false:false). SDK execution now removes both controls for non-source modes, and stored environment directives reserve both names. This is part of the introduced lease protocol, not a claim that the older completed source-context delivery was unimplemented."
   "2026-10-12T11:35:53.274Z","harness:codex",The same strengthened native mode test now passes after source lease token+root removal from snapshot/isolated children. Existing source execution retains its host lease controls; both names are reserved from stored env-set/env-clear directives. Focused SDK/transport/packing checks pass88 assertions. The final full suite uses the verified absolute Node24.21.0 executable with its bundled npm; prior shell-selected Node26 runs are retained as unsuccessful evidence and not reused as coverage proof.
+  "2026-10-12T15:05:12.901Z","harness:codex","Verified implementation head 7411d7ee6e29b288eba2b7222e294a31d74635fc: CI run 38264143222 is successful, all 26 required contexts are present and passed, GitHub merge state is CLEAN, and no inline review threads remain. Accepted CodeRabbit release-summary feedback is corrected. Sourcery/Cubic limits and the expired Greptile trial are availability limitations, not approvals. Closure and the latest package-generated changelog remain in the reviewed final push."
 learnings[1]{created_at,author,text}:
   "2026-10-12T10:16:52.147Z","harness:codex",An artifact consumer must retain producer ownership across source inventory and staging. Verify overlap with live PID/token contention and independent processes; file-copy completion or sleeps alone do not establish a consistent generation.
 files[11]{path,scope}:
@@ -79,4 +82,5 @@ docs[3]{path,scope}:
   docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   docs/SDK_CONSUMER_RECEIPTS.md,project
+close_reason: Implementation and recorded acceptance completed in reviewed PR 1451.
 body: ""

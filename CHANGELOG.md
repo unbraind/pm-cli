@@ -4,11 +4,17 @@
 
 ### Fixed
 
+- Preserve documented SDK schema field types through typed helpers ([pm-ty5i58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ty5i58.toon))
+- Protect distribution inventory and staging from concurrent dist rebuilds ([pm-distribution-consumer-lease](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-distribution-consumer-lease.toon))
+- Core external-reference refusal recommends a flag absent from the CLI lexicon ([pm-by83yj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-by83yj.toon))
 - GH-1443: align item and history union ordering and provenance during lossless merges ([pm-pftgcz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pftgcz.toon))
 - Make assurance risk help include the required recurrence policy ([pm-assurance-risk-help-policy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-assurance-risk-help-policy.toon))
 
 ### Other
 
+- Deduplicate hosted Commander recovery-context projection ([pm-nrj9sy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nrj9sy.toon))
+- Refresh eligible SDK and CI dependencies ([pm-98f0ec](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-98f0ec.toon))
+- Accept universal SDK read receipts in the public context evaluation reader ([pm-i4kxx1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-i4kxx1.toon))
 - Expose active planning recovery when a canonical item is reopened ([pm-reopen-planning-recovery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-reopen-planning-recovery.toon))
 - Compact declaration indentation while preserving SDK types and documentation ([pm-chw71s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chw71s.toon))
 

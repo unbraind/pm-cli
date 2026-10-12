@@ -2,24 +2,26 @@ id: pm-i4kxx1
 title: Accept universal SDK read receipts in the public context evaluation reader
 description: "Strict compilation against the candidate packed SDK proves that PmClient cannot satisfy ContextEvaluationReader: context/next return a universal result that may contain output_budget_exceeded, even for an unbounded request when shared budgets bind. The existing documentation passes PmClient directly. A guard-aware adapter can make the example correct now, but the evaluator should compose with the public reader contract itself and refuse omitted data before grading."
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-11T17:04:26.652Z"
-updated_at: "2026-10-12T14:36:15.784Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
+updated_at: "2026-10-12T15:05:07.318Z"
+closed_at: "2026-10-12T15:05:06.653Z"
+completed_at: "2026-10-12T15:05:06.653Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Direct PmClient and structural reader integrations compile without casts; context and next results retain universal budget refusal types; infeasible or shared-budget omissions fail explicitly before scoring instead of being treated as empty ranked context; complete results preserve metrics and attribution; published Node/Bun and strict TypeScript consumers prove the contract
 parent: pm-atfm
 risk: medium
 confidence: high
-expected_result: Public evaluator readers compose directly with PmClient while handling typed budget refusals before scoring.
+resolution: "Accept direct SDK context/next readers and refuse omitted results before grading, preserving metrics, token accounting and served attribution."
+expected_result: Real PmClient and structural readers compose without casts; infeasible receipts never score as empty success.
+actual_result: "All 10295 functional assertions and exact 100/100/100/100 source coverage passed. Five linked commands pass, including installed Node/Bun, strict TypeScript and npm/npx/Bun/bunx. Corrected head 7411d7ee6 passes all 26 required contexts, including real native Windows Bun acceptance."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4g4qv0,discovered_from,"2026-10-11T17:04:26.652Z","harness:codex","cli:create:dep",detected
   pm-atfm,implements,"2026-10-11T17:48:14.139Z","harness:codex","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-10-11T17:04:26.652Z","harness:codex","Duplicate check: complete all-status corpus, exact ContextEvaluationReader keyword search (zero hits), evaluation/PmClient searches, fresh open and active inventories, and full live pm-atfm metadata/comments/raw history were inspected. The completed runner lineage remains completed. This new task tracks the reproduced universal-read composition gap under the canonical evaluation feature; it stays open and unclaimed while the connected documentation supplies a typed fail-closed adapter."
   "2026-10-11T17:06:33.841Z","harness:codex","Additional strict consumer evidence: after narrowing the budget-refusal variant with isReadOutputBudgetExceeded, ContextResult and NextResult still fail the reader interface because its string index signature excludes those exported interfaces. A typed adapter that guards refusals and returns a shallow object copy composes without casts while preserving every packet field. This is a structural type and refusal-contract gap, not a claim that the completed evaluation algorithm is unfinished."
   "2026-10-12T09:52:28.534Z","harness:codex","Regression established before implementation: both context and next universal budget omissions resolve into apparently successful empty quality reports (2 independent assertions fail,17 existing assertions pass). Strict consumer compilation separately rejects direct PmClient assignment to ContextEvaluationReader. Implement omission-aware reader composition with unchanged ranking metrics and token thresholds."
@@ -29,6 +31,7 @@ comments[9]{created_at,author,text}:
   "2026-10-12T13:49:09.783Z","harness:codex","Detailed V8 diagnostics explain the remaining guard counter: an inline compound condition produces a negative residual false-branch count despite covered success/refusal scenarios. Naming the omission state before the guard retains identical logic and all three receipt checks; the same diagnostic reports positive guard counts 4/6. No coverage ignore, inclusion filter, denominator policy, threshold, or test-only seam is changed. Final complete coverage still must accept the integrated source."
   "2026-10-12T14:25:44.438Z","harness:codex","First hosted exact-head inventory: all required contexts are present; only Packed first run (windows-latest, Node 24) fails. Its actual log reaches the added installed evaluator fixture and reports spawnSync bun.cmd ENOENT. Bun provides bun.exe on this runner; the shared resolver previously special-cased only bunx. Strengthened the existing Windows subprocess contract to require bun.exe for the evaluator fixture: it fails before the correction. Expand the native Bun executable family, preserve npm/npx .cmd shims, and await fresh hosted native acceptance."
   "2026-10-12T14:36:15.784Z","harness:codex","Windows launcher correction passes all 23 smoke-script contract assertions, including the strengthened evaluator bun.exe route and unchanged npm/npx .cmd behavior. All five PM-linked commands pass after the correction: omission unit checks, strict TypeScript, real packed npm/npx/Bun/bunx and typed/evaluator consumers, direct SDK integration, and portable subprocess contracts. Before this launcher-only correction, the integrated source passed 10295 assertions with exact coverage 68263 statements, 52353 branches, 14075 functions, and 64892 lines. Final hosted coverage and native Windows acceptance must bind the corrected head."
+  "2026-10-12T15:05:05.747Z","harness:codex","Verified implementation head 7411d7ee6e29b288eba2b7222e294a31d74635fc: CI run 38264143222 is successful, all 26 required contexts are present and passed, GitHub merge state is CLEAN, and no inline review threads remain. Accepted CodeRabbit release-summary feedback is corrected. Sourcery/Cubic limits and the expired Greptile trial are availability limitations, not approvals. Closure and the latest package-generated changelog remain in the reviewed final push."
 learnings[1]{created_at,author,text}:
   "2026-10-12T10:16:52.893Z","harness:codex","Context evaluation must reject a whole-result omission before scoring. Empty context and omitted context are different observations, and unbounded per-read output does not bypass a shared session budget."
 files[10]{path,scope}:
@@ -137,4 +140,5 @@ test_runs[4]:
 docs[2]{path,scope}:
   docs/SDK_CONSUMER_RECEIPTS.md,project
   docs/SDK.md,project
+close_reason: Implementation and recorded acceptance completed in reviewed PR 1451.
 body: ""

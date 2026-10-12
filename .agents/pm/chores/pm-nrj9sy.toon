@@ -2,28 +2,31 @@ id: pm-nrj9sy
 title: Deduplicate hosted Commander recovery-context projection
 description: "Chrome inspection of CodeFactor main ce42326aab12da6b8ce7850f10da32a0f89e1528 shows three duplicate findings: two existing generated standalone-plugin groups already owned by pm-z3ez, plus one20-line Commander usage projection in src/cli/commander-usage.ts. Replace the duplicated destructuring/reconstruction with a shared structural projection while preserving plain/JSON guidance, service overrides and every recovery field."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-12T10:11:33.548Z"
-updated_at: "2026-10-12T14:05:46.581Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
+updated_at: "2026-10-12T15:05:21.228Z"
+closed_at: "2026-10-12T15:05:20.410Z"
+completed_at: "2026-10-12T15:05:20.410Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Both human and JSON Commander recovery paths retain all declared guidance fields and service override behavior; existing Commander/error recovery suites and strict zero-clone gates pass; exact PR-head hosted CodeFactor proof is inspected.
 parent: pm-92if
 risk: low
 confidence: high
-expected_result: The new handwritten recovery clone is removed without losing any recovery information.
+resolution: Remove duplicate handwritten Commander recovery projection while preserving every guidance field and human/JSON service behavior.
+expected_result: The new handwritten recovery clone disappears without loss of recovery context.
+actual_result: "Existing Commander/error suites, zero-clone and strict static gates pass. Exact-head CodeFactor check dc5cf03f3 reports no PR issues and DeepScan reports zero new issues; the corrected 7411d7ee6 also passes both required providers. Existing generated plugin groups remain separately owned."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-by83yj,related,"2026-10-12T13:18:55.393Z","harness:codex","cli:update:dep",detected
   pm-eonv,discovered_from,"2026-10-12T13:33:37.146Z","harness:codex","cli:update:dep",detected
   pm-z3ez,related,"2026-10-12T13:33:37.146Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-12T10:11:33.548Z","harness:codex","Duplicate-check evidence: strict complete2936-item all-status census, fresh commander-usage keyword and duplicate/recovery searches plus current open/active inventories and full pm-92if metadata/history were read. Completed pm-eonv and generated-copy owner pm-z3ez remain canonical separate work. Chrome read-only CodeFactor main inspection reports the new minor20-line clone at1111-1130/1133-1153; no existing exact active implementation owner was found."
   "2026-10-12T10:14:32.798Z","harness:codex","Removed the handwritten20-line recovery clone using the existing CommanderUsageContext structural contract, preserving every field and both renderers. Existing linked CLI error/guidance suite passes; no new implementation-mirroring test was added. Chrome main baseline is A with3 duplicate groups; the2 standalone generated plugin groups remain under pm-z3ez and GitHub1311/1312,distinct from this repair. Await exact revised-head hosted analysis."
   "2026-10-12T14:05:46.581Z","harness:codex",Read-only Chrome inspection of CodeFactor PR 1451 reports No issues found. The PR is bound to source head dc5cf03f353f4ace8371095c2b30405963efce6a by its GitHub check metadata; the old main baseline still lists three findings before merge. DeepScan Chrome shows this exact commit and zero new issues/zero fixed issues. Existing generated-plugin duplication remains separately owned; no analyzer suppression or quality-budget change was introduced.
+  "2026-10-12T15:05:19.585Z","harness:codex","Verified implementation head 7411d7ee6e29b288eba2b7222e294a31d74635fc: CI run 38264143222 is successful, all 26 required contexts are present and passed, GitHub merge state is CLEAN, and no inline review threads remain. Accepted CodeRabbit release-summary feedback is corrected. Sourcery/Cubic limits and the expired Greptile trial are availability limitations, not approvals. Closure and the latest package-generated changelog remain in the reviewed final push."
 files[2]{path,scope}:
   src/cli/commander-usage.ts,project
   tests/unit/cli/cli-main-errors.spec.ts,project
@@ -54,4 +57,5 @@ test_runs[2]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
+close_reason: Implementation and recorded acceptance completed in reviewed PR 1451.
 body: ""

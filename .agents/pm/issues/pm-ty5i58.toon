@@ -2,27 +2,30 @@ id: pm-ty5i58
 title: Preserve documented SDK schema field types through typed helpers
 description: "GitHub 1450 reports that PmClient.schemaAddField(name, { type }) silently defaults custom number/boolean fields to string because the runtime action consumes fieldType. Existing typed-helper coverage checks only keys, allowing the documented option to be ignored. Align direct and functional SDK helpers with the action contract and verify persisted values and downstream coercion."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-12T13:31:06.760Z"
-updated_at: "2026-10-12T14:08:31.976Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
+updated_at: "2026-10-12T15:05:24.670Z"
+closed_at: "2026-10-12T15:05:23.946Z"
+completed_at: "2026-10-12T15:05:23.946Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Direct and functional typed SDK helpers persist string, number, and boolean correctly; omitted type retains the documented default; installed Node/Bun consumers exercise non-string registration; independent pre-fix control fails on the persisted type; exact full-source coverage and SDK contracts remain intact."
 parent: pm-atfm
 risk: medium
 confidence: high
-expected_result: Typed custom field registration persists its documented type and validates/coerces values consistently with the schema action.
+resolution: "Translate the documented typed schemaAddField type to the runtime fieldType input for direct and functional SDK helpers, retaining defaults and generic action compatibility."
+expected_result: Number and boolean registrations persist their types and coerce custom values consistently; omitted types remain strings.
+actual_result: "Independent pre-fix persisted-number assertion fails with received string. Strengthened direct/functional tests, schema reads and plan materialization pass with numeric/boolean/string values. Installed Node and Bun fixtures verify persisted definitions and dynamic-option coercion; exact source coverage and all corrected-head hosted contexts pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-i4kxx1,related,"2026-10-12T13:31:06.760Z","harness:codex","cli:create:dep",detected
   pm-vhbf,discovered_from,"2026-10-12T13:31:06.760Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-12T13:31:06.760Z","harness:codex","Duplicate check: complete all-status corpus plus fresh schemaAddField/fieldType search and open/in_progress inventories found no active owner. Closed pm-vhbf and earlier custom-field fixes remain completed historical lineage. This SDK consumer defect fits the current connected primitive/customization delivery."
   "2026-10-12T13:36:55.817Z","harness:codex","Independent current-source control strengthens the existing SDK customization suite to assert the actual documented number type. Before the fix it fails deterministically: expected number, received string. The typed helper spreads type unchanged into an action whose field-type input is fieldType. Translate this option at the typed-helper boundary, preserving direct generic action input and omitted-type defaults; functional exports delegate to that same helper. Strengthened direct consumers also read persisted schemas and coerce numeric/boolean/string custom values."
   "2026-10-12T14:01:00.714Z","harness:codex","Integrated direct and functional SDK customization tests pass. The latest pm-i4kxx1 linked run also passes real packed Node and Bun registration, persisted number/boolean/default-string definitions, dynamic-option coercion, evaluator composition, strict installed TypeScript, and npm/npx/Bun/bunx workflows. The first packed attempt correctly rejected my fixture using extension field assignments for schema-managed fields; corrected the fixture to declared dynamic option names, documented that namespace distinction, and reran the complete acceptance without weakening production validation. Full static and mutation gates pass; exact final coverage is pending."
+  "2026-10-12T15:05:23.269Z","harness:codex","Verified implementation head 7411d7ee6e29b288eba2b7222e294a31d74635fc: CI run 38264143222 is successful, all 26 required contexts are present and passed, GitHub merge state is CLEAN, and no inline review threads remain. Accepted CodeRabbit release-summary feedback is corrected. Sourcery/Cubic limits and the expired Greptile trial are availability limitations, not approvals. Closure and the latest package-generated changelog remain in the reviewed final push."
 learnings[1]{created_at,author,text}:
   "2026-10-12T14:08:31.976Z","harness:codex","Assert actual persisted field types and downstream coercion when verifying typed schema convenience methods; checking only a returned key misses option translation defects. Schema-managed dynamic mutation options and extension field assignments are separate contracts, so installed fixtures must use the registered command option names."
 files[3]{path,scope}:
@@ -53,6 +56,7 @@ test_runs[1]:
       - command: "pnpm smoke:npx"
 docs[1]{path,scope}:
   docs/SDK_CONSUMER_RECEIPTS.md,project
+close_reason: Implementation and recorded acceptance completed in reviewed PR 1451.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
