@@ -19,7 +19,9 @@ One `tests_update` history event carries field-level patches plus the edited
 index and metadata field names in `context.linked_test_update`.
 
 Use `null` to clear an optional field, such as a note, path or timeout. Scope is
-required and cannot be cleared. Unknown fields, command changes, provenance
+required and cannot be cleared. Every entry must retain a nonblank command or path:
+replace a path-only entry's path rather than clearing its last identity.
+Unknown fields, command changes, provenance
 changes and editor-stamp overrides are refused. To change the command, remove
 and add it through the ordinary provenance-recording workflow. Editing context
 or environment controls changes the clone-local trust fingerprint, so any prior

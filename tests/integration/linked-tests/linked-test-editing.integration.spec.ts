@@ -133,6 +133,33 @@ describe("linked-test editing and configuration admission", () => {
     });
   });
 
+  it("retains a command or path when editing legacy path-only entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "linked-test identity", createMode: "progressive" });
+      await overwriteTaskTests(context, id, [{ path: "legacy.mjs", scope: "project", note: "original" }]);
+      const before = await capture(context, id);
+      for (const patch of [{ path: null }, { path: "" }, { path: " " }, { path: null, note: "wrong" }]) {
+        await expect(updateLinkedTest(id, { selector: { path: "legacy.mjs" }, patch }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: 2 });
+        expect(await capture(context, id)).toEqual(before);
+        await expect(runTest(id, { updateIndex: 1, setJson: JSON.stringify(patch) }, { path: context.pmPath })).rejects.toMatchObject({ exitCode: 2 });
+        expect(await capture(context, id)).toEqual(before);
+        expect(context.runCli(["test", id, "--update-index", "1", "--set-json", JSON.stringify(patch), "--json"]).code).toBe(2);
+        expect(await capture(context, id)).toEqual(before);
+      }
+      const renamed = await updateLinkedTest(id, { selector: { path: "legacy.mjs" }, patch: { path: "renamed.mjs" } }, { path: context.pmPath });
+      expect(renamed.tests[0]).toMatchObject({ path: "renamed.mjs", note: "original" });
+      expect(renamed.tests[0]).not.toHaveProperty("command");
+      expect(renamed.tests[0]).not.toHaveProperty("provenance");
+      const after = await capture(context, id);
+      const events = after.history.slice(before.history.length).trim().split("\n").map((line) => JSON.parse(line) as { op: string; patch: Array<{ path: string }> });
+      expect(events).toHaveLength(1);
+      expect(events[0].op).toBe("tests_update");
+      expect(events[0].patch.map((entry) => entry.path)).toContain("/metadata/tests/0/path");
+      expect((await updateLinkedTest(id, { selector: { path: "renamed.mjs" }, patch: { path: "renamed.mjs" } }, { path: context.pmPath })).changed).toBe(false);
+      expect(await capture(context, id)).toEqual(after);
+    });
+  });
+
   it("refuses every other active run directive and collection operation on metadata edits", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "complete edit admission", createMode: "progressive" });

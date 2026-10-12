@@ -134,6 +134,9 @@ function applyPatch(test: LinkedTest, patch: LinkedTestMetadataPatch): { test: L
     Object.assign(next, { [key]: value });
     if (value === undefined) delete next[key as keyof LinkedTest];
   }
+  if (!next.command?.trim() && !next.path?.trim()) {
+    throw new PmCliError("Linked-test entry must retain a command or path", EXIT_CODE.USAGE);
+  }
   return { test: next, fields };
 }
 
