@@ -1,0 +1,21 @@
+id: pm-7dsolo
+title: Accept actively registered relationship kinds in SDK and CLI dependency mutations
+description: "GitHub 1452 reports that registerRelationshipKinds activation succeeds, but create/update dependency assignments still refuse custom kinds through a built-in vocabulary. This blocks downstream package-defined ordering edges despite graph registry support. Reproduce in an isolated installed extension and align mutation validation, aliases and diagnostics with the active workspace registry."
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-12T15:22:02.458Z"
+updated_at: "2026-10-12T15:22:02.458Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Use a real isolated extension to prove create/update and SDK writes plus graph traversal for a custom ordering kind; validate aliases and cardinality/cycle semantics through the authoritative active registry; deactivated or absent registrations refuse before item/history mutation; an independent pre-fix control fails; complete source coverage, SDK contracts and installed Node/Bun consumers pass."
+parent: pm-96h7
+risk: medium
+confidence: medium
+expected_result: CLI and SDK dependency writes accept active registered kinds and aliases while refusing inactive or unknown kinds with precise recovery.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ju83,discovered_from,"2026-10-12T15:22:02.458Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-12T15:22:02.458Z","harness:codex","Duplicate check: fresh complete 2941-item all-status census plus registered-kind/dependency-mutation search and open/in_progress inventories found prior completed registry/grammar work and broad graph maturity owners, but no exact active owner for this new report. Full pm-ju83 metadata, comments, resolution and history were read. Keep this issue open and unclaimed as the next connected registry-mutation follow-up; the six implemented SDK delivery owners remain closed."
+body: "Source: https://github.com/unbraind/pm-cli/issues/1452. Reported on published 2026.10.12 with a directed persistent ships_before kind; activation and graph discovery succeed, while --dep id=sr-b,kind=ships_before fails. Downstream pm-gantt-chart issue 135 reportedly seeds files directly as a workaround. Current mutation behavior has not yet been independently reproduced during this intake; do not edit real tracker files or bypass registry validation."
