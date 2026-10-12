@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
+  RESERVED_ITEM_FIELD_NAMES,
 } from "../../../src/core/extensions/item-fields.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
+import { resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
+import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../../../src/sdk/cli-contracts/commander-mutation-options.js";
 import {
   createEmptyExtensionRegistrationRegistry,
   type ExtensionRegistrationRegistry,
@@ -21,6 +25,31 @@ function withFields(
 }
 
 describe("extensions item field runtime wiring", () => {
+  it.each([["comments", "--comment"], ["type_options", "--type-option"], ["dependencies", "--dep"]] as const)("resolves the actual collection mutation route for %s", (field, flag) => {
+    expect(resolveCoreFieldRecovery(field).recovery?.suggested_flags).toContain(flag);
+  });
+  it.each([...RESERVED_ITEM_FIELD_NAMES])("never invents a mutation flag for reserved core field %s", (field) => {
+    let refusal: unknown;
+    try {
+      parseRegisteredItemFieldAssignments([`${field}=value`], null, resolveCoreFieldRecovery);
+    } catch (error) { refusal = error; }
+    expect(refusal).toBeInstanceOf(PmCliError);
+    const context = (refusal as PmCliError).context;
+    expect(context.code).toBe("core_item_field_requires_dedicated_flag");
+    const declared = [...CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, ...UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS].map((contract) => contract.option.match(/--[a-z][a-z0-9-]*/u)![0]);
+    for (const flag of context.recovery?.suggested_flags ?? []) expect(declared).toContain(flag);
+    if (!context.recovery?.suggested_flags) expect(context.nextSteps?.[0]).toContain("No dedicated create/update CLI mutation flag");
+    if (field === "external_ref") expect(context.recovery?.suggested_flags).toBeUndefined();
+  });
+
+  it("keeps the standalone core parser truthful without host command contracts", () => {
+    expect(() => parseRegisteredItemFieldAssignments(["external_ref=GH-1"], null)).toThrowError(expect.objectContaining({
+      context: expect.objectContaining({
+        recovery: { provided_fields: ["external_ref"] },
+        nextSteps: [expect.stringContaining("no generic --field mutation path")],
+      }),
+    }));
+  });
   it("applies defaults and validates values when registrations are present", () => {
     const itemMetadata: Record<string, unknown> = {};
     applyRegisteredItemFieldDefaultsAndValidation(

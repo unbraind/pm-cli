@@ -2714,6 +2714,10 @@ function buildLinkedTestExecutionEnv(params: {
     executionEnv.PM_PATH = params.executionContext.sandbox_project_pm_path;
   }
   executionEnv.PM_GLOBAL_PATH = params.executionContext.sandbox_global_pm_path;
+  if (params.executionContext.workspace_context_mode !== "source") {
+    delete executionEnv.PM_BUILD_CONSUMER_LEASE;
+    delete executionEnv.PM_BUILD_CONSUMER_LEASE_ROOT;
+  }
   if (params.executionContext.workspace_context_mode === "isolated") {
     delete executionEnv.PM_SOURCE_WORKSPACE_ROOT;
     delete executionEnv.PM_SOURCE_PM_PATH;

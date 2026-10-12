@@ -14,6 +14,10 @@ import type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { compareTimestampStrings } from "../core/shared/time.js";
 import type { ItemMetadata } from "../types/index.js";
 import type { HistoryEventClass } from "../core/history/event-classification.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
+import { isReadOutputBudgetExceeded, type PmReadOutputResult } from "./read-output-contracts.js";
+import type { PmContextIntentReceipt } from "./context-intent-contracts.js";
 import {
   canonicalizeContextRecencyCoordinate,
   CONTEXT_RECENCY_EPOCH,
@@ -681,6 +685,8 @@ export interface ContextEvaluationContextResult {
   blocked_fallback?: ContextEvaluationResultItem[];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextEvaluationResultRanking;
+  /** Intent receipt retained so whole-result omissions cannot be graded. */
+  context_intent?: Pick<PmContextIntentReceipt, "result_omitted">;
   [key: string]: unknown;
 }
 
@@ -692,19 +698,24 @@ export interface ContextEvaluationNextResult {
   ready?: ContextEvaluationResultItem[];
   /** Value that configures or reports ranking for this contract. */
   ranking?: ContextEvaluationResultRanking;
+  /** Intent receipt retained so whole-result omissions cannot be graded. */
+  context_intent?: Pick<PmContextIntentReceipt, "result_omitted">;
   [key: string]: unknown;
 }
+
+type ContextEvaluationContextFields = Pick<ContextEvaluationContextResult, "high_level" | "low_level" | "blocked_fallback" | "ranking" | "context_intent">;
+type ContextEvaluationNextFields = Pick<ContextEvaluationNextResult, "recommended" | "ready" | "ranking" | "context_intent">;
 
 /** Read-only SDK surface required by the context evaluation runner. */
 export interface ContextEvaluationReader {
   /** Value that configures or reports context for this contract. */
   context(
     options?: ContextEvaluationReadOptions,
-  ): Promise<ContextEvaluationContextResult>;
+  ): Promise<PmReadOutputResult<ContextEvaluationContextFields>>;
   /** Value that configures or reports next for this contract. */
   next(
     options?: ContextEvaluationReadOptions,
-  ): Promise<ContextEvaluationNextResult>;
+  ): Promise<PmReadOutputResult<ContextEvaluationNextFields>>;
 }
 
 /** One graded context or next scenario evaluated against a real SDK reader. */
@@ -850,7 +861,7 @@ function roundEvaluationMetric(value: number): number {
 }
 
 function rankingPayloadForScenario(
-  result: ContextEvaluationContextResult | ContextEvaluationNextResult,
+  result: ContextEvaluationContextFields | ContextEvaluationNextFields,
   surface: ContextRelevanceSurface,
 ): { rankedIds: string[]; attribution: ContextEvaluationAttribution[] } {
   const rankedIds =
@@ -902,6 +913,19 @@ export async function runContextEvaluationScenario(
           explainRanking: true,
           outputBudget: scenario.options?.outputBudget ?? "unbounded",
         });
+  const resultOmitted = isReadOutputBudgetExceeded(result) ||
+    result.read_output?.result_omitted === true ||
+    result.context_intent?.result_omitted === true;
+  if (resultOmitted) {
+    throw new PmCliError(
+      `Cannot evaluate ${scenario.surface} scenario "${scenario.id}": the read omitted its useful result.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "context_evaluation_read_incomplete",
+        nextSteps: ["Increase the read output budget or start a new shared output session, then rerun the scenario."],
+      },
+    );
+  }
   const { rankedIds, attribution } = rankingPayloadForScenario(
     result,
     scenario.surface,

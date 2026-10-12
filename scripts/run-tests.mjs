@@ -238,7 +238,7 @@ async function run() {
     }
 
     await withBuildLease(process.cwd(), (lease) => runValidation(
-      resolved.mode, normalizedVitestArgs, { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease }, vitestEntry,
+      resolved.mode, normalizedVitestArgs, { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease, PM_BUILD_CONSUMER_LEASE_ROOT: process.cwd() }, vitestEntry,
     ), { inherited: process.env.PM_BUILD_CONSUMER_LEASE });
 
   } catch (error) {

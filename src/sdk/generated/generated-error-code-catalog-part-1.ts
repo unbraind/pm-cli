@@ -537,6 +537,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "context_evaluation_read_incomplete",
+    meaning: "Context evaluation read incomplete condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/context-relevance.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "context_evaluation_read_incomplete",
+    aliases: [],
+  },
+  {
     code: "context_signal_store_invalid",
     meaning: "Context signal store invalid condition.",
     stability: "provisional",

@@ -1792,22 +1792,8 @@ Custom tools can evaluate the same behavior without shelling out:
 
 ```ts
 import {
-  runContextEvaluationCorpus, isReadOutputBudgetExceeded,
-  type ContextEvaluationReader,
+  runContextEvaluationCorpus,
 } from "@unbrained/pm-cli/sdk";
-
-const reader: ContextEvaluationReader = {
-  context: async options => {
-    const result = await pm.context(options);
-    if (isReadOutputBudgetExceeded(result)) throw new Error("Cannot grade omitted context");
-    return { ...result };
-  },
-  next: async options => {
-    const result = await pm.next(options);
-    if (isReadOutputBudgetExceeded(result)) throw new Error("Cannot grade omitted next");
-    return { ...result };
-  },
-};
 
 const report = await runContextEvaluationCorpus([{
   id: "returning-agent",
@@ -1818,16 +1804,21 @@ const report = await runContextEvaluationCorpus([{
   continuity_ids: ["pm-current", "pm-support"],
   token_budget: 1200,
   rationale: "Resume claimed work with its supporting context.",
-}], reader, {
+}], pm, {
   ndcg: 0.9, reciprocal_rank: 0.9, required_recall: 1,
   continuity_coverage: 1, token_budget_adherence: 1,
 });
 if (!report.passed) throw new Error(report.failures.join(", "));
 ```
 
-The adapter preserves the whole packet and refuses a universal budget omission
-before scoring. Direct reader-type composition is tracked by
+`PmClient` directly satisfies `ContextEvaluationReader`, including universal
+budget receipts. The evaluator preserves the complete packet and refuses
+whole-result omissions with `context_evaluation_read_incomplete` before scoring,
+including omissions caused by a shared session despite an unbounded per-read
+budget. Increase the budget or start a fresh session before retrying. Ordinary
+bounded row selection remains evaluable. Tracked by
 [pm-i4kxx1](../.agents/pm/tasks/pm-i4kxx1.toon).
+See [SDK consumer receipts](SDK_CONSUMER_RECEIPTS.md) for recovery and package-generation contracts.
 
 The evaluator calls only the public `context()` / `next()` reader contract. It
 scores nDCG, reciprocal rank, required-item recall, returning-agent continuity,

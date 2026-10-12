@@ -105,6 +105,7 @@ jobs:
           mkdir -p "${RELEASE_CONTROLS}"
           # Keep the reviewed local import topology outside the mutable checkout.
           cp scripts/temp-lifecycle.mjs "${RELEASE_CONTROLS}/../temp-lifecycle.mjs"
+          cp scripts/build-lease.mjs "${RELEASE_CONTROLS}/../build-lease.mjs"
           cp scripts/smoke-cleanup.mjs "${RELEASE_CONTROLS}/../smoke-cleanup.mjs"
           cp scripts/release/package-artifact-gate.mjs "${RELEASE_CONTROLS}/package-artifact-gate.mjs"
           cp scripts/release/package-distribution.mjs "${RELEASE_CONTROLS}/package-distribution.mjs"

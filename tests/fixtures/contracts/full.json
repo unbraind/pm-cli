@@ -20657,6 +20657,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "context_evaluation_read_incomplete",
+      "class": "usage",
+      "code": "context_evaluation_read_incomplete",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Context evaluation read incomplete condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/context-relevance.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "context_signal_store_invalid",
       "class": "usage",
       "code": "context_signal_store_invalid",

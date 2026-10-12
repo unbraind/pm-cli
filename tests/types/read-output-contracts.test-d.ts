@@ -14,6 +14,8 @@ import {
   type PmReadOutputOptions,
   type PmReadOutputResult,
   type PmReadOutputSessionReceipt,
+  type ContextEvaluationReader,
+  runContextEvaluationScenario,
 } from "../../src/sdk/index.js";
 import type {
   PmReadOutputOptions as CoreReadOutputOptions,
@@ -85,6 +87,11 @@ const typedSessionReceipt:
 void typedSessionReceipt;
 
 const client = new PmClient();
+const evaluationReader: ContextEvaluationReader = client;
+void runContextEvaluationScenario({
+  id: "sdk-reader", surface: "context", judgments: {}, token_budget: 1000,
+  rationale: "Public client composes without an adapter or casts.",
+}, evaluationReader);
 const ordinaryClientRead: Promise<ListResult> = client.list({ limit: "2" });
 const budgetedClientRead: Promise<PmReadOutputResult<ListResult>> = client.list(
   {

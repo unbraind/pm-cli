@@ -2,11 +2,13 @@ id: pm-i4kxx1
 title: Accept universal SDK read receipts in the public context evaluation reader
 description: "Strict compilation against the candidate packed SDK proves that PmClient cannot satisfy ContextEvaluationReader: context/next return a universal result that may contain output_budget_exceeded, even for an unbounded request when shared budgets bind. The existing documentation passes PmClient directly. A guard-aware adapter can make the example correct now, but the evaluator should compose with the public reader contract itself and refuse omitted data before grading."
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-11T17:04:26.652Z"
-updated_at: "2026-10-11T17:48:14.455Z"
+updated_at: "2026-10-12T13:59:36.581Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#5628aec67334ad0f0d349bb7"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Direct PmClient and structural reader integrations compile without casts; context and next results retain universal budget refusal types; infeasible or shared-budget omissions fail explicitly before scoring instead of being treated as empty ranked context; complete results preserve metrics and attribution; published Node/Bun and strict TypeScript consumers prove the contract
@@ -17,7 +19,103 @@ expected_result: Public evaluator readers compose directly with PmClient while h
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4g4qv0,discovered_from,"2026-10-11T17:04:26.652Z","harness:codex","cli:create:dep",detected
   pm-atfm,implements,"2026-10-11T17:48:14.139Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-11T17:04:26.652Z","harness:codex","Duplicate check: complete all-status corpus, exact ContextEvaluationReader keyword search (zero hits), evaluation/PmClient searches, fresh open and active inventories, and full live pm-atfm metadata/comments/raw history were inspected. The completed runner lineage remains completed. This new task tracks the reproduced universal-read composition gap under the canonical evaluation feature; it stays open and unclaimed while the connected documentation supplies a typed fail-closed adapter."
   "2026-10-11T17:06:33.841Z","harness:codex","Additional strict consumer evidence: after narrowing the budget-refusal variant with isReadOutputBudgetExceeded, ContextResult and NextResult still fail the reader interface because its string index signature excludes those exported interfaces. A typed adapter that guards refusals and returns a shallow object copy composes without casts while preserving every packet field. This is a structural type and refusal-contract gap, not a claim that the completed evaluation algorithm is unfinished."
+  "2026-10-12T09:52:28.534Z","harness:codex","Regression established before implementation: both context and next universal budget omissions resolve into apparently successful empty quality reports (2 independent assertions fail,17 existing assertions pass). Strict consumer compilation separately rejects direct PmClient assignment to ContextEvaluationReader. Implement omission-aware reader composition with unchanged ranking metrics and token thresholds."
+  "2026-10-12T10:14:30.227Z","harness:codex","Public-client acceptance passed: direct strict PmClient composition, context/next metrics and served-item attribution, explicit omission refusal, original exhausted-session diagnostics, and actual installed Node/Bun evaluator consumers. All four active items passed the PM-linked sweep with the shared integration safely deduplicated. npm,npx,Bun,bunx,installed package workflows and TypeScript consumer compilation passed. SDK snapshot records the reviewed receipt widening and optional recovery resolver while retaining legacy result index signatures."
+  "2026-10-12T11:40:33.759Z","harness:codex",Current external package audit observed a new latest pm-changelog2026.10.12 after the initial2026.10.5 census. Installed the actual latest through the package-owned CLI lifecycle and verified deep activation; final changelog generation/check will use that release. Exact v2026.10.12 pm-cli producer binding and public distribution remain independently verified; no manual release or second tag was requested.
+  "2026-10-12T11:52:22.086Z","harness:codex","Verified absolute Node24 full-source run passes10295 functional assertions with three platform skips. Exact coverage refuses one previously unexercised branch: an explicitly complete context-intent receipt. The existing legitimate empty/no-ranking scenario now asserts that complete receipt remains evaluable. No coverage membership or100pct threshold changes; final whole-source verification will supply the accepted coverage receipt. Static duplicate scanners report0 clones, and generated refusal census is refreshed from the actual reserved lease controls."
+  "2026-10-12T13:49:09.783Z","harness:codex","Detailed V8 diagnostics explain the remaining guard counter: an inline compound condition produces a negative residual false-branch count despite covered success/refusal scenarios. Naming the omission state before the guard retains identical logic and all three receipt checks; the same diagnostic reports positive guard counts 4/6. No coverage ignore, inclusion filter, denominator policy, threshold, or test-only seam is changed. Final complete coverage still must accept the integrated source."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T10:16:52.893Z","harness:codex","Context evaluation must reject a whole-result omission before scoring. Empty context and omitted context are different observations, and unbounded per-read output does not bypass a shared session budget."
+files[9]{path,scope}:
+  scripts/smoke-npx-from-pack.mjs,project
+  sdk/public-surface.json,project
+  src/sdk/context-relevance.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/fixtures/read-output/evaluation-consumer.mjs,project
+  tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,project
+  tests/types/read-output-contracts.test-d.ts,project
+  tests/unit/sdk/context-relevance.spec.ts,project
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts,project,240,"harness:codex","2026-10-12T09:57:22.099Z",local_mutation,fix/sdk-consumer-contracts-oct12
+  pnpm typecheck,project,240,"harness:codex","2026-10-12T10:08:50.944Z",local_mutation,fix/sdk-consumer-contracts-oct12
+  "pnpm smoke:npx",project,600,"harness:codex","2026-10-12T10:08:51.531Z",local_mutation,fix/sdk-consumer-contracts-oct12
+  node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,project,240,"harness:codex","2026-10-12T10:53:10.751Z",local_mutation,fix/sdk-consumer-contracts-oct12
+test_runs[3]:
+  - run_id: test-all-local-mv53ba67-iemu1w
+    kind: test-all
+    status: passed
+    started_at: "2026-10-12T10:09:18.600Z"
+    finished_at: "2026-10-12T10:13:10.095Z"
+    recorded_at: "2026-10-12T10:13:10.095Z"
+    passed: 3
+    failed: 0
+    skipped: 1
+    items: 1
+    linked_tests: 4
+    executions[4]:
+      - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+      - command: node scripts/run-tests.mjs test -- tests/integration/sdk-consumer-receipts.integration.spec.ts
+      - command: pnpm typecheck
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+      - command: "pnpm smoke:npx"
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+  - run_id: test-all-local-mv5b0mkz-42nq4u
+    kind: test-all
+    status: failed
+    started_at: "2026-10-12T13:44:58.382Z"
+    finished_at: "2026-10-12T13:48:38.429Z"
+    recorded_at: "2026-10-12T13:48:38.429Z"
+    passed: 2
+    failed: 1
+    skipped: 1
+    items: 1
+    linked_tests: 4
+    executions[4]:
+      - command: node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+      - command: pnpm typecheck
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+      - command: "pnpm smoke:npx"
+        requested_pm_context_mode: schema
+        pm_context_mode: schema
+        workspace_context_mode: source
+        trust_reason: local_source_ref
+      - command: node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts
+  - run_id: test-local-mv5bjg57-mcdfgo
+    kind: test
+    status: passed
+    started_at: "2026-10-12T13:57:37.924Z"
+    finished_at: "2026-10-12T13:59:36.570Z"
+    recorded_at: "2026-10-12T13:59:36.570Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-relevance.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SDK_CONSUMER_RECEIPTS.md,project
+  docs/SDK.md,project
 body: ""

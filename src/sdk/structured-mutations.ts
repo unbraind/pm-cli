@@ -5,6 +5,7 @@
  * transaction contract and normalizes full item documents for CLI round trips.
  */
 import crypto from "node:crypto";
+import { ITEM_MUTATION_FACET_OPTION_MAPPINGS } from "./lifecycle/mutation-facet-contracts.js";
 import { normalizeItemId, normalizePrefix } from "../core/item/id.js";
 import { preserveMutationStdinTokenLiterals } from "../core/item/parse.js";
 import {
@@ -696,24 +697,7 @@ function appendFacetOptions(
   source: Record<string, unknown>,
   skipPersistedAnnotations = false,
 ): void {
-  const mappings: ReadonlyArray<readonly [string, string, readonly string[]]> =
-    [
-      [
-        "dependencies",
-        "dep",
-        ["id", "kind", "created_at", "author", "source_kind"],
-      ],
-      ["comments", "comment", ["text", "created_at", "author"]],
-      ["notes", "note", ["text", "created_at", "author"]],
-      ["learnings", "learning", ["text", "created_at", "author"]],
-      ["files", "file", ["path", "scope", "note"]],
-      ["tests", "test", ["command", "scope", "timeout_seconds"]],
-      ["docs", "doc", ["path", "scope", "note"]],
-      ["reminders", "reminder", ["at", "text", "created_at"]],
-      ["events", "event", ["start_at", "end_at", "title", "location"]],
-      ["type_options", "typeOption", ["key", "value"]],
-    ];
-  for (const [sourceKey, targetKey, keys] of mappings) {
+  for (const [sourceKey, targetKey, keys] of ITEM_MUTATION_FACET_OPTION_MAPPINGS) {
     const sourceValue = source[sourceKey];
     const serialized = serializeObjectArray(
       skipPersistedAnnotations &&
