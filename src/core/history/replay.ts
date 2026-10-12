@@ -574,6 +574,8 @@ export interface ReanchorResult {
 export interface ReanchorHistoryOptions {
   /** Keep one semantic hash candidate for the complete rewritten stream so adjacent stored endpoints are identical. */
   continuousHashSurface?: boolean;
+  /** Rebase an entry's patch onto its new replay position, retaining the original patch as immutable rewrite evidence. */
+  projectPatch?: (entry: HistoryEntry, current: ReplayDocument) => HistoryPatchOp[];
 }
 
 /**
@@ -605,6 +607,7 @@ export function resolveHistoryRepairItemHashVersion(
 function applyReanchorPatch(
   replay: ReplayDocument,
   entry: HistoryEntry,
+  projectedPatch: HistoryPatchOp[] = entry.patch,
 ): {
   next: ReplayDocument;
   patch: HistoryPatchOp[];
@@ -612,17 +615,17 @@ function applyReanchorPatch(
   converted: number;
   skipped: number;
 } {
-  const strict = tryApplyReplayPatch(replay, entry.patch);
+  const strict = tryApplyReplayPatch(replay, projectedPatch);
   if (strict.ok) {
     return {
       next: strict.document,
-      patch: entry.patch,
-      repaired: false,
+      patch: projectedPatch,
+      repaired: stableStringify(projectedPatch) !== stableStringify(entry.patch),
       converted: 0,
       skipped: 0,
     };
   }
-  const lenient = lenientApplyReplayPatch(replay, entry.patch);
+  const lenient = lenientApplyReplayPatch(replay, projectedPatch);
   return {
     next: lenient.document,
     patch: jsonPatch.compare(replay, lenient.document) as HistoryPatchOp[],
@@ -630,6 +633,11 @@ function applyReanchorPatch(
     converted: lenient.convertedReplaceToAdd,
     skipped: lenient.skippedOps,
   };
+}
+
+/** Apply a caller's explicit projection before the canonical reanchor audit. */
+function applyProjectedReanchorPatch(replay: ReplayDocument, entry: HistoryEntry, options: ReanchorHistoryOptions): ReturnType<typeof applyReanchorPatch> {
+  return applyReanchorPatch(replay, entry, options.projectPatch?.(entry, replay));
 }
 
 /** Re-anchor a drifted history chain: replay every entry from empty, recompute the before/after hashes, and only rewrite a patch when the original op set no longer strictly applies (legacy drift). Clean entries keep their patch verbatim so the on-disk diff stays minimal. The returned chain verifies via verifyHistoryChain. */
@@ -661,7 +669,7 @@ export function reanchorHistoryEntries(
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
     assertHistoryEntryIntegrity(entry, index);
-    const patchApplication = applyReanchorPatch(replay, entry);
+    const patchApplication = applyProjectedReanchorPatch(replay, entry, options);
     const {
       next,
       patch: outPatch,

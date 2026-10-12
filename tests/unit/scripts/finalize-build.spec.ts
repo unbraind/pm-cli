@@ -2,6 +2,7 @@ import path from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 import { describe, expect, it, vi } from "vitest";
+import ts from "typescript";
 
 import { createScriptHarness } from "../../helpers/scriptModule";
 
@@ -18,12 +19,25 @@ describe("finalize-build", () => {
     await mkdir(path.join(root, "dist", "sdk"), { recursive: true });
     const source = JSON.stringify({ entrypoints: { "./sdk": { symbols: ["historyRepair", "getItemAt"] } } }, null, 2);
     await writeFile(path.join(root, "sdk", "public-surface.json"), source);
+    const declaration = '/** Public API.\n *     Keep example indentation.\n */\nexport interface PublicApi {\n    readonly literal: "    spaces";\n    readonly template: `start\n    ${string}\n    end`;\n    readonly nested: {\n        value: string;\n    };\n}\n';
+    const declarationPath = path.join(root, "dist", "sdk", "index.d.ts");
+    await writeFile(declarationPath, declaration);
     const mod = await harness.importModule<FinalizeBuildModule>("scripts/finalize-build.mjs");
     await mod.main(root);
     const packed = await readFile(path.join(root, "dist", "sdk", "public-surface.json"), "utf8");
     expect(JSON.parse(packed)).toEqual(JSON.parse(source));
     expect(packed.length).toBeLessThan(source.length);
     expect(await readFile(path.join(root, "sdk", "public-surface.json"), "utf8")).toBe(source);
+    const compact = await readFile(declarationPath, "utf8");
+    const printer = ts.createPrinter();
+    const parse = (text: string): ts.SourceFile => ts.createSourceFile("index.d.ts", text, ts.ScriptTarget.Latest, true);
+    expect(printer.printFile(parse(compact))).toBe(printer.printFile(parse(declaration)));
+    expect(compact).toContain('"    spaces"');
+    expect(compact).toContain('`start\n    ${string}\n    end`');
+    expect(compact).toContain(' *     Keep example indentation.');
+    expect(compact.length).toBeLessThan(declaration.length);
+    await mod.main(root);
+    expect(await readFile(declarationPath, "utf8")).toBe(compact);
   });
 
   it("chmods present outputs and skips absent ones", async () => {

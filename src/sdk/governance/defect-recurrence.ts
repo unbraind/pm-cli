@@ -1080,19 +1080,32 @@ export function evaluateDefectGateEvidence(
   };
 }
 
+/** A policy-stage validation failure, distinguishable from other request TypeErrors. */
+export class DefectRecurrencePolicyParseError extends TypeError {
+  /** Stable stage identity for consumers combining different SDK entrypoints. */
+  readonly code = "defect_recurrence_policy_invalid";
+}
+
 /** Parse an untrusted serialized policy without weakening runtime validation. */
 export function parseDefectRecurrencePolicy(
   value: unknown,
 ): DefectRecurrencePolicy {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new TypeError("defect recurrence policy must be an object");
+  try {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      throw new TypeError("defect recurrence policy must be an object");
+    }
+    const policy = value as DefectRecurrencePolicy;
+    if (!Array.isArray(policy.families)) {
+      throw new TypeError("defect recurrence policy families must be an array");
+    }
+    validatePolicy(policy);
+    return policy;
+  } catch (error: unknown) {
+    if (error instanceof TypeError) {
+      throw new DefectRecurrencePolicyParseError(error.message, { cause: error });
+    }
+    throw error;
   }
-  const policy = value as DefectRecurrencePolicy;
-  if (!Array.isArray(policy.families)) {
-    throw new TypeError("defect recurrence policy families must be an array");
-  }
-  validatePolicy(policy);
-  return policy;
 }
 
 /** Parse an untrusted cross-transport change-risk request. */

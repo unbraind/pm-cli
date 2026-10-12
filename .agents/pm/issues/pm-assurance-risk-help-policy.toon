@@ -2,11 +2,13 @@ id: pm-assurance-risk-help-policy
 title: Make assurance risk help include the required recurrence policy
 description: "Observed during recovery delivery: pm assurance risk --help advertises a definition containing only change.files. Executing that exact example returns invalid_argument_value with defect recurrence policy must be an object. Supplying the existing config/defect-recurrence-policy.json as definition.policy succeeds and selects18 relevant recurrence families for the current patch. Fix discovery and prerequisite recovery without fabricating policy or weakening recurrence gates."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-10T19:11:49.975Z"
-updated_at: "2026-10-10T19:11:49.975Z"
+updated_at: "2026-10-12T07:27:34.637Z"
+closed_at: "2026-10-12T07:27:33.822Z"
+completed_at: "2026-10-12T07:27:33.822Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Help and contracts disclose policy plus change input; advertised example executes on an isolated nonempty tracker; missing policy returns precise executable recovery; original runtime and token ceilings are preserved
@@ -17,7 +19,62 @@ why_now: The current help example reproducibly refuses because definition.policy
 parent: pm-f05lsg
 risk: low
 confidence: high
-expected_result: "A copyable risk example supplies or locates a valid policy, and a missing policy names its recovery before any mutation"
-comments[1]{created_at,author,text}:
+resolution: "Declare policy plus change in risk help and contracts; brand canonical policy-parser TypeErrors with an additive TypeError-compatible SDK class, stable code and cause, and return precise executable risk recovery without reclassifying other request failures."
+expected_result: "All malformed policy shapes receive policy help recovery; SDK packages can recognize policy-stage errors without English message matching, while change/lineage validation and unexpected faults retain their contracts."
+actual_result: "Both linked commands, public Node/Bun root and governance consumers, strict TypeScript,10205-test full suite and exact source coverage pass. Complete static, grammar/recovery/token and unchanged artifact budgets pass; classified production escape and strengthened gate evidence precede this immutable replacement closure."
+comments[7]{created_at,author,text}:
   "2026-10-10T19:11:49.975Z","harness:codex","Duplicate check: strict live all-status2918-item corpus including terminal data plus request-specific assurance risk help policy search found no focused owner for the missing-policy example. Existing pm-f05lsg is retained as the recovery programme parent; no completed assurance primitive is reopened. Reproduction was read-only, and no implementation is claimed or in progress for this new issue."
+  "2026-10-12T03:06:15.386Z","harness:codex","Implementation: help and SDK contracts now show both policy and change. The minimal empty-family help example executes against an isolated nonempty tracker and is explicitly documented as request-shape guidance, not project coverage. Missing policy returns precise required input plus executable help recovery; no repository-specific policy is inferred and recurrence/token thresholds are unchanged. Focused CLI and SDK transport tests pass; full static and coverage gates remain pending."
+  "2026-10-12T05:35:01.909Z","harness:codex","Final acceptance: linked CLI/SDK assurance tests pass with an immutable test_runs receipt. The advertised explicit policy-plus-change example executes on an isolated nonempty tracker. Missing policy yields required-input details and executable help recovery, covered directly at the source SDK boundary and through the real CLI. Exact complete-source coverage and the unchanged grammar/recovery/token gates pass; the empty-family demo is documented as request-shape guidance and does not imply project coverage."
+  "2026-10-12T05:38:27.323Z","harness:codex","Closure correction: the first terminal defect gate correctly refused missing escape_class and gate_evidence. Reopened through the canonical command with an explicit current expectation, claimed only this evidence repair, and retained the earlier terminal snapshot in immutable recurrence context. The original published help example failed because it supplied no policy; the strengthened real CLI advertised-example and missing-policy source SDK tests now protect that boundary. Recorded production_defect classification and accountable gate_strengthened evidence before the replacement close event. No source, test, coverage or policy budget changed."
+  "2026-10-12T05:49:44.650Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1445 carries the verified risk-help and missing-policy recovery, terminal escape classification and strengthened gate evidence. Both earlier and corrected close events remain append-only. Current-head checks and bot review are pending."
+  "2026-10-12T06:54:45.018Z","harness:codex","PR1445 inline4245053342 addressed through the canonical policy parser: every policy-stage TypeError becomes the exported TypeError-compatible DefectRecurrencePolicyParseError, with original cause and stable defect_recurrence_policy_invalid code. Risk recovery recognizes that stage rather than English text. Invalid families/version/epoch policies receive recovery; malformed changes and lineages retain their own contracts, and non-TypeError accessor faults propagate unchanged. Focused72 tests pass; the new public class is an additive SDK surface and needs renewed full-source and packed-entrypoint acceptance."
+  "2026-10-12T07:27:33.052Z","harness:codex","Final review remediation acceptance: both linked assurance and policy-parser commands pass with immutable schema-isolated receipts. All10205 tests pass; source coverage is exact100/100/100/100 and the complete static command, TypeScript and SDK contracts pass. Fresh packed Node and Bun root/governance entrypoints verify the additive policy error class, stable code, TypeError compatibility and original cause, while malformed change input remains a separate TypeError. Risk action recovery covers malformed policy families/version/epoch; unexpected accessor exceptions retain their identity. Nine-package npx/bunx smoke and original artifact budgets pass."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T07:03:42.749Z","harness:codex","Classify validation by its canonical parser stage instead of matching one English message. A TypeError-compatible policy error with a stable code and original cause lets SDK packages and action hosts recover all malformed policy shapes without misclassifying change, lineage or unexpected accessor faults."
+files[6]{path,scope}:
+  src/sdk/cli-contracts/grammar-contracts.ts,project
+  src/sdk/governance/assurance-action.ts,project
+  src/sdk/governance/defect-recurrence.ts,project
+  tests/integration/assurance-cli.integration.spec.ts,project
+  tests/unit/sdk/assurance-action.spec.ts,project
+  tests/unit/sdk/governance/defect-recurrence.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/assurance-cli.integration.spec.ts tests/unit/sdk/assurance-action.spec.ts,project,120,"harness:codex","2026-10-12T03:05:00.036Z",local_mutation,fix/lossless-merge-and-planning-recovery
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,project,120,"harness:codex","2026-10-12T06:42:41.898Z",local_mutation,fix/lossless-merge-and-planning-recovery
+test_runs[2]:
+  - run_id: test-local-mv4tbjmb-5bt18b
+    kind: test
+    status: passed
+    started_at: "2026-10-12T05:29:25.996Z"
+    finished_at: "2026-10-12T05:29:34.739Z"
+    recorded_at: "2026-10-12T05:29:34.739Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/assurance-cli.integration.spec.ts tests/unit/sdk/assurance-action.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv4xb4ny-clyzaw
+    kind: test
+    status: passed
+    started_at: "2026-10-12T07:21:03.423Z"
+    finished_at: "2026-10-12T07:21:13.822Z"
+    recorded_at: "2026-10-12T07:21:13.822Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/assurance-cli.integration.spec.ts tests/unit/sdk/assurance-action.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/DEFECT_RECURRENCE.md,project
+close_reason: Verified required-policy discovery and stage-specific recovery across SDK entrypoints
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: command-grammar-and-executable-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/assurance-cli.integration.spec.ts tests/unit/sdk/assurance-action.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/integration/assurance-cli.integration.spec.ts tests/unit/sdk/assurance-action.spec.ts,node scripts/release/command-grammar-gate.mjs,node scripts/release/refusal-closure-gate.mjs,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: unbraind/pm-cli maintainers
 body: ""

@@ -615,6 +615,11 @@ describe("defect recurrence SDK", () => {
     for (const [input, message] of invalidPolicies) {
       expect(() => parseDefectRecurrencePolicy(input)).toThrow(message);
     }
+    const accessorFailure = new RangeError("policy accessor failed");
+    const accessorPolicy = { get families(): never { throw accessorFailure; } };
+    let observedFailure: unknown;
+    try { parseDefectRecurrencePolicy(accessorPolicy); } catch (error: unknown) { observedFailure = error; }
+    expect(observedFailure).toBe(accessorFailure);
     expect(
       parseDefectChangeRiskRequest({
         policy: policy(),

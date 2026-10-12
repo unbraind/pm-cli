@@ -4,6 +4,42 @@ import { chmod, glob, readFile, realpath, stat, writeFile } from "node:fs/promis
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import ts from "typescript";
+
+/** Remove declaration indentation outside literals and comments, retaining every semantic token and JSDoc byte. */
+function compactDeclaration(source) {
+  const file = ts.createSourceFile("declaration.d.ts", source, ts.ScriptTarget.Latest, true);
+  const literals = new Map();
+  const visit = (node) => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateLiteralTypeNode(node)) {
+      literals.set(node.getStart(file), node.end);
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, source);
+  const parts = [];
+  let lineStart = true;
+  for (let kind = scanner.scan(); kind !== ts.SyntaxKind.EndOfFileToken; kind = scanner.scan()) {
+    const start = scanner.getTokenPos();
+    const end = literals.get(start) ?? scanner.getTextPos();
+    const text = source.slice(start, end);
+    if (kind !== ts.SyntaxKind.WhitespaceTrivia || !lineStart) parts.push(text);
+    if (kind !== ts.SyntaxKind.WhitespaceTrivia) lineStart = /[\r\n]$/u.test(text);
+    scanner.setTextPos(end);
+  }
+  return parts.join("");
+}
+
+/** Compact all emitted declarations without editing source or altering type literal contents. */
+async function compactDeclarationOutputs(directory) {
+  for await (const relative of glob("**/*.d.ts", { cwd: directory })) {
+    const target = path.join(directory, relative);
+    const source = await readFile(target, "utf8");
+    await writeFile(target, compactDeclaration(source));
+  }
+}
 
 /** Check optional emitted executables before chmod, treating only absent files as optional and propagating other stat failures. */
 async function outputExists(filePath) {
@@ -58,6 +94,7 @@ export async function compactRuntimeOutputs(directory) {
 /** Finalize executable modes and the semantically identical compact public SDK manifest. */
 export async function main(repoRoot = process.cwd()) {
   await compactRuntimeOutputs(path.join(repoRoot, "dist"));
+  await compactDeclarationOutputs(path.join(repoRoot, "dist"));
   const executableOutputs = [
     path.join(repoRoot, "dist", "cli.js"),
     path.join(repoRoot, "dist", "mcp", "server.js"),

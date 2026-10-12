@@ -1379,6 +1379,7 @@ export const ITEM_COMPLETE_FLAG_CONTRACTS: CliFlagContract[] = [
 export const ITEM_REOPEN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
   { flag: "--status", value_name: "open|in_progress" },
+  { flag: "--expected-result", value_name: "value", aliases: ["--expected"] },
   { flag: "--message", value_name: "value" },
   { flag: "--force" },
   { flag: "--author", value_name: "value" },

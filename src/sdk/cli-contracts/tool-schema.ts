@@ -1456,7 +1456,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     "item-reopen": {
       required: ["id", "reason"],
-      optional: ["status", "author", "message", "force"],
+      optional: ["status", "expectedResult", "author", "message", "force"],
     },
   };
 

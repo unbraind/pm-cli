@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1990,
+    "covered_symbols": 1991,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1991
+    "required_symbols": 1992
   },
   "breaking_acknowledgements": [
     {
@@ -2280,6 +2280,18 @@
       ],
       "package_version": "2026.10.11",
       "reason": "Schema version literal advances from 4.21.0 to 4.21.1 for edit dependency validation; runtime-valid selector and patch requests remain accepted."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ReopenCommandOptions",
+        "signature ./sdk:ReopenResult",
+        "signature ./sdk/core:ReopenCommandOptions",
+        "signature ./sdk/core:ReopenResult",
+        "signature ./sdk/runtime:ReopenCommandOptions",
+        "signature ./sdk/runtime:ReopenResult"
+      ],
+      "package_version": "2026.10.11",
+      "reason": "Reopen options and results gain optional planning input and recovery. Existing callers remain valid; terminal expectations remain archived and the next calendar release adds explicit active planning guidance."
     }
   ],
   "entrypoints": {
@@ -6155,6 +6167,12 @@
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
           "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "class",
+          "name": "DefectRecurrencePolicyParseError",
+          "signature": "export declare class DefectRecurrencePolicyParseError extends TypeError { readonly code = \"defect_recurrence_policy_invalid\"; }"
         },
         {
           "classification": "supported",
@@ -16414,13 +16432,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
-          "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface ReopenCommandOptions { status?: string; expectedResult?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
-          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
+          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -26026,13 +26044,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
-          "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface ReopenCommandOptions { status?: string; expectedResult?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
-          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
+          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "supported",
@@ -27041,6 +27059,12 @@
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
           "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "class",
+          "name": "DefectRecurrencePolicyParseError",
+          "signature": "export declare class DefectRecurrencePolicyParseError extends TypeError { readonly code = \"defect_recurrence_policy_invalid\"; }"
         },
         {
           "classification": "supported",
@@ -33904,13 +33928,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenCommandOptions",
-          "signature": "export interface ReopenCommandOptions { status?: string; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface ReopenCommandOptions { status?: string; expectedResult?: string; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ReopenResult",
-          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; }"
+          "signature": "export interface ReopenResult { item: Record<string, unknown>; changed_fields: string[]; warnings: string[]; recurrence: RecurrenceReceipt; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",

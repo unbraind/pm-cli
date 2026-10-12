@@ -257,6 +257,7 @@ describe("structured mutation command registration", () => {
       "Recurring failure",
       {
         status: "in_progress",
+        expectedResult: "The current recurrence is repaired",
         author: "incident-agent",
         message: "Resume response",
         force: true,
@@ -268,6 +269,7 @@ describe("structured mutation command registration", () => {
       "Recurring failure",
       {
         status: "in_progress",
+        expectedResult: "The current recurrence is repaired",
         author: "incident-agent",
         message: "Resume response",
         force: true,
@@ -280,13 +282,13 @@ describe("structured mutation command registration", () => {
     await structuredMutationTestOnly.runItemReopenAction(
       "pm-a",
       "Recurring through a global author",
-      {},
+      { expected: "The alias supplies current planning" },
       globalAuthorCommand,
     );
     expect(mocks.runReopen).toHaveBeenLastCalledWith(
       "pm-a",
       "Recurring through a global author",
-      expect.objectContaining({ author: "global-agent" }),
+      expect.objectContaining({ author: "global-agent", expectedResult: "The alias supplies current planning" }),
       expect.any(Object),
     );
   });

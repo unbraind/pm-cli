@@ -47,7 +47,22 @@ describe("recurrence presentation contracts", () => {
           from_status: "closed",
           to_status: "in_progress",
         },
+        recovery: {
+          missing: ["expected_result"],
+          suggested_retry_args: ["--pm-path", context.pmPath, "update", created.item.id, "--expected-result", "<current expected outcome>"],
+        },
       });
+
+      const recovery = (reopened.json as { recovery: { suggested_retry_args: string[] } }).recovery;
+      const restored = context.runCli(recovery.suggested_retry_args.map((arg) => arg === "<current expected outcome>" ? "The recurrence is repaired" : arg));
+      expect(restored.code).toBe(0);
+      const help = context.runCli(["item", "reopen", "--help"]);
+      expect(help.stdout).toContain('--expected-result "The recurrence regression passes"');
+      expect(context.runCli(["close", created.item.id, "The recurrence was repaired"]).code).toBe(0);
+      const explicit = context.runCli(["item", "reopen", created.item.id, "Recurred again", "--expected", "The new regression passes", "--json"], { expectJson: true });
+      expect(explicit.code, explicit.stderr).toBe(0);
+      expect(explicit.json).not.toHaveProperty("recovery");
+      expect((context.runCli(["get", created.item.id, "--full", "--json"], { expectJson: true }).json as { item: { expected_result: string } }).item.expected_result).toBe("The new regression passes");
 
       const history = context.runCli(
         ["history", created.item.id, "--full", "--json"],
@@ -57,7 +72,7 @@ describe("recurrence presentation contracts", () => {
         (history.json as { history: Array<{ op: string }> }).history.map(
           (entry) => entry.op,
         ),
-      ).toEqual(["create", "close", "reopen"]);
+      ).toEqual(["create", "close", "reopen", "update", "close", "reopen"]);
     });
   });
 
@@ -82,7 +97,10 @@ describe("recurrence presentation contracts", () => {
       const reopened = await client.reopen(
         created.item.id,
         "SDK observed a recurrence",
+        { expectedResult: "Current SDK expectation" },
       );
+      expect(reopened.item.expected_result).toBe("Current SDK expectation");
+      expect(reopened.recovery).toBeUndefined();
       expect(reopened.recurrence).toMatchObject({
         reason: "SDK observed a recurrence",
         from_status: "closed",
@@ -111,6 +129,7 @@ describe("recurrence presentation contracts", () => {
           action: "item-reopen",
           id: genericTarget.item.id,
           reason: "Generic dispatch observed a recurrence",
+          expectedResult: "Current MCP expectation",
           path: context.pmPath,
         }),
       ).resolves.toMatchObject({

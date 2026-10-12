@@ -175,6 +175,11 @@ export function isFullHelpDiscovery(argv: readonly string[]): boolean {
 }
 
 const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
+  "item reopen": {
+    why: "Reopens recurring work while archiving earlier closure evidence and declaring its current planning outcome.",
+    examples: ['pm item reopen pm-a1b2 "The failure recurred" --expected-result "The recurrence regression passes"'],
+    tips: ["Without --expected-result, follow recovery.suggested_retry_args to restore current planning before claiming the item."],
+  },
   ops: {
     why: "Groups workspace diagnostics, quality checks, and maintenance under one discoverable command.",
     examples: ["pm ops health --summary", "pm ops validate --check-history-drift", "pm ops --help"],

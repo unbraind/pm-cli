@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1443: align item and history union ordering and provenance during lossless merges ([pm-pftgcz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pftgcz.toon))
+- Make assurance risk help include the required recurrence policy ([pm-assurance-risk-help-policy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-assurance-risk-help-policy.toon))
+
+### Other
+
+- Expose active planning recovery when a canonical item is reopened ([pm-reopen-planning-recovery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-reopen-planning-recovery.toon))
+- Compact declaration indentation while preserving SDK types and documentation ([pm-chw71s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chw71s.toon))
+
 ## 2026.10.12 - 2026-10-12
 
 ### Fixed
