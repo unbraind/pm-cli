@@ -216,7 +216,7 @@
     "node": ">=22.18.0"
   },
   "dependencies": {
-    "@sentry/node": "10.75.1",
+    "@sentry/node": "10.76.0",
     "@toon-format/toon": "^4.1.1",
     "commander": "^15.0.0",
     "fast-json-patch": "^3.1.1",
@@ -253,7 +253,7 @@
     "gpt-tokenizer": "4.0.0",
     "greptile": "^3.6.1",
     "jscpd": "^5.4.0",
-    "knip": "^6.38.0",
+    "knip": "^6.39.0",
     "marked": "18.0.14",
     "parse5": "8.0.1",
     "tsx": "^4.23.15",

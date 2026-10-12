@@ -18,7 +18,7 @@ const COMMAND_TIMEOUT_MS = 600_000;
 /** Resolve the native package-manager shim; the portable launcher handles Windows command interpreters. */
 function resolveCommand(base) {
   return process.platform === "win32"
-    ? `${base}.${base === "bunx" ? "exe" : "cmd"}`
+    ? `${base}.${base === "bunx" || base === "bun" ? "exe" : "cmd"}`
     : base;
 }
 
@@ -238,7 +238,9 @@ function assertPackedTypescriptConsumer(consumerRoot) {
   writeFileSync(
     path.join(consumerRoot, "consumer.ts"),
     [
-      'import { assertTestMeasurementRun, quoteCommandArg } from "@unbrained/pm-cli/sdk";',
+      'import { assertTestMeasurementRun, quoteCommandArg, PmClient, runContextEvaluationScenario, type ContextEvaluationReader } from "@unbrained/pm-cli/sdk";',
+      'const reader: ContextEvaluationReader = new PmClient({ noExtensions: true });',
+      'void runContextEvaluationScenario({ id: "packed-reader", surface: "context", judgments: {}, token_budget: 1000, rationale: "Public client reader composition requires no casts." }, reader);',
       'export const quoted: string = quoteCommandArg("pack-smoke", "linux");',
       'assertTestMeasurementRun("pm-consumer", { onlyIndex: 2, removeIndex: [2] }, {}, "/isolated/tracker");',
       "",
@@ -357,6 +359,10 @@ function run() {
       );
     }
     assertPackedTypescriptConsumer(consumerRoot);
+    const evaluatorConsumer = path.join(REPO_ROOT, "tests", "fixtures", "read-output", "evaluation-consumer.mjs");
+    for (const runtime of [process.execPath, resolveCommand("bun")]) {
+      runSmokeCommand(runtime, [evaluatorConsumer, consumerRoot], commandOptions);
+    }
 
     console.log(
       `npx and bunx packed package smoke passed (${version}, packages=${packages.length}).`,

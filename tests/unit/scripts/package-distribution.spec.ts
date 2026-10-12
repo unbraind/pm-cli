@@ -1,5 +1,6 @@
 import {
   execFileSync,
+  fork,
   type ExecFileSyncOptionsWithStringEncoding,
 } from "node:child_process";
 import {
@@ -11,11 +12,14 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { createRequire } from "node:module";
+import { once } from "node:events";
+import { pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
 import { packDistribution } from "../../../scripts/release/package-distribution.mjs";
+import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
 
@@ -108,7 +112,7 @@ async function createBundleFixture() {
 it("packs exact physical runtime packages without development dependencies or maps and refuses installed drift", async () => {
   const { root, packages, ledger } = await createBundleFixture();
   const before = await readFile(path.join(root, "package.json"), "utf8");
-  const artifact = packDistribution(root);
+  const artifact = await packDistribution(root);
   const files = artifact.files.map(
     (file: { path: string }) => file.path,
   ) as string[];
@@ -138,7 +142,7 @@ it("packs exact physical runtime packages without development dependencies or ma
     path.join(root, "node_modules/shared/package.json"),
     '{"name":"shared","version":"9.0.0"}',
   );
-  expect(() => packDistribution(root)).toThrow("Installed runtime drift");
+  await expect(packDistribution(root)).rejects.toThrow("Installed runtime drift");
   expect(() => verifyRuntimeInstallation(root)).toThrow(
     "Installed runtime version mismatch",
   );
@@ -152,7 +156,7 @@ it("packs exact physical runtime packages without development dependencies or ma
       },
     }),
   );
-  expect(() => packDistribution(root)).toThrow(
+  await expect(packDistribution(root)).rejects.toThrow(
     "Unsafe runtime ledger location",
   );
 }, 60_000);
@@ -195,7 +199,7 @@ it.each([
       path.join(root, "runtime-dependencies.json"),
       JSON.stringify(ledger),
     );
-    expect(() => packDistribution(root)).toThrow(
+    await expect(packDistribution(root)).rejects.toThrow(
       {
         manifest: "publication manifest",
         "missing-package": "Missing tested runtime package",
@@ -243,7 +247,7 @@ it.each([
   const module = await harness.importModule<{
     packDistribution: typeof packDistribution;
   }>("scripts/release/package-distribution.mjs");
-  expect(() => module.packDistribution(root)).toThrow(
+  await expect(module.packDistribution(root)).rejects.toThrow(
     /exactly one npm artifact|Unsafe source distribution path|escapes the checkout/u,
   );
   expect(execute).toHaveBeenCalledTimes(1);
@@ -279,7 +283,7 @@ it("uses npm's Node entrypoint on Windows and writes a real distributable tarbal
   );
   vi.spyOn(process, "execPath", "get").mockReturnValue(executable);
   vi.spyOn(process, "platform", "get").mockReturnValue("win32");
-  const artifact = packDistribution(root, { destination });
+  const artifact = await packDistribution(root, { destination });
   expect(
     await readFile(path.join(destination, artifact.filename)),
   ).not.toHaveLength(0);
@@ -312,7 +316,7 @@ it("packs real npm artifacts through the npm 12 keyed receipt format", async () 
   const module = await harness.importModule<{
     packDistribution: typeof packDistribution;
   }>("scripts/release/package-distribution.mjs");
-  const artifact = module.packDistribution(root, { destination });
+  const artifact = await module.packDistribution(root, { destination });
   expect(artifact.name).toBe(manifest.name);
   expect(artifact.files).toEqual(
     expect.arrayContaining([
@@ -350,7 +354,7 @@ it("packs real npm artifacts through the npm 12 keyed receipt format", async () 
 it.each(["{", '{"value":-0}', '{"value":1e400}'])("refuses invalid or lossy first-party JSON instead of silently changing its values: %s", async (raw) => {
   const { root } = await createBundleFixture();
   await writeFile(path.join(root, "metadata.json"), raw);
-  expect(() => packDistribution(root)).toThrow(/JSON|lossless/u);
+  await expect(packDistribution(root)).rejects.toThrow(/JSON|lossless/u);
   expect(await readFile(path.join(root, "metadata.json"), "utf8")).toBe(raw);
 }, 60_000);
 
@@ -416,6 +420,7 @@ it("runs both packer CLI modes and rejects ambiguous arguments", async () => {
   const { root } = await createBundleFixture();
   const destination = await harness.createTempRoot("pm-publication-cli-");
   vi.spyOn(process, "cwd").mockReturnValue(root);
+  vi.stubEnv("PM_BUILD_CONSUMER_LEASE", "");
   const output = vi.spyOn(console, "log").mockImplementation(() => {});
   for (const args of [[], [`--destination=${destination}`]]) {
     process.argv = [
@@ -441,5 +446,129 @@ it("runs both packer CLI modes and rejects ambiguous arguments", async () => {
     await expect(
       harness.importModule("scripts/release/package-distribution.mjs"),
     ).rejects.toThrow("Usage");
+  }
+}, 60_000);
+
+it("refuses incomplete generations and validates inherited ownership before source inventory", async () => {
+  const { root } = await createBundleFixture();
+  await mkdir(path.join(root, ".cache"));
+  await writeFile(path.join(root, ".cache/build-incomplete"), "interrupted build");
+  await expect(packDistribution(root)).rejects.toThrow("incomplete build generation");
+  expect(await readFile(path.join(root, ".cache/build-incomplete"), "utf8")).toBe("interrupted build");
+  await rm(path.join(root, ".cache/build-incomplete"));
+  vi.spyOn(process, "cwd").mockReturnValue(root);
+  vi.stubEnv("PM_BUILD_CONSUMER_LEASE", "invalid");
+  vi.stubEnv("PM_BUILD_CONSUMER_LEASE_ROOT", root);
+  await mkdir(path.join(root, ".cache/build-lease"));
+  const owner = JSON.stringify({ pid: process.pid, token: "actual-owner" });
+  await writeFile(path.join(root, ".cache/build-lease/owner.json"), owner);
+  await expect(packDistribution(root)).rejects.toThrow("Invalid inherited build lease");
+  expect(await readFile(path.join(root, ".cache/build-lease/owner.json"), "utf8")).toBe(owner);
+});
+
+it("binds inherited packing leases to their source workspace and preserves both live owners", async () => {
+  const { root: source } = await createBundleFixture();
+  const { root: foreign } = await createBundleFixture();
+  await withBuildLease(source, async (lease: string) => {
+    vi.stubEnv("PM_BUILD_CONSUMER_LEASE", lease);
+    vi.stubEnv("PM_BUILD_CONSUMER_LEASE_ROOT", source);
+    vi.spyOn(process, "cwd").mockReturnValue(foreign);
+    expect((await packDistribution(foreign)).name).toBe("runtime-bundle-fixture");
+    const ownerPath = path.join(source, ".cache/build-lease/owner.json");
+    const owner = await readFile(ownerPath, "utf8");
+    expect(JSON.parse(owner)).toMatchObject({ token: lease, pid: process.pid });
+    vi.mocked(process.cwd).mockReturnValue(source);
+    expect((await packDistribution(source)).name).toBe("runtime-bundle-fixture");
+    expect(await readFile(ownerPath, "utf8")).toBe(owner);
+    vi.stubEnv("PM_BUILD_CONSUMER_LEASE_ROOT", undefined);
+    vi.mocked(process.cwd).mockReturnValue(foreign);
+    expect((await packDistribution(foreign)).name).toBe("runtime-bundle-fixture");
+    expect(await readFile(ownerPath, "utf8")).toBe(owner);
+  });
+}, 60_000);
+
+it.each(["missing", "non-directory"])("packs independently when the inherited owner path is %s", async (state) => {
+  const { root } = await createBundleFixture();
+  const retired = path.join(root, "retired-owner");
+  if (state === "non-directory") await writeFile(retired, "preserved foreign file");
+  vi.stubEnv("PM_BUILD_CONSUMER_LEASE", "former-owner-token");
+  vi.stubEnv("PM_BUILD_CONSUMER_LEASE_ROOT", state === "missing" ? retired : path.join(retired, "workspace"));
+  expect((await packDistribution(root)).name).toBe("runtime-bundle-fixture");
+  await expect(readFile(path.join(root, ".cache/build-lease/owner.json"))).rejects.toMatchObject({ code: "ENOENT" });
+  if (state === "non-directory") expect(await readFile(retired, "utf8")).toBe("preserved foreign file");
+});
+
+it("waits for an independent real build to finish before inventorying and packing one generation", async () => {
+  const { root, manifest } = await createBundleFixture();
+  const destination = await harness.createTempRoot("pm-overlap-artifact-");
+  manifest.files.push("second.js");
+  await writeFile(path.join(root, "package.json"), JSON.stringify(manifest));
+  await writeFile(path.join(root, "second.js"), "generation-one");
+  await mkdir(path.join(root, "scripts"));
+  await mkdir(path.join(root, "node_modules/typescript/bin"), { recursive: true });
+  await writeFile(path.join(root, "scripts/prepare-build-cache.mjs"), `
+import { writeFileSync } from 'node:fs';
+import { once } from 'node:events';
+writeFileSync('index.js', 'partial-generation');
+console.log('build-is-partial');
+await once(process.stdin, 'data');
+process.stdin.pause();
+writeFileSync('index.js', 'generation-two');
+`);
+  await writeFile(path.join(root, "node_modules/typescript/bin/tsc"), "process.exitCode = 0;");
+  await writeFile(path.join(root, "scripts/bundle-cli.mjs"), "");
+  await writeFile(path.join(root, "scripts/finalize-build.mjs"), "import { writeFileSync } from 'node:fs'; writeFileSync('second.js', 'generation-two');");
+  const fixture = path.join(root, "consumer.mjs");
+  const packerUrl = pathToFileURL(path.resolve("scripts/release/package-distribution.mjs")).href;
+  await writeFile(fixture, `
+import fs from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
+const originalMkdir = fs.mkdir;
+let reported = false;
+fs.mkdir = async (...args) => {
+  try { return await originalMkdir(...args); }
+  catch (error) {
+    if (!reported && error.code === 'EEXIST' && String(args[0]).endsWith('build-lease')) {
+      reported = true;
+      process.send({ state: 'contending', owner: JSON.parse(await fs.readFile(String(args[0]) + '/owner.json', 'utf8')) });
+    }
+    throw error;
+  }
+};
+syncBuiltinESMExports();
+try {
+  const { packDistribution } = await import(${JSON.stringify(packerUrl)});
+  const artifact = await packDistribution(process.cwd(), { destination: process.argv[2] });
+  process.send({ state: 'packed', filename: artifact.filename });
+} catch (error) { process.send({ state: 'failed', message: error.message }); process.exitCode = 1; }
+process.disconnect();
+`);
+  const producer = fork(path.resolve("scripts/build.mjs"), [], {
+    cwd: root, env: { ...process.env, PM_BUILD_CONSUMER_LEASE: "" },
+    stdio: ["pipe", "pipe", "pipe", "ipc"],
+  });
+  const producerClosed = once(producer, "close");
+  let consumer: ReturnType<typeof fork> | undefined;
+  let consumerClosed: ReturnType<typeof once> | undefined;
+  try {
+    expect(String((await once(producer.stdout!, "data"))[0])).toContain("build-is-partial");
+    consumer = fork(fixture, [destination], { cwd: root, env: { ...process.env, PM_BUILD_CONSUMER_LEASE: "" }, stdio: ["ignore", "pipe", "pipe", "ipc"] });
+    consumerClosed = once(consumer, "close");
+    const [waiting] = await once(consumer, "message");
+    expect(waiting).toMatchObject({ state: "contending", owner: { pid: producer.pid, token: expect.any(String) } });
+    const packed = once(consumer, "message");
+    producer.stdin!.end("finish generation\n");
+    expect((await producerClosed)[0]).toBe(0);
+    const [artifact] = await packed as [{ state: string; filename: string }];
+    expect(artifact.state).toBe("packed");
+    expect((await consumerClosed)[0]).toBe(0);
+    const extracted = await harness.createTempRoot("pm-overlap-extracted-");
+    await extractTar({ file: path.join(destination, artifact.filename), cwd: extracted });
+    expect(await readFile(path.join(extracted, "package/index.js"), "utf8")).toBe("generation-two");
+    expect(await readFile(path.join(extracted, "package/second.js"), "utf8")).toBe("generation-two");
+  } finally {
+    producer.kill();
+    consumer?.kill();
+    await Promise.all([producerClosed, ...(consumerClosed ? [consumerClosed] : [])]);
   }
 }, 60_000);

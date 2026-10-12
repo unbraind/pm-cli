@@ -22,6 +22,8 @@ describe("linked-test constants", () => {
     expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_PATH")).toBe(true);
     expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_SOURCE_PM_PATH")).toBe(true);
     expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_SOURCE_WORKSPACE_ROOT")).toBe(true);
+    expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_BUILD_CONSUMER_LEASE")).toBe(true);
+    expect(LINKED_TEST_PROTECTED_ENV_KEYS.has("PM_BUILD_CONSUMER_LEASE_ROOT")).toBe(true);
     expect(LINKED_TEST_ENV_NAME_PATTERN.test("PORT")).toBe(true);
     expect(LINKED_TEST_ENV_NAME_PATTERN.test("1BAD")).toBe(false);
     expect([...LINKED_TEST_PM_CONTEXT_MODE_VALUES]).toEqual([
@@ -63,8 +65,8 @@ describe("parseLinkedTestEnvSet", () => {
     );
   });
 
-  it("throws on protected key", () => {
-    expect(() => parseLinkedTestEnvSet("pm_path=x", "--test")).toThrow(
+  it.each(["pm_path", "PM_BUILD_CONSUMER_LEASE", "PM_BUILD_CONSUMER_LEASE_ROOT"])("throws on protected key %s", (key) => {
+    expect(() => parseLinkedTestEnvSet(`${key}=x`, "--test")).toThrow(
       /reserved for sandbox safety/,
     );
   });
@@ -91,8 +93,8 @@ describe("parseLinkedTestEnvClear", () => {
     );
   });
 
-  it("throws on protected key", () => {
-    expect(() => parseLinkedTestEnvClear("FORCE_COLOR", "--test")).toThrow(
+  it.each(["FORCE_COLOR", "PM_BUILD_CONSUMER_LEASE", "PM_BUILD_CONSUMER_LEASE_ROOT"])("throws on protected key %s", (key) => {
+    expect(() => parseLinkedTestEnvClear(key, "--test")).toThrow(
       /reserved for sandbox safety/,
     );
   });

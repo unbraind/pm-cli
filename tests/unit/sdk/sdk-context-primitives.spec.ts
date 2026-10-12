@@ -134,6 +134,11 @@ describe("SDK context-management primitives", () => {
         requiredOnCreate: true,
         requiredTypes: ["Task"],
       });
+      for (const [key, type] of [["sdk_numeric", "number"], ["sdk_boolean", "boolean"], ["sdk_default", undefined]] as const) {
+        await client.schemaAddField(key, { type });
+        const registered = await client.schemaListFields();
+        expect(registered.fields).toContainEqual(expect.objectContaining({ key, type: type ?? "string" }));
+      }
       const created = await client.planCreate({
         title: "SDK plan",
         step: ["Implement primitive", "Verify primitive"],
@@ -161,7 +166,7 @@ describe("SDK context-management primitives", () => {
         steps: "plan-step-001",
         materializeType: "Task",
         materializeTags: "sdk,plan",
-        field: ["acceptance_owner=sdk-plan-test"],
+        field: ["acceptance_owner=sdk-plan-test", "sdk_numeric=7", "sdk_boolean=true", "sdk_default=Ready"],
       });
       expect(materialized.materialized?.[0]).toMatchObject({
         title: "Implement primitive",
@@ -177,6 +182,7 @@ describe("SDK context-management primitives", () => {
         (item.json as { item: { acceptance_owner?: string } }).item
           .acceptance_owner,
       ).toBe("sdk-plan-test");
+      expect((item.json as { item: Record<string, unknown> }).item).toMatchObject({ sdk_numeric: 7, sdk_boolean: true, sdk_default: "Ready" });
     });
   });
 
@@ -449,12 +455,13 @@ describe("SDK context-management primitives", () => {
         { pmRoot: context.pmPath, noExtensions: true },
       );
       expect(schemaField.field.key).toBe("risk_score");
+      expect(schemaField.field.type).toBe("number");
       const fields = await schemaListFields({
         pmRoot: context.pmPath,
         noExtensions: true,
       });
       expect(fields.fields).toContainEqual(
-        expect.objectContaining({ key: "risk_score" }),
+        expect.objectContaining({ key: "risk_score", type: "number" }),
       );
       const shownField = await schemaShowField("risk_score", {
         pmRoot: context.pmPath,

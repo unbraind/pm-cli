@@ -263,12 +263,14 @@ describe("linked-test workspace and trust contracts", () => {
         "{}\n",
       );
       context.env.PM_SOURCE_WORKSPACE_ROOT = sourceRoot;
+      context.env.PM_BUILD_CONSUMER_LEASE = "context-owner";
+      context.env.PM_BUILD_CONSUMER_LEASE_ROOT = sourceRoot;
       const id = createTestItemId(context, {
         title: "workspace context integration",
         createMode: "progressive",
       });
       const command =
-        "node -e \"const fs=require('fs');fs.writeFileSync('snapshot-only.txt','ok');process.stdout.write(String(fs.existsSync('marker.txt'))+':'+String(fs.existsSync('nested/.git/secret'))+':'+String(fs.existsSync('nested/coverage/result.json')))\"";
+        "node -e \"const fs=require('fs');fs.writeFileSync('snapshot-only.txt','ok');process.stdout.write(String(fs.existsSync('marker.txt'))+':'+String(fs.existsSync('nested/.git/secret'))+':'+String(fs.existsSync('nested/coverage/result.json'))+':'+String(Boolean(process.env.PM_BUILD_CONSUMER_LEASE))+':'+String(Boolean(process.env.PM_BUILD_CONSUMER_LEASE_ROOT)))\"";
       expect(
         context.runCli(
           [
@@ -290,7 +292,7 @@ describe("linked-test workspace and trust contracts", () => {
       const snapshotResult = (snapshot.json as TestEnvelope).run_results[0];
       expect(snapshotResult).toMatchObject({
         status: "passed",
-        stdout: "true:false:false",
+        stdout: "true:false:false:false:false",
       });
       const snapshotContext = (snapshot.json as TestEnvelope).execution_context;
       expect(snapshotContext).toMatchObject({
@@ -324,7 +326,7 @@ describe("linked-test workspace and trust contracts", () => {
       expect(isolated.code).toBe(0);
       expect((isolated.json as TestEnvelope).run_results[0]).toMatchObject({
         status: "passed",
-        stdout: "false:false:false",
+        stdout: "false:false:false:false:false",
       });
       expect((isolated.json as TestEnvelope).execution_context).toMatchObject({
         requested_workspace_context_mode: "isolated",

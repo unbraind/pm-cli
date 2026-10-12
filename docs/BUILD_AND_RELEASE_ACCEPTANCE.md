@@ -7,7 +7,7 @@ Trackers: [pm-cxc4jc](../.agents/pm/tasks/pm-cxc4jc.toon),
 
 ## Build ownership
 
-Build/test/coverage sessions own `.cache/build-lease` through completion;
+Build/test/coverage and distribution-packing sessions own `.cache/build-lease` through completion;
 other producers/consumers wait twenty minutes. Nested readers inherit a verified
 PID/token receipt; nested builds require independent workspaces. Direct stages
 and arbitrary `dist` reads bypass this protocol.
@@ -16,7 +16,10 @@ Leases never expire or get stolen. Two matching reads proving PID absence fail
 promptly with recovery guidance. Missing/malformed/changing/ambiguous receipts
 use the timeout; PID reuse is ambiguous. Inspect owner and children before
 abandoned-lease removal. Failed builds leave `.cache/build-incomplete`; prebuilt
-tests refuse it until a successful build.
+tests and distribution packing refuse it until a successful build. Packing holds
+the lease from source inventory through isolated staging and the final archive;
+its asynchronous helper validates inherited consumer receipts in the same
+physical workspace. See [SDK consumer receipts](SDK_CONSUMER_RECEIPTS.md).
 
 Interrupts stop the child and stage admission, allowing five seconds for
 settlement, lease release and cleanup; unsettled children retain storage.

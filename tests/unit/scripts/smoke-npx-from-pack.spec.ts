@@ -427,6 +427,9 @@ describe("smoke-npx-from-pack", () => {
     expect(execFileSync.mock.calls.some((call) => call[0] === "bunx.exe")).toBe(
       true,
     );
+    expect(execFileSync.mock.calls.some((call) =>
+      call[0] === "bun.exe" && call[1]?.[0]?.endsWith("evaluation-consumer.mjs"),
+    )).toBe(true);
   });
 
   it("readCommandError renders non-Error cleanup failures", async () => {

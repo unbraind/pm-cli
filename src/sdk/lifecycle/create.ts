@@ -101,6 +101,7 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
+import { resolveCoreFieldRecovery } from "./core-field-recovery.js";
 import {
   applyLegacyNoneCollectionNormalizers,
   createLegacyNoneCollectionNormalizers,
@@ -2818,6 +2819,7 @@ export async function runCreate(
   const registeredItemFieldValues = parseRegisteredItemFieldAssignments(
     resolvedOptions.field,
     extensionRegistrations,
+    resolveCoreFieldRecovery,
   );
   const runtimeCreateFieldValues = collectRuntimeCreateFieldValues(
     resolvedOptions as Record<string, unknown>,

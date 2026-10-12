@@ -2,11 +2,13 @@ id: pm-by83yj
 title: Core external-reference refusal recommends a flag absent from the CLI lexicon
 description: "Current checkout create --stdin-json refuses an external_ref field as core_item_field_requires_dedicated_flag and recommends pm update <id> --external-ref <value>. Following that recovery fails because --external-ref is declared nowhere, including update. The refusal cannot supply its promised recovery."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-11T18:27:26.645Z"
-updated_at: "2026-10-11T18:27:26.645Z"
+updated_at: "2026-10-12T15:05:10.787Z"
+closed_at: "2026-10-12T15:05:09.977Z"
+completed_at: "2026-10-12T15:05:09.977Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce in an isolated initialized tracker with unchanged-byte refusal evidence; align external-reference mutation support with public SDK contracts; generated help/contracts and actual dispatch agree; a negative control detects ghost recovery flags; all reserved-field recovery recommendations use declared executable paths
@@ -14,12 +16,75 @@ goal: project management = context management
 parent: pm-wg07
 risk: low
 confidence: high
-expected_result: Every reserved-core-field refusal names an executable supported write path or truthfully states that no CLI mutation path is available.
-actual_result: create --stdin-json advertises update --external-ref; following it exits 2 with a declared_nowhere unknown-option refusal.
+resolution: "Resolve reserved-core-field recovery only from executable mutation registrations, sharing collection aliases with structured item IO and declining absent external-reference flags."
+expected_result: Each reserved-field refusal names a declared mutation route or explicitly states that no create/update flag exists.
+actual_result: "Independent ghost-flag control fails before the repair; the 73-field census, collection alias checks, stdin unchanged-byte refusals and structured mutations pass. Exact hosted coverage, static and native Windows regression contexts pass on 7411d7ee6."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,related,"2026-10-11T18:27:26.645Z","harness:codex","cli:create:dep",detected
   pm-pftgcz,discovered_from,"2026-10-11T18:27:26.645Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-11T18:27:26.645Z","harness:codex","Duplicate check: full all-status corpus plus current exact external_ref/dedicated-flag search and open/in_progress inventories found no existing orphan external-reference recovery owner. Full public-surface parent metadata/history was read. Directly observed both refusal stages during GitHub intake. This issue stays open and unclaimed; current metadata-editor delivery does not claim the broader recovery contract fixed."
+  "2026-10-12T09:52:30.253Z","harness:codex","Implementation scope: remove synthesized reserved-field flags and route recovery from the real command registration contracts. external_ref has no dedicated create/update/close flag; preserve imported metadata compatibility and state that limitation truthfully instead of inventing a new transport mutation. Inventory every reserved core field so ghost flags cannot recur."
+  "2026-10-12T10:16:50.698Z","harness:codex","All73 reserved core storage fields are now tested against executable create/update registrations. Direct CLI stdin create/update external_ref refusals preserve existing item+history bytes, emit no invented flag, and identify the missing dedicated mutation path. An isolated pre-fix-style synthesized --external-ref mutant fails the independent external_ref table row. Structured gate-strengthening evidence binds this regression and native transport checks; ordinary SDK imports/legacy stored references remain unchanged."
+  "2026-10-12T10:54:38.138Z","harness:codex","Collection semantics are now single-sourced with structured item IO: dependencies/dep,comments/comment,type_options/typeOption and all other collection mappings come from one SDK-owned data table. Three independent collection-route assertions fail before this refinement and pass afterward; scalar routes and truthful unsupported external_ref refusal stay intact. The integration moved to tests/integration/sdk to preserve the unchanged120-file directory cap, with linked command replacement recorded through PM history."
+  "2026-10-12T14:05:47.528Z","harness:codex","The exact initial PR head is pushed as 1451. Reserved-field negative controls, unchanged-byte create/update refusals, structured mutation routes, strict SDK contract/type checks, and refreshed refusal census are included in the reviewed delivery. Chrome DeepScan shows dc5cf03f353f4ace8371095c2b30405963efce6a with zero new issues; remaining hosted coverage/native checks and reviewer feedback are awaited before immutable closure."
+  "2026-10-12T15:05:09.058Z","harness:codex","Verified implementation head 7411d7ee6e29b288eba2b7222e294a31d74635fc: CI run 38264143222 is successful, all 26 required contexts are present and passed, GitHub merge state is CLEAN, and no inline review threads remain. Accepted CodeRabbit release-summary feedback is corrected. Sourcery/Cubic limits and the expired Greptile trial are availability limitations, not approvals. Closure and the latest package-generated changelog remain in the reviewed final push."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T10:16:51.395Z","harness:codex",Storage field spelling is not a CLI mutation contract. Recovery must derive routes from executable registrations and state unavailable routes explicitly; create/update/close can have different support.
+files[9]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/extensions/item-fields.ts,project
+  src/sdk/lifecycle/core-field-recovery.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/mutation-facet-contracts.ts,project
+  src/sdk/lifecycle/update.ts,project
+  src/sdk/structured-mutations.ts,project
+  tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,project
+  tests/unit/extensions/extensions-item-fields.spec.ts,project
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,project,240,"harness:codex","2026-10-12T09:57:22.743Z",local_mutation,fix/sdk-consumer-contracts-oct12
+  node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,project,240,"harness:codex","2026-10-12T10:53:11.967Z",local_mutation,fix/sdk-consumer-contracts-oct12
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts,project,240,"harness:codex","2026-10-12T10:54:36.668Z",local_mutation,fix/sdk-consumer-contracts-oct12
+test_runs[2]:
+  - run_id: test-all-local-mv53ba67-iemu1w
+    kind: test-all
+    status: passed
+    started_at: "2026-10-12T10:09:18.600Z"
+    finished_at: "2026-10-12T10:10:30.686Z"
+    recorded_at: "2026-10-12T10:10:30.686Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/sdk-consumer-receipts.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mv5b0mkz-42nq4u
+    kind: test-all
+    status: passed
+    started_at: "2026-10-12T13:44:58.382Z"
+    finished_at: "2026-10-12T13:45:57.152Z"
+    recorded_at: "2026-10-12T13:45:57.152Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 3
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/SDK_CONSUMER_RECEIPTS.md,project
+close_reason: Implementation and recorded acceptance completed in reviewed PR 1451.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: core-field-recovery-contract
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts -t \"never invents a mutation flag for reserved core field external_ref\""
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
+  owner: pm-by83yj
 body: "Observed while importing a new GitHub report on the current 2026.10.11 checkout. A JSON external_ref fails before creation; source URL intake succeeds when retained in body. The recommended update --external-ref fails as declared_nowhere. Verify the intended SDK/CLI external-reference write contract and provide a reachable recovery; do not invent a flag, add a blanket field override, or weaken reserved-field guards."

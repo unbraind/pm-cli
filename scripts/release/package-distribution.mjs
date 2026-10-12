@@ -17,6 +17,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
+import { withBuildLease } from "../build-lease.mjs";
 
 /** Decode npm 11 and npm 12's single-package receipts. */
 function readArtifact(output) {
@@ -132,8 +133,10 @@ function copyPublicationFile(relative, source, target) {
   writeFileSync(target, compact);
 }
 
-/** Pack an isolated physical publication tree; never mutate the checkout or its node_modules. */
-export function packDistribution(root, options = {}) {
+/** Materialize one leased, complete generation into an isolated physical publication tree. */
+function packLeasedDistribution(root, options) {
+  if (existsSync(path.join(root, ".cache", "build-incomplete")))
+    throw new Error("Cannot pack an incomplete build generation. Run pnpm build before packing.");
   let npm = "npm";
   const prefix = [];
   if (process.platform === "win32") {
@@ -241,6 +244,22 @@ export function packDistribution(root, options = {}) {
   }
 }
 
+/** Hold the verified build-consumer lease throughout source inventory, staging, and packing. */
+export async function packDistribution(root, options = {}) {
+  const physicalRoot = realpathSync(root);
+  const token = process.env.PM_BUILD_CONSUMER_LEASE;
+  const ownerRoot = process.env.PM_BUILD_CONSUMER_LEASE_ROOT ?? path.resolve(import.meta.dirname, "../..");
+  let inherited;
+  if (token) {
+    try {
+      if (physicalRoot === realpathSync(ownerRoot)) inherited = token;
+    } catch {
+      // An unresolvable parent never authorizes inheritance; acquire independent ownership.
+    }
+  }
+  return withBuildLease(physicalRoot, () => packLeasedDistribution(physicalRoot, options), { inherited });
+}
+
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
@@ -255,7 +274,7 @@ if (
     );
   console.log(
     JSON.stringify(
-      packDistribution(process.cwd(), {
+      await packDistribution(process.cwd(), {
         destination: args[0]?.slice("--destination=".length),
       }),
       null,

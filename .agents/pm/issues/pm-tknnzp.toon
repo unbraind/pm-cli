@@ -1,0 +1,21 @@
+id: pm-tknnzp
+title: Preserve reviewed legacy merge receipts across SDK upgrades
+description: GitHub 1446 reports that unchanged pm-beads receipts reviewed by older merge_reconcile events are gated again after upgrading from 2026.10.8 to 2026.10.9. The advertised dry-run cannot prove snapshots and omits the documented force-review recovery. Reproduce on immutable downstream data and determine the compatible settled-receipt and recovery contract without destructive receipt cleanup.
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-12T13:31:52.812Z"
+updated_at: "2026-10-12T13:31:52.812Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Reproduce 2026.10.8, 2026.10.9 and current SDK against isolated exact downstream data; distinguish historical reviewed receipt proof from unreviewed decisions; preserve immutable evidence and unchanged bytes on refusals; any force review guidance names its audit requirements; independent regressions and all-source coverage pass."
+parent: pm-atfm
+risk: medium
+confidence: medium
+expected_result: Reviewed legacy receipts retain auditable settlement or have explicit safe migration guidance before a strict health gate changes.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ao0bu9,discovered_from,"2026-10-12T13:31:52.812Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-12T13:31:52.812Z","harness:codex","Duplicate check: complete all-status census and fresh merge-receipt/reconcile searches plus open/in_progress inventories found completed prior recovery fixes but no exact active owner for the newly reported upgrade regression. Full pm-ao0bu9 metadata, comments, resolution and history were read. Keep this item open and unclaimed while the connected SDK consumer delivery proceeds."
+body: "Source: https://github.com/unbraind/pm-cli/issues/1446. Public reproduction uses pm-beads main at 25561a2 and references prior issues 1200/1202 plus downstream workaround pm-beads PR 138. This is a reported upgrade behavior, not a verified current regression. Do not run force reconciliation on real downstream data during intake."

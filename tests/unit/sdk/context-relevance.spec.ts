@@ -11,6 +11,7 @@ import {
   scoreContextCandidatesWithActiveExtensions,
   semanticAttributionAffinity,
   summarizeContextEvaluationReports,
+  applyReadOutputDimensions,
   type ContextRelevanceCandidate,
   type ExtensionServiceRegistry,
 } from "../../../src/sdk/index.js";
@@ -33,6 +34,29 @@ function candidate(
 }
 
 describe("context relevance SDK primitives", () => {
+  it.each(["context", "next"] as const)("refuses an omitted %s read before computing quality metrics", async (surface) => {
+    const omitted = applyReadOutputDimensions(surface, { outputBudget: 1 }, {
+      low_level: [{ id: "pm-required", description: "Useful context".repeat(100) }],
+      ready: [{ id: "pm-required" }],
+    });
+    await expect(runContextEvaluationScenario({
+      id: "omitted-read", surface, judgments: {}, token_budget: 1000,
+      rationale: "An omitted packet cannot be graded as a successful empty context.",
+    }, {
+      context: async () => omitted,
+      next: async () => omitted,
+    })).rejects.toMatchObject({ context: { code: "context_evaluation_read_incomplete" } });
+  });
+  it.each(["read_output", "context_intent"] as const)("honors the %s whole-result omission receipt from structural readers", async (receipt) => {
+    const result = { low_level: [{ id: "pm-visible" }], [receipt]: { result_omitted: true } };
+    await expect(runContextEvaluationScenario({
+      id: "receipt-omission", surface: "context", judgments: {}, token_budget: 1000,
+      rationale: "A host cannot supply a ranked packet marked as omitted.",
+    }, {
+      context: async () => result,
+      next: async () => ({}),
+    })).rejects.toMatchObject({ context: { code: "context_evaluation_read_incomplete" } });
+  });
   afterEach(() => {
     clearActiveExtensionHooks();
   });
@@ -882,11 +906,11 @@ describe("context relevance SDK primitives", () => {
         surface: "context",
         judgments: {},
         token_budget: 100,
-        rationale: "A reader may omit optional ranking metadata.",
+        rationale: "An explicitly complete intent receipt can omit optional ranking metadata.",
       },
       {
         context: async () =>
-          ({ high_level: [], low_level: [], blocked_fallback: [] }) as never,
+          ({ high_level: [], low_level: [], blocked_fallback: [], context_intent: { result_omitted: false } }) as never,
         next: async () => ({ ready: [] }) as never,
       },
     );

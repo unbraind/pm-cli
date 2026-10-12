@@ -980,9 +980,10 @@ export class PmClient {
     name: string,
     options: SchemaAddFieldCommandOptions = {},
   ): Promise<SchemaAddFieldResult> {
+    const { type, ...mutationOptions } = options;
     return this.runTyped("schema", {
       name,
-      options: { ...options, subcommand: "add-field" },
+      options: { ...mutationOptions, fieldType: type, subcommand: "add-field" },
     });
   }
 

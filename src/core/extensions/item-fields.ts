@@ -9,7 +9,7 @@ import {
   type KnownItemFieldType,
 } from "./item-field-types.js";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
-import { PmCliError } from "../shared/errors.js";
+import { PmCliError, type PmCliErrorContext } from "../shared/errors.js";
 
 const reservedItemFieldNames = new Set(ITEM_METADATA_KEY_ORDER);
 
@@ -226,6 +226,7 @@ export function collectRegisteredItemFieldNames(
 export function parseRegisteredItemFieldAssignments(
   rawFields: string[] | undefined,
   registrations: ExtensionRegistrationRegistry | null,
+  resolveCoreFieldRecovery?: (field: string) => Pick<PmCliErrorContext, "recovery" | "nextSteps">,
 ): Record<string, unknown> {
   if (!rawFields || rawFields.length === 0) {
     return {};
@@ -237,21 +238,17 @@ export function parseRegisteredItemFieldAssignments(
     const definition = definitions.get(key);
     if (!definition) {
       if (RESERVED_ITEM_FIELD_NAMES.has(key)) {
-        const flag = `--${key.replaceAll("_", "-")}`;
+        const guidance = resolveCoreFieldRecovery?.(key) ?? {
+          recovery: { provided_fields: [key] },
+          nextSteps: ["Core metadata has no generic --field mutation path. Use the owning lifecycle, evidence, or importer API; inspect pm update <id> --help for declared mutation flags."],
+        };
         throw new PmCliError(
           `--field ${key} is a core item field, not an extension field`,
           EXIT_CODE.USAGE,
           {
             code: "core_item_field_requires_dedicated_flag",
             field: key,
-            recovery: {
-              provided_fields: [key],
-              suggested_flags: [flag],
-            },
-            nextSteps: [
-              `Set the core field with its dedicated flag: pm update <id> ${flag} <value>`,
-              `When closing an item, pm close <id> also accepts ${flag} <value>.`,
-            ],
+            ...guidance,
           },
         );
       }

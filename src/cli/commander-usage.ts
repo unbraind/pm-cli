@@ -1107,51 +1107,12 @@ export async function formatCommanderUsageMessage(
     guidanceOverrides,
     invocationArgs,
   );
-  const {
-    message,
-    commandName,
-    allowedTypes,
-    unknownCommandExamples,
-    unknownCommandNextSteps,
-    attemptedCommand,
-    normalizedInvocationArgs,
-    providedOptionFlags,
-    unknownOptionSuggestions,
-    unknownOptionOtherCommands,
-    unknownOptionOtherCommandsTotal,
-    unknownOptionOtherCommandsTruncated,
-    unknownOptionScope,
-    unknownSubcommandPath,
-    unknownSubcommandToken,
-    unknownSubcommandAllowedValues,
-    suggestedRetryCommand,
-    suggestedRetryArgs,
-    verifiedCollectionItemId,
-    failedExtensions,
-  } = usageContext;
+  const { message, commandName, allowedTypes, ...guidance } = usageContext;
   const formatted = formatCommanderErrorForDisplay(
     message,
     commandName,
     allowedTypes,
-    {
-      unknownCommandExamples,
-      unknownCommandNextSteps,
-      attemptedCommand,
-      normalizedInvocationArgs,
-      providedOptionFlags,
-      unknownOptionSuggestions,
-      unknownOptionOtherCommands,
-      unknownOptionOtherCommandsTotal,
-      unknownOptionOtherCommandsTruncated,
-      unknownOptionScope,
-      unknownSubcommandPath,
-      unknownSubcommandToken,
-      unknownSubcommandAllowedValues,
-      suggestedRetryCommand,
-      suggestedRetryArgs,
-      verifiedCollectionItemId,
-      failedExtensions,
-    },
+    guidance,
   );
   const serviceOverride = await runActiveServiceOverride("help_format", {
     message: formatted,
@@ -1185,28 +1146,7 @@ export async function formatCommanderUsageJson(
     usageContext.commandName,
     usageContext.allowedTypes,
     EXIT_CODE.USAGE,
-    {
-      unknownCommandExamples: usageContext.unknownCommandExamples,
-      unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
-      attemptedCommand: usageContext.attemptedCommand,
-      normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
-      providedOptionFlags: usageContext.providedOptionFlags,
-      unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
-      unknownOptionOtherCommands: usageContext.unknownOptionOtherCommands,
-      unknownOptionOtherCommandsTotal:
-        usageContext.unknownOptionOtherCommandsTotal,
-      unknownOptionOtherCommandsTruncated:
-        usageContext.unknownOptionOtherCommandsTruncated,
-      unknownOptionScope: usageContext.unknownOptionScope,
-      unknownSubcommandPath: usageContext.unknownSubcommandPath,
-      unknownSubcommandToken: usageContext.unknownSubcommandToken,
-      unknownSubcommandAllowedValues:
-        usageContext.unknownSubcommandAllowedValues,
-      suggestedRetryCommand: usageContext.suggestedRetryCommand,
-      suggestedRetryArgs: usageContext.suggestedRetryArgs,
-      verifiedCollectionItemId: usageContext.verifiedCollectionItemId,
-      failedExtensions: usageContext.failedExtensions,
-    },
+    usageContext,
   );
   const projected = lean ? projectLeanErrorEnvelope(envelope) : envelope;
   const accountingRequested = parseBootstrapGlobalOptions(

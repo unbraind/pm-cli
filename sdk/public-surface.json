@@ -2292,6 +2292,19 @@
       ],
       "package_version": "2026.10.11",
       "reason": "Reopen options and results gain optional planning input and recovery. Existing callers remain valid; terminal expectations remain archived and the next calendar release adds explicit active planning guidance."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ContextEvaluationContextResult",
+        "signature ./sdk:ContextEvaluationNextResult",
+        "signature ./sdk:ContextEvaluationReader",
+        "signature ./sdk:parseRegisteredItemFieldAssignments",
+        "signature ./sdk/query:ContextEvaluationContextResult",
+        "signature ./sdk/query:ContextEvaluationNextResult",
+        "signature ./sdk/query:ContextEvaluationReader"
+      ],
+      "package_version": "2026.10.12",
+      "reason": "Widen context evaluation readers to accept universal SDK receipts and structural result fields while preserving legacy result index signatures; add an optional core-field recovery resolver to preserve existing two-argument parser consumers."
     }
   ],
   "entrypoints": {
@@ -5206,7 +5219,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextEvaluationContextResult",
-          "signature": "export interface ContextEvaluationContextResult { high_level?: ContextEvaluationResultItem[]; low_level?: ContextEvaluationResultItem[]; blocked_fallback?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; [key: string]: unknown; }"
+          "signature": "export interface ContextEvaluationContextResult { high_level?: ContextEvaluationResultItem[]; low_level?: ContextEvaluationResultItem[]; blocked_fallback?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; context_intent?: Pick<PmContextIntentReceipt, \"result_omitted\">; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -5218,13 +5231,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextEvaluationNextResult",
-          "signature": "export interface ContextEvaluationNextResult { recommended?: ContextEvaluationResultItem | null; ready?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; [key: string]: unknown; }"
+          "signature": "export interface ContextEvaluationNextResult { recommended?: ContextEvaluationResultItem | null; ready?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; context_intent?: Pick<PmContextIntentReceipt, \"result_omitted\">; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextEvaluationReader",
-          "signature": "export interface ContextEvaluationReader { context(options?: ContextEvaluationReadOptions): Promise<ContextEvaluationContextResult>; next(options?: ContextEvaluationReadOptions): Promise<ContextEvaluationNextResult>; }"
+          "signature": "export interface ContextEvaluationReader { context(options?: ContextEvaluationReadOptions): Promise<PmReadOutputResult<ContextEvaluationContextFields>>; next(options?: ContextEvaluationReadOptions): Promise<PmReadOutputResult<ContextEvaluationNextFields>>; }"
         },
         {
           "classification": "supported",
@@ -12004,7 +12017,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseRegisteredItemFieldAssignments",
-          "signature": "(rawFields: string[] | undefined, registrations: ExtensionRegistrationRegistry | null) => Record<string, unknown> | calls: (rawFields: string[] | undefined, registrations: ExtensionRegistrationRegistry | null) => Record<string, unknown>"
+          "signature": "(rawFields: string[] | undefined, registrations: ExtensionRegistrationRegistry | null, resolveCoreFieldRecovery?: (field: string) => Pick<PmCliErrorContext, \"nextSteps\" | \"recovery\">) => Record<string, unknown> | calls: (rawFields: string[] | undefined, registrations: ExtensionRegistrationRegistry | null, resolveCoreFieldRecovery?: (field: string) => Pick<PmCliErrorContext, \"recovery\" | \"nextSteps\">) => Record<string, unknown>"
         },
         {
           "classification": "supported",
@@ -30496,7 +30509,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextEvaluationContextResult",
-          "signature": "export interface ContextEvaluationContextResult { high_level?: ContextEvaluationResultItem[]; low_level?: ContextEvaluationResultItem[]; blocked_fallback?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; [key: string]: unknown; }"
+          "signature": "export interface ContextEvaluationContextResult { high_level?: ContextEvaluationResultItem[]; low_level?: ContextEvaluationResultItem[]; blocked_fallback?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; context_intent?: Pick<PmContextIntentReceipt, \"result_omitted\">; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -30508,13 +30521,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextEvaluationNextResult",
-          "signature": "export interface ContextEvaluationNextResult { recommended?: ContextEvaluationResultItem | null; ready?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; [key: string]: unknown; }"
+          "signature": "export interface ContextEvaluationNextResult { recommended?: ContextEvaluationResultItem | null; ready?: ContextEvaluationResultItem[]; ranking?: ContextEvaluationResultRanking; context_intent?: Pick<PmContextIntentReceipt, \"result_omitted\">; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ContextEvaluationReader",
-          "signature": "export interface ContextEvaluationReader { context(options?: ContextEvaluationReadOptions): Promise<ContextEvaluationContextResult>; next(options?: ContextEvaluationReadOptions): Promise<ContextEvaluationNextResult>; }"
+          "signature": "export interface ContextEvaluationReader { context(options?: ContextEvaluationReadOptions): Promise<PmReadOutputResult<ContextEvaluationContextFields>>; next(options?: ContextEvaluationReadOptions): Promise<PmReadOutputResult<ContextEvaluationNextFields>>; }"
         },
         {
           "classification": "supported",
@@ -35703,6 +35716,7 @@
     "config_key_unknown",
     "config_value_invalid",
     "conflicting_lifecycle_owner",
+    "context_evaluation_read_incomplete",
     "context_signal_store_invalid",
     "context_signal_store_stale",
     "context_signal_store_write_failed",
