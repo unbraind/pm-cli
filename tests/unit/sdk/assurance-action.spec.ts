@@ -874,6 +874,15 @@ describe("assurance action transport", () => {
         exitCode: EXIT_CODE.USAGE,
         context: { required: expect.stringContaining("definition.policy"), recovery: { suggested_retry_args: ["assurance", "risk", "--help"] } },
       });
+      for (const policy of [{ version: 1 }, { version: 2, families: [] }, { version: 1, evidence_epoch: "invalid", families: [] }, { version: 1, evidence_epoch: "2026-10-11T00:00:00.000Z", families: [null] }]) {
+        await expect(runAssuranceAction({ action: "risk", definition: { policy, change: { files: [] } } }, { path: pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          context: { recovery: { suggested_retry_args: ["assurance", "risk", "--help"] } },
+        });
+      }
+      const changeFailure = await runAssuranceAction({ action: "risk", definition: { ...request, change: { files: [42] } } }, { path: pmPath }).catch((error: unknown) => error);
+      expect(changeFailure).toBeInstanceOf(PmCliError);
+      expect((changeFailure as PmCliError).context).toEqual({});
       const throwingDefinition = new Proxy(
         {},
         {

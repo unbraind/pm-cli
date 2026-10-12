@@ -1,9 +1,10 @@
 /** Real Git proof that positional collection patches retain exact merge evidence. */
 import { execFileSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { hashDocument } from "../../../src/core/history/history.js";
+import { createHistoryEntry, hashDocument } from "../../../src/core/history/history.js";
+import type { HistoryRepairResult } from "../../../src/sdk/history-repair.js";
 import { reanchorHistoryEntries, replayToCanonicalItemDocument, verifyHistoryChain } from "../../../src/core/history/replay.js";
 import { parseItemDocument } from "../../../src/core/item/item-format.js";
 import { runMergeReconcile } from "../../../src/sdk/merge/reconcile.js";
@@ -12,6 +13,43 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import type { HistoryEntry } from "../../../src/types/index.js";
 
 describe("lossless Git collection union", () => {
+  it("reports retained comments and tests through an explicitly forced repair of legacy replay drift", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--type", "Task", "--title", "Retained forced repair", "--create-mode", "progressive",
+        "--comment", "text=Retained comment", "--json"], { expectJson: true, cwd: context.tempRoot });
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+      expect(context.runCli(["test", id, "--add", "command=node kept.mjs"], { cwd: context.tempRoot }).code).toBe(0);
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const original = await readFile(itemPath, "utf8");
+      const document = parseItemDocument(original);
+      const commentsDrift = structuredClone(document);
+      commentsDrift.metadata.comments!.push(structuredClone(commentsDrift.metadata.comments![0]));
+      const provenanceDrift = structuredClone(commentsDrift);
+      provenanceDrift.metadata.tests![0].provenance!.source_kind = "merge_union";
+      const events = [
+        createHistoryEntry({ before: document, after: commentsDrift, author: "comment-writer", op: "comment_add", nowIso: "2026-10-12T01:00:00.000Z" }),
+        createHistoryEntry({ before: commentsDrift, after: provenanceDrift, author: "test-writer", op: "tests_add", nowIso: "2026-10-12T01:00:01.000Z" }),
+      ];
+      await appendFile(historyPath, events.map((event) => JSON.stringify(event)).join("\n") + "\n");
+      const repaired = context.runCli(["history-repair", id, "--force", "--json"], { expectJson: true, cwd: context.tempRoot });
+      expect(repaired.code, repaired.stderr).toBe(0);
+      const result = repaired.json as HistoryRepairResult;
+      expect(result.history.verify_ok).toBe(true);
+      expect(result.reconciliation).toMatchObject({ preserved_fields: ["comments", "tests"], discarded_events: [], discarded_authors: [], recovery_hint: null });
+      expect(result.reconciliation?.preserved_events).toEqual([
+        expect.objectContaining({ op: "comment_add", author: "comment-writer", fields: ["comments"] }),
+        expect.objectContaining({ op: "tests_add", author: "test-writer", fields: ["tests"] }),
+      ]);
+      expect(result.warnings.some((warning) => warning.startsWith("history_repair_reconcile_discards_events"))).toBe(false);
+      expect(await readFile(itemPath, "utf8")).toBe(original);
+      const verified = context.runCli(["history", id, "--verify", "--json"], { expectJson: true, cwd: context.tempRoot });
+      expect(verified.code).toBe(0);
+      expect((verified.json as { verification: { current_matches_latest: boolean } }).verification.current_matches_latest).toBe(true);
+    });
+  });
+
   it.each([false, true])("settles reordered comments and branch-local test provenance without force (prior reconciliation: %s)", async (priorReconciliation) => {
     await withTempPmPath(async (context) => {
       const git = (...args: string[]): string => execFileSync("git", args, {

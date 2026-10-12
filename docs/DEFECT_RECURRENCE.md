@@ -57,6 +57,11 @@ example with an explicitly empty family list; it demonstrates the request
 shape and makes no project coverage claim. Use the project's declared policy
 for real decisions, as below. A missing or invalid policy object returns
 structured help recovery without choosing a policy on the caller's behalf.
+SDK policy parsing throws `DefectRecurrencePolicyParseError`, a `TypeError`
+subclass exported by the root and governance entrypoints. This identifies
+policy validation without depending on message text; its stable `code` is
+`defect_recurrence_policy_invalid`. Change and lineage
+validation retain their separate error contracts.
 
 ```bash
 risk_request=$(jq -cn \

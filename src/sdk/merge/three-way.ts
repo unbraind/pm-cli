@@ -171,6 +171,46 @@ function commonHistoryPrefixLength(
   return shared;
 }
 
+/** Interleave available events by time without violating either original branch's event order. */
+function orderHistoryUnionSuffix(ours: HistoryEntry[], theirs: HistoryEntry[], incoming: HistoryEntry[], oursIdentities: ReadonlySet<string>): HistoryEntry[] {
+  const entries = [...ours, ...incoming];
+  const positions = new Map(entries.map((entry, index) => [entry, index]));
+  const aliases = new Map(entries.map((entry, index) => [historyEntryIdentity(entry), index]));
+  const successors = entries.map(() => new Set<number>());
+  for (const branch of [ours, theirs]) {
+    const coordinates = branch.map((entry) => positions.get(entry) ?? aliases.get(historyEntryIdentity(entry))!);
+    for (let index = 1; index < coordinates.length; index += 1) {
+      if (coordinates[index - 1] !== coordinates[index]) successors[coordinates[index - 1]].add(coordinates[index]);
+    }
+  }
+  const predecessors = entries.map(() => 0);
+  for (const targets of successors) {
+    for (const target of targets) predecessors[target] += 1;
+  }
+  const ready = entries.map((_, index) => index).filter((index) => predecessors[index] === 0);
+  const result: HistoryEntry[] = [];
+  while (ready.length > 0) {
+    ready.sort((leftIndex, rightIndex) => {
+      const left = entries[leftIndex];
+      const right = entries[rightIndex];
+      const byTs = compareTimestampStrings(left.ts, right.ts);
+      const leftIdentity = historyEntryIdentity(left);
+      const rightIdentity = historyEntryIdentity(right);
+      return byTs || Number(oursIdentities.has(rightIdentity)) - Number(oursIdentities.has(leftIdentity));
+    });
+    const index = ready.shift()!;
+    result.push(entries[index]);
+    for (const target of successors[index]) {
+      predecessors[target] -= 1;
+      if (predecessors[target] === 0) ready.push(target);
+    }
+  }
+  if (result.length !== entries.length) {
+    throw new PmCliError("History union cannot preserve contradictory original branch event orders; leave the file unresolved for manual recovery.", EXIT_CODE.GENERIC_FAILURE);
+  }
+  return result;
+}
+
 /** Retain one cumulative document per branch, avoiding a full snapshot for every event. */
 interface HistoryBranchProjection {
   entries: HistoryEntry[];
@@ -199,6 +239,14 @@ function advanceHistoryBranch(state: HistoryBranchProjection, target: number | u
   return state.document;
 }
 
+/** Refuse ambiguous duplicate coordinates instead of attributing future branch effects to an earlier event. */
+function advanceOrderedHistoryBranch(state: HistoryBranchProjection, target: number | undefined): ReplayDocument {
+  if (target !== undefined && target > state.index + 1) {
+    throw new PmCliError("History union cannot attribute multiple original branch events to one semantic identity; preserve the source histories for manual recovery.", EXIT_CODE.GENERIC_FAILURE);
+  }
+  return advanceHistoryBranch(state, target);
+}
+
 /** Rebase collection effects from branch snapshots rather than replaying stale array positions. */
 function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[], shared: number): NonNullable<Parameters<typeof reanchorHistoryEntries>[2]>["projectPatch"] {
   if (shared === 0) return undefined;
@@ -211,8 +259,8 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
   return (entry, current) => {
     if (position++ < shared) return entry.patch;
     const identity = historyEntryIdentity(entry);
-    const oursState = advanceHistoryBranch(oursBranch, oursBranch.positions.get(identity));
-    const theirsState = advanceHistoryBranch(theirsBranch, theirsBranch.positions.get(identity));
+    const oursState = advanceOrderedHistoryBranch(oursBranch, oursBranch.positions.get(identity));
+    const theirsState = advanceOrderedHistoryBranch(theirsBranch, theirsBranch.positions.get(identity));
     const scalarPatch = normalizeReplayPatchOps(entry.patch).filter((operation) => {
       const [root, field] = operation.path.slice(1).split("/");
       return root !== "metadata" || !unionFields.has(field);
@@ -235,7 +283,8 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
  * Deterministically merge two diverged versions of one append-only history
  * JSONL stream. Identical streams and one-sided fast-forwards keep the winning
  * side byte-for-byte; genuinely diverged streams are merged as the shared
- * prefix plus both suffixes ordered by timestamp (ours-first on ties), then
+ * prefix plus both suffixes ordered by original branch dependencies, choosing
+ * by timestamp among available events (ours-first on ties), then
  * hash re-anchored so the resulting chain verifies again. No side's events are
  * ever discarded: content divergence is preserved for the post-merge
  * reconciliation pass (`pm validate` + `pm history-repair`) instead of being
@@ -306,20 +355,7 @@ export function mergeHistoryStreams(
   const theirsSuffix = theirs
     .slice(shared)
     .filter((entry) => !seenIdentities.has(historyEntryIdentity(entry)));
-  const mergedSuffix = [...oursSuffix, ...theirsSuffix].sort((left, right) => {
-    const byTs = compareTimestampStrings(left.ts, right.ts);
-    if (byTs !== 0) {
-      return byTs;
-    }
-    const leftFromOurs = seenIdentities.has(historyEntryIdentity(left));
-    const rightFromOurs = seenIdentities.has(historyEntryIdentity(right));
-    if (leftFromOurs !== rightFromOurs) {
-      return Number(rightFromOurs) - Number(leftFromOurs);
-    }
-    return historyEntryIdentity(left).localeCompare(
-      historyEntryIdentity(right),
-    );
-  });
+  const mergedSuffix = orderHistoryUnionSuffix(oursSuffix, theirs.slice(shared), theirsSuffix, seenIdentities);
   const reanchored = reanchorHistoryEntries(
     [...ours.slice(0, shared), ...mergedSuffix],
     undefined,

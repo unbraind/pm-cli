@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1990,
+    "covered_symbols": 1991,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1991
+    "required_symbols": 1992
   },
   "breaking_acknowledgements": [
     {
@@ -6167,6 +6167,12 @@
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
           "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "class",
+          "name": "DefectRecurrencePolicyParseError",
+          "signature": "export declare class DefectRecurrencePolicyParseError extends TypeError { readonly code = \"defect_recurrence_policy_invalid\"; }"
         },
         {
           "classification": "supported",
@@ -27053,6 +27059,12 @@
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
           "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "class",
+          "name": "DefectRecurrencePolicyParseError",
+          "signature": "export declare class DefectRecurrencePolicyParseError extends TypeError { readonly code = \"defect_recurrence_policy_invalid\"; }"
         },
         {
           "classification": "supported",

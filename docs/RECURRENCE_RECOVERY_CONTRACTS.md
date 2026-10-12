@@ -31,8 +31,9 @@ The command accepts only the workspace open or in-progress status. While
 holding the item lock it verifies that the current status is terminal, records
 one `reopen` history event with structured recurrence context, and delegates the
 state change to the normal update pipeline. Active metadata drops stale
-`closed_at`, `completed_at`, `close_reason`, `resolution`, `expected_result`,
-`actual_result`, and `fixed_version` values. Earlier history retains the exact
+`closed_at`, `completed_at`, `close_reason`, `resolution`, `actual_result`, and
+`fixed_version` values. It clears the prior `expected_result` and retains a new
+current expectation when explicitly supplied. Earlier history retains the exact
 closure values.
 
 Supply `--expected-result` (`--expected`) for the current active expectation.

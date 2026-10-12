@@ -98,9 +98,31 @@ describe("public merge-safety SDK primitives", () => {
       historyEntriesToRaw([seed, entry(base, other, "2026-07-19T00:03:00.000Z", "theirs")]));
     const entries = merged.merged.trim().split("\n").map((line) => JSON.parse(line));
     expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
+    expect(entries.map((event) => event.author)).toEqual(["seed", "theirs", "ours", "ours"]);
+    const commentsAt = (count: number) => (reanchorHistoryEntries(entries.slice(0, count)).finalDocument.metadata.comments as Array<{ text: string }>).map((comment) => comment.text);
+    expect(commentsAt(2)).toEqual(["Other"]);
+    expect(commentsAt(3)).toEqual(["First", "Other"]);
+    expect(commentsAt(4)).toEqual(["First", "Second", "Other"]);
     const replay = reanchorHistoryEntries(entries).finalDocument;
     expect((replay.metadata.comments as Array<{ text: string }>).map((comment) => comment.text)).toEqual(["First", "Second", "Other"]);
     expect(replay.metadata.acceptance_criteria).toBe("Base criterion; First criterion; Other criterion");
+  });
+
+  it("refuses contradictory branch ordering and ambiguous repeated event coordinates", () => {
+    const base = item("base", "2026-07-19T00:00:00.000Z");
+    const first = { ...base, metadata: { ...base.metadata, title: "first" } };
+    const second = { ...base, metadata: { ...base.metadata, title: "second" } };
+    const event = (before: ItemDocument, after: ItemDocument, author: string) => createHistoryEntry({ before, after, author, nowIso: "2026-07-19T00:01:00.000Z", op: "update" });
+    const seed = createHistoryEntry({ before: { metadata: {} as ItemDocument["metadata"], body: "" }, after: base, author: "seed", nowIso: "2026-07-19T00:00:00.000Z", op: "create" });
+    const raw = (events: ReturnType<typeof createHistoryEntry>[]) => historyEntriesToRaw([seed, ...events]);
+    expect(() => mergeHistoryStreams(raw([]), raw([event(base, first, "first"), event(first, second, "second")]),
+      raw([event(base, second, "second"), event(second, first, "first")]))).toThrow("contradictory original branch event orders");
+    const ours = item("ours", base.metadata.updated_at);
+    const theirs = item("theirs", base.metadata.updated_at);
+    const common = event(theirs, first, "common");
+    const duplicate = sealHistoryRecord({ ...common, before_hash: common.after_hash });
+    expect(() => mergeHistoryStreams(raw([]), raw([event(base, ours, "ours"), event(ours, first, "common")]),
+      raw([event(base, theirs, "theirs"), common, duplicate]))).toThrow("multiple original branch events to one semantic identity");
   });
 
   it("refuses invalid original branch coordinates and preserves prefixless legacy merge behavior", () => {

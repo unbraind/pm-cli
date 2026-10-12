@@ -507,7 +507,7 @@ pm history-repair <item-id>
 pm merge reconcile --dry-run --json
 ```
 
-`history-repair` records the reconciliation patch and classifies its changed fields against the final item. Append-only collection unions and deterministic reordering are reported as preserved context without a data-loss warning. Fields whose replayed values are actually removed or replaced remain loud with discarded event authors/operations and recovery guidance. Re-apply any intended losing mutation as a normal `pm update` so it remains explicit and auditable.
+`history-repair` records the reconciliation patch and classifies its changed fields against the final item. Append-only collection unions and deterministic reordering are reported as preserved context without a data-loss warning. For native comments, docs and tests, duplicate copies of the same identified record and changes between the known `local_mutation`/`merge_union` display markers are also reported as preserved context. Author, creation time, origin, payload and unknown-field changes remain significant. This diagnosis does not authorize linked commands or relax exact receipt hashes. Fields whose replayed values are actually removed or replaced remain loud with discarded event authors/operations and recovery guidance. Re-apply any intended losing mutation as a normal `pm update` so it remains explicit and auditable.
 
 History events now declare an item-hash epoch. Epochs are immutable writer
 contracts, not aliases for the current item serializer: epoch 1 sorts linked

@@ -14,6 +14,51 @@ function entry(author: string, patch: HistoryEntry["patch"]): HistoryEntry {
 }
 
 describe("history repair reconciliation analysis", () => {
+  it("reports retained native records despite duplicate replay positions and union display markers", () => {
+    const comment = { created_at: "2026-10-11T00:00:00.000Z", author: "writer", text: "Kept context" };
+    const doc = { path: "docs/kept.md", author: "writer", source_kind: "merge_union", custom: { retained: true } };
+    const test = { command: "node kept.mjs", scope: "project", provenance: { author: "writer", created_at: "2026-10-11T00:00:00.000Z", source_ref: "original", source_kind: "merge_union" } };
+    const replay = { metadata: { comments: [comment, comment], docs: [doc], tests: [test] }, body: "" };
+    const kept = { metadata: { comments: [comment], docs: [{ ...doc, source_kind: "local_mutation" }], tests: [{ ...test, provenance: { ...test.provenance, source_kind: "local_mutation" } }] }, body: "" };
+    const before = structuredClone(replay);
+    const report = analyzeReconciliationDiscard([entry("writer", [
+      { op: "add", path: "/metadata/comments/0", value: comment },
+      { op: "add", path: "/metadata/docs/0", value: doc },
+      { op: "add", path: "/metadata/tests/0", value: test },
+    ])], replay, kept);
+    expect(report).toMatchObject({ preserved_fields: ["comments", "docs", "tests"], discarded_events: [], discarded_authors: [], recovery_hint: null });
+    expect(report?.preserved_events).toEqual([expect.objectContaining({ author: "writer", fields: ["comments", "docs", "tests"] })]);
+    expect(replay).toEqual(before);
+  });
+
+  it.each([
+    { command: "node changed.mjs" },
+    { scope: "global" },
+    { provenance: { author: "other", source_kind: "local_mutation" } },
+    { provenance: null },
+    { provenance: ["unknown"] },
+    { provenance: { author: "writer", source_kind: "unknown" } },
+    { provenance: { author: "writer" } },
+    { custom: undefined },
+  ])("keeps substantive linked-record changes loud: %s", (changed) => {
+    const test = { command: "node kept.mjs", scope: "project", provenance: { author: "writer", source_kind: "merge_union" }, custom: "must survive" };
+    const report = analyzeReconciliationDiscard([entry("writer", [{ op: "add", path: "/metadata/tests/0", value: test }])],
+      { metadata: { tests: [test] }, body: "" }, { metadata: { tests: [{ ...test, ...changed }] }, body: "" });
+    expect(report).toMatchObject({ reverted_fields: ["tests"], preserved_fields: [], discarded_authors: ["writer"] });
+  });
+
+  it.each([null, "legacy", [], {}, { created_at: "2026-10-11T00:00:00.000Z" }, { created_at: "2026-10-11T00:00:00.000Z", author: "writer" }])("does not collapse unidentified native rows: %s", (row) => {
+    const report = analyzeReconciliationDiscard([], { metadata: { comments: [row, row], docs: [row, row], tests: [row, row] }, body: "" },
+      { metadata: { comments: [row], docs: [row], tests: [row] }, body: "" });
+    expect(report?.reverted_fields).toEqual(["comments", "docs", "tests"]);
+  });
+
+  it("preserves path-based tests and scalar/native shape refusals", () => {
+    const report = analyzeReconciliationDiscard([], { metadata: { tests: [{ path: "tests/kept.ts" }], comments: [], docs: [{ path: "docs/kept.md" }] }, body: "" },
+      { metadata: { tests: [{ path: "tests/kept.ts", custom: "extra" }], comments: "invalid", docs: [] }, body: "" });
+    expect(report).toMatchObject({ preserved_fields: ["tests"], reverted_fields: ["comments", "docs"] });
+  });
+
   it("returns no report when item and replay agree", () => {
     const replay = { metadata: { title: "same" }, body: "" };
     expect(analyzeReconciliationDiscard([], replay, replay)).toBeUndefined();

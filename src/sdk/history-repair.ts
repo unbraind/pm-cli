@@ -227,6 +227,34 @@ function replayFieldValue(
     : (document.metadata as unknown as Record<string, unknown>)[field];
 }
 
+/** Require native collection identities before treating repeated records as the same retained context. */
+function isDiagnosticCollectionRow(field: string, value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  const row = value as Record<string, unknown>;
+  if (field === "comments") return typeof row.created_at === "string" && typeof row.author === "string" && typeof row.text === "string";
+  return typeof row.path === "string" || (field === "tests" && typeof row.command === "string");
+}
+
+/** Normalize only the known local/union display marker; retain authors, origins, timestamps and unknown fields. */
+function diagnosticLinkedRecord(value: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...value };
+  if (result.source_kind === "merge_union") result.source_kind = "local_mutation";
+  if (result.provenance !== null && typeof result.provenance === "object" && !Array.isArray(result.provenance)) {
+    const provenance = { ...result.provenance } as Record<string, unknown>;
+    if (provenance.source_kind === "merge_union") provenance.source_kind = "local_mutation";
+    result.provenance = provenance;
+  }
+  return result;
+}
+
+/** Compare native retained context independently of duplicate replay positions and union display markers. */
+function diagnosticCollectionValue(field: string, value: unknown): unknown {
+  if (!Array.isArray(value) || !["comments", "docs", "tests"].includes(field)) return value;
+  if (!value.every((row) => isDiagnosticCollectionRow(field, row))) return value;
+  const rows = value.map((row) => field === "comments" ? row : diagnosticLinkedRecord(row));
+  return [...new Map(rows.map((row) => [stableStringify(row), row])).values()];
+}
+
 /**
  * Report whether the replayed value survives inside the reconciled value.
  *
@@ -335,8 +363,8 @@ export function analyzeReconciliationDiscard(
   const preservedFields = new Set(
     [...reconciledFields].filter((field) =>
       isReplayValuePreserved(
-        replayFieldValue(finalReplay, field),
-        replayFieldValue(currentItemReplay, field),
+        diagnosticCollectionValue(field, replayFieldValue(finalReplay, field)),
+        diagnosticCollectionValue(field, replayFieldValue(currentItemReplay, field)),
       ),
     ),
   );
