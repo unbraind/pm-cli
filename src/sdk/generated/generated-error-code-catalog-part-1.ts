@@ -628,6 +628,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "dependency_cardinality_created",
+    meaning: "Dependency cardinality created condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/graph/cardinality-integrity.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "dependency_cardinality_created",
+    aliases: [],
+  },
+  {
     code: "dependency_edge_not_allowed",
     meaning: "Dependency edge not allowed condition.",
     stability: "stable",
@@ -2650,19 +2663,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["core/diagnostics/remediation.ts", "sdk/merge/reconcile.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_receipt_evidence_invalid",
-    aliases: [],
-  },
-  {
-    code: "merge_receipt_history_reference_missing",
-    meaning: "Merge receipt history reference missing condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/diagnostics/remediation.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_receipt_history_reference_missing",
     aliases: [],
   },
 ];

@@ -41,6 +41,9 @@ export { isSafeReceiptId } from "./receipt-schema.js";
 const execFileAsync = promisify(execFile);
 const RECEIPT_FILE_MAX_BYTES = 16 * 1024 * 1024;
 const RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT = 100;
+// Commit 182639fa3 introduced sealed history records; older receipt summaries
+// omitted requested_preference_applied and cannot retroactively carry a seal.
+const SEALED_MERGE_AUDIT_INTRODUCED_AT = Date.parse("2026-09-03T06:15:48.000Z");
 
 /** One clone-local merge receipt with recoverable branch values. */
 export interface MergeDecisionReceipt {
@@ -356,6 +359,33 @@ function mergeReceiptCopyLifecycle(
   return { ...pendingLocal, state: "pending" };
 }
 
+/** Admit only the historical unsealed schema, retaining exact receipt identity and decision hashes. */
+function legacySettlementSummary(
+  summary: unknown,
+  entry: HistoryEntry,
+  receipt: MergeDecisionReceipt,
+): unknown {
+  const historical = [
+    receipt.settlement === undefined, receipt.value_policy === undefined,
+    receipt.merged_field_hashes === undefined, receipt.operation === undefined,
+    Date.parse(entry.ts) < SEALED_MERGE_AUDIT_INTRODUCED_AT,
+    Date.parse(receipt.created_at) < SEALED_MERGE_AUDIT_INTRODUCED_AT,
+    Date.parse(entry.ts) >= Date.parse(receipt.created_at),
+    typeof summary === "object", summary !== null, !Array.isArray(summary),
+  ].every(Boolean);
+  if (!historical) return undefined;
+  const { preferred, ...record } = summary as Record<string, unknown>;
+  if (preferred !== undefined && record.requested_preference !== undefined) return undefined;
+  return {
+    ...record,
+    requested_preference: record.requested_preference === undefined ? preferred : record.requested_preference,
+    requested_preference_applied: record.requested_preference_applied === undefined
+      ? record.conflict_resolution === undefined || record.conflict_resolution === "preferred_side"
+      : record.requested_preference_applied,
+    conflict_resolution: record.conflict_resolution === undefined ? "preferred_side" : record.conflict_resolution,
+  };
+}
+
 /** Keep unaudited durable lifecycle flags pending; verified record context must match the complete disposition. */
 async function retainAuditedDurableSettlements(
   receipts: Map<string, MergeDecisionReceipt>,
@@ -385,11 +415,15 @@ async function retainAuditedDurableSettlements(
       ...(abandoned ? { reason: receipt.settlement, operation: receipt.operation } : {}),
     });
     const audited = entries.some((entry) => {
-      if (entry.op !== "merge_reconcile" || entry.record_hash_version === undefined) return false;
+      if (entry.op !== "merge_reconcile") return false;
       const merge = entry.context?.merge;
       if (typeof merge !== "object" || merge === null || Array.isArray(merge)) return false;
       const summaries = (merge as Record<string, unknown>)[abandoned ? "abandoned_receipts" : "receipts"];
-      return Array.isArray(summaries) && summaries.some((summary: unknown) => stableStringify(summary) === expected);
+      return Array.isArray(summaries) && summaries.some((summary: unknown) =>
+        stableStringify(entry.record_hash_version === undefined
+          ? legacySettlementSummary(summary, entry, durable)
+          : summary) === expected,
+      );
     });
     if (!audited) {
       const { reconciled_at: _reconciledAt, settlement: _settlement, ...pending } = receipt;

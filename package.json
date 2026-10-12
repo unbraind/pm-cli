@@ -254,11 +254,11 @@
     "greptile": "^3.6.1",
     "jscpd": "^5.4.0",
     "knip": "^6.39.0",
-    "marked": "18.0.14",
+    "marked": "18.1.0",
     "parse5": "8.0.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.0",
+    "typescript-eslint": "^8.71.1",
     "vitest": "^4.1.11"
   }
 }

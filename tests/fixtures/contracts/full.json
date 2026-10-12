@@ -20776,6 +20776,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "dependency_cardinality_created",
+      "class": "usage",
+      "code": "dependency_cardinality_created",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Dependency cardinality created condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/graph/cardinality-integrity.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "dependency_edge_not_allowed",
       "class": "usage",
       "code": "dependency_edge_not_allowed",

@@ -1,0 +1,125 @@
+{
+  "capture_source": "captured_verbatim",
+  "capture_provenance": "https://github.com/unbraind/pm-beads/tree/25561a2/.agents/pm; receipt and summary projections captured 2026-10-12 for pm-tknnzp",
+  "samples": [
+    {
+      "receipt": {
+        "version": 1,
+        "id": "4c0368f9-377c-43bd-86ca-9aa1d54dd108",
+        "item_path": ".agents/pm/issues/pm-beads-1uz3.toon",
+        "item_id": "pm-beads-1uz3",
+        "requested_preference": "ours",
+        "conflict_resolution": "stable_value_order",
+        "fields_from_theirs": [
+          "assignee"
+        ],
+        "union_fields": [],
+        "decisions": [
+          {
+            "field": "actual_result",
+            "base": null,
+            "ours": null,
+            "theirs": null,
+            "retained": {
+              "pm_value_hash": "97d5c3bab3c4225f0dcce4d4892066f03127a396a441586cb8b5db72e8cb0e2d"
+            },
+            "discarded": {
+              "pm_value_hash": "44b09ffc1577d793995314a023e09810850993c23341c400b68e9c3f58324b0a"
+            }
+          },
+          {
+            "field": "expected_result",
+            "base": null,
+            "ours": null,
+            "theirs": null,
+            "retained": {
+              "pm_value_hash": "e7a226bd9aebead915f76f9ab893f3af50cafdf030fdd42b84728935fe451821"
+            },
+            "discarded": {
+              "pm_value_hash": "c8b18ce02ff022fa62126048eb41435966fb7058db859d012e7bd8913f921575"
+            }
+          },
+          {
+            "field": "status",
+            "base": null,
+            "ours": null,
+            "theirs": null,
+            "retained": {
+              "pm_value_hash": "02e31f51aa8b1b6a622c4f7c30fab328d711cad4c9da74b9965ada8aa15d9df2"
+            },
+            "discarded": {
+              "pm_value_hash": "de2bc7968076346e1ae2e62d3fd6385361b3855025678cd2732d9132eb9965cb"
+            }
+          }
+        ],
+        "state": "reconciled",
+        "created_at": "2026-08-22T08:10:19.524Z",
+        "value_availability": "hash_only",
+        "reconciled_at": "2026-08-22T09:30:05.835Z"
+      },
+      "summary": {
+        "receipt_id": "4c0368f9-377c-43bd-86ca-9aa1d54dd108",
+        "item_id": "pm-beads-1uz3",
+        "item_path": ".agents/pm/issues/pm-beads-1uz3.toon",
+        "conflict_fields": [
+          "actual_result",
+          "expected_result",
+          "status"
+        ],
+        "fields_from_theirs": [
+          "assignee"
+        ],
+        "union_fields": [],
+        "requested_preference": "ours",
+        "conflict_resolution": "stable_value_order",
+        "decisions": [
+          {
+            "field": "actual_result",
+            "retained_hash": "97d5c3bab3c4225f0dcce4d4892066f03127a396a441586cb8b5db72e8cb0e2d",
+            "discarded_hash": "44b09ffc1577d793995314a023e09810850993c23341c400b68e9c3f58324b0a"
+          },
+          {
+            "field": "expected_result",
+            "retained_hash": "e7a226bd9aebead915f76f9ab893f3af50cafdf030fdd42b84728935fe451821",
+            "discarded_hash": "c8b18ce02ff022fa62126048eb41435966fb7058db859d012e7bd8913f921575"
+          },
+          {
+            "field": "status",
+            "retained_hash": "02e31f51aa8b1b6a622c4f7c30fab328d711cad4c9da74b9965ada8aa15d9df2",
+            "discarded_hash": "de2bc7968076346e1ae2e62d3fd6385361b3855025678cd2732d9132eb9965cb"
+          }
+        ]
+      },
+      "audit_timestamp": "2026-08-22T09:30:05.807Z"
+    },
+    {
+      "receipt": {
+        "version": 1,
+        "id": "8c598717-0821-4fae-aeef-abd0b25c9509",
+        "item_path": ".agents/pm/issues/pm-beads-y76h.toon",
+        "item_id": "pm-beads-y76h",
+        "requested_preference": "ours",
+        "conflict_resolution": "stable_value_order",
+        "fields_from_theirs": [],
+        "union_fields": [],
+        "decisions": [],
+        "state": "reconciled",
+        "created_at": "2026-08-22T08:10:18.632Z",
+        "value_availability": "hash_only",
+        "reconciled_at": "2026-08-22T09:30:05.835Z"
+      },
+      "summary": {
+        "receipt_id": "8c598717-0821-4fae-aeef-abd0b25c9509",
+        "item_id": "pm-beads-y76h",
+        "item_path": ".agents/pm/issues/pm-beads-y76h.toon",
+        "conflict_fields": [],
+        "fields_from_theirs": [],
+        "union_fields": [],
+        "requested_preference": "ours",
+        "conflict_resolution": "stable_value_order",
+        "decisions": []
+      },
+      "audit_timestamp": "2026-08-22T09:30:05.798Z"
+    }
+  ]
+}

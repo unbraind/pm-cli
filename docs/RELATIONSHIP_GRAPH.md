@@ -10,6 +10,32 @@ The alternatives were rejected as follows: a closed enum cannot model applicatio
 
 ## Contract
 
+Dependency mutation admission is tracked by [pm-7dsolo](../.agents/pm/issues/pm-7dsolo.toon).
+`create --dep`, `update --dep`, `update --dep-remove`, bulk updates, and their
+SDK actions resolve kinds and aliases through the active workspace registry.
+For example, an extension can register `ships_before` with alias
+`precedes_ship`, then use `--dep id=<target>,kind=precedes_ship`; storage and
+history record `ships_before`. Ordering advice, self-edge refusals, and
+hierarchy validation use those same registered semantics. Disabling or
+uninstalling the registration refuses new dependency writes before item or history changes.
+The refusal lists active canonical kinds and explains how to enable the owning
+extension. `DependencyKind` is a string identifier: `DEPENDENCY_KIND_VALUES`
+describes built-in spellings rather than the complete workspace vocabulary.
+
+Non-hierarchy kinds with `outgoing: "one"` or `incoming: "one"` also reject
+new conflicting logical endpoints before persistence. Duplicate provenance
+rows do not consume another logical endpoint; unchanged historical debt and
+strict repairs remain allowed. One removal plus one addition is validated as
+the final dependency set. Limited-cardinality writers share the workspace
+integrity lock with hierarchy writers, so concurrent updates cannot both
+validate against the same empty snapshot.
+`assertNonHierarchyCardinalityMutationAllowed` and `RelationshipCardinalityItem`
+are public root/graph SDK exports for comparing minimal immutable item
+projections. The guard reports `dependency_cardinality_created` with a typed
+`relationship_cardinality` context. Native mutations compose it with the
+existing richer hierarchy validator; it does not infer semantics for an
+inactive or unknown kind.
+
 Each relationship kind declares direction, inverse, a traversal family,
 optional typed-outcome traversal direction, ordering and hierarchy
 participation, optional temporal order, incoming and outgoing cardinality,

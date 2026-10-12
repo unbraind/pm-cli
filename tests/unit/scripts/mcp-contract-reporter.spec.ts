@@ -8,6 +8,14 @@ import McpContractReporter, { MCP_OPTION_WARNING_ALLOWLIST } from "../../../scri
 import { withTempDir } from "../../helpers/temp.js";
 
 describe("MCP contract warning gate", () => {
+  it("retains warning failures when late logs have no module attribution", () => {
+    const reporter = new McpContractReporter();
+    reporter.onInit({ state: { getReportedEntityById: () => ({ fullName: "late log" }) } } as unknown as Vitest);
+    const log = { content: "ordinary late diagnostic", taskId: "finished-task", type: "stderr" as const, time: 0, size: 1 };
+    expect(() => reporter.onUserConsoleLog(log)).not.toThrow();
+    expect(() => reporter.onUserConsoleLog({ ...log, content: '[pm-mcp] Unknown option "drift" for pm_run action "get"' })).not.toThrow();
+    expect(() => reporter.onTestRunEnd()).toThrow("<unknown> > late log: drift:pm_run:get");
+  });
   it("rejects new option warnings and limits exemptions to an exact test and warning identity", () => {
     const entry = MCP_OPTION_WARNING_ALLOWLIST[0];
     const reporter = new McpContractReporter();

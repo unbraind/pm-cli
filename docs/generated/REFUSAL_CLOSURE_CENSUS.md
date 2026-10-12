@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 403
+- Catalog error codes: 404
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 384
-- Coverage fraction: 0.047146
+- Uncovered error codes: 385
+- Coverage fraction: 0.047030
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -62,6 +62,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `context_takes_no_item_argument` | `context_takes_no_item_argument` | uncovered | none | 0 |
 | `core_item_field_requires_dedicated_flag` | `core_item_field_requires_dedicated_flag` | uncovered | none | 0 |
 | `create_positional_type_without_title` | `create_positional_type_without_title` | uncovered | none | 0 |
+| `dependency_cardinality_created` | `dependency_cardinality_created` | uncovered | none | 0 |
 | `dependency_edge_not_allowed` | `dependency_edge_not_allowed` | uncovered | none | 0 |
 | `dependency_flag_value_invalid` | `dependency_flag_value_invalid` | uncovered | none | 0 |
 | `dependency_remove_no_match` | `dependency_remove_no_match` | uncovered | none | 0 |

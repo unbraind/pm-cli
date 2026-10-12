@@ -341,6 +341,12 @@ async function settleProvenReceipts(params: {
   return receiptsToSettle.length;
 }
 
+/** Describe the audited acceptance route only when pending receipts still require review. */
+function receiptReviewGuidance(pendingCount: number, complete: boolean): string | undefined {
+  if (pendingCount === 0 || complete) return undefined;
+  return 'If receipt proof is unavailable or competing values were discarded, first review receipts.summaries and repair.streams and re-apply intended values. Only with explicit authority to accept that review, run pm merge reconcile --force --message "<reviewed receipt disposition and rationale>". This appends an audit event; it does not restore missing evidence or discarded values.';
+}
+
 /**
  * Preview or apply post-merge history reconciliation and immediately validate
  * the two merge-critical invariants. The default remains explicit and safe:
@@ -493,11 +499,13 @@ export async function runMergeReconcile(
     missingBefore.truncated || missingAfter.truncated
       ? "Missing receipt coordinates exceed the bounded detail response; each reviewed --force pass can disposition only the reported eligible batch. Repeat dry-run and --force passes until receipts.missing_history_references_after=0 and pm merge reconcile returns ok=true."
       : undefined;
+  const explicitReviewGuidance = receiptReviewGuidance(pendingReceipts.length, ok);
   const guidance = (
     dryRun
       ? [
           "Review repair.streams, then rerun pm merge reconcile without --dry-run to apply audited repairs.",
           boundedBatchGuidance,
+          explicitReviewGuidance,
           "No Git hook is installed automatically; invoke this command from an explicit post-merge hook only when your repository policy opts in.",
         ]
       : ok
@@ -508,6 +516,7 @@ export async function runMergeReconcile(
         : [
             "Reconciliation remains incomplete; inspect repair failures and non-green validation checks before retrying.",
             boundedBatchGuidance,
+            explicitReviewGuidance,
             ...(legacyDispositionCandidates.length > 0 &&
             recordedLegacyDispositionCount === 0
               ? [

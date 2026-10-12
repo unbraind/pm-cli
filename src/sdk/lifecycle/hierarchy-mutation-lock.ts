@@ -1,7 +1,7 @@
 /**
  * @module sdk/lifecycle/hierarchy-mutation-lock
  *
- * Serializes hierarchy-affecting create and update transactions so each
+ * Serializes hierarchy and limited-cardinality create and update transactions so each
  * before/after integrity decision is made from a fresh workspace snapshot.
  */
 import { acquireLock } from "../../core/lock/lock.js";
@@ -18,7 +18,7 @@ export interface HierarchyMutationLockOptions {
   ttlSeconds: number;
   /** Tracker-configured bounded lock wait. */
   waitMs: number;
-  /** Whether this mutation can add hierarchy evidence. */
+  /** Whether this mutation can add hierarchy evidence or a one-edge relationship. */
   required: boolean;
 }
 

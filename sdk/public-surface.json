@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1991,
+    "covered_symbols": 1993,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1992
+    "required_symbols": 1994
   },
   "breaking_acknowledgements": [
     {
@@ -2305,6 +2305,13 @@
       ],
       "package_version": "2026.10.12",
       "reason": "Widen context evaluation readers to accept universal SDK receipts and structural result fields while preserving legacy result index signatures; add an optional core-field recovery resolver to preserve existing two-argument parser consumers."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.10.12",
+      "reason": "Add optional typed relationship_cardinality diagnostics without removing existing context fields; expose the composable non-hierarchy cardinality guard and minimal item projection."
     }
   ],
   "entrypoints": {
@@ -3186,6 +3193,12 @@
           "kind": "function",
           "name": "assertMemoryRelationshipGraphAdapterConformance",
           "signature": "(workspace?: string) => Promise<RelationshipGraphAdapterConformanceReport> | calls: (workspace?: string) => Promise<RelationshipGraphAdapterConformanceReport>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "assertNonHierarchyCardinalityMutationAllowed",
+          "signature": "(before: readonly RelationshipCardinalityItem[], after: readonly RelationshipCardinalityItem[], registry?: RelationshipKindRegistry) => void | calls: (before: readonly RelationshipCardinalityItem[], after: readonly RelationshipCardinalityItem[], registry?: RelationshipKindRegistry) => void"
         },
         {
           "classification": "advanced_export",
@@ -13157,7 +13170,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -15768,6 +15781,12 @@
           "kind": "type",
           "name": "RelationshipCardinality",
           "signature": "export type RelationshipCardinality = \"one\" | \"many\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RelationshipCardinalityItem",
+          "signature": "export interface RelationshipCardinalityItem { id: string; dependencies?: readonly Pick<Dependency, \"id\" | \"kind\">[]; }"
         },
         {
           "classification": "supported",
@@ -28366,6 +28385,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "assertNonHierarchyCardinalityMutationAllowed",
+          "signature": "(before: readonly RelationshipCardinalityItem[], after: readonly RelationshipCardinalityItem[], registry?: RelationshipKindRegistry) => void | calls: (before: readonly RelationshipCardinalityItem[], after: readonly RelationshipCardinalityItem[], registry?: RelationshipKindRegistry) => void"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "assertRelationshipEdgeAllowed",
           "signature": "(source: string, target: string, kind: string, registry?: RelationshipKindRegistry) => RelationshipKindDefinition | calls: (source: string, target: string, kind: string, registry?: RelationshipKindRegistry) => RelationshipKindDefinition"
         },
@@ -29184,6 +29209,12 @@
           "kind": "type",
           "name": "RelationshipCardinality",
           "signature": "export type RelationshipCardinality = \"one\" | \"many\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RelationshipCardinalityItem",
+          "signature": "export interface RelationshipCardinalityItem { id: string; dependencies?: readonly Pick<Dependency, \"id\" | \"kind\">[]; }"
         },
         {
           "classification": "supported",
@@ -35723,6 +35754,7 @@
     "context_takes_no_item_argument",
     "core_item_field_requires_dedicated_flag",
     "create_positional_type_without_title",
+    "dependency_cardinality_created",
     "dependency_edge_not_allowed",
     "dependency_flag_value_invalid",
     "dependency_remove_no_match",

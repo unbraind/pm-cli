@@ -2,11 +2,13 @@ id: pm-tknnzp
 title: Preserve reviewed legacy merge receipts across SDK upgrades
 description: GitHub 1446 reports that unchanged pm-beads receipts reviewed by older merge_reconcile events are gated again after upgrading from 2026.10.8 to 2026.10.9. The advertised dry-run cannot prove snapshots and omits the documented force-review recovery. Reproduce on immutable downstream data and determine the compatible settled-receipt and recovery contract without destructive receipt cleanup.
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-12T13:31:52.812Z"
-updated_at: "2026-10-12T13:31:52.812Z"
+updated_at: "2026-10-12T18:26:07.859Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#da6c4a524d0c5025cfe0e34b"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Reproduce 2026.10.8, 2026.10.9 and current SDK against isolated exact downstream data; distinguish historical reviewed receipt proof from unreviewed decisions; preserve immutable evidence and unchanged bytes on refusals; any force review guidance names its audit requirements; independent regressions and all-source coverage pass."
@@ -16,6 +18,42 @@ confidence: medium
 expected_result: Reviewed legacy receipts retain auditable settlement or have explicit safe migration guidance before a strict health gate changes.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-ao0bu9,discovered_from,"2026-10-12T13:31:52.812Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-12T13:31:52.812Z","harness:codex","Duplicate check: complete all-status census and fresh merge-receipt/reconcile searches plus open/in_progress inventories found completed prior recovery fixes but no exact active owner for the newly reported upgrade regression. Full pm-ao0bu9 metadata, comments, resolution and history were read. Keep this item open and unclaimed while the connected SDK consumer delivery proceeds."
+  "2026-10-12T16:50:44.838Z","harness:codex","Investigation: read current report1446 and canonical completed receipt-preview lineage. Reproduce only in isolated immutable downstream copies, preserving legacy evidence. Delivery includes compatible settlement recognition and explicit audited refusal recovery; no force repair of production trackers is authorized or needed."
+  "2026-10-12T17:02:24.755Z","harness:codex","Captured immutable public25561a2receipt/summary projections reproduce2settlement failures before and pass after the compatibility fix. Verified source history pins record-seal introduction to182639fa3 at2026-09-03T06:15:48Z. Matching old unsealed audits are accepted only under that historical schema and verified item chain; modern unsealed, malformed, mismatched, new-policy and compacted-away audit evidence stays pending. Exact installed2026.10.8 and2026.10.9 both currently report3lossy/5lossless pending receipts on25561a2, so this independent reproduction does not confirm the issue report's version8-versus9 contrast. Modern snapshot proof safeguards remain intact; no real downstream force repair was performed."
+  "2026-10-12T17:27:59.496Z","harness:codex","Final compatibility review also checks malformed optional summary fields: omission is a supported legacy schema state, while explicit null values and competing preference keys must remain distinguishable from omission. Strengthen those controls through the same captured receipt boundary before final delivery; do not add test-only production seams or rewrite historical records."
+  "2026-10-12T17:49:56.054Z","harness:codex","Independent additional control: both captured receipt tests fail when explicit null participation is treated as omission. The corrected reader defaults only undefined fields and rejects competing preferred/requested_preference keys. All normalization remains read-only and exact identity/hash comparison still decides settlement. Simplified eligibility checks retain every historical bound and modern-evidence exclusion without raising complexity ceilings."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T17:24:29.676Z","harness:codex",Preserve historical reviewed context only when matching audit evidence remains verifiable. Older unsealed schemas need a bounded compatibility rule; compacted-away audit context cannot be inferred from a reconciled flag and requires an explicit audited review disposition.
+files[5]{path,scope}:
+  src/core/diagnostics/remediation.ts,project
+  src/sdk/merge/receipts.ts,project
+  src/sdk/merge/reconcile.ts,project
+  tests/fixtures/merge/legacy-reviewed-receipts.json,project
+  tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts,project,240,"harness:codex","2026-10-12T17:00:03.980Z",local_mutation,fix/sdk-relationship-receipt-compatibility
+test_runs[1]:
+  - run_id: test-local-mv5l273f-f9ic18
+    kind: test
+    status: passed
+    started_at: "2026-10-12T18:25:50.921Z"
+    finished_at: "2026-10-12T18:26:07.851Z"
+    recorded_at: "2026-10-12T18:26:07.851Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/unit/sdk/merge-receipts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/MERGE_SAFETY.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: legacy-reviewed-receipt-settlement
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/workspace/legacy-reviewed-settlement.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI,Security and Script Quality
+  owner: pm-tknnzp
 body: "Source: https://github.com/unbraind/pm-cli/issues/1446. Public reproduction uses pm-beads main at 25561a2 and references prior issues 1200/1202 plus downstream workaround pm-beads PR 138. This is a reported upgrade behavior, not a verified current regression. Do not run force reconciliation on real downstream data during intake."

@@ -1,0 +1,61 @@
+id: pm-0uxmwf
+title: Refresh eligible Markdown and lint tooling and record pending dependency migrations
+description: "Adopt cooldown-eligible compatible marked18.1.0 and TypeScript-ESLint8.71.1 once its exact seven-day age is met, while documenting pending minor and separately owned major updates. Keep supply-chain cooldown and original gates intact."
+type: Chore
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-12T17:00:36.219Z"
+updated_at: "2026-10-12T19:13:32.505Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#da6c4a524d0c5025cfe0e34b"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Validate engine and peer compatibility; preserve the seven-day policy; full docs/static/typechecks and audit pass; link pending major migration owners without claiming them.
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: "Eligible compatible tooling is current, vulnerabilities and dependency PRs are absent, and unsupported or young upgrades retain explicit ownership."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-98f0ec,discovered_from,"2026-10-12T17:23:05.155Z","harness:codex","cli:update:dep",detected
+  pm-do5b,related,"2026-10-12T19:07:16.366Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-12T19:07:16.366Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-12T19:07:16.366Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-12T19:07:16.366Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-12T17:00:36.219Z","harness:codex","Duplicate check: complete2942-item all-status corpus and fresh dependency/marked/typescript-eslint search plus open/in_progress inventories found closed prior refreshes including pm-98f0ec and separate active Sentry11,Vitest5,TypeScript7 and npm-package-arg14 migration owners. No exact active owner covers this newly eligible compatible refresh."
+  "2026-10-12T17:02:26.831Z","harness:codex","Live GitHub inventory:17open issues all have an existing canonical PM-item link in their comments, including immutable-commit links for1442and1399; no duplicate comments were added. No open PRs; Dependabot,CodeQL and secret-scanning open alerts0; audit541dependencies0vulnerabilities. marked18.1.0 publishedOctober5 at15:40UTC is past the seven-day cooldown and compatible with Node22.18. TypeScript-ESLint8.71.1 meets the seven-day policy atOctober12 17:08:41.691UTC; do not bypass it. Other fresh compatible updates remain under cooldown; major migrations remain owned by pm-t3jxjj,pm-fokyhh,pm-do5b,pm-ksr40d. No agent-browser skill was found in either skills root or plugin cache."
+  "2026-10-12T17:17:35.000Z","harness:codex","Operational proof: the shared verifier passes installed npm/npx/Bun/bunx and every package bin, with missing-bin controls. Package doctor activates four extensions with zero blocking failures; update-check coverage is partial. Required Sentry/telemetry gate passes with zero critical/high issues, 3.01 percent finish error rate and zero missing error-code rows. The fresh 24-hour hosted trace query returns zero rows, so fresh trace retention remains unverified. A local flush drains five events to zero; the broker queue is empty. Backend table inspection shows 148 starts and 148 finishes since intake; per-session pairing is verified separately using the authoritative session_id column."
+  "2026-10-12T17:22:04.531Z","harness:codex","TypeScript-ESLint 8.71.1 installed after October12 17:08:41.691UTC, retaining the seven-day cooldown. Its Node/ESLint/TypeScript peer contract matches this repository. marked 18.1.0 is also installed. Fresh patch/minor updates remain younger than seven days; unsupported major upgrades stay with their existing owners. Full typechecks, unchanged static quality and full coverage now verify both eligible updates."
+  "2026-10-12T18:23:50.809Z","harness:codex","Verification sequencing: a packed smoke command launched while full coverage retained the build lease timed out waiting to pack. The standalone three-runtime specific packed proof still passes on Node24, Node26 and Bun. Rerun general npm/npx/Bun/bunx acceptance after source validation releases the lease, retaining its original timeout and genuine artifact checks."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T19:07:21.638Z","harness:codex","When documenting deferred dependency migrations, store typed related edges to their canonical owners. The graph-composition assurance correctly caught five new prose-only links; the existing 1233-gap ceiling remains unchanged."
+files[4]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+  - path: docs/EXTENSIONS.md
+    scope: project
+    note: Package customization documentation verified alongside eligible tooling
+  - path: package.json
+    scope: project
+  - path: pnpm-lock.yaml
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,240,"harness:codex","2026-10-12T17:23:13.193Z",local_mutation,fix/sdk-relationship-receipt-compatibility
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/development-dependencies.spec.ts,project,240,"harness:codex","2026-10-12T17:27:57.491Z",local_mutation,fix/sdk-relationship-receipt-compatibility
+test_runs[1]:
+  - run_id: test-local-mv5l35ny-ug872f
+    kind: test
+    status: passed
+    started_at: "2026-10-12T18:26:18.178Z"
+    finished_at: "2026-10-12T18:26:52.654Z"
+    recorded_at: "2026-10-12T18:26:52.654Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/development-dependencies.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/EXTENSIONS.md,project
+body: ""

@@ -192,9 +192,25 @@ locally recoverable values. After immutable provenance matches, durable
 reconciled state takes precedence over a stale clone-local pending copy only
 when verified item history contains a sealed `merge_reconcile` event with the
 same complete receipt summary and disposition. An absent, unreadable, invalid,
-unsealed, or mismatched audit keeps the receipt pending in memory; inspection
+modern unsealed, or mismatched audit keeps the receipt pending in memory; inspection
 rewrites neither receipt nor history. History is verified once per affected
 item in each receipt scan.
+Legacy settlement compatibility is tracked by [pm-tknnzp](../.agents/pm/issues/pm-tknnzp.toon).
+Receipts created before sealed records were introduced on 2026-09-03 can retain
+settlement from a matching earlier unsealed `merge_reconcile` event in a
+verified item-hash chain. This narrow path admits the historical summary schema,
+including the omitted preference-participation default, while requiring exact
+receipt identity, item path, fields, and retained/discarded hashes. It excludes
+modern receipt policies, field-hash proofs, Git-operation evidence, abandonment,
+and audits before receipt creation or after the seal introduction. No read
+rewrites historical evidence or synthesizes a signature for an old audit.
+If compaction removed the audit, the receipt stays pending. Preview with
+`pm merge reconcile --dry-run`; review its summaries and repair failures and
+re-apply any intended discarded values. Only with explicit review authority,
+use `pm merge reconcile --force --message "<reviewed receipt disposition and rationale>"`.
+That command appends acceptance evidence; it cannot recover missing evidence
+or restore discarded values. This migration guidance also applies to a
+lossless receipt whose snapshot proof is unavailable.
 Copy provenance includes normalized `requested_preference_applied`, so copies
 that disagree on whether preference participated cannot share lifecycle state
 even if history matches one copy. Inspection reports `copy_provenance_mismatch`,
