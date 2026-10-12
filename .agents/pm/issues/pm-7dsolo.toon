@@ -2,20 +2,110 @@ id: pm-7dsolo
 title: Accept actively registered relationship kinds in SDK and CLI dependency mutations
 description: "GitHub 1452 reports that registerRelationshipKinds activation succeeds, but create/update dependency assignments still refuse custom kinds through a built-in vocabulary. This blocks downstream package-defined ordering edges despite graph registry support. Reproduce in an isolated installed extension and align mutation validation, aliases and diagnostics with the active workspace registry."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-12T15:22:02.458Z"
-updated_at: "2026-10-12T15:22:02.458Z"
+updated_at: "2026-10-12T20:08:22.965Z"
+closed_at: "2026-10-12T19:53:13.891Z"
+completed_at: "2026-10-12T19:53:13.891Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Use a real isolated extension to prove create/update and SDK writes plus graph traversal for a custom ordering kind; validate aliases and cardinality/cycle semantics through the authoritative active registry; deactivated or absent registrations refuse before item/history mutation; an independent pre-fix control fails; complete source coverage, SDK contracts and installed Node/Bun consumers pass."
 parent: pm-96h7
 risk: medium
 confidence: medium
-expected_result: CLI and SDK dependency writes accept active registered kinds and aliases while refusing inactive or unknown kinds with precise recovery.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "CLI and SDK create, update, bulk update and removal admit active registered kinds and aliases; the public non-hierarchy cardinality guard and shared integrity lock reject newly introduced one-edge conflicts before persistence. Existing builtin diagnostics remain compatible."
+expected_result: Package-defined relationship semantics compose through the public SDK without tracker-file workarounds; inactive kinds refuse unchanged and limited-cardinality writers cannot race.
+actual_result: "Independent admission controls failed before correction. The initial full suite passed10307 tests with exact100/100/100/100 source coverage; final39-case review regressions, both linked commands, four typechecks, three packed runtimes and nine-package npm/npx/Bun/bunx acceptance pass. Losing-writer refusal and stored bulk canonical kind are explicitly asserted; final exact-head CI/review remains mandatory before merging PR1453."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-ju83,discovered_from,"2026-10-12T15:22:02.458Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-bbyopg,related,"2026-10-12T19:07:18.958Z","harness:codex","cli:update:dep",detected
+comments[14]{created_at,author,text}:
   "2026-10-12T15:22:02.458Z","harness:codex","Duplicate check: fresh complete 2941-item all-status census plus registered-kind/dependency-mutation search and open/in_progress inventories found prior completed registry/grammar work and broad graph maturity owners, but no exact active owner for this new report. Full pm-ju83 metadata, comments, resolution and history were read. Keep this issue open and unclaimed as the next connected registry-mutation follow-up; the six implemented SDK delivery owners remain closed."
+  "2026-10-12T16:50:44.088Z","harness:codex","Delivery scope: SDK-first active relationship mutation admission and legacy merge settlement compatibility share the need to preserve canonical context under extension and release changes. Complete live corpus receipt:2942items,2634closed,235open,59draft,14canceled; no unreadable sources or omissions; zero prior in_progress. GitHub has no open PRs or open Dependabot/CodeQL/secret alerts. Only the two edited defects are claimed; broad graph and reliability owners stay open."
+  "2026-10-12T17:02:24.085Z","harness:codex","Independent regressions: all3new tests fail on the original source with invalid registered kind, including an actual schema-extension subprocess. Corrected5-file focused suite passes23tests, including immutable byte refusals, custom alias canonicalization, bulk writes, ordering-cycle advice, exact removal, hierarchy cardinality and existing modern receipt safeguards. DependencyKind is now extensible; the bundled Beads importer retains its deliberate built-in mapping without a narrowing assertion."
+  "2026-10-12T17:22:03.149Z","harness:codex","Full-suite remediation: retain the existing builtin allowed-values order and exact dependency-kind recovery text while appending active extension kinds and aliases. Two diagnostics assertions initially failed against the changed wording; both now pass without changing their independent contract. The new active custom-kind refusal explicitly lists ships_before and precedes_ship. All six targeted files pass 25 tests, including the previous npm-resolution and timing failures in isolation. Full exact-source coverage is rerun with the actual local npm package exposed through NODE_PATH and eight workers; no timeout, denominator or threshold is changed."
+  "2026-10-12T17:23:16.606Z","harness:codex","Correction to the preceding focused-run count: the completed six-file remediation run passed 29 tests, not 25. The exact result is six passed files and 29 passed tests; all original diagnostic and byte-preservation assertions remain enabled."
+  "2026-10-12T17:49:57.200Z","harness:codex","All 10,302 functional tests pass with three platform skips. Exact coverage found one unreachable alias fallback: RelationshipKindRegistry.register always materializes an alias array, including an empty one. Removed that redundant fallback while retaining alias diagnostics and every source file in the denominator; full canonical coverage is rerun after the final null-admission correction. Static corpus assertions identified missing risk/confidence on the two new intake records; populated those through PM without lowering any gate."
+  "2026-10-12T18:23:50.112Z","harness:codex","The final functional run passed 10,301 cases but the real public-artifact workspace matrix hit its unchanged 180-second deadline, followed by the independently tracked late-log reporter defect pm-bbyopg. Earlier identical matrix controls passed, including four real writer/reader directions. Static validation passes the live corpus assertions and public surface snapshot; a qualified Node26 SDK query import sample exceeded the unchanged 241ms ceiling (median271, minimum167). Preserve this failing receipt and rerun that exact performance gate without concurrent validation; do not increase budgets or classify a qualified failure as an approval."
+  "2026-10-12T18:28:05.665Z","harness:codex","Qualified verification update: the unchanged SDK import-cost gate now passes all ten entrypoints after the full validation process exits. Every linked item check passes through PM. Specific packed SDK registry and captured legacy settlement journeys pass on Node24, Node26 and Bun with an 8,899,423-byte compressed/43,307,444-byte unpacked pre-close artifact. Final static and full-source coverage are serialized; the earlier qualified budget failure and matrix timeout remain retained historical receipts."
+  "2026-10-12T18:35:55.417Z","harness:codex","Acceptance review: active custom kinds can declare one outgoing or incoming edge without hierarchy participation. The current mutation path validates self/endpoint/temporal and hierarchy constraints, but generic non-hierarchy cardinality must also be enforced before claiming full registry admission. Add independent outgoing/incoming controls and preserve the existing hierarchy, ordering-advice and mutation-lock contracts. This remains work on the same claimed registry defect rather than a duplicate item."
+  "2026-10-12T18:49:36.454Z","harness:codex","Non-hierarchy cardinality proof: the added integration control fails on the earlier source, where a one-edge ordering kind accepts two outgoing endpoints. The corrected SDK guard rejects both outgoing and incoming conflicts before bytes change, validates a removal/addition as final state, permits unchanged historical debt and strict repairs, and deduplicates provenance rows. A real two-process CLI control proves at most one writer can occupy an incoming slot. Seven focused cases and all four TypeScript projects pass. Public root/graph guard and minimal projection are additive; the snapshot's context-signature change is acknowledged as an optional structured relationship_cardinality diagnostic with no removed field."
+  "2026-10-12T18:53:07.812Z","harness:codex","Evidence correction: removed a nonexistent docs/ERROR_CODES.md link; error documentation is generated within the SDK error catalog. The two real CLI processes competing for a registered incoming-one kind yielded exactly one successful writer and one stored edge, with the losing mutation refused before item/history writes."
+  "2026-10-12T19:16:03.124Z","harness:codex","Reviewed delivery is PR1453 at source commit 8eb1e56c4. The final linked registry run passed both commands, including public alias handling, cardinality debt/repair semantics, inactive-kind byte preservation and the real two-process incoming-slot race. The unchanged CLI transport gate passed after preserving prior qualified failures. Graph composition now passes with typed references to the reporter remediation and deferred dependency owners. Packed Node24/26 and Bun consumers verify the public cardinality guard and actual SDK writes; full source coverage and hosted reviews are in progress."
+  "2026-10-12T19:51:24.689Z","harness:codex","Accepted both CodeRabbit test findings: the real competing writer must emit dependency_cardinality_created on stderr, and a separate stored-item read proves bulk aliases persist as canonical ships_before. The corrected focused suite passes39 tests and packed Node24/26/Bun consumers pass. Initial full local and hosted suites passed10307 tests with exact100/100/100/100 coverage; final hosted coverage will validate the security remediation and stronger assertions on the revised delivery head before merge."
+  "2026-10-12T20:08:22.965Z","harness:codex","Coverage scope clarification:10307 tests and the detailed statement/branch/function/line counts come from the complete local Node24 run. The first hosted Gates(coverage) log independently confirms exact100/100/100/100 with zero uncovered counts, and all four hosted shards succeeded. Final head coverage and review remain required before merging; the local aggregate count is not a sum parsed from hosted shard logs."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T17:24:27.781Z","harness:codex",An extensible ontology must govern parser admission as well as graph reads. Keep legacy recovery vocabulary stable while appending active custom kinds and aliases; full contract tests can detect diagnostic regressions that focused new-feature tests miss.
+files[16]{path,scope}:
+  CHANGELOG.md,project
+  packages/pm-beads/extensions/beads/runtime.ts,project
+  sdk/public-surface.json,project
+  src/core/shared/errors.ts,project
+  src/sdk/dependency-flag-validation.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/graph/cardinality-integrity.ts,project
+  src/sdk/graph/index.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/hierarchy-mutation-lock.ts,project
+  src/sdk/lifecycle/update.ts,project
+  src/types.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/dependencies/registered-kind-mutations.integration.spec.ts,project
+  tests/unit/sdk/graph/cardinality-integrity.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/dependencies/registered-kind-mutations.integration.spec.ts tests/unit/commands/query/dependency-exact-removal-contract.spec.ts tests/unit/sdk/extension-relationship-kinds.spec.ts,project,240,"harness:codex","2026-10-12T17:00:01.024Z",local_mutation,fix/sdk-relationship-receipt-compatibility
+  node scripts/run-tests.mjs test -- tests/unit/sdk/graph/cardinality-integrity.spec.ts tests/integration/dependencies/registered-kind-mutations.integration.spec.ts,project,240,"harness:codex","2026-10-12T18:45:16.829Z",local_mutation,fix/sdk-relationship-receipt-compatibility
+test_runs[3]:
+  - run_id: test-local-mv5l1tkc-nak8m8
+    kind: test
+    status: passed
+    started_at: "2026-10-12T18:25:34.727Z"
+    finished_at: "2026-10-12T18:25:50.316Z"
+    recorded_at: "2026-10-12T18:25:50.316Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/dependencies/registered-kind-mutations.integration.spec.ts tests/unit/commands/query/dependency-exact-removal-contract.spec.ts tests/unit/sdk/extension-relationship-kinds.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv5mpnrz-b4sux8
+    kind: test
+    status: passed
+    started_at: "2026-10-12T19:11:43.462Z"
+    finished_at: "2026-10-12T19:12:22.175Z"
+    recorded_at: "2026-10-12T19:12:22.175Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/dependencies/registered-kind-mutations.integration.spec.ts tests/unit/commands/query/dependency-exact-removal-contract.spec.ts tests/unit/sdk/extension-relationship-kinds.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/graph/cardinality-integrity.spec.ts tests/integration/dependencies/registered-kind-mutations.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv5nx9vi-nxh90l
+    kind: test
+    status: passed
+    started_at: "2026-10-12T19:45:45.328Z"
+    finished_at: "2026-10-12T19:46:17.022Z"
+    recorded_at: "2026-10-12T19:46:17.022Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/dependencies/registered-kind-mutations.integration.spec.ts tests/unit/commands/query/dependency-exact-removal-contract.spec.ts tests/unit/sdk/extension-relationship-kinds.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/graph/cardinality-integrity.spec.ts tests/integration/dependencies/registered-kind-mutations.integration.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
+  docs/EXTENSIONS.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/RELATIONSHIP_GRAPH.md,project
+close_reason: Verified active relationship mutation semantics and concurrent cardinality enforcement for reviewed delivery
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: registered-relationship-mutation-admission
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/dependencies/registered-kind-mutations.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/dependencies/registered-kind-mutations.integration.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI,Security and Script Quality
+  owner: pm-7dsolo
 body: "Source: https://github.com/unbraind/pm-cli/issues/1452. Reported on published 2026.10.12 with a directed persistent ships_before kind; activation and graph discovery succeed, while --dep id=sr-b,kind=ships_before fails. Downstream pm-gantt-chart issue 135 reportedly seeds files directly as a workaround. Current mutation behavior has not yet been independently reproduced during this intake; do not edit real tracker files or bypass registry validation."

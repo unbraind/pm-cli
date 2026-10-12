@@ -169,6 +169,7 @@ export {
   type RelationshipRemediationStep,
 } from "./remediation.js";
 export { collectNewOrderingCycleWarnings } from "./mutation-advisory.js";
+export { assertNonHierarchyCardinalityMutationAllowed, type RelationshipCardinalityItem } from "./cardinality-integrity.js";
 export {
   GRAPH_SUBCOMMAND_VALUES,
   parseGraphSubcommand,

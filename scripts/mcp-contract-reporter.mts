@@ -25,7 +25,7 @@ export default class McpContractReporter implements Reporter {
   /** Classify every warning in a batched console event without exposing option values. */
   onUserConsoleLog(log: Parameters<NonNullable<Reporter["onUserConsoleLog"]>>[0]): void {
     const entity = log.taskId === undefined ? undefined : this.#vitest.state.getReportedEntityById(log.taskId);
-    const file = entity?.module.relativeModuleId.replaceAll("\\", "/") ?? "<unknown>";
+    const file = entity?.module?.relativeModuleId.replaceAll("\\", "/") ?? "<unknown>";
     const test = entity?.fullName ?? "<unknown>";
     for (const match of log.content.matchAll(/\[pm-mcp\] Unknown option "([^"]+)" for (\S+) action "([^"]+)"/g)) {
       const identity = `${match[1]}:${match[2]}:${match[3]}`;

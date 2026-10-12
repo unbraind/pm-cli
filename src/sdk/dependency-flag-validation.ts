@@ -7,6 +7,7 @@ import type {
   ItemFormat,
   RuntimeSchemaSettings,
 } from "../types/index.js";
+import { DEPENDENCY_KIND_VALUES } from "../types/index.js";
 import {
   locateItem,
   readLocatedItem,
@@ -18,6 +19,30 @@ import {
   assertRelationshipEdgeAllowed,
   type RelationshipKindRegistry,
 } from "./relationships.js";
+
+/** Resolve mutation spellings through the active ontology and advertise its vocabulary on refusal. */
+export function requireDependencyKind(
+  value: string,
+  registry: RelationshipKindRegistry = resolveWorkspaceRelationshipKindRegistry(),
+): string {
+  const definition = registry.resolve(value);
+  if (definition) return definition.kind;
+  const builtinKinds = new Set<string>(DEPENDENCY_KIND_VALUES);
+  // Registration materializes every alias list, including empty lists.
+  const allowed = [...DEPENDENCY_KIND_VALUES, ...registry.list()
+    .filter(({ kind }) => !builtinKinds.has(kind))
+    .flatMap(({ kind, aliases }) => [kind, ...aliases!])];
+  throw new PmCliError(
+    `Invalid dependency kind value "${value}". Allowed: ${allowed.join(", ")}`,
+    EXIT_CODE.USAGE,
+    {
+      field: "kind", value,
+      recovery: { allowed_values: allowed },
+      required: `dependency kind must be one of: ${allowed.join(", ")}.`,
+      nextSteps: ["Choose a registered kind, or install and enable the extension that registers this kind before retrying."],
+    },
+  );
+}
 
 /** Reject malformed shorthand before item-id prefix normalization can create a dangling graph node. */
 export function assertValidBareDependencyFlagValue(

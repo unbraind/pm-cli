@@ -292,8 +292,8 @@ function toDependencyKind(value: unknown): {
     sourceKind: normalized === kind ? undefined : raw,
   });
 
-  if (DEPENDENCY_KIND_VALUES.includes(normalized as Dependency["kind"])) {
-    return preserveIfChanged(normalized as Dependency["kind"]);
+  if (DEPENDENCY_KIND_VALUES.some((kind) => kind === normalized)) {
+    return preserveIfChanged(normalized);
   }
 
   const aliasKind = BEADS_DEPENDENCY_KIND_ALIASES.get(normalized);

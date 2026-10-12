@@ -1,0 +1,21 @@
+id: pm-o0tkr6
+title: Avoid mutation-output flags when recovering an unsupported read projection
+description: "During telemetry verification, pm telemetry status --full --json refuses the unsupported projection but suggests replacing --full with --full-changed-fields. The replacement is executable yet unrelated to the requested read detail. Rank correction candidates by semantic purpose and command support, and prefer command-help guidance when no equivalent projection exists."
+type: Issue
+status: open
+priority: 3
+tags: []
+created_at: "2026-10-12T17:07:56.575Z"
+updated_at: "2026-10-12T17:49:54.991Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Reproduce the exact status request in isolation; retain unknown_option and declared-elsewhere diagnostics; verify CLI/SDK/MCP ranking without inventing unsupported flags; meaningful pre-fix controls and context-token gates pass.
+parent: pm-f05lsg
+risk: medium
+confidence: medium
+expected_result: Recovery suggests a meaningful supported read control or help instead of an unrelated mutation echo flag.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0uxmwf,discovered_from,"2026-10-12T17:23:09.733Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-12T17:07:56.575Z","harness:codex","Duplicate check: complete all-status corpus plus fresh full-changed-fields/output-projection search and open/in_progress reads found completed projection fixes and the recovery closure parent, but no exact owner for this semantic nearest-flag suggestion. This is intake only; keep open and unclaimed."
+body: ""

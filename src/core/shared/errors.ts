@@ -120,6 +120,17 @@ export interface PmCliErrorContext {
   target_created_at?: string;
   /** Temporal relationship rule evaluated for the source and target. */
   temporal_order?: string;
+  /** Active one-edge relationship constraint violated by a prospective mutation. */
+  relationship_cardinality?: {
+    /** Canonical registered relationship kind. */
+    kind: string;
+    /** Endpoint orientation whose multiplicity is constrained. */
+    direction: "outgoing" | "incoming";
+    /** Node whose one-edge constraint would be exceeded. */
+    node_id: string;
+    /** Distinct conflicting logical endpoints in deterministic order. */
+    endpoint_ids: string[];
+  };
   /** Validate or health check selected by an assurance source, when known. */
   check?: string;
   /** Serialization format involved in a parse failure. */

@@ -195,6 +195,20 @@ same complete receipt summary and disposition. An absent, unreadable, invalid,
 unsealed, or mismatched audit keeps the receipt pending in memory; inspection
 rewrites neither receipt nor history. History is verified once per affected
 item in each receipt scan.
+Historical receipt recovery is tracked by [pm-tknnzp](../.agents/pm/issues/pm-tknnzp.toon).
+Historical item-state hashes do not authenticate audit context. An older
+unsealed `merge_reconcile` summary therefore cannot retain settled state,
+even when its receipt identity, fields, and value hashes match. Editing that
+context leaves the legacy item chain valid. Keep these receipts pending for
+explicit reviewed migration to a modern sealed audit; never retroactively
+trust the old summary or synthesize an old signature during inspection.
+If compaction removed the audit, the receipt also stays pending. Preview with
+`pm merge reconcile --dry-run`; review its summaries and repair failures and
+re-apply any intended discarded values. Only with explicit review authority,
+use `pm merge reconcile --force --message "<reviewed receipt disposition and rationale>"`.
+That command appends acceptance evidence; it cannot recover missing evidence
+or restore discarded values. This migration guidance also applies to a
+lossless receipt whose snapshot proof is unavailable.
 Copy provenance includes normalized `requested_preference_applied`, so copies
 that disagree on whether preference participated cannot share lifecycle state
 even if history matches one copy. Inspection reports `copy_provenance_mismatch`,

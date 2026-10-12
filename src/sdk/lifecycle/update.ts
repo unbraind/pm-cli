@@ -86,6 +86,7 @@ import {
   parseTypeOptionEntries,
 } from "./repeatable-metadata-parsers.js";
 import {
+  requireDependencyKind,
   assertDependencyEdgesAllowed,
   assertDependencyTargetsResolvable,
   assertValidBareDependencyFlagValue,
@@ -96,9 +97,9 @@ import {
   isExternalDependencyReference,
   normalizeDependencySourceKind,
 } from "../dependency-provenance.js";
-import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { collectNewOrderingCycleWarnings } from "../graph/mutation-advisory.js";
 import { assertHierarchyMutationAllowed } from "../graph/hierarchy-integrity.js";
+import { assertNonHierarchyCardinalityMutationAllowed, relationshipKindNeedsIntegrityLock } from "../graph/cardinality-integrity.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import { acquireHierarchyMutationLock } from "./hierarchy-mutation-lock.js";
 import type {
@@ -115,7 +116,6 @@ import type {
   LogNote,
 } from "../../types/index.js";
 import {
-  DEPENDENCY_KIND_VALUES,
   ISSUE_SEVERITY_VALUES,
   RISK_VALUES,
 } from "../../types/index.js";
@@ -757,7 +757,7 @@ interface ParsedDependencyUpdates {
 
 interface DependencyRemovalSelector {
   id: string;
-  kind?: (typeof DEPENDENCY_KIND_VALUES)[number];
+  kind?: string;
   source_kind?: string;
   author?: string;
   created_at?: string;
@@ -831,7 +831,7 @@ function normalizeDependencyKindInput(
   raw: string | undefined,
 ): string | undefined {
   return typeof raw === "string"
-    ? (resolveCanonicalRelationshipKind(raw) ?? raw.trim())
+    ? (resolveWorkspaceRelationshipKindRegistry().resolve(raw)?.kind ?? raw.trim())
     : raw;
 }
 
@@ -880,7 +880,7 @@ export function parseDependencyAdditions(
     const explicitAuthor = parseOptionalDependencyString(kv.author);
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
-      kind: ensureEnum(kind, DEPENDENCY_KIND_VALUES, "dependency kind", "kind"),
+      kind: requireDependencyKind(kind),
       created_at: parseDependencyCreatedAt(kv.created_at, nowIso),
       author: explicitAuthor ?? fallbackAuthor,
       source_kind: sourceKind ?? "cli:update:dep",
@@ -935,7 +935,7 @@ function parseDependencyRemovals(
       return {
         id: normalizeDependencySeedId(idRaw, prefix, sourceKind),
         kind: kindRaw
-          ? ensureEnum(kindRaw, DEPENDENCY_KIND_VALUES, "dependency kind", "kind")
+          ? requireDependencyKind(kindRaw)
           : undefined,
         source_kind: sourceKind,
         author,
@@ -1935,6 +1935,10 @@ function assertUpdateHierarchyIntegrity(params: {
   statusRegistry: RuntimeStatusRegistry;
 }): void {
   if (!params.before) return;
+  assertNonHierarchyCardinalityMutationAllowed(
+    params.before,
+    params.before.map((item) => item.id === params.document.metadata.id ? params.document.metadata : item),
+  );
   assertHierarchyMutationAllowed(
     params.before,
     params.before.map((item) =>
@@ -3368,7 +3372,7 @@ async function runUpdateWithContext(
   const hierarchyMutationRequired =
     (fieldFlags.parent && !clearItemMetadataKeys.has("parent")) ||
     dependencyUpdates.additions.some(
-      (dependency) => relationshipRegistry.resolve(dependency.kind)?.hierarchy,
+      (dependency) => relationshipKindNeedsIntegrityLock(dependency.kind, relationshipRegistry),
     );
   const releaseHierarchyMutationLock = await acquireHierarchyMutationLock({
     pmRoot,

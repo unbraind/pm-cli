@@ -93,6 +93,7 @@ import {
 } from "../item-metadata-index.js";
 import { collectNewOrderingCycleWarnings } from "../graph/mutation-advisory.js";
 import { assertHierarchyMutationAllowed } from "../graph/hierarchy-integrity.js";
+import { assertNonHierarchyCardinalityMutationAllowed, relationshipKindNeedsIntegrityLock } from "../graph/cardinality-integrity.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import { acquireHierarchyMutationLock } from "./hierarchy-mutation-lock.js";
 import {
@@ -144,6 +145,7 @@ import type {
 } from "./mutation-command-options.js";
 import { ensureEnumValue } from "./recurrence-parsers.js";
 import {
+  requireDependencyKind,
   assertDependencyEdgesAllowed,
   assertDependencyTargetsResolvable,
   assertValidBareDependencyFlagValue,
@@ -154,7 +156,6 @@ import {
   isExternalDependencyReference,
   normalizeDependencySourceKind,
 } from "../dependency-provenance.js";
-import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { supportsCreateExplicitEmpty } from "../agent/create-option-policy.js";
 import {
   parseEventEntries,
@@ -176,7 +177,6 @@ import type {
   Reminder,
 } from "../../types/index.js";
 import {
-  DEPENDENCY_KIND_VALUES,
   ISSUE_SEVERITY_VALUES,
   RISK_VALUES,
   SCOPE_VALUES,
@@ -491,7 +491,7 @@ function parseDependencies(
     const explicitAuthor = parseOptionalString(kv.author);
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
-      kind: ensureEnumValue(kind, DEPENDENCY_KIND_VALUES, "dependency kind", "kind"),
+      kind: requireDependencyKind(kind),
       created_at: parseCreatedAt(kv.created_at, nowValue),
       author: explicitAuthor ?? fallbackAuthor,
       source_kind: sourceKind ?? "cli:create:dep",
@@ -505,7 +505,7 @@ function normalizeDependencyKindInput(
   raw: string | undefined,
 ): string | undefined {
   return typeof raw === "string"
-    ? (resolveCanonicalRelationshipKind(raw) ?? raw.trim())
+    ? (resolveWorkspaceRelationshipKindRegistry().resolve(raw)?.kind ?? raw.trim())
     : raw;
 }
 
@@ -2539,7 +2539,7 @@ async function writeCreatedItem(params: {
   const hierarchyMutationRequired =
     afterDocument.metadata.parent !== undefined ||
     (afterDocument.metadata.dependencies ?? []).some(
-      (dependency) => relationshipRegistry.resolve(dependency.kind)?.hierarchy,
+      (dependency) => relationshipKindNeedsIntegrityLock(dependency.kind, relationshipRegistry),
     );
   const hierarchyLockRelease = await acquireHierarchyMutationLock({
     pmRoot,
@@ -2590,6 +2590,7 @@ async function writeCreatedItem(params: {
         });
       }
       if (graphBeforeCreate) {
+        assertNonHierarchyCardinalityMutationAllowed(graphBeforeCreate, [...graphBeforeCreate, afterDocument.metadata], relationshipRegistry);
         const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
         assertHierarchyMutationAllowed(
           graphBeforeCreate,

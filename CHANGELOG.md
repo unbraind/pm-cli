@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Preserve MCP warning enforcement when late console logs lack module attribution ([pm-bbyopg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bbyopg.toon))
+- Expose safe reviewed migration for historical merge receipts ([pm-tknnzp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tknnzp.toon))
+- Accept actively registered relationship kinds in SDK and CLI dependency mutations ([pm-7dsolo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7dsolo.toon))
 - Protect distribution inventory and staging from concurrent dist rebuilds ([pm-distribution-consumer-lease](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-distribution-consumer-lease.toon))
 - Preserve documented SDK schema field types through typed helpers ([pm-ty5i58](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ty5i58.toon))
 - Core external-reference refusal recommends a flag absent from the CLI lexicon ([pm-by83yj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-by83yj.toon))
@@ -12,6 +15,7 @@
 
 ### Other
 
+- Refresh eligible Markdown and lint tooling and record pending dependency migrations ([pm-0uxmwf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0uxmwf.toon))
 - Deduplicate hosted Commander recovery-context projection ([pm-nrj9sy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nrj9sy.toon))
 - Refresh eligible SDK and CI dependencies ([pm-98f0ec](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-98f0ec.toon))
 - Accept universal SDK read receipts in the public context evaluation reader ([pm-i4kxx1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-i4kxx1.toon))

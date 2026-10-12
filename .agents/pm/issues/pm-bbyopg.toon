@@ -1,0 +1,57 @@
+id: pm-bbyopg
+title: Preserve MCP warning enforcement when late console logs lack module attribution
+description: Full validation exposed a TypeError in McpContractReporter.onUserConsoleLog when a reported entity has no module after a timed-out compatibility test. Console attribution may disappear while logs are still delivered. Handle the absent module while continuing to reject undeclared MCP warnings under unknown attribution; preserve the original timeout and warning allowlist.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-12T18:11:59.782Z"
+updated_at: "2026-10-12T20:08:21.384Z"
+closed_at: "2026-10-12T19:53:18.615Z"
+completed_at: "2026-10-12T19:53:18.615Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: An independent absent-module control fails before and passes after; unattributed MCP drift remains a failure; existing allowlist and retry enforcement stay unchanged; full source coverage and static gates pass.
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: "Optional module attribution is guarded for late Vitest console logs, while unattributed MCP contract drift still fails the reporter."
+expected_result: "An entity without a module cannot crash reporting, and missing attribution cannot suppress undeclared MCP warnings."
+actual_result: "The absent-module pre-fix control failed and the corrected reporter controls pass, including an otherwise-green run rejected for unknown drift. The initial full suite passes10307 tests with exact source coverage; the unchanged real public workspace matrix and final focused review controls pass. No timeout, allowlist, retry or coverage policy was weakened."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-tknnzp,discovered_from,"2026-10-12T18:11:59.782Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-12T18:11:59.782Z","harness:codex","Duplicate check: complete live corpus and fresh MCP/reporter/module/console search plus open/in_progress inventories found existing conformance ownership but no exact active owner for this observed reporter crash. The full-run stack names onUserConsoleLog relativeModuleId. This is a verification defect discovered during the connected SDK delivery."
+  "2026-10-12T18:22:51.015Z","harness:codex","Independent negative control fails before the single optional-module guard. Late ordinary logs remain ordinary, while an unattributed undeclared MCP option still fails onTestRunEnd under the unknown file and original warning identity. Keep the exact allowlist, retry enforcement, original compatibility timeout and source coverage thresholds unchanged."
+  "2026-10-12T18:28:04.660Z","harness:codex","Verification: the original absent-module control fails with relativeModuleId TypeError. After the one-character optional-module guard, all three reporter tests pass, including a real otherwise-green Vitest process that still fails for undeclared MCP drift. The original published-artifact matrix also passes both cases and all four writer/reader directions in 88.9 seconds under its unchanged 180-second limit. All linked PM tests pass; the corrected reporter preserves warning enforcement rather than discarding unknown-attribution logs."
+  "2026-10-12T19:51:25.352Z","harness:codex","Final verification: the initial full local suite passes10307 tests with exact100/100/100/100 source coverage, including the unchanged real published workspace matrix. The final focused review run retains all reporter controls: missing module attribution is safe, while unknown MCP warning drift still fails. Hosted CI and final exact-head review are required before merge; retry budgets, timeout, warning allowlist and coverage thresholds remain unchanged."
+files[3]{path,scope}:
+  CHANGELOG.md,project
+  scripts/mcp-contract-reporter.mts,project
+  tests/unit/scripts/mcp-contract-reporter.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/mcp-contract-reporter.spec.ts,project,240,"harness:codex","2026-10-12T18:22:44.524Z",local_mutation,fix/sdk-relationship-receipt-compatibility
+test_runs[1]:
+  - run_id: test-local-mv5l2el7-re4bck
+    kind: test
+    status: passed
+    started_at: "2026-10-12T18:26:08.542Z"
+    finished_at: "2026-10-12T18:26:17.563Z"
+    recorded_at: "2026-10-12T18:26:17.563Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/mcp-contract-reporter.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Verified late-console attribution safety with unchanged MCP warning enforcement
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mcp-console-attribution
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/mcp-contract-reporter.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/scripts/mcp-contract-reporter.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI,Security and Script Quality
+  owner: pm-bbyopg
+body: ""

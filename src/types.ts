@@ -86,7 +86,7 @@ export const RUNTIME_UNKNOWN_FIELD_POLICY_VALUES = [
 export type RuntimeUnknownFieldPolicy =
   (typeof RUNTIME_UNKNOWN_FIELD_POLICY_VALUES)[number];
 
-/** Supported values accepted by the dependency kind contract. */
+/** Built-in dependency spellings; active extensions may register additional kinds and aliases. */
 export const DEPENDENCY_KIND_VALUES = [
   "blocks",
   "parent",
@@ -105,8 +105,8 @@ export const DEPENDENCY_KIND_VALUES = [
   "task",
   "verifies",
 ] as const;
-/** Restricts dependency kind values accepted by command, SDK, and storage contracts. */
-export type DependencyKind = (typeof DEPENDENCY_KIND_VALUES)[number];
+/** Relationship identifier admitted by the active built-in and extension registry. */
+export type DependencyKind = string;
 
 /** Supported values accepted by the scope contract. */
 export const SCOPE_VALUES = ["project", "global"] as const;
