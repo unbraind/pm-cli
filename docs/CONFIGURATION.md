@@ -247,7 +247,9 @@ For a bounded diagnostic invocation use
 `PM_SENTRY_TRACE_COMMANDS=1 SENTRY_TRACES_SAMPLE_RATE=1 pm context --limit 3`.
 Completion flushes buffered spans within the existing three-second SDK timeout.
 The sample-rate variable alone does not enable successful-command initialization.
-Configured telemetry opt-outs also prevent it. SDK callers use
+Configured telemetry opt-outs also prevent it. The CLI skips command context and
+span creation when consent is disabled, including when an embedding caller has
+already initialized Sentry. SDK callers use
 `ensureSentryCommandTracing(telemetryEnabled)` from `@unbrained/pm-cli/sdk`,
 passing their effective consent decision before starting a command span.
 Sentry sends streamed spans; its span and log hooks apply the same scrubbing

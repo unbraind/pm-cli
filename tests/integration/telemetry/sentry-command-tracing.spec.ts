@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
@@ -11,15 +12,19 @@ import { readSettings, writeSettings } from "../../../src/core/store/settings.js
 
 const execute = promisify(execFile);
 const cli = fileURLToPath(new URL("../../../dist/cli.js", import.meta.url));
+const sdk = new URL("../../../dist/sdk/index.js", import.meta.url).href;
+const embeddedCli = new URL("../../../dist/cli/main.js", import.meta.url).href;
 
 it.each([
-  ["default", {}, true, false],
-  ["explicit", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true],
-  ["configured opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false],
-  ["zero rate", { PM_SENTRY_TRACE_COMMANDS: "1", SENTRY_TRACES_SAMPLE_RATE: "0" }, true, false],
-  ["consent opt-out", { PM_SENTRY_TRACE_COMMANDS: "1", DO_NOT_TRACK: "1" }, true, false],
-  ["test isolation", { PM_SENTRY_TRACE_COMMANDS: "1", VITEST: "1" }, true, false],
-] as const)("exports successful CLI spans only with %s tracing", async (_name, overrides, enabled, expected) => {
+  ["default", {}, true, false, false],
+  ["explicit", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, false],
+  ["configured opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, false],
+  ["zero rate", { PM_SENTRY_TRACE_COMMANDS: "1", SENTRY_TRACES_SAMPLE_RATE: "0" }, true, false, false],
+  ["consent opt-out", { PM_SENTRY_TRACE_COMMANDS: "1", DO_NOT_TRACK: "1" }, true, false, false],
+  ["test isolation", { PM_SENTRY_TRACE_COMMANDS: "1", VITEST: "1" }, true, false, false],
+  ["preinitialized opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, true],
+  ["preinitialized allowed", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, true],
+] as const)("exports successful CLI spans only with %s tracing", async (_name, overrides, enabled, expected, preinitialized) => {
   const root = await mkdtemp(path.join(tmpdir(), "pm-sentry-command-"));
   const envelopes: string[] = [];
   const server = createServer(async (request, response) => {
@@ -35,7 +40,7 @@ it.each([
     if (!address || typeof address === "string") throw new Error("Missing collector address");
     const globalPath = path.join(root, "global");
     const settings = await readSettings(globalPath);
-    await writeSettings(globalPath, { ...settings, telemetry: { ...settings.telemetry, enabled, endpoint: `http://127.0.0.1:${address.port}/events` } });
+    await writeSettings(globalPath, { ...settings, telemetry: { ...settings.telemetry, enabled, installation_id: randomUUID(), endpoint: `http://127.0.0.1:${address.port}/events` } });
     const env: NodeJS.ProcessEnv = { ...process.env };
     for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_ENV", "PM_SENTRY_DISABLED", "PM_TELEMETRY_DISABLED", "PM_NO_TELEMETRY", "DO_NOT_TRACK", "PM_SENTRY_TRACE_COMMANDS"]) delete env[key];
     Object.assign(env, {
@@ -43,7 +48,11 @@ it.each([
       PM_TELEMETRY_PROMPT: "0", SENTRY_TRACES_SAMPLE_RATE: "1",
       SENTRY_DSN: `http://public@127.0.0.1:${address.port}/1`,
     }, overrides);
-    const result = await execute(process.execPath, [cli, "--no-extensions", "contracts", "--summary", "--json"], { cwd: root, env, timeout: 15_000 });
+    const commandArgs = ["--no-extensions", "contracts", "--summary", "--json"];
+    const args = preinitialized
+      ? ["--input-type=module", "-e", `const { ensureSentryCommandTracing } = await import(${JSON.stringify(sdk)}); const { runPmCli } = await import(${JSON.stringify(embeddedCli)}); await ensureSentryCommandTracing(true); await runPmCli(${JSON.stringify(commandArgs)});`]
+      : [cli, ...commandArgs];
+    const result = await execute(process.execPath, args, { cwd: root, env, timeout: 15_000 });
     expect(JSON.parse(result.stdout)).toHaveProperty("commands");
     const sentryEnvelopes = envelopes.filter((envelope) => envelope.includes('"sdk":{"name":"sentry.'));
     const exported = sentryEnvelopes.join("\n");
@@ -58,7 +67,8 @@ it.each([
       })]);
       expect(exported).not.toContain(root);
     } else {
-      expect(sentryEnvelopes).toEqual([]);
+      expect(sentryEnvelopes.filter((envelope) => envelope.includes('"type":"span"'))).toEqual([]);
+      if (!preinitialized) expect(sentryEnvelopes).toEqual([]);
     }
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

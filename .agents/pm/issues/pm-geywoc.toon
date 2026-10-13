@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: bugfix,observability,privacy,sdk
 created_at: "2026-10-13T04:41:25.527Z"
-updated_at: "2026-10-13T06:25:37.594Z"
+updated_at: "2026-10-13T07:37:36.353Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7ed53804faba291cc8b1a6ce"
 author: "harness:codex"
@@ -19,19 +19,37 @@ expected_result: Sentry retains bounded command taxonomy and outcome without pri
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-58yzil,discovered_from,"2026-10-13T04:41:25.527Z","harness:codex","cli:create:dep",detected
   pm-t3jxjj,related,"2026-10-13T05:43:51.188Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-13T04:41:25.527Z","harness:codex","Duplicate check: strict all-status corpus including closed Sentry/privacy lineage and current request-specific search found no owner for raw positional command-context exposure. Reuse pm-58yzil and pm-t3jxjj as related delivery owners."
   "2026-10-13T04:44:24.888Z","harness:codex","Independent pre-fix control: canonical helper test extended with private positional text and a separate token value. Before production edits selected test exits1 because both strings remain in context args. Same assertion and harness retained for after proof; ignored privacy-before.log records exact assertion failure."
   "2026-10-13T05:16:59.000Z","harness:codex","Configured consent control fails before the fix: with a disposable global telemetry.enabled=false and a loopback Sentry DSN, explicit tracing exported a span. CLI now supplies effective consent from its active telemetry receipt to the shared SDK helper before initialization. The unchanged configured-opt-out assertion passes afterward. Fixture telemetry endpoint also points to its loopback collector, preventing external event delivery when test policy is cleared for local Sentry instrumentation. Initial collector experiments emitted3 unfinished fixture starts; those installation identities are separate from the real installation, whose fixed04:30-05:01UTC cohort is112 starts/112 finishes with0 unmatched or duplicate pairs. No historical telemetry records are deleted."
+  "2026-10-13T06:48:52.880Z","harness:codex","Export-boundary review found that streamed spans also carry link attributes. The final hook scrubs the complete raw span before Sentry serialization, retaining trace/span identities and safe attributes while redacting linked private data. Independent isolated control exits0 for current source and exits1 when restoring the old name/attributes-only scrub. No detector exclusions were added; synthetic credential examples use explicit placeholders and the staged repository security scan is clean."
+  "2026-10-13T07:32:18.958Z","harness:codex","Export-boundary follow-up: an embedded caller can already have a Sentry client before a CLI invocation with configured telemetry disabled. Initialization consent alone does not prevent the existing client from starting a command span. Add an independent real-SDK/CLI collector control, then gate command-span creation on effective command consent in both lifecycle paths."
+  "2026-10-13T07:37:36.353Z","harness:codex","Independent embedded consent control fails before span gating and passes afterward. Both core and extension lifecycle paths now skip Sentry command context and span creation when the active telemetry consent receipt is absent, even if an embedding caller already initialized the client. The collector fixture supplies a disposable installation identity so the positive preinitialized case also proves real command capture. All101 focused tests and typecheck pass after this correction; complete coverage and packed acceptance are being repeated for the final source."
 learnings[1]{created_at,author,text}:
   "2026-10-13T05:01:46.510Z","harness:codex",Command args reaching a diagnostic helper are data even when text resembles flags. Redact every argument slot and retain option keys separately; apply privacy at event breadcrumb log and streamed-span export boundaries.
-files[4]{path,scope}:
+files[6]{path,scope}:
+  src/cli/main.ts,project
   src/core/sentry/helpers.ts,project
   src/core/sentry/instrument.ts,project
+  tests/integration/telemetry/sentry-command-tracing.spec.ts,project
   tests/unit/core/sentry/instrument.spec.ts,project
   tests/unit/core/sentry/sentry-helpers.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry,project,240,"harness:codex","2026-10-13T04:46:48.043Z",local_mutation,feat/sentry-tracing-privacy
+  node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts,project,240,"harness:codex","2026-10-13T07:37:34.396Z",local_mutation,feat/sentry-tracing-privacy
+test_runs[1]:
+  - run_id: test-local-mv6d2996-qxhmcx
+    kind: test
+    status: passed
+    started_at: "2026-10-13T07:29:47.601Z"
+    finished_at: "2026-10-13T07:29:59.898Z"
+    recorded_at: "2026-10-13T07:29:59.898Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
 escape_class: production_defect

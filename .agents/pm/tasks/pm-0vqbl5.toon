@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: improve,performance,sdk
 created_at: "2026-10-13T05:47:55.612Z"
-updated_at: "2026-10-13T06:22:03.609Z"
+updated_at: "2026-10-13T07:30:12.699Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7ed53804faba291cc8b1a6ce"
 author: "harness:codex"
@@ -30,6 +30,18 @@ files[2]{path,scope}:
   tests/unit/sdk/governance/defect-recurrence.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,project,240,"harness:codex","2026-10-13T05:55:24.178Z",local_mutation,feat/sentry-tracing-privacy
+test_runs[1]:
+  - run_id: test-local-mv6d2j4d-0gekl5
+    kind: test
+    status: passed
+    started_at: "2026-10-13T07:30:00.668Z"
+    finished_at: "2026-10-13T07:30:12.685Z"
+    recorded_at: "2026-10-13T07:30:12.685Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DEFECT_RECURRENCE.md,project
 body: ""

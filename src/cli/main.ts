@@ -1488,12 +1488,14 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
         pm_root: fallbackPmRoot,
       });
       await recordActiveDeprecatedAliasUsage(rootProgram);
-      await ensureSentryCommandTracing(Boolean(activeTelemetryCommandContext));
-      sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
-        source_context: activeTelemetryCommandContext?.source_context,
-        source_context_source: activeTelemetryCommandContext?.source_context_source,
-      });
-      sentryStartCommandSpan(commandPath);
+      if (activeTelemetryCommandContext) {
+        await ensureSentryCommandTracing(true);
+        sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
+          source_context: activeTelemetryCommandContext.source_context,
+          source_context_source: activeTelemetryCommandContext.source_context_source,
+        });
+        sentryStartCommandSpan(commandPath);
+      }
       await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, fallbackPmRoot, defaultPreflightDecision());
       await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, fallbackPmRoot);
       return;
@@ -1584,12 +1586,14 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       pm_root: runtimeExtensions.pmRoot,
     });
     await recordActiveDeprecatedAliasUsage(rootProgram);
-    await ensureSentryCommandTracing(Boolean(activeTelemetryCommandContext));
-    sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
-      source_context: activeTelemetryCommandContext?.source_context,
-      source_context_source: activeTelemetryCommandContext?.source_context_source,
-    });
-    sentryStartCommandSpan(commandPath);
+    if (activeTelemetryCommandContext) {
+      await ensureSentryCommandTracing(true);
+      sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
+        source_context: activeTelemetryCommandContext.source_context,
+        source_context_source: activeTelemetryCommandContext.source_context_source,
+      });
+      sentryStartCommandSpan(commandPath);
+    }
 
     const hookWarnings = await runBeforeCommandHooks(runtimeExtensions.hooks, {
       command: commandPath,

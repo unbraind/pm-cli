@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: feature,observability,sdk
 created_at: "2026-10-12T19:21:47.566Z"
-updated_at: "2026-10-13T06:22:04.330Z"
+updated_at: "2026-10-13T07:29:46.614Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#7ed53804faba291cc8b1a6ce"
 author: "harness:codex"
@@ -39,6 +39,18 @@ files[7]{path,scope}:
   tests/unit/core/sentry/instrument.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,project,240,"harness:codex","2026-10-13T05:01:42.836Z",local_mutation,feat/sentry-tracing-privacy
+test_runs[1]:
+  - run_id: test-local-mv6d1yzt-hwxtco
+    kind: test
+    status: passed
+    started_at: "2026-10-13T07:29:31.153Z"
+    finished_at: "2026-10-13T07:29:46.601Z"
+    recorded_at: "2026-10-13T07:29:46.601Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
 body: ""
