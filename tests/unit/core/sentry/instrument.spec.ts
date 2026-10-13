@@ -97,9 +97,9 @@ describe("instrument residual branches", () => {
     expect(requireSentryInitOptions<{ tracesSampleRate: number }>().tracesSampleRate).toBe(1);
   });
 
-  it("requires effective telemetry consent before successful tracing loads Sentry", async () => {
+  it.each([false, "false", 1, {}, null, undefined])("requires explicit boolean consent instead of %j before successful tracing loads Sentry", async (consent) => {
     process.env.PM_SENTRY_TRACE_COMMANDS = "1";
-    await ensureSentryCommandTracing(false);
+    await ensureSentryCommandTracing(consent as boolean);
     expect(sentryLoaderMock).not.toHaveBeenCalled();
   });
 

@@ -251,7 +251,8 @@ Configured telemetry opt-outs also prevent it. The CLI skips command context and
 span creation when consent is disabled, including when an embedding caller has
 already initialized Sentry. SDK callers use
 `ensureSentryCommandTracing(telemetryEnabled)` from `@unbrained/pm-cli/sdk`,
-passing their effective consent decision before starting a command span.
+passing an explicit `true` only after confirming effective consent before starting
+a command span. Other runtime values keep initialization disabled.
 Sentry sends streamed spans; its span and log hooks apply the same scrubbing
 as errors and breadcrumbs. Command context retains option keys and redacted
 argument slots, including text that resembles a flag. Automatic user, cookie, HTTP header/body/query, AI, database,

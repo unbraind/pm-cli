@@ -495,9 +495,9 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
   return SentryModule;
 }
 
-/** Initialize opted-in tracing only after the caller confirms effective telemetry consent. */
+/** Initialize opted-in tracing only after the caller confirms consent with an explicit true. */
 export async function ensureSentryCommandTracing(telemetryEnabled: boolean): Promise<void> {
-  if (!telemetryEnabled) return;
+  if (telemetryEnabled !== true) return;
   if (!OPT_OUT_VALUES.has((process.env.PM_SENTRY_TRACE_COMMANDS ?? "").trim().toLowerCase())) return;
   if (resolveTracesSampleRate() === 0) return;
   await ensureSentryInit();
