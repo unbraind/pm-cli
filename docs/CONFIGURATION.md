@@ -260,6 +260,9 @@ telemetry discards its span; SDK callers can use `sentryDiscardCommandSpan()`
 to clear a pending span without exporting it.
 A failed completion-time settings read also discards the span, so optional
 diagnostics cannot turn a successful command into a failure.
+If the SDK loader or initializer fails, tracing remains unavailable for that
+process and the command continues. The partial client is cleared and the
+failed initialization is not retried.
 Sentry sends streamed spans; its span and log hooks apply the same scrubbing
 as errors and breadcrumbs. Command context retains option keys and redacted
 argument slots, including text that resembles a flag. Automatic user, cookie, HTTP header/body/query, AI, database,

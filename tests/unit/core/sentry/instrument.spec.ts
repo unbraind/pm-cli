@@ -20,7 +20,7 @@ const rootMock = vi.hoisted(() => ({
 
 vi.mock("../../../../src/core/packages/root.js", () => rootMock);
 
-import { _testOnly, ensureSentryInit, ensureSentryCommandTracing } from "../../../../src/core/sentry/instrument.js";
+import { _testOnly, ensureSentryInit, ensureSentryCommandTracing, getSentry } from "../../../../src/core/sentry/instrument.js";
 
 const {
   scrubEventData,
@@ -101,6 +101,31 @@ describe("instrument residual branches", () => {
     process.env.PM_SENTRY_TRACE_COMMANDS = "1";
     await expect(ensureSentryCommandTracing(consent as boolean)).resolves.toBe(false);
     expect(sentryLoaderMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["loader", "initializer"])("keeps optional-tracing-initialization-failure from the %s unsuccessful without retries", async (stage) => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "1";
+    const fail = () => { throw new Error("Diagnostic initialization unavailable"); };
+    if (stage === "loader") sentryLoaderMock.mockImplementationOnce(fail);
+    else sentryNodeMock.init.mockImplementationOnce(fail);
+
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(getSentry()).toBeUndefined();
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    await expect(ensureSentryInit()).resolves.toBeUndefined();
+    expect(sentryLoaderMock).toHaveBeenCalledOnce();
+    expect(sentryNodeMock.init).toHaveBeenCalledTimes(stage === "loader" ? 0 : 1);
+  });
+
+  it("never grants concurrent tracing permission from a partially initialized client", async () => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "1";
+    sentryNodeMock.init.mockImplementationOnce(() => { throw new Error("Diagnostic initialization unavailable"); });
+    await expect(Promise.all([ensureSentryCommandTracing(true), ensureSentryCommandTracing(true)])).resolves.toEqual([false, false]);
+    expect(getSentry()).toBeUndefined();
+    expect(sentryLoaderMock).toHaveBeenCalledOnce();
+    expect(sentryNodeMock.init).toHaveBeenCalledOnce();
   });
 
   it("scrubs streamed spans and logs at their actual export hooks", async () => {

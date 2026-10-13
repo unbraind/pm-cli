@@ -465,7 +465,6 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
   if (isSentryDisabled()) return undefined;
 
   const SentryModule = _loadSentry();
-  _sentry = SentryModule;
 
   const dsn = process.env.SENTRY_DSN?.trim() || PM_CLI_SENTRY_DSN;
   const release = resolveCliVersion();
@@ -517,6 +516,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     beforeBreadcrumb,
   });
 
+  _sentry = SentryModule;
   return SentryModule;
 }
 
@@ -525,7 +525,12 @@ export async function ensureSentryCommandTracing(telemetryEnabled: boolean): Pro
   if (telemetryEnabled !== true) return false;
   if (!OPT_OUT_VALUES.has((process.env.PM_SENTRY_TRACE_COMMANDS ?? "").trim().toLowerCase())) return false;
   if (resolveTracesSampleRate() === 0 || isSentryDisabled()) return false;
-  return (await ensureSentryInit()) !== undefined;
+  try {
+    return (await ensureSentryInit()) !== undefined;
+  } catch {
+    _sentry = undefined;
+    return false;
+  }
 }
 
 /** Implements get sentry for the public runtime surface of this module. */
