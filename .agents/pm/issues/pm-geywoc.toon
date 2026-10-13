@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags[4]: bugfix,observability,privacy,sdk
 created_at: "2026-10-13T04:41:25.527Z"
-updated_at: "2026-10-13T14:55:12.067Z"
-closed_at: "2026-10-13T14:55:11.456Z"
-completed_at: "2026-10-13T14:55:11.456Z"
+updated_at: "2026-10-13T15:33:23.473Z"
+closed_at: "2026-10-13T15:33:22.560Z"
+completed_at: "2026-10-13T15:33:22.560Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Positional content and separate option values never enter Sentry context or breadcrumbs; streamed spans and logs scrub sensitive data before export; independent negative controls fail before the fix and pass after; existing error classification and consent remain intact.
 parent: pm-5oj5
 risk: high
 confidence: high
-resolution: Scrub complete streamed diagnostics and serialized logs after scope merging; redact every template parameter and preserve safe typed attributes without modifying shared scopes
-expected_result: "Private command, scope and template values cannot leave through Sentry diagnostics"
-actual_result: "103 linked Sentry checks and135 focused checks pass; two independent real-SDK controls reproduce each log escape and pass after correction; full local static and packed npm/Bun/npx/bunx gates pass, with renewed exact-head hosted coverage still required before merge"
+resolution: "Redact argument, stream and final serialized-log boundaries including scope and template values, with explicitly synthetic regression fixtures"
+expected_result: Private diagnostic values stay redacted while the unchanged secret detector and privacy suite pass
+actual_result: "node scripts/check-secrets.mjs passes and43 instrument tests pass after fixture-only correction;135 focused checks,103 linked Sentry cases,30 recurrence cases, full static and packed consumers previously passed on identical production code; final hosted checks and review remain required"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-58yzil,discovered_from,"2026-10-13T04:41:25.527Z","harness:codex","cli:create:dep",detected
   pm-t3jxjj,related,"2026-10-13T05:43:51.188Z","harness:codex","cli:update:dep",detected
   pm-mor9pl,related,"2026-10-13T12:54:36.933Z","harness:codex","cli:update:dep",detected
-comments[15]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-10-13T04:41:25.527Z","harness:codex","Duplicate check: strict all-status corpus including closed Sentry/privacy lineage and current request-specific search found no owner for raw positional command-context exposure. Reuse pm-58yzil and pm-t3jxjj as related delivery owners."
   "2026-10-13T04:44:24.888Z","harness:codex","Independent pre-fix control: canonical helper test extended with private positional text and a separate token value. Before production edits selected test exits1 because both strings remain in context args. Same assertion and harness retained for after proof; ignored privacy-before.log records exact assertion failure."
   "2026-10-13T05:16:59.000Z","harness:codex","Configured consent control fails before the fix: with a disposable global telemetry.enabled=false and a loopback Sentry DSN, explicit tracing exported a span. CLI now supplies effective consent from its active telemetry receipt to the shared SDK helper before initialization. The unchanged configured-opt-out assertion passes afterward. Fixture telemetry endpoint also points to its loopback collector, preventing external event delivery when test policy is cleared for local Sentry instrumentation. Initial collector experiments emitted3 unfinished fixture starts; those installation identities are separate from the real installation, whose fixed04:30-05:01UTC cohort is112 starts/112 finishes with0 unmatched or duplicate pairs. No historical telemetry records are deleted."
@@ -38,6 +38,9 @@ comments[15]{created_at,author,text}:
   "2026-10-13T12:54:38.094Z","harness:codex","Graph-composition at exactf13bac6cd passes code, SDK import and all6 CLI startup budgets but reports1234 prose gaps against the unchanged1233 ceiling. Complete live CLI corpus plus the public evaluateMeasurement source identifies this exact newly introduced implicit mention: pm-geywoc to pm-mor9pl. Add the semantically correct related edge between the privacy collector and its discovered public embedding fix. No gate bound or prose evidence is removed."
   "2026-10-13T14:15:52.992Z","harness:codex","Review round5 verified both pinned Sentry10.76.0 source paths: scope attributes merge after beforeSendLog, and template parameters retain bare values under positional attribute keys. Add final beforeEnvelope log scrubbing with typed-attribute preservation, redact all positional parameters, and verify real loopback serialization without modifying shared scopes."
   "2026-10-13T14:52:23.762Z","harness:codex","Round5 source validation:135 focused checks and all103 linked Sentry cases pass; typecheck and uncached unsuppressed ESLint pass. Independent real-SDK scope-hook and positional-parameter controls each leak only their targeted value when protection is removed and export neither with the correction. Broad local coverage passed10393 tests but one unchanged packed-continuation fixture could not resolve this host npm package, so it produced no coverage summary. The exact fixture then passed public Node/Bun consumers with the existing npm package on NODE_PATH. Renewed full hosted coverage is mandatory. Complete current local quality:static also passes, including all six unchanged startup budgets and registered mutation controls; prior workstation timing diagnoses remain separate historical evidence."
+  "2026-10-13T15:31:01.660Z","harness:codex","Hosted static gate failure on229b94812 was limited to two synthetic password-assignment strings newly added to the serialized-envelope unit fixture. Replace both with explicit angle-bracket fixture markers; the unchanged secret scanner and all43 instrument tests pass. No detector exclusion, scanner configuration or production logic changed. This corrects a missed separate local secret-gate invocation; complete local quality:static had passed but did not invoke quality:secrets."
+  "2026-10-13T15:32:10.841Z","harness:codex","Correction to the immediately preceding fixture receipt: quality:secrets is not a registered package script, so that attempted command failed before the focused suite ran. The earlier pass statement and closure receipt were premature. Preserve those events, reopen, and use node scripts/check-secrets.mjs followed by the focused43-case suite to obtain the actual result before a new atomic closure."
+  "2026-10-13T15:33:20.031Z","harness:codex","Actual corrected fixture validation now completed: node scripts/check-secrets.mjs reports no secret patterns, and the focused instrument suite passes all43 tests. Synthetic markers preserve the previously passing privacy expectations; production files and real-SDK negative controls are unchanged."
 learnings[2]{created_at,author,text}:
   "2026-10-13T05:01:46.510Z","harness:codex",Command args reaching a diagnostic helper are data even when text resembles flags. Redact every argument slot and retain option keys separately; apply privacy at event breadcrumb log and streamed-span export boundaries.
   "2026-10-13T10:21:53.015Z","harness:codex","Privacy at a diagnostic export boundary must consume the entire quoted value, including escaped delimiters and incomplete input. A prefix-only regex can redact the first word while exporting the remaining secret."
@@ -129,7 +132,7 @@ test_runs[6]:
       node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: Verified final serialized-log privacy boundary
+close_reason: Verified privacy coverage and explicit fixture markers with the actual secret checker
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

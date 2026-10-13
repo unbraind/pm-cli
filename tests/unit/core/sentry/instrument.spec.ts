@@ -148,10 +148,10 @@ describe("instrument residual branches", () => {
     expect(sentryNodeMock.on).toHaveBeenCalledWith("beforeEnvelope", expect.any(Function));
     const hook = sentryNodeMock.on.mock.calls[0]![1] as (envelope: unknown) => void;
     const logs = [
-      { body: "password=private-log-value", attributes: {
+      { body: "password=<private-log-value>", attributes: {
         token: { type: "integer", value: 12345 },
         "sentry.message.parameter.0": { type: "string", value: "private-parameter" },
-        details: { type: "string", value: "password=private-scope-value" },
+        details: { type: "string", value: "password=<private-scope-value>" },
         counter: { type: "integer", value: 7 },
         ready: { type: "boolean", value: true },
       } },
