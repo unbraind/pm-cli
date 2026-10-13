@@ -81,6 +81,35 @@ function looksLikeFilesystemPath(value: string): boolean {
   return normalized.includes("/home/");
 }
 
+/** Consume a quoted assignment through its delimiter, escapes, or incomplete end. */
+function sensitiveAssignmentEnd(value: string, start: number, unquotedEnd: number): number {
+  const quote = value[start];
+  if (quote !== '"' && quote !== "'") return unquotedEnd;
+  for (let index = start + 1; index < value.length; index++) {
+    if (value[index] === "\\") {
+      index++;
+      continue;
+    }
+    if (value[index] === quote) return index + 1;
+  }
+  return value.length;
+}
+
+/** Replace sensitive assignments without retaining quoted suffixes or nested matches. */
+function scrubInlineSensitiveAssignments(value: string): string {
+  const chunks: string[] = [];
+  let consumed = 0;
+  for (const match of value.matchAll(INLINE_SENSITIVE_ASSIGNMENT_RE)) {
+    if (match.index < consumed) continue;
+    const unquotedEnd = match.index + match[0].length;
+    const start = unquotedEnd - match[2]!.length;
+    chunks.push(value.slice(consumed, match.index), `${match[1]}=[scrubbed]`);
+    consumed = sensitiveAssignmentEnd(value, start, unquotedEnd);
+  }
+  chunks.push(value.slice(consumed));
+  return chunks.join("");
+}
+
 function scrubString(value: string, keyHint?: string): string {
   if (
     keyHint &&
@@ -89,11 +118,7 @@ function scrubString(value: string, keyHint?: string): string {
   ) {
     return "[scrubbed_path]";
   }
-  const scrubbed = value
-    .replaceAll(
-      INLINE_SENSITIVE_ASSIGNMENT_RE,
-      (_m, key: string) => `${key}=[scrubbed]`,
-    )
+  const scrubbed = scrubInlineSensitiveAssignments(value)
     .replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[scrubbed_email]")
     .replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [scrubbed]")
     .replaceAll(/sntr[ysu]_[A-Za-z0-9_-]+/g, "[scrubbed_sentry_token]")
@@ -495,12 +520,12 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
   return SentryModule;
 }
 
-/** Initialize opted-in tracing only after the caller confirms consent with an explicit true. */
-export async function ensureSentryCommandTracing(telemetryEnabled: boolean): Promise<void> {
-  if (telemetryEnabled !== true) return;
-  if (!OPT_OUT_VALUES.has((process.env.PM_SENTRY_TRACE_COMMANDS ?? "").trim().toLowerCase())) return;
-  if (resolveTracesSampleRate() === 0) return;
-  await ensureSentryInit();
+/** Return tracing permission only after explicit consent, opt-in, sampling and process policy agree. */
+export async function ensureSentryCommandTracing(telemetryEnabled: boolean): Promise<boolean> {
+  if (telemetryEnabled !== true) return false;
+  if (!OPT_OUT_VALUES.has((process.env.PM_SENTRY_TRACE_COMMANDS ?? "").trim().toLowerCase())) return false;
+  if (resolveTracesSampleRate() === 0 || isSentryDisabled()) return false;
+  return (await ensureSentryInit()) !== undefined;
 }
 
 /** Implements get sentry for the public runtime surface of this module. */

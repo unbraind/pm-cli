@@ -1488,8 +1488,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
         pm_root: fallbackPmRoot,
       });
       await recordActiveDeprecatedAliasUsage(rootProgram);
-      if (activeTelemetryCommandContext) {
-        await ensureSentryCommandTracing(true);
+      if (activeTelemetryCommandContext && await ensureSentryCommandTracing(true)) {
         sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
           source_context: activeTelemetryCommandContext.source_context,
           source_context_source: activeTelemetryCommandContext.source_context_source,
@@ -1586,8 +1585,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       pm_root: runtimeExtensions.pmRoot,
     });
     await recordActiveDeprecatedAliasUsage(rootProgram);
-    if (activeTelemetryCommandContext) {
-      await ensureSentryCommandTracing(true);
+    if (activeTelemetryCommandContext && await ensureSentryCommandTracing(true)) {
       sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
         source_context: activeTelemetryCommandContext.source_context,
         source_context_source: activeTelemetryCommandContext.source_context_source,

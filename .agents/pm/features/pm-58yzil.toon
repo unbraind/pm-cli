@@ -6,24 +6,24 @@ status: closed
 priority: 2
 tags[3]: feature,observability,sdk
 created_at: "2026-10-12T19:21:47.566Z"
-updated_at: "2026-10-13T09:23:18.315Z"
-closed_at: "2026-10-13T08:39:42.089Z"
-completed_at: "2026-10-13T08:39:42.089Z"
+updated_at: "2026-10-13T10:21:54.581Z"
+closed_at: "2026-10-13T10:21:53.826Z"
+completed_at: "2026-10-13T10:21:53.826Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Prove an independent successful-command opt-in control before and after; honor consent opt-outs and Vitest isolation; sanitize span context; preserve default cold-start and import budgets; verify one recent explicitly sampled trace through the authenticated Sentry API, distinguishing ingestion unavailability from source behavior."
 parent: pm-5oj5
 risk: medium
 confidence: high
-resolution: "Export ensureSentryCommandTracing, initialize only for explicit positive sampling and effective consent, annotate streamed command spans, and flush completion within the existing bounded timeout."
-expected_result: Opted-in successful commands produce useful recent sanitized spans while default startup and opt-out isolation remain lazy.
-actual_result: "80 linked Sentry tests pass with real loopback export and configured opt-outs; independent initialization removal fails; authenticated Sentry discovery shows a real recent pm context span, and final Node/Bun/npx/bunx package workflows pass."
+resolution: "Export boolean tracing permission from the lazy SDK initializer and enforce it at both CLI command-context/span boundaries, including current consent, opt-in, sampling and process policy for an existing client."
+expected_result: "Successful command spans are exported only with current explicit permission, and default startup remains lazy."
+actual_result: "Pre-fix existing-client control fails; all90 linked Sentry tests, typecheck, ESLint, packed npm/Bun/npx/bunx9-package workflows and full10377-test exact100/100/100/100 coverage pass after correction."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-1ybs,related,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
   pm-gg8e,discovered_from,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
   pm-t3jxjj,related,"2026-10-13T05:41:51.029Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-13T09:23:17.604Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-10-12T19:21:47.566Z","harness:codex","Duplicate check: fresh opt-in tracing search, open/in_progress inventories and complete all-status corpus review found the completed sampling-knob and lazy-startup owners but no exact active implementation owner. Their full live metadata was read. This enhancement remains open and unclaimed; the four connected implementation owners remain the only active items."
   "2026-10-12T21:58:24.817Z","harness:codex","Fresh explicit unbrained/pm-cli Sentry queries during this delivery again return0 unresolved issues and0 recent trace rows. The14-day authenticated Sentry/telemetry gate passes with0 critical/high issues,3.01% finish error rate and0 failures without error codes. Successful-command tracing remains unproven and is retained here open/unclaimed; metrics-service recovery in pm-m1tfmp is independent from Sentry trace instrumentation."
   "2026-10-13T04:40:54.426Z","harness:codex","Delivery intake: complete strict all-status read of 2949 items with zero omissions and zero unreadable files; closed lineage and current GitHub reports inspected. Fresh authenticated Sentry query returns zero 24h traces and zero unresolved issues. Implement explicit successful-command opt-in without default SDK loading and preserve consent/test isolation. Bundle with canonical eligible Sentry11 migration and privacy hardening in one reviewed PR."
@@ -32,6 +32,8 @@ comments[8]{created_at,author,text}:
   "2026-10-13T06:05:28.578Z","harness:codex","Final independent tracing control uses the current consent-aware signature: isolated checkout baseline exits0 and removing opt-in initialization makes the same assertion fail with exit1. Focused verification is100 passing tests, including real loopback Sentry export and packed SDK Node/Bun continuation. Latest pm-changelog2026.10.12 is installed and activated through pm package install; full configured generation remains part of reviewed closeout."
   "2026-10-13T08:36:53.517Z","harness:codex","Candidate validation: explicit successful-command tracing has real loopback export and independent initialization-refusal controls, remains lazy by default, and respects configured consent, process opt-outs, zero sampling and Vitest isolation. Current linked80 Sentry tests and typecheck pass; final packed npm/Bun/npx/bunx smoke passes9 package workflows under unchanged artifact budgets. Authenticated span discovery for the compiled delivery shows actual pm context span bfd10b169aabf415 at2026-10-13T07:42:47UTC, separate from the prior legacy transaction-only query. Full coverage before the final strict-consent comparison passes10362 tests at exact100/100/100/100; hosted final coverage includes five extra JS boundary cases."
   "2026-10-13T08:49:51.375Z","harness:codex","Reviewed-closeout preparation: post-closure defect-evidence gate passes. Latest pm-changelog2026.10.12 generated the canonical all-release-tag/status/exclusion projection and its configured check reports unchanged with2636 included items. Unreleased contains exactly the three implementation owners in Added/Changed/Fixed; the32 historical scanner reconciliations are excluded. No manual changelog editing or package-owned workaround was needed."
+  "2026-10-13T09:51:03.273Z","harness:codex","Review evidence: https://github.com/unbraind/pm-cli/pull/1455#discussion_r4257006476. Exact be4553aec head has37 successful checks plus neutral/skipped provider results; merge is blocked by two unresolved actionable CodeRabbit threads. Reuse this owner for explicit tracing permission even with an existing client. Sourcery reports a temporary free quota limit, Cubic a monthly free limit and Greptile an expired trial; none is treated as approval."
+  "2026-10-13T10:21:51.575Z","harness:codex","PR1455 remediation verified: the SDK initializer now returns explicit boolean tracing permission and both CLI lifecycle branches guard context/span creation with it. Existing clients require current opt-in, nonzero sampling, hard process policy and effective consent. The independent preinitialized-default collector assertion fails before correction and passes afterward. Snapshot signature acknowledgment applies only to this PR-new, unpublished API: released2026.10.13 contains no ensureSentryCommandTracing export. Current90 linked Sentry tests, typecheck, ESLint, final packed9-package npm/Bun/npx/bunx acceptance and full10377-test exact100/100/100/100 coverage pass. Initial PRhead be4553aec has37 successful checks; renewed exact-head checks/review remain required."
 learnings[1]{created_at,author,text}:
   "2026-10-13T05:01:45.527Z","harness:codex",Use Sentry span discovery to verify streamed-span ingestion; a legacy transaction-only trace listing can be empty even when recent spans exist. Real loopback envelopes prove initialization flush and serialization separately from SaaS ingestion.
 files[7]{path,scope}:
@@ -44,7 +46,7 @@ files[7]{path,scope}:
   tests/unit/core/sentry/instrument.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,project,240,"harness:codex","2026-10-13T05:01:42.836Z",local_mutation,feat/sentry-tracing-privacy
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mv6d1yzt-hwxtco
     kind: test
     status: passed
@@ -78,8 +80,19 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv6iic34-ot8gge
+    kind: test
+    status: passed
+    started_at: "2026-10-13T10:02:04.866Z"
+    finished_at: "2026-10-13T10:02:28.144Z"
+    recorded_at: "2026-10-13T10:02:28.144Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/CONFIGURATION.md,project
-close_reason: Implemented explicit successful-command tracing through the lazy public SDK primitive.
+close_reason: Verified explicit tracing permission for both new and preinitialized SDK clients.
 body: ""

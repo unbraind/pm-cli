@@ -2326,6 +2326,13 @@
       ],
       "package_version": "2026.10.12",
       "reason": "Add optional read_output metadata and ExtensionCommandReadOutput for package authors; extend the read-surface union with extension command identities. Existing built-in identities and signatures remain usable; exhaustive surface consumers must admit the added namespace. No symbols or existing flags are removed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ensureSentryCommandTracing"
+      ],
+      "package_version": "2026.10.13",
+      "reason": "The initializer is first introduced in unpublished PR1455 and absent from the released2026.10.13 SDK; boolean permission lets callers enforce opt-in for an existing client."
     }
   ],
   "entrypoints": {
@@ -6980,7 +6987,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "ensureSentryCommandTracing",
-          "signature": "(telemetryEnabled: boolean) => Promise<void> | calls: (telemetryEnabled: boolean) => Promise<void>"
+          "signature": "(telemetryEnabled: boolean) => Promise<boolean> | calls: (telemetryEnabled: boolean) => Promise<boolean>"
         },
         {
           "classification": "advanced_export",

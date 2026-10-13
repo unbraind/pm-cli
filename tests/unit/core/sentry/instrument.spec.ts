@@ -99,7 +99,7 @@ describe("instrument residual branches", () => {
 
   it.each([false, "false", 1, {}, null, undefined])("requires explicit boolean consent instead of %j before successful tracing loads Sentry", async (consent) => {
     process.env.PM_SENTRY_TRACE_COMMANDS = "1";
-    await ensureSentryCommandTracing(consent as boolean);
+    await expect(ensureSentryCommandTracing(consent as boolean)).resolves.toBe(false);
     expect(sentryLoaderMock).not.toHaveBeenCalled();
   });
 
@@ -123,6 +123,45 @@ describe("instrument residual branches", () => {
     const log = options.beforeSendLog({ message: "error token=private-value", attributes });
     expect(JSON.stringify(log)).not.toContain("private-value");
     expect(options.beforeSendLog({ message: "safe log" })).toEqual({ message: "safe log" });
+  });
+
+  it.each([
+    ["single", "token='<private value with spaces>' outcome=ok", "token=[scrubbed] outcome=ok"],
+    ["double", 'token="<private value with spaces>" outcome=ok', "token=[scrubbed] outcome=ok"],
+    ["escaped", String.raw`token="<private \"quote\" value>" outcome=ok`, "token=[scrubbed] outcome=ok"],
+    ["nested", "token='<private password=value with spaces>' outcome=ok", "token=[scrubbed] outcome=ok"],
+    ["incomplete", 'token="<private value with spaces>', "token=[scrubbed]"],
+  ])("scrubs-complete-quoted-values using %s at span and log export", async (_name, value, expected) => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      beforeSendSpan: (span: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendLog: (log: Record<string, unknown>) => Record<string, unknown>;
+    }>();
+    expect(options.beforeSendSpan({ name: value, attributes: { detail: value }, links: [{ attributes: { detail: value } }] })).toEqual({
+      name: expected, attributes: { detail: expected }, links: [{ attributes: { detail: expected } }],
+    });
+    expect(options.beforeSendLog({ message: value, attributes: { detail: value } })).toEqual({ message: expected, attributes: { detail: expected } });
+  });
+
+  it.each([
+    ["missing opt-in", "PM_SENTRY_TRACE_COMMANDS", "0"],
+    ["zero rate", "SENTRY_TRACES_SAMPLE_RATE", "0"],
+    ["hard opt-out", "DO_NOT_TRACK", "1"],
+  ])("refuses tracing permission for %s even with an existing client", async (_name, key, value) => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(true);
+    process.env[key] = value;
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a prior process initialization refusal unsuccessful", async () => {
+    process.env.PM_SENTRY_DISABLED = "1";
+    await expect(ensureSentryInit()).resolves.toBeUndefined();
+    delete process.env.PM_SENTRY_DISABLED;
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
   });
 
   it.each([

@@ -16,15 +16,16 @@ const sdk = new URL("../../../dist/sdk/index.js", import.meta.url).href;
 const embeddedCli = new URL("../../../dist/cli/main.js", import.meta.url).href;
 
 it.each([
-  ["default", {}, true, false, false],
-  ["explicit", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, false],
-  ["configured opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, false],
-  ["zero rate", { PM_SENTRY_TRACE_COMMANDS: "1", SENTRY_TRACES_SAMPLE_RATE: "0" }, true, false, false],
-  ["consent opt-out", { PM_SENTRY_TRACE_COMMANDS: "1", DO_NOT_TRACK: "1" }, true, false, false],
-  ["test isolation", { PM_SENTRY_TRACE_COMMANDS: "1", VITEST: "1" }, true, false, false],
-  ["preinitialized opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, true],
-  ["preinitialized allowed", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, true],
-] as const)("exports successful CLI spans only with %s tracing", async (_name, overrides, enabled, expected, preinitialized) => {
+  ["default", {}, true, false, false, false],
+  ["explicit", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, false, false],
+  ["configured opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, false, false],
+  ["zero rate", { PM_SENTRY_TRACE_COMMANDS: "1", SENTRY_TRACES_SAMPLE_RATE: "0" }, true, false, false, false],
+  ["consent opt-out", { PM_SENTRY_TRACE_COMMANDS: "1", DO_NOT_TRACK: "1" }, true, false, false, false],
+  ["test isolation", { PM_SENTRY_TRACE_COMMANDS: "1", VITEST: "1" }, true, false, false, false],
+  ["preinitialized opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, true, false],
+  ["preinitialized allowed", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, true, false],
+  ["preinitialized default", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, false, true, true],
+] as const)("exports successful CLI spans only with %s tracing", async (_name, overrides, enabled, expected, preinitialized, removeOptIn) => {
   const root = await mkdtemp(path.join(tmpdir(), "pm-sentry-command-"));
   const envelopes: string[] = [];
   const server = createServer(async (request, response) => {
@@ -50,7 +51,7 @@ it.each([
     }, overrides);
     const commandArgs = ["--no-extensions", "contracts", "--summary", "--json"];
     const args = preinitialized
-      ? ["--input-type=module", "-e", `const { ensureSentryCommandTracing } = await import(${JSON.stringify(sdk)}); const { runPmCli } = await import(${JSON.stringify(embeddedCli)}); await ensureSentryCommandTracing(true); await runPmCli(${JSON.stringify(commandArgs)});`]
+      ? ["--input-type=module", "-e", `const { ensureSentryCommandTracing } = await import(${JSON.stringify(sdk)}); const { runPmCli } = await import(${JSON.stringify(embeddedCli)}); await ensureSentryCommandTracing(true); if (${removeOptIn}) delete process.env.PM_SENTRY_TRACE_COMMANDS; await runPmCli(${JSON.stringify(commandArgs)});`]
       : [cli, ...commandArgs];
     const result = await execute(process.execPath, args, { cwd: root, env, timeout: 15_000 });
     expect(JSON.parse(result.stdout)).toHaveProperty("commands");
