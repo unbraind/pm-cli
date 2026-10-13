@@ -5,6 +5,7 @@
  * workspace configuration, and packages.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { attachExtensionReadOutputRows } from "./read-output/extension.js";
 import { renderPmCommand } from "./command-line.js";
 import { attachOutputOmissionReceipt } from "./output-projection.js";
 import { encodeQueryCursor } from "./pagination.js";
@@ -1074,7 +1075,7 @@ export function attachReadOutputContracts(
   options: Record<string, unknown>,
   result: unknown,
 ): unknown {
-  const disclosedResult = attachOutputOmissionReceipt(command, result);
+  const disclosedResult = attachOutputOmissionReceipt(command, attachExtensionReadOutputRows(command ?? "", result));
   const projected =
     typeof disclosedResult === "object" &&
     disclosedResult !== null &&

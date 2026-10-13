@@ -859,6 +859,8 @@ export interface ExtensionCommandArgumentDefinition {
 
 /** Documents the command definition payload exchanged by command, SDK, and package integrations. */
 export interface CommandDefinition {
+  /** Opt a read-only handler into host projection, row bounds, budgets and continuation. */
+  read_output?: ExtensionCommandReadOutput;
   /** Value that configures or reports name for this contract. */
   name: string;
   /** Value that configures or reports run for this contract. */
@@ -885,6 +887,12 @@ export interface CommandDefinition {
   tier?: "core" | "standard" | "full" | "internal";
   /** Capability family used by generated agent routing surfaces. */
   family?: ExtensionCommandCapabilityFamily;
+}
+
+/** Structured rows a read-only extension command returns for host output shaping. */
+export interface ExtensionCommandReadOutput {
+  /** Dot-delimited array or object-map paths; an empty list declares a singleton result. */
+  row_keys: readonly string[];
 }
 
 /**
@@ -1529,6 +1537,8 @@ export interface RegisteredExtensionFlagDefinitions {
 
 /** Documents the registered extension command definition payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredExtensionCommandDefinition {
+  /** Validated read-only output declaration, snapshotted during activation. */
+  read_output?: ExtensionCommandReadOutput;
   /** Value that configures or reports layer for this contract. */
   layer: ExtensionLayer;
   /** Value that configures or reports name for this contract. */

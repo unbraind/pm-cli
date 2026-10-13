@@ -1,0 +1,41 @@
+id: pm-m1tfmp
+title: Recover telemetry metrics from a non-sequential Prometheus WAL
+description: "Live operational verification found Prometheus repeatedly aborting with opening storage failed: get segment range: segments are not sequential. Ingestion API, worker, Postgres and broker are healthy, with an empty event queue. Recover monitoring through a preservation-first procedure and verify live metrics separately from durable command event pairing."
+type: Issue
+status: closed
+priority: 1
+tags[1]: changelog-exclude
+created_at: "2026-10-12T21:48:16.899Z"
+updated_at: "2026-10-12T22:58:18.102Z"
+closed_at: "2026-10-12T22:56:14.868Z"
+completed_at: "2026-10-12T22:56:14.868Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Preserve and verify the complete original TSDB before reversible recovery; keep immutable blocks and Postgres telemetry intact; restore ready metrics and healthy scrape targets; record the recovered-head time-window limitation and rollback evidence privately.
+parent: pm-5oj5
+risk: high
+confidence: high
+resolution: "Moved the verified TSDB copy to supported local POSIX storage; retained the original data and quarantined obsolete WAL/mmap cache segments, then replayed the retained checkpoint/WAL. Preventive guard is tracked in pm-xa1w84."
+expected_result: Prometheus starts safely and receives fresh scrapes without discarding historical data.
+actual_result: "All 1451 file hashes matched before switching storage. Retained checkpoint/WAL replay completed; ready HTTP 200, six of six targets healthy with fresh timestamps, 5017 active series, about 334 samples/second and zero restarts. Original data and quarantined caches remain preserved."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-extension-read-output-controls,discovered_from,"2026-10-12T22:04:52.230Z","harness:codex","cli:update:dep",detected
+  pm-xa1w84,related,"2026-10-12T22:56:09.783Z","harness:codex","cli:update:dep",detected
+  pm-0kjv,related,"2026-10-12T22:58:17.668Z","harness:codex","cli:update:dep",detected
+  pm-58yzil,related,"2026-10-12T22:58:17.668Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-12T21:48:16.899Z","harness:codex","Duplicate check: complete2947-item all-status corpus plus live Prometheus/telemetry searches and fresh open/in_progress inventories found only completed telemetry setup/verification predecessors, not this non-sequential WAL incident. Existing observability parent and completed pm-0kjv were read in full. Host paths, raw identifiers and recovery artifacts stay private; no deletion of authoritative telemetry or unverified reset is authorized by this item."
+  "2026-10-12T21:49:39.578Z","harness:codex","Investigation before recovery: read-only volume inventory finds a validly named checkpoint covering segment1102, while an older segment1101 remains alongside1103 through1143. That obsolete pre-checkpoint segment introduces the gap. Plan: stop the failed service, create and independently verify a complete12.8GiB TSDB snapshot, quarantine only that older segment after inspecting checkpoint contents, preserve the checkpoint/current WAL/immutable blocks, and verify startup plus scrape/query health. This offers a reversible narrower repair than resetting the head; no event/metric data will be deleted. Official Prometheus storage guidance requires backup before corruption recovery."
+  "2026-10-12T21:54:01.777Z","harness:codex","Root cause and durable recovery refinement: Docker volume data is a symlink onto unsupported NFS, while the host has more than200GiB free on ext4. Preserve the original NFS tree and symlink, copy the entire TSDB onto local POSIX storage, compare independent per-file SHA256 manifests, quarantine only the obsolete segment below the retained checkpoint, then atomically switch this volume path and start the existing service. Compose configuration, immutable blocks, checkpoint, current WAL, and Postgres event storage remain preserved. Rollback retains both original storage and the new copy; private evidence contains exact paths and commands."
+  "2026-10-12T22:51:16.484Z","harness:codex","Complete independent snapshot verification succeeded: all1451 regular-file SHA256 rows match between the original NFS tree and the local copy. The volume now uses local ext4; original symlink/tree and byte manifests are retained. The first startup exposed widespread cached chunks_head sequence gaps from84 through358, rather than just the single WAL gap. Archive that entire cache and rebuild it from the retained checkpoint and WAL; immutable blocks and original cache/WAL are preserved, with no deletion or fabricated samples. Readiness and actual scrape/query validation are required before closure."
+  "2026-10-12T22:55:15.436Z","harness:codex","Recovery verification: the complete 1,451-file source/copy hash manifests match. The original unsupported filesystem tree and both damaged cache segments remain preserved for rollback. Prometheus replayed the retained checkpoint/WAL on local POSIX storage, is ready (HTTP 200), has zero restarts, and all six configured scrape targets are healthy with fresh timestamps. It reports 5,017 active series and approximately 334 appended samples/second. No samples were fabricated; historical gaps remain historical gaps."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T22:56:13.508Z","harness:codex","Storage readiness is independent of event ingestion health: a healthy API, worker and database did not imply healthy metrics storage. Verify filesystem support before TSDB relocation; preserve source data and prove hash equality before switching storage."
+close_reason: Metrics recovered with preserved data and live acceptance.
+escape_class: production_defect
+gate_evidence:
+  disposition: explicit_waiver
+  owner: unbraind
+  waiver_reason: "This is an external metrics-storage incident, not a package-source defect. Repository CI cannot attest the private deployment filesystem. Manual live acceptance proves ready HTTP 200, six healthy fresh scrapes, WAL replay, zero restarts and ingestion; all 1451 copied file hashes matched and original data is retained. Preventive deployment storage/readiness enforcement is separately owned by open follow-up pm-xa1w84. No repository gate is relaxed."
+  waiver_expires_at: "2026-11-12T00:00:00Z"
+body: ""

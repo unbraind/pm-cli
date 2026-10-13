@@ -8,6 +8,24 @@
 import { renderPmCommand } from "../command-line.js";
 import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
 import { parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
+import { READ_OUTPUT_DIMENSION_FLAGS, READ_OUTPUT_COMPOSITION_FLAGS } from "../read-output/options.js";
+
+const READ_PROJECTION_FLAGS = new Set<string>([...Object.values(READ_OUTPUT_DIMENSION_FLAGS), ...READ_OUTPUT_COMPOSITION_FLAGS, "--full", "--brief", "--compact", "--summary", "--fields", "--section", "--token-budget"]);
+const MUTATION_RECEIPT_FLAGS = new Set(["--full-changed-fields", "--no-changed-fields", "--id-only"]);
+
+/** Identify presentation intent that must not be silently dropped from an unknown-option retry. */
+export function isReadProjectionRecoveryFlag(flag: string): boolean {
+  const normalized = flag.split("=", 1)[0]!.replaceAll("_", "-");
+  return READ_PROJECTION_FLAGS.has(normalized) || (normalized.length >= 5 && [...READ_PROJECTION_FLAGS].some((candidate) => candidate.startsWith(normalized)));
+}
+
+/** Keep lexical corrections within read projection or mutation receipt semantics. */
+export function isCompatibleRecoveryFlag(requested: string, candidate: string): boolean {
+  const unknownFlag = requested.split("=", 1)[0]!.replaceAll("_", "-");
+  if (isReadProjectionRecoveryFlag(unknownFlag)) return !MUTATION_RECEIPT_FLAGS.has(candidate);
+  if (MUTATION_RECEIPT_FLAGS.has(unknownFlag)) return !isReadProjectionRecoveryFlag(candidate);
+  return true;
+}
 
 function normalizeMissingFlag(label: string): string | undefined {
   const match = label.trim().match(/--[a-z0-9][a-z0-9_-]*/i);

@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Let SDK extension read commands opt into universal context output controls ([pm-extension-read-output-controls](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-extension-read-output-controls.toon))
+
 ### Fixed
 
+- Avoid mutation-output flags when recovering an unsupported read projection ([pm-o0tkr6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o0tkr6.toon))
 - Preserve MCP warning enforcement when late console logs lack module attribution ([pm-bbyopg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bbyopg.toon))
 - Expose safe reviewed migration for historical merge receipts ([pm-tknnzp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tknnzp.toon))
 - Accept actively registered relationship kinds in SDK and CLI dependency mutations ([pm-7dsolo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7dsolo.toon))

@@ -1981,6 +1981,40 @@ capability entry to add before publishing.
 
 ## Minimal Command Extension
 
+Read-only command handlers can opt into the host output contract with
+`read_output: { row_keys: ["items"] }`. This public declaration is tracked by
+[pm-extension-read-output-controls](../.agents/pm/features/pm-extension-read-output-controls.toon).
+It supports `outputInclude`, `outputLimit`, `outputBudget`, `outputFormat`,
+`outputSession`, `outputCursor`, and `outputRowContract` through CLI flags,
+`PmClient.run(action, { options })`, and MCP `pm_run`. Inspect the active
+command's flags and schemas with `pm contracts --command "<path>" --full`.
+
+```ts
+api.registerCommand({
+  name: "inventory rows",
+  read_output: { row_keys: ["items"] },
+  run: () => ({ items: [{ id: "asset-1", title: "Camera" }], count: 1, total: 1 }),
+});
+```
+
+The handler must return a structured object. Each declared path must contain
+an array or object map; paths may be nested, unique and non-overlapping. Use
+`row_keys: []` for a singleton result. Activation snapshots the declaration,
+and the host validates the returned collections before projecting them. Avoid
+reserved metadata and prototype property names. The declaration promises a
+read-only handler; writers and undeclared commands keep refusing read controls,
+and native commands/actions retain their existing contracts. A declaration
+cannot shadow native dispatch; choose a distinct package action.
+
+Receipts and continuation cursors identify the canonical extension command.
+Resume with the returned cursor and the same semantic inputs; changed rows
+refuse stale continuation. A budget that cannot fit useful content returns the
+shared `output_budget_exceeded` branch, and CLI exits 2. SDK consumers should
+check `isReadOutputBudgetExceeded` before treating the payload as their result.
+Packages can describe their own omitted groups with the existing
+`OutputProjectionDeclaration`; the host also discloses reductions caused by
+its output controls. JSON and TOON estimates include their receipts.
+
 ```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 

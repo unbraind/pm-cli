@@ -2731,13 +2731,13 @@ async function withActiveExtensionsExclusively<T>(
   }
 }
 
-/**
- * Resolve `action` against the active extension command registrations and dispatch it.
- * Reached by runAction's default case for dynamic (non-built-in) actions after
- * {@link withActiveExtensions} has published the active registries. `active` is `null`
- * when no extensions are active (disabled, no workspace, or activation failed), in
- * which case no extension command can match and the action is reported unsupported.
- */
+/** Resolve SDK action precedence once for both read contracts and handler dispatch. */
+function resolveActiveExtensionActionCommand(action: string, active: ActiveExtensionRuntime | null): string | undefined {
+  const normalizedAction = normalizeActionName(action);
+  return active?.registrations.commands.find((entry) => normalizeActionName(entry.action) === normalizedAction)?.command ?? active?.commands.handlers.find((entry) => normalizeActionName(entry.command) === normalizedAction)?.command;
+}
+
+/** Dispatch a dynamic action using the same canonical command selected for its read contract. */
 async function dispatchActiveExtensionAction(
   action: string,
   args: Record<string, unknown>,
@@ -2751,15 +2751,7 @@ async function dispatchActiveExtensionAction(
       EXIT_CODE.USAGE,
     );
   }
-  const normalizedAction = normalizeActionName(action);
-  const definition = active.registrations.commands.find(
-    (entry) => normalizeActionName(entry.action) === normalizedAction,
-  );
-  const command =
-    definition?.command ??
-    active.commands.handlers.find(
-      (entry) => normalizeActionName(entry.command) === normalizedAction,
-    )?.command;
+  const command = resolveActiveExtensionActionCommand(action, active);
   if (!command) {
     throw new PmCliError(
       `Unsupported native pm action: ${action}`,
@@ -2933,8 +2925,11 @@ async function dispatchAction(
   activeExtensions: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
   const options = optionsWithAuthor(args, action);
-  validateReadOutputOptions(action, options);
-  normalizeReadOutputIncludeModeOptions(action, options);
+  const handler = getOwnHandler(SDK_ACTION_HANDLERS, action);
+  const extensionCommand = handler ? undefined : resolveActiveExtensionActionCommand(action, activeExtensions);
+  const readCommand = extensionCommand === undefined ? action : `extension:${extensionCommand}`;
+  validateReadOutputOptions(readCommand, options);
+  normalizeReadOutputIncludeModeOptions(readCommand, options);
   const ctx: McpActionDispatchContext = {
     action,
     args,
@@ -2944,7 +2939,6 @@ async function dispatchAction(
     global,
     activeExtensions,
   };
-  const handler = getOwnHandler(SDK_ACTION_HANDLERS, action);
   const result = handler
     ? await handler(ctx)
     : await dispatchActiveExtensionAction(
@@ -2958,7 +2952,7 @@ async function dispatchAction(
     return result;
   } else {
     options.resolvedOutputFormat = "json";
-    const projected = attachReadOutputContracts(action, options, result);
+    const projected = attachReadOutputContracts(readCommand, options, result);
     await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
     return projected;
   }

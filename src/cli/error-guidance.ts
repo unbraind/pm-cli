@@ -3,6 +3,7 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
+import { isReadProjectionRecoveryFlag } from "../sdk/agent/command-recovery.js";
 import {
   type PmCliErrorContext,
   type PmCliErrorRecoveryPayload,
@@ -1631,6 +1632,7 @@ function resolveUnknownOptionRetry(
   if (context.suggestedRetryCommand !== undefined) {
     return { retryCommand: context.suggestedRetryCommand };
   }
+  if (isReadProjectionRecoveryFlag(optionName)) return {};
   const normalizedArgs = context.normalizedInvocationArgs;
   if (normalizedArgs === undefined) return {};
   if (

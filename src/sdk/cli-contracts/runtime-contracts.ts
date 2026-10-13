@@ -4,6 +4,7 @@
  * Assembles executable core and package contracts into bounded discovery
  * projections shared by CLI, SDK, and MCP consumers.
  */
+import { PM_TOOL_PARAMETER_PROPERTIES } from "./tool-parameter-tables.js";
 import {
   EXIT_CODE,
   SETTINGS_DEFAULTS,
@@ -135,6 +136,7 @@ import {
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
   compactFlagAliasContracts,
+  SUBCOMMAND_GLOBAL_FLAG_CONTRACTS,
   PM_COMMAND_ALIAS_CONTRACTS,
   PM_DIAGNOSTIC_OUTPUT_BUDGET_CONTRACTS,
   resolvePmCommandOutputBudget,
@@ -449,6 +451,8 @@ interface RuntimeExtensionActionProbe {
 }
 
 interface ExtensionCommandContract {
+  /** Read-only structured output declaration contributed by the package. */
+  read_output?: RegisteredExtensionCommandDefinition["read_output"];
   /** Package-declared discovery tier, retained for full and scoped inspection. */
   tier?: PmCommandVisibilityTier;
   command: string;
@@ -1330,6 +1334,15 @@ function collectExtensionFlagContractsByCommand(
   return normalized;
 }
 
+/** Add universal controls only to commands declaring structured read output. */
+function extensionReadOutputDiscovery(definition: RegisteredExtensionCommandDefinition, flags: CliFlagContract[]): Pick<ExtensionCommandContract, "flags" | "read_output"> {
+  if (definition.read_output === undefined) return { flags };
+  return {
+    read_output: definition.read_output,
+    flags: [...flags, ...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS.filter(({ flag }) => flag.startsWith("--output-"))],
+  };
+}
+
 /** Preserve registered package metadata and combine handler, argument, and flag contributions by command path. */
 function collectExtensionCommandContracts(
   runtimeProbe: RuntimeExtensionActionProbe,
@@ -1373,6 +1386,7 @@ function collectExtensionCommandContracts(
       : [];
     definitionsByCommand.set(command, {
       ...(definition.tier === undefined ? {} : { tier: definition.tier }),
+      ...extensionReadOutputDiscovery(definition, flagsByCommand.get(command)?.flags ?? []),
       command,
       action,
       source: {
@@ -1382,7 +1396,7 @@ function collectExtensionCommandContracts(
       description: toOptionalTrimmedString(definition.description),
       intent: toOptionalTrimmedString(definition.intent),
       arguments: args,
-      flags: flagsByCommand.get(command)?.flags ?? [],
+
       examples: normalizeStringList(definition.examples),
       failure_hints: normalizeStringList(definition.failure_hints),
     });
@@ -1528,7 +1542,7 @@ function buildExtensionActionSchemaBranch(
     if (!propertyName || properties[propertyName] !== undefined) {
       continue;
     }
-    properties[propertyName] = buildExtensionFlagSchema(flag, contract.action);
+    properties[propertyName] = SUBCOMMAND_GLOBAL_FLAG_CONTRACTS.some((host) => host.flag === flag.flag && host.flag.startsWith("--output-")) ? PM_TOOL_PARAMETER_PROPERTIES[propertyName] : buildExtensionFlagSchema(flag, contract.action);
     if (flag.required === true) {
       required.push(propertyName);
     }

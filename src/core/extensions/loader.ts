@@ -26,6 +26,7 @@ import {
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { captureExtensionActivationRollback } from "./activation-transaction.js";
 import { assertCommandDefinitionMetadataStrings } from "./command-visibility-tier.js";
+import { normalizeExtensionReadOutput } from "./read-output-contract.js";
 import { normalizeExtensionContributionInventory } from "./contribution-inventory.js";
 import {
   buildImportExportContext,
@@ -1414,6 +1415,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
         normalizedCommand,
         definition.action,
       );
+      const readOutput = normalizeExtensionReadOutput(definition.read_output, normalizedCommand, action);
       if (
         !this.allowRegistration(
           "commands.handler",
@@ -1465,6 +1467,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       }
 
       const registration: RegisteredExtensionCommandDefinition = {
+        read_output: readOutput,
         layer: this.#loadedExtension.layer,
         name: this.#loadedExtension.name,
         source_package: this.#loadedExtension.source_package,
