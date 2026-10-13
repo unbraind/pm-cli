@@ -42,7 +42,7 @@ describe("merge fence version-skew compatibility", () => {
           cwd: tempRoot,
           encoding: "utf8",
         }),
-      ).toContain("merge: unset");
+      ).toContain("merge: text");
 
       await installMergeFence({ pmRoot: pmPath, workspaceRoot: tempRoot });
       expect(
@@ -55,7 +55,7 @@ describe("merge fence version-skew compatibility", () => {
           cwd: tempRoot,
           encoding: "utf8",
         }),
-      ).toContain("merge: unset");
+      ).toContain("merge: text");
       for (const tracker of [pmPath, childPmPath]) {
         expect(
           (
@@ -225,7 +225,7 @@ describe("merge fence version-skew compatibility", () => {
       const legacyWouldRewrite = current.includes(PM_GITATTRIBUTES_START);
       if (legacyWouldRewrite) await writeFile(attributesPath, "unexpected\n");
       expect(await readFile(attributesPath, "utf8")).toBe(current);
-      expect(current).toContain('".agents/pm/extensions/**" -merge');
+      expect(current).toContain('".agents/pm/extensions/**" merge=text');
       expect(current).toContain(
         '".agents/pm/extensions/.managed-extensions.json" merge=pm-json',
       );

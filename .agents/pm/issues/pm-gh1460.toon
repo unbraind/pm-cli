@@ -1,0 +1,74 @@
+id: pm-gh1460
+title: "GH-1460: Merge extension assets as ordinary Git files while preserving tracker drivers"
+description: Correct generated extension asset merge semantics without sending package content to tracker drivers or selecting binary merge for text sources.
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:extensions","area:sdk",data-durability,github-intake,merge
+created_at: "2026-10-13T20:29:23.483Z"
+updated_at: "2026-10-13T22:02:20.647Z"
+closed_at: "2026-10-13T22:02:19.891Z"
+completed_at: "2026-10-13T22:02:19.891Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Prove real native Git non-overlapping and conflicting extension merges; Keep managed inventory and contributed item drivers intact; Refresh installed fences without reverting sibling or older-version safety
+parent: pm-o2kc
+risk: high
+confidence: high
+resolution: "Generated extension asset attributes now select Git built-in merge=text, retaining managed inventory structured merge and existing v2 grammar. Current SDK installation refreshes older fences before current-policy reconciliation."
+expected_result: "Disjoint extension text edits combine cleanly, overlapping text has standard conflict markers, binaries preserve native conflict stages and tracker drivers remain structured."
+actual_result: "Native disjoint/overlap/binary controls pass; the pre-fix controls fail3/4 while binary preservation already passes. All10 linked fence cases pass, including sibling and older-version protection. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5rexki,related,"2026-10-13T20:29:23.483Z","harness:codex","cli:create:dep",detected
+  pm-l56d0o,related,"2026-10-13T20:29:23.483Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-13T20:29:23.483Z","harness:codex","{\"text\":\"Duplicate check: complete live2956-item all-status corpus with zero omissions and unreadable records, request-specific searches and open/in-progress inventories. Full live closed predecessors pm-5rexki and pm-l56d0o describe shipped adjacent contracts, not this new reported scope. Reuse pm-o2kc parent lineage and relate predecessors without reopening completed work. Full GitHub issue and comments read. Official Git documentation distinguishes -merge binary conflict behavior from the native text/default drivers. Implementation will preserve supported SDK contracts and use real controls.\"}"
+  "2026-10-13T20:38:59.079Z","harness:codex","Real native Git controls confirm the reported defect: generated -merge refuses disjoint text merges and produces no markers for conflicting text; the binary preservation control passes. Use the explicit built-in merge=text driver and retain its native binary detection, with the managed inventory pm-json override. Keep the existing v2 fence grammar because attribute syntax is unchanged and expected-pattern drift/pm merge install already refresh installed semantics; changing markers alone would let v2-aware older hosts append competing fences. Preserve the shipped older-client and sibling-fence contracts."
+  "2026-10-13T20:58:36.698Z","harness:codex","Current correction passes10 linked/native fence cases, including clean disjoint text merge, standard overlapping markers, untouched binary tentative content with all3 conflict stages, managed-inventory override and sibling/legacy-fence preservation. The current CLI successfully refreshes this repository fence through pm merge install. No direct tracker edit or force override was used."
+  "2026-10-13T21:27:57.863Z","harness:codex","Installed public-tarball acceptance now passes on Node26.9 and Bun, including real inline-placeholder extension dispatch and semantic TOON output through /sdk/testing and /sdk; the strict TypeScript6 consumer succeeds with explicit Node ambient types, and its isolated public-registry production dependency audit reports0 vulnerabilities. The earlier fixture typecheck refusal is preserved. Full repository execution initially exposed4 regressions: root integration-file and compact-document ceilings, the short-only residual-help contract, and an older installed merge fence during the published-artifact compatibility matrix. Corrected by relocating the new integration test, moving detail into focused author contracts, retaining the existing long-only residual guard, and refreshing old fences through the current SDK before current reconciliation. All192 targeted regression cases now pass, including all4 actual published writer/reader combinations with values, hashes, unknown fields, restore, native Git merges and verified history. No threshold, coverage denominator or force override changed. Full source coverage is still running and is not yet certified."
+  "2026-10-13T22:02:19.197Z","harness:codex","Native disjoint/overlap/binary controls pass; the pre-fix controls fail3/4 while binary preservation already passes. All10 linked fence cases pass, including sibling and older-version protection. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
+learnings[1]{created_at,author,text}:
+  "2026-10-13T21:28:03.109Z","harness:codex","Unset Git merge attributes select binary conflict behavior. Extension source assets need the built-in text driver, while the later managed inventory override remains structured. Cross-version workspace acceptance must upgrade an older installed fence through the current SDK before validating current policy, without weakening data or history assertions."
+files[5]{path,scope}:
+  .gitattributes,project
+  scripts/release/workspace-compatibility.mjs,project
+  src/sdk/merge/install.ts,project
+  tests/integration/merge-fence-version-skew.integration.spec.ts,project
+  tests/unit/sdk/merge-extension-asset-scope.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,project,"harness:codex","2026-10-13T20:44:54.740Z",local_mutation,chore/oct13-delivery-evidence
+test_runs[2]:
+  - run_id: test-local-mv75tpbg-e7lihj
+    kind: test
+    status: passed
+    started_at: "2026-10-13T20:54:53.027Z"
+    finished_at: "2026-10-13T20:55:09.676Z"
+    recorded_at: "2026-10-13T20:55:09.676Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv786qwq-y3qx0f
+    kind: test
+    status: passed
+    started_at: "2026-10-13T22:01:06.390Z"
+    finished_at: "2026-10-13T22:01:17.498Z"
+    recorded_at: "2026-10-13T22:01:17.498Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/MERGE_SAFETY.md,project
+close_reason: Implementation and sandboxed regression evidence complete; awaiting reviewed PR delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-gh1460
+body: "Source: https://github.com/unbraind/pm-cli/issues/1460\n\n## Problem\n`pm merge install` writes this into the tracked `.gitattributes` fence:\n```gitattributes\n\".agents/pm/**/*.json\" merge=pm-json\n\".agents/pm/extensions/**\" -merge\n\".agents/pm/extensions/.managed-extensions.json\" merge=pm-json\n```\nThe source comment (`src/sdk/merge/install.ts`, added in #916) says the intent is an escape hatch: extension package assets should not go through the pm item and stream drivers. But `-merge` does not mean \"no custom driver\". In gitattributes, **`-merge` (unset) means \"treat as binary\"**:\n- when both branches change an extension file, Git keeps the current branch's version as the tentative result and reports a conflict;\n- it writes **no conflict markers**, so the other side's edit can easily be lost, because the file looks clean;\n- non-conflicting edits from both sides are not combined either.\n\nWhat the comment describes is `!merge` (unspecified, meaning Git's built-in 3-way text merge) or an explicit `merge=text`. Either one excludes the files from `pm-json` / `pm-relationship` without making them binary.\n\n## Impact\nAny repository that vendors or develops an extension under `.agents/pm/extensions/` (fleet packages do this during development and in packed-consumer tests) gets binary-merge semantics on text sources. A code-review bot flagged it on a downstream PR (unbraind/pm-lint#6). Consumers cannot fix it locally: the fence is generated, and `pm health` reports any edit as `merge_fence_drift`.\n\n## Proposal\n1. Emit `\".agents/pm/extensions/**\" merge=text` (or `!merge`) instead of `-merge`, and keep the later `merge=pm-json` override for `.managed-extensions.json`.\n2. Bump the fence version marker so `pm merge install` / health refresh existing fences.\n3. Add a test that merges two branches each editing a different line of an extension source file: expect a clean text merge. Editing the same line should produce standard conflict markers.\n\n\nImplementation intent\n\nCorrect generated extension asset merge semantics without sending package content to tracker drivers or selecting binary merge for text sources."

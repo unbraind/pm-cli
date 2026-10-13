@@ -7,6 +7,8 @@
  * prefer the typed operations exported by the main SDK barrel.
  */
 export { assertSchemaPreviewSupported } from "./runtime/schema-preview.js";
+/** Shared long-flag spelling contract for SDK adapters and package discovery. */
+export { parseExtensionLongFlagToken, type ExtensionLongFlagSpelling } from "../core/extensions/flag-definition-validation.js";
 export {
   type MutationCheckpointItem,
   createCheckpointId,

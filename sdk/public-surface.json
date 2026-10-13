@@ -6030,6 +6030,12 @@
           "signature": "(raw: string) => PmReadOutputCursorEnvelope | calls: (raw: string) => PmReadOutputCursorEnvelope"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "decodeToon",
+          "signature": "(input: string, options?: DecodeOptions) => JsonValue | calls: (input: string, options?: DecodeOptions) => JsonValue"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "decoratePmMcpToolsWithApps",
@@ -6936,6 +6942,12 @@
           "signature": "(cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string | calls: (cursor: Omit<PmReadOutputCursorEnvelope, \"version\">) => string"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "encodeToon",
+          "signature": "(input: unknown, options?: EncodeOptions) => string | calls: (input: unknown, options?: EncodeOptions) => string"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "enforceHistoryStreamPolicyForItem",
@@ -7732,6 +7744,12 @@
           "kind": "interface",
           "name": "ExtensionLoadResult",
           "signature": "export interface ExtensionLoadResult extends ExtensionDiscoveryResult { loaded: LoadedExtension[]; failed: FailedExtensionLoad[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ExtensionLongFlagSpelling",
+          "signature": "export interface ExtensionLongFlagSpelling { name: string; valueName: string | null; optional: boolean; }"
         },
         {
           "classification": "supported",
@@ -11872,6 +11890,12 @@
           "kind": "function",
           "name": "parseEvalQuerySet",
           "signature": "(raw: unknown) => EvalQuerySet | calls: (raw: unknown) => EvalQuerySet"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "parseExtensionLongFlagToken",
+          "signature": "(value: unknown) => ExtensionLongFlagSpelling | null | calls: (value: unknown) => ExtensionLongFlagSpelling | null"
         },
         {
           "classification": "supported",
@@ -20146,6 +20170,24 @@
           "kind": "interface",
           "name": "ToolOptionFlagContract",
           "signature": "export interface ToolOptionFlagContract { param: string; flag: string; allowEmpty?: boolean; repeatable?: boolean; booleanish?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ToonDecodeOptions",
+          "signature": "interface DecodeOptions { indentSize?: number; indent?: number; strict?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ToonEncodeOptions",
+          "signature": "interface EncodeOptions { indentSize?: number; indent?: number; delimiter?: Delimiter; replacer?: EncodeReplacer; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ToonJsonValue",
+          "signature": "type JsonValue = JsonPrimitive | JsonObject | JsonArray;"
         },
         {
           "classification": "advanced_export",
@@ -35360,6 +35402,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "decodeToon",
+          "signature": "(input: string, options?: DecodeOptions) => JsonValue | calls: (input: string, options?: DecodeOptions) => JsonValue"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "describeExtensionActivation",
           "signature": "(activation: ExtensionActivationResult, options?: DescribeExtensionActivationOptions) => ExtensionActivationSummary | calls: (activation: ExtensionActivationResult, options?: DescribeExtensionActivationOptions) => ExtensionActivationSummary"
         },
@@ -35374,6 +35422,12 @@
           "kind": "function",
           "name": "describeExtensionBlueprint",
           "signature": "(blueprint: ExtensionBlueprint) => ExtensionActivationSummary | calls: (blueprint: ExtensionBlueprint) => ExtensionActivationSummary"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "encodeToon",
+          "signature": "(input: unknown, options?: EncodeOptions) => string | calls: (input: unknown, options?: EncodeOptions) => string"
         },
         {
           "classification": "supported",
@@ -35746,6 +35800,24 @@
           "kind": "interface",
           "name": "SearchProviderOperationResults",
           "signature": "export interface SearchProviderOperationResults { query: SearchProviderQueryResult; embed: number[]; embedBatch: number[][]; queryExpansion: SearchProviderQueryExpansionResult; rerank: SearchProviderRerankResult; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ToonDecodeOptions",
+          "signature": "interface DecodeOptions { indentSize?: number; indent?: number; strict?: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ToonEncodeOptions",
+          "signature": "interface EncodeOptions { indentSize?: number; indent?: number; delimiter?: Delimiter; replacer?: EncodeReplacer; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "ToonJsonValue",
+          "signature": "type JsonValue = JsonPrimitive | JsonObject | JsonArray;"
         },
         {
           "classification": "supported",

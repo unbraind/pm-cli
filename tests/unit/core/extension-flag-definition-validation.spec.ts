@@ -2,12 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   describeExtensionLongFlagFailure,
   findExtensionFlagTokenFailure,
+  parseExtensionLongFlagToken,
   validateExtensionLongFlagToken,
 } from "../../../src/core/extensions/flag-definition-validation.js";
 
 import { GLOBAL_FLAG_CONTRACTS, SUBCOMMAND_GLOBAL_FLAG_CONTRACTS } from "../../../src/sdk/cli-contracts/flag-contracts.js";
 
 describe("extension flag definition validation", () => {
+  it("shares canonical identities and placeholder labels without changing accepted syntax", () => {
+    for (const value of [undefined, 0, "missing-prefix", "--bad <nested<name>>"]) expect(parseExtensionLongFlagToken(value)).toBeNull();
+    expect(parseExtensionLongFlagToken(" --plain ")).toEqual({ name: "--plain", valueName: null, optional: false });
+    expect(parseExtensionLongFlagToken("--repo <project>")).toEqual({ name: "--repo", valueName: "project", optional: false });
+    expect(parseExtensionLongFlagToken("--repo=<project>")).toEqual({ name: "--repo", valueName: "project", optional: false });
+    expect(parseExtensionLongFlagToken("--label [name]")).toEqual({ name: "--label", valueName: "name", optional: true });
+  });
   it("ignores absent declarations and classifies host-owned short aliases", () => {
     expect(validateExtensionLongFlagToken(undefined)).toBeNull();
     expect(validateExtensionLongFlagToken("--json")).toBe(

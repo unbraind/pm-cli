@@ -6,6 +6,7 @@
  */
 import { PM_TOOL_PARAMETER_PROPERTIES } from "./tool-parameter-tables.js";
 import {
+  parseExtensionLongFlagToken,
   EXIT_CODE,
   SETTINGS_DEFAULTS,
   type GlobalOptions,
@@ -1204,7 +1205,7 @@ function normalizeExtensionFlagName(
     return null;
   }
   if (kind === "long") {
-    return trimmed.startsWith("--") && trimmed.length > 2 ? trimmed : null;
+    return trimmed.startsWith("--") && trimmed.length > 2 ? parseExtensionLongFlagToken(trimmed)?.name ?? trimmed : null;
   }
   return trimmed.startsWith("-") &&
     !trimmed.startsWith("--") &&
@@ -1241,7 +1242,7 @@ function toExtensionFlagContract(
   if (description) {
     contract.description = description;
   }
-  const valueName = toOptionalTrimmedString(definition.value_name);
+  const valueName = toOptionalTrimmedString(definition.value_name) ?? parseExtensionLongFlagToken(definition.long)?.valueName;
   if (valueName) {
     contract.value_name = valueName;
   }

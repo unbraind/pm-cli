@@ -122,6 +122,10 @@ export async function main() {
         git("add", ".agents");
         git("commit", "-m", "Write main priority");
         git("merge", "peer", "--no-edit");
+        // An older installed driver may leave its version's attribute policy.
+        // Upgrade the fence through the current SDK before current validation;
+        // preserve every data, hash, restore and native merge assertion below.
+        cli(current, ["merge", "install"]);
         const reconciled = cli(current, ["merge", "reconcile"]);
         assert.equal(reconciled.ok, true, "Merged history must reconcile without force");
         assertWorkspaceCompatibilityItem(cli(reader, ["get", id, "--full"]).item, { ...expected, description: "Peer description", priority: 1 });

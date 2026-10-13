@@ -325,7 +325,7 @@ Use the public SDK barrel. Do not deep-import from `src/core` or `dist/core`.
 
 The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only `hooks` and registers a default-inert `afterCommand` hook so authors can copy a safe lifecycle pattern without changing command output.
 If a package calls a `register*` API without declaring the required manifest capability, `pm package doctor --project --detail deep --trace` reports `extension_capability_missing:<name>:<capability>` and shows the exact capability to add before publishing.
-Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:
+Inline command flags require both `commands` and `schema` capabilities. See [Extension author contracts](EXTENSION_AUTHOR_CONTRACTS.md) for canonical flag spelling ([pm-gh1461](../.agents/pm/issues/pm-gh1461.toon)) and [SDK testing helpers](SDK.md#testing-helpers) for TOON output assertions ([pm-gh1462](../.agents/pm/features/pm-gh1462.toon)). Verify runtime schema changes and flag contracts with:
 
 ```bash
 pm schema list

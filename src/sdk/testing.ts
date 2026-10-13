@@ -138,6 +138,11 @@ import {
 import { createExtensionCommandSdk } from "./extension-command-context.js";
 import { PmClient } from "./runtime.js";
 
+/** Host-pinned TOON codecs for semantic package-output assertions without deep imports. */
+export { decode as decodeToon, encode as encodeToon } from "@toon-format/toon";
+/** Codec options and JSON values owned by the exact implementation used by the host. */
+export type { DecodeOptions as ToonDecodeOptions, EncodeOptions as ToonEncodeOptions, JsonValue as ToonJsonValue } from "@toon-format/toon";
+
 // `describeExtensionActivation` is the `describe` (enumerate-all) verb that
 // pairs with the `assert*` (verify-one) and `run*` (invoke-one) helpers below.
 // It lives in core (it walks the same registries the loader populates) and is

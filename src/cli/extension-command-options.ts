@@ -4,6 +4,7 @@
  * Provides CLI runtime support for Extension Command Options.
  */
 import {
+  parseExtensionLongFlagToken,
   EXIT_CODE,
   PmCliError,
   flattenFlagListValue,
@@ -166,7 +167,7 @@ function collectLooseOptionKeys(
 ): string[] {
   const keys: string[] = [];
   const long =
-    typeof definition.long === "string" ? definition.long.trim() : "";
+    parseExtensionLongFlagToken(definition.long)?.name ?? (typeof definition.long === "string" ? definition.long.trim() : "");
   const short =
     typeof definition.short === "string" ? definition.short.trim() : "";
   if (long.startsWith("--")) {
@@ -201,7 +202,7 @@ function resolveCanonicalLooseOptionKey(
   definition: LooseCommandFlagDefinition,
 ): string | null {
   const long =
-    typeof definition.long === "string" ? definition.long.trim() : "";
+    parseExtensionLongFlagToken(definition.long)?.name ?? (typeof definition.long === "string" ? definition.long.trim() : "");
   if (long.startsWith("--")) {
     const normalized = toLooseOptionKey(long.slice(2));
     if (normalized.length > 0 && !isUnsafeLooseOptionKey(normalized)) {
