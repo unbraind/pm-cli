@@ -6,29 +6,32 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:sdk",data-durability,github-intake,merge
 created_at: "2026-10-13T20:29:23.483Z"
-updated_at: "2026-10-13T22:02:20.647Z"
-closed_at: "2026-10-13T22:02:19.891Z"
-completed_at: "2026-10-13T22:02:19.891Z"
+updated_at: "2026-10-13T22:25:40.168Z"
+closed_at: "2026-10-13T22:25:39.447Z"
+completed_at: "2026-10-13T22:25:39.447Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Prove real native Git non-overlapping and conflicting extension merges; Keep managed inventory and contributed item drivers intact; Refresh installed fences without reverting sibling or older-version safety
 parent: pm-o2kc
 risk: high
 confidence: high
-resolution: "Generated extension asset attributes now select Git built-in merge=text, retaining managed inventory structured merge and existing v2 grammar. Current SDK installation refreshes older fences before current-policy reconciliation."
-expected_result: "Disjoint extension text edits combine cleanly, overlapping text has standard conflict markers, binaries preserve native conflict stages and tracker drivers remain structured."
-actual_result: "Native disjoint/overlap/binary controls pass; the pre-fix controls fail3/4 while binary preservation already passes. All10 linked fence cases pass, including sibling and older-version protection. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
+resolution: "Git text merging remains SDK-owned with protected tracker overrides and v2 compatibility. Native acceptance now pins fixture core.autocrlf and checks exact LF and CRLF disjoint outcomes, preserving overlapping and binary conflict controls."
+expected_result: "Native disjoint edits combine under both configured LF and CRLF policies while conflicting text retains markers, binary bytes and stages remain intact, and tracker merge rules remain structured."
+actual_result: "All11 native merge/fence cases and the linked test pass after the fixture correction. Both explicitly configured core.autocrlf=false (LF) and true (CRLF) disjoint cases assert exact native worktree bytes and both edits; standard overlapping markers, raw binary bytes and three conflict stages remain strict. Uncached ESLint with an empty suppression file passes. No production source, package API, workflow, coverage denominator or threshold changed from9abfaee, whose complete local static gate and10,407-case suite pass at exact100% coverage. The failed Windows annotation and failed full-review request are retained as distinct receipts; prior78a86 review does not approve9abfaee. The corrected head must receive renewed required checks and bot review before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-5rexki,related,"2026-10-13T20:29:23.483Z","harness:codex","cli:create:dep",detected
   pm-l56d0o,related,"2026-10-13T20:29:23.483Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-13T20:29:23.483Z","harness:codex","{\"text\":\"Duplicate check: complete live2956-item all-status corpus with zero omissions and unreadable records, request-specific searches and open/in-progress inventories. Full live closed predecessors pm-5rexki and pm-l56d0o describe shipped adjacent contracts, not this new reported scope. Reuse pm-o2kc parent lineage and relate predecessors without reopening completed work. Full GitHub issue and comments read. Official Git documentation distinguishes -merge binary conflict behavior from the native text/default drivers. Implementation will preserve supported SDK contracts and use real controls.\"}"
   "2026-10-13T20:38:59.079Z","harness:codex","Real native Git controls confirm the reported defect: generated -merge refuses disjoint text merges and produces no markers for conflicting text; the binary preservation control passes. Use the explicit built-in merge=text driver and retain its native binary detection, with the managed inventory pm-json override. Keep the existing v2 fence grammar because attribute syntax is unchanged and expected-pattern drift/pm merge install already refresh installed semantics; changing markers alone would let v2-aware older hosts append competing fences. Preserve the shipped older-client and sibling-fence contracts."
   "2026-10-13T20:58:36.698Z","harness:codex","Current correction passes10 linked/native fence cases, including clean disjoint text merge, standard overlapping markers, untouched binary tentative content with all3 conflict stages, managed-inventory override and sibling/legacy-fence preservation. The current CLI successfully refreshes this repository fence through pm merge install. No direct tracker edit or force override was used."
   "2026-10-13T21:27:57.863Z","harness:codex","Installed public-tarball acceptance now passes on Node26.9 and Bun, including real inline-placeholder extension dispatch and semantic TOON output through /sdk/testing and /sdk; the strict TypeScript6 consumer succeeds with explicit Node ambient types, and its isolated public-registry production dependency audit reports0 vulnerabilities. The earlier fixture typecheck refusal is preserved. Full repository execution initially exposed4 regressions: root integration-file and compact-document ceilings, the short-only residual-help contract, and an older installed merge fence during the published-artifact compatibility matrix. Corrected by relocating the new integration test, moving detail into focused author contracts, retaining the existing long-only residual guard, and refreshing old fences through the current SDK before current reconciliation. All192 targeted regression cases now pass, including all4 actual published writer/reader combinations with values, hashes, unknown fields, restore, native Git merges and verified history. No threshold, coverage denominator or force override changed. Full source coverage is still running and is not yet certified."
   "2026-10-13T22:02:19.197Z","harness:codex","Native disjoint/overlap/binary controls pass; the pre-fix controls fail3/4 while binary preservation already passes. All10 linked fence cases pass, including sibling and older-version protection. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
-learnings[1]{created_at,author,text}:
+  "2026-10-13T22:23:34.515Z","harness:codex","Exact head9abfaee12ca74cd869c94ffec55769f25b011b47 passes all required contexts except Windows regression. Job115566247309 annotations show the disjoint native Git merge correctly retained header/left/separator/right/footer with CRLF but the fixture expected LF. The job summary has incomplete step metadata and the log-failed export is empty, so those are not evidence of an infrastructure failure. Preserve the annotations and failed watch. Correct only the fixture by making core.autocrlf explicit and asserting native bytes for both LF and CRLF disjoint cases; overlapping markers, binary bytes and conflict stages stay strict. The requested full CodeRabbit review failed without a new completed review, so the old78a86 receipt cannot approve this revised source. Renew all configured agents after the correction push."
+  "2026-10-13T22:25:37.868Z","harness:codex","All11 native merge/fence cases and the linked test pass after the fixture correction. Both explicitly configured core.autocrlf=false (LF) and true (CRLF) disjoint cases assert exact native worktree bytes and both edits; standard overlapping markers, raw binary bytes and three conflict stages remain strict. Uncached ESLint with an empty suppression file passes. No production source, package API, workflow, coverage denominator or threshold changed from9abfaee, whose complete local static gate and10,407-case suite pass at exact100% coverage. The failed Windows annotation and failed full-review request are retained as distinct receipts; prior78a86 review does not approve9abfaee. The corrected head must receive renewed required checks and bot review before merge."
+learnings[2]{created_at,author,text}:
   "2026-10-13T21:28:03.109Z","harness:codex","Unset Git merge attributes select binary conflict behavior. Extension source assets need the built-in text driver, while the later managed inventory override remains structured. Cross-version workspace acceptance must upgrade an older installed fence through the current SDK before validating current policy, without weakening data or history assertions."
+  "2026-10-13T22:25:38.570Z","harness:codex",Native Git worktree bytes depend on core.autocrlf. A semantic merge fixture should explicitly exercise LF and CRLF policies and retain byte-exact assertions for each; do not infer runner failure from incomplete job-step metadata when annotations identify a real assertion failure.
 files[5]{path,scope}:
   .gitattributes,project
   scripts/release/workspace-compatibility.mjs,project
@@ -37,7 +40,7 @@ files[5]{path,scope}:
   tests/unit/sdk/merge-extension-asset-scope.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,project,"harness:codex","2026-10-13T20:44:54.740Z",local_mutation,chore/oct13-delivery-evidence
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mv75tpbg-e7lihj
     kind: test
     status: passed
@@ -60,9 +63,20 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv790zgh-e5nvnj
+    kind: test
+    status: passed
+    started_at: "2026-10-13T22:24:36.813Z"
+    finished_at: "2026-10-13T22:24:48.257Z"
+    recorded_at: "2026-10-13T22:24:48.257Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/MERGE_SAFETY.md,project
-close_reason: Implementation and sandboxed regression evidence complete; awaiting reviewed PR delivery.
+close_reason: Native line-ending portability regression corrected; source delivery awaits renewed hosted verification.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

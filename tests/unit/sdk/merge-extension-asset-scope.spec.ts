@@ -51,13 +51,19 @@ describe("merge fence extension asset scope", () => {
     }
   });
 
-  it.each(["disjoint", "overlap", "binary"] as const)("preserves native Git %s merge behavior for extension assets", (mode) => {
+  it.each([
+    { mode: "disjoint", autocrlf: false },
+    { mode: "disjoint", autocrlf: true },
+    { mode: "overlap", autocrlf: false },
+    { mode: "binary", autocrlf: false },
+  ] as const)("preserves native Git $mode merges with autocrlf=$autocrlf", ({ mode, autocrlf }) => {
     const root = mkdtempSync(path.join(os.tmpdir(), "pm-merge-native-assets-"));
     const relative = ".agents/pm/extensions/demo/index.ts";
     const file = path.join(root, relative);
     const git = (...args: string[]) => execFileSync("git", ["-c", "user.name=Merge Fixture", "-c", "user.email=merge@example.invalid", "-c", "commit.gpgsign=false", ...args], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
     try {
       git("init", "-q", "--initial-branch=main");
+      git("config", "core.autocrlf", String(autocrlf));
       mkdirSync(path.dirname(file), { recursive: true });
       writeFileSync(path.join(root, ".gitattributes"), buildMergeAttributePatterns(".agents/pm", ["tasks"]).join("\n") + "\n");
       const base = mode === "binary" ? Buffer.from([0, 1, 2]) : Buffer.from("header\nfirst\nseparator\nlast\nfooter\n");
@@ -69,7 +75,8 @@ describe("merge fence extension asset scope", () => {
       git("switch", "-qc", "right", "main"); writeFileSync(file, right); git("commit", "-qam", "Edit right extension");
       if (mode === "disjoint") {
         git("merge", "left", "--no-edit");
-        expect(readFileSync(file, "utf8")).toBe("header\nleft\nseparator\nright\nfooter\n");
+        const expected = "header\nleft\nseparator\nright\nfooter\n";
+        expect(readFileSync(file, "utf8")).toBe(autocrlf ? expected.replaceAll("\n", "\r\n") : expected);
         expect(git("ls-files", "--unmerged", "--", relative)).toBe("");
       } else {
         expect(() => git("merge", "left", "--no-edit")).toThrow();
