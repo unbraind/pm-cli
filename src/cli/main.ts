@@ -48,6 +48,7 @@ import {
   discoverExtensions,
   emitTelemetryErrorEvent,
   ensureSentryInit,
+  ensureSentryCommandTracing,
   getActiveCommandResult,
   getActiveExtensionRegistrations,
   getSettingsPath,
@@ -75,6 +76,7 @@ import {
   runWithHarnessDetectionSignals,
   runWithWorkspaceHarnessSignalDescriptors,
   sentryCaptureCliError,
+  sentryDiscardCommandSpan,
   sentryFinishCommandSpan,
   sentryFlush,
   sentryLogCliUsageError,
@@ -206,6 +208,7 @@ if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKA
 let activeExtensionHookContext: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null = null;
 
 let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
+let activeSentryCommandContext: ActiveTelemetryCommand | null = null;
 
 function setActiveExtensionHookContextForTest(context: ActiveExtensionHookContext<MandatoryMigrationBlocker> | null): void {
   activeExtensionHookContext = context;
@@ -568,7 +571,7 @@ async function handleGenericRunPmCliError(params: {
     });
     errorCategory = telemetry.errorCategory;
     commandResolution = telemetry.commandResolution;
-    sentryFinishCommandSpan(false, message, {
+    await finishActiveSentryCommandSpan(false, message, {
       error_code: classification.code,
       error_category: errorCategory,
       exit_code: EXIT_CODE.GENERIC_FAILURE,
@@ -1436,6 +1439,33 @@ async function runCommandPreparation<T>(actionCommand: Command, skipped: T, run:
 
 /* c8 ignore start */
 
+/** Start a CLI-owned span only after the SDK grants current explicit tracing permission. */
+async function startActiveSentryCommandTracing(command: string, args: string[], options: Record<string, unknown>): Promise<void> {
+  if (!activeTelemetryCommandContext || !await ensureSentryCommandTracing(true)) return;
+  sentrySetCommandContext(command, args, options, {
+    source_context: activeTelemetryCommandContext.source_context,
+    source_context_source: activeTelemetryCommandContext.source_context_source,
+  });
+  sentryStartCommandSpan(command);
+  activeSentryCommandContext = activeTelemetryCommandContext;
+}
+
+/** Re-read consent and installation identity before exporting a CLI-owned command span. */
+async function finishActiveSentryCommandSpan(ok: boolean, error?: string, metadata?: Parameters<typeof sentryFinishCommandSpan>[2]): Promise<void> {
+  const runtime = activeSentryCommandContext;
+  if (!runtime) return;
+  activeSentryCommandContext = null;
+  let consent = false;
+  try {
+    const settings = await readSettings(runtime.global_pm_root);
+    consent = settings.telemetry.enabled && settings.telemetry.installation_id === runtime.installation_id;
+  } catch {
+    // Unverifiable consent drops optional diagnostics without changing the action outcome.
+  }
+  if (await ensureSentryCommandTracing(consent)) sentryFinishCommandSpan(ok, error, metadata);
+  else sentryDiscardCommandSpan();
+}
+
 /** Publish request-local read declarations before validating host output controls. */
 async function loadRuntimeReadDeclarations(actionCommand: Command): Promise<Awaited<ReturnType<typeof maybeLoadRuntimeExtensions>>> {
   const snapshot = await maybeLoadRuntimeExtensions(actionCommand);
@@ -1449,6 +1479,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
   rootProgram.hook("preAction", async (_thisCommand, actionCommand) => {
     activeExtensionHookContext = null;
     activeTelemetryCommandContext = null;
+    activeSentryCommandContext = null;
     clearActiveExtensionHooks();
     clearResolvedGlobalOptions(actionCommand);
     const rawGlobalOptions = actionCommand.optsWithGlobals() as Record<string, unknown>;
@@ -1487,11 +1518,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
         pm_root: fallbackPmRoot,
       });
       await recordActiveDeprecatedAliasUsage(rootProgram);
-      sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
-        source_context: activeTelemetryCommandContext?.source_context,
-        source_context_source: activeTelemetryCommandContext?.source_context_source,
-      });
-      sentryStartCommandSpan(commandPath);
+      await startActiveSentryCommandTracing(commandPath, commandArgs, commandOptions);
       await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, fallbackPmRoot, defaultPreflightDecision());
       await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, fallbackPmRoot);
       return;
@@ -1582,11 +1609,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       pm_root: runtimeExtensions.pmRoot,
     });
     await recordActiveDeprecatedAliasUsage(rootProgram);
-    sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
-      source_context: activeTelemetryCommandContext?.source_context,
-      source_context_source: activeTelemetryCommandContext?.source_context_source,
-    });
-    sentryStartCommandSpan(commandPath);
+    await startActiveSentryCommandTracing(commandPath, commandArgs, commandOptions);
 
     const hookWarnings = await runBeforeCommandHooks(runtimeExtensions.hooks, {
       command: commandPath,
@@ -1608,7 +1631,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
 
   rootProgram.hook("postAction", async () => {
     const outcome = buildPostActionTelemetryOutcome();
-    sentryFinishCommandSpan(outcome.ok, outcome.error, {
+    await finishActiveSentryCommandSpan(outcome.ok, outcome.error, {
       error_code: outcome.error_code,
       error_category: outcome.error_category,
       exit_code: outcome.exit_code,
@@ -1616,6 +1639,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       resolution_stage: outcome.resolution_stage,
     });
     await runAndClearAfterCommandHooks(outcome);
+    await sentryFlush();
   });
 }
 
@@ -1769,7 +1793,7 @@ async function finishRunPmCliFailure(params: {
   commandResolution: TelemetryCommandResolution;
   resolutionStage: TelemetryResolutionStage;
 }): Promise<void> {
-  sentryFinishCommandSpan(false, params.errorMessage, {
+  await finishActiveSentryCommandSpan(false, params.errorMessage, {
     error_code: params.classificationCode,
     error_category: params.errorCategory,
     exit_code: params.exitCode,
@@ -1788,7 +1812,7 @@ async function finishRunPmCliFailure(params: {
 }
 
 async function finishRunPmCliSuccessParse(): Promise<void> {
-  sentryFinishCommandSpan(true, undefined, {
+  await finishActiveSentryCommandSpan(true, undefined, {
     exit_code: EXIT_CODE.SUCCESS,
     command_resolution: "success",
     resolution_stage: "parse",
@@ -2081,6 +2105,11 @@ function captureInvokedDeprecatedAlias(rootProgram: Command, rawArgv: string[]):
   if (resolved?.lifecycle === "deprecated") Reflect.set(rootProgram, DEPRECATED_ALIAS_INVOCATION, resolved.alias);
 }
 
+/** Build Commander's process prefix without mutating an embedding host's argument array. */
+function buildInvocationProcessArgv(invocationArgv: string[]): string[] {
+  return [process.argv[0], process.argv[1] ?? "pm", ...invocationArgv];
+}
+
 /** Dispatch one fresh CLI invocation with deterministic process state and tracker-scoped attribution. */
 async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: { configurationOnly: boolean }): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
@@ -2104,7 +2133,7 @@ async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: 
     const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
     invocationArgv = bootstrapInvocation.argv;
     captureInvokedDeprecatedAlias(program, rawArgv);
-    const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
+    const invocationProcessArgv = buildInvocationProcessArgv(invocationArgv);
     const isBareInvocation = invocationArgv.length === 0;
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     if (bootstrapGlobal.authorMissingValue) {

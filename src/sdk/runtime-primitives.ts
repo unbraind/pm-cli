@@ -287,13 +287,14 @@ export {
 } from "../core/search/vectorization-metadata.js";
 export {
   sentryCaptureCliError,
+  sentryDiscardCommandSpan,
   sentryFinishCommandSpan,
   sentryFlush,
   sentryLogCliUsageError,
   sentrySetCommandContext,
   sentryStartCommandSpan,
 } from "../core/sentry/helpers.js";
-export { ensureSentryInit } from "../core/sentry/instrument.js";
+export { ensureSentryInit, ensureSentryCommandTracing } from "../core/sentry/instrument.js";
 export {
   clearFocusedItem,
   getFocusedItem,

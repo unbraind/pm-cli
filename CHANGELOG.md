@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Enable explicit successful-command Sentry tracing without eager startup ([pm-58yzil](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-58yzil.toon))
+
+### Changed
+
+- Give recurrence policy globs a deterministic matching bound ([pm-0vqbl5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0vqbl5.toon))
+
+### Fixed
+
+- Prevent Sentry command context from recording positional content and option values ([pm-geywoc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-geywoc.toon))
+- Embedded CLI commands fail when an eval host has no script argv entry ([pm-mor9pl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mor9pl.toon))
+
 ## 2026.10.13 - 2026-10-13
 
 ### Added

@@ -7,11 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 //  - scrubStackFrame post_context entries that are NOT strings (line 111)
 //  - resolveCliVersion falling back to "0.0.0" when version resolution is null (line 188)
 
-const sentryNodeMock = vi.hoisted(() => ({
+const sentryNodeMock = vi.hoisted(() => {
+  const on = vi.fn();
+  return {
   init: vi.fn(),
+  on,
+  getClient: vi.fn<() => { on: typeof on } | undefined>(() => ({ on })),
+  withStreamedSpan: vi.fn((callback: unknown) => callback),
   extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
   captureConsoleIntegration: vi.fn((options: unknown) => ({ name: "captureConsoleIntegration", options })),
-}));
+}; });
 
 const rootMock = vi.hoisted(() => ({
   resolvePmCliVersion: vi.fn<() => string | null>(() => null),
@@ -19,7 +24,7 @@ const rootMock = vi.hoisted(() => ({
 
 vi.mock("../../../../src/core/packages/root.js", () => rootMock);
 
-import { _testOnly, ensureSentryInit } from "../../../../src/core/sentry/instrument.js";
+import { _testOnly, ensureSentryInit, ensureSentryCommandTracing, getSentry } from "../../../../src/core/sentry/instrument.js";
 
 const {
   scrubEventData,
@@ -50,10 +55,14 @@ describe("instrument residual branches", () => {
     delete process.env.VITEST;
     delete process.env.VITEST_WORKER_ID;
     delete process.env.NODE_ENV;
+    delete process.env.PM_SENTRY_TRACE_COMMANDS;
+    delete process.env.SENTRY_TRACES_SAMPLE_RATE;
     resetSentryStateForTests();
     sentryLoaderMock = vi.fn(() => sentryNodeMock as never);
     setSentryLoaderForTests(sentryLoaderMock as never);
     sentryNodeMock.init.mockClear();
+    sentryNodeMock.on.mockClear();
+    sentryNodeMock.getClient.mockReset().mockReturnValue({ on: sentryNodeMock.on });
     rootMock.resolvePmCliVersion.mockReset();
     rootMock.resolvePmCliVersion.mockReturnValue(null);
   });
@@ -77,6 +86,154 @@ describe("instrument residual branches", () => {
     expect(loaded).toMatchObject({ init: expect.any(Function), flush: expect.any(Function) });
   });
 
+  it.each([undefined, "", "0", "false", "invalid"])("keeps successful tracing lazy for opt-in %j", async (value) => {
+    if (value !== undefined) process.env.PM_SENTRY_TRACE_COMMANDS = value;
+    await ensureSentryCommandTracing(true);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+  });
+
+  it("initializes-successful-command-tracing only on explicit opt-in and honors a zero rate", async () => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "On";
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "0";
+    await ensureSentryCommandTracing(true);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "1";
+    await ensureSentryCommandTracing(true);
+    expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
+    expect(requireSentryInitOptions<{ tracesSampleRate: number }>().tracesSampleRate).toBe(1);
+  });
+
+  it.each([false, "false", 1, {}, null, undefined])("requires explicit boolean consent instead of %j before successful tracing loads Sentry", async (consent) => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await expect(ensureSentryCommandTracing(consent as boolean)).resolves.toBe(false);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["loader", "initializer"])("keeps optional-tracing-initialization-failure from the %s unsuccessful without retries", async (stage) => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "1";
+    const fail = () => { throw new Error("Diagnostic initialization unavailable"); };
+    if (stage === "loader") sentryLoaderMock.mockImplementationOnce(fail);
+    else sentryNodeMock.init.mockImplementationOnce(fail);
+
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(getSentry()).toBeUndefined();
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    await expect(ensureSentryInit()).resolves.toBeUndefined();
+    expect(sentryLoaderMock).toHaveBeenCalledOnce();
+    expect(sentryNodeMock.init).toHaveBeenCalledTimes(stage === "loader" ? 0 : 1);
+  });
+
+  it("never grants concurrent tracing permission from a partially initialized client", async () => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "1";
+    sentryNodeMock.init.mockImplementationOnce(() => { throw new Error("Diagnostic initialization unavailable"); });
+    await expect(Promise.all([ensureSentryCommandTracing(true), ensureSentryCommandTracing(true)])).resolves.toEqual([false, false]);
+    expect(getSentry()).toBeUndefined();
+    expect(sentryLoaderMock).toHaveBeenCalledOnce();
+    expect(sentryNodeMock.init).toHaveBeenCalledOnce();
+  });
+
+  it("denies tracing if initialization does not provide a client", async () => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    sentryNodeMock.getClient.mockReturnValue(undefined);
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(getSentry()).toBeUndefined();
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(sentryNodeMock.init).toHaveBeenCalledOnce();
+  });
+
+  it("scrubs post-merge serialized log attributes without changing safe typed values", async () => {
+    await ensureSentryInit();
+    expect(sentryNodeMock.on).toHaveBeenCalledWith("beforeEnvelope", expect.any(Function));
+    const hook = sentryNodeMock.on.mock.calls[0]![1] as (envelope: unknown) => void;
+    const logs = [
+      { body: "password=<private-log-value>", attributes: {
+        token: { type: "integer", value: 12345 },
+        "sentry.message.parameter.0": { type: "string", value: "private-parameter" },
+        details: { type: "string", value: "password=<private-scope-value>" },
+        counter: { type: "integer", value: 7 },
+        ready: { type: "boolean", value: true },
+      } },
+      { body: "safe empty log" },
+    ];
+    const event = { message: "safe event" };
+    hook([{}, [[{ type: "log" }, { items: logs }], [{ type: "event" }, event]]]);
+    expect(logs[0]).toEqual({ body: "password=[scrubbed]", attributes: {
+      token: { type: "string", value: "[scrubbed]" },
+      "sentry.message.parameter.0": { type: "string", value: "[scrubbed]" },
+      details: { type: "string", value: "password=[scrubbed]" },
+      counter: { type: "integer", value: 7 },
+      ready: { type: "boolean", value: true },
+    } });
+    expect(logs[1]).toEqual({ body: "safe empty log" });
+    expect(event).toEqual({ message: "safe event" });
+  });
+
+  it("scrubs streamed spans and logs at their actual export hooks", async () => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      traceLifecycle: string;
+      beforeSendSpan: (span: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendLog: (log: Record<string, unknown>) => Record<string, unknown>;
+    }>();
+    expect(options.traceLifecycle).toBe("stream");
+    const attributes = { token: "<private-value>", "sentry.status.message": "password=<private-value>", "pm.command": "context", duration: 3 };
+    const span = options.beforeSendSpan({ name: "read password=<private-value>", attributes, links: [{
+      trace_id: "a".repeat(32), span_id: "b".repeat(16),
+      attributes: { token: "<private-value>", label: "safe" },
+    }] });
+    expect(span).toMatchObject({ name: "read password=[scrubbed]", attributes: { token: "[scrubbed]", "pm.command": "context", duration: 3 } });
+    expect(JSON.stringify(span)).not.toContain("private-value");
+    expect(span.links).toEqual([{ trace_id: "a".repeat(32), span_id: "b".repeat(16), attributes: { token: "[scrubbed]", label: "safe" } }]);
+    expect(options.beforeSendSpan({ name: "safe span" })).toEqual({ name: "safe span" });
+    const log = options.beforeSendLog({ message: "error token=private-value", attributes });
+    expect(JSON.stringify(log)).not.toContain("private-value");
+    expect(options.beforeSendLog({ message: "safe log" })).toEqual({ message: "safe log" });
+  });
+
+  it.each([
+    ["single", "token='<private value with spaces>' outcome=ok", "token=[scrubbed] outcome=ok"],
+    ["double", 'token="<private value with spaces>" outcome=ok', "token=[scrubbed] outcome=ok"],
+    ["escaped", String.raw`token="<private \"quote\" value>" outcome=ok`, "token=[scrubbed] outcome=ok"],
+    ["nested", "token='<private password=value with spaces>' outcome=ok", "token=[scrubbed] outcome=ok"],
+    ["incomplete", 'token="<private value with spaces>', "token=[scrubbed]"],
+    ["access token", "access_token=<private-value> outcome=ok", "access_token=[scrubbed] outcome=ok"],
+    ["client secret", 'client_secret="<private value with spaces>" outcome=ok', "client_secret=[scrubbed] outcome=ok"],
+    ["hyphenated token", "refresh-token='<private value>' outcome=ok", "refresh-token=[scrubbed] outcome=ok"],
+  ])("scrubs-complete-quoted-values using %s at span and log export", async (_name, value, expected) => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      beforeSendSpan: (span: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendLog: (log: Record<string, unknown>) => Record<string, unknown>;
+    }>();
+    expect(options.beforeSendSpan({ name: value, attributes: { detail: value }, links: [{ attributes: { detail: value } }] })).toEqual({
+      name: expected, attributes: { detail: expected }, links: [{ attributes: { detail: expected } }],
+    });
+    expect(options.beforeSendLog({ message: value, attributes: { detail: value } })).toEqual({ message: expected, attributes: { detail: expected } });
+  });
+
+  it.each([
+    ["missing opt-in", "PM_SENTRY_TRACE_COMMANDS", "0"],
+    ["zero rate", "SENTRY_TRACES_SAMPLE_RATE", "0"],
+    ["hard opt-out", "DO_NOT_TRACK", "1"],
+  ])("refuses tracing permission for %s even with an existing client", async (_name, key, value) => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(true);
+    process.env[key] = value;
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a prior process initialization refusal unsuccessful", async () => {
+    process.env.PM_SENTRY_DISABLED = "1";
+    await expect(ensureSentryInit()).resolves.toBeUndefined();
+    delete process.env.PM_SENTRY_DISABLED;
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["VITEST", "7"],
     ["VITEST_WORKER_ID", "7"],
@@ -86,6 +243,8 @@ describe("instrument residual branches", () => {
     process.env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
     process.env[key] = value;
 
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await ensureSentryCommandTracing(true);
     await expect(ensureSentryInit()).resolves.toBeUndefined();
     expect(sentryNodeMock.init).not.toHaveBeenCalled();
     expect(sentryLoaderMock).not.toHaveBeenCalled();

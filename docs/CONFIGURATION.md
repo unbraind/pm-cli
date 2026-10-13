@@ -228,6 +228,9 @@ Successful sampled reads defer their start until completion so both lifecycle ev
 
 ### Sentry environment variables
 
+Tracing and privacy delivery: [pm-58yzil](../.agents/pm/features/pm-58yzil.toon) and
+[pm-geywoc](../.agents/pm/issues/pm-geywoc.toon).
+
 Crash and error diagnostics are reported to Sentry only when telemetry is enabled and the process is not opted out. These environment variables tune the Sentry client.
 
 | Variable                    | Values         | Use                                                                                                                                                                                                                         |
@@ -235,9 +238,42 @@ Crash and error diagnostics are reported to Sentry only when telemetry is enable
 | `PM_SENTRY_DISABLED`        | boolean        | Disable Sentry error reporting for this process (the Sentry SDK is not even imported). `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` also disable it.                                                                         |
 | `SENTRY_DSN`                | URL            | Override the destination DSN. Defaults to the bundled pm-cli project DSN.                                                                                                                                                   |
 | `SENTRY_ENVIRONMENT`        | string         | Override the reported environment tag. Defaults to `test` under Vitest, `ci` when `CI` is set, otherwise `production`.                                                                                                      |
+| `PM_SENTRY_TRACE_COMMANDS`  | boolean        | Explicitly initialize Sentry for successful commands. Defaults to off, preserving lazy startup. All consent opt-outs and test isolation still apply; a zero trace sample rate avoids initialization. |
 | `SENTRY_TRACES_SAMPLE_RATE` | number `0`–`1` | Fraction of command spans sampled for performance tracing. Defaults to `0.2` (20%). Set to `1` for full-trace performance debugging or `0` to disable tracing. Non-numeric or out-of-range values fall back to the default. |
 
 > Sentry is hard-disabled under Vitest (`VITEST` / `VITEST_WORKER_ID`), so these knobs are no-ops inside the test suite.
+
+For a bounded diagnostic invocation use
+`PM_SENTRY_TRACE_COMMANDS=1 SENTRY_TRACES_SAMPLE_RATE=1 pm context --limit 3`.
+Completion flushes buffered spans within the existing three-second SDK timeout.
+The sample-rate variable alone does not enable successful-command initialization.
+Configured telemetry opt-outs also prevent it. The CLI skips command context and
+span creation when consent is disabled, including when an embedding caller has
+already initialized Sentry. SDK callers use
+`ensureSentryCommandTracing(telemetryEnabled)` from `@unbrained/pm-cli/sdk`,
+passing an explicit `true` only after confirming effective consent. Start a
+command span only when the returned permission is `true`; an existing client
+also requires the current opt-in, sampling and process policy. Other runtime
+values keep initialization disabled.
+Consent is checked again at command completion. A command that disables
+telemetry discards its span; SDK callers can use `sentryDiscardCommandSpan()`
+to clear a pending span without exporting it.
+A failed completion-time settings read also discards the span, so optional
+diagnostics cannot turn a successful command into a failure.
+If the SDK loader or initializer fails, tracing remains unavailable for that
+process and the command continues. The partial client is cleared and the
+failed initialization is not retried.
+Sentry sends streamed spans; its span and log hooks apply the same scrubbing
+as errors and breadcrumbs. A final envelope hook scrubs serialized log attributes
+after the SDK merges current and isolation scopes, preserving safe typed values
+without changing shared scopes. Template parameter attributes are always redacted.
+Command context retains option keys and redacted
+argument slots, including text that resembles a flag. Automatic user, cookie, HTTP header/body/query, AI, database,
+GraphQL, local-variable and source-context collection is explicitly
+disabled. Command taxonomy and outcome attributes remain available on spans.
+
+The separate local event and OTLP queues retain their existing formats. Turning
+off command tracing does not require deleting or rewriting those queues.
 
 Linked commands launched by `pm test --run` default
 `SENTRY_ENVIRONMENT=test`, even when the parent process is classified as

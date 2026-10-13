@@ -30,7 +30,7 @@ const SENSITIVE_KEY_PATTERN =
   /(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|credentials|bearer|dsn)/i;
 
 const INLINE_SENSITIVE_ASSIGNMENT_RE = new RegExp(
-  `\\b(${SENSITIVE_KEY_PATTERN.source})\\s*[:=]\\s*([^\\s,;]+)`,
+  `(?:\\b|(?<=_))(${SENSITIVE_KEY_PATTERN.source})\\s*[:=]\\s*([^\\s,;]+)`,
   "giu",
 );
 const ABSOLUTE_PATH_TOKEN_RE = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
@@ -81,6 +81,35 @@ function looksLikeFilesystemPath(value: string): boolean {
   return normalized.includes("/home/");
 }
 
+/** Consume a quoted assignment through its delimiter, escapes, or incomplete end. */
+function sensitiveAssignmentEnd(value: string, start: number, unquotedEnd: number): number {
+  const quote = value[start];
+  if (quote !== '"' && quote !== "'") return unquotedEnd;
+  for (let index = start + 1; index < value.length; index++) {
+    if (value[index] === "\\") {
+      index++;
+      continue;
+    }
+    if (value[index] === quote) return index + 1;
+  }
+  return value.length;
+}
+
+/** Replace sensitive assignments without retaining quoted suffixes or nested matches. */
+function scrubInlineSensitiveAssignments(value: string): string {
+  const chunks: string[] = [];
+  let consumed = 0;
+  for (const match of value.matchAll(INLINE_SENSITIVE_ASSIGNMENT_RE)) {
+    if (match.index < consumed) continue;
+    const unquotedEnd = match.index + match[0].length;
+    const start = unquotedEnd - match[2]!.length;
+    chunks.push(value.slice(consumed, match.index), `${match[1]}=[scrubbed]`);
+    consumed = sensitiveAssignmentEnd(value, start, unquotedEnd);
+  }
+  chunks.push(value.slice(consumed));
+  return chunks.join("");
+}
+
 function scrubString(value: string, keyHint?: string): string {
   if (
     keyHint &&
@@ -89,11 +118,7 @@ function scrubString(value: string, keyHint?: string): string {
   ) {
     return "[scrubbed_path]";
   }
-  const scrubbed = value
-    .replaceAll(
-      INLINE_SENSITIVE_ASSIGNMENT_RE,
-      (_m, key: string) => `${key}=[scrubbed]`,
-    )
+  const scrubbed = scrubInlineSensitiveAssignments(value)
     .replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[scrubbed_email]")
     .replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [scrubbed]")
     .replaceAll(/sntr[ysu]_[A-Za-z0-9_-]+/g, "[scrubbed_sentry_token]")
@@ -113,7 +138,7 @@ function scrubString(value: string, keyHint?: string): string {
 function scrubEventData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (SENSITIVE_KEY_PATTERN.test(key)) {
+    if (SENSITIVE_KEY_PATTERN.test(key) || key.startsWith("sentry.message.parameter.")) {
       result[key] = "[scrubbed]";
     } else if (typeof value === "string") {
       result[key] = scrubString(value, key);
@@ -166,6 +191,8 @@ function scrubStackFrame(frame: Record<string, unknown>): void {
 
 type SentryLike = typeof SentryModuleTypes;
 type NodeOptions = SentryModuleTypes.NodeOptions;
+type SentryEnvelope = Parameters<SentryModuleTypes.NodeClient["sendEnvelope"]>[0];
+type LogEnvelopeItem = Extract<SentryEnvelope[1][number], [{ type: "log" }, unknown]>;
 
 const requireFromInstrument = createRequire(import.meta.url);
 const defaultSentryLoader = (): SentryLike =>
@@ -411,6 +438,34 @@ const beforeSendTransaction: NonNullable<NodeOptions["beforeSendTransaction"]> =
   return event;
 };
 
+/** Scrub streamed spans before each completed observation leaves the process. */
+const beforeSendSpan: Parameters<SentryLike["withStreamedSpan"]>[0] = (span) => {
+  return scrubEventData(span as unknown as Record<string, unknown>) as unknown as typeof span;
+};
+
+/** Apply the same privacy boundary to usage logs, which bypass event hooks. */
+const beforeSendLog: NonNullable<NodeOptions["beforeSendLog"]> = (log) => {
+  log.message = scrubString(log.message);
+  if (log.attributes) log.attributes = scrubEventData(log.attributes) as typeof log.attributes;
+  return log;
+};
+
+/** Scrub complete serialized logs after the SDK merges scope attributes. */
+function scrubSentryLogEnvelope(envelope: SentryEnvelope): void {
+  for (const item of envelope[1]) {
+    if (item[0].type !== "log") continue;
+    for (const log of (item as LogEnvelopeItem)[1].items) {
+      log.body = scrubString(log.body);
+      const attributes = log.attributes;
+      if (!attributes) continue;
+      for (const [key, attribute] of Object.entries(attributes)) {
+        const value = scrubEventData({ [key]: attribute.value })[key];
+        if (typeof value === "string") attributes[key] = { type: "string", value };
+      }
+    }
+  }
+}
+
 const beforeBreadcrumb: NonNullable<NodeOptions["beforeBreadcrumb"]> = (breadcrumb) => {
   if (isPmCliErrorBreadcrumb(breadcrumb) || isKnownNoisyConsoleBreadcrumb(breadcrumb)) return null;
   if (breadcrumb.message) breadcrumb.message = scrubString(breadcrumb.message, "message");
@@ -428,7 +483,6 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
   if (isSentryDisabled()) return undefined;
 
   const SentryModule = _loadSentry();
-  _sentry = SentryModule;
 
   const dsn = process.env.SENTRY_DSN?.trim() || PM_CLI_SENTRY_DSN;
   const release = resolveCliVersion();
@@ -443,7 +497,19 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     attachStacktrace: true,
     normalizeDepth: 6,
     shutdownTimeout: 3000,
-    sendDefaultPii: false,
+    traceLifecycle: "stream",
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: { request: false, response: false },
+      httpBodies: [],
+      urlQueryParams: false,
+      genAI: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      graphQL: { document: false, variables: false },
+      stackFrameVariables: false,
+      frameContextLines: 0,
+    },
     serverName: undefined,
 
     integrations: [
@@ -463,10 +529,29 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 
     beforeSend,
     beforeSendTransaction,
+    beforeSendSpan: SentryModule.withStreamedSpan(beforeSendSpan),
+    beforeSendLog,
     beforeBreadcrumb,
   });
 
+  const client = SentryModule.getClient();
+  if (!client) return undefined;
+  client.on("beforeEnvelope", scrubSentryLogEnvelope);
+  _sentry = SentryModule;
   return SentryModule;
+}
+
+/** Return tracing permission only after explicit consent, opt-in, sampling and process policy agree. */
+export async function ensureSentryCommandTracing(telemetryEnabled: boolean): Promise<boolean> {
+  if (telemetryEnabled !== true) return false;
+  if (!OPT_OUT_VALUES.has((process.env.PM_SENTRY_TRACE_COMMANDS ?? "").trim().toLowerCase())) return false;
+  if (resolveTracesSampleRate() === 0 || isSentryDisabled()) return false;
+  try {
+    return (await ensureSentryInit()) !== undefined;
+  } catch {
+    _sentry = undefined;
+    return false;
+  }
 }
 
 /** Implements get sentry for the public runtime surface of this module. */

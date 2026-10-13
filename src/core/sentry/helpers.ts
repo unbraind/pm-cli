@@ -110,9 +110,7 @@ export function sentrySetCommandContext(
     Sentry.setTag("pm.source_context", metadata.source_context);
   }
 
-  const safeArgs = args.map((arg) =>
-    arg.startsWith("--") ? arg.split("=")[0] : arg,
-  );
+  const safeArgs = args.map(() => "[redacted]");
 
   Sentry.setContext("pm.command", {
     name: command,
@@ -142,12 +140,23 @@ export function sentrySetCommandContext(
 export function sentryStartCommandSpan(command: string): void {
   const Sentry = getSentry();
   if (!Sentry) return;
+  const taxonomy = deriveTelemetryCommandTaxonomy(command);
 
   activeCommandSpan = Sentry.startInactiveSpan({
     op: "pm.command",
     name: `pm ${command}`,
     forceTransaction: true,
+    attributes: {
+      "pm.command": command,
+      "pm.command_root": taxonomy.command_root,
+      "pm.command_family": taxonomy.command_family,
+    },
   });
+}
+
+/** Clear the pending command span without ending it or submitting it for export. */
+export function sentryDiscardCommandSpan(): void {
+  activeCommandSpan = undefined;
 }
 
 /** Implements sentry finish command span for the public runtime surface of this module. */

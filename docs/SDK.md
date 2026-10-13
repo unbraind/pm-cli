@@ -3127,6 +3127,9 @@ tracker and extension policy from any working directory.
 In-process callers of `runPmCli(args)` do not need to replace `process.argv`:
 usage and help recovery use the supplied invocation for command selection,
 tracker scope, extension policy and both text and JSON formatting.
+Eval hosts with no `process.argv[1]` also work: the CLI supplies an internal
+script label and preserves the host's argument array and exit status
+([pm-mor9pl](../.agents/pm/issues/pm-mor9pl.toon)).
 
 `runTest(id, { measure: [...] }, global)` requires `run: true`. A missing run
 returns `test_measure_requires_run` before linked-test mutation, with an executable

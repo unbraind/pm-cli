@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sentryNodeMock = vi.hoisted(() => ({
   init: vi.fn(),
+  getClient: vi.fn(() => ({ on: vi.fn() })),
+  withStreamedSpan: vi.fn((callback: unknown) => callback),
   extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
   captureConsoleIntegration: vi.fn((options: unknown) => ({ name: "captureConsoleIntegration", options })),
 }));
@@ -17,6 +19,7 @@ vi.mock("../../../../src/core/sentry/instrument.js", async (importOriginal) => {
 
 import {
   sentryCaptureCliError,
+  sentryDiscardCommandSpan,
   sentryFinishCommandSpan,
   sentryFlush,
   sentryLogCliUsageError,
@@ -411,7 +414,7 @@ describe("ensureSentryInit", () => {
       environment: string;
       tracesSampleRate: number;
       serverName: unknown;
-      sendDefaultPii: boolean;
+      dataCollection: Record<string, unknown>;
       initialScope: { tags: Record<string, string> };
       beforeSend: (event: SentryEventPayload) => SentryEventPayload | null;
       beforeSendTransaction: (event: SentryEventPayload) => SentryEventPayload;
@@ -422,7 +425,13 @@ describe("ensureSentryInit", () => {
     expect(options.environment).toBe("staging");
     expect(options.tracesSampleRate).toBe(0.75);
     expect(options.serverName).toBeUndefined();
-    expect(options.sendDefaultPii).toBe(false);
+    expect(options.dataCollection).toEqual({
+      userInfo: false, cookies: false,
+      httpHeaders: { request: false, response: false }, httpBodies: [], urlQueryParams: false,
+      genAI: { inputs: false, outputs: false }, databaseQueryData: false,
+      graphQL: { document: false, variables: false },
+      stackFrameVariables: false, frameContextLines: 0,
+    });
     expect(options.initialScope.tags).toMatchObject({
       "cli.name": "pm-cli",
       "runtime.node": process.version,
@@ -625,14 +634,26 @@ describe("sentry command runtime helpers", () => {
     expect(vi.mocked(getSentry)).toHaveBeenCalled();
   });
 
-  it("tags command taxonomy, scrubs option-bearing args, and records a breadcrumb", () => {
+  it("discards a pending span without export and clears it before the next command", () => {
+    const span = buildFakeSpan();
+    vi.mocked(getSentry).mockReturnValue(buildFakeSentry(span) as never);
+    sentryStartCommandSpan("config global set");
+    sentryDiscardCommandSpan();
+    sentryFinishCommandSpan(true);
+    expect(span.end).not.toHaveBeenCalled();
+    sentryStartCommandSpan("list");
+    sentryFinishCommandSpan(true);
+    expect(span.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("prevents-private-command-content while retaining taxonomy and argument structure", () => {
     const span = buildFakeSpan();
     const sentry = buildFakeSentry(span);
     vi.mocked(getSentry).mockReturnValue(sentry as never);
 
     sentrySetCommandContext(
       "schema add-type",
-      ["Asset", "--workflow=draft,open", "--json"],
+      ["private item body", "--workflow=draft,open", "--token", "private-value", "--json"],
       { json: true, workflow: "draft,open" },
       { source_context: "mcp", source_context_source: "env" },
     );
@@ -640,7 +661,9 @@ describe("sentry command runtime helpers", () => {
     expect(sentry.setTag).toHaveBeenCalledWith("pm.command", "schema add-type");
     expect(sentry.setTag).toHaveBeenCalledWith("pm.source_context", "mcp");
     const context = sentry.setContext.mock.calls[0]?.[1] as Record<string, unknown>;
-    expect(context.args).toEqual(["Asset", "--workflow", "--json"]);
+    expect(context.args).toEqual(Array.from({ length: 5 }, () => "[redacted]"));
+    expect(JSON.stringify(sentry.setContext.mock.calls)).not.toContain("private");
+    expect(JSON.stringify(sentry.addBreadcrumb.mock.calls)).not.toContain("private");
     expect(context.option_keys).toEqual(["json", "workflow"]);
     expect(sentry.addBreadcrumb).toHaveBeenCalledWith(
       expect.objectContaining({ category: "pm.command", message: "pm schema add-type" }),
