@@ -2529,13 +2529,22 @@ async function flushQueueWithProcessLock(
 
 /** Snapshot eligible event/span identities to distinguish tail progress from dormant retries. */
 async function dueTelemetryArtifactIds(globalPmRoot: string, retentionDays: number): Promise<Set<string>> {
-  const { entries } = pruneExpiredQueueEntries(await readCurrentQueueEntries(globalPmRoot), retentionDays);
-  const ids = new Set(entries.filter(isDueForRetry).map((entry) => `event:${entry.event.event_id}`));
-  const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
-  if (raw !== null) {
-    for (const entry of prunePendingOtelSpans(parsePendingOtelSpanLines(raw), retentionDays).entries) {
-      if (isDueForRetryAt(entry.next_attempt_after)) ids.add(`span:${entry.id}`);
+  const ids = new Set<string>();
+  try {
+    const { entries } = pruneExpiredQueueEntries(await readCurrentQueueEntries(globalPmRoot), retentionDays);
+    for (const entry of entries.filter(isDueForRetry)) ids.add(`event:${entry.event.event_id}`);
+  } catch {
+    // A failed event snapshot must not prevent independently guarded span delivery.
+  }
+  try {
+    const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
+    if (raw !== null) {
+      for (const entry of prunePendingOtelSpans(parsePendingOtelSpanLines(raw), retentionDays).entries) {
+        if (isDueForRetryAt(entry.next_attempt_after)) ids.add(`span:${entry.id}`);
+      }
     }
+  } catch {
+    // A failed span snapshot must not prevent independently guarded event delivery.
   }
   return ids;
 }

@@ -1,4 +1,4 @@
-import { access, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -75,13 +75,15 @@ it("leaves future OTLP retries dormant during detached tail draining", async () 
 });
 
 it.each([
-  { artifact: "events", status: 202, removeRoot: true },
-  { artifact: "events", status: 503, removeRoot: true },
-  { artifact: "events", status: 202, removeRoot: false },
-  { artifact: "spans", status: 202, removeRoot: true },
-  { artifact: "spans", status: 503, removeRoot: true },
-  { artifact: "spans", status: 202, removeRoot: false },
-] as const)("respects storage ownership during $artifact delivery (HTTP $status, remove=$removeRoot)", async ({ artifact, status, removeRoot }) => {
+  { artifact: "events", status: 202, removeRoot: true, unreadable: null },
+  { artifact: "events", status: 503, removeRoot: true, unreadable: null },
+  { artifact: "events", status: 202, removeRoot: false, unreadable: null },
+  { artifact: "spans", status: 202, removeRoot: true, unreadable: null },
+  { artifact: "spans", status: 503, removeRoot: true, unreadable: null },
+  { artifact: "spans", status: 202, removeRoot: false, unreadable: null },
+  { artifact: "events", status: 202, removeRoot: false, unreadable: "spans" },
+  { artifact: "spans", status: 202, removeRoot: false, unreadable: "events" },
+] as const)("respects storage ownership during $artifact delivery (HTTP $status, remove=$removeRoot, unreadable=$unreadable)", async ({ artifact, status, removeRoot, unreadable }) => {
   await withTempDir("pm-worker-inflight-", async (parent) => {
     const root = path.join(parent, "installation");
     const sentinel = path.join(parent, "unrelated");
@@ -131,9 +133,15 @@ it.each([
         deliverySettings.telemetry.endpoint = endpoint;
         await writeSettings(root, deliverySettings, "test:delivery");
       }
+      const unreadableQueue = path.join(root, "runtime", "telemetry", unreadable === "events" ? "events.jsonl" : "otel-spans.jsonl");
+      if (unreadable !== null) {
+        await rm(unreadableQueue, { force: true });
+        await mkdir(unreadableQueue);
+      }
       vi.stubEnv("PM_TELEMETRY_FLUSH_CHILD", "1");
       await flushTelemetryQueueNow(root);
       await deletion;
+      expect(received).not.toBe("");
       if (artifact === "events") {
         expect((JSON.parse(received) as { events: Array<{ event_type: string }> }).events.map((event) => event.event_type))
           .toEqual(["command_start", "command_finish"]);
@@ -147,6 +155,7 @@ it.each([
         expect(await readFile(queue, "utf8")).toBe("");
         expect((await readSettings(root)).telemetry.installation_id).toBe(settings.telemetry.installation_id);
       }
+      if (unreadable !== null) expect((await stat(unreadableQueue)).isDirectory()).toBe(true);
       expect(await readFile(sentinel, "utf8")).toBe("preserve me");
     } finally {
       server.closeAllConnections();
