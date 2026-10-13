@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bugfix,observability,privacy,sdk
 created_at: "2026-10-13T04:41:25.527Z"
-updated_at: "2026-10-13T11:40:39.243Z"
+updated_at: "2026-10-13T12:54:38.094Z"
 closed_at: "2026-10-13T11:40:38.401Z"
 completed_at: "2026-10-13T11:40:38.401Z"
 author: "harness:codex"
@@ -18,10 +18,11 @@ confidence: high
 resolution: "Redact all argument slots and scrub complete spans, links and logs, including full quoted values and sensitive components after underscore separators"
 expected_result: Private argument content and quoted or compound credential values never enter diagnostic exports
 actual_result: "Independent compound assignment and revocation controls fail on the prior revision and pass after correction;96 linked Sentry checks, typecheck, ESLint, mutation and packed Node/Bun consumer gates pass; retain the local lifecycle timeout and require final full hosted coverage"
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-58yzil,discovered_from,"2026-10-13T04:41:25.527Z","harness:codex","cli:create:dep",detected
   pm-t3jxjj,related,"2026-10-13T05:43:51.188Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+  pm-mor9pl,related,"2026-10-13T12:54:36.933Z","harness:codex","cli:update:dep",detected
+comments[13]{created_at,author,text}:
   "2026-10-13T04:41:25.527Z","harness:codex","Duplicate check: strict all-status corpus including closed Sentry/privacy lineage and current request-specific search found no owner for raw positional command-context exposure. Reuse pm-58yzil and pm-t3jxjj as related delivery owners."
   "2026-10-13T04:44:24.888Z","harness:codex","Independent pre-fix control: canonical helper test extended with private positional text and a separate token value. Before production edits selected test exits1 because both strings remain in context args. Same assertion and harness retained for after proof; ignored privacy-before.log records exact assertion failure."
   "2026-10-13T05:16:59.000Z","harness:codex","Configured consent control fails before the fix: with a disposable global telemetry.enabled=false and a loopback Sentry DSN, explicit tracing exported a span. CLI now supplies effective consent from its active telemetry receipt to the shared SDK helper before initialization. The unchanged configured-opt-out assertion passes afterward. Fixture telemetry endpoint also points to its loopback collector, preventing external event delivery when test policy is cleared for local Sentry instrumentation. Initial collector experiments emitted3 unfinished fixture starts; those installation identities are separate from the real installation, whose fixed04:30-05:01UTC cohort is112 starts/112 finishes with0 unmatched or duplicate pairs. No historical telemetry records are deleted."
@@ -34,6 +35,7 @@ comments[12]{created_at,author,text}:
   "2026-10-13T10:21:52.243Z","harness:codex","PR1455 remediation verified: quoted sensitive assignments use bounded delimiter scanning across spaces, escaped quotes, nested assignment text and incomplete input. Span names/attributes/link attributes and log messages/attributes use the same complete scrubber. The two unchanged quoted-value controls fail before correction; all90 linked Sentry tests and full10377-test exact100/100/100/100 coverage pass afterward. Typecheck, ESLint and packed npm/Bun/npx/bunx9-package acceptance pass. Existing scanner rules, dependency/runtime inventories and all performance ratchets remain unchanged."
   "2026-10-13T11:04:54.853Z","harness:codex","PR1455 revised review https://github.com/unbraind/pm-cli/pull/1455#discussion_r4257567305: access_token and client_secret failed unchanged span/link/log export assertions on b80427b5d. Permit sensitive component matching after underscore separators while preserving assignment names, quote scanning and constant regex construction. The corrected independent collector/test control has3 assertion failures before and all121 focused tests pass after. Initial internal Node-e config fixture had an unrelated missing-argv setup failure; replace it with the real CLI bin before asserting the consent regression."
   "2026-10-13T11:35:19.856Z","harness:codex",The Node-e failure previously separated from the consent regression also affects the supported published ./cli wrapper. Its live SDK contract promises supplied invocation arguments without replacing host argv. pm-mor9pl owns the independently failing public collector case and the missing-script normalization; the final collector uses public.js and verifies unchanged host argv/exit status. Current96 Sentry tests plus26 recurrence tests and2 scratch-lifecycle checks all pass. Both real-bin and embedded opt-out commands mutate consent and export zero command spans.
+  "2026-10-13T12:54:38.094Z","harness:codex","Graph-composition at exactf13bac6cd passes code, SDK import and all6 CLI startup budgets but reports1234 prose gaps against the unchanged1233 ceiling. Complete live CLI corpus plus the public evaluateMeasurement source identifies this exact newly introduced implicit mention: pm-geywoc to pm-mor9pl. Add the semantically correct related edge between the privacy collector and its discovered public embedding fix. No gate bound or prose evidence is removed."
 learnings[2]{created_at,author,text}:
   "2026-10-13T05:01:46.510Z","harness:codex",Command args reaching a diagnostic helper are data even when text resembles flags. Redact every argument slot and retain option keys separately; apply privacy at event breadcrumb log and streamed-span export boundaries.
   "2026-10-13T10:21:53.015Z","harness:codex","Privacy at a diagnostic export boundary must consume the entire quoted value, including escaped delimiters and incomplete input. A prefix-only regex can redact the first word while exporting the remaining secret."
