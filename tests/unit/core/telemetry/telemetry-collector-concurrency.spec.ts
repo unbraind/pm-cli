@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -12,6 +12,75 @@ const execFileAsync = promisify(execFile);
 const primitivesUrl = pathToFileURL(path.resolve("dist/sdk/runtime-primitives.js")).href;
 const telemetryUrl = pathToFileURL(path.resolve("dist/core/telemetry/runtime.js")).href;
 afterEach(() => { vi.unstubAllEnvs(); });
+
+it("delivers completion-appended during an in-flight background upload without another command", async () => {
+  await withTempGlobalRoot("pm-telemetry-tail-", async (root) => {
+    let releaseFirst!: () => void;
+    let observeFirst!: () => void;
+    let observeFinish!: () => void;
+    const firstObserved = new Promise<void>((resolve) => { observeFirst = resolve; });
+    const finishObserved = new Promise<void>((resolve) => { observeFinish = resolve; });
+    const firstReleased = new Promise<void>((resolve) => { releaseFirst = resolve; });
+    const types: string[] = [];
+    const server = createServer(async (request, response) => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of request) chunks.push(Buffer.from(chunk as Uint8Array));
+      const body = JSON.parse(Buffer.concat(chunks).toString()) as { events: Array<{ event_type: string }> };
+      types.push(...body.events.map((event) => event.event_type));
+      if (body.events.some((event) => event.event_type === "command_start")) {
+        observeFirst();
+        await firstReleased;
+      }
+      response.writeHead(202).end();
+      if (body.events.some((event) => event.event_type === "command_finish")) observeFinish();
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing loopback address");
+    const settings = await readSettings(root);
+    await writeSettings(root, { ...settings, telemetry: { ...settings.telemetry, enabled: true, endpoint: `http://127.0.0.1:${address.port}/events` } }, "test:tail-consent");
+    const env: NodeJS.ProcessEnv = { ...process.env, PM_PATH: root, PM_GLOBAL_PATH: root,
+      DO_NOT_TRACK: "0", PM_TELEMETRY_DISABLED: "0", PM_NO_TELEMETRY: "0",
+      PM_TELEMETRY_INLINE_FLUSH: "0", PM_TELEMETRY_FLUSH_CHILD: "0",
+      PM_TELEMETRY_READ_SAMPLE_RATE: "1", PM_TELEMETRY_INGEST_KEY: "",
+      PM_TELEMETRY_OTEL_DISABLED: "1", PM_SENTRY_DISABLED: "1",
+    };
+    for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_ENV"]) delete env[key];
+    const child = spawn(process.execPath, ["--input-type=module", "-e", `
+      import { startTelemetryCommand, finishTelemetryCommand } from ${JSON.stringify(primitivesUrl)};
+      const active = await startTelemetryCommand({ command: "create", pm_version: "fixture", args: [], options: {}, global: { json: true, quiet: true }, pm_root: process.env.PM_PATH });
+      if (!active) throw new Error("Capture unavailable");
+      await new Promise(resolve => process.stdin.once("data", resolve));
+      await finishTelemetryCommand(active, { ok: true, result: { changed: true } });
+      process.stdout.write("completion-enqueued");
+      process.stdin.destroy();
+    `], { cwd: root, env, stdio: ["pipe", "pipe", "pipe"] });
+    let stderr = "";
+    child.stderr.on("data", (chunk: Buffer) => { stderr += chunk.toString(); });
+    const completionEnqueued = new Promise<void>((resolve) => child.stdout.on("data", (chunk: Buffer) => {
+      if (chunk.toString().includes("completion-enqueued")) resolve();
+    }));
+    const exited = new Promise<number | null>((resolve) => child.once("exit", resolve));
+    const deadline = <T>(promise: Promise<T>): Promise<T> => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Background delivery did not complete")), 8_000);
+      promise.then((value) => { clearTimeout(timer); resolve(value); }, (error: unknown) => { clearTimeout(timer); reject(error); });
+    });
+    try {
+      await deadline(firstObserved);
+      child.stdin.end("finish");
+      await deadline(completionEnqueued);
+      releaseFirst();
+      await deadline(finishObserved);
+      expect(await deadline(exited)).toBe(0);
+      expect(stderr).toBe("");
+      expect(types.sort()).toEqual(["command_finish", "command_start"]);
+    } finally {
+      releaseFirst();
+      if (child.exitCode === null) child.kill();
+      await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
+  });
+}, 25_000);
 
 it("delivers every concurrent SDK lifecycle pair with one cold-installation identity", async () => {
   vi.stubEnv("PM_TELEMETRY_INGEST_KEY", "synthetic-parent-key");

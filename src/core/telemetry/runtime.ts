@@ -2509,11 +2509,11 @@ async function flushQueueWithProcessLock(
   globalPmRoot: string,
   endpoint: string,
   retentionDays: number,
-): Promise<void> {
+): Promise<boolean> {
   const acquired = await acquireTelemetryFlushLock(globalPmRoot);
   releaseTelemetryFlushSpawnGate(globalPmRoot);
   if (!acquired) {
-    return;
+    return false;
   }
   try {
     await flushTelemetryArtifacts(globalPmRoot, endpoint, retentionDays);
@@ -2524,6 +2524,20 @@ async function flushQueueWithProcessLock(
       // Best effort lock cleanup; stale locks are recovered by TTL checks.
     }
   }
+  return true;
+}
+
+/** Snapshot eligible event/span identities to distinguish tail progress from dormant retries. */
+async function dueTelemetryArtifactIds(globalPmRoot: string, retentionDays: number): Promise<Set<string>> {
+  const { entries } = pruneExpiredQueueEntries(await readCurrentQueueEntries(globalPmRoot), retentionDays);
+  const ids = new Set(entries.filter(isDueForRetry).map((entry) => `event:${entry.event.event_id}`));
+  const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
+  if (raw !== null) {
+    for (const entry of prunePendingOtelSpans(parsePendingOtelSpanLines(raw), retentionDays).entries) {
+      if (isDueForRetryAt(entry.next_attempt_after)) ids.add(`span:${entry.id}`);
+    }
+  }
+  return ids;
 }
 
 function scheduleTelemetryFlush(
@@ -2589,13 +2603,19 @@ export async function flushTelemetryQueueNow(
   }
   try {
     await runWithConfigurationOnlySettings(globalPmRoot, async () => {
-      const settings = await readSettings(globalPmRoot);
-      if (!settings.telemetry.enabled) {
-        return;
+      const detached = parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]);
+      let continueDraining = true;
+      while (continueDraining) {
+        const settings = await readSettings(globalPmRoot);
+        if (!settings.telemetry.enabled) return;
+        const installation = await withQueueMutation(() => ensureInstallationId(globalPmRoot), globalPmRoot);
+        if (!installation) return;
+        const before = detached ? await dueTelemetryArtifactIds(globalPmRoot, installation.retentionDays) : new Set<string>();
+        const acquired = await flushQueueWithProcessLock(globalPmRoot, installation.endpoint, installation.retentionDays);
+        if (!acquired || !detached) return;
+        const after = await dueTelemetryArtifactIds(globalPmRoot, installation.retentionDays);
+        continueDraining = after.size > 0 && (after.size !== before.size || [...after].some((id) => !before.has(id)));
       }
-      const installation = await withQueueMutation(() => ensureInstallationId(globalPmRoot), globalPmRoot);
-      if (!installation) return;
-      await flushQueueWithProcessLock(globalPmRoot, installation.endpoint, installation.retentionDays);
     }, () => parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]));
   } catch {
     // Telemetry workers are best effort and must never fail user commands.

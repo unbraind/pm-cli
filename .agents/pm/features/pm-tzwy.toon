@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: ci,cost,free-tier,github-actions,performance,pm-cli
 created_at: "2026-05-16T22:07:27.879Z"
-updated_at: "2026-09-19T08:41:47.222Z"
+updated_at: "2026-10-13T17:27:05.494Z"
 closed_at: "2026-05-17T11:43:51.877Z"
 author: maintainer-agent
 acceptance_criteria: "Average CI duration per push/PR cut by >=40%; total runner minutes per PR cut by >=50% on common docs-only or single-file PRs; full matrix still runs on main push; coverage gate, static quality gate, plugin smoke tests still gating; pnpm audit/security:scan still gating; no paid GitHub features used; CI is green on the change."
@@ -21,12 +21,13 @@ dependencies[5]{id,kind,created_at}:
   pm-iv1u,related,"2026-07-26T17:26:47.422Z"
   pm-n28v,related,"2026-07-26T17:26:47.422Z"
   pm-rnpb,implements,"2026-07-26T17:26:47.422Z"
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-05-17T10:33:05.353Z",codex-agent,"Execution start 2026-05-17: bootstrap complete (npm install -g ., pm --version, node -v, pnpm -v, pnpm build) and duplicate-check/orient commands rerun (pm context, pm search ci free-tier cache matrix gates artifact, pm list-open, pm list-in-progress). Active implementation slice is pm-27yz under this parent; releasing unrelated stale claims to keep in_progress/claim hygiene strict."
   "2026-05-17T10:41:27.702Z",codex-agent,"Progress update 2026-05-17: completed pm-27yz implementation locally with parallelized CI gates architecture and full local verification stack green (focused contracts, typecheck, release gates with required telemetry/Sentry, dogfood, secret scan). Next step is commit/push and remote GitHub checks evidence."
   "2026-05-17T11:14:59.487Z",codex-agent,"Execution continuation 2026-05-17: reran bootstrap (npm install -g ., pm --version 2026.5.14, node v25.9.0, pnpm 10.33.0, pnpm build) and duplicate-check/orient commands (pm context, pm search ci free-tier cache matrix gates artifact sentry telemetry dogfood, pm list-open, pm list-in-progress). Reusing existing CI lineage without creating duplicate items; enforcing parent+single-active-child in_progress policy."
   "2026-05-17T11:31:57.718Z",codex-agent,"Lineage update 2026-05-17 before push: closed child issues pm-27yz, pm-iv1u, pm-1pah, and pm-n28v with acceptance evidence and backfilled resolution metadata. Latest local verification for n28v includes linked run test-local-mp9p1ujz-zjy2f5 (4/4 passed), required release gates (1326 tests, 100% coverage), standalone sentry/telemetry gate (critical=0 high=0 total=0; telemetry error rate 2.11%), check-secrets clean, and dogfood temp-project 54-command pass. Next step is commit/push this workflow/test/update set and capture fresh GitHub Actions run evidence."
   "2026-05-17T11:43:43.509Z",codex-agent,"Delivery evidence 2026-05-17: committed and pushed main as a1f134cfe165bff79387e5a1d15b9af63c9e37fc. CI run 25989643786 is green on all jobs (build-foundation, gates, ubuntu/macos/windows matrix). Remaining annotation is the existing GitHub-hosted Node20 deprecation notice for actions/download-artifact, not a functional failure."
+  "2026-10-13T17:27:05.494Z","harness:codex","October13 provider evidence: exact PR1455 head a9cc7a11f had two macOS ARM jobs canceled before runner assignment, with empty runner_name and no steps. GitHub annotations state that hosted runners did not acquire the jobs and cite ARM capacity constraints. Rerunning only those jobs on the same head succeeded, preserving the full required matrix and free runner labels. Source merge f01d624d63b8971d7180758bbaf92880c8b6603d then passed main CI38429327409. These are provider allocation events, not executed regression failures or evidence that the shipped optimization is unfinished. Current runner annotations also announce ubuntu-latest migration beginning October19; retain the upstream runner-images issue14748 as an environment-change notice."
 notes[1]{created_at,author,text}:
   "2026-05-17T11:43:45.291Z",codex-agent,"Operational note: GitHub Actions emitted Node20 deprecation annotations for actions/download-artifact during run 25989643786. Track future pin upgrade to a Node24-compatible action release in a separate maintenance item if/when upstream changes."
 learnings[1]{created_at,author,text}:

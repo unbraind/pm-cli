@@ -12,6 +12,7 @@
 
 ### Fixed
 
+- Resume due telemetry after a concurrent background upload ([pm-j8spis](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j8spis.toon))
 - Prevent Sentry command context from recording positional content and option values ([pm-geywoc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-geywoc.toon))
 - Embedded CLI commands fail when an eval host has no script argv entry ([pm-mor9pl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mor9pl.toon))
 

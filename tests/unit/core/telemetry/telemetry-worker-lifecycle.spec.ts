@@ -17,6 +17,24 @@ beforeEach(() => {
 });
 afterEach(async () => { await waitForPendingFlush(); vi.unstubAllEnvs(); });
 
+it("stops a detached drain that cannot make progress without changing queued events", async () => {
+  await withTempDir("pm-worker-stagnant-", async (root) => {
+    vi.stubEnv("PM_GLOBAL_PATH", root);
+    const settings = await readSettings(root);
+    settings.telemetry.enabled = true;
+    settings.telemetry.endpoint = "";
+    await writeSettings(root, settings, "test:stagnant-consent");
+    const active = await startTelemetryCommand({ command: "create", pm_version: "fixture", args: [], options: {}, global: { noExtensions: true }, pm_root: root });
+    expect(active).not.toBeNull();
+    await waitForPendingFlush();
+    const queue = path.join(root, "runtime", "telemetry", "events.jsonl");
+    const before = await readFile(queue, "utf8");
+    vi.stubEnv("PM_TELEMETRY_FLUSH_CHILD", "1");
+    await flushTelemetryQueueNow(root);
+    expect(await readFile(queue, "utf8")).toBe(before);
+  });
+});
+
 it("does not initialize storage after a detached worker's root has been removed", async () => {
   await withTempDir("pm-worker-absent-", async (parent) => {
     const root = path.join(parent, "installation");
@@ -27,6 +45,32 @@ it("does not initialize storage after a detached worker's root has been removed"
     vi.stubEnv("PM_TELEMETRY_FLUSH_CHILD", "1");
     await flushTelemetryQueueNow(root);
     await expect(access(root)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+});
+
+it("leaves future OTLP retries dormant during detached tail draining", async () => {
+  await withTempDir("pm-worker-future-span-", async (root) => {
+    vi.stubEnv("PM_GLOBAL_PATH", root);
+    vi.stubEnv("PM_TELEMETRY_OTEL_DISABLED", "0");
+    vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://127.0.0.1:9/traces");
+    const settings = await readSettings(root);
+    settings.telemetry.enabled = true;
+    settings.telemetry.endpoint = "";
+    settings.telemetry.installation_id = randomUUID();
+    await writeSettings(root, settings, "test:future-consent");
+    await runWithConfigurationOnlySettings(root, async () => {
+      const command = await startTelemetryCommand({ command: "create", pm_version: "fixture", args: [], options: {}, global: { noExtensions: true }, pm_root: root });
+      await finishTelemetryCommand(command, { ok: true });
+      await waitForPendingFlush();
+    });
+    const queue = path.join(root, "runtime", "telemetry", "otel-spans.jsonl");
+    const entry = JSON.parse(await readFile(queue, "utf8")) as Record<string, unknown>;
+    entry.next_attempt_after = new Date(Date.now() + 60_000).toISOString();
+    const deferred = JSON.stringify(entry) + "\n";
+    await writeFile(queue, deferred);
+    vi.stubEnv("PM_TELEMETRY_FLUSH_CHILD", "1");
+    await flushTelemetryQueueNow(root);
+    expect(await readFile(queue, "utf8")).toBe(deferred);
   });
 });
 

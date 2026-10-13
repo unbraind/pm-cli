@@ -2,25 +2,29 @@ id: pm-oz8u
 title: Semgrep 2026-07-06 downloaded code findings triage batch
 description: "Import and triage the 40 Semgrep Code findings downloaded on 2026-07-06, preserving each platform finding as a linked pm issue with source links and security metadata."
 type: Task
-status: open
+status: closed
 priority: 1
-tags[5]: code-scanning,context-management,security,semgrep,triage
+tags[1]: changelog-exclude
 created_at: "2026-07-06T18:56:14.728Z"
-updated_at: "2026-10-13T08:21:56.755Z"
+updated_at: "2026-10-13T17:16:27.918Z"
+closed_at: "2026-10-13T17:16:27.243Z"
+completed_at: "2026-10-13T17:16:27.243Z"
 author: codex-cli-agent
 estimated_minutes: 240
 acceptance_criteria: "Every Semgrep finding from the CSV has a linked pm Issue with Semgrep ID, rule, severity, status, platform link, code link, autotriage metadata, and rule description."
 parent: pm-qwoy
 risk: high
 confidence: high
-expected_result: "Each of the forty Semgrep findings from 2026-07-06 is a linked pm issue with rule, severity, platform link and triage state."
+resolution: Preserve all forty imported findings and their source/security metadata; reconcile historical closures and verify the bounded matcher eliminates the seven retained findings
+expected_result: Every imported finding remains traceable and the reviewed current main scan has no actionable PM CLI findings
+actual_result: "All41 linked children are closed; the full managed main scan245435268 completes successfully, all7 matcher identities are independently FIXED, and the project/main Open view is empty with0 secrets and0 supply-chain findings; linked sandbox verification passes"
 dependencies[5]{id,kind,created_at}:
   pm-3u2x,related,"2026-07-24T23:54:07.117Z"
   pm-6ixn,related,"2026-07-24T23:54:07.117Z"
   pm-ngjd,related,"2026-07-24T23:54:07.117Z"
   pm-qwoy,related,"2026-07-24T23:54:07.117Z"
   pm-6ixn,implements,"2026-07-25T20:44:37.794Z"
-comments[12]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-07-06T18:57:11.617Z",codex-cli-agent,"Evidence: imported 40 Semgrep Code findings from Semgrep_Code_Combined_Findings_2026_07_06.csv as child Issue items. Duplicate check before import found no existing Semgrep tracker items or Semgrep finding IDs in .agents/pm. Verification after import: pm search semgrep --status all --limit 60 returns 41 items (parent + 40 children); pm list --status all --parent pm-oz8u --limit 60 returns 40 child issues."
   "2026-07-06T19:36:47.451Z",codex-cli-agent,"Evidence update: imported the downloaded Semgrep 2026-07-06 CSV as one parent task plus 40 child Issue items, after all-status duplicate checks found no existing Semgrep lineage. Redacted the local absolute download path from the imported pm history/item metadata with pm history-redact; rg no longer finds the original local CSV path in tracked pm data. Verification: pm search semgrep --status all --limit 60 returns 41 items and pm list --status all --parent pm-oz8u --limit 60 returns 40 child issues; security:scan reports no credential-like secrets."
   "2026-07-24T12:17:13.096Z",claude-code-agent,"Whole-system audit evidence: active-only dedupe-audit found six fuzzy title clusters (29 candidate items, 23 merge suggestions), all within this imported Semgrep batch. Exact-title and parent-scope modes found zero. Manual comparison of pm-dtn1 and pm-y49x confirms distinct Semgrep finding IDs and distinct RegExp argument flows despite the same file/line signature; treat the fuzzy clusters as triage groups, not proven duplicates, and preserve external finding identity until each full record is reconciled against current Semgrep state."
@@ -33,6 +37,9 @@ comments[12]{created_at,author,text}:
   "2026-10-13T06:06:21.930Z","harness:codex",Static triage is recorded and this parent is released to open while implementation/validation proceeds on its claimed bounded-matching child. The managed Semgrep project exposes a free rule-based rescan for main; use it after reviewed delivery to reconcile retained sink findings rather than disabling rules or prematurely labeling them fixed.
   "2026-10-13T06:13:46.685Z","harness:codex","Semgrep scan freshness is scoped correctly: October13 recent scans are PR diffs with0 findings, while the latest complete main scan is October9 and took23m58s with51 code findings and0 secrets/supply-chain findings. A fresh full main scan is necessary after the matcher delivery; a clean PR diff alone does not settle the retained baseline records."
   "2026-10-13T08:21:55.905Z","harness:codex","Completed exact historical reconciliation:32 distinct original July identities were read directly in authenticated Chrome and all report FIXED. Their activity datetime values are31 completions at2026-07-17T13:59:21.232Z and one at2026-08-07T14:03:45.981Z. Full live metadata and158 history entries were verified before mutation; each item was individually claimed, closed with structured evidence and the observed completed_at, released, and replay-verified. Original CSV bodies and identity links are preserved, and changelog-exclude prevents historical reconciliation from becoming new release notes. Private receipt digest c27334c3e4f3712f25bc15a6e745d2b5f458d61f03e9b14e3d0c2d0e8a097211. The7 distinct October matcher findings still require the planned full main rescan after delivery; pause this parent while candidate validation and review proceed."
+  "2026-10-13T16:19:13.403Z","harness:codex","Begin full managed main rescan after reviewed source delivery: PR1455 merged at2026-10-13T16:17:46Z as f01d624d63b8971d7180758bbaf92880c8b6603d. Exact PR head a9cc7a11f passed all required checks,10394 tests with exact100% coverage, and the CodeRabbit full98-file review reports no actionable findings. Preserve the44 ignored false-positive identities and reconcile the7 old matcher records against this fresh full scan. Record operational closure in a reviewed main-based follow-up."
+  "2026-10-13T16:50:03.462Z","harness:codex","The rule-based main scan was submitted and the project visibly confirms main Full Pending at October13 18:26 local display. The initial menu action required a delayed HTML branch-confirmation modal; only the confirmed Scan submission starts the scan. Release this parent while validating the independent telemetry tail-delivery finding, then reclaim for result reconciliation."
+  "2026-10-13T17:16:26.308Z","harness:codex","Authenticated full main scan245435268 completed on October13 in21m42s with45 raw code observations,0 secrets,0 supply-chain findings and0 blocking findings. The project-and-main-filtered Open view has no matching findings. All7 retained matcher identities963785855,937509394,937509393,937509392,937509391,937509390,937509389 individually report FIXED at2026-10-13T16:50:05.365Z. Raw finding counts retain non-open historical/monitor observations; no rule was disabled. The45th observation is the local smoke harness assigning only fixed stdout/stderr diagnostic keys onto its own Error object, with no web response or user-controlled property names. Private fixed-identity receipt digest23c6e90da0634ce4b3175b68e5e6dbedf63d0ce75aa79297fb6604892c327e54 and scoped-zero-open screenshot digest78625c3d828e08bd57a2291b97cc6fdda0e82ea732c756cfa6ee3a859dcbc37d preserve the exact evidence."
 learnings[1]{created_at,author,text}:
   "2026-07-25T02:02:16.799Z","harness:codex",Cross-platform Node command wrappers should select the Windows .cmd shim explicitly and keep shell disabled; argv must remain structured from generation through execution.
 files[4]{path,scope,note}:
@@ -42,4 +49,17 @@ files[4]{path,scope,note}:
   tests/unit/scripts/release/utils.spec.ts,project,High severity shell spawn remediation batch
 tests[1]{command,scope,timeout_seconds}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/scripts/release/utils.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,project,240
+test_runs[1]:
+  - run_id: test-local-mv6wd70w-rc8k2j
+    kind: test
+    status: passed
+    started_at: "2026-10-13T16:30:14.320Z"
+    finished_at: "2026-10-13T16:30:22.928Z"
+    recorded_at: "2026-10-13T16:30:22.928Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/gen-plugin-mcp-wrappers.spec.ts tests/unit/scripts/release/utils.spec.ts tests/unit/plugins/pm-mcp-server.spec.ts,schema,schema,source,legacy
+close_reason: Completed imported-identity triage and authenticated full-main reconciliation
 body: "# Semgrep downloaded findings triage batch\n\nSource CSV: Semgrep_Code_Combined_Findings_2026_07_06.csv (local download, not committed)\nDownloaded: 2026-07-06\nFinding count: 40\nRepository: unbraind/pm-cli\n\nThis parent groups the Semgrep Code findings imported from the downloaded CSV so each platform finding has a durable pm issue with source links and triage metadata.\n\nDuplicate check before import: `pm search semgrep --status all --limit 100 --json` returned 0 items, and `rg` found no Semgrep finding IDs or semgrep.dev finding links under `.agents/pm`."

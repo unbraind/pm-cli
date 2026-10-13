@@ -1,0 +1,59 @@
+id: pm-j8spis
+title: Resume due telemetry after a concurrent background upload
+description: "A real source get finish remained queued for432.545 seconds until a later invocation, though it eventually paired. The detached worker flushes one snapshot; a concurrent completion can append after that snapshot while its foreground scheduling is refused by the active flush lock. Reconcile and schedule due tail work after releasing that lock, without foreground network I/O, busy retries, or recreating removed storage."
+type: Issue
+status: closed
+priority: 1
+tags[3]: delivery,sdk,telemetry
+created_at: "2026-10-13T16:48:11.966Z"
+updated_at: "2026-10-13T17:53:27.050Z"
+closed_at: "2026-10-13T17:53:26.144Z"
+completed_at: "2026-10-13T17:53:26.144Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: A deterministic real-SDK worker collector receives a finish appended during the first POST without a subsequent user command; future-backoff work does not spin; disabled consent or removed storage cannot restart workers; event and OTLP tail work are covered; existing SDK/CLI performance and security gates pass.
+parent: pm-5oj5
+risk: medium
+confidence: high
+resolution: "Detached SDK workers continue due event and span draining after releasing each upload lock, rechecking consent and identity and stopping on unchanged work or future retry backoff"
+expected_result: A completion appended during an upload reaches the collector without another user command and without foreground network work
+actual_result: "The real-worker control times out before correction and passes after correction;156 linked telemetry tests cover consent, removed storage, stagnant work and future OTLP retries; typecheck, lint, secrets, SDK/graph/record/mutation and9 packed consumers pass, while exact hosted coverage and static remain mandatory before merge"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-58yzil,discovered_from,"2026-10-13T16:48:11.966Z","harness:codex","cli:create:dep",detected
+  pm-sgko,related,"2026-10-13T16:48:11.966Z","harness:codex","cli:create:dep",detected
+  pm-u5c27w,related,"2026-10-13T16:48:11.966Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-13T16:48:11.966Z","harness:codex","Duplicate check: complete2952-item live corpus and all-status flush-worker/finish and appended-flush searches were read, plus live open/in-progress inventories. Closed background-flush and manual partial-drain owners describe shipped distinct behavior; preserve their closures. The new tail scheduling case is evidenced by a real delayed finish and the current single-pass worker/lock code."
+  "2026-10-13T17:17:12.338Z","harness:codex","The real detached-worker regression fails on unchanged source: after the first POST owns the flush lock, append the SDK completion and release that POST; no second user command occurs and completion delivery times out. With post-unlock due-artifact draining it passes in606ms. Detached passes renew their lock, re-read consent and installation inside the queue mutex, preserve removed storage, exclude future retry work, and stop when eligible identities do not change. All155 telemetry assertions pass, including existing revocation and removed-storage controls plus the stagnant-queue case. Focused coverage intentionally does not satisfy the repository-wide denominator; full exact coverage remains required."
+  "2026-10-13T17:35:17.581Z","harness:codex","Planning qualification: medium risk because exporter coordination changes while foreground and retention contracts stay intact; high confidence from the deterministic real-worker failure and corrected pass; estimated90 minutes including preservation, consent/backoff coverage, packed consumers, exact coverage and reviewed operational closeout."
+  "2026-10-13T17:53:24.971Z","harness:codex","Final local source checks:156 linked telemetry tests pass; typecheck, uncached unsuppressed ESLint, secret scanning, SDK surface and import costs, configured context/graph/record gates and all9 packed npm/Bun/npx/bunx workflows pass. Distribution19,965,753 bytes remains under20,000,000 with40 runtime packages. Registered mutation control reports336 total,329 killed and7 documented equivalents, with no failures. Full local coverage received SIGTERM before a verdict; preserve that incomplete receipt and require exact100% hosted coverage. The latest full static run stops only at the qualified get timing369ms versus362ms, recorded under the existing diagnosis without changing thresholds."
+files[3]{path,scope}:
+  src/core/telemetry/runtime.ts,project
+  tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project
+  tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry,project,240,"harness:codex","2026-10-13T17:17:11.593Z",local_mutation,chore/oct13-delivery-evidence
+test_runs[1]:
+  - run_id: test-local-mv6yd6v1-osio8r
+    kind: test
+    status: passed
+    started_at: "2026-10-13T17:26:03.034Z"
+    finished_at: "2026-10-13T17:26:21.949Z"
+    recorded_at: "2026-10-13T17:26:21.949Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
+close_reason: Verified autonomous delivery of completions appended during background uploads
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts -t completion-appended
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/telemetry
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-j8spis
+body: ""
