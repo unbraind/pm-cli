@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-12T19:21:47.566Z"
-updated_at: "2026-10-12T19:21:47.566Z"
+updated_at: "2026-10-12T21:58:24.817Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Prove an independent successful-command opt-in control before and after; honor consent opt-outs and Vitest isolation; sanitize span context; preserve default cold-start and import budgets; verify one recent explicitly sampled trace through the authenticated Sentry API, distinguishing ingestion unavailability from source behavior."
@@ -17,6 +17,7 @@ expected_result: Explicit opt-in tracing observes successful CLI commands while 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-1ybs,related,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
   pm-gg8e,discovered_from,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-12T19:21:47.566Z","harness:codex","Duplicate check: fresh opt-in tracing search, open/in_progress inventories and complete all-status corpus review found the completed sampling-knob and lazy-startup owners but no exact active implementation owner. Their full live metadata was read. This enhancement remains open and unclaimed; the four connected implementation owners remain the only active items."
+  "2026-10-12T21:58:24.817Z","harness:codex","Fresh explicit unbrained/pm-cli Sentry queries during this delivery again return0 unresolved issues and0 recent trace rows. The14-day authenticated Sentry/telemetry gate passes with0 critical/high issues,3.01% finish error rate and0 failures without error codes. Successful-command tracing remains unproven and is retained here open/unclaimed; metrics-service recovery in pm-m1tfmp is independent from Sentry trace instrumentation."
 body: ""

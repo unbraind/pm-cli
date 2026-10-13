@@ -90,6 +90,7 @@ export type {
   BeforeMutationHookContext,
   BeforeMutationHookDecision,
   CommandDefinition,
+  ExtensionCommandReadOutput,
   ExtensionCommandArgumentDefinition,
   CommandHandler,
   CommandHandlerContext,

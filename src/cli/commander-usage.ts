@@ -46,7 +46,7 @@ import {
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 import { canonicalizeCommandSuggestions, rankCommandPaths, resolveMisnestedCommandPath } from "../sdk/agent/command-suggestions.js";
-import { renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
+import { isCompatibleRecoveryFlag, renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
@@ -898,7 +898,7 @@ function resolveUnknownOptionSuggestions(
             match[1],
             collectKnownLongFlags(commandName),
           ),
-        ])
+        ]).filter((candidate) => isCompatibleRecoveryFlag(match[1], candidate))
       : undefined;
   const otherCommands = match
     ? findOtherCommandsForFlag(match[1], commandName)

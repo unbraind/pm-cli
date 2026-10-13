@@ -1109,6 +1109,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "extension_read_output_invalid",
+    meaning: "Extension read output invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/read-output/extension.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "extension_read_output_invalid",
+    aliases: [],
+  },
+  {
     code: "extension_update_health_partial_coverage",
     meaning: "Extension update health partial coverage condition.",
     stability: "stable",

@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 404
+- Catalog error codes: 405
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 385
-- Coverage fraction: 0.047030
+- Uncovered error codes: 386
+- Coverage fraction: 0.046914
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -99,6 +99,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `extension_mutation_guard_invalid_decision` | `extension_mutation_guard_invalid_decision` | uncovered | none | 0 |
 | `extension_mutation_guard_invalid_denial` | `extension_mutation_guard_invalid_denial` | uncovered | none | 0 |
 | `extension_mutation_guard_timed_out` | `extension_mutation_guard_timed_out` | uncovered | none | 0 |
+| `extension_read_output_invalid` | `extension_read_output_invalid` | uncovered | none | 0 |
 | `extension_update_health_partial_coverage` | `extension_update_health_partial_coverage` | uncovered | none | 0 |
 | `extensions_unreadable` | `extensions_unreadable` | uncovered | none | 0 |
 | `field_duplicate` | `field_duplicate` | uncovered | none | 0 |

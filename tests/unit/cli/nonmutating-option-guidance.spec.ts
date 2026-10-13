@@ -8,6 +8,14 @@ afterEach(() => {
 });
 
 describe("agent command guidance", () => {
+  it.each(["--full", "--ful"])("preserves unsupported read intent %s in the real JSON refusal", (option) => {
+    const refusal = formatCommanderErrorForJson(`unknown option '${option}'`, "telemetry status", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["telemetry", "status", option, "--json"],
+    });
+    expect(refusal.code).toBe("unknown_option");
+    expect(refusal.recovery?.suggested_retry).toBeUndefined();
+    expect(refusal.recovery?.suggested_retry_args).toBeUndefined();
+  });
   it("preserves preview intent even when a producer supplies a retry", () => {
     for (const option of ["--dry-run", "--dry-run=true"]) {
       const refusal = formatCommanderErrorForJson(

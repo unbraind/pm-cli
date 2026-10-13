@@ -18,3 +18,31 @@ export const READ_OUTPUT_COMPOSITION_FLAGS = Object.freeze([
   "--output-cursor",
   "--output-row-contract",
 ] as const);
+
+/** Built-in command roots whose primary operation is a read. */
+export const PM_READ_OUTPUT_SURFACES = [
+  "list",
+  "context",
+  "search",
+  "get",
+  "next",
+  "health",
+  "deps",
+  "graph",
+  "history",
+  "activity",
+  "validate",
+  "events",
+  "contracts",
+  "comments",
+  "notes",
+  "files",
+  "docs",
+  "stats",
+  "aggregate",
+  "duplicates",
+  "package-catalog",
+  "package-manage",
+  "comments-audit",
+  "assurance",
+] as const;

@@ -1436,6 +1436,13 @@ async function runCommandPreparation<T>(actionCommand: Command, skipped: T, run:
 
 /* c8 ignore start */
 
+/** Publish request-local read declarations before validating host output controls. */
+async function loadRuntimeReadDeclarations(actionCommand: Command): Promise<Awaited<ReturnType<typeof maybeLoadRuntimeExtensions>>> {
+  const snapshot = await maybeLoadRuntimeExtensions(actionCommand);
+  setActiveExtensionRegistrations(snapshot?.registrations ?? null);
+  return snapshot;
+}
+
 /** Bind command policy and observability while keeping structured previews free of host-owned migration and consent writes. */
 function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: string[]): void {
   if (invocationArgv && isStaticExtensionInventoryInvocation(invocationArgv)) return;
@@ -1450,6 +1457,8 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     let commandArgs = actionCommand.args.map(String);
     let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
     let globalOptions = { ...bootstrapGlobalOptions };
+    const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
+    const runtimeExtensions = await loadRuntimeReadDeclarations(actionCommand);
     validateReadOutputOptions(commandPath, {
       ...commandOptions,
       outputInclude: rawGlobalOptions.outputInclude,
@@ -1461,8 +1470,6 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     });
     forwardReadOutputIncludeModes(actionCommand, commandPath, globalOptions, commandOptions);
     await runCommandPreparation(actionCommand, undefined, () => maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions));
-    const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
-    const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
     if (!runtimeExtensions) {
       activeExtensionHookContext = createCoreCommandHookContext({
         commandName: commandPath,

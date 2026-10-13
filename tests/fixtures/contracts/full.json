@@ -21406,6 +21406,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "extension_read_output_invalid",
+      "class": "usage",
+      "code": "extension_read_output_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Extension read output invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/read-output/extension.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "extension_update_health_partial_coverage",
       "class": "generic_failure",
       "code": "extension_update_health_partial_coverage",

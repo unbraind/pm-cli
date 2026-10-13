@@ -2,21 +2,90 @@ id: pm-extension-read-output-controls
 title: Let SDK extension read commands opt into universal context output controls
 description: "Real calendar adoption for PR1439 exposed an enhancement opportunity: the optional read command correctly omits universal output-budget flags from its contract, and the core guard refuses them because read-output policies currently enumerate built-in surfaces. Add an explicit public SDK declaration and structured output contract allowing package authors to opt read commands into projection, omission and budget controls while preserving fail-closed behavior for writers and undeclared commands. Current calendar JSON behavior and shipped core read controls remain valid."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-11T08:48:09.560Z"
-updated_at: "2026-10-11T08:48:09.560Z"
+updated_at: "2026-10-13T00:57:46.133Z"
+closed_at: "2026-10-13T00:57:45.514Z"
+completed_at: "2026-10-13T00:57:45.514Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Installed Node and Bun read extensions opt in through a public SDK contract and preserve omission and budget refusal semantics; write and undeclared extension commands continue to reject read-only controls; aliases agree with availability and flag contracts.
 parent: pm-xp1xsw
 risk: medium
 confidence: medium
-expected_result: "Custom package read commands can declare and reuse the same truthful context projection and budget primitives as core readers, with runtime contracts exposing only supported flags."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Added validated immutable read_output declarations, shared SDK shaping and continuation, canonical extension identities, native dispatch protection, action-precedence alignment, custom-flag-preserving schema discovery and authoring documentation."
+expected_result: "Installed npm/Bun package readers reuse truthful universal controls across CLI, SDK and MCP; undeclared writers refuse controls and native behavior remains intact."
+actual_result: "10327 tests pass; all786 measured files have exact100/100/100/100 coverage with zero gaps. Full static gates, linked tests, public contracts/types and npx/bunx smoke pass. npm/Bun installed consumers verify all200 rows exactly once across bounded continuation. Source implementation is complete; hosted delivery and registry publication are independently verified."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,discovered_from,"2026-10-11T08:48:09.560Z","harness:codex","cli:create:dep",detected
   pm-usfg,discovered_from,"2026-10-11T08:48:09.560Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-o0tkr6,related,"2026-10-12T22:58:16.510Z","harness:codex","cli:update:dep",detected
+comments[10]{created_at,author,text}:
   "2026-10-11T08:48:09.560Z","harness:codex","Duplicate-check evidence: complete2926-item all-status census, request-specific extension/output/calendar search and fresh open/in-progress lists were inspected. Existing calendar UX and core universal-output lineages are closed shipped work; full live SDK-first pm-usfg and open GA stability pm-xp1xsw metadata/comments/history were read. No exact extension read-output opt-in delivery exists. Actual installed calendar contract does not advertise output-budget and explicitly refuses it; its normal JSON future window and deep activation doctor succeed. This is an additive SDK authoring enhancement, not a claim that the supported calendar command or closed SDK architecture is broken. Leave open and unclaimed."
+  "2026-10-12T21:20:13.710Z","harness:codex","Delivery scope: declare read-only extension output contracts through the public CommandDefinition, apply shared SDK projection/amount/budget/session/cursor semantics, expose only opted-in flags and validate structured results. Pair with pm-o0tkr6 for semantically safe recovery. Full2947-item strict all-status census has no omissions and zero pre-existing in-progress items; preserve closed predecessors and leave broader roadmap owners unclaimed."
+  "2026-10-12T21:41:02.085Z","harness:codex","Verification: full18-case selected suite passes after projection/continuation work. Larger coupled suite passed191 cases before the additional stale-cursor assertion was finalized. Public SDK typecheck passed; surface transition acknowledges optional metadata and extension receipt namespace with preserved built-in variants. Latest npm pm-changelog2026.10.12 activates with no blocking package-doctor failures. GitHub intake has zero open PRs, all14 open issues already carry canonical PM links, and zero open Dependabot/code-scanning/secret alerts."
+  "2026-10-12T21:58:25.606Z","harness:codex","Read-only operational checks found and started the distinct generated incident pm-m1tfmp under the observability capability. The telemetry event ingress remained healthy; its metrics database was running on unsupported NFS with an obsolete WAL segment below a retained checkpoint. All recovery commands and byte manifests remain private. Only this feature, pm-o0tkr6 and the actively repaired incident are in progress."
+  "2026-10-12T22:58:59.470Z","harness:codex","The graph-composition gate found three new prose-only relationships in delivery evidence. Added the actual combined-delivery relationship, completed pipeline predecessor and independent trace/metrics relationship through typed edges; the existing 1233 prose-gap ceiling now passes unchanged. GitHub full open-issue inventory is15 (the earlier bounded view omitted older #1246); every issue already has a canonical PM link comment, including immutable-revision links. No duplicate GitHub comment was added."
+  "2026-10-12T23:46:47.476Z","harness:codex","All10325 executed tests pass in the complete one-worker suite (three platform skips remain owned by Windows); exact coverage is99.99% statements/branches with four uncovered branches and one statement, not a green coverage verdict. Pre-publication review found custom list-prefixed command classification and custom output-prefixed flag schema edge cases. Correct these, add singleton and real refusal-boundary proof, then rerun unchanged exact thresholds before closing."
+  "2026-10-12T23:54:55.572Z","harness:codex","Revised24 focused assertions pass, including source CLI provenance, singleton rows, a valid custom list-prefixed root, undeclared list-prefixed writer refusal, custom output-style schema, and SDK action/path collision precedence. Native read declarations cannot shadow native dispatch. Both new modules are fully covered in the focused instrumentation run; that scoped run does not certify whole-source coverage. Full exact coverage is running again after these changes."
+  "2026-10-13T00:16:49.588Z","harness:codex",The broad revised run exposed static contract construction calling the request registry during module initialization (search mock TDZ). Fixed production construction to use a pure legacy-mode helper; no mock or test was weakened. The unchanged94 search cases and revised24 cases pass together (118 total). Factored native alias resolution to preserve the existing complexity ceiling. Tracker/context and graph receipts now pass after supplying the new open guard task risk/confidence/estimate. Final full coverage and static gates are running on this corrected source.
+  "2026-10-13T00:35:33.368Z","harness:codex","Latest complete suite:10327 executed tests pass with three platform skips; exactly one adapter branch remains uncovered. Added real Commander provenance feeding the shared output engine, rather than a private inspection seam. The token gate exposed a project-registered comments-audit wrapper being mistaken for an extension writer; moved the existing native read identity tuple into the lightweight option-contract module and use that same authority in declaration/dispatch checks. Public SDK surface remains unchanged by the move; focused118 cases still pass. npm and Bun artifact installs pass all four CLI executors plus both SDK runtimes, including200 unique ordered rows across bounded continuation."
+  "2026-10-13T00:57:44.631Z","harness:codex","Final local acceptance: all10327 executed tests pass, with three explicit platform skips. Exact all-source coverage covers786 files at68379/68379 statements,52468/52468 branches,14105/14105 functions and64980/64980 lines. Full pnpm quality:static passes unchanged, including token, import/transport costs, graph/context, record integrity and bounded mutation gates. Source-linked focused runs pass (15 SDK/transport and9 recovery assertions); invalid_projection_suggestions=0. Packed npm/Bun installs pass Node, Bun, npx, bunx and both SDK runtimes, including200 unique ordered continuation rows. Standard smoke:npx passes9 packaged components. One trailing blank line was removed after verification; no executable code changed. Hosted PR/main checks, review and next daily publication are separate delivery evidence."
+notes[1]{created_at,author,text}:
+  "2026-10-12T21:41:03.805Z","harness:codex","Compatibility: optional CommandDefinition.read_output is the read-only author contract. Host-owned flags require no schema permission and cannot be shadowed; declared paths are snapshotted and structured rows validated. Writers must remain undeclared. Existing core mutation actions still refuse output shaping."
+learnings[1]{created_at,author,text}:
+  "2026-10-12T21:41:04.694Z","harness:codex","Extension output declarations must be available before CLI preAction validation, and row contracts must satisfy the public ReadRowContract shape or the omission layer discards them. Reuse the host output engine instead of a parallel renderer."
+files[19]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  sdk/public-surface.json,project
+  src/cli/main.ts,project
+  src/cli/runtime/invocation-options.ts,project
+  src/core/extensions/extension-types.ts,project
+  src/core/extensions/loader.ts,project
+  src/core/extensions/read-output-contract.ts,project
+  src/sdk/authoring.ts,project
+  src/sdk/cli-contracts/runtime-contracts.ts,project
+  src/sdk/context-intent-contracts.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/read-output-contracts.ts,project
+  src/sdk/read-output/continuation.ts,project
+  src/sdk/read-output/extension.ts,project
+  src/sdk/read-output/options.ts,project
+  src/sdk/runtime.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/read-output/extension.integration.spec.ts,project
+  tests/unit/sdk/read-output/extension.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/extension.spec.ts tests/integration/read-output/extension.integration.spec.ts,project,240,"harness:codex","2026-10-12T21:46:42.540Z",local_mutation,feat/extension-read-output-contracts
+test_runs[2]:
+  - run_id: test-local-mv5uezxa-ksf110
+    kind: test
+    status: passed
+    started_at: "2026-10-12T22:47:49.198Z"
+    finished_at: "2026-10-12T22:48:01.630Z"
+    recorded_at: "2026-10-12T22:48:01.630Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/extension.spec.ts tests/integration/read-output/extension.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv5ywhwq-ztkp9c
+    kind: test
+    status: passed
+    started_at: "2026-10-13T00:53:16.803Z"
+    finished_at: "2026-10-13T00:53:36.554Z"
+    recorded_at: "2026-10-13T00:53:36.554Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/extension.spec.ts tests/integration/read-output/extension.integration.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
+  docs/EXTENSIONS.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/SDK.md,project
+close_reason: Universal package read output primitives implemented and locally verified.
 body: ""

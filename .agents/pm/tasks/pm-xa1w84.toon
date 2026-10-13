@@ -1,0 +1,21 @@
+id: pm-xa1w84
+title: Guard telemetry metrics storage and readiness against unsupported filesystems
+description: "The metrics service crashed after its TSDB volume resolved onto an unsupported filesystem. Recovery preserved all data and restored local POSIX storage, but deployment and storage relocation currently lack a preventive filesystem/readiness check."
+type: Task
+status: open
+priority: 2
+tags[4]: changelog-exclude,observability,operations,telemetry
+created_at: "2026-10-12T22:55:55.643Z"
+updated_at: "2026-10-12T23:48:12.866Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Validate actual filesystem backing before starting Prometheus; fail visibly for unsupported storage; preserve rollback; monitor readiness and scrape freshness; prove a negative control without production data.
+parent: pm-5oj5
+risk: medium
+confidence: high
+expected_result: "A deployment preflight rejects unsupported TSDB storage, readiness and scrape freshness are measured, and a controlled unsupported-storage case proves the guard."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-m1tfmp,discovered_from,"2026-10-12T22:55:55.643Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-12T22:55:55.643Z","harness:codex","Duplicate check: complete all-status corpus and current request-specific storage/readiness search contain recovery incident pm-m1tfmp and completed dashboard/pipeline work but no preventive TSDB filesystem guard. This follow-up remains open and unclaimed; it does not reopen completed telemetry implementation."
+body: ""

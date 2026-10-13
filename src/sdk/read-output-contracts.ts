@@ -7,8 +7,10 @@
 import {
   READ_OUTPUT_DIMENSION_FLAGS,
   READ_OUTPUT_COMPOSITION_FLAGS,
+  PM_READ_OUTPUT_SURFACES,
 } from "./read-output/options.js";
 import { resolvePmHistoryOperation } from "./cli-contracts/command-aliases.js";
+import { resolveExtensionOutputCommand } from "./read-output/extension.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
@@ -74,36 +76,10 @@ export const PM_READ_OUTPUT_DIMENSIONS = [
 /** One member of the universal read-output dimension set. */
 export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];
 
-/** Built-in command roots whose primary operation is a read. */
-export const PM_READ_OUTPUT_SURFACES = [
-  "list",
-  "context",
-  "search",
-  "get",
-  "next",
-  "health",
-  "deps",
-  "graph",
-  "history",
-  "activity",
-  "validate",
-  "events",
-  "contracts",
-  "comments",
-  "notes",
-  "files",
-  "docs",
-  "stats",
-  "aggregate",
-  "duplicates",
-  "package-catalog",
-  "package-manage",
-  "comments-audit",
-  "assurance",
-] as const;
+export { PM_READ_OUTPUT_SURFACES } from "./read-output/options.js";
 
-/** Built-in read command supported by the universal output contract. */
-export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number];
+/** Native or package read identity supported by the universal output contract. */
+export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number] | `extension:${string}`;
 
 /** Canonical output controls accepted by every built-in read action. */
 export interface PmReadOutputOptions {
@@ -373,7 +349,7 @@ export const PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS =
   READ_OUTPUT_COMPOSITION_FLAGS;
 
 const LEGACY_FLAGS_BY_COMMAND: Readonly<
-  Record<PmReadOutputSurface, Partial<Record<PmReadOutputDimension, string[]>>>
+  Partial<Record<PmReadOutputSurface, Partial<Record<PmReadOutputDimension, string[]>>>>
 > = {
   list: {
     include: ["--brief", "--compact", "--fields", "--full"],
@@ -507,7 +483,7 @@ function migrationHint(flag: string, dimension: PmReadOutputDimension): string {
 function buildSurfaceContract(
   command: PmReadOutputSurface,
 ): PmReadOutputSurfaceContract {
-  const legacy = LEGACY_FLAGS_BY_COMMAND[command];
+  const legacy = LEGACY_FLAGS_BY_COMMAND[command] ?? {};
   const dimensions = Object.freeze(
     Object.fromEntries(
       PM_READ_OUTPUT_DIMENSIONS.map((dimension) => [
@@ -541,7 +517,7 @@ function buildSurfaceContract(
     budget_retention_policy:
       command === "assurance" ? "verdict_priority" : "ordered_prefix",
     projection_modes: Object.freeze([
-      ...readOutputIncludeModeOptions(command).keys(),
+      ...readOutputIncludeModeOptionsForSurface(command).keys(),
     ]),
   });
 }
@@ -565,6 +541,13 @@ export function resolveReadOutputSurface(
   const normalizedCommand = resolvePmHistoryOperation(
     command.trim().toLowerCase(),
   );
+  const extension = resolveExtensionOutputCommand(normalizedCommand);
+  if (extension !== undefined) return extension.read_output === undefined ? undefined : `extension:${extension.command}`;
+  return resolveNativeReadOutputSurface(normalizedCommand, options);
+}
+
+/** Resolve native read aliases without consulting request-local extension state. */
+function resolveNativeReadOutputSurface(normalizedCommand: string, options: Record<string, unknown>): PmReadOutputSurface | undefined {
   const packageMode =
     normalizedCommand === "package catalog" ||
     normalizedCommand === "packages catalog" ||
@@ -586,7 +569,7 @@ export function resolveReadOutputSurface(
     : root === "ctx"
       ? "context"
       : root;
-  return PM_READ_OUTPUT_SURFACES.includes(normalized as PmReadOutputSurface)
+  return PM_READ_OUTPUT_SURFACES.includes(normalized as (typeof PM_READ_OUTPUT_SURFACES)[number])
     ? (normalized as PmReadOutputSurface)
     : undefined;
 }
@@ -733,8 +716,13 @@ export function readOutputIncludeModeOptions(
 ): ReadonlyMap<string, string> {
   const surface = resolveReadOutputSurface(command);
   if (!surface) return new Map();
+  return readOutputIncludeModeOptionsForSurface(surface);
+}
+
+/** Build compatibility include modes without invoking runtime registry discovery. */
+function readOutputIncludeModeOptionsForSurface(surface: PmReadOutputSurface): ReadonlyMap<string, string> {
   return new Map(
-    (LEGACY_FLAGS_BY_COMMAND[surface].include ?? [])
+    (LEGACY_FLAGS_BY_COMMAND[surface]?.include ?? [])
       .filter(
         (flag) =>
           !VALUE_BEARING_INCLUDE_ALIASES.has(flag) &&
@@ -1039,7 +1027,7 @@ export function resolveReadOutputDimensions(
 ): PmResolvedReadOutputDimensions | undefined {
   const normalizedCommand = resolveReadOutputSurface(command, options);
   if (!normalizedCommand) return undefined;
-  const contract = SURFACE_CONTRACT_BY_COMMAND.get(normalizedCommand)!;
+  const contract = SURFACE_CONTRACT_BY_COMMAND.get(normalizedCommand) ?? buildSurfaceContract(normalizedCommand);
   const invocationProvenance = (options as PmReadOutputOptionsWithProvenance)[
     READ_OUTPUT_INVOCATION_PROVENANCE
   ];

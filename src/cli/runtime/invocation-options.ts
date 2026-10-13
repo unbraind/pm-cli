@@ -53,8 +53,8 @@ function recordCliReadOutputInvocationProvenance(actionCommand: Command, command
   while (rootCommand.parent) rootCommand = rootCommand.parent;
   const rawArgs = (rootCommand as Command & { rawArgs: string[] }).rawArgs;
   const providedFlags = new Set(extractProvidedOptionFlags(rawArgs.slice(2)));
-  const contract = PM_READ_OUTPUT_SURFACE_CONTRACTS.find((candidate) => candidate.command === surface)!;
-  const explicitLegacyAliases = Object.values(contract.dimensions).flatMap((dimension) =>
+  const contract = PM_READ_OUTPUT_SURFACE_CONTRACTS.find((candidate) => candidate.command === surface);
+  const explicitLegacyAliases = Object.values(contract?.dimensions ?? {}).flatMap((dimension) =>
     dimension.legacy_aliases.flatMap((alias) => (providedFlags.has(alias.flag) ? [alias.flag] : [])),
   );
   const previous = Reflect.get(commandOptions, READ_OUTPUT_INVOCATION_PROVENANCE) as

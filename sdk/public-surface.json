@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1993,
+    "covered_symbols": 1994,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1994
+    "required_symbols": 1995
   },
   "breaking_acknowledgements": [
     {
@@ -2312,6 +2312,20 @@
       ],
       "package_version": "2026.10.12",
       "reason": "Add optional typed relationship_cardinality diagnostics without removing existing context fields; expose the composable non-hierarchy cardinality guard and minimal item projection."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CommandDefinition",
+        "signature ./sdk:PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES",
+        "signature ./sdk:PmReadOutputSurface",
+        "signature ./sdk:RegisteredExtensionCommandDefinition",
+        "signature ./sdk/authoring:CommandDefinition",
+        "signature ./sdk/contracts:PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES",
+        "signature ./sdk/contracts:PmReadOutputSurface",
+        "signature ./sdk/core:PmReadOutputSurface"
+      ],
+      "package_version": "2026.10.12",
+      "reason": "Add optional read_output metadata and ExtensionCommandReadOutput for package authors; extend the read-surface union with extension command identities. Existing built-in identities and signatures remain usable; exhaustive surface consumers must admit the added namespace. No symbols or existing flags are removed."
     }
   ],
   "entrypoints": {
@@ -4824,7 +4838,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandDefinition",
-          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
+          "signature": "export interface CommandDefinition { read_output?: ExtensionCommandReadOutput; name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
         },
         {
           "classification": "contract_data",
@@ -7553,6 +7567,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ExtensionCommandReadOutput",
+          "signature": "export interface ExtensionCommandReadOutput { row_keys: readonly string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ExtensionCommandRegistry",
           "signature": "export interface ExtensionCommandRegistry { overrides: RegisteredExtensionCommandOverride[]; handlers: RegisteredExtensionCommandHandler[]; }"
         },
@@ -9761,6 +9781,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "isCompatibleRecoveryFlag",
+          "signature": "(requested: string, candidate: string) => boolean | calls: (requested: string, candidate: string) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "isErrnoError",
           "signature": "(error: unknown) => error is { code?: unknown; } | calls: (error: unknown) => error is { code?: unknown; }"
         },
@@ -9913,6 +9939,12 @@
           "kind": "function",
           "name": "isReadOutputBudgetExceeded",
           "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isReadProjectionRecoveryFlag",
+          "signature": "(flag: string) => boolean | calls: (flag: string) => boolean"
         },
         {
           "classification": "advanced_export",
@@ -12882,7 +12914,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES",
-          "signature": "Readonly<Partial<Record<\"activity\" | \"aggregate\" | \"assurance\" | \"comments-audit\" | \"comments\" | \"context\" | \"contracts\" | \"deps\" | \"docs\" | \"duplicates\" | \"events\" | \"files\" | \"get\" | \"graph\" | \"health\" | \"history\" | \"list\" | \"next\" | \"notes\" | \"package-catalog\" | \"package-manage\" | \"search\" | \"stats\" | \"validate\", PmReadOutputContinuationFingerprintPolicy>>>"
+          "signature": "Readonly<Partial<Record<PmReadOutputSurface, PmReadOutputContinuationFingerprintPolicy>>>"
         },
         {
           "classification": "supported",
@@ -14172,7 +14204,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputSurface",
-          "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number];"
+          "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number] | `extension:${string}`;"
         },
         {
           "classification": "supported",
@@ -15516,7 +15548,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "RegisteredExtensionCommandDefinition",
-          "signature": "export interface RegisteredExtensionCommandDefinition { layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
+          "signature": "export interface RegisteredExtensionCommandDefinition { read_output?: ExtensionCommandReadOutput; layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
         },
         {
           "classification": "supported",
@@ -21246,7 +21278,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandDefinition",
-          "signature": "export interface CommandDefinition { name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
+          "signature": "export interface CommandDefinition { read_output?: ExtensionCommandReadOutput; name: string; run?: CommandHandler; handler?: CommandHandler; action?: string; description?: string; intent?: string; examples?: string[]; failure_hints?: string[]; arguments?: ExtensionCommandArgumentDefinition[]; flags?: FlagDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
         },
         {
           "classification": "supported",
@@ -21619,6 +21651,12 @@
           "kind": "interface",
           "name": "ExtensionCommandArgumentDefinition",
           "signature": "export interface ExtensionCommandArgumentDefinition { name: string; required?: boolean; variadic?: boolean; description?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ExtensionCommandReadOutput",
+          "signature": "export interface ExtensionCommandReadOutput { row_keys: readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -23724,7 +23762,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES",
-          "signature": "Readonly<Partial<Record<\"activity\" | \"aggregate\" | \"assurance\" | \"comments-audit\" | \"comments\" | \"context\" | \"contracts\" | \"deps\" | \"docs\" | \"duplicates\" | \"events\" | \"files\" | \"get\" | \"graph\" | \"health\" | \"history\" | \"list\" | \"next\" | \"notes\" | \"package-catalog\" | \"package-manage\" | \"search\" | \"stats\" | \"validate\", PmReadOutputContinuationFingerprintPolicy>>>"
+          "signature": "Readonly<Partial<Record<PmReadOutputSurface, PmReadOutputContinuationFingerprintPolicy>>>"
         },
         {
           "classification": "contract_data",
@@ -24348,7 +24386,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputSurface",
-          "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number];"
+          "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number] | `extension:${string}`;"
         },
         {
           "classification": "contract_data",
@@ -25986,7 +26024,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputSurface",
-          "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number];"
+          "signature": "export type PmReadOutputSurface = (typeof PM_READ_OUTPUT_SURFACES)[number] | `extension:${string}`;"
         },
         {
           "classification": "supported",
@@ -35791,6 +35829,7 @@
     "extension_mutation_guard_invalid_decision",
     "extension_mutation_guard_invalid_denial",
     "extension_mutation_guard_timed_out",
+    "extension_read_output_invalid",
     "extension_update_health_partial_coverage",
     "extensions_unreadable",
     "field_duplicate",

@@ -171,6 +171,11 @@ export function encodeReadOutputContinuationCursor(
   ).toString("base64url");
 }
 
+/** Validate command identities without requiring an extension to be activated merely to decode a cursor. */
+function isReadOutputCursorCommand(value: unknown): boolean {
+  return typeof value === "string" && (resolveReadOutputSurface(value) === value || /^extension:\S(?:[^\r\n]*\S)?$/u.test(value));
+}
+
 /** Decode and validate one universal declared-row continuation cursor. */
 export function decodeReadOutputContinuationCursor(
   raw: string,
@@ -191,7 +196,7 @@ export function decodeReadOutputContinuationCursor(
   if (
     !isRecord(candidate) ||
     candidate.v !== 1 ||
-    resolveReadOutputSurface(String(candidate.c ?? "")) !== candidate.c ||
+    !isReadOutputCursorCommand(candidate.c) ||
     typeof candidate.p !== "string" ||
     candidate.p.length === 0 ||
     !Number.isSafeInteger(candidate.o) ||
