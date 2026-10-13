@@ -6,25 +6,27 @@ status: closed
 priority: 1
 tags[3]: improve,performance,sdk
 created_at: "2026-10-13T05:47:55.612Z"
-updated_at: "2026-10-13T11:40:41.173Z"
-closed_at: "2026-10-13T11:40:40.259Z"
-completed_at: "2026-10-13T11:40:40.259Z"
+updated_at: "2026-10-13T14:55:13.789Z"
+closed_at: "2026-10-13T14:55:12.912Z"
+completed_at: "2026-10-13T14:55:12.912Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Literal regex punctuation stays literal; single and double stars retain their separator and line-break behavior; Unicode paths and empty patterns remain compatible; repeated wildcard matching has a deterministic bound; full SDK and runtime gates pass.
 parent: pm-oz8u
 risk: medium
 confidence: high
-resolution: Replace dynamic regex matching with cached bounded wildcard states and direct line-terminator comparisons
-expected_result: Preserve the public grammar with O(pattern times path) execution and O(pattern) temporary memory
-actual_result: "26 linked public SDK cases pass, including Unicode, literal punctuation, all four line terminators and repeated-wildcard long paths; unchanged CodeFactor and packed runtime budgets pass"
+resolution: "Use bounded cached wildcard states with direct adjacent-star tokenization, keeping literal NUL distinct from globstar"
+expected_result: Custom recurrence paths retain literal semantics without regex execution or unrelated-family matches
+actual_result: "30 linked public SDK checks and independent before/after NUL controls pass; full local static, registered mutation and packed consumer gates pass without changing policy budgets"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-1qkivy,implements,"2026-10-13T06:15:02.349Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-13T05:47:55.612Z","harness:codex","Duplicate check: strict full all-status corpus and current recurrence glob matcher search have no canonical owner for bounded file-pattern matching. Existing calendar and linked-artifact glob work has a different grammar and surface; retain this enhancement under the live triage lineage."
   "2026-10-13T06:05:29.184Z","harness:codex","Replaced path-pattern backtracking with cached literal/wildcard tokens and two bounded state rows. Eighteen independently declared compatibility cases cover Unicode, punctuation, separators, nullable stars and all four excluded globstar line terminators; long6000-character matching and nonmatching paths with100 stars complete in the same public SDK fixture. Existing256-character pattern and1024-entry cache bounds remain unchanged. Focused suite26 tests passes; full validation is underway."
   "2026-10-13T08:36:54.172Z","harness:codex","Candidate validation: full coverage passes10362 tests with exact100/100/100/100, including26 public recurrence SDK cases. Final Node/Bun/npx/bunx packed workflows and unchanged distribution/runtime budgets pass. The default CLI transport-floor recheck passes all6 operations with unchanged ceilings after one qualified run exceeded create by13ms; retain both observations rather than weakening admission. Seven exact current Semgrep matcher identities await the new full main scan after reviewed delivery. Thirty-two distinct historical Semgrep records were independently reconciled through their own FIXED activity dates under pm-oz8u."
   "2026-10-13T11:04:55.708Z","harness:codex","PR1455 revised review https://github.com/unbraind/pm-cli/pull/1455#discussion_r4257567311: replace the per-character line-terminator array with four direct comparisons. Existing26 public SDK tests retain independently declared separator, Unicode and line-break expectations and pass; no grammar, policy, cache or cost bound changes. Final coverage and exact-head hosted review remain pending."
+  "2026-10-13T14:15:53.670Z","harness:codex","Review round5: existing in-band NUL marker makes literal NUL indistinguishable from globstar. Replace marker tokenization with direct adjacent-star parsing and add public SDK positive/negative literal-NUL cases, preserving bounded Unicode matching and normal wildcard semantics."
+  "2026-10-13T14:52:24.694Z","harness:codex","Round5 validation: all30 linked public SDK cases pass, including literal NUL positives and rejection of unrelated paths with adjacent wildcard combinations. An independently transpiled pre-fix SDK source reproduces the unrelated-family match; the current public SDK rejects it and still matches the literal NUL. Current complete local quality:static passes without relaxing startup, graph, dependency, mutation or artifact acceptance policy."
 notes[1]{created_at,author,text}:
   "2026-10-13T06:21:01.787Z","harness:codex","The matcher caches compiled tokens under the existing1024-entry eviction policy and uses two state rows per path. This keeps temporary memory proportional to the maximum256-character pattern rather than path length, while preserving the existing trimmed-path and nullable-star semantics."
 learnings[1]{created_at,author,text}:
@@ -34,7 +36,7 @@ files[2]{path,scope}:
   tests/unit/sdk/governance/defect-recurrence.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,project,240,"harness:codex","2026-10-13T05:55:24.178Z",local_mutation,feat/sentry-tracing-privacy
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mv6d2j4d-0gekl5
     kind: test
     status: passed
@@ -70,7 +72,20 @@ test_runs[3]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mv6rw6tb-5cjrgx
+    kind: test-all
+    status: passed
+    started_at: "2026-10-13T14:25:11.021Z"
+    finished_at: "2026-10-13T14:25:19.085Z"
+    recorded_at: "2026-10-13T14:25:19.085Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/DEFECT_RECURRENCE.md,project
-close_reason: Verified bounded wildcard matching without per-character arrays
+close_reason: Verified direct wildcard parsing preserves literal NUL
 body: ""

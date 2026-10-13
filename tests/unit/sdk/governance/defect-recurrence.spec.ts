@@ -62,6 +62,10 @@ describe("defect recurrence SDK", () => {
     ["src/a*", "src/a", true],
     ["src/a**", "src/a", true],
     ["src/a", "src/ab", false],
+    ["src/\u0000", "src/other.ts", false],
+    ["src/\u0000", "src/\u0000", true],
+    ["src/\u0000*.ts", "src/\u0000a.ts", true],
+    ["src/**\u0000*.ts", "src/nested/\u0000a.ts", true],
   ] as const)("preserves glob %s against %s", (pattern, file, matches) => {
     const index = buildDefectRecurrenceIndex(policy([family({
       triggers: { file_patterns: [pattern], item_ids: ["pm-control"] },

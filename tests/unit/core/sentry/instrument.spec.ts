@@ -7,12 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 //  - scrubStackFrame post_context entries that are NOT strings (line 111)
 //  - resolveCliVersion falling back to "0.0.0" when version resolution is null (line 188)
 
-const sentryNodeMock = vi.hoisted(() => ({
+const sentryNodeMock = vi.hoisted(() => {
+  const on = vi.fn();
+  return {
   init: vi.fn(),
+  on,
+  getClient: vi.fn<() => { on: typeof on } | undefined>(() => ({ on })),
   withStreamedSpan: vi.fn((callback: unknown) => callback),
   extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
   captureConsoleIntegration: vi.fn((options: unknown) => ({ name: "captureConsoleIntegration", options })),
-}));
+}; });
 
 const rootMock = vi.hoisted(() => ({
   resolvePmCliVersion: vi.fn<() => string | null>(() => null),
@@ -57,6 +61,8 @@ describe("instrument residual branches", () => {
     sentryLoaderMock = vi.fn(() => sentryNodeMock as never);
     setSentryLoaderForTests(sentryLoaderMock as never);
     sentryNodeMock.init.mockClear();
+    sentryNodeMock.on.mockClear();
+    sentryNodeMock.getClient.mockReset().mockReturnValue({ on: sentryNodeMock.on });
     rootMock.resolvePmCliVersion.mockReset();
     rootMock.resolvePmCliVersion.mockReturnValue(null);
   });
@@ -126,6 +132,42 @@ describe("instrument residual branches", () => {
     expect(getSentry()).toBeUndefined();
     expect(sentryLoaderMock).toHaveBeenCalledOnce();
     expect(sentryNodeMock.init).toHaveBeenCalledOnce();
+  });
+
+  it("denies tracing if initialization does not provide a client", async () => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    sentryNodeMock.getClient.mockReturnValue(undefined);
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(getSentry()).toBeUndefined();
+    await expect(ensureSentryCommandTracing(true)).resolves.toBe(false);
+    expect(sentryNodeMock.init).toHaveBeenCalledOnce();
+  });
+
+  it("scrubs post-merge serialized log attributes without changing safe typed values", async () => {
+    await ensureSentryInit();
+    expect(sentryNodeMock.on).toHaveBeenCalledWith("beforeEnvelope", expect.any(Function));
+    const hook = sentryNodeMock.on.mock.calls[0]![1] as (envelope: unknown) => void;
+    const logs = [
+      { body: "password=private-log-value", attributes: {
+        token: { type: "integer", value: 12345 },
+        "sentry.message.parameter.0": { type: "string", value: "private-parameter" },
+        details: { type: "string", value: "password=private-scope-value" },
+        counter: { type: "integer", value: 7 },
+        ready: { type: "boolean", value: true },
+      } },
+      { body: "safe empty log" },
+    ];
+    const event = { message: "safe event" };
+    hook([{}, [[{ type: "log" }, { items: logs }], [{ type: "event" }, event]]]);
+    expect(logs[0]).toEqual({ body: "password=[scrubbed]", attributes: {
+      token: { type: "string", value: "[scrubbed]" },
+      "sentry.message.parameter.0": { type: "string", value: "[scrubbed]" },
+      details: { type: "string", value: "password=[scrubbed]" },
+      counter: { type: "integer", value: 7 },
+      ready: { type: "boolean", value: true },
+    } });
+    expect(logs[1]).toEqual({ body: "safe empty log" });
+    expect(event).toEqual({ message: "safe event" });
   });
 
   it("scrubs streamed spans and logs at their actual export hooks", async () => {

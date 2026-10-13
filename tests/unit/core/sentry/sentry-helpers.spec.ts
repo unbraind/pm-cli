@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sentryNodeMock = vi.hoisted(() => ({
   init: vi.fn(),
+  getClient: vi.fn(() => ({ on: vi.fn() })),
   withStreamedSpan: vi.fn((callback: unknown) => callback),
   extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
   captureConsoleIntegration: vi.fn((options: unknown) => ({ name: "captureConsoleIntegration", options })),

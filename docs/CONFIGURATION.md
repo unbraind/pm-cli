@@ -264,7 +264,10 @@ If the SDK loader or initializer fails, tracing remains unavailable for that
 process and the command continues. The partial client is cleared and the
 failed initialization is not retried.
 Sentry sends streamed spans; its span and log hooks apply the same scrubbing
-as errors and breadcrumbs. Command context retains option keys and redacted
+as errors and breadcrumbs. A final envelope hook scrubs serialized log attributes
+after the SDK merges current and isolation scopes, preserving safe typed values
+without changing shared scopes. Template parameter attributes are always redacted.
+Command context retains option keys and redacted
 argument slots, including text that resembles a flag. Automatic user, cookie, HTTP header/body/query, AI, database,
 GraphQL, local-variable and source-context collection is explicitly
 disabled. Command taxonomy and outcome attributes remain available on spans.

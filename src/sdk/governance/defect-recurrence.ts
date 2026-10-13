@@ -502,13 +502,18 @@ function pathPatternTokens(pattern: string): readonly PathPatternToken[] {
       const oldest = compiledPathPatterns.keys().next().value;
       compiledPathPatterns.delete(oldest!);
     }
-    compiled = [...pattern.replaceAll("**", "\u0000")].map((character) =>
-      character === "\u0000"
-        ? { kind: "globstar" as const }
-        : character === "*"
-          ? { kind: "star" as const }
-          : { kind: "literal" as const, value: character },
-    );
+    const characters = [...pattern];
+    const tokens: PathPatternToken[] = [];
+    for (let index = 0; index < characters.length; index++) {
+      const character = characters[index]!;
+      if (character === "*" && characters[index + 1] === "*") {
+        tokens.push({ kind: "globstar" });
+        index++;
+      } else {
+        tokens.push(character === "*" ? { kind: "star" } : { kind: "literal", value: character });
+      }
+    }
+    compiled = tokens;
     compiledPathPatterns.set(pattern, compiled);
   }
   return compiled;

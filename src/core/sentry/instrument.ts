@@ -138,7 +138,7 @@ function scrubString(value: string, keyHint?: string): string {
 function scrubEventData(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    if (SENSITIVE_KEY_PATTERN.test(key)) {
+    if (SENSITIVE_KEY_PATTERN.test(key) || key.startsWith("sentry.message.parameter.")) {
       result[key] = "[scrubbed]";
     } else if (typeof value === "string") {
       result[key] = scrubString(value, key);
@@ -191,6 +191,8 @@ function scrubStackFrame(frame: Record<string, unknown>): void {
 
 type SentryLike = typeof SentryModuleTypes;
 type NodeOptions = SentryModuleTypes.NodeOptions;
+type SentryEnvelope = Parameters<SentryModuleTypes.NodeClient["sendEnvelope"]>[0];
+type LogEnvelopeItem = Extract<SentryEnvelope[1][number], [{ type: "log" }, unknown]>;
 
 const requireFromInstrument = createRequire(import.meta.url);
 const defaultSentryLoader = (): SentryLike =>
@@ -448,6 +450,22 @@ const beforeSendLog: NonNullable<NodeOptions["beforeSendLog"]> = (log) => {
   return log;
 };
 
+/** Scrub complete serialized logs after the SDK merges scope attributes. */
+function scrubSentryLogEnvelope(envelope: SentryEnvelope): void {
+  for (const item of envelope[1]) {
+    if (item[0].type !== "log") continue;
+    for (const log of (item as LogEnvelopeItem)[1].items) {
+      log.body = scrubString(log.body);
+      const attributes = log.attributes;
+      if (!attributes) continue;
+      for (const [key, attribute] of Object.entries(attributes)) {
+        const value = scrubEventData({ [key]: attribute.value })[key];
+        if (typeof value === "string") attributes[key] = { type: "string", value };
+      }
+    }
+  }
+}
+
 const beforeBreadcrumb: NonNullable<NodeOptions["beforeBreadcrumb"]> = (breadcrumb) => {
   if (isPmCliErrorBreadcrumb(breadcrumb) || isKnownNoisyConsoleBreadcrumb(breadcrumb)) return null;
   if (breadcrumb.message) breadcrumb.message = scrubString(breadcrumb.message, "message");
@@ -516,6 +534,9 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     beforeBreadcrumb,
   });
 
+  const client = SentryModule.getClient();
+  if (!client) return undefined;
+  client.on("beforeEnvelope", scrubSentryLogEnvelope);
   _sentry = SentryModule;
   return SentryModule;
 }

@@ -48,7 +48,7 @@ The index and report are deterministic. `policy_fingerprint` identifies the vers
 Each report explains its exact matching signals, returns deduplicated local and hosted checks, and includes a small cost receipt. Package authors may keep their own recurrence policy and feed the same SDK from a custom command, extension, CI adapter, or application.
 
 File-pattern evaluation is tracked by [pm-0vqbl5](../.agents/pm/tasks/pm-0vqbl5.toon).
-Patterns treat punctuation literally, `*` matches any characters except `/`, and
+Patterns treat punctuation and literal NUL characters literally, `*` matches any characters except `/`, and
 `**` also crosses separators while excluding line terminators. Matching covers
 the complete trimmed path; `**/` still requires its slash. A finite-state matcher
 uses at most pattern length times path length work and memory proportional to
