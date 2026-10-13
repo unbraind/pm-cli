@@ -6,44 +6,53 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:sdk",command-contracts,github-intake
 created_at: "2026-10-13T20:29:26.956Z"
-updated_at: "2026-10-13T22:02:23.479Z"
-closed_at: "2026-10-13T22:02:22.731Z"
-completed_at: "2026-10-13T22:02:22.731Z"
+updated_at: "2026-10-13T23:40:51.591Z"
+closed_at: "2026-10-13T23:40:50.818Z"
+completed_at: "2026-10-13T23:40:50.818Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Exercise real nested extension help and command execution; Render every supported flag once with one coherent value placeholder; Preserve published legacy spelling support and modern value_name descriptors; Keep shared validation, parsing, structured help and author guidance coherent"
 parent: pm-ugqx
 risk: medium
 confidence: high
-resolution: "Shared SDK token parsing normalizes legacy long names and inline value labels across CLI registration, help, residual dedupe, dispatch and runtime contract identity. Explicit labels, typed precedence, boolean arity, optional values and short-only residual behavior are preserved."
-expected_result: "Supported declarations render one option and placeholder, dispatch canonical keys with coherent types, and preserve existing registration diagnostics."
-actual_result: "Real nested host help changes from2 duplicate occurrences to1; JSON help and numeric/optional invocation pass. Native Commander controls prove optional values with and without supplied data, explicit label/type precedence and boolean behavior; permissive loose aliases retain their legacy fallback. Both linked commands pass. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
+resolution: "Shared SDK long-name and scalar-kind resolution now keeps help, dispatch and runtime contracts coherent. Boolean inline labels are suppressed, explicit value_name compatibility is retained, and unknown inherited kind names reject."
+expected_result: "Canonical flag identity uses one SDK rule; valid boolean declarations stay value-free and machine-readable, explicit metadata and kind precedence remain compatible, and unknown kinds return null."
+actual_result: "Both CodeRabbit findings are corrected through shared SDK primitives: one long-name resolver owns supported canonical identity and trimmed legacy fallback across all help, dispatch and contract sites; boolean inline labels are omitted from contracts while explicit value_name compatibility and declared-kind precedence remain. The existing scalar-kind resolver canonicalizes supported dynamic aliases and now rejects inherited constructor/__proto__ entries through an own-key lookup. Real public contract and inherited-kind controls fail before correction and pass afterward. All149 focused cases pass, including real CLI bool-alias presence and typed/native/legacy/untyped projections. All4 linked commands pass. Complete static validation passes, and the full suite passes10,409 tests with3 explicit skips at exact100% lines65067/65067, statements68493/68493, functions14116/14116 and branches52545/52545. Coverage scope,100% thresholds and workflows remain unchanged; branch counts reflect the actual shared-kind refactor, not exclusions. The surface adds one classified name resolver to the earlier12 additive exports. Renewed hosted checks and full bot review are required before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-853a,related,"2026-10-13T20:29:26.956Z","harness:codex","cli:create:dep",detected
   pm-s1w0sf,related,"2026-10-13T20:29:26.956Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-13T20:29:26.956Z","harness:codex","{\"text\":\"Duplicate check: complete live2956-item all-status corpus with zero omissions and unreadable records, request-specific searches and open/in-progress inventories. Full live closed predecessors pm-s1w0sf and pm-853a describe shipped adjacent contracts, not this new reported scope. Reuse pm-ugqx parent lineage and relate predecessors without reopening completed work. Full GitHub issue and comments read. Official Git documentation distinguishes -merge binary conflict behavior from the native text/default drivers. Implementation will preserve supported SDK contracts and use real controls.\"}"
   "2026-10-13T20:44:57.576Z","harness:codex","Real nested host help reproduces two --repo listings before correction. The SDK intentionally permits legacy space/equal required and optional placeholders, so rejecting them would break an explicit contract. Share one parser for canonical name, inline label and optional syntax across SDK-backed Commander help, residual dedupe, loose option identity and runtime contracts. Preserve value_type/type precedence and explicit value_name override; new real host controls verify numeric conversion, optional no-value presence, structured help and semantic TOON output."
   "2026-10-13T20:58:38.610Z","harness:codex","The updated connected boundary suite passes22 cases: real nested help contains one canonical flag occurrence, JSON help reports optional value arity, host invocation converts numeric values and preserves optional no-value presence, and explicit labels/boolean type precedence are exercised with real Commander parsing. Typecheck, uncached unsuppressed ESLint, public surface verification and docstring quality pass. Full source coverage and installed package proof remain pending."
   "2026-10-13T21:27:59.544Z","harness:codex","Installed public-tarball acceptance now passes on Node26.9 and Bun, including real inline-placeholder extension dispatch and semantic TOON output through /sdk/testing and /sdk; the strict TypeScript6 consumer succeeds with explicit Node ambient types, and its isolated public-registry production dependency audit reports0 vulnerabilities. The earlier fixture typecheck refusal is preserved. Full repository execution initially exposed4 regressions: root integration-file and compact-document ceilings, the short-only residual-help contract, and an older installed merge fence during the published-artifact compatibility matrix. Corrected by relocating the new integration test, moving detail into focused author contracts, retaining the existing long-only residual guard, and refreshing old fences through the current SDK before current reconciliation. All192 targeted regression cases now pass, including all4 actual published writer/reader combinations with values, hashes, unknown fields, restore, native Git merges and verified history. No threshold, coverage denominator or force override changed. Full source coverage is still running and is not yet certified."
   "2026-10-13T22:02:22.035Z","harness:codex","Real nested host help changes from2 duplicate occurrences to1; JSON help and numeric/optional invocation pass. Native Commander controls prove optional values with and without supplied data, explicit label/type precedence and boolean behavior; permissive loose aliases retain their legacy fallback. Both linked commands pass. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
-learnings[1]{created_at,author,text}:
+  "2026-10-13T22:57:29.828Z","harness:codex","Full CodeRabbit review on exact7ef8421d3fde327dc435fc86697a35bbbd38d652 completed after the two earlier requests failed. Review8960a1b2-9b46-4c8e-8ae1-208a03ac2593 covered all48 files from basef01d624d and produced two actionable comments:4264905239 requests one shared canonical long-name resolver, and4264905244 identifies inline labels incorrectly retained when the resolved value type is boolean. All26 required contexts were green before these unresolved threads changed readiness to BLOCKED. Reuse this canonical flag item, claim only it, add a real public contract negative control, preserve explicit value_name compatibility, then renew every configured reviewer after the next push. The GitHub review recovered, so the separate pending CodeRabbit website terms approval is unnecessary for delivery."
+  "2026-10-13T23:07:47.071Z","harness:codex","While reusing the SDK scalar-kind resolver, found that its ordinary object lookup accepts inherited constructor/__proto__ entries as kinds despite the documented null-on-unknown contract. This is a malformed-type correctness defect, not evidence of an exploit. Keep canonical typed author names and existing dynamic scalar aliases, preserve declared-field precedence, and reject inherited entries with an own-key lookup; extend the existing resolver control before changing it."
+  "2026-10-13T23:40:49.354Z","harness:codex","Both CodeRabbit findings are corrected through shared SDK primitives: one long-name resolver owns supported canonical identity and trimmed legacy fallback across all help, dispatch and contract sites; boolean inline labels are omitted from contracts while explicit value_name compatibility and declared-kind precedence remain. The existing scalar-kind resolver canonicalizes supported dynamic aliases and now rejects inherited constructor/__proto__ entries through an own-key lookup. Real public contract and inherited-kind controls fail before correction and pass afterward. All149 focused cases pass, including real CLI bool-alias presence and typed/native/legacy/untyped projections. All4 linked commands pass. Complete static validation passes, and the full suite passes10,409 tests with3 explicit skips at exact100% lines65067/65067, statements68493/68493, functions14116/14116 and branches52545/52545. Coverage scope,100% thresholds and workflows remain unchanged; branch counts reflect the actual shared-kind refactor, not exclusions. The surface adds one classified name resolver to the earlier12 additive exports. Renewed hosted checks and full bot review are required before merge."
+learnings[2]{created_at,author,text}:
   "2026-10-13T21:28:04.693Z","harness:codex","Legacy inline flag syntax is a supported SDK contract. Share canonical option identity and arity across help, dispatch and runtime contracts; preserve boolean/value_type precedence and optional brackets. Keep compact entrypoints within their existing budgets by routing detailed author contracts."
-files[10]{path,scope}:
+  "2026-10-13T23:40:49.931Z","harness:codex",Resolve canonical identity once through the shared SDK rule. Runtime contracts must omit inferred boolean labels and preserve explicit legacy metadata separately; canonicalize documented dynamic scalar aliases with the SDK resolver. A kind alias dictionary must test own keys so inherited constructor/prototype entries cannot masquerade as valid kinds. Typed package authors retain canonical scalar names.
+files[13]{path,scope}:
   sdk/public-surface.json,project
   src/cli/extension-command-help.ts,project
   src/cli/extension-command-options.ts,project
   src/core/extensions/flag-definition-validation.ts,project
+  src/core/extensions/flag-value-types.ts,project
   src/sdk/cli-contracts/runtime-contracts.ts,project
   src/sdk/runtime-primitives.ts,project
   tests/integration/extensions/authoring-output.integration.spec.ts,project
   tests/unit/cli/extension-command-help.spec.ts,project
   tests/unit/cli/main-loose-options.spec.ts,project
   tests/unit/core/extension-flag-definition-validation.spec.ts,project
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/extensions/extension-loader.spec.ts,project
+  tests/unit/sdk/contracts-full-projection.spec.ts,project
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/extensions/authoring-output.integration.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/core/extension-flag-definition-validation.spec.ts,project,240,"harness:codex","2026-10-13T21:23:58.487Z",local_mutation,chore/oct13-delivery-evidence
   node scripts/run-tests.mjs test -- tests/unit/cli/main-loose-options.spec.ts,project,240,"harness:codex","2026-10-13T21:44:37.099Z",local_mutation,chore/oct13-delivery-evidence
-test_runs[2]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/contracts-full-projection.spec.ts,project,240,"harness:codex","2026-10-13T22:58:58.452Z",local_mutation,chore/oct13-delivery-evidence
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts,project,240,"harness:codex","2026-10-13T23:09:55.059Z",local_mutation,chore/oct13-delivery-evidence
+test_runs[3]:
   - run_id: test-local-mv75u34e-hi14fo
     kind: test
     status: passed
@@ -67,16 +76,30 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/extensions/authoring-output.integration.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/core/extension-flag-definition-validation.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/main-loose-options.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv7bprfx-p38t1m
+    kind: test
+    status: passed
+    started_at: "2026-10-13T23:39:20.814Z"
+    finished_at: "2026-10-13T23:40:03.501Z"
+    recorded_at: "2026-10-13T23:40:03.501Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/authoring-output.integration.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/core/extension-flag-definition-validation.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/main-loose-options.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/contracts-full-projection.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-loader.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/EXTENSION_AUTHOR_CONTRACTS.md,project
   docs/EXTENSIONS.md,project
-close_reason: Implementation and sandboxed regression evidence complete; awaiting reviewed PR delivery.
+close_reason: Full-review findings corrected with real boundary controls and complete static/coverage proof.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   gate_id: repository-static-quality
-  negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/authoring-output.integration.spec.ts
-  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/extensions/authoring-output.integration.spec.ts,node scripts/run-tests.mjs coverage
-  hosted_checks[2]: Gates (static),Gates (coverage)
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/contracts-full-projection.spec.ts -t \"omits inferred boolean labels\""
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/core/extension-flag-definition-validation.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/cli/main-loose-options.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/integration/extensions/authoring-output.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: Gates (static),Gates (coverage),Windows regression (Node 24)
   owner: pm-gh1461
 body: "Source: https://github.com/unbraind/pm-cli/issues/1461\n\n## Problem (pm 2026.10.13)\nAn extension command group (`registerCommand` with subcommands) declared its flags as `{ long: '--repo <value>', type: 'string', description: … }`, embedding the value placeholder in `long`. The SDK accepts that silently, and `pm <group> <sub> --help` then renders:\n\n```text\nOptions:\n  --repo <value> <value>    Repository owner/name\n  --pr <value> <value>      Positive pull request number\n  --reason <value> <value>  Durable decision reasoning\n  ...\nExtension-provided flags:\n  --commit <value>  Commit SHA implementing or explaining this decision\n  --pr <value>  Positive pull request number\n  --reason <value>  Durable decision reasoning\n  --repo <value>  Repository owner/name\n```\n\nTwo separate issues:\n1. **Placeholder doubling:** the host appends `<value>` to a `long` that already contains one. The supported form, `long: '--repo'` with `value_name: 'value'` (used by pm-lint), renders correctly, but nothing tells the author that the other form is wrong.\n2. **Duplicate listing for subcommand flags:** every subcommand flag appears twice, once under `Options:` and again under `Extension-provided flags:`, which costs agents tokens on every `--help` read. A top-level extension command (pm-lint's `pm lint --help`) lists its flags only once.\n\nSeen in unbraind/pm-review (a fleet package), `pm review verdict --help`.\n\n## Proposal\n- In `defineCommand` / `registerCommand` validation, either reject a `long` containing whitespace or `<…>` with a fix hint (`use long: '--repo', value_name: 'value'`), or normalize it into `long` + `value_name`.\n- Render each subcommand flag once. If the \"Extension-provided flags\" section adds information (provenance), merge it into the single listing instead of repeating every flag.\n\n\nImplementation intent\n\nPreserve the explicitly supported legacy inline-placeholder flag syntax while making placeholder arity and canonical option identity consistent across registration, help, contracts and real invocation."

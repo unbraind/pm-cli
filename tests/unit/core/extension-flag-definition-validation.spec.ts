@@ -3,6 +3,7 @@ import {
   describeExtensionLongFlagFailure,
   findExtensionFlagTokenFailure,
   parseExtensionLongFlagToken,
+  resolveExtensionLongFlagName,
   validateExtensionLongFlagToken,
 } from "../../../src/core/extensions/flag-definition-validation.js";
 
@@ -15,6 +16,11 @@ describe("extension flag definition validation", () => {
     expect(parseExtensionLongFlagToken("--repo <project>")).toEqual({ name: "--repo", valueName: "project", optional: false });
     expect(parseExtensionLongFlagToken("--repo=<project>")).toEqual({ name: "--repo", valueName: "project", optional: false });
     expect(parseExtensionLongFlagToken("--label [name]")).toEqual({ name: "--label", valueName: "name", optional: true });
+    for (const [value, expected] of [
+      [undefined, null], [false, null], ["   ", null],
+      [" --repo <project> ", "--repo"], ["--label [name]", "--label"],
+      [" missing-prefix ", "missing-prefix"], [" --Legacy ", "--Legacy"],
+    ] as const) expect(resolveExtensionLongFlagName(value)).toBe(expected);
   });
   it("ignores absent declarations and classifies host-owned short aliases", () => {
     expect(validateExtensionLongFlagToken(undefined)).toBeNull();

@@ -18,7 +18,10 @@ export function resolveFlagValueKind(raw: unknown): FlagValueKind | null {
   if (typeof raw !== "string") {
     return null;
   }
-  return FLAG_VALUE_KIND_BY_ALIAS[raw.trim().toLowerCase()] ?? null;
+  const alias = raw.trim().toLowerCase();
+  return Object.hasOwn(FLAG_VALUE_KIND_BY_ALIAS, alias)
+    ? FLAG_VALUE_KIND_BY_ALIAS[alias]!
+    : null;
 }
 
 /** Flatten a `list` flag value (or default) into its individual entries the same way the runtime does: nested arrays are flattened and comma-joined strings are split, with surrounding whitespace trimmed and empty segments dropped. No type coercion is applied. Shared by the CLI coercion path and the registration-time default validator so the two never disagree. */

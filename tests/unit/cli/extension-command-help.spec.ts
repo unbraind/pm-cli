@@ -78,6 +78,10 @@ describe("dynamic extension Commander options", () => {
   });
 
   it("uses one value-arity contract for typed, required, and list flags", () => {
+    expect(resolveExtensionFlagArity({ value_type: "boolean", type: "number", long: "--switch <ignored>" })).toEqual({
+      takesValue: false,
+      valueName: null,
+    });
     expect(resolveExtensionFlagArity({ value_type: "boolean", required: true })).toEqual({
       takesValue: false,
       valueName: null,

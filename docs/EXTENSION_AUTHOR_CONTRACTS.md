@@ -12,7 +12,11 @@ Prefer `{ long: "--repo", value_name: "project", value_type: "string" }`.
 Legacy `--repo <project>`, `--repo=<project>` and `--label [name]` declarations
 retain one canonical identity, one value placeholder and one help listing.
 Optional brackets permit presence without a value. Explicit `value_name` wins
-over the inline label, and boolean types remain value-free.
+over the inline label, and boolean types remain value-free. Runtime contracts
+omit inferred labels for boolean flags, including legacy dynamic `bool` aliases;
+explicit legacy `value_name` metadata remains compatible. The SDK owns the
+canonical long-name rule used by help, option dispatch and contract discovery.
+Typed authors should use canonical `value_type` names (`boolean`, `number`, `string`).
 
 Use `decodeToon` from `@unbrained/pm-cli/sdk/testing` to assert on host output
 semantically; `encodeToon` and the native codec option types are available from

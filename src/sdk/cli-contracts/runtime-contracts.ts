@@ -7,6 +7,8 @@
 import { PM_TOOL_PARAMETER_PROPERTIES } from "./tool-parameter-tables.js";
 import {
   parseExtensionLongFlagToken,
+  resolveExtensionLongFlagName,
+  resolveFlagValueKind,
   EXIT_CODE,
   SETTINGS_DEFAULTS,
   type GlobalOptions,
@@ -1205,7 +1207,7 @@ function normalizeExtensionFlagName(
     return null;
   }
   if (kind === "long") {
-    return trimmed.startsWith("--") && trimmed.length > 2 ? parseExtensionLongFlagToken(trimmed)?.name ?? trimmed : null;
+    return trimmed.startsWith("--") && trimmed.length > 2 ? resolveExtensionLongFlagName(trimmed) : null;
   }
   return trimmed.startsWith("-") &&
     !trimmed.startsWith("--") &&
@@ -1242,20 +1244,15 @@ function toExtensionFlagContract(
   if (description) {
     contract.description = description;
   }
-  const valueName = toOptionalTrimmedString(definition.value_name) ?? parseExtensionLongFlagToken(definition.long)?.valueName;
+  const declaredType = [definition.value_type, definition.type]
+    .map(resolveFlagValueKind)
+    .find((kind) => kind !== null);
+  const inlineValueName = declaredType === "boolean" ? null : parseExtensionLongFlagToken(definition.long)?.valueName;
+  const valueName = toOptionalTrimmedString(definition.value_name) ?? inlineValueName;
   if (valueName) {
     contract.value_name = valueName;
   }
-  const rawValueType = [
-    toOptionalTrimmedString(definition.value_type),
-    toOptionalTrimmedString(definition.type),
-    valueName ? "string" : null,
-  ].find(
-    (candidate): candidate is "string" | "number" | "boolean" =>
-      candidate === "string" ||
-      candidate === "number" ||
-      candidate === "boolean",
-  );
+  const rawValueType = declaredType ?? (valueName ? "string" : null);
   if (rawValueType) {
     contract.value_type = rawValueType;
   }

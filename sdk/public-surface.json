@@ -16808,6 +16808,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveExtensionLongFlagName",
+          "signature": "(value: unknown) => string | null | calls: (value: unknown) => string | null"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveExtensionMigrationStatePath",
           "signature": "(pmRoot: string) => string | calls: (pmRoot: string) => string"
         },

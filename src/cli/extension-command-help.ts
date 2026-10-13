@@ -7,6 +7,8 @@ import { Command, Option } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES } from "../sdk/cli-contracts/command-aliases.js";
 import {
   parseExtensionLongFlagToken,
+  resolveExtensionLongFlagName,
+  resolveFlagValueKind,
   type FlagDefinition,
   type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,
@@ -197,9 +199,10 @@ export function resolveExtensionFlagArity(
   takesValue: boolean;
   valueName: string | null;
 } {
-  const valueType =
+  const declaredValueType =
     toNonEmptyFlagString(definition.value_type) ??
     toNonEmptyFlagString(definition.type);
+  const valueType = resolveFlagValueKind(declaredValueType) ?? declaredValueType;
   const declaredValueName = toNonEmptyFlagString(definition.value_name);
   const inlineValueName = parseExtensionLongFlagToken(definition.long)?.valueName;
   const takesValue =
@@ -218,7 +221,7 @@ export function resolveExtensionFlagArity(
 function formatDynamicExtensionFlagHelpLine(
   definition: FlagDefinition,
 ): string | null {
-  const longName = parseExtensionLongFlagToken(definition.long)?.name ?? toNonEmptyFlagString(definition.long);
+  const longName = resolveExtensionLongFlagName(definition.long);
   if (!longName || !longName.startsWith("--") || longName.length < 3) return null;
   const flags = formatDynamicExtensionOptionFlags(definition);
   if (!flags) return null;
@@ -533,7 +536,7 @@ function normalizeDynamicExtensionOptionNames(
   if (visible === false) {
     return null;
   }
-  const longName = parseExtensionLongFlagToken(definition.long)?.name ?? toNonEmptyFlagString(definition.long);
+  const longName = resolveExtensionLongFlagName(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
   const normalizedShort =
     shortName && shortName.startsWith("-") && !shortName.startsWith("--")
@@ -589,7 +592,7 @@ function commandAlreadyHasOption(
   command: Command,
   definition: FlagDefinition,
 ): boolean {
-  const longName = parseExtensionLongFlagToken(definition.long)?.name ?? toNonEmptyFlagString(definition.long);
+  const longName = resolveExtensionLongFlagName(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
   return command.options.some((option) => {
     const optionWithNames = option as { long?: string; short?: string };
@@ -660,7 +663,7 @@ function buildDynamicExtensionHelpOptionSummary(
   if (!flags) {
     return null;
   }
-  const longName = parseExtensionLongFlagToken(definition.long)?.name ?? toNonEmptyFlagString(definition.long);
+  const longName = resolveExtensionLongFlagName(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
   const normalizedLong =
     longName && longName.startsWith("--") && longName.length > 2

@@ -15,6 +15,40 @@ const GLOBAL = {
 } as Parameters<typeof runContracts>[1];
 
 describe("full contracts projection monotonicity", () => {
+  it("omits inferred boolean labels while preserving explicit labels and typed contracts", async () => {
+    await withTempPmPath(async (context) => {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "arity-contract",
+        manifestOverrides: { capabilities: ["commands", "schema"] },
+        entryFilename: "index.mjs",
+        entrySource: `export default { activate(api) {
+          api.registerCommand({ name: 'probe arity', flags: [
+            { long: '--modern <ignored>', value_type: 'boolean' },
+            { long: '--legacy <ignored>', type: 'boolean' },
+            { long: '--alias <ignored>', value_type: 'bool', type: 'number' },
+            { long: '--explicit <ignored>', value_type: 'boolean', value_name: 'kept' },
+            { long: '--number=<amount>', value_type: 'number', value_name: 'count' },
+            { long: '--inferred <label>' }
+          ], run: (context) => ({ ok: true, alias: context.options.alias }) });
+        } };`,
+      });
+      const result = await runContracts({ command: 'probe arity', flagsOnly: true }, { ...GLOBAL, path: context.pmPath, noExtensions: false });
+      const flags = result.command_flags?.[0]?.flags;
+      for (const name of ['--modern', '--legacy', '--alias']) {
+        const flag = flags?.find((entry) => entry.flag === name);
+        expect(flag).toMatchObject({ flag: name, value_type: 'boolean' });
+        expect(flag).not.toHaveProperty('value_name');
+      }
+      expect(flags?.find((entry) => entry.flag === '--explicit')).toMatchObject({ value_type: 'boolean', value_name: 'kept' });
+      expect(flags?.find((entry) => entry.flag === '--number')).toMatchObject({ value_type: 'number', value_name: 'count' });
+      expect(flags?.find((entry) => entry.flag === '--inferred')).toMatchObject({ value_type: 'string', value_name: 'label' });
+      const invocation = context.runCli(['probe', 'arity', '--alias', '--json']);
+      expect(invocation.status, invocation.stderr).toBe(0);
+      expect(JSON.parse(invocation.stdout)).toMatchObject({ ok: true, alias: true });
+    });
+  });
   it("respects package visibility across command and action discovery while retaining scoped inspection", async () => {
     await withTempPmPath(async (context) => {
       await writeTestExtension({

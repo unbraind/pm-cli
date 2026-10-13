@@ -32,6 +32,13 @@ export function parseExtensionLongFlagToken(value: unknown): ExtensionLongFlagSp
   return { name: matched[1]!, valueName: placeholder ? placeholder.slice(1, -1) : null, optional: placeholder?.startsWith("[") ?? false };
 }
 
+/** Resolve supported canonical names while preserving trimmed legacy spellings for permissive consumers. Validation remains separate. */
+export function resolveExtensionLongFlagName(value: unknown): string | null {
+  const parsed = parseExtensionLongFlagToken(value);
+  if (parsed) return parsed.name;
+  return typeof value === "string" ? value.trim() || null : null;
+}
+
 /** Machine-readable failure returned for one invalid extension flag token. */
 export type ExtensionFlagTokenFailure =
   | "host_owned_flag_collision"
