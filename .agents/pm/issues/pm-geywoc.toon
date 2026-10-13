@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags[4]: bugfix,observability,privacy,sdk
 created_at: "2026-10-13T04:41:25.527Z"
-updated_at: "2026-10-13T10:21:56.600Z"
-closed_at: "2026-10-13T10:21:55.627Z"
-completed_at: "2026-10-13T10:21:55.627Z"
+updated_at: "2026-10-13T11:40:39.243Z"
+closed_at: "2026-10-13T11:40:38.401Z"
+completed_at: "2026-10-13T11:40:38.401Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Positional content and separate option values never enter Sentry context or breadcrumbs; streamed spans and logs scrub sensitive data before export; independent negative controls fail before the fix and pass after; existing error classification and consent remain intact.
 parent: pm-5oj5
 risk: high
 confidence: high
-resolution: "Redact every argument slot, deny automatic sensitive collection, scrub complete spans and links plus logs, and consume complete quoted assignment values through escaped delimiters or incomplete input."
-expected_result: Private argument content and quoted sensitive-value suffixes never enter diagnostic exports; unconsented command spans remain absent.
-actual_result: "Independent argument, span-link, existing-client and quoted-value negatives fail before their fixes and pass afterward;90 linked Sentry tests, full10377-test exact100/100/100/100 coverage, typecheck, ESLint and final9-package Node/Bun/npx/bunx workflows pass."
+resolution: "Redact all argument slots and scrub complete spans, links and logs, including full quoted values and sensitive components after underscore separators"
+expected_result: Private argument content and quoted or compound credential values never enter diagnostic exports
+actual_result: "Independent compound assignment and revocation controls fail on the prior revision and pass after correction;96 linked Sentry checks, typecheck, ESLint, mutation and packed Node/Bun consumer gates pass; retain the local lifecycle timeout and require final full hosted coverage"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-58yzil,discovered_from,"2026-10-13T04:41:25.527Z","harness:codex","cli:create:dep",detected
   pm-t3jxjj,related,"2026-10-13T05:43:51.188Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-10-13T04:41:25.527Z","harness:codex","Duplicate check: strict all-status corpus including closed Sentry/privacy lineage and current request-specific search found no owner for raw positional command-context exposure. Reuse pm-58yzil and pm-t3jxjj as related delivery owners."
   "2026-10-13T04:44:24.888Z","harness:codex","Independent pre-fix control: canonical helper test extended with private positional text and a separate token value. Before production edits selected test exits1 because both strings remain in context args. Same assertion and harness retained for after proof; ignored privacy-before.log records exact assertion failure."
   "2026-10-13T05:16:59.000Z","harness:codex","Configured consent control fails before the fix: with a disposable global telemetry.enabled=false and a loopback Sentry DSN, explicit tracing exported a span. CLI now supplies effective consent from its active telemetry receipt to the shared SDK helper before initialization. The unchanged configured-opt-out assertion passes afterward. Fixture telemetry endpoint also points to its loopback collector, preventing external event delivery when test policy is cleared for local Sentry instrumentation. Initial collector experiments emitted3 unfinished fixture starts; those installation identities are separate from the real installation, whose fixed04:30-05:01UTC cohort is112 starts/112 finishes with0 unmatched or duplicate pairs. No historical telemetry records are deleted."
@@ -32,6 +32,8 @@ comments[10]{created_at,author,text}:
   "2026-10-13T08:36:52.835Z","harness:codex","Final source consent control: the unchanged invalid-runtime-value assertions fail before strict boolean checking (three assertion failures) and pass afterward. Typecheck passes; linked tests record72 Sentry unit assertions plus8 real SDK/CLI collector cases, covering prior-client opt-out and allowed capture. Full repository coverage before this final single-comparison refinement is10362 passing tests with exact100/100/100/100; final hosted coverage will verify the five additional runtime-consent cases. Packed npm/Bun/npx/bunx workflows pass for the final source, with9 package workflows and the unchanged40-package locked runtime inventory."
   "2026-10-13T09:51:04.168Z","harness:codex","Review evidence: https://github.com/unbraind/pm-cli/pull/1455#discussion_r4257006485. Verify complete single/double quoted values containing spaces at the real span and log export hooks before changing the central scrubber. Keep placeholders, independent assertions and the existing privacy boundaries."
   "2026-10-13T10:21:52.243Z","harness:codex","PR1455 remediation verified: quoted sensitive assignments use bounded delimiter scanning across spaces, escaped quotes, nested assignment text and incomplete input. Span names/attributes/link attributes and log messages/attributes use the same complete scrubber. The two unchanged quoted-value controls fail before correction; all90 linked Sentry tests and full10377-test exact100/100/100/100 coverage pass afterward. Typecheck, ESLint and packed npm/Bun/npx/bunx9-package acceptance pass. Existing scanner rules, dependency/runtime inventories and all performance ratchets remain unchanged."
+  "2026-10-13T11:04:54.853Z","harness:codex","PR1455 revised review https://github.com/unbraind/pm-cli/pull/1455#discussion_r4257567305: access_token and client_secret failed unchanged span/link/log export assertions on b80427b5d. Permit sensitive component matching after underscore separators while preserving assignment names, quote scanning and constant regex construction. The corrected independent collector/test control has3 assertion failures before and all121 focused tests pass after. Initial internal Node-e config fixture had an unrelated missing-argv setup failure; replace it with the real CLI bin before asserting the consent regression."
+  "2026-10-13T11:35:19.856Z","harness:codex",The Node-e failure previously separated from the consent regression also affects the supported published ./cli wrapper. Its live SDK contract promises supplied invocation arguments without replacing host argv. pm-mor9pl owns the independently failing public collector case and the missing-script normalization; the final collector uses public.js and verifies unchanged host argv/exit status. Current96 Sentry tests plus26 recurrence tests and2 scratch-lifecycle checks all pass. Both real-bin and embedded opt-out commands mutate consent and export zero command spans.
 learnings[2]{created_at,author,text}:
   "2026-10-13T05:01:46.510Z","harness:codex",Command args reaching a diagnostic helper are data even when text resembles flags. Redact every argument slot and retain option keys separately; apply privacy at event breadcrumb log and streamed-span export boundaries.
   "2026-10-13T10:21:53.015Z","harness:codex","Privacy at a diagnostic export boundary must consume the entire quoted value, including escaped delimiters and incomplete input. A prefix-only regex can redact the first word while exporting the remaining secret."
@@ -45,7 +47,7 @@ files[6]{path,scope}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry,project,240,"harness:codex","2026-10-13T04:46:48.043Z",local_mutation,feat/sentry-tracing-privacy
   node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts,project,240,"harness:codex","2026-10-13T07:37:34.396Z",local_mutation,feat/sentry-tracing-privacy
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-mv6d2996-qxhmcx
     kind: test
     status: passed
@@ -93,9 +95,23 @@ test_runs[4]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/sentry,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mv6luay5-df7kjj
+    kind: test-all
+    status: passed
+    started_at: "2026-10-13T11:35:45.342Z"
+    finished_at: "2026-10-13T11:36:42.708Z"
+    recorded_at: "2026-10-13T11:36:42.708Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 2
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: Verified complete argument and quoted-value privacy at diagnostic export.
+close_reason: Verified complete quoted and compound credential assignment privacy
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

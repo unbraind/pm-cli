@@ -12,6 +12,7 @@
 
 ### Fixed
 
+- Embedded CLI commands fail when an eval host has no script argv entry ([pm-mor9pl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mor9pl.toon))
 - Prevent Sentry command context from recording positional content and option values ([pm-geywoc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-geywoc.toon))
 
 ## 2026.10.13 - 2026-10-13

@@ -131,6 +131,9 @@ describe("instrument residual branches", () => {
     ["escaped", String.raw`token="<private \"quote\" value>" outcome=ok`, "token=[scrubbed] outcome=ok"],
     ["nested", "token='<private password=value with spaces>' outcome=ok", "token=[scrubbed] outcome=ok"],
     ["incomplete", 'token="<private value with spaces>', "token=[scrubbed]"],
+    ["access token", "access_token=<private-value> outcome=ok", "access_token=[scrubbed] outcome=ok"],
+    ["client secret", 'client_secret="<private value with spaces>" outcome=ok', "client_secret=[scrubbed] outcome=ok"],
+    ["hyphenated token", "refresh-token='<private value>' outcome=ok", "refresh-token=[scrubbed] outcome=ok"],
   ])("scrubs-complete-quoted-values using %s at span and log export", async (_name, value, expected) => {
     await ensureSentryInit();
     const options = requireSentryInitOptions<{

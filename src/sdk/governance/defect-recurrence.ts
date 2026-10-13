@@ -518,7 +518,7 @@ function pathPatternTokens(pattern: string): readonly PathPatternToken[] {
 function pathTokenAccepts(token: PathPatternToken, character: string): boolean {
   if (token.kind === "literal") return token.value === character;
   if (token.kind === "star") return character !== "/";
-  return !["\n", "\r", "\u2028", "\u2029"].includes(character);
+  return character !== "\n" && character !== "\r" && character !== "\u2028" && character !== "\u2029";
 }
 
 /** Match the existing glob grammar in O(pattern × path) time and O(pattern) memory. */

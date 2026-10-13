@@ -18998,6 +18998,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "sentryDiscardCommandSpan",
+          "signature": "() => void | calls: () => void"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "sentryFinishCommandSpan",
           "signature": "(ok: boolean, error?: string, metadata?: { error_code?: string; error_category?: TelemetryErrorCategory; exit_code?: number; command_resolution?: TelemetryCommandResolution; resolution_stage?: TelemetryResolutionStage; }) => void | calls: (ok: boolean, error?: string, metadata?: { error_code?: string; error_category?: TelemetryErrorCategory; exit_code?: number; command_resolution?: TelemetryCommandResolution; resolution_stage?: TelemetryResolutionStage; }) => void"
         },

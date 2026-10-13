@@ -154,6 +154,11 @@ export function sentryStartCommandSpan(command: string): void {
   });
 }
 
+/** Clear the pending command span without ending it or submitting it for export. */
+export function sentryDiscardCommandSpan(): void {
+  activeCommandSpan = undefined;
+}
+
 /** Implements sentry finish command span for the public runtime surface of this module. */
 export function sentryFinishCommandSpan(
   ok: boolean,

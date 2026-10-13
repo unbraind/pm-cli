@@ -255,6 +255,9 @@ passing an explicit `true` only after confirming effective consent. Start a
 command span only when the returned permission is `true`; an existing client
 also requires the current opt-in, sampling and process policy. Other runtime
 values keep initialization disabled.
+Consent is checked again at command completion. A command that disables
+telemetry discards its span; SDK callers can use `sentryDiscardCommandSpan()`
+to clear a pending span without exporting it.
 Sentry sends streamed spans; its span and log hooks apply the same scrubbing
 as errors and breadcrumbs. Command context retains option keys and redacted
 argument slots, including text that resembles a flag. Automatic user, cookie, HTTP header/body/query, AI, database,

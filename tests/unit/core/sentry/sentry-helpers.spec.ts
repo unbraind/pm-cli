@@ -18,6 +18,7 @@ vi.mock("../../../../src/core/sentry/instrument.js", async (importOriginal) => {
 
 import {
   sentryCaptureCliError,
+  sentryDiscardCommandSpan,
   sentryFinishCommandSpan,
   sentryFlush,
   sentryLogCliUsageError,
@@ -630,6 +631,18 @@ describe("sentry command runtime helpers", () => {
     });
     await sentryFlush();
     expect(vi.mocked(getSentry)).toHaveBeenCalled();
+  });
+
+  it("discards a pending span without export and clears it before the next command", () => {
+    const span = buildFakeSpan();
+    vi.mocked(getSentry).mockReturnValue(buildFakeSentry(span) as never);
+    sentryStartCommandSpan("config global set");
+    sentryDiscardCommandSpan();
+    sentryFinishCommandSpan(true);
+    expect(span.end).not.toHaveBeenCalled();
+    sentryStartCommandSpan("list");
+    sentryFinishCommandSpan(true);
+    expect(span.end).toHaveBeenCalledTimes(1);
   });
 
   it("prevents-private-command-content while retaining taxonomy and argument structure", () => {

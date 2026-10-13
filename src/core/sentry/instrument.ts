@@ -30,7 +30,7 @@ const SENSITIVE_KEY_PATTERN =
   /(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|credentials|bearer|dsn)/i;
 
 const INLINE_SENSITIVE_ASSIGNMENT_RE = new RegExp(
-  `\\b(${SENSITIVE_KEY_PATTERN.source})\\s*[:=]\\s*([^\\s,;]+)`,
+  `(?:\\b|(?<=_))(${SENSITIVE_KEY_PATTERN.source})\\s*[:=]\\s*([^\\s,;]+)`,
   "giu",
 );
 const ABSOLUTE_PATH_TOKEN_RE = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;

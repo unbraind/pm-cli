@@ -287,6 +287,7 @@ export {
 } from "../core/search/vectorization-metadata.js";
 export {
   sentryCaptureCliError,
+  sentryDiscardCommandSpan,
   sentryFinishCommandSpan,
   sentryFlush,
   sentryLogCliUsageError,

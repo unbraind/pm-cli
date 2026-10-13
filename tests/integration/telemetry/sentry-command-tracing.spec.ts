@@ -13,7 +13,7 @@ import { readSettings, writeSettings } from "../../../src/core/store/settings.js
 const execute = promisify(execFile);
 const cli = fileURLToPath(new URL("../../../dist/cli.js", import.meta.url));
 const sdk = new URL("../../../dist/sdk/index.js", import.meta.url).href;
-const embeddedCli = new URL("../../../dist/cli/main.js", import.meta.url).href;
+const embeddedCli = new URL("../../../dist/cli/public.js", import.meta.url).href;
 
 it.each([
   ["default", {}, true, false, false, false],
@@ -25,6 +25,8 @@ it.each([
   ["preinitialized opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, true, false],
   ["preinitialized allowed", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, true, false],
   ["preinitialized default", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, false, true, true],
+  ["command opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, false, false, false],
+  ["embedded command opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, false, true, false],
 ] as const)("exports successful CLI spans only with %s tracing", async (_name, overrides, enabled, expected, preinitialized, removeOptIn) => {
   const root = await mkdtemp(path.join(tmpdir(), "pm-sentry-command-"));
   const envelopes: string[] = [];
@@ -49,12 +51,15 @@ it.each([
       PM_TELEMETRY_PROMPT: "0", SENTRY_TRACES_SAMPLE_RATE: "1",
       SENTRY_DSN: `http://public@127.0.0.1:${address.port}/1`,
     }, overrides);
-    const commandArgs = ["--no-extensions", "contracts", "--summary", "--json"];
+    const commandArgs = _name.includes("command opt-out")
+      ? ["--no-extensions", "config", "global", "set", "telemetry-tracking", "--policy", "disabled", "--json"]
+      : ["--no-extensions", "contracts", "--summary", "--json"];
     const args = preinitialized
-      ? ["--input-type=module", "-e", `const { ensureSentryCommandTracing } = await import(${JSON.stringify(sdk)}); const { runPmCli } = await import(${JSON.stringify(embeddedCli)}); await ensureSentryCommandTracing(true); if (${removeOptIn}) delete process.env.PM_SENTRY_TRACE_COMMANDS; await runPmCli(${JSON.stringify(commandArgs)});`]
+      ? ["--input-type=module", "-e", `const { ensureSentryCommandTracing } = await import(${JSON.stringify(sdk)}); const { runPmCli } = await import(${JSON.stringify(embeddedCli)}); const hostArgv = JSON.stringify(process.argv); const hostExit = process.exitCode; await ensureSentryCommandTracing(true); if (${removeOptIn}) delete process.env.PM_SENTRY_TRACE_COMMANDS; await runPmCli(${JSON.stringify(commandArgs)}); if (JSON.stringify(process.argv) !== hostArgv || process.exitCode !== hostExit) throw new Error("Embedded invocation changed host state");`]
       : [cli, ...commandArgs];
     const result = await execute(process.execPath, args, { cwd: root, env, timeout: 15_000 });
-    expect(JSON.parse(result.stdout)).toHaveProperty("commands");
+    if (_name.includes("command opt-out")) expect((await readSettings(globalPath)).telemetry.enabled).toBe(false);
+    else expect(JSON.parse(result.stdout)).toHaveProperty("commands");
     const sentryEnvelopes = envelopes.filter((envelope) => envelope.includes('"sdk":{"name":"sentry.'));
     const exported = sentryEnvelopes.join("\n");
     if (expected) {
@@ -69,7 +74,7 @@ it.each([
       expect(exported).not.toContain(root);
     } else {
       expect(sentryEnvelopes.filter((envelope) => envelope.includes('"type":"span"'))).toEqual([]);
-      if (!preinitialized) expect(sentryEnvelopes).toEqual([]);
+      if (!preinitialized && !_name.includes("command opt-out")) expect(sentryEnvelopes).toEqual([]);
     }
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
