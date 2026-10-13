@@ -1455,8 +1455,13 @@ async function finishActiveSentryCommandSpan(ok: boolean, error?: string, metada
   const runtime = activeSentryCommandContext;
   if (!runtime) return;
   activeSentryCommandContext = null;
-  const settings = await readSettings(runtime.global_pm_root);
-  const consent = settings.telemetry.enabled && settings.telemetry.installation_id === runtime.installation_id;
+  let consent = false;
+  try {
+    const settings = await readSettings(runtime.global_pm_root);
+    consent = settings.telemetry.enabled && settings.telemetry.installation_id === runtime.installation_id;
+  } catch {
+    // Unverifiable consent drops optional diagnostics without changing the action outcome.
+  }
   if (await ensureSentryCommandTracing(consent)) sentryFinishCommandSpan(ok, error, metadata);
   else sentryDiscardCommandSpan();
 }
@@ -2100,6 +2105,11 @@ function captureInvokedDeprecatedAlias(rootProgram: Command, rawArgv: string[]):
   if (resolved?.lifecycle === "deprecated") Reflect.set(rootProgram, DEPRECATED_ALIAS_INVOCATION, resolved.alias);
 }
 
+/** Build Commander's process prefix without mutating an embedding host's argument array. */
+function buildInvocationProcessArgv(invocationArgv: string[]): string[] {
+  return [process.argv[0], process.argv[1] ?? "pm", ...invocationArgv];
+}
+
 /** Dispatch one fresh CLI invocation with deterministic process state and tracker-scoped attribution. */
 async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: { configurationOnly: boolean }): Promise<void> {
   program = createPmCliProgram(CLI_VERSION);
@@ -2123,7 +2133,7 @@ async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: 
     const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
     invocationArgv = bootstrapInvocation.argv;
     captureInvokedDeprecatedAlias(program, rawArgv);
-    const invocationProcessArgv = [process.argv[0], process.argv[1] ?? "pm", ...invocationArgv];
+    const invocationProcessArgv = buildInvocationProcessArgv(invocationArgv);
     const isBareInvocation = invocationArgv.length === 0;
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     if (bootstrapGlobal.authorMissingValue) {

@@ -258,6 +258,8 @@ values keep initialization disabled.
 Consent is checked again at command completion. A command that disables
 telemetry discards its span; SDK callers can use `sentryDiscardCommandSpan()`
 to clear a pending span without exporting it.
+A failed completion-time settings read also discards the span, so optional
+diagnostics cannot turn a successful command into a failure.
 Sentry sends streamed spans; its span and log hooks apply the same scrubbing
 as errors and breadcrumbs. Command context retains option keys and redacted
 argument slots, including text that resembles a flag. Automatic user, cookie, HTTP header/body/query, AI, database,

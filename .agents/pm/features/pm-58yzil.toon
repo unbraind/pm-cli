@@ -6,24 +6,24 @@ status: closed
 priority: 2
 tags[3]: feature,observability,sdk
 created_at: "2026-10-12T19:21:47.566Z"
-updated_at: "2026-10-13T11:40:37.375Z"
-closed_at: "2026-10-13T11:40:36.635Z"
-completed_at: "2026-10-13T11:40:36.635Z"
+updated_at: "2026-10-13T12:34:07.164Z"
+closed_at: "2026-10-13T12:34:05.188Z"
+completed_at: "2026-10-13T12:34:05.188Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Prove an independent successful-command opt-in control before and after; honor consent opt-outs and Vitest isolation; sanitize span context; preserve default cold-start and import budgets; verify one recent explicitly sampled trace through the authenticated Sentry API, distinguishing ingestion unavailability from source behavior."
 parent: pm-5oj5
 risk: medium
 confidence: high
-resolution: Expose boolean initialization permission and SDK span cancellation; enforce current consent and installation identity at command completion for core and extension lifecycle paths
-expected_result: Only currently permitted command spans export while default startup remains lazy
-actual_result: "96 linked Sentry checks and124 focused checks pass; real CLI and public embedded opt-out collectors prove zero command spans after revocation, with unchanged host state; packed9-package npm/Bun/npx/bunx acceptance passes; final hosted full coverage is required before merge"
+resolution: Expose explicit SDK tracing permission and cancellation; enforce completion consent and installation identity; discard when the optional completion settings read is unverifiable without changing the command outcome
+expected_result: Only currently permitted spans export; optional diagnostics failures preserve successful actions and normal completion hooks
+actual_result: "The unchanged settings-rejection control fails before correction and passes after;97 linked Sentry checks and125 focused checks pass, including normal telemetry completion and bounded flush; direct unsuppressed lint, typecheck, public SDK surface and final packed npm/Bun/npx/bunx workflows pass; prior hosted coverage is exact100 and the revised head requires renewed hosted acceptance"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-1ybs,related,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
   pm-gg8e,discovered_from,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
   pm-t3jxjj,related,"2026-10-13T05:41:51.029Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-13T09:23:17.604Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-10-12T19:21:47.566Z","harness:codex","Duplicate check: fresh opt-in tracing search, open/in_progress inventories and complete all-status corpus review found the completed sampling-knob and lazy-startup owners but no exact active implementation owner. Their full live metadata was read. This enhancement remains open and unclaimed; the four connected implementation owners remain the only active items."
   "2026-10-12T21:58:24.817Z","harness:codex","Fresh explicit unbrained/pm-cli Sentry queries during this delivery again return0 unresolved issues and0 recent trace rows. The14-day authenticated Sentry/telemetry gate passes with0 critical/high issues,3.01% finish error rate and0 failures without error codes. Successful-command tracing remains unproven and is retained here open/unclaimed; metrics-service recovery in pm-m1tfmp is independent from Sentry trace instrumentation."
   "2026-10-13T04:40:54.426Z","harness:codex","Delivery intake: complete strict all-status read of 2949 items with zero omissions and zero unreadable files; closed lineage and current GitHub reports inspected. Fresh authenticated Sentry query returns zero 24h traces and zero unresolved issues. Implement explicit successful-command opt-in without default SDK loading and preserve consent/test isolation. Bundle with canonical eligible Sentry11 migration and privacy hardening in one reviewed PR."
@@ -35,9 +35,11 @@ comments[11]{created_at,author,text}:
   "2026-10-13T09:51:03.273Z","harness:codex","Review evidence: https://github.com/unbraind/pm-cli/pull/1455#discussion_r4257006476. Exact be4553aec head has37 successful checks plus neutral/skipped provider results; merge is blocked by two unresolved actionable CodeRabbit threads. Reuse this owner for explicit tracing permission even with an existing client. Sourcery reports a temporary free quota limit, Cubic a monthly free limit and Greptile an expired trial; none is treated as approval."
   "2026-10-13T10:21:51.575Z","harness:codex","PR1455 remediation verified: the SDK initializer now returns explicit boolean tracing permission and both CLI lifecycle branches guard context/span creation with it. Existing clients require current opt-in, nonzero sampling, hard process policy and effective consent. The independent preinitialized-default collector assertion fails before correction and passes afterward. Snapshot signature acknowledgment applies only to this PR-new, unpublished API: released2026.10.13 contains no ensureSentryCommandTracing export. Current90 linked Sentry tests, typecheck, ESLint, final packed9-package npm/Bun/npx/bunx acceptance and full10377-test exact100/100/100/100 coverage pass. Initial PRhead be4553aec has37 successful checks; renewed exact-head checks/review remain required."
   "2026-10-13T11:04:54.036Z","harness:codex","PR1455 revised review https://github.com/unbraind/pm-cli/pull/1455#discussion_r4257567292 exposed consent revocation during the command action. Real bin collector control observes a forbidden exported span on b80427b5d and zero command spans after re-reading consent and installation identity before completion. Added public sentryDiscardCommandSpan plus command-owned completion on success/error paths; extracted shared lifecycle helpers to restore the unchanged CodeFactor complexity ceiling. Current121 focused tests and typecheck pass; full final coverage and hosted checks remain pending."
+  "2026-10-13T12:19:46.550Z","harness:codex","PR1455 review https://github.com/unbraind/pm-cli/pull/1455#discussion_r4258301245: the independent supported-CLI control rejects the external completion settings read after span start. Before correction the successful contracts action prints its result but receives an unhandled-error diagnostic and skips span discard. Default completion consent to false and catch only this optional read failure; retain normal after-command telemetry and bounded flush. No production test seam is added."
+  "2026-10-13T12:34:03.494Z","harness:codex","Final review control passes after correction: optional completion settings rejection now discards the span, verifies false SDK permission, preserves successful telemetry completion and performs the bounded flush. The identical public-CLI assertion failed before the fix with an unhandled-error diagnostic after successful output. All125 focused checks and97 linked Sentry checks pass. Direct ESLint on changed files with an empty suppression file, typecheck, SDK surface and final9-package packed npm/Bun/npx/bunx gates pass. Prior exact86c155c42 hosted coverage is100/100/100/100; the new head must repeat hosted checks and review."
 learnings[1]{created_at,author,text}:
   "2026-10-13T05:01:45.527Z","harness:codex",Use Sentry span discovery to verify streamed-span ingestion; a legacy transaction-only trace listing can be empty even when recent spans exist. Real loopback envelopes prove initialization flush and serialization separately from SaaS ingestion.
-files[8]{path,scope}:
+files[9]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   sdk/public-surface.json,project
   src/cli/main.ts,project
@@ -46,9 +48,10 @@ files[8]{path,scope}:
   src/sdk/runtime-primitives.ts,project
   tests/integration/telemetry/sentry-command-tracing.spec.ts,project
   tests/unit/core/sentry/instrument.spec.ts,project
+  tests/unit/core/sentry/sentry-command-completion.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,project,240,"harness:codex","2026-10-13T05:01:42.836Z",local_mutation,feat/sentry-tracing-privacy
-test_runs[5]:
+test_runs[6]:
   - run_id: test-local-mv6d1yzt-hwxtco
     kind: test
     status: passed
@@ -106,8 +109,21 @@ test_runs[5]:
     linked_tests: 1
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mv6nmg3d-s9j6y4
+    kind: test-all
+    status: passed
+    started_at: "2026-10-13T12:25:38.005Z"
+    finished_at: "2026-10-13T12:25:56.508Z"
+    recorded_at: "2026-10-13T12:25:56.508Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/CONFIGURATION.md,project
-close_reason: Verified explicit tracing permission and cancellation on consent revocation
+close_reason: Verified fail-closed optional tracing completion and preserved command success
 body: ""
