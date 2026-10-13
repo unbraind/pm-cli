@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sentryNodeMock = vi.hoisted(() => ({
   init: vi.fn(),
+  withStreamedSpan: vi.fn((callback: unknown) => callback),
   extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
   captureConsoleIntegration: vi.fn((options: unknown) => ({ name: "captureConsoleIntegration", options })),
 }));
@@ -19,7 +20,7 @@ const rootMock = vi.hoisted(() => ({
 
 vi.mock("../../../../src/core/packages/root.js", () => rootMock);
 
-import { _testOnly, ensureSentryInit } from "../../../../src/core/sentry/instrument.js";
+import { _testOnly, ensureSentryInit, ensureSentryCommandTracing } from "../../../../src/core/sentry/instrument.js";
 
 const {
   scrubEventData,
@@ -50,6 +51,8 @@ describe("instrument residual branches", () => {
     delete process.env.VITEST;
     delete process.env.VITEST_WORKER_ID;
     delete process.env.NODE_ENV;
+    delete process.env.PM_SENTRY_TRACE_COMMANDS;
+    delete process.env.SENTRY_TRACES_SAMPLE_RATE;
     resetSentryStateForTests();
     sentryLoaderMock = vi.fn(() => sentryNodeMock as never);
     setSentryLoaderForTests(sentryLoaderMock as never);
@@ -77,6 +80,51 @@ describe("instrument residual branches", () => {
     expect(loaded).toMatchObject({ init: expect.any(Function), flush: expect.any(Function) });
   });
 
+  it.each([undefined, "", "0", "false", "invalid"])("keeps successful tracing lazy for opt-in %j", async (value) => {
+    if (value !== undefined) process.env.PM_SENTRY_TRACE_COMMANDS = value;
+    await ensureSentryCommandTracing(true);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+  });
+
+  it("initializes-successful-command-tracing only on explicit opt-in and honors a zero rate", async () => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "On";
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "0";
+    await ensureSentryCommandTracing(true);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+    process.env.SENTRY_TRACES_SAMPLE_RATE = "1";
+    await ensureSentryCommandTracing(true);
+    expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
+    expect(requireSentryInitOptions<{ tracesSampleRate: number }>().tracesSampleRate).toBe(1);
+  });
+
+  it("requires effective telemetry consent before successful tracing loads Sentry", async () => {
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await ensureSentryCommandTracing(false);
+    expect(sentryLoaderMock).not.toHaveBeenCalled();
+  });
+
+  it("scrubs streamed spans and logs at their actual export hooks", async () => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      traceLifecycle: string;
+      beforeSendSpan: (span: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendLog: (log: Record<string, unknown>) => Record<string, unknown>;
+    }>();
+    expect(options.traceLifecycle).toBe("stream");
+    const attributes = { token: "<private-value>", "sentry.status.message": "password=<private-value>", "pm.command": "context", duration: 3 };
+    const span = options.beforeSendSpan({ name: "read password=<private-value>", attributes, links: [{
+      trace_id: "a".repeat(32), span_id: "b".repeat(16),
+      attributes: { token: "<private-value>", label: "safe" },
+    }] });
+    expect(span).toMatchObject({ name: "read password=[scrubbed]", attributes: { token: "[scrubbed]", "pm.command": "context", duration: 3 } });
+    expect(JSON.stringify(span)).not.toContain("private-value");
+    expect(span.links).toEqual([{ trace_id: "a".repeat(32), span_id: "b".repeat(16), attributes: { token: "[scrubbed]", label: "safe" } }]);
+    expect(options.beforeSendSpan({ name: "safe span" })).toEqual({ name: "safe span" });
+    const log = options.beforeSendLog({ message: "error token=private-value", attributes });
+    expect(JSON.stringify(log)).not.toContain("private-value");
+    expect(options.beforeSendLog({ message: "safe log" })).toEqual({ message: "safe log" });
+  });
+
   it.each([
     ["VITEST", "7"],
     ["VITEST_WORKER_ID", "7"],
@@ -86,6 +134,8 @@ describe("instrument residual branches", () => {
     process.env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
     process.env[key] = value;
 
+    process.env.PM_SENTRY_TRACE_COMMANDS = "1";
+    await ensureSentryCommandTracing(true);
     await expect(ensureSentryInit()).resolves.toBeUndefined();
     expect(sentryNodeMock.init).not.toHaveBeenCalled();
     expect(sentryLoaderMock).not.toHaveBeenCalled();

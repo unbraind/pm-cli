@@ -6979,6 +6979,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "ensureSentryCommandTracing",
+          "signature": "(telemetryEnabled: boolean) => Promise<void> | calls: (telemetryEnabled: boolean) => Promise<void>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "ensureSentryInit",
           "signature": "() => Promise<SentryLike | undefined> | calls: () => Promise<SentryLike | undefined>"
         },

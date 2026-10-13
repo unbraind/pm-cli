@@ -411,6 +411,18 @@ const beforeSendTransaction: NonNullable<NodeOptions["beforeSendTransaction"]> =
   return event;
 };
 
+/** Scrub streamed spans before each completed observation leaves the process. */
+const beforeSendSpan: Parameters<SentryLike["withStreamedSpan"]>[0] = (span) => {
+  return scrubEventData(span as unknown as Record<string, unknown>) as unknown as typeof span;
+};
+
+/** Apply the same privacy boundary to usage logs, which bypass event hooks. */
+const beforeSendLog: NonNullable<NodeOptions["beforeSendLog"]> = (log) => {
+  log.message = scrubString(log.message);
+  if (log.attributes) log.attributes = scrubEventData(log.attributes) as typeof log.attributes;
+  return log;
+};
+
 const beforeBreadcrumb: NonNullable<NodeOptions["beforeBreadcrumb"]> = (breadcrumb) => {
   if (isPmCliErrorBreadcrumb(breadcrumb) || isKnownNoisyConsoleBreadcrumb(breadcrumb)) return null;
   if (breadcrumb.message) breadcrumb.message = scrubString(breadcrumb.message, "message");
@@ -443,7 +455,19 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     attachStacktrace: true,
     normalizeDepth: 6,
     shutdownTimeout: 3000,
-    sendDefaultPii: false,
+    traceLifecycle: "stream",
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: { request: false, response: false },
+      httpBodies: [],
+      urlQueryParams: false,
+      genAI: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      graphQL: { document: false, variables: false },
+      stackFrameVariables: false,
+      frameContextLines: 0,
+    },
     serverName: undefined,
 
     integrations: [
@@ -463,10 +487,20 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 
     beforeSend,
     beforeSendTransaction,
+    beforeSendSpan: SentryModule.withStreamedSpan(beforeSendSpan),
+    beforeSendLog,
     beforeBreadcrumb,
   });
 
   return SentryModule;
+}
+
+/** Initialize opted-in tracing only after the caller confirms effective telemetry consent. */
+export async function ensureSentryCommandTracing(telemetryEnabled: boolean): Promise<void> {
+  if (!telemetryEnabled) return;
+  if (!OPT_OUT_VALUES.has((process.env.PM_SENTRY_TRACE_COMMANDS ?? "").trim().toLowerCase())) return;
+  if (resolveTracesSampleRate() === 0) return;
+  await ensureSentryInit();
 }
 
 /** Implements get sentry for the public runtime surface of this module. */

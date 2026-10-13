@@ -1,0 +1,35 @@
+id: pm-0vqbl5
+title: Give recurrence policy globs a deterministic matching bound
+description: "Replace recurrence file-pattern regex execution with a bounded wildcard matcher while preserving the published policy grammar, Unicode handling and existing path semantics. Keep SDK consumers free to supply custom project policy without an implicit regex execution cost."
+type: Task
+status: in_progress
+priority: 1
+tags[3]: improve,performance,sdk
+created_at: "2026-10-13T05:47:55.612Z"
+updated_at: "2026-10-13T06:22:03.609Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7ed53804faba291cc8b1a6ce"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Literal regex punctuation stays literal; single and double stars retain their separator and line-break behavior; Unicode paths and empty patterns remain compatible; repeated wildcard matching has a deterministic bound; full SDK and runtime gates pass.
+parent: pm-oz8u
+risk: medium
+confidence: high
+expected_result: Wildcard matching costs at most pattern length times path length and uses bounded pattern-state memory.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1qkivy,implements,"2026-10-13T06:15:02.349Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-13T05:47:55.612Z","harness:codex","Duplicate check: strict full all-status corpus and current recurrence glob matcher search have no canonical owner for bounded file-pattern matching. Existing calendar and linked-artifact glob work has a different grammar and surface; retain this enhancement under the live triage lineage."
+  "2026-10-13T06:05:29.184Z","harness:codex","Replaced path-pattern backtracking with cached literal/wildcard tokens and two bounded state rows. Eighteen independently declared compatibility cases cover Unicode, punctuation, separators, nullable stars and all four excluded globstar line terminators; long6000-character matching and nonmatching paths with100 stars complete in the same public SDK fixture. Existing256-character pattern and1024-entry cache bounds remain unchanged. Focused suite26 tests passes; full validation is underway."
+notes[1]{created_at,author,text}:
+  "2026-10-13T06:21:01.787Z","harness:codex","The matcher caches compiled tokens under the existing1024-entry eviction policy and uses two state rows per path. This keeps temporary memory proportional to the maximum256-character pattern rather than path length, while preserving the existing trimmed-path and nullable-star semantics."
+learnings[1]{created_at,author,text}:
+  "2026-10-13T06:21:01.119Z","harness:codex","Escaping regex operators and limiting pattern length do not establish a matching-time bound. Preserve a small declared wildcard grammar with bounded state evaluation, and verify literal punctuation, Unicode, separators and line terminators as independent public contracts."
+files[2]{path,scope}:
+  src/sdk/governance/defect-recurrence.ts,project
+  tests/unit/sdk/governance/defect-recurrence.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/governance/defect-recurrence.spec.ts,project,240,"harness:codex","2026-10-13T05:55:24.178Z",local_mutation,feat/sentry-tracing-privacy
+docs[1]{path,scope}:
+  docs/DEFECT_RECURRENCE.md,project
+body: ""

@@ -48,6 +48,7 @@ import {
   discoverExtensions,
   emitTelemetryErrorEvent,
   ensureSentryInit,
+  ensureSentryCommandTracing,
   getActiveCommandResult,
   getActiveExtensionRegistrations,
   getSettingsPath,
@@ -1487,6 +1488,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
         pm_root: fallbackPmRoot,
       });
       await recordActiveDeprecatedAliasUsage(rootProgram);
+      await ensureSentryCommandTracing(Boolean(activeTelemetryCommandContext));
       sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
         source_context: activeTelemetryCommandContext?.source_context,
         source_context_source: activeTelemetryCommandContext?.source_context_source,
@@ -1582,6 +1584,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       pm_root: runtimeExtensions.pmRoot,
     });
     await recordActiveDeprecatedAliasUsage(rootProgram);
+    await ensureSentryCommandTracing(Boolean(activeTelemetryCommandContext));
     sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
       source_context: activeTelemetryCommandContext?.source_context,
       source_context_source: activeTelemetryCommandContext?.source_context_source,
@@ -1616,6 +1619,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       resolution_stage: outcome.resolution_stage,
     });
     await runAndClearAfterCommandHooks(outcome);
+    await sentryFlush();
   });
 }
 

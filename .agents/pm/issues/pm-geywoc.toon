@@ -1,0 +1,45 @@
+id: pm-geywoc
+title: Prevent Sentry command context from recording positional content and option values
+description: "sentrySetCommandContext currently preserves every non-option argument verbatim, including free text and space-separated option values. Broader successful-command tracing must use safe argument structure and streamed-span/log scrubbing through the existing policy instead of collecting private item content."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: bugfix,observability,privacy,sdk
+created_at: "2026-10-13T04:41:25.527Z"
+updated_at: "2026-10-13T06:25:37.594Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7ed53804faba291cc8b1a6ce"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Positional content and separate option values never enter Sentry context or breadcrumbs; streamed spans and logs scrub sensitive data before export; independent negative controls fail before the fix and pass after; existing error classification and consent remain intact.
+parent: pm-5oj5
+risk: high
+confidence: high
+expected_result: Sentry retains bounded command taxonomy and outcome without private argument or environment values.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-58yzil,discovered_from,"2026-10-13T04:41:25.527Z","harness:codex","cli:create:dep",detected
+  pm-t3jxjj,related,"2026-10-13T05:43:51.188Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-13T04:41:25.527Z","harness:codex","Duplicate check: strict all-status corpus including closed Sentry/privacy lineage and current request-specific search found no owner for raw positional command-context exposure. Reuse pm-58yzil and pm-t3jxjj as related delivery owners."
+  "2026-10-13T04:44:24.888Z","harness:codex","Independent pre-fix control: canonical helper test extended with private positional text and a separate token value. Before production edits selected test exits1 because both strings remain in context args. Same assertion and harness retained for after proof; ignored privacy-before.log records exact assertion failure."
+  "2026-10-13T05:16:59.000Z","harness:codex","Configured consent control fails before the fix: with a disposable global telemetry.enabled=false and a loopback Sentry DSN, explicit tracing exported a span. CLI now supplies effective consent from its active telemetry receipt to the shared SDK helper before initialization. The unchanged configured-opt-out assertion passes afterward. Fixture telemetry endpoint also points to its loopback collector, preventing external event delivery when test policy is cleared for local Sentry instrumentation. Initial collector experiments emitted3 unfinished fixture starts; those installation identities are separate from the real installation, whose fixed04:30-05:01UTC cohort is112 starts/112 finishes with0 unmatched or duplicate pairs. No historical telemetry records are deleted."
+learnings[1]{created_at,author,text}:
+  "2026-10-13T05:01:46.510Z","harness:codex",Command args reaching a diagnostic helper are data even when text resembles flags. Redact every argument slot and retain option keys separately; apply privacy at event breadcrumb log and streamed-span export boundaries.
+files[4]{path,scope}:
+  src/core/sentry/helpers.ts,project
+  src/core/sentry/instrument.ts,project
+  tests/unit/core/sentry/instrument.spec.ts,project
+  tests/unit/core/sentry/sentry-helpers.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry,project,240,"harness:codex","2026-10-13T04:46:48.043Z",local_mutation,feat/sentry-tracing-privacy
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/sentry/sentry-helpers.spec.ts -t prevents-private-command-content
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/sentry
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-geywoc
+body: ""

@@ -43,6 +43,43 @@ const policy = (families = [family()]): DefectRecurrencePolicy => ({
 });
 
 describe("defect recurrence SDK", () => {
+  it.each([
+    ["src/*.ts", "src/index.ts", true],
+    ["src/*.ts", "src/nested/index.ts", false],
+    ["src/*.ts", "src/.ts", true],
+    ["src/**.ts", "src/nested/index.ts", true],
+    ["src/**/index.ts", "src/index.ts", false],
+    ["src/**/index.ts", "src//index.ts", true],
+    ["src/***.ts", "src/nested/index.ts", true],
+    ["src/🐈*.ts", "src/🐈猫.ts", true],
+    ["src/[a].(ts)+?$^{x}|\\file.ts", "src/[a].(ts)+?$^{x}|\\file.ts", true],
+    ["src/[a].ts", "src/a.ts", false],
+    ["src/*b.ts", "src/a\nb.ts", true],
+    ["src/**b.ts", "src/a\nb.ts", false],
+    ["src/**b.ts", "src/a\rb.ts", false],
+    ["src/**b.ts", "src/a\u2028b.ts", false],
+    ["src/**b.ts", "src/a\u2029b.ts", false],
+    ["src/a*", "src/a", true],
+    ["src/a**", "src/a", true],
+    ["src/a", "src/ab", false],
+  ] as const)("preserves glob %s against %s", (pattern, file, matches) => {
+    const index = buildDefectRecurrenceIndex(policy([family({
+      triggers: { file_patterns: [pattern], item_ids: ["pm-control"] },
+      negative_control: { item_ids: ["pm-control"] },
+    })]), []);
+    expect(analyzeDefectChangeRisk(index, { files: [file] }).risk_detected).toBe(matches);
+  });
+
+  it("completes repeated-wildcard matching for long custom policy paths", () => {
+    const pattern = `${"a*".repeat(100)}z`;
+    const index = buildDefectRecurrenceIndex(policy([family({
+      triggers: { file_patterns: [pattern], item_ids: ["pm-control"] },
+      negative_control: { item_ids: ["pm-control"] },
+    })]), []);
+    expect(analyzeDefectChangeRisk(index, { files: [`${"a".repeat(6_000)}y`] }).risk_detected).toBe(false);
+    expect(analyzeDefectChangeRisk(index, { files: [`${"a".repeat(6_000)}z`] }).risk_detected).toBe(true);
+  });
+
   it("builds a deterministic sparse index and explains every matching signal", () => {
     const inputPolicy = policy();
     const items = [

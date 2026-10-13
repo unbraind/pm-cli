@@ -293,7 +293,7 @@ export {
   sentrySetCommandContext,
   sentryStartCommandSpan,
 } from "../core/sentry/helpers.js";
-export { ensureSentryInit } from "../core/sentry/instrument.js";
+export { ensureSentryInit, ensureSentryCommandTracing } from "../core/sentry/instrument.js";
 export {
   clearFocusedItem,
   getFocusedItem,

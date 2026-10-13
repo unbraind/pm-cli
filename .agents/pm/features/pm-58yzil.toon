@@ -2,11 +2,13 @@ id: pm-58yzil
 title: Enable explicit successful-command Sentry tracing without eager startup
 description: "A fresh24h Sentry trace query returned zero rows after a successful read with SENTRY_TRACES_SAMPLE_RATE=1. Successful-command span helpers require an already-initialized client, while current CLI initialization is lazy on error-reporting paths. Preserve that completed startup optimization and add an explicit, bounded tracing opt-in that can initialize and flush successful command spans without manufacturing errors."
 type: Feature
-status: open
+status: in_progress
 priority: 2
-tags: []
+tags[3]: feature,observability,sdk
 created_at: "2026-10-12T19:21:47.566Z"
-updated_at: "2026-10-12T21:58:24.817Z"
+updated_at: "2026-10-13T06:22:04.330Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7ed53804faba291cc8b1a6ce"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Prove an independent successful-command opt-in control before and after; honor consent opt-outs and Vitest isolation; sanitize span context; preserve default cold-start and import budgets; verify one recent explicitly sampled trace through the authenticated Sentry API, distinguishing ingestion unavailability from source behavior."
@@ -14,10 +16,29 @@ parent: pm-5oj5
 risk: medium
 confidence: high
 expected_result: Explicit opt-in tracing observes successful CLI commands while default startup remains lazy.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1ybs,related,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
   pm-gg8e,discovered_from,"2026-10-12T19:21:47.566Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-t3jxjj,related,"2026-10-13T05:41:51.029Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-10-12T19:21:47.566Z","harness:codex","Duplicate check: fresh opt-in tracing search, open/in_progress inventories and complete all-status corpus review found the completed sampling-knob and lazy-startup owners but no exact active implementation owner. Their full live metadata was read. This enhancement remains open and unclaimed; the four connected implementation owners remain the only active items."
   "2026-10-12T21:58:24.817Z","harness:codex","Fresh explicit unbrained/pm-cli Sentry queries during this delivery again return0 unresolved issues and0 recent trace rows. The14-day authenticated Sentry/telemetry gate passes with0 critical/high issues,3.01% finish error rate and0 failures without error codes. Successful-command tracing remains unproven and is retained here open/unclaimed; metrics-service recovery in pm-m1tfmp is independent from Sentry trace instrumentation."
+  "2026-10-13T04:40:54.426Z","harness:codex","Delivery intake: complete strict all-status read of 2949 items with zero omissions and zero unreadable files; closed lineage and current GitHub reports inspected. Fresh authenticated Sentry query returns zero 24h traces and zero unresolved issues. Implement explicit successful-command opt-in without default SDK loading and preserve consent/test isolation. Bundle with canonical eligible Sentry11 migration and privacy hardening in one reviewed PR."
+  "2026-10-13T04:50:31.051Z","harness:codex","Sentry11 migration was correctly refused by portable native runtime staging and paused on pm-t3jxjj. Current10.76.0 already provides typed dataCollection and streamed-span wrappers: successful tracing and privacy implementation use those supported primitives without raising artifact budgets. All argument slots are redacted, even text resembling flags; option keys retain structural diagnostics."
+  "2026-10-13T05:01:44.198Z","harness:codex","Verified71 focused tests through the real CLI and disposable loopback Sentry collector. Streamed envelopes retain pm.command_root and command_ok; default zero-rate consent-opt-out and Vitest cases export nothing. Isolated source mutant restoring no successful initialization fails the independent assertion with exit1 while original passes0. Authenticated fresh Sentry span query now shows one actual pm context span at04:54:27UTC from explicit sampling; legacy transaction-only trace-list remains empty. Required14-day Sentry gate has0 critical/high issues;7-day telemetry error rate3.00 percent with0 missing codes. Moved integration test into the telemetry domain directory to preserve the existing folder-density cap; command identities are immutable so replacement uses audited remove/add."
+  "2026-10-13T06:05:28.578Z","harness:codex","Final independent tracing control uses the current consent-aware signature: isolated checkout baseline exits0 and removing opt-in initialization makes the same assertion fail with exit1. Focused verification is100 passing tests, including real loopback Sentry export and packed SDK Node/Bun continuation. Latest pm-changelog2026.10.12 is installed and activated through pm package install; full configured generation remains part of reviewed closeout."
+learnings[1]{created_at,author,text}:
+  "2026-10-13T05:01:45.527Z","harness:codex",Use Sentry span discovery to verify streamed-span ingestion; a legacy transaction-only trace listing can be empty even when recent spans exist. Real loopback envelopes prove initialization flush and serialization separately from SaaS ingestion.
+files[7]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  sdk/public-surface.json,project
+  src/cli/main.ts,project
+  src/core/sentry/instrument.ts,project
+  src/sdk/runtime-primitives.ts,project
+  tests/integration/telemetry/sentry-command-tracing.spec.ts,project
+  tests/unit/core/sentry/instrument.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,project,240,"harness:codex","2026-10-13T05:01:42.836Z",local_mutation,feat/sentry-tracing-privacy
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
 body: ""

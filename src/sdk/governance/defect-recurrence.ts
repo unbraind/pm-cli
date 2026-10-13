@@ -288,7 +288,8 @@ export interface DefectGateEvidenceReport {
 
 const MAX_FILE_PATTERN_LENGTH = 256;
 const MAX_COMPILED_PATH_PATTERNS = 1_024;
-const compiledPathPatterns = new Map<string, RegExp>();
+type PathPatternToken = { kind: "literal"; value: string } | { kind: "star" | "globstar" };
+const compiledPathPatterns = new Map<string, readonly PathPatternToken[]>();
 const CHANGE_INPUT_FIELDS = [
   "files",
   "package_names",
@@ -493,22 +494,54 @@ function validatePolicy(policy: DefectRecurrencePolicy): void {
   }
 }
 
-function pathMatches(pattern: string, value: string): boolean {
+/** Cache literal and wildcard tokens under the existing bounded eviction policy. */
+function pathPatternTokens(pattern: string): readonly PathPatternToken[] {
   let compiled = compiledPathPatterns.get(pattern);
   if (compiled === undefined) {
     if (compiledPathPatterns.size >= MAX_COMPILED_PATH_PATTERNS) {
       const oldest = compiledPathPatterns.keys().next().value;
       compiledPathPatterns.delete(oldest!);
     }
-    const escaped = pattern
-      .replaceAll("**", "\u0000")
-      .replaceAll(/[|\\{}()[\]^$+?./]/gu, "\\$&")
-      .replaceAll("*", "[^/]*")
-      .replaceAll("\u0000", ".*");
-    compiled = new RegExp(`^${escaped}$`, "u");
+    compiled = [...pattern.replaceAll("**", "\u0000")].map((character) =>
+      character === "\u0000"
+        ? { kind: "globstar" as const }
+        : character === "*"
+          ? { kind: "star" as const }
+          : { kind: "literal" as const, value: character },
+    );
     compiledPathPatterns.set(pattern, compiled);
   }
-  return compiled.test(value);
+  return compiled;
+}
+
+/** Preserve single-star separator and globstar line-terminator behavior. */
+function pathTokenAccepts(token: PathPatternToken, character: string): boolean {
+  if (token.kind === "literal") return token.value === character;
+  if (token.kind === "star") return character !== "/";
+  return !["\n", "\r", "\u2028", "\u2029"].includes(character);
+}
+
+/** Match the existing glob grammar in O(pattern × path) time and O(pattern) memory. */
+function pathMatches(pattern: string, value: string): boolean {
+  const compiled = pathPatternTokens(pattern);
+  let states = new Uint8Array(compiled.length + 1);
+  let next = new Uint8Array(states.length);
+  states[0] = 1;
+  for (let index = 0; index < compiled.length; index++) {
+    states[index + 1] = compiled[index]!.kind === "literal" ? 0 : states[index]!;
+  }
+  for (const character of value) {
+    for (let index = 0; index < compiled.length; index++) {
+      const token = compiled[index]!;
+      const accepts = pathTokenAccepts(token, character);
+      next[index + 1] = token.kind === "literal"
+        ? Number(Boolean(states[index] && accepts))
+        : Number(Boolean(next[index] || (states[index + 1] && accepts)));
+    }
+    [states, next] = [next, states];
+    next[0] = 0;
+  }
+  return states[compiled.length] === 1;
 }
 
 function fileReasons(
