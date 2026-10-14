@@ -52,6 +52,7 @@ jobs:
       RECOVERY_SOURCE_MODE: ${{ github.event_name == 'workflow_dispatch' && 'main' || 'tag' }}
       PACKAGE_ARTIFACT_GATE: scripts/release/package-artifact-gate.mjs
       PACKAGE_DISTRIBUTION: scripts/release/package-distribution.mjs
+      EXTENSION_FLAG_ACCEPTANCE: scripts/release/extension-flag-acceptance.mjs
       RELEASE_CONTROL: scripts/release/release-control.mjs
       WORKSPACE_COMPATIBILITY: scripts/release/workspace-compatibility.mjs
       RELEASE_PUBLICATION_ADMISSION: scripts/release/release-run-selection.mjs
@@ -109,6 +110,7 @@ jobs:
           cp scripts/smoke-cleanup.mjs "${RELEASE_CONTROLS}/../smoke-cleanup.mjs"
           cp scripts/release/package-artifact-gate.mjs "${RELEASE_CONTROLS}/package-artifact-gate.mjs"
           cp scripts/release/package-distribution.mjs "${RELEASE_CONTROLS}/package-distribution.mjs"
+          cp scripts/release/extension-flag-acceptance.mjs "${RELEASE_CONTROLS}/extension-flag-acceptance.mjs"
           cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"
           cp scripts/release/release-control.mjs "${RELEASE_CONTROLS}/release-control.mjs"
           cp scripts/release/release-run-selection.mjs "${RELEASE_CONTROLS}/release-run-selection.mjs"
@@ -120,9 +122,14 @@ jobs:
           mkdir -p "${COMPATIBILITY_FIXTURES}/custom-fields"
           cp tests/fixtures/compatibility/custom-fields/index.mjs "${COMPATIBILITY_FIXTURES}/custom-fields/index.mjs"
           cp tests/fixtures/compatibility/sdk-reader.mjs "${COMPATIBILITY_FIXTURES}/sdk-reader.mjs"
+          mkdir -p "${RELEASE_CONTROLS}/../../tests/fixtures/extensions"
+          cp tests/fixtures/extensions/flag-semantics.mjs "${RELEASE_CONTROLS}/../../tests/fixtures/extensions/flag-semantics.mjs"
+          mkdir -p "${RELEASE_CONTROLS}/../../tests/fixtures/telemetry"
+          cp tests/fixtures/telemetry/diagnostic-privacy.mjs "${RELEASE_CONTROLS}/../../tests/fixtures/telemetry/diagnostic-privacy.mjs"
           {
             echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs"
             echo "PACKAGE_DISTRIBUTION=${RELEASE_CONTROLS}/package-distribution.mjs"
+            echo "EXTENSION_FLAG_ACCEPTANCE=${RELEASE_CONTROLS}/extension-flag-acceptance.mjs"
             echo "RELEASE_CONTROL=${RELEASE_CONTROLS}/release-control.mjs"
             echo "RELEASE_PUBLICATION_ADMISSION=${RELEASE_CONTROLS}/release-run-selection.mjs"
             echo "WORKSPACE_COMPATIBILITY=${RELEASE_CONTROLS}/workspace-compatibility.mjs"
@@ -406,6 +413,7 @@ jobs:
               --tag "${RELEASE_TAG}" --tag-sha "${tag_commit}" --default-branch "${DEFAULT_BRANCH}"
             node "${PACKAGE_DISTRIBUTION}" --destination="${RUNNER_TEMP}" > "${RUNNER_TEMP}/publication-artifact.json"
             publication_tarball="$(node -p 'JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).filename' "${RUNNER_TEMP}/publication-artifact.json")"
+            node "${EXTENSION_FLAG_ACCEPTANCE}" "${RUNNER_TEMP}/${publication_tarball}" > "${RUNNER_TEMP}/extension-flag-acceptance.json"
             env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u npm_config_userconfig -u npm_config_cache \
               NPM_CONFIG_USERCONFIG="${PUBLIC_NPMRC}" \
               NPM_CONFIG_CACHE="${PUBLIC_NPM_CACHE}" \
@@ -424,6 +432,15 @@ jobs:
             echo "${NPM_PACKAGE} is not publicly discoverable. Trusted publishing authorizes npm publish only; restore public package access outside this workflow before retrying immutable publication." >&2
             exit 1
           fi
+
+      - name: Retain exact-candidate extension acceptance
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: extension-flag-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/extension-flag-acceptance.json
+          if-no-files-found: ignore
+          retention-days: 90
 
       - name: Verify published package on npm, npx, and bunx
         # npm metadata propagation measured at 6-8 minutes after publish on

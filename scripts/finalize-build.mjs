@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
 import ts from "typescript";
 
-/** Remove declaration indentation outside literals and comments, retaining every semantic token and JSDoc byte. */
+/** Remove declaration indentation and type punctuation spacing, retaining every semantic token and JSDoc byte. */
 function compactDeclaration(source) {
   const file = ts.createSourceFile("declaration.d.ts", source, ts.ScriptTarget.Latest, true);
   const literals = new Map();
@@ -21,12 +21,18 @@ function compactDeclaration(source) {
   const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, source);
   const parts = [];
   let lineStart = true;
+  let previousKind;
   for (let kind = scanner.scan(); kind !== ts.SyntaxKind.EndOfFileToken; kind = scanner.scan()) {
     const start = scanner.getTokenPos();
     const end = literals.get(start) ?? scanner.getTextPos();
     const text = source.slice(start, end);
-    if (kind !== ts.SyntaxKind.WhitespaceTrivia || !lineStart) parts.push(text);
-    if (kind !== ts.SyntaxKind.WhitespaceTrivia) lineStart = /[\r\n]$/u.test(text);
+    const removableWhitespace = kind === ts.SyntaxKind.WhitespaceTrivia &&
+      (lineStart || previousKind === ts.SyntaxKind.ColonToken || previousKind === ts.SyntaxKind.CommaToken);
+    if (!removableWhitespace) parts.push(text);
+    if (kind !== ts.SyntaxKind.WhitespaceTrivia) {
+      lineStart = /[\r\n]$/u.test(text);
+      previousKind = kind;
+    }
     scanner.setTextPos(end);
   }
   return parts.join("");

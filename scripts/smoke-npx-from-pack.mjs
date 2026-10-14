@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { cleanupTempRoot } from "./smoke-cleanup.mjs";
 import { registerTempCleanup } from "./temp-lifecycle.mjs";
 import { verifyInstalledAgentRecovery } from "./release/agent-recovery-acceptance.mjs";
+import { verifyInstalledExtensionFlags } from "./release/extension-flag-acceptance.mjs";
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -362,6 +363,7 @@ function run() {
     const evaluatorConsumer = path.join(REPO_ROOT, "tests", "fixtures", "read-output", "evaluation-consumer.mjs");
     for (const runtime of [process.execPath, resolveCommand("bun")]) {
       runSmokeCommand(runtime, [evaluatorConsumer, consumerRoot], commandOptions);
+      verifyInstalledExtensionFlags(path.join(consumerRoot, "node_modules", "@unbrained", "pm-cli"), runtime);
     }
 
     console.log(

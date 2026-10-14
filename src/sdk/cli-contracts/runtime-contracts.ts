@@ -6,9 +6,8 @@
  */
 import { PM_TOOL_PARAMETER_PROPERTIES } from "./tool-parameter-tables.js";
 import {
-  parseExtensionLongFlagToken,
+  resolveExtensionFlagValueContract,
   resolveExtensionLongFlagName,
-  resolveFlagValueKind,
   EXIT_CODE,
   SETTINGS_DEFAULTS,
   type GlobalOptions,
@@ -1244,15 +1243,13 @@ function toExtensionFlagContract(
   if (description) {
     contract.description = description;
   }
-  const declaredType = [definition.value_type, definition.type]
-    .map(resolveFlagValueKind)
-    .find((kind) => kind !== null);
-  const inlineValueName = declaredType === "boolean" ? null : parseExtensionLongFlagToken(definition.long)?.valueName;
-  const valueName = toOptionalTrimmedString(definition.value_name) ?? inlineValueName;
-  if (valueName) {
-    contract.value_name = valueName;
-  }
-  const rawValueType = declaredType ?? (valueName ? "string" : null);
+  const value = resolveExtensionFlagValueContract(definition);
+  contract.value_arity = value.value_arity;
+  // Explicit legacy labels remain discoverable even for a switch; value_arity
+  // determines whether the label represents an actual consumed argv token.
+  const valueName = toOptionalTrimmedString(definition.value_name) ?? value.value_name;
+  if (valueName) contract.value_name = valueName;
+  const rawValueType = value.value_type ?? (value.value_name ? "string" : null);
   if (rawValueType) {
     contract.value_type = rawValueType;
   }

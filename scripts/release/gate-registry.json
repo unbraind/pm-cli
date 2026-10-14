@@ -61,7 +61,7 @@
       {
         "path": "scripts/release/flag-invocation-parity.mjs",
         "disposition": "retained",
-        "reason": "Compares generated SDK flag arity with independently observed Commander registrations.",
+        "reason": "Compares generated SDK flag arity with independently observed core registrations and a synthetic extension fixture; the shared extension acceptance runner also checks literal dispatch behavior and the exact publication tarball.",
         "negative_control": {
           "test": "tests/unit/scripts/flag-invocation-parity.spec.ts",
           "assertion": "blocks a seeded arity mismatch"

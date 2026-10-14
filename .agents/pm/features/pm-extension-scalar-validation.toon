@@ -1,0 +1,22 @@
+id: pm-extension-scalar-validation
+title: Validate contributed scalar flag values before extension handler dispatch
+description: "A harmless echo fixture declares type bool but --enabled not-a-boolean reaches its handler as a string. Coercion preserves invalid input for later validation, yet current dynamic dispatch validates only allowed/required/disabled option keys. Establish an explicit compatible scalar-validation contract for extension authors."
+type: Feature
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-14T16:21:40.172Z"
+updated_at: "2026-10-14T16:47:27.101Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Define compatibility for invalid number/boolean tokens and optional no-value presence; Apply shared SDK-owned scalar validation before handler invocation where opted in or required by the supported contract; Preserve canonical switch positional behavior and legacy bool grammar; Independently assert malformed value refusals and valid coercion/default/list cases through public CLI/SDK
+parent: pm-ugqx
+risk: medium
+confidence: high
+expected_result: "Extension authors can declare scalar validation that rejects malformed boolean and numeric inputs before dispatch while preserving valid aliases, defaults, optional presence and list ordering across public SDK and CLI."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1466,discovered_from,"2026-10-14T16:47:25.265Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-14T16:21:40.172Z","harness:codex","Duplicate check: strict2965-item all-status corpus; focused live extension invalid scalar boolean validation search; title/description scan for coercion and scalar-validation owners found only unrelated closed schema-field/numeric-wrapper work. Actual isolated echo reproduction on2026-10-14 returns exit0 and options.enabled=not-a-boolean. This pre-existing issue is separate from pm-gh1466 false preservation and pm-gh1467 optional arity; leave open/unclaimed and do not silently broaden those compatibility fixes."
+  "2026-10-14T16:47:27.101Z","harness:codex","Discovery provenance: the malformed scalar echo was encountered while implementing pm-gh1466, so record discovered_from rather than a fabricated ordering/recurrence relationship. Risk, confidence, estimate and expected outcome are now complete. This separately queued enhancement remains open/unclaimed."
+body: ""

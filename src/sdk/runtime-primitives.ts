@@ -18,7 +18,9 @@ export {
 } from "../core/checkpoint/mutation-checkpoint.js";
 export {
   flattenFlagListValue,
+  resolveExtensionFlagValueContract,
   resolveFlagValueKind,
+  type ExtensionFlagValueContract,
 } from "../core/extensions/flag-value-types.js";
 export {
   createUnknownSubcommandError,

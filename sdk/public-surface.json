@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1994,
+    "covered_symbols": 1996,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1995
+    "required_symbols": 1997
   },
   "breaking_acknowledgements": [
     {
@@ -2347,6 +2347,14 @@
       ],
       "package_version": "2026.10.14",
       "reason": "GH-1458 adds guarded item format 2 and optional minimum-format bounds; format 1 remains readable and legacy history commitments are preserved."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CliFlagContract",
+        "signature ./sdk/contracts:CliFlagContract"
+      ],
+      "package_version": "2026.10.14",
+      "reason": "Add optional explicit value_arity metadata to CliFlagContract; preserve legacy core inference for callers that omit it. Publish the shared extension value grammar helper additively."
     }
   ],
   "entrypoints": {
@@ -4595,7 +4603,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagContract",
-          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
+          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
         },
         {
           "classification": "contract_data",
@@ -7704,6 +7712,12 @@
           "kind": "interface",
           "name": "ExtensionDiscoveryResult",
           "signature": "export interface ExtensionDiscoveryResult { disabled_by_flag: boolean; roots: { global: string; project: string; }; configured_enabled: string[]; configured_disabled: string[]; discovered: ExtensionDiagnostic[]; effective: EffectiveExtension[]; warnings: string[]; policy: ExtensionGovernancePolicy; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "ExtensionFlagValueContract",
+          "signature": "export interface ExtensionFlagValueContract { value_type: FlagValueKind | null; value_arity: \"none\" | \"required\" | \"optional\"; value_name: string | null; }"
         },
         {
           "classification": "supported",
@@ -16820,6 +16834,12 @@
           "signature": "(settings: PmSettings | ProviderSettingsInput) => EmbeddingProviderResolution | calls: (settings: PmSettings | ProviderSettingsInput) => EmbeddingProviderResolution"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveExtensionFlagValueContract",
+          "signature": "(definition: Readonly<FlagDefinition>) => ExtensionFlagValueContract | calls: (definition: Readonly<FlagDefinition>) => ExtensionFlagValueContract"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "resolveExtensionInstallSourceIdentity",
@@ -22823,7 +22843,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagContract",
-          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
+          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
         },
         {
           "classification": "contract_data",
@@ -23184,6 +23204,12 @@
           "kind": "value",
           "name": "EXTENSION_UNINSTALL_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "ExtensionFlagValueContract",
+          "signature": "export interface ExtensionFlagValueContract { value_type: FlagValueKind | null; value_arity: \"none\" | \"required\" | \"optional\"; value_name: string | null; }"
         },
         {
           "classification": "contract_data",
@@ -24702,6 +24728,12 @@
           "kind": "function",
           "name": "resolveContextIntentContract",
           "signature": "(command: string, intent: string, contracts?: readonly PmContextIntentContract[], positionalArguments?: readonly string[]) => PmContextIntentContract | undefined | calls: (command: string, intent: string, contracts?: readonly PmContextIntentContract[], positionalArguments?: readonly string[]) => PmContextIntentContract | undefined"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolveExtensionFlagValueContract",
+          "signature": "(definition: Readonly<FlagDefinition>) => ExtensionFlagValueContract | calls: (definition: Readonly<FlagDefinition>) => ExtensionFlagValueContract"
         },
         {
           "classification": "contract_data",

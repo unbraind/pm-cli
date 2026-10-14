@@ -10,6 +10,7 @@
  */
 import { installCommandNamespaces } from "../../dist/cli/command-namespaces.js";
 import { pathToFileURL } from "node:url";
+import { verifyInstalledExtensionFlags } from "./extension-flag-acceptance.mjs";
 
 import { registerListQueryCommands } from "../../dist/cli/register-list-query.js";
 import { registerMutationCommands } from "../../dist/cli/register-mutation.js";
@@ -161,6 +162,7 @@ export function main(argv = process.argv.slice(2)) {
   const report = verifyCoreFlagInvocationParity({
     injectMismatch: argv.includes("--inject-mismatch"),
   });
+  report.extension_acceptance = verifyInstalledExtensionFlags(process.cwd());
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   if (!report.ok) process.exitCode = 1;
   return report;

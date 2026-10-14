@@ -40,6 +40,30 @@ describe("finalize-build", () => {
     expect(await readFile(declarationPath, "utf8")).toBe(compact);
   });
 
+  it("reduces already unindented declaration payloads without changing directives or type content", async () => {
+    const root = await harness.createTempRoot("pm-declaration-pack-");
+    await mkdir(path.join(root, "sdk"));
+    await mkdir(path.join(root, "dist", "sdk"), { recursive: true });
+    await writeFile(path.join(root, "sdk", "public-surface.json"), "{}");
+    const directive = '/// <reference path="./peer.d.ts" />';
+    const jsdoc = "/** Keep punctuation: space, comma, space and documentation bytes. */";
+    const declaration = `${directive}\n${jsdoc}\nexport interface Payload { values: [string, number, boolean]; literal: "a, b: c"; }\nexport declare function send(left: string, right: number): Payload;\n`;
+    const file = path.join(root, "dist", "sdk", "index.d.ts");
+    await writeFile(file, declaration);
+    const mod = await harness.importModule<FinalizeBuildModule>("scripts/finalize-build.mjs");
+    await mod.main(root);
+    const compact = await readFile(file, "utf8");
+    const printer = ts.createPrinter();
+    const parse = (text: string): ts.SourceFile => ts.createSourceFile("index.d.ts", text, ts.ScriptTarget.Latest, true);
+    expect(printer.printFile(parse(compact))).toBe(printer.printFile(parse(declaration)));
+    expect(compact).toContain(`${directive}\n`);
+    expect(compact).toContain(jsdoc);
+    expect(compact).toContain('"a, b: c"');
+    expect(Buffer.byteLength(compact)).toBeLessThanOrEqual(Buffer.byteLength(declaration) - 7);
+    await mod.main(root);
+    expect(await readFile(file, "utf8")).toBe(compact);
+  });
+
   it("chmods present outputs and skips absent ones", async () => {
     const chmod = vi.fn(async () => {});
     vi.doMock("node:fs/promises", () => ({

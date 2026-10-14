@@ -334,13 +334,21 @@ function flagTakesValue(command: string, contract: CliFlagContract): boolean {
   );
 }
 
+/** Prefer declared extension grammar; legacy core tables keep their existing vocabulary inference. */
+function resolveFlagValueArity(command: string, contract: CliFlagContract): "none" | "required" | "optional" {
+  if (contract.value_arity !== undefined) return contract.value_arity;
+  if (!flagTakesValue(command, contract)) return "none";
+  return OPTIONAL_VALUE_FLAGS.has(contract.flag) || OPTIONAL_VALUE_COMMAND_FLAGS.has(`${command}:${contract.flag}`) ? "optional" : "required";
+}
+
 /** Enrich one vocabulary row with deterministic invocation and input-channel metadata. */
 export function enrichCliFlagInvocationContract(
   command: string,
   contract: CliFlagContract,
 ): CliFlagInvocationContract {
   const operation = resolvePmHistoryOperation(command);
-  const takesValue = flagTakesValue(operation, contract);
+  const arity = resolveFlagValueArity(operation, contract);
+  const takesValue = arity !== "none";
   const inputSources = resolveFlagInputSources(operation, contract.flag);
   const description =
     contract.description ??
@@ -350,10 +358,7 @@ export function enrichCliFlagInvocationContract(
     ...contract,
     description,
     takes_value: takesValue,
-    value_required:
-      takesValue &&
-      !OPTIONAL_VALUE_FLAGS.has(contract.flag) &&
-      !OPTIONAL_VALUE_COMMAND_FLAGS.has(`${operation}:${contract.flag}`),
+    value_required: arity === "required",
     ...(takesValue ? { value_name: contract.value_name ?? "value" } : {}),
     value_type: takesValue ? (contract.value_type ?? "string") : "boolean",
     required: contract.required === true,

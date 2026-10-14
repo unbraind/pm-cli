@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fileURLToPath } from "node:url";
+import * as extensionAcceptance from "../../../scripts/release/extension-flag-acceptance.mjs";
 import {
   buildCoreCommandProgram,
   main,
@@ -136,6 +137,7 @@ describe("flag invocation parity gate", () => {
   });
 
   it("reports standalone success and negative-control exit status", () => {
+    const extensions = vi.spyOn(extensionAcceptance, "verifyInstalledExtensionFlags").mockReturnValue({ ok: true, case_count: 39 });
     const originalExitCode = process.exitCode;
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     try {
@@ -153,6 +155,7 @@ describe("flag invocation parity gate", () => {
       expect(main(["--inject-mismatch"])).toMatchObject({ ok: false });
       expect(process.exitCode).toBe(1);
     } finally {
+      extensions.mockRestore();
       write.mockRestore();
       process.exitCode = originalExitCode;
     }

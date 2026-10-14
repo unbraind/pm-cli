@@ -6,6 +6,13 @@ import {
 } from "../../../src/sdk/flag-invocation-contracts.js";
 
 describe("CLI flag invocation contracts", () => {
+  it("honors explicit value grammar independently of core flag names and required presence", () => {
+    for (const [arity, takesValue, valueRequired] of [["none", false, false], ["optional", true, false], ["required", true, true]] as const) {
+      expect(enrichCliFlagInvocationContract("extension probe", {
+        flag: "--regression", required: true, value_type: "boolean", value_arity: arity,
+      })).toMatchObject({ takes_value: takesValue, value_required: valueRequired, value_type: "boolean", required: true });
+    }
+  });
   it("makes arity, repeatability, requiredness, and input sources explicit", () => {
     expect(
       enrichCliFlagInvocationContract("create", {

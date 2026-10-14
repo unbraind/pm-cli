@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[7]: "area:sdk","area:storage",durability,governance,interop,specification,standards
 created_at: "2026-07-25T12:29:30.396Z"
-updated_at: "2026-09-08T13:32:34.369Z"
+updated_at: "2026-10-14T18:59:22.830Z"
 author: "harness:claude-code"
 estimated_minutes: 960
 acceptance_criteria: "The specification defines the item document grammar, history record grammar, hash-chain construction, tombstone and redaction semantics, relationship edge encoding, and index artifacts, and states for each artifact whether it is authoritative or derivable; The specification states the compatibility rules between format versions, including what a conformant reader must do with a version it does not recognize; A conformance suite exists that a third-party implementation can run, covering read, write, hash-chain verification, and round-trip fidelity; This implementation is run against the same conformance suite in CI, so the spec and the code cannot drift; An independent reader — a small script that verifies a history chain without importing pm — is published as executable proof that the spec is sufficient; The specification is versioned and its revision policy is stated, so a change to it is a reviewable event"
@@ -72,4 +72,6 @@ dependencies[16]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[1]{created_at,author,text,edited_at}:
+  "2026-10-14T16:10:02.225Z","harness:codex","Report intake: https://github.com/unbraind/pm-cli/issues/1472. Bounded persisted-format conformance tranche: shared semantic admission across write/restore/merge, retained history requirements, independent future-feature fault controls, exact candidate CLI/SDK acceptance. Full issue and existing canonical item read; no competing owner created. Planning remains open/unclaimed.","2026-10-14T18:59:22.830Z"
 body: ""

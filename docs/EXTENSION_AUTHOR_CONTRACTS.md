@@ -8,14 +8,28 @@ This page records runtime contracts package authors need when they build on the 
 
 Tracked by [pm-gh1461](../.agents/pm/issues/pm-gh1461.toon) and
 [pm-gh1462](../.agents/pm/features/pm-gh1462.toon).
+Value grammar corrections are tracked by [pm-gh1466](../.agents/pm/issues/pm-gh1466.toon)
+and [pm-gh1467](../.agents/pm/issues/pm-gh1467.toon).
 Prefer `{ long: "--repo", value_name: "project", value_type: "string" }`.
 Legacy `--repo <project>`, `--repo=<project>` and `--label [name]` declarations
 retain one canonical identity, one value placeholder and one help listing.
 Optional brackets permit presence without a value. Explicit `value_name` wins
-over the inline label, and boolean types remain value-free. Runtime contracts
-omit inferred labels for boolean flags, including legacy dynamic `bool` aliases;
-explicit legacy `value_name` metadata remains compatible. The SDK owns the
-canonical long-name rule used by help, option dispatch and contract discovery.
+over the inline label. Canonical `boolean` flags are switches, including when an
+inline label is present. Legacy `bool` declarations retain their value grammar:
+`--enabled false`, `--enabled 0`, and their short forms consume and coerce the
+value. A bare legacy `bool` permits presence without a value, preserving the
+published switch form too. An explicit `--enabled <value>` still requires its
+operand; `--enabled [value]` permits omission. A canonical
+boolean switch leaves subsequent positional values intact. Existing equals and
+negated forms remain supported; loose negated flags remain in `context.args`.
+Use `--` to distinguish a positional operand immediately after an optional-valued
+legacy `bool`, for example `--enabled -- operand`.
+The SDK's explicit `value_arity` distinguishes `none`, `required`, and `optional`
+from the scalar `value_type`. `required` describes flag presence: an optional
+value remains optional even when the flag itself is required. Help, Commander,
+recovery and machine contracts consume the shared SDK value declaration.
+Explicit legacy `value_name` metadata remains discoverable on switches for
+compatibility; `value_arity: "none"` still means that no value token is consumed.
 Typed authors should use canonical `value_type` names (`boolean`, `number`, `string`).
 
 Use `decodeToon` from `@unbrained/pm-cli/sdk/testing` to assert on host output
