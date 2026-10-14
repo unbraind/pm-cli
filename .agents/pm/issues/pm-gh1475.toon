@@ -1,0 +1,19 @@
+id: pm-gh1475
+title: "GH-1475: settle authenticated lossless merges within one reviewed delivery"
+description: Published 2026.10.14 losslessly merges disjoint scalar edits and union collections but leaves a pending receipt and gate-failing health until explicit reconcile plus a second commit. Evaluate a complete audited settlement path that preserves existing evidence authentication and genuine conflicting-value review requirements.
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-14T22:04:28.563Z"
+updated_at: "2026-10-14T22:04:28.563Z"
+author: "harness:codex"
+acceptance_criteria: "Reproduce the submitted fresh Git merge on the immutable published artifact and candidate; preserve both branch values and history; validate authenticated no-discard settlement and fresh-clone receipt portability; prove same-field conflicts, lossy decisions, malformed or unsealed legacy evidence remain review-required; retain SDK/CLI parity and non-surprising opt-in hook behavior; do not weaken health or verification merely to suppress a pending state."
+parent: pm-dj98
+severity: medium
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-baksix,related,"2026-10-14T22:04:28.563Z","harness:codex","cli:create:dep",detected
+  pm-mfkv92,related,"2026-10-14T22:04:28.563Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-14T22:04:28.563Z","harness:codex","Duplicate check: strict complete 2967-item all-status corpus plus fresh merge/reconcile and issue-number searches and open/in-progress lists found no open exact owner. Full live metadata and history for the completed pending-health and reconcile owners retain their shipped contracts; this request changes the merge delivery UX and is separate new work. GitHub source: https://github.com/unbraind/pm-cli/issues/1475. Queued open and unclaimed; no source implementation claimed."
+body: ""
