@@ -15,6 +15,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { registerTempCleanup } from "../temp-lifecycle.mjs";
 import { commandFor, repoRoot } from "./utils.mjs";
+import { verifyLinkedTestWorkspaces } from "./workspace-linked-tests.mjs";
 
 /** Select the two immediately preceding stable calendar releases, refusing a diluted window. */
 export function selectWorkspaceCompatibilityVersions(versions, current, policy) {
@@ -63,7 +64,7 @@ export async function main() {
     const versions = selectWorkspaceCompatibilityVersions(JSON.parse(run(commandFor("npm"), ["view", "@unbrained/pm-cli", "versions", "--json", ...npmArgs])), manifest.version, policy);
     const current = { version: manifest.version, cli: path.join(workspaceRoot, "dist/cli.js"), packageRoot: workspaceRoot };
     const releases = [];
-    for (const version of versions) {
+    for (const version of new Set([...versions, ...policy.linked_test_historical_readers])) {
       const prefix = path.join(root, `runtime-${version}`);
       await mkdir(prefix);
       run(commandFor("npm"), ["install", "--prefix", prefix, "--ignore-scripts", "--no-audit", "--no-fund", `@unbrained/pm-cli@${version}`, ...npmArgs]);
@@ -73,7 +74,7 @@ export async function main() {
     const expected = { compat_text: 'Unicode λ,equals=quote"\nline', compat_count: 0, compat_enabled: false, compat_object: { nested: [null, false, "x,y=z"] }, compat_array: [0, false, null, { x: "y,z" }] };
     const types = ["string", "number", "boolean", "object", "array"];
     const matrix = [];
-    for (const release of releases) {
+    for (const release of releases.filter((runtime) => versions.includes(runtime.version))) {
       for (const [writer, reader] of [[release, current], [current, release]]) {
         const cwd = path.join(root, `${writer.version}-to-${reader.version}`);
         await mkdir(cwd);
@@ -135,7 +136,8 @@ export async function main() {
         matrix.push({ writer: writer.version, reader: reader.version, cli: true, sdk: true, unknown_fields: true, restore: true, git_merge: true, history: true });
       }
     }
-    console.log(JSON.stringify({ ok: true, policy, matrix }, null, 2));
+    const linked_tests = await verifyLinkedTestWorkspaces({ root, current, releases: policy.linked_test_historical_readers.map((version) => releases.find((runtime) => runtime.version === version)), run, fixtureRoot: path.join(repoRoot, "tests/fixtures/compatibility") });
+    console.log(JSON.stringify({ ok: true, policy, matrix, linked_tests }, null, 2));
   } finally {
     await rm(root, { recursive: true, force: true });
     releaseCleanup();

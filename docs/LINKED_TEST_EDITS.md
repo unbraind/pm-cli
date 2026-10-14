@@ -77,3 +77,18 @@ gate, and display its recovery message; `exit_code: null` means no subprocess ra
 Context mismatches and a missing required PM assertion also use this result.
 The `TestRunResult.exit_code` type now allows null, and `TestCommandOptions` and
 `TestResult` include the optional editor flags and receipt fields described above.
+
+## Mixed host versions
+
+Tracked by [pm-gh1458](../.agents/pm/issues/pm-gh1458.toon).
+Editor stamps require item format 2. Ordinary records retain format 1, while
+existing unstamped or legacy format-1 records advance only on a real write that
+needs the new fields. Upgrade the CLI, pinned SDK, CI and clone-local merge
+driver together before editing guarded records. Hosts from 2026.10.10 refuse
+with `item_format_version_unsupported`; preserve item/history bytes and upgrade
+instead of lowering the marker or re-anchoring valid history. Inspection of
+legacy 2026.10.12–13 records retains their original history commitments.
+Restoration retains the format requirement even when selecting a pre-edit state.
+The SDK refuses a guarded write when the owning project's declared or resolved
+runtime pins still select a pre-2026.10.10 host. Such hosts predate format
+admission and must be upgraded before they read guarded records.

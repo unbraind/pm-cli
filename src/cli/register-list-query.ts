@@ -535,11 +535,11 @@ function registerListCommand(
     )
     .option(
       "--after <cursor>",
-      "Continue after an opaque next_cursor from a previous list response",
+      "Query next_cursor; output_cursor uses --output-cursor",
     )
     .option(
       "--no-truncate",
-      "Return every matched row after the explicit status and field filters",
+      "Disable default token cap; explicit --limit and --output-budget apply",
     )
     .option("--include-body", "Include item body in each returned list row")
     .option(
@@ -1211,7 +1211,7 @@ export function registerListQueryCommands(
       .option("--limit <n>", "Limit focus and agenda rows per section")
       .option(
         "--after <cursor>",
-        "Continue ranked focus after a next_cursor from a previous context response",
+        "Query next_cursor; output_cursor uses --output-cursor",
       )
       .option(
         "--format <value>",
@@ -1453,7 +1453,7 @@ export function registerListQueryCommands(
       .option("--limit <n>", "Limit returned item count")
       .option(
         "--after <cursor>",
-        "Continue after an opaque next_cursor from a previous search response",
+        "Query next_cursor; output_cursor uses --output-cursor",
       );
     registerContentAndGovernanceFilters(searchCommand);
     searchCommand.action(runSearchAction);

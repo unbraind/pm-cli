@@ -114,6 +114,7 @@ jobs:
           cp scripts/release/release-run-selection.mjs "${RELEASE_CONTROLS}/release-run-selection.mjs"
           cp scripts/release/utils.mjs "${RELEASE_CONTROLS}/utils.mjs"
           cp scripts/release/workspace-compatibility.mjs "${RELEASE_CONTROLS}/workspace-compatibility.mjs"
+          cp scripts/release/workspace-linked-tests.mjs "${RELEASE_CONTROLS}/workspace-linked-tests.mjs"
           cp scripts/release/workspace-compatibility-policy.json "${RELEASE_CONTROLS}/workspace-compatibility-policy.json"
           COMPATIBILITY_FIXTURES="${RELEASE_CONTROLS}/../../tests/fixtures/compatibility"
           mkdir -p "${COMPATIBILITY_FIXTURES}/custom-fields"

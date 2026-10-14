@@ -144,7 +144,7 @@ only after the pushed reviewed head's hosted analyzers are terminal.
 
 ## Published Workspace Compatibility
 
-Tracked by [pm-pae3wo](../.agents/pm/tasks/pm-pae3wo.toon).
+Tracked by [pm-pae3wo](../.agents/pm/tasks/pm-pae3wo.toon) and [pm-gh1458](../.agents/pm/issues/pm-gh1458.toon).
 Run `node scripts/release/workspace-compatibility.mjs --json` after building.
 The policy in `scripts/release/workspace-compatibility-policy.json` requires
 the two immediately preceding stable calendar releases. Each installed release
@@ -171,6 +171,26 @@ modules read separate JSON data; published SDK probes use the public package
 entrypoint from their own consumer directory. Raw parsers still preserve future version
 markers for integrity inspection; inventory diagnostics are not permission to
 rewrite an unsupported item.
+
+Format 1 remains readable and is still used for ordinary records. Persisting
+linked-test editor stamps requires format 2. The same mutation records that
+marker in history; ordinary subsequent writes, restoration and current-runtime
+merges retain it. Restoring an older state does not lower the reader requirement
+while newer history remains. Existing format-1 editor records written by
+2026.10.12–13 keep their original hashes during inspection and acquire the
+format-2 guard on the next real write. Upgrade every reader, CI runtime and Git
+merge driver before operating on guarded records. Never re-anchor history or
+remove the marker to make an older verifier pass.
+
+The additional published-artifact matrix pins the reported 2026.10.9, 10 and 13
+hosts. It proves original history-prefix preservation, exact nested stamps,
+write refusal when the project still pins 2026.10.9, and CLI/public SDK format
+refusal by 2026.10.10 and 13 without byte changes, ordinary
+current writes, restored states, and native Git merge/reconciliation with the
+upgraded driver. Baseline records still pass the two-prior-release matrix.
+The 2026.10.9 host predates format admission and is not a supported reader of
+guarded records; update project pins and resolved dependencies before writing
+them. That host's mutation bootstrap can then reject the newer project pin.
 
 Run the matrix from the built workspace root. Exact-tag release recovery retains
 the reviewed matrix controls, policy and static fixtures outside the checkout,

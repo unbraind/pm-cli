@@ -49,10 +49,12 @@ describe("published workspace compatibility acceptance", () => {
     const output = vi.spyOn(console, "log");
     process.argv = [process.execPath, path.resolve("scripts/release/workspace-compatibility.mjs"), "--json"];
     await harness.importModule("scripts/release/workspace-compatibility.mjs");
-    const receipt = output.mock.calls.map(([value]) => JSON.parse(String(value)) as { ok: boolean; matrix: Array<Record<string, unknown>> }).find((value) => Array.isArray(value.matrix));
+    const receipt = output.mock.calls.map(([value]) => JSON.parse(String(value)) as { ok: boolean; matrix: Array<Record<string, unknown>>; linked_tests: Array<Record<string, unknown>> }).find((value) => Array.isArray(value.matrix));
     expect(receipt).toMatchObject({ ok: true });
     expect(receipt?.matrix).toHaveLength(4);
     expect(receipt?.matrix.every((row) => row.unknown_fields && row.restore && row.git_merge && row.history && row.sdk && row.cli)).toBe(true);
     expect(execute.mock.calls.some(([file]) => file === "npm")).toBe(true);
-  }, 180_000);
+    expect(receipt?.linked_tests.map((row) => row.legacy_writer)).toEqual(["2026.10.9", "2026.10.10", "2026.10.13"]);
+    expect(receipt?.linked_tests.every((row) => row.nested_fields && row.older_refusal && row.sdk && row.restore && row.git_merge && row.history)).toBe(true);
+  }, 480_000);
 });

@@ -48,7 +48,7 @@ export function createPmCliProgram(version: string): Command {
     )
     .option(
       "--output-cursor <cursor>",
-      "Resume a budget-compacted declared row collection",
+      "Resume continuation_kind=output_cursor",
     )
     .option(
       "--output-row-contract",

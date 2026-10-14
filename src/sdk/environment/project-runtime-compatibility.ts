@@ -6,6 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 
@@ -186,6 +187,8 @@ const MIXED_COMMAND_CLASSIFIERS: Readonly<
   templates: (_argv, positionals) => positionals[0] === "save",
   test: (argv) =>
     hasAnyToken(argv, [
+      "--update",
+      "--update-index",
       "--add",
       "--add-json",
       "--background",
@@ -379,6 +382,16 @@ function analyzeHistoryEpochRange(specification: string): Readonly<{
   };
 }
 
+/** Read every pm dependency declaration without letting one dependency section hide another. */
+function dependencyDeclarations(packageJson: Record<string, unknown>): string[] {
+  return ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"].flatMap((field) => {
+    const dependencies = packageJson[field];
+    if (typeof dependencies !== "object" || dependencies === null) return [];
+    const value = (dependencies as Record<string, unknown>)[PACKAGE_NAME];
+    return typeof value === "string" ? [value.trim()] : [];
+  });
+}
+
 /** Extract every supported pm declaration without letting one section hide another. */
 function dependencyPins(
   packageJson: Record<string, unknown>,
@@ -388,16 +401,7 @@ function dependencyPins(
     "constraint" | "declaration" | "history_epoch_compatible" | "version"
   >
 > {
-  return [
-    "dependencies",
-    "devDependencies",
-    "optionalDependencies",
-    "peerDependencies",
-  ].flatMap((field) => {
-    const dependencies = packageJson[field];
-    if (typeof dependencies !== "object" || dependencies === null) return [];
-    const value = (dependencies as Record<string, unknown>)[PACKAGE_NAME];
-    const specification = typeof value === "string" ? value.trim() : "";
+  return dependencyDeclarations(packageJson).flatMap((specification) => {
     const version = /^[<!]/u.test(specification)
       ? undefined
       : specification.match(VERSION_PATTERN)?.[0];
@@ -526,6 +530,31 @@ export function discoverProjectRuntimeVersionPins(
     }
   }
   return pins;
+}
+
+/** Refuse guarded-format writes while the owning project still selects a host predating format admission. */
+export function assertProjectRuntimeFormatGuard(projectRoot: string, formatVersion: number): void {
+  if (formatVersion <= 1) return;
+  const { minVersion, lt } = createRequire(import.meta.url)("semver") as typeof import("semver");
+  const declaration = dependencyDeclarations(readJsonRecord(path.join(projectRoot, "package.json")) ?? {}).find((specification) => {
+    try {
+      const minimum = minVersion(specification);
+      return minimum !== null && lt(minimum, "2026.10.10");
+    } catch {
+      // Opaque package references are governed by their installed/lock-resolved pin.
+      return false;
+    }
+  });
+  const incompatible = declaration === undefined
+    ? discoverProjectRuntimeVersionPins(projectRoot).find((pin) => comparePmDateVersions(pin.version, "2026.10.10") === -1)
+    : { version: declaration, source: "package.json" };
+  if (!incompatible) return;
+  throw new PmCliError(`The project selects pm ${incompatible.version}, which cannot safely refuse item format ${formatVersion}.`, EXIT_CODE.CONFLICT, {
+    code: "project_runtime_item_format_incompatible",
+    reason: incompatible.source,
+    required: "Upgrade project pins, installed SDKs, CI hosts and Git merge drivers before writing guarded item formats.",
+    nextSteps: ["Use a pm runtime supporting the required item format throughout the project; preserve original item and history bytes, and never re-anchor history to satisfy an older host."],
+  });
 }
 
 /** Resolve the first command token and index while preserving global option values. */

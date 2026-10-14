@@ -35,6 +35,8 @@ import {
   serializeItemDocument,
 } from "../item/item-format.js";
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
+import { effectiveItemFormatVersion, requiredItemFormatVersion } from "../item/item-format-version.js";
+import { assertProjectRuntimeFormatGuard } from "../../sdk/environment/project-runtime-compatibility.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { isUtf8 } from "node:buffer";
@@ -46,7 +48,7 @@ import {
   listAllDocumentsCachedLight,
   refreshItemMetadataDerivedIndex,
 } from "./item-metadata-cache.js";
-import { getHistoryPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
+import { getHistoryPath, getItemPath, ITEM_FILE_EXTENSIONS, resolveWorkspaceRoot } from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
 import { assertReadableTrackerRoot } from "./tracker-preflight.js";
 import { resolveClaimPrincipal } from "../shared/author.js";
@@ -692,6 +694,12 @@ async function mutateItemWithDeferredHistoryContext(
       };
     }
     const historyContext = params.resolveHistoryContext?.();
+    const requiredFormat = Math.max(requiredItemFormatVersion(beforeDocument.metadata), requiredItemFormatVersion(mutableDocument.metadata));
+    assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(params.pmRoot), requiredFormat);
+    if (requiredFormat > effectiveItemFormatVersion(mutableDocument.metadata)) {
+      mutableDocument.metadata.pm_format_version = requiredFormat;
+      mutation.changedFields.push("pm_format_version");
+    }
     mutableDocument.metadata.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument, {
       schema: params.settings.schema,

@@ -2275,7 +2275,7 @@ describe("runList", () => {
     });
   });
 
-  it("--no-truncate overrides --limit and surfaces the pre-pagination total (GH-154)", async () => {
+  it("--no-truncate preserves explicit row caps and surfaces the pre-pagination total (GH-154, GH-1457)", async () => {
     await withTempPmPath(async (context) => {
       for (let index = 0; index < 4; index += 1) {
         createItem(context, {
@@ -2333,13 +2333,15 @@ describe("runList", () => {
       expect(full.truncated).toBe(false);
       expect(full.next_cursor).toBeNull();
 
-      // --no-truncate wins even when --limit is also supplied, and echoes the flag.
+      // Explicit row caps still apply while the no-truncate intent is retained.
       const override = await runList(
         undefined,
         { noTruncate: true, limit: "1" },
         { path: context.pmPath },
       );
-      expect(override.count).toBe(4);
+      expect(override.count).toBe(1);
+      expect(override.total).toBe(4);
+      expect(override.next_cursor).toBeTypeOf("string");
       expect((override.filters as { no_truncate?: boolean }).no_truncate).toBe(
         true,
       );

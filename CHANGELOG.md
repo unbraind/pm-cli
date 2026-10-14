@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1458: Preserve linked-test edit history across older published readers and writers ([pm-gh1458](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1458.toon))
+- GH-1457: Recover output cursors passed to --after and expose budget continuation controls ([pm-gh1457](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1457.toon))
+
 ## 2026.10.14 - 2026-10-14
 
 ### Added

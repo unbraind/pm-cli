@@ -69,17 +69,17 @@ describe("declared custom item JSON transport", () => {
         const itemPath = path.join(context.pmPath, "tasks", `${id}.${format === "toon" ? "toon" : "md"}`);
         const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
         const baseline = await readFile(createdPath, "utf8");
-        const metadata = { ...parseItemDocument(baseline, { format: "toon" }).metadata, pm_format_version: 2 };
+        const metadata = { ...parseItemDocument(baseline, { format: "toon" }).metadata, pm_format_version: 3 };
         if (format === "json_markdown") {
           await rename(createdPath, itemPath);
         }
         const variants = format === "toon" ? [
-          `${baseline}\npm_format_version: 2\n`,
-          `${baseline.replace(/^title:.*$/mu, "title: 123")}\npm_format_version: 2\n`,
-          "pm_format_version: 2\n",
-          "front_matter:\n  pm_format_version: 2\n  title: 123\nbody[1]: wrong-shape\n",
-        ] : [JSON.stringify(metadata), JSON.stringify({ ...metadata, title: 123 }), JSON.stringify({ pm_format_version: 2 })];
-        expect(parseItemDocument(variants[0]!, { format }).metadata.pm_format_version).toBe(2);
+          `${baseline}\npm_format_version: 3\n`,
+          `${baseline.replace(/^title:.*$/mu, "title: 123")}\npm_format_version: 3\n`,
+          "pm_format_version: 3\n",
+          "front_matter:\n  pm_format_version: 3\n  title: 123\nbody[1]: wrong-shape\n",
+        ] : [JSON.stringify(metadata), JSON.stringify({ ...metadata, title: 123 }), JSON.stringify({ pm_format_version: 3 })];
+        expect(parseItemDocument(variants[0]!, { format }).metadata.pm_format_version).toBe(3);
         expect(() => parseItemDocument(variants[0]!, { format, requireSupportedFormat: true })).toThrow("Upgrade");
         for (const raw of variants) {
           await writeFile(itemPath, raw);
@@ -90,7 +90,7 @@ describe("declared custom item JSON transport", () => {
             expect(JSON.parse(refused.stderr)).toMatchObject({ code: "item_format_version_unsupported", required: expect.stringContaining("Upgrade") });
             expect(await Promise.all([readFile(itemPath), readFile(historyPath)])).toEqual(original);
           }
-          await expect(get(id, {}, { pmRoot: context.pmPath, noExtensions: true })).rejects.toMatchObject({ context: { code: "item_format_version_unsupported", item_id: id, format_version: 2 } });
+          await expect(get(id, {}, { pmRoot: context.pmPath, noExtensions: true })).rejects.toMatchObject({ context: { code: "item_format_version_unsupported", item_id: id, format_version: 3 } });
         }
         for (const raw of format === "toon" ? ["front_matter: null\n", "front_matter: 123\n"] : []) {
           await writeFile(itemPath, raw);

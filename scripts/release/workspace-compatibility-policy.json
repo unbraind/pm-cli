@@ -2,5 +2,7 @@
   "schema_version": 1,
   "previous_stable_releases": 2,
   "item_format_version": 1,
-  "owner": "pm-pae3wo"
+  "owner": "pm-pae3wo",
+  "linked_test_edit_format_version": 2,
+  "linked_test_historical_readers": ["2026.10.9", "2026.10.10", "2026.10.13"]
 }

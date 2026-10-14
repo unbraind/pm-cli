@@ -2333,6 +2333,20 @@
       ],
       "package_version": "2026.10.13",
       "reason": "The initializer is first introduced in unpublished PR1455 and absent from the released2026.10.13 SDK; boolean permission lets callers enforce opt-in for an existing client."
+    },
+    {
+      "changes": [
+        "signature ./sdk:classifyItemFormatVersion",
+        "signature ./sdk:CURRENT_ITEM_FORMAT_VERSION",
+        "signature ./sdk:scanItemFormatVersions",
+        "signature ./sdk/core:classifyItemFormatVersion",
+        "signature ./sdk/core:CURRENT_ITEM_FORMAT_VERSION",
+        "signature ./sdk/runtime:classifyItemFormatVersion",
+        "signature ./sdk/runtime:CURRENT_ITEM_FORMAT_VERSION",
+        "signature ./sdk/runtime:scanItemFormatVersions"
+      ],
+      "package_version": "2026.10.14",
+      "reason": "GH-1458 adds guarded item format 2 and optional minimum-format bounds; format 1 remains readable and legacy history commitments are preserved."
     }
   ],
   "entrypoints": {
@@ -3268,6 +3282,12 @@
           "kind": "function",
           "name": "assertProjectRuntimeCompatibility",
           "signature": "(options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult | calls: (options: { executingVersion: string; projectRoot: string; argv: readonly string[]; allowStale?: boolean; }) => ProjectRuntimeCompatibilityResult"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "assertProjectRuntimeFormatGuard",
+          "signature": "(projectRoot: string, formatVersion: number) => void | calls: (projectRoot: string, formatVersion: number) => void"
         },
         {
           "classification": "advanced_export",
@@ -4527,7 +4547,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "classifyItemFormatVersion",
-          "signature": "(version: number, current?: number) => ItemFormatVersionStatus | calls: (version: number, current?: number) => ItemFormatVersionStatus"
+          "signature": "(version: number, current?: number, minimum?: number) => ItemFormatVersionStatus | calls: (version: number, current?: number, minimum?: number) => ItemFormatVersionStatus"
         },
         {
           "classification": "advanced_export",
@@ -5913,7 +5933,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "supported",
@@ -18345,7 +18365,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "scanItemFormatVersions",
-          "signature": "(entries: readonly ItemFormatVersionScanEntry[], current?: number) => ItemFormatVersionScanResult | calls: (entries: readonly ItemFormatVersionScanEntry[], current?: number) => ItemFormatVersionScanResult"
+          "signature": "(entries: readonly ItemFormatVersionScanEntry[], current?: number, minimum?: number) => ItemFormatVersionScanResult | calls: (entries: readonly ItemFormatVersionScanEntry[], current?: number, minimum?: number) => ItemFormatVersionScanResult"
         },
         {
           "classification": "supported",
@@ -25395,7 +25415,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "classifyItemFormatVersion",
-          "signature": "(version: number, current?: number) => ItemFormatVersionStatus | calls: (version: number, current?: number) => ItemFormatVersionStatus"
+          "signature": "(version: number, current?: number, minimum?: number) => ItemFormatVersionStatus | calls: (version: number, current?: number, minimum?: number) => ItemFormatVersionStatus"
         },
         {
           "classification": "supported",
@@ -25485,7 +25505,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "supported",
@@ -32337,7 +32357,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "classifyItemFormatVersion",
-          "signature": "(version: number, current?: number) => ItemFormatVersionStatus | calls: (version: number, current?: number) => ItemFormatVersionStatus"
+          "signature": "(version: number, current?: number, minimum?: number) => ItemFormatVersionStatus | calls: (version: number, current?: number, minimum?: number) => ItemFormatVersionStatus"
         },
         {
           "classification": "advanced_export",
@@ -32595,7 +32615,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
-          "signature": "1"
+          "signature": "2"
         },
         {
           "classification": "advanced_export",
@@ -34401,7 +34421,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "scanItemFormatVersions",
-          "signature": "(entries: readonly ItemFormatVersionScanEntry[], current?: number) => ItemFormatVersionScanResult | calls: (entries: readonly ItemFormatVersionScanEntry[], current?: number) => ItemFormatVersionScanResult"
+          "signature": "(entries: readonly ItemFormatVersionScanEntry[], current?: number, minimum?: number) => ItemFormatVersionScanResult | calls: (entries: readonly ItemFormatVersionScanEntry[], current?: number, minimum?: number) => ItemFormatVersionScanResult"
         },
         {
           "classification": "advanced_export",
@@ -36092,6 +36112,7 @@
     "profile_summary_empty",
     "profile_title_empty",
     "project_runtime_history_epoch_incompatible",
+    "project_runtime_item_format_incompatible",
     "project_runtime_stale_mutation",
     "project_runtime_stale_read",
     "projection_options_mutually_exclusive",

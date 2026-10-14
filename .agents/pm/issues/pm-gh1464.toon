@@ -1,0 +1,21 @@
+id: pm-gh1464
+title: "GH-1464: Distinguish successful close follow-up from failure recovery"
+description: "Successful warn-mode close returns failure-shaped recovery suggested_retry fields, causing agents to repeat an already completed action."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-14T05:57:30.561Z"
+updated_at: "2026-10-14T06:03:18.895Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Independently reproduce exit0 closed receipt; Preserve useful missing evidence guidance using success follow-up identity; Keep failure recovery unchanged; Update generated guidance and public receipt contracts with meaningful regression evidence
+parent: pm-f05lsg
+risk: low
+confidence: medium
+expected_result: A successful close advertises an optional evidence follow-up without instructing the agent to retry a completed close.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1457,related,"2026-10-14T05:57:30.561Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-14T05:57:30.561Z","harness:codex","Duplicate check: full2959-item corpus includes completed historical close warning and failure recovery owners; fresh request-specific search and open/in-progress reads found no owner for success receipt identity. GH1464 body and all comments read; report observed2026.10.13. This is intake only and remains open, unclaimed. Related cursor UX work is separately active under pm-gh1457."
+body: "Source: https://github.com/unbraind/pm-cli/issues/1464\n\n## Problem\n\nA **successful** `pm close <id> \"<reason>\" --validate-close warn` (exit 0, `status: \"closed\"`) prints a `recovery:` block containing `suggested_retry` and `suggested_retry_args`. Every other `recovery` / `suggested_retry` an agent sees in pm output belongs to a failed command, so agents read this one as a failure too.\n\nObserved on 2026.10.13 (orchestrator session, 2026-10-14): I closed three items with warn-mode validation. Output piped through `tail -2` showed only the two `suggested_retry*` lines, so I re-ran `pm close`. The retry failed with `Item … is already terminal; use pm update …`: one wasted round trip, an error, and briefly the belief that the close had not happened.\n\n## Repro\n\n```bash\nd=$(mktemp -d) && cd \"$d\" && git init -q && pm init >/dev/null\nid=$(pm create --type Task --title \"Probe\" --description d --acceptance-criteria a --json | jq -r .item.id)\npm close \"$id\" \"done\" --validate-close warn; echo \"exit=$?\"\n```\n\nOutput (abridged):\n\n```\nstatus: \"closed\"\nwarnings[1]: \"close_validation_missing_fields:pm-6lay:resolution (--resolution),expected_result (--expected-result),actual_result (--actual-result)\"\nrecovery:\n  missing[3]: \"--resolution\",\"--expected-result\",\"--actual-result\"\n  suggested_retry: \"pm --pm-path …/.agents/pm update pm-6lay --resolution \\\"<value>\\\" --expected-result \\\"<value>\\\" --actual-result \\\"<value>\\\"\"\nexit=0\n```\n\n## Suggested change\n\n1. On success, rename the block to a non-failure key, for example `follow_up:` with `suggested_command`, so `recovery`/`retry` keep their meaning (the command failed, here is how to re-run it).\n2. Since `pm close` already accepts `--resolution`, `--expected-result` and `--actual-result`, mention them in the warning and in the generated AGENTS.md quickstart (`pm close <id> \"<evidence>\" --validate-close warn`). Agents can then close with full evidence in one call instead of close + update.\n\nRelated, all closed: #953, #757, #519 (failure-path recovery bundles for `pm close`), #1203."

@@ -239,7 +239,7 @@ describe("read output contracts", () => {
       resolveReadOutputDimensions("list", { truncate: false }),
     ).toMatchObject({
       migration_hints: [
-        "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
+        "--no-truncate is a compatibility alias; prefer --output-limit unbounded --output-budget unbounded.",
       ],
     });
     for (const command of ["health", "validate"] as const) {

@@ -336,13 +336,22 @@ pm eval --fail-under 0.6 --json      # CI gate: exit non-zero when aggregate nDC
 
 ### Full results, totals, and bodies
 
-`pm list` returns every matched row when neither `--limit` nor `--offset` is set. Every JSON/TOON result has the same pagination envelope: `total` is the pre-pagination match count, `has_more` and `truncated` are booleans, and `next_cursor` is either the continuation token or `null`. `completeness` reports whether the corpus was `complete`, `partial`, or `unchecked` (derived-index page), with unreadable item/directory counts. Use `--strict-read` when omissions must fail the command. The `filters` object omits unset values instead of emitting null placeholders, keeping long-running agent context stable and lean. Pass `--no-truncate` to force the entire matched set and override any `--limit` in one call. `--all` selects every lifecycle status; combine the flags for an unbounded all-status audit:
+`pm list` selects every matched row when neither `--limit` nor `--offset` is set; the default output budget can still bound delivery. Every JSON/TOON result has the same pagination envelope: `total` is the pre-pagination match count, `has_more` and `truncated` are booleans, and `next_cursor` is either the continuation token or `null`. `completeness` reports whether the corpus was `complete`, `partial`, or `unchecked` (derived-index page), with unreadable item/directory counts. Use `--strict-read` when omissions must fail the command. The `filters` object omits unset values instead of emitting null placeholders, keeping long-running agent context stable and lean. Pass `--no-truncate` to disable the default output budget; an explicit `--limit` still caps rows, and an explicit `--output-budget` still applies. `--all` selects every lifecycle status; combine the flags for an unbounded all-status audit:
 
 ```bash
-pm list --all --no-truncate --brief        # every matched row, ignoring any --limit
+pm list --all --no-truncate --brief        # every matched row without the default token ceiling
 pm list --status open --limit 20 --json    # stable total/has_more/truncated/next_cursor envelope
 pm list --all --strict-read --json         # fail if any source item cannot be read
 ```
+
+Continuation recovery is tracked by [pm-gh1457](../.agents/pm/issues/pm-gh1457.toon).
+For list, search and context, pass a producer `next_cursor` to `--after`.
+When `continuation_kind=output_cursor` is present, consume `next_cursor` through
+`--output-cursor` instead. An output continuation resumes within the same
+producer page, so retain its original query and any producer `--after` value.
+Passing an output cursor to `--after` returns `invalid_query_cursor` with the
+executable flag substitution in `next_steps`. Changed filters or snapshots
+still refuse rather than silently restarting.
 
 Compatibility note: older responses emitted `total` only when pagination
 omitted rows, omitted `next_cursor` on a completed page, and emitted unset

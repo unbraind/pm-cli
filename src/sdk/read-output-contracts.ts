@@ -448,7 +448,7 @@ const BEHAVIOR_PRESERVING_MIGRATION_HINTS: Readonly<Record<string, string>> =
     "--max-paths":
       "--max-paths retains graph path-search semantics; use --output-limit separately to bound returned rows.",
     "--no-truncate":
-      "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
+      "--no-truncate is a compatibility alias; prefer --output-limit unbounded --output-budget unbounded.",
     "--offset":
       "--offset retains positional pagination semantics; use --output-limit separately to bound returned rows.",
     "--stream":
@@ -989,6 +989,7 @@ function hasCompleteReadOutputIntent(
     { value: unknown; flag: string } | undefined
   >,
   provenance: PmReadOutputInvocationProvenance | undefined,
+  options: Record<string, unknown>,
 ): boolean {
   const root = command
     .trim()
@@ -997,6 +998,8 @@ function hasCompleteReadOutputIntent(
     .split(" ")[0];
   return (
     root === "list-all" ||
+    (isRequestedOption(readOption(options, "--no-truncate")) &&
+      !shouldIgnoreReadOutputLegacyAlias(provenance, "amount", "--no-truncate")) ||
     legacyByDimension.amount?.flag === "--no-truncate" ||
     legacyByDimension.include?.flag === "--full" ||
     provenance?.canonical_include_modes.includes("full") === true
@@ -1095,6 +1098,7 @@ export function resolveReadOutputDimensions(
     command,
     legacyByDimension,
     invocationProvenance,
+    options,
   );
   const budget = resolvePmCommandOutputBudget(command, {
     generateFallback: true,

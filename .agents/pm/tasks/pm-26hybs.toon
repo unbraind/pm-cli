@@ -1,0 +1,46 @@
+id: pm-26hybs
+title: Complete mutation and cold-start acceptance for context recovery delivery
+description: "Finish the final delivery gate: the new wrong-cursor error message mutant survives and four unchanged equivalent mutants have moved source coordinates; also retain qualified import/transport failures and compare the published baseline before attributing a source regression."
+type: Task
+status: in_progress
+priority: 1
+tags[3]: assurance,changelog-exclude,quality
+created_at: "2026-10-14T07:18:33.519Z"
+updated_at: "2026-10-14T07:46:25.978Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#c55fa3824028333991367803"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Kill the new actionable-message mutant with the existing public refusal keeper; Rebind only proven unchanged equivalent mutants to current exact coordinates; Ratchet the mutation score upward without reducing source scope or exclusions; Diagnose qualified cold budgets without weakening controls; Complete reviewed delivery with green required checks
+parent: pm-gh1457
+risk: low
+confidence: high
+expected_result: Current source has fresh owned mutation evidence at a nondecreasing floor and the exact delivery head meets unchanged cold-start and hosted acceptance policies.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1458,related,"2026-10-14T07:18:33.519Z","harness:codex","cli:create:dep",detected
+  pm-zclzll,related,"2026-10-14T07:18:33.519Z","harness:codex","cli:create:dep",detected
+  pm-5oj5,related,"2026-10-14T07:44:34.880Z","harness:codex","cli:update:dep",detected
+  pm-mor9pl,related,"2026-10-14T07:44:34.880Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-14T07:18:33.519Z","harness:codex","Duplicate check: complete2959-item all-status corpus, fresh request-specific search/open/in-progress reads, full closed pm-zclzll metadata/history and closed pm-gh1457 read. This is the current branch delivery acceptance phase, not a duplicate continuation defect or a reopened completed mutation gate. Actual348-mutant run kills340, leaves8:4 pre-existing equivalent pagination mutants moved by one import line and the new empty error-message string remains observable. Original qualified local benchmark failures are retained; no source-performance cause is assumed before a same-host published control."
+  "2026-10-14T07:29:45.154Z","harness:codex","Mutation acceptance now passes348 mutants:341 killed and the same7 independently justified equivalents. The new blank-message mutant is killed by the public refusal keeper; only the four unchanged one-line-shifted equivalent identities were rebound, preserving existing owners/reasons. The score floor increases from97.91666666666667 to97.98850574712644. A SHA512-verified public2026.10.14 control, using unchanged measurement scripts and fresh one-item sandboxes on this host, also fails the qualified transport gate at create400ms versus398ms. Thus retain local admission failures and require exact hosted proof; no budget, runner qualification or source scope is weakened."
+  "2026-10-14T07:43:23.772Z","harness:codex","Read-only public SDK evaluateMeasurement compares the strict before/current corpora with complete prose contributor output and isolates the one new graph gap: observability owner pm-5oj5 to shipped eval-host fix pm-mor9pl. Added that truthful typed related edge through PM instead of increasing the1233 historical ceiling or adding an exemption. The isolated current Node26 transport recheck also passes all6 operations with unchanged budgets. Node24 complete static execution passed both cold gates and reached graph composition; remaining terminal graph/record/mutation checks are being completed on the corrected tracker."
+  "2026-10-14T07:46:25.978Z","harness:codex","All configured local static steps are now individually proven on the unchanged source: the complete Node24 run passed compilation, audits, lint, contracts, bounds, snapshots and both cold budgets; after the truthful typed graph correction the exact graph-composition and record-integrity suffix passes, followed by the348-mutant Node24 gate. Historical failures are retained. Final packed Sentry-injected npm/Bun workflows and exact-head hosted review remain the delivery prerequisites. This item alone remains claimed/in progress during active delivery."
+files[2]{path,scope}:
+  scripts/release/sdk-mutation-baseline.json,project
+  tests/unit/sdk/pagination.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm quality:mutation -- --prebuilt",project,300,"harness:codex","2026-10-14T07:19:17.408Z",local_mutation,feat/mixed-version-context-recovery
+test_runs[1]:
+  - run_id: test-local-mv7s9x48-3m0uqh
+    kind: test
+    status: passed
+    started_at: "2026-10-14T07:22:50.676Z"
+    finished_at: "2026-10-14T07:23:37.832Z"
+    recorded_at: "2026-10-14T07:23:37.832Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm quality:mutation -- --prebuilt",schema,schema,source,local_source_ref
+body: ""

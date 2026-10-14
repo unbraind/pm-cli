@@ -35,6 +35,7 @@ import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import {
   CURRENT_ITEM_FORMAT_VERSION,
+  BASELINE_ITEM_FORMAT_VERSION,
   effectiveItemFormatVersion,
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
@@ -2971,6 +2972,8 @@ function buildFormatVersionCheck(
       ref: item.id,
       version: effectiveItemFormatVersion(item),
     })),
+    CURRENT_ITEM_FORMAT_VERSION,
+    BASELINE_ITEM_FORMAT_VERSION,
   );
   const warnings: string[] = [];
   if (scan.outdated.length > 0) {

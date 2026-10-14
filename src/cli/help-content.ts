@@ -1071,6 +1071,12 @@ function configureTieredHelpVisibility(
       return visible.filter((option) => coreOptions.has(option.flags));
     },
   });
+  const continuationOptions = program.options.filter((option) => option.long === "--output-cursor");
+  for (const command of program.commands.flatMap((root) => [root, ...root.commands])) {
+    if (["list", "search", "context"].includes(command.name())) {
+      command.configureHelp({ visibleOptions: (target) => [...baselineHelp.visibleOptions(target), ...continuationOptions] });
+    }
+  }
 }
 
 /** Populate the root core tier while enforcing the public help-size budget. */
