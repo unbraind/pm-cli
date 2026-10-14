@@ -9,7 +9,8 @@ const spawn = vi.hoisted(() => vi.fn());
 const consumer = vi.hoisted(() => vi.fn());
 beforeEach(() => {
   vi.doMock("node:child_process", () => ({ spawnSync: spawn }));
-  vi.doMock("../../../fixtures/extensions/flag-semantics.mjs", () => ({ runExtensionFlagConsumer: consumer }));
+  vi.doMock("../../../fixtures/extensions/flag-semantics.mjs", () => ({ runExtensionFlagConsumer: consumer, EXTENSION_FLAG_REQUIRED_CASE_IDS: ["echo"] }));
+  vi.doMock("../../../fixtures/telemetry/diagnostic-privacy.mjs", () => ({ DIAGNOSTIC_PRIVACY_REQUIRED_CASE_IDS: ["echo"] }));
 });
 const harness = createScriptHarness();
 const script = "scripts/release/extension-flag-acceptance.mjs";
@@ -26,6 +27,7 @@ it("keeps exact-artifact acceptance before publication and preserves the reviewe
   const preservation = steps.find((step) => step.name === "Preserve reviewed package artifact controls")!.run!;
   expect(preservation).toContain('cp scripts/release/extension-flag-acceptance.mjs');
   expect(preservation).toContain('cp tests/fixtures/extensions/flag-semantics.mjs');
+  expect(preservation).toContain('cp tests/fixtures/telemetry/diagnostic-privacy.mjs');
   expect(preservation).toContain('echo "EXTENSION_FLAG_ACCEPTANCE=${RELEASE_CONTROLS}/extension-flag-acceptance.mjs"');
   const retained = steps.findIndex((step) => step.name === "Retain exact-candidate extension acceptance");
   expect(retained).toBeGreaterThan(steps.findIndex((step) => step.name === "Publish to npm"));
@@ -36,19 +38,27 @@ it("requires executed cases, isolates inherited state and binds the exact candid
   const module = await harness.importModule<typeof import("../../../../scripts/release/extension-flag-acceptance.mjs")>(script);
   const root = mkdtempSync(path.join(tmpdir(), "pm-flag-receipt-")); roots.push(root);
   const tarball = path.join(root, "candidate.tgz"); writeFileSync(tarball, "candidate");
-  spawn.mockImplementation((command) => ({ status: 0, stdout: command === "tar" ? "" : JSON.stringify({ ok: true, case_count: 39 }), stderr: "" }));
+  spawn.mockImplementation((command) => ({ status: 0, stdout: command === "tar" ? "" : JSON.stringify({ ok: true, case_count: 1, executed_cases: ["echo"] }), stderr: "" }));
   vi.stubEnv("PM_PATH", path.join(root, "must-not-touch"));
   vi.stubEnv("GIT_DIR", path.join(root, "decoy"));
-  expect(module.verifyExtensionFlagTarball(tarball)).toMatchObject({ ok: true, case_count: 39, artifact_sha256: "dda18a0e21ae47c53b4309434cbc02ae8bf764fa83a6defbb719431242722aa7", evidence_scope: "packed-candidate" });
+  expect(module.verifyExtensionFlagTarball(tarball)).toMatchObject({ ok: true, case_count: 1, executed_cases: ["echo"], artifact_sha256: "dda18a0e21ae47c53b4309434cbc02ae8bf764fa83a6defbb719431242722aa7", evidence_scope: "packed-candidate" });
   const options = spawn.mock.calls[1]![2];
   expect(options.env.GIT_DIR).toBeUndefined();
   expect(options.env.PM_PATH).not.toContain("must-not-touch");
   expect(options.env).toMatchObject({ PM_TELEMETRY_DISABLED: "1", PM_TELEMETRY_OTEL_DISABLED: "1" });
   expect(existsSync(options.cwd)).toBe(false);
-  for (const receipt of [{ ok: false, case_count: 1 }, { ok: true, case_count: 0 }]) {
+  for (const receipt of [{ ok: false, case_count: 1 }, { ok: true, case_count: 0, executed_cases: [] }, { ok: true, case_count: 1 }, { ok: true, case_count: 1, executed_cases: ["unknown"] }, { ok: true, case_count: 1, executed_cases: ["echo", "echo"] }]) {
     spawn.mockReturnValue({ status: 0, stdout: JSON.stringify(receipt), stderr: "" });
-    expect(() => module.verifyInstalledExtensionFlags(root, "other-runtime")).toThrow(/Missing required/);
+    expect(() => module.verifyInstalledExtensionFlags(root, "other-runtime")).toThrow();
   }
+  for (const receipt of [{ ok: false, case_count: 1 }, { ok: true, case_count: 0, executed_cases: [] }, { ok: true, case_count: 1 }, { ok: true, case_count: 1, executed_cases: ["unknown"] }]) {
+    spawn.mockReturnValueOnce({ status: 0, stdout: JSON.stringify({ ok: true, case_count: 1, executed_cases: ["echo"] }), stderr: "" });
+    spawn.mockReturnValueOnce({ status: 0, stdout: JSON.stringify(receipt), stderr: "" });
+    expect(() => module.verifyInstalledExtensionFlags(root)).toThrow();
+  }
+  spawn.mockReturnValueOnce({ status: 0, stdout: JSON.stringify({ ok: true, case_count: 1, executed_cases: ["echo"] }), stderr: "" });
+  spawn.mockReturnValueOnce({ status: 1, stdout: "", stderr: "privacy failed" });
+  expect(() => module.verifyInstalledExtensionFlags(root)).toThrow(/privacy failed/);
   spawn.mockReturnValue({ status: 1, stdout: "", stderr: "unpack failed" });
   expect(() => module.verifyExtensionFlagTarball(tarball)).toThrow(/unpack failed/);
   expect(() => module.verifyInstalledExtensionFlags(root)).toThrow(/unpack failed/);
@@ -65,11 +75,11 @@ it("distinguishes launch and signal failures from product assertions", async () 
 it("dispatches both required modes and guards executable entry", async () => {
   const module = await harness.importModule<typeof import("../../../../scripts/release/extension-flag-acceptance.mjs")>(script);
   const output = vi.spyOn(process.stdout, "write").mockReturnValue(true);
-  consumer.mockResolvedValue({ ok: true, case_count: 39 });
+  consumer.mockResolvedValue({ ok: true, case_count: 1, executed_cases: ["echo"] });
   expect(await module.main(["--consumer", "/installed"])).toMatchObject({ ok: true });
   const root = mkdtempSync(path.join(tmpdir(), "pm-flag-main-")); roots.push(root);
   const tarball = path.join(root, "candidate.tgz"); writeFileSync(tarball, "candidate");
-  spawn.mockImplementation((command) => ({ status: 0, stdout: command === "tar" ? "" : JSON.stringify({ ok: true, case_count: 39 }), stderr: "" }));
+  spawn.mockImplementation((command) => ({ status: 0, stdout: command === "tar" ? "" : JSON.stringify({ ok: true, case_count: 1, executed_cases: ["echo"] }), stderr: "" }));
   process.argv = [process.execPath, path.resolve(script), tarball];
   expect(await module.main()).toMatchObject({ ok: true });
   await module.runIfMain("");

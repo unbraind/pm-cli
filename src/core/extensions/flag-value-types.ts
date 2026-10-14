@@ -39,12 +39,12 @@ export interface ExtensionFlagValueContract {
 
 /** Preserve the historical inferred-value declarations as well as explicit labels and scalar kinds. */
 function hasExtensionFlagValueMetadata(definition: Readonly<FlagDefinition>, inlineName: string | null | undefined, declaredType: string | undefined): boolean {
-  return Boolean(definition.value_name?.trim() || inlineName || declaredType || definition.required === true || definition.list === true);
+  return Boolean(definition.value_name?.trim() || inlineName || declaredType || definition.required === true || definition.list === true || definition.repeatable === true);
 }
 
 /** Prefer the canonical declaration while retaining the legacy alias when it is absent or blank. */
 function declaredExtensionFlagType(definition: Readonly<FlagDefinition>): string | undefined {
-  return definition.value_type?.trim() || definition.type?.trim();
+  return (definition.value_type?.trim() || definition.type?.trim())?.toLowerCase();
 }
 
 /** Preserve legacy bool value tokens and inline optionality before canonicalizing the scalar kind. */
@@ -53,11 +53,12 @@ export function resolveExtensionFlagValueContract(definition: Readonly<FlagDefin
   const valueType = resolveFlagValueKind(declaredType);
   const inline = parseExtensionLongFlagToken(definition.long);
   const declaredName = definition.value_name?.trim() || null;
-  const booleanSwitch = valueType === "boolean" && declaredType?.toLowerCase() !== "bool";
+  const booleanSwitch = valueType === "boolean" && declaredType !== "bool";
   const takesValue = !booleanSwitch && hasExtensionFlagValueMetadata(definition, inline?.valueName, declaredType);
+  const optionalValue = inline?.valueName ? inline.optional : declaredType === "bool";
   return {
     value_type: valueType,
-    value_arity: takesValue ? inline?.optional ? "optional" : "required" : "none",
+    value_arity: takesValue ? optionalValue ? "optional" : "required" : "none",
     value_name: takesValue ? declaredName ?? inline?.valueName ?? "value" : null,
   };
 }

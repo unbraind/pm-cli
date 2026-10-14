@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: "area:docs",code-quality,docstrings,maintainability,token-efficiency
 created_at: "2026-07-19T04:07:16.881Z"
-updated_at: "2026-10-14T16:10:00.873Z"
+updated_at: "2026-10-14T18:59:36.523Z"
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: "Census script or lint rule flags the known filler templates (Implements X for the public runtime surface of this module; Value that configures or reports X for this contract; Provides CLI runtime support for X; payload exchanged by command, SDK, and package integrations) and the count is ratcheted down, not up; Touched-file burn-down policy documented so gate-mandated docstrings added going forward must carry real information (what the value means, units, invariants) or use @inheritDoc/type-level docs; Static-gate docstring coverage stays at 100 percent throughout - the fix is content quality, never coverage relaxation"
@@ -14,7 +14,7 @@ parent: pm-n7rr
 risk: low
 confidence: 70
 expected_result: Filler docstrings are replaced with informative documentation and a ratcheted census keeps the filler count falling.
-dependencies[7]:
+dependencies[8]:
   - id: pm-92if
     kind: related
     created_at: "2026-07-19T04:07:16.881Z"
@@ -45,6 +45,12 @@ dependencies[7]:
   - id: pm-2sef82
     kind: discovered_from
     created_at: "2026-10-03T22:51:54.274Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-e96opw
+    kind: related
+    created_at: "2026-10-14T18:59:36.043Z"
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
@@ -115,7 +121,8 @@ comments[22]:
     text: "Current release-ledger SDK delivery preserves all source, export and member documentation presence gates. The supported AST census scans 776 maintained files and records 4115 legacy filler comments across 202 files. New artifact-ledger types, fields and reconciliation helpers describe completeness, exact identities, historical settlement and input preservation. The broader semantic replacement debt stays open and unclaimed; no filler baseline or documentation requirement was relaxed."
   - created_at: "2026-10-14T16:10:00.873Z"
     author: "harness:codex"
-    text: "Report intake: https://github.com/unbraind/pm-cli/issues/1471. Reviewed staged policy evolution: preserve100% presence and filler no-growth during dual-run; replace only migrated scopes after independent obligation checks and complete population diffs. No broad deletion or floor reduction authorized. Full issue and existing canonical item read; no competing owner created. Planning remains open/unclaimed while active implementation is restricted to pm-gh1466 and pm-gh1467."
+    text: "Report intake: https://github.com/unbraind/pm-cli/issues/1471. Reviewed staged policy evolution: preserve100% presence and filler no-growth during dual-run; replace only migrated scopes after independent obligation checks and complete population diffs. No broad deletion or floor reduction authorized. Full issue and existing canonical item read; no competing owner created. Planning remains open/unclaimed."
+    edited_at: "2026-10-14T18:59:28.898Z"
 files[10]{path,scope,note}:
   packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,Semantic contracts for every named callable in the reviewed module
   scripts/release/docstring-quality-baseline.json,project,File-level filler debt cannot grow or retain stale headroom

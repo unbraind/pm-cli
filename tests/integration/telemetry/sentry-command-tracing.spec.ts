@@ -9,11 +9,18 @@ import { promisify } from "node:util";
 import { gunzipSync } from "node:zlib";
 import { expect, it } from "vitest";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
+import { runDiagnosticPrivacyConsumer } from "../../fixtures/telemetry/diagnostic-privacy.mjs";
 
 const execute = promisify(execFile);
 const cli = fileURLToPath(new URL("../../../dist/cli.js", import.meta.url));
 const sdk = new URL("../../../dist/sdk/index.js", import.meta.url).href;
 const embeddedCli = new URL("../../../dist/cli/public.js", import.meta.url).href;
+
+it("redacts quoted diagnostic keys through the public SDK and real loopback serialization", async () => {
+  const receipt = await runDiagnosticPrivacyConsumer(fileURLToPath(new URL("../../../", import.meta.url)));
+  expect(receipt.ok).toBe(true);
+  expect(receipt.case_count).toBe(33);
+}, 30_000);
 
 it.each([
   ["default", {}, true, false, false, false],

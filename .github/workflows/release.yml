@@ -124,6 +124,8 @@ jobs:
           cp tests/fixtures/compatibility/sdk-reader.mjs "${COMPATIBILITY_FIXTURES}/sdk-reader.mjs"
           mkdir -p "${RELEASE_CONTROLS}/../../tests/fixtures/extensions"
           cp tests/fixtures/extensions/flag-semantics.mjs "${RELEASE_CONTROLS}/../../tests/fixtures/extensions/flag-semantics.mjs"
+          mkdir -p "${RELEASE_CONTROLS}/../../tests/fixtures/telemetry"
+          cp tests/fixtures/telemetry/diagnostic-privacy.mjs "${RELEASE_CONTROLS}/../../tests/fixtures/telemetry/diagnostic-privacy.mjs"
           {
             echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs"
             echo "PACKAGE_DISTRIBUTION=${RELEASE_CONTROLS}/package-distribution.mjs"

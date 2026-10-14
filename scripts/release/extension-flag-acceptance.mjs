@@ -1,4 +1,4 @@
-/** Required exact-candidate extension grammar acceptance. Trackers: pm-gh1466, pm-gh1467. */
+/** Required exact-candidate SDK grammar and diagnostic acceptance. Trackers: pm-gh1466, pm-gh1467, pm-geywoc. */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -6,7 +6,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { runExtensionFlagConsumer } from "../../tests/fixtures/extensions/flag-semantics.mjs";
+import { EXTENSION_FLAG_REQUIRED_CASE_IDS, runExtensionFlagConsumer } from "../../tests/fixtures/extensions/flag-semantics.mjs";
+import { DIAGNOSTIC_PRIVACY_REQUIRED_CASE_IDS } from "../../tests/fixtures/telemetry/diagnostic-privacy.mjs";
 
 /** Run a bounded subprocess, refusing launch failures separately from product verdicts. */
 export function execute(command, args, options) {
@@ -26,8 +27,16 @@ export function verifyInstalledExtensionFlags(root, runtime = process.execPath) 
     const result = execute(runtime, [fileURLToPath(import.meta.url), "--consumer", path.resolve(root)], { cwd: workspace, env });
     assert.equal(result.status, 0, result.stderr);
     const receipt = JSON.parse(result.stdout);
-    assert(receipt.ok === true && receipt.case_count > 0, "Missing required extension acceptance results");
-    return receipt;
+    assert(receipt.ok === true && Array.isArray(receipt.executed_cases) && receipt.case_count === EXTENSION_FLAG_REQUIRED_CASE_IDS.length,
+      "Missing required extension acceptance results");
+    assert.deepEqual([...receipt.executed_cases].sort(), [...EXTENSION_FLAG_REQUIRED_CASE_IDS].sort(), "Required extension case inventory mismatch");
+    const privacyResult = execute(runtime, [fileURLToPath(new URL("../../tests/fixtures/telemetry/diagnostic-privacy.mjs", import.meta.url)), path.resolve(root)], { cwd: workspace, env });
+    assert.equal(privacyResult.status, 0, privacyResult.stderr);
+    const privacy = JSON.parse(privacyResult.stdout);
+    assert(privacy.ok === true && Array.isArray(privacy.executed_cases) && privacy.case_count === DIAGNOSTIC_PRIVACY_REQUIRED_CASE_IDS.length,
+      "Missing required diagnostic acceptance results");
+    assert.deepEqual([...privacy.executed_cases].sort(), [...DIAGNOSTIC_PRIVACY_REQUIRED_CASE_IDS].sort(), "Required diagnostic case inventory mismatch");
+    return { ...receipt, diagnostic_privacy: privacy };
   } finally { rmSync(workspace, { recursive: true, force: true }); }
 }
 

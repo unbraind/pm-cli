@@ -1245,8 +1245,11 @@ function toExtensionFlagContract(
   }
   const value = resolveExtensionFlagValueContract(definition);
   contract.value_arity = value.value_arity;
-  if (value.value_name) contract.value_name = value.value_name;
-  const rawValueType = value.value_type ?? (value.value_name ? "string" : "boolean");
+  // Explicit legacy labels remain discoverable even for a switch; value_arity
+  // determines whether the label represents an actual consumed argv token.
+  const valueName = toOptionalTrimmedString(definition.value_name) ?? value.value_name;
+  if (valueName) contract.value_name = valueName;
+  const rawValueType = value.value_type ?? (value.value_name ? "string" : null);
   if (rawValueType) {
     contract.value_type = rawValueType;
   }

@@ -13,7 +13,7 @@ it("preserves extension value grammar through help, SDK contracts and exact hand
     }
     const contracts = { command_flags: surfaces.flatMap((surface) => surface.command_flags ?? []) };
     const report = verifyExtensionFlagFixture(context.runCli, contracts, verifyCliFlagInvocationParity);
-    expect(report).toMatchObject({ ok: true, case_count: 37 });
+    expect(report).toMatchObject({ ok: true, case_count: 39 });
     await verifySdkExtensionFlagFixture(new PmClient({ pmRoot: context.pmPath }));
     const lostArity = structuredClone(contracts);
     const optional = lostArity.command_flags[0]!.flag_invocations!.find((row) => row.flag === "--maybe")!;

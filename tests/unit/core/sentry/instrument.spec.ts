@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DIAGNOSTIC_PRIVACY_CASES } from "../../../fixtures/telemetry/diagnostic-privacy.mjs";
 
 // Covers the residual branches in src/core/sentry/instrument.ts that the broad
 // sentry-helpers suite leaves uncovered:
@@ -196,6 +197,11 @@ describe("instrument residual branches", () => {
     ["single", "token='<private value with spaces>' outcome=ok", "token=[scrubbed] outcome=ok"],
     ["double", 'token="<private value with spaces>" outcome=ok', "token=[scrubbed] outcome=ok"],
     ["escaped", String.raw`token="<private \"quote\" value>" outcome=ok`, "token=[scrubbed] outcome=ok"],
+    ["escaped trailing slash", String.raw`token="<private value>\\" outcome=ok`, "token=[scrubbed] outcome=ok"],
+    ["unicode-looking scalar", "token=u0022<private-value> outcome=ok", "token=[scrubbed] outcome=ok"],
+    ["quoted unicode-looking scalar", 'token="u0022 <private value>" outcome=ok', "token=[scrubbed] outcome=ok"],
+    ["unicode-looking container", 'token=[u0022, "<private value>"] outcome=ok', "token=[scrubbed] outcome=ok"],
+    ["encoded container suffix", String.raw`token=\u007b"label":"<private value>"\u007d outcome=ok`, "token=[scrubbed] outcome=ok"],
     ["nested", "token='<private password=value with spaces>' outcome=ok", "token=[scrubbed] outcome=ok"],
     ["incomplete", 'token="<private value with spaces>', "token=[scrubbed]"],
     ["access token", "access_token=<private-value> outcome=ok", "access_token=[scrubbed] outcome=ok"],
@@ -211,6 +217,36 @@ describe("instrument residual branches", () => {
       name: expected, attributes: { detail: expected }, links: [{ attributes: { detail: expected } }],
     });
     expect(options.beforeSendLog({ message: value, attributes: { detail: value } })).toEqual({ message: expected, attributes: { detail: expected } });
+  });
+
+  it.each(DIAGNOSTIC_PRIVACY_CASES)("redacts quoted-key diagnostic case $id at every active export hook", async ({ input, safe }) => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      beforeSend: (event: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendSpan: (span: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendLog: (log: Record<string, unknown>) => Record<string, unknown>;
+    }>();
+    const logs = [{ body: input, attributes: { detail: { type: "string", value: input }, counter: { type: "integer", value: 7 }, enabled: { type: "boolean", value: false } } }];
+    const envelopeHook = sentryNodeMock.on.mock.calls[0]![1] as (envelope: unknown) => void;
+    envelopeHook([{}, [[{ type: "log" }, { items: logs }]]]);
+    const outputs = [
+      options.beforeSend({ message: input, extra: { detail: input }, breadcrumbs: [{ message: input }] }),
+      options.beforeSendSpan({ name: input, attributes: { detail: input }, links: [{ attributes: { detail: input } }] }),
+      options.beforeSendLog({ message: input, attributes: { detail: input } }),
+      logs[0],
+    ];
+    if (safe) {
+      expect(outputs[0]!.message).toBe(input);
+      expect(outputs[1]!.name).toBe(input);
+      expect(outputs[2]!.message).toBe(input);
+      expect(logs[0]!.body).toBe(input);
+    } else for (const output of outputs) {
+      expect(JSON.stringify(output)).not.toContain("<synthetic-quoted-private-marker>");
+      expect(JSON.stringify(output)).not.toContain("private tail");
+      expect(JSON.stringify(output)).toContain("[scrubbed]");
+    }
+    expect(logs[0]!.attributes.counter).toEqual({ type: "integer", value: 7 });
+    expect(logs[0]!.attributes.enabled).toEqual({ type: "boolean", value: false });
   });
 
   it.each([

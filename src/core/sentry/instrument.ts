@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
 import { resolveTelemetryEnvironmentPolicy } from "../telemetry/policy.js";
+import { scrubInlineSensitiveAssignments, SENSITIVE_KEY_PATTERN } from "./sensitive-assignments.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
 
@@ -26,13 +27,6 @@ function isSentryDisabled(): boolean {
   return false;
 }
 
-const SENSITIVE_KEY_PATTERN =
-  /(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|credentials|bearer|dsn)/i;
-
-const INLINE_SENSITIVE_ASSIGNMENT_RE = new RegExp(
-  `(?:\\b|(?<=_))(${SENSITIVE_KEY_PATTERN.source})\\s*[:=]\\s*([^\\s,;]+)`,
-  "giu",
-);
 const ABSOLUTE_PATH_TOKEN_RE = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
 const FILE_URL_PATH_RE = /file:\/\/\/?[^\s"'`),;]+/giu;
 const WINDOWS_PATH_TOKEN_RE = /\b[A-Za-z]:\\[^\s"'`),;]+/g;
@@ -79,35 +73,6 @@ function looksLikeFilesystemPath(value: string): boolean {
     return true;
   }
   return normalized.includes("/home/");
-}
-
-/** Consume a quoted assignment through its delimiter, escapes, or incomplete end. */
-function sensitiveAssignmentEnd(value: string, start: number, unquotedEnd: number): number {
-  const quote = value[start];
-  if (quote !== '"' && quote !== "'") return unquotedEnd;
-  for (let index = start + 1; index < value.length; index++) {
-    if (value[index] === "\\") {
-      index++;
-      continue;
-    }
-    if (value[index] === quote) return index + 1;
-  }
-  return value.length;
-}
-
-/** Replace sensitive assignments without retaining quoted suffixes or nested matches. */
-function scrubInlineSensitiveAssignments(value: string): string {
-  const chunks: string[] = [];
-  let consumed = 0;
-  for (const match of value.matchAll(INLINE_SENSITIVE_ASSIGNMENT_RE)) {
-    if (match.index < consumed) continue;
-    const unquotedEnd = match.index + match[0].length;
-    const start = unquotedEnd - match[2]!.length;
-    chunks.push(value.slice(consumed, match.index), `${match[1]}=[scrubbed]`);
-    consumed = sensitiveAssignmentEnd(value, start, unquotedEnd);
-  }
-  chunks.push(value.slice(consumed));
-  return chunks.join("");
 }
 
 function scrubString(value: string, keyHint?: string): string {

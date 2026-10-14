@@ -2,36 +2,92 @@ id: pm-gh1467
 title: "GH-1467: Preserve optional extension value arity in machine contracts"
 description: Investigate reported mismatch where optional extension labels are optional in help and dispatch but required in machine invocation contracts.
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-14T07:54:47.624Z"
-updated_at: "2026-10-14T16:31:22.218Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#176e34d9400da8196c72660d"
+updated_at: "2026-10-14T20:37:13.439Z"
+closed_at: "2026-10-14T19:13:40.204Z"
+completed_at: "2026-10-14T19:13:40.204Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce published and exact-source contract/help/dispatch parity; Carry optional arity through the canonical SDK declaration; Use the existing invocation parity verifier with real Commander observations; Cover optional/required/boolean/alias/repeated values without a second name registry
 parent: pm-ugqx
 risk: low
 confidence: medium
-expected_result: "One canonical extension declaration accurately drives optional value arity in help, contracts and dispatch."
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Publish explicit SDK value_arity and derive Commander, help, recovery and machine invocation contracts from one declaration; require complete installed/exact-tarball case inventories before publication"
+expected_result: "Optional value consumption stays optional independently of required flag presence; CLI, SDK and machine contracts agree without a second optional-name registry"
+actual_result: "Published2026.10.14 independently reproduces the optional-value contract mismatch. Both linked source runs and Node/Bun40-case extension acceptance pass; exact-candidate wiring refuses missing/failed cases and preserves reviewed controls during tag recovery. Typecheck, graph, integrity, mutation and SDK surface/import checks pass. Complete local static stops only at qualified startup budgets; final hosted static, whole coverage and revised review are required before merge. Package version14 is a baseline, not a claim that the candidate is published."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1461,related,"2026-10-14T07:54:47.624Z","harness:codex","cli:create:dep",detected
   pm-gh1466,related,"2026-10-14T07:54:47.624Z","harness:codex","cli:create:dep",detected
   pm-11phn1,related,"2026-10-14T07:56:04.446Z","harness:codex","cli:update:dep",detected
   pm-9qcr,related,"2026-10-14T07:56:04.446Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
-  "2026-10-14T07:54:47.624Z","harness:codex","Duplicate check: complete all-status corpus, fresh flag searches and open/in-progress reads; full closed normalization owner metadata/history read. GH1467 identifies a residual pre-existing mismatch, not a new14 regression, with published14 acceptance still pending. No exact existing owner found. Keep related completed work completed and this new scope open/unclaimed."
-  "2026-10-14T16:06:32.149Z","harness:codex","Implementation scope: retain optional value arity before normalization and carry it through SDK contracts, Commander, JSON help and recovery, without a second flag-name registry. Incorporate issue clarification comments through2026-10-14T09:58Z. Use the existing public parity verifier with actual extension observations plus independent exact dispatch expectations; bind recurring required pre-publication acceptance to candidate tarball digest. Pair with pm-gh1466; only these edited work items are in_progress."
-  "2026-10-14T16:20:26.157Z","harness:codex","Verified official public2026.10.14 tarball against registry SHA512 integrity; unchanged semantic echo fixture reproduces false-to-true with leftover positional false. Candidate source integration now passes37 declared cases across nested/flattened commands: exact boolean values, optional/required arity, list ordering, short forms, remaining operands, required-flag presence and safe refusals. Independent seeded lost-optionality and false-to-true controls are required to fail for their named semantic assertions. Full coverage, complete static and npm/Bun/npx/bunx packed acceptance are running; none is claimed passed yet."
-  "2026-10-14T16:21:41.039Z","harness:codex","Operational intake complete: all24 currently open GitHub issues now have canonical PM-link comments; reports1469-1472 are recorded under their proper owners without reopening delivered work or claiming planning containers. Both GitHub and local pnpm audit currently report zero known vulnerabilities. New registry updates are within the explicit seven-day cooldown; older incompatible major migrations remain with their existing PM owners. Latest pm-changelog2026.10.13 installed through the package-owned path, with no generator edits in this repo. No agent-browser skill found in the enabled host skill/plugin directories."
-  "2026-10-14T16:23:20.870Z","harness:codex","The independently verified public2026.10.14 SDK also reproduces the second failure: --maybe [label] reports help takes_value=true/value_required=false while public SDK machine contracts report value_required=true. Both original bug signatures are now confirmed on an integrity-verified published artifact, not source reconstruction. Source and candidate acceptance are separate from the next future daily release. The new malformed-scalar validation enhancement is recorded as pm-extension-scalar-validation and remains open/unclaimed."
-  "2026-10-14T16:27:14.778Z","harness:codex","Candidate acceptance now also invokes the public PmClient.run extension action directly, with an independent literal expectation for explicit false values, optional presence, ordered list values and remaining operands. The packed receipt includes runtime name/version/platform/architecture, actual export resolution, the whole semantic fixture digest, the runner digest and exact candidate tarball SHA256. The SDK surface snapshot explicitly records the additive optional CliFlagContract.value_arity field and the shared helper exports; legacy core inference remains available when the field is absent."
-  "2026-10-14T16:31:22.217Z","harness:codex","Chrome Computer Use also confirms the latest reviewed DeepScan branch inventory:0 open/confirmed findings,120 fixed, Issue-free, and0 new findings for prior PR1468. These are existing branch observations; the new PR will require its own exact-head analyzers and reviews. No hosted status was copied or manufactured. The baseline optionality probe and all source/packed receipts retain separate evidence scopes."
+  pm-bj7rq0,related,"2026-10-14T18:50:33.160Z","harness:codex","cli:update:dep",detected
+  pm-extension-scalar-validation,related,"2026-10-14T18:59:34.334Z","harness:codex","cli:update:dep",detected
+comments[19]:
+  - created_at: "2026-10-14T07:54:47.624Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete all-status corpus, fresh flag searches and open/in-progress reads; full closed normalization owner metadata/history read. GH1467 identifies a residual pre-existing mismatch, not a new14 regression, with published14 acceptance still pending. No exact existing owner found. Keep related completed work completed and this new scope open/unclaimed."
+  - created_at: "2026-10-14T16:06:32.149Z"
+    author: "harness:codex"
+    text: "Implementation scope: retain optional value arity before normalization and carry it through SDK contracts, Commander, JSON help and recovery, without a second flag-name registry. Incorporate issue clarification comments through2026-10-14T09:58Z. Use the existing public parity verifier with actual extension observations plus independent exact dispatch expectations; bind recurring required pre-publication acceptance to candidate tarball digest. Pair with pm-gh1466; only these edited work items are in_progress."
+  - created_at: "2026-10-14T16:20:26.157Z"
+    author: "harness:codex"
+    text: "Verified official public2026.10.14 tarball against registry SHA512 integrity; unchanged semantic echo fixture reproduces false-to-true with leftover positional false. Candidate source integration now passes37 declared cases across nested/flattened commands: exact boolean values, optional/required arity, list ordering, short forms, remaining operands, required-flag presence and safe refusals. Independent seeded lost-optionality and false-to-true controls are required to fail for their named semantic assertions. Full coverage, complete static and npm/Bun/npx/bunx packed acceptance are running; none is claimed passed yet."
+  - created_at: "2026-10-14T16:21:41.039Z"
+    author: "harness:codex"
+    text: "Operational intake complete: all24 currently open GitHub issues now have canonical PM-link comments; reports1469-1472 are recorded under their proper owners without reopening delivered work or claiming planning containers. Both GitHub and local pnpm audit currently report zero known vulnerabilities. New registry updates are within the explicit seven-day cooldown; older incompatible major migrations remain with their existing PM owners. Latest pm-changelog2026.10.13 installed through the package-owned path, with no generator edits in this repo. No agent-browser skill found in the enabled host skill/plugin directories."
+  - created_at: "2026-10-14T16:23:20.870Z"
+    author: "harness:codex"
+    text: "The independently verified public2026.10.14 SDK also reproduces the second failure: --maybe [label] reports help takes_value=true/value_required=false while public SDK machine contracts report value_required=true. Both original bug signatures are now confirmed on an integrity-verified published artifact, not source reconstruction. Source and candidate acceptance are separate from the next future daily release. The new malformed-scalar validation enhancement is recorded as pm-extension-scalar-validation and remains open/unclaimed."
+  - created_at: "2026-10-14T16:27:14.778Z"
+    author: "harness:codex"
+    text: "Candidate acceptance now also invokes the public PmClient.run extension action directly, with an independent literal expectation for explicit false values, optional presence, ordered list values and remaining operands. The packed receipt includes runtime name/version/platform/architecture, actual export resolution, the whole semantic fixture digest, the runner digest and exact candidate tarball SHA256. The SDK surface snapshot explicitly records the additive optional CliFlagContract.value_arity field and the shared helper exports; legacy core inference remains available when the field is absent."
+  - created_at: "2026-10-14T16:31:22.217Z"
+    author: "harness:codex"
+    text: "Chrome Computer Use also confirms the latest reviewed DeepScan branch inventory:0 open/confirmed findings,120 fixed, Issue-free, and0 new findings for prior PR1468. These are existing branch observations; the new PR will require its own exact-head analyzers and reviews. No hosted status was copied or manufactured. The baseline optionality probe and all source/packed receipts retain separate evidence scopes."
+  - created_at: "2026-10-14T16:38:22.083Z"
+    author: "harness:codex"
+    text: "Retained complete first validation receipt:10422 tests passed,5 failed,3 skipped; no coverage certification emitted. Three old contract expectations need explicit arity metadata and legacy bool grammar updates; the publication workflow fixture lacked the new mandatory acceptance environment, and an existing packed continuation test could not discover npm/package.json from this mixed-prefix host. No timeout was hit in that continuation test. Correcting test expectations and adding executed failed/missing-acceptance publication controls. The installed npm package will be exposed only through this validation process NODE_PATH; all source membership, deadlines and exact coverage thresholds remain unchanged. Concurrent packed smoke waited for the build lease and reached its existing600-second deadline; it will run sequentially after the complete test/static lease holders."
+  - created_at: "2026-10-14T16:47:23.847Z"
+    author: "harness:codex"
+    text: "Real-time telemetry acceptance is now installation-scoped and finite: the closed16:05-16:33UTC cohort has70 command_start and70 command_finish events, with0 unpaired sessions; the private installation identity and SQL are not stored in PM. Prometheus reports all6 stack targets up (telemetry API, RabbitMQ, Alloy, Tempo, Loki, Prometheus). The physical queue separately drained to0. Fresh hosted Sentry trace queries still return no rows after an explicit successful-command trace probe; The existing hosted trace acceptance task retains that unproven operational acceptance. Global threshold/aggregate metrics are not claimed as per-action Sentry trace evidence."
+    edited_at: "2026-10-14T18:59:19.356Z"
+  - created_at: "2026-10-14T16:57:52.968Z"
+    author: "harness:codex"
+    text: "Tracker context assurance now passes all47 assertions after completing required metadata on the two newly queued items and recording honest provenance/occupancy relationships. No bound, scope, exclusion or waiver changed. The finite real telemetry cohort has70 starts/70 finishes with0 unpaired sessions, and all6 Prometheus stack targets are up. This ordinary audited mutation also provides an explicit successful-command tracing probe; hosted trace visibility will be checked separately without fabricating an error event."
+  - created_at: "2026-10-14T17:00:58.778Z"
+    author: "harness:codex"
+    text: "The bounded candidate runner now checks the exact required case identity inventory, not merely a positive count: missing, duplicate, unexpected and zero-case receipts fail. The independent oracle declares39 CLI/help/contract cases plus1 direct public SDK dispatch case. The broader prospective execution-proof migration remains with pm-gh1469; this change protects the demonstrated extension population without introducing a parallel general receipt system."
+  - created_at: "2026-10-14T17:14:09.789Z"
+    author: "harness:codex"
+    text: "Fresh rebuilt acceptance passes121 focused tests plus complete packed npm/npx/Bun/bunx smoke with9 package workflows. CodeRabbit bare-bool compatibility feedback is implemented with39 source oracle cases and40 required packed CLI/SDK case identities, including explicit false/0, bare presence, required inline operands, optional labels, meaningful positionals, repeat ordering and refusal controls. The runner independently rejects missing/duplicate/unexpected case identities. Initial PR checks are retained as failed prior-head evidence; their failure set is being cross-checked before the revised push. Final full coverage and static proof remain pending, so no terminal or all-green claim is made yet."
+  - created_at: "2026-10-14T17:16:10.673Z"
+    author: "harness:codex"
+    text: "Initial hosted failure classification: compat refused on npm ENETUNREACH, rather than accepting missing published evidence. Coverage shards reproduce the corrected contract/publication expectations; Windows also exposes several unchanged30/60-second timing/control limits. Bound only the existing Windows keeper concurrency to2 workers, leaving all tests, job limits, assertions and required checks intact. Require fresh native exact-head proof. The artifact gate and network admission remain fail-closed."
+  - created_at: "2026-10-14T17:21:52.527Z"
+    author: "harness:codex"
+    text: "The prior broad receipt has10426 passing tests and one expected stale-build/raw-repeatable declaration mismatch: its build preceded the newly added direct SDK repeatable-alias case. The shared helper now handles raw repeatable metadata consistently with registration normalization. No source edits will occur during the new fresh-build complete run. Coverage report-on-failure is enabled only to retain diagnostic integer counts; test failures still refuse the combined gate, with all original100-percent thresholds and source membership unchanged."
+  - created_at: "2026-10-14T17:38:34.487Z"
+    author: "harness:codex"
+    text: "Frozen full coverage execution completed: 10,426 tests passed, 3 skipped, and one workflow-contract assertion failed because it still expected the pre-concurrency-limit Windows command. Exact coverage independently passed with zero uncovered counts: statements 68,682/68,682, branches 52,621/52,621, functions 14,148/14,148, lines 65,234/65,234. All five retained implementation/fixture digests matched the frozen source. Updated only the stale command assertion, retaining the complete pinned keeper list; focused workflow verification and complete static gate are now running. This is not yet a combined green verdict."
+  - created_at: "2026-10-14T17:49:30.890Z"
+    author: "harness:codex"
+    text: "Complete static rerun passed dependency audit, documentation, exports, ESLint, duplication, workflow permissions, cooldown, generated surfaces, repository assurance, package boundary, invocation parity, tracker quality (47 assertions), gate registry and SDK import budgets. It stopped at the unchanged CLI transport-floor claim budget: best446ms versus415ms; runner control qualified. This is a failed product admission, not a passing or infrastructure-only verdict. No bounds are changed. A newly arrived diagnostic privacy report is now being remediated through its canonical owner; final integrated static/coverage runs will follow that source change."
+  - created_at: "2026-10-14T19:11:42.911Z"
+    author: "harness:codex"
+    text: "Final candidate verification:146 focused privacy/export checks pass;81 registered-hook tests give exact helper coverage104/104 statements,62/62 branches,10/10 functions,88/88 lines. Packed npm/npx/Bun/bunx9-workflow acceptance passes40 extension and33 diagnostic cases on Node/Bun. Typecheck, graph composition at the unchanged prose bound, record integrity and registered mutation controls pass. Native linked tests are now recorded successful for every selected item, with required case metrics40/40/33; inherited privacy links were reviewed and clone-locally acknowledged without changing trust policy. Complete local static passes all gates through10 SDK import budgets but fails qualified CLI startup ceilings; the existing startup diagnosis retains that failure, and full exact-head hosted static/coverage/review are mandatory before merge. Public2026.10.14 remains the integrity-verified failing baseline; no second same-day release is created."
+  - created_at: "2026-10-14T19:47:19.438Z"
+    author: "harness:codex"
+    text: "Frozen final source passed the complete whole-repository coverage gate: statements68767/68767, branches52676/52676, functions14156/14156, lines65307/65307. Zero uncovered counts and unchanged100/100/100/100 floors. The upstream changelog correction is committed in unbraind/pm-changelog PR243 with608 passing tests and complete exact coverage; published-generator consumption and exact-head hosted admission remain separate required delivery steps."
+  - created_at: "2026-10-14T20:37:13.439Z"
+    author: "harness:codex"
+    text: "Upstream pm-changelog PR243 is merged and public2026.10.14 published via successful official release run38629635421, including npm/Bun acceptance. Native pnpm changelog:pm and changelog:pm:check install and activate that latest package successfully and regenerate2669 entries; old shipped pm-geywoc prose remains in2026.10.14 while its current privacy recurrence appears under Unreleased. Historical occurrence restorations are generated from immutable tags, not edited by hand. Final whole coverage10466 passes with3 existing skips and exact100/100/100/100; packed9 workflows pass; graph composition passes all9 assertions. Local qualified transport floor remains an explicitly retained failure requiring exact-head hosted static admission."
 learnings[1]{created_at,author,text}:
   "2026-10-14T16:23:18.005Z","harness:codex","Scalar coercion and argv value arity are distinct contracts. Preserve the original extension declaration before canonicalizing aliases, and assert literal handler options/remaining arguments independently of help-contract agreement. A packed-candidate digest cannot establish a published-installed fix."
-files[17]{path,scope,note}:
+files[25]{path,scope,note}:
+  .github/workflows/ci.yml,project,Bound native Windows keeper concurrency without changing corpus or deadlines
   .github/workflows/release.yml,project,Shared extension flag grammar and recurring exact-candidate acceptance
   scripts/release/extension-flag-acceptance.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
   scripts/release/flag-invocation-parity.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
@@ -46,14 +102,37 @@ files[17]{path,scope,note}:
   src/sdk/flag-invocation-contracts.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
   src/sdk/runtime-primitives.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
   tests/fixtures/extensions/flag-semantics.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  tests/integration/ci-workflow-contract.spec.ts,project,Retain exact native Windows keeper inventory with bounded concurrency
   tests/integration/extensions/flag-semantics.integration.spec.ts,project,Independent CLI and SDK behavior oracle
+  tests/integration/release-automation-contract.spec.ts,project,Executed failed and missing candidate acceptance blocks publication
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Explicit arity contract expectations
   tests/unit/extensions/flag-value-contract.spec.ts,project,Public semantic declaration contract
+  tests/unit/scripts/flag-invocation-parity.spec.ts,project,Connected shared flag grammar and required consumer acceptance verification
   tests/unit/scripts/release/extension-flag-acceptance.spec.ts,project,Required result and workflow wiring controls
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,Connected shared flag grammar and required consumer acceptance verification
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Preserved label metadata and corrected bool grammar
+  tests/unit/sdk/flag-invocation-contracts.spec.ts,project,Connected shared flag grammar and required consumer acceptance verification
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/flag-value-contract.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts tests/unit/scripts/flag-invocation-parity.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,240,"harness:codex","2026-10-14T16:20:23.238Z",local_mutation,fix/extension-flag-semantics,"Independent echo oracle, lost-optionality and false-to-true fault controls, public SDK grammar and required runner refusal"
-docs[2]{path,scope,note}:
+test_runs[1]:
+  - run_id: test-local-mv8h8qr4-h4h4sc
+    kind: test
+    status: passed
+    started_at: "2026-10-14T19:02:14.985Z"
+    finished_at: "2026-10-14T19:02:33.328Z"
+    recorded_at: "2026-10-14T19:02:33.328Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[1]{name,value,unit,threshold,recorded_at}:
+      required_extension_cases,40,count,40,"2026-10-14T19:02:33.328Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/flag-value-contract.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts tests/unit/scripts/flag-invocation-parity.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,Latest package-owned changelog generation for the reviewed connected delivery
   docs/EXTENSION_AUTHOR_CONTRACTS.md,project,Explicit value arity and legacy bool compatibility
   docs/RELEASING.md,project,Required exact-tarball acceptance and evidence scope
+close_reason: Verified canonical extension value arity and required exact-candidate gates in PR1473
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
@@ -61,5 +140,5 @@ gate_evidence:
   owner: pm-gh1467
   negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts
   local_checks[2]: node scripts/release/flag-invocation-parity.mjs,"pnpm smoke:npx"
-  hosted_checks[2]: CI / Static quality,"Release / Publish to npm: exact-candidate extension acceptance"
+  hosted_checks[3]: Gates (static),Gates (smokes),"Release: exact candidate acceptance before npm publish"
 body: "Source: https://github.com/unbraind/pm-cli/issues/1467\n\n## Summary and scope\nA pre-existing discovery-contract gap remains in exact v2026.10.14 source `2024387a346bb88e0590e07cb3262e03307b997b`: optional extension flag values are correctly described by JSON help, but `contracts.command_flags[].flag_invocations` marks them required. This is not a newly introduced 10.14 regression.\n\n**The new result is an exact-source integration probe, not published-10.14 artifact acceptance.** Official npm retrieval was unavailable. Actual installed 10.13 supplies the runtime control; no mutating action ran.\n\n## Minimal case\nRegister a harmless command with `flags: [{ long: \"--maybe [label]\" }]` and an echo handler returning context.options/context.args.\n\n- New JSON-help summary: `long:\"--maybe\", takes_value:true, value_required:false, value_name:\"label\"`.\n- New `runContracts({command:\"contract probe\",flagsOnly:true}, ...)` result: `flag_invocations` says **`value_required:true`** for `--maybe`.\n- Bare `--maybe` is accepted and produces `maybe:true`; `--maybe label` produces the string. Verified on actual 10.13 and both old/new source compositions.\n- Old contracts already said required and embedded the placeholder in the flag identity. 10.14 repairs that identity but still loses optional arity.\n\n## Evidence\n- [toExtensionFlagContract](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/sdk/cli-contracts/runtime-contracts.ts#L1219-L1259) carries the parsed canonical name/value name but omits the extension declaration's optionality.\n- [Invocation enrichment](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/sdk/flag-invocation-contracts.ts#L714-L752) derives optionality from built-in name sets rather than that declaration.\n- The public SDK `verifyCliFlagInvocationParity` reports one `value_required_mismatch` across a five-flag fixture. Correcting only this field in an in-memory control makes parity pass.\n- The #1461 source integration case checks structured help, but does not compare this machine-contract projection.\n\nThe harness uses exact selected source modules with Node TypeScript erasure, real Commander, the full source invocation/contracts functions and existing 10.13 runtime dependencies. Source transformations are confined to isolated test modules. Baseline files remain byte-identical to their retained verified artifact, with isolated HOME/PM path, telemetry disabled and network denied.\n\n## Acceptance proposal\nCarry arity from the shared canonical extension declaration into machine contracts. Reuse the existing parity verifier against actual extension observations instead of adding a second optional-flag name list. Cover bare optional values, supplied values, required values, boolean switches, aliases and repeated values through help, contracts and dispatch. Confirm the same fixture on the published artifact before closure.\n\n## Ownership\nFocused all-status searches found no exact newer owner. Related completed work: #1461 / pm-gh1461 (inline flag identity/help normalization), #817 / pm-11phn1 (semantic invocation metadata), #507 / pm-9qcr (extension arity/recovery). This narrow residual mismatch does not reopen or negate those deliveries. No implementation is included."

@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[6]: "area:storage",ci,durability,governance,long-horizon,migration
 created_at: "2026-07-25T12:29:31.317Z"
-updated_at: "2026-10-14T16:10:03.083Z"
+updated_at: "2026-10-14T18:59:27.414Z"
 author: "harness:claude-code"
 estimated_minutes: 420
 acceptance_criteria: "The policy declares, per format version, its support window, what support guarantees (read, verify, migrate), and what happens when the window closes; A golden workspace for every supported format version lives in the test corpus, and CI asserts the current build reads it, verifies its hash chains, and migrates it without loss; Hash-chain verification across construction changes is covered explicitly, so a verification break is caught separately from a read break; Derived artifacts from older versions are covered: the policy states whether they are usable or must be rebuilt, and the test asserts the stated behavior; Dropping support for a format version is a reviewable, announced event with a migration path, never a silent failure to parse; The policy is referenced from the v1.0 stability contract so it is frozen alongside the other compatibility guarantees"
@@ -71,6 +71,6 @@ dependencies[15]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[1]{created_at,author,text}:
-  "2026-10-14T16:10:03.083Z","harness:codex","Report intake: https://github.com/unbraind/pm-cli/issues/1472. Retain permanent first-affected format boundaries, including linked-test editor stamps, alongside the moving prior-release window. Preserve original history prefixes and unchanged-byte refusal; no bulk migration or new format database. Full issue and existing canonical item read; no competing owner created. Planning remains open/unclaimed while active implementation is restricted to pm-gh1466 and pm-gh1467."
+comments[1]{created_at,author,text,edited_at}:
+  "2026-10-14T16:10:03.083Z","harness:codex","Report intake: https://github.com/unbraind/pm-cli/issues/1472. Retain permanent first-affected format boundaries, including linked-test editor stamps, alongside the moving prior-release window. Preserve original history prefixes and unchanged-byte refusal; no bulk migration or new format database. Full issue and existing canonical item read; no competing owner created. Planning remains open/unclaimed.","2026-10-14T18:59:27.414Z"
 body: ""

@@ -558,8 +558,10 @@ describe("contracts command helper coverage", () => {
           description: "Count",
           required: true,
           value_type: "number",
+          value_name: "value",
+          value_arity: "required",
         },
-        { flag: "-v", description: "Verbose", value_type: "boolean" },
+        { flag: "-v", description: "Verbose", value_type: "boolean", value_arity: "none" },
       ],
       sources: [
         { layer: "global", name: "pkg-a" },
@@ -2631,14 +2633,16 @@ describe("contracts command runtime", () => {
               required: true,
               value_name: "path",
               value_type: "string",
+              value_arity: "required",
             },
             {
               flag: "--target",
               description: "Destination payload path.",
               value_name: "path",
               value_type: "string",
+              value_arity: "required",
             },
-            { flag: "--dry-run", description: "Preview migration only." },
+            { flag: "--dry-run", description: "Preview migration only.", value_arity: "none" },
           ],
           examples: [
             "pm migrate-asset --source assets/source.json --target assets/output.json",
@@ -2659,14 +2663,16 @@ describe("contracts command runtime", () => {
               required: true,
               value_name: "path",
               value_type: "string",
+              value_arity: "required",
             },
             {
               flag: "--target",
               description: "Destination payload path.",
               value_name: "path",
               value_type: "string",
+              value_arity: "required",
             },
-            { flag: "--dry-run", description: "Preview migration only." },
+            { flag: "--dry-run", description: "Preview migration only.", value_arity: "none" },
           ],
           extension_sources: [
             {

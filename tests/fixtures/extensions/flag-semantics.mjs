@@ -34,9 +34,9 @@ export function writeExtensionFlagFixture(pmRoot) {
   writeFileSync(path.join(directory, "index.mjs"), EXTENSION_FLAG_FIXTURE);
 }
 
-/** Compare literal dispatch outcomes and independently observed help arity with public SDK contracts. */
-export function verifyExtensionFlagFixture(run, contracts, verifyParity) {
-  const cases = [
+const EXTENSION_FLAG_CASES = [
+    ["bool-bare", ["--enabled"], { enabled: true, truth: true }, []],
+    ["bool-bare-positionals", ["--enabled", "--", "operand"], { enabled: true, truth: true }, ["operand"]],
     ["bool-spaced-false", ["--enabled", "false"], { enabled: false, truth: true }, []],
     ["bool-spaced-zero", ["--enabled", "0"], { enabled: false, truth: true }, []],
     ["bool-spaced-true", ["-e", "true"], { enabled: true, truth: true }, []],
@@ -52,16 +52,32 @@ export function verifyExtensionFlagFixture(run, contracts, verifyParity) {
     ["switch-positionals", ["--silent", "operand"], { enabled: true, truth: true, silent: true }, ["operand"]],
     ["terminator", ["--enabled", "false", "--", "false"], { enabled: false, truth: true }, ["false"]],
   ];
+
+const EXTENSION_FLAG_COMMANDS = [["semantic", "probe"], ["semantic-probe"]];
+const EXTENSION_FLAG_REFUSALS = [["--repo"], ["--unknown"]];
+
+/** Required candidate population; the runner rejects missing, duplicate or unexpected terminal case identities. */
+export const EXTENSION_FLAG_REQUIRED_CASE_IDS = [
+  ...EXTENSION_FLAG_COMMANDS.flatMap((command) => [
+    ...EXTENSION_FLAG_CASES.map(([id]) => `${command.join(" ")}:${id}`),
+    ...EXTENSION_FLAG_REFUSALS.map((args) => `${command.join(" ")}:refusal:${args.join(" ")}`),
+    `${command.join(" ")}:help-sdk-parity`,
+  ]),
+  "required-presence-optional-value", "public-sdk-extension-dispatch",
+];
+
+/** Compare literal dispatch outcomes and independently observed help arity with public SDK contracts. */
+export function verifyExtensionFlagFixture(run, contracts, verifyParity) {
   const executed = [];
-  for (const command of [["semantic", "probe"], ["semantic-probe"]]) {
-    for (const [id, args, options, remaining] of cases) {
+  for (const command of EXTENSION_FLAG_COMMANDS) {
+    for (const [id, args, options, remaining] of EXTENSION_FLAG_CASES) {
       const label = `${command.join(" ")}:${id}`;
       const result = run([...command, "--json", ...args]);
       assert.equal(result.status, 0, `${label}: ${result.stderr}`);
       assert.deepEqual(JSON.parse(result.stdout), { options, args: remaining }, label);
       executed.push(label);
     }
-    for (const args of [["--enabled"], ["--repo"], ["--unknown"]]) {
+    for (const args of EXTENSION_FLAG_REFUSALS) {
       const result = run([...command, ...args, "--json"]);
       assert.equal(result.status, 2, `refusal:${args.join(" ")}`);
       assert(!result.stdout.includes('"options"'), "A refused invocation must not reach the echo handler");
@@ -78,7 +94,7 @@ export function verifyExtensionFlagFixture(run, contracts, verifyParity) {
     }));
     assert.equal(observations.length, 8, `${name}: missing or duplicate executable options`);
     assert.deepEqual(verifyParity(name, rows, observations).findings, [], `${name}: invocation parity`);
-    for (const [flag, takes, required] of [["--enabled", true, true], ["--truth", false, false], ["--maybe", true, false], ["--repo", true, true], ["--silent", false, false]]) {
+    for (const [flag, takes, required] of [["--enabled", true, false], ["--truth", false, false], ["--maybe", true, false], ["--repo", true, true], ["--silent", false, false]]) {
       const row = rows.find((candidate) => candidate.flag === flag);
       assert.deepEqual([row.takes_value, row.value_required], [takes, required], `${name}:${flag}:literal arity`);
     }

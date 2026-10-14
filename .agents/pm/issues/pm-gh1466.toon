@@ -2,30 +2,37 @@ id: pm-gh1466
 title: "GH-1466: Preserve explicitly false values for extension bool aliases"
 description: "Investigate source-proven report that normalization maps spaced false/0 on a bool alias to true with a positional value, while equals-false and negation remain supported."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-14T07:54:43.008Z"
-updated_at: "2026-10-14T16:31:19.761Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#176e34d9400da8196c72660d"
+updated_at: "2026-10-14T19:13:39.316Z"
+closed_at: "2026-10-14T19:13:38.329Z"
+completed_at: "2026-10-14T19:13:38.329Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: "Independently reproduce exact published and source controls without mutating handlers; Preserve accepted explicit false/0 or refuse ambiguity before dispatch; Cover bare, equals, spaced, negated and legitimate positional cases; Keep shared SDK help/contracts/dispatch aligned"
 parent: pm-ugqx
 risk: medium
 confidence: medium
-expected_result: A caller explicitly disabling a boolean option cannot silently enable it in an extension handler.
+resolution: Share SDK value grammar across CLI and contracts; preserve explicit false/0 and bare legacy bool presence while retaining canonical boolean positionals
+expected_result: "Explicit disabling values reach extension handlers as false, bare legacy bool remains accepted, and candidate/publication checks refuse semantic drift"
+actual_result: "Integrity-verified published2026.10.14 reproduces the opposite-value failure. Linked source tests and packed Node/Bun40-case extension acceptance pass, including bare, equals, spaced, negated and positional controls. Shared33-case diagnostic acceptance, typecheck, graph, integrity and mutation checks pass. Final exact-head hosted static/coverage/review remain mandatory before merge; local qualified startup overruns are retained separately. Current public14 remains immutable until the next daily release."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1461,related,"2026-10-14T07:54:43.008Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-14T07:54:43.008Z","harness:codex","Duplicate check: full all-status corpus, fresh flag searches/open/in-progress reads; full closed normalization owner metadata/history confirms completed prior scope. GH1466 body/all comments read: exact-source comparison is reported evidence and published14 execution remains pending. No exact owner found; this follow-on remains open/unclaimed and does not reopen completed work."
   "2026-10-14T16:06:31.056Z","harness:codex","Implementation scope: shared semantic extension flag declaration, preserving legacy bool spaced false/0 grammar independently of canonical boolean switches. Pair with pm-gh1467 in one reviewed delivery, with independently asserted echo behavior and required exact-candidate packaged pre-publication acceptance. Live intake read all2965 items with no omissions,2685 closed and zero in_progress; closed pm-gh1461 remains completed. GitHub initial inventory has zero open PRs, zero open Dependabot/code/secret alerts and24 open issues. Every pre-existing issue link verified; four new reports are being mapped to canonical owners."
   "2026-10-14T16:20:19.050Z","harness:codex","Verified official public2026.10.14 tarball against registry SHA512 integrity; unchanged semantic echo fixture reproduces false-to-true with leftover positional false. Candidate source integration now passes37 declared cases across nested/flattened commands: exact boolean values, optional/required arity, list ordering, short forms, remaining operands, required-flag presence and safe refusals. Independent seeded lost-optionality and false-to-true controls are required to fail for their named semantic assertions. Full coverage, complete static and npm/Bun/npx/bunx packed acceptance are running; none is claimed passed yet."
   "2026-10-14T16:23:15.027Z","harness:codex","The independently verified public2026.10.14 SDK also reproduces the second failure: --maybe [label] reports help takes_value=true/value_required=false while public SDK machine contracts report value_required=true. Both original bug signatures are now confirmed on an integrity-verified published artifact, not source reconstruction. Source and candidate acceptance are separate from the next future daily release. The new malformed-scalar validation enhancement is recorded as pm-extension-scalar-validation and remains open/unclaimed."
+  "2026-10-14T16:38:20.164Z","harness:codex","Retained complete first validation receipt:10422 tests passed,5 failed,3 skipped; no coverage certification emitted. Three old contract expectations need explicit arity metadata and legacy bool grammar updates; the publication workflow fixture lacked the new mandatory acceptance environment, and an existing packed continuation test could not discover npm/package.json from this mixed-prefix host. No timeout was hit in that continuation test. Correcting test expectations and adding executed failed/missing-acceptance publication controls. The installed npm package will be exposed only through this validation process NODE_PATH; all source membership, deadlines and exact coverage thresholds remain unchanged. Concurrent packed smoke waited for the build lease and reached its existing600-second deadline; it will run sequentially after the complete test/static lease holders."
+  "2026-10-14T16:50:47.624Z","harness:codex","Accepted CodeRabbit inline finding4273627058: preserve the bare bool form accepted by the current published14 artifact alongside pre-existing explicit false/0 forms. Revised shared grammar makes an unlabelled legacy bool optional-valued, retains required <value> declarations, and keeps canonical boolean switches unchanged. Added independent bare and positional-before-flag echo cases. This supersedes the earlier interim bare-bool refusal expectation without rewriting its evidence. Complete final code and packed acceptance will be rerun before closure."
+  "2026-10-14T17:01:45.578Z","harness:codex","Retained interim broad validation:10425 tests pass and the original5 failures are corrected; the only2 remaining failures used the compiled mandatory-bool artifact from the run started before accepted review feedback. No test or threshold was skipped or weakened. A fresh build and focused review controls, packed Node/Bun/npx/bunx acceptance and a complete stable-source coverage run now execute sequentially, avoiding the earlier build-lease queue timeout. Required source39-case and packed40-case inventories are frozen for this validation."
+  "2026-10-14T17:38:33.664Z","harness:codex","Frozen full coverage execution completed: 10,426 tests passed, 3 skipped, and one workflow-contract assertion failed because it still expected the pre-concurrency-limit Windows command. Exact coverage independently passed with zero uncovered counts: statements 68,682/68,682, branches 52,621/52,621, functions 14,148/14,148, lines 65,234/65,234. All five retained implementation/fixture digests matched the frozen source. Updated only the stale command assertion, retaining the complete pinned keeper list; focused workflow verification and complete static gate are now running. This is not yet a combined green verdict."
+  "2026-10-14T19:11:42.023Z","harness:codex","Final candidate verification:146 focused privacy/export checks pass;81 registered-hook tests give exact helper coverage104/104 statements,62/62 branches,10/10 functions,88/88 lines. Packed npm/npx/Bun/bunx9-workflow acceptance passes40 extension and33 diagnostic cases on Node/Bun. Typecheck, graph composition at the unchanged prose bound, record integrity and registered mutation controls pass. Native linked tests are now recorded successful for every selected item, with required case metrics40/40/33; inherited privacy links were reviewed and clone-locally acknowledged without changing trust policy. Complete local static passes all gates through10 SDK import budgets but fails qualified CLI startup ceilings; the existing startup diagnosis retains that failure, and full exact-head hosted static/coverage/review are mandatory before merge. Public2026.10.14 remains the integrity-verified failing baseline; no second same-day release is created."
 learnings[1]{created_at,author,text}:
   "2026-10-14T16:23:12.840Z","harness:codex","Scalar coercion and argv value arity are distinct contracts. Preserve the original extension declaration before canonicalizing aliases, and assert literal handler options/remaining arguments independently of help-contract agreement. A packed-candidate digest cannot establish a published-installed fix."
-files[17]{path,scope,note}:
+files[20]{path,scope,note}:
   .github/workflows/release.yml,project,Shared extension flag grammar and recurring exact-candidate acceptance
   scripts/release/extension-flag-acceptance.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
   scripts/release/flag-invocation-parity.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
@@ -41,13 +48,31 @@ files[17]{path,scope,note}:
   src/sdk/runtime-primitives.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
   tests/fixtures/extensions/flag-semantics.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
   tests/integration/extensions/flag-semantics.integration.spec.ts,project,Independent CLI and SDK behavior oracle
+  tests/integration/release-automation-contract.spec.ts,project,Executed failed and missing candidate acceptance blocks publication
+  tests/unit/commands/workspace/contracts-command.spec.ts,project,Explicit arity contract expectations
   tests/unit/extensions/flag-value-contract.spec.ts,project,Public semantic declaration contract
   tests/unit/scripts/release/extension-flag-acceptance.spec.ts,project,Required result and workflow wiring controls
+  tests/unit/sdk/contracts-full-projection.spec.ts,project,Preserved label metadata and corrected bool grammar
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/flag-value-contract.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts tests/unit/scripts/flag-invocation-parity.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,240,"harness:codex","2026-10-14T16:20:15.367Z",local_mutation,fix/extension-flag-semantics,"Independent echo oracle, lost-optionality and false-to-true fault controls, public SDK grammar and required runner refusal"
+test_runs[1]:
+  - run_id: test-local-mv8h8c2b-k6li33
+    kind: test
+    status: passed
+    started_at: "2026-10-14T19:01:55.064Z"
+    finished_at: "2026-10-14T19:02:14.291Z"
+    recorded_at: "2026-10-14T19:02:14.291Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    measurements[1]{name,value,unit,threshold,recorded_at}:
+      required_extension_cases,40,count,40,"2026-10-14T19:02:14.291Z"
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/flag-value-contract.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts tests/unit/scripts/flag-invocation-parity.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   docs/EXTENSION_AUTHOR_CONTRACTS.md,project,Explicit value arity and legacy bool compatibility
   docs/RELEASING.md,project,Required exact-tarball acceptance and evidence scope
+close_reason: Verified the extension boolean compatibility correction and recurring candidate acceptance in PR1473
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
@@ -55,5 +80,5 @@ gate_evidence:
   owner: pm-gh1466
   negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts
   local_checks[2]: node scripts/release/flag-invocation-parity.mjs,"pnpm smoke:npx"
-  hosted_checks[2]: CI / Static quality,"Release / Publish to npm: exact-candidate extension acceptance"
+  hosted_checks[3]: Gates (static),Gates (smokes),"Release: exact candidate acceptance before npm publish"
 body: "Source: https://github.com/unbraind/pm-cli/issues/1466\n\n## Scope\nSource-proven compatibility regression in v2026.10.14 commit `2024387a346bb88e0590e07cb3262e03307b997b`, compared with `828edf4ae71d27c28a103ca05cec87366d88a5fd` and the verified installed 2026.10.13 artifact. **Published 10.14 artifact execution remains pending** because direct official npm access was unavailable. No mutating handler was exercised.\n\n## Minimal case\nA harmless extension command:\n```js\napi.registerCommand({\n  name: \"contract probe\",\n  flags: [{ long: \"--enabled\", type: \"bool\", default: true }],\n  run(context) {\n    return { options: context.options, args: context.args };\n  },\n});\n```\n\nInvocation: `pm contract probe --enabled false --json` (also `--enabled 0`).\n\n- Actual installed 10.13 invokes the echo handler with `enabled:false,args:[]`.\n- Exact old/new source composition changes the same argv from `enabled:false,args:[]` to **`enabled:true,args:[\"false\"]`**; `0` changes analogously.\n- A caller explicitly trying to disable the option can therefore supply the opposite option to the handler, depending on its accepted positional arguments.\n\n## Evidence\n[New scalar-kind normalization](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/cli/extension-command-help.ts#L202-L217) makes legacy `bool` a value-free Commander switch. The following literal becomes a positional argument. [Invocation extraction](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/cli/runtime/invocation-options.ts#L148-L210) retains the already-present true value.\n\n[The outer action wrapper](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/cli/main.ts#L1155-L1238) invokes registered handlers before its fallback; [positional validation](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/cli/main.ts#L1125-L1139) is restricted to importer/exporter commands. Free-form handlers intentionally receive context.args. As a dispatch control, the actual 10.13 canonical `type:\"boolean\"` echo handler already receives `truth:true,args:[\"false\"]` for `--truth false`, matching the path to which `bool` now normalizes.\n\nThe new probes use exact selected source modules with Node TypeScript erasure, real Commander and unchanged full invocation-options source, composed with existing 10.13 dependencies. This is not a build or installed-10.14 test.\n\n## Controls\n- `--enabled=false` and `--no-enabled` still produce false via the supported loose-option path.\n- Bare `--enabled` is newly accepted; old `bool` demanded an argument.\n- Unknown flags and missing required string values remain refused.\n- No real tracker or mutating extension action ran. Isolated HOME/PM path, telemetry disabled, network denied. All 6,411 baseline files remain byte-identical to the retained verified tarball.\n\n## Acceptance proposal\nPreserve the previously accepted explicitly valued alias invocation, or reject ambiguous trailing boolean literals before a handler can observe a contradictory option. Cover bare, equals-false, spaced false/0, negated and legitimate positional cases; do not silently reinterpret false as true. Confirm on the exact published artifact before release closure.\n\n## Ownership\nAll-status focused searches found no exact newer owner. Related completed work: #1461 / pm-gh1461 (inline flag help/identity normalization). This narrow follow-on does not reopen or negate its delivered fixes. No implementation is included."

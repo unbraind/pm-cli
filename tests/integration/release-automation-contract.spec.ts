@@ -1423,6 +1423,13 @@ if [ "$*" = sentry:upload ]; then exit "\${UPLOAD_STATUS}"; fi
       const npmLog = path.join(tempRoot, "npm.log");
       const distributionScript = path.join(tempRoot, "distribution.mjs");
       const distributionLog = path.join(tempRoot, "distribution.log");
+      const acceptanceScript = path.join(tempRoot, "acceptance.mjs");
+      await writeFile(acceptanceScript, [
+        'import { appendFileSync } from "node:fs";',
+        'appendFileSync(process.env.NPM_FAKE_LOG, "accept " + process.argv[2] + "\\n");',
+        'if (process.env.ACCEPTANCE_STATUS === "1") process.exit(1);',
+        'console.log(JSON.stringify({ ok: true, case_count: 40 }));',
+      ].join("\n"));
       await writeFile(
         distributionScript,
         [
@@ -1476,6 +1483,8 @@ esac
             NPM_PACKAGE: "@unbrained/pm-cli",
             NPM_FAKE_LOG: npmLog,
             PACKAGE_DISTRIBUTION: distributionScript,
+            EXTENSION_FLAG_ACCEPTANCE: acceptanceScript,
+            ACCEPTANCE_STATUS: "0",
             RELEASE_PUBLICATION_ADMISSION: path.join(repoRoot, "scripts/release/release-run-selection.mjs"),
             DEFAULT_BRANCH: "main", GITHUB_REPOSITORY: "fixture/project",
             PRIOR_JOBS: JSON.stringify([{ total_count: 1, jobs: [{ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [
@@ -1503,6 +1512,9 @@ esac
         `publish ${tempRoot}/publication.tgz --access public --provenance --tag latest`,
       );
       expect(invocations).not.toContain("access set");
+      expect(invocations.indexOf(`accept ${tempRoot}/publication.tgz`)).toBeLessThan(
+        invocations.indexOf(`publish ${tempRoot}/publication.tgz`),
+      );
 
       for (const event of ["push", "workflow_dispatch"]) {
         await writeFile(npmLog, "", "utf8");
@@ -1522,6 +1534,12 @@ esac
       const packedFailure = runScenario({ DISTRIBUTION_STATUS: "1" });
       expect(packedFailure.status).not.toBe(0);
       expect(await readFile(npmLog, "utf8")).not.toContain("publish ");
+      for (const overrides of [{ ACCEPTANCE_STATUS: "1" }, { EXTENSION_FLAG_ACCEPTANCE: path.join(tempRoot, "missing.mjs") }]) {
+        await writeFile(npmLog, "", "utf8");
+        const refused = runScenario(overrides);
+        expect(refused.status).not.toBe(0);
+        expect(await readFile(npmLog, "utf8")).not.toContain("publish ");
+      }
       await writeFile(npmLog, "", "utf8");
       await writeFile(distributionLog, "", "utf8");
       const existingVersion = runScenario({ TARGET_VERSION_STATUS: "0" });
