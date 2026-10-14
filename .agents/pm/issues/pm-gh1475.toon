@@ -6,11 +6,15 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-14T22:04:28.563Z"
-updated_at: "2026-10-14T22:04:28.563Z"
+updated_at: "2026-10-14T22:20:15.089Z"
 author: "harness:codex"
+estimated_minutes: 180
 acceptance_criteria: "Reproduce the submitted fresh Git merge on the immutable published artifact and candidate; preserve both branch values and history; validate authenticated no-discard settlement and fresh-clone receipt portability; prove same-field conflicts, lossy decisions, malformed or unsealed legacy evidence remain review-required; retain SDK/CLI parity and non-surprising opt-in hook behavior; do not weaken health or verification merely to suppress a pending state."
 parent: pm-dj98
+risk: high
+confidence: medium
 severity: medium
+expected_result: A reviewed lossless settlement path reduces ordinary multi-agent merge friction while retaining complete authenticated audit evidence; conflicting or discarded values and invalid or unsealed receipts still require review. Reproduction and implementation remain future work.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,related,"2026-10-14T22:04:28.563Z","harness:codex","cli:create:dep",detected
   pm-mfkv92,related,"2026-10-14T22:04:28.563Z","harness:codex","cli:create:dep",detected
