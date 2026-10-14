@@ -5,6 +5,7 @@ import { createScriptHarness } from "../../helpers/scriptModule";
 const harness = createScriptHarness([
   "../../../scripts/smoke-cleanup.mjs",
   "../../../scripts/release/agent-recovery-acceptance.mjs",
+  "../../../scripts/release/extension-flag-acceptance.mjs",
   "cross-spawn",
 ]);
 
@@ -196,6 +197,7 @@ function buildExecFileSync(responses: ExecResponses) {
 
 /** Isolate filesystem effects while retaining every smoke control-flow branch. */
 function mockFs() {
+  vi.doMock("../../../scripts/release/extension-flag-acceptance.mjs", () => ({ verifyInstalledExtensionFlags: vi.fn() }));
   vi.doMock("../../../scripts/release/agent-recovery-acceptance.mjs", () => ({
     verifyInstalledAgentRecovery: vi.fn(),
   }));

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,integrity,property-testing,quality,testing
 created_at: "2026-07-25T12:31:35.988Z"
-updated_at: "2026-09-08T13:32:20.294Z"
+updated_at: "2026-10-14T16:09:59.305Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "The invariant set is declared explicitly as data — chain verifiability, edge resolvability, derived-artifact agreement, lifecycle reachability, per-item reconstructability — with each invariant naming what violates it; Randomized sequences cover create, update, close, restore, delete, redact, compact, merge, schema change, and config change in arbitrary orders; A violation produces a minimal shrunk reproducer plus a seed that reproduces it deterministically; Every violation found is filed as an item with its reproducer added to the permanent regression corpus, linked discovered_from this item; The suite runs on a schedule with a time budget rather than blocking every change, and a violation opens work immediately rather than being retried; Coverage over the declared invariant set is reported, so an invariant no sequence has ever attacked is visible as a gap"
@@ -71,4 +71,6 @@ dependencies[16]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
+comments[1]{created_at,author,text}:
+  "2026-10-14T16:09:59.305Z","harness:codex","Report intake: https://github.com/unbraind/pm-cli/issues/1470. Deterministic bounded SDK sequence tranche; retain independent reference model, named transition coverage, exact replay identities and signature-preserving shrinker. Full issue and existing canonical item read; no competing owner created. Planning remains open/unclaimed while active implementation is restricted to pm-gh1466 and pm-gh1467."
 body: ""

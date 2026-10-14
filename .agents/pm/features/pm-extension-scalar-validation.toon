@@ -1,0 +1,15 @@
+id: pm-extension-scalar-validation
+title: Validate contributed scalar flag values before extension handler dispatch
+description: "A harmless echo fixture declares type bool but --enabled not-a-boolean reaches its handler as a string. Coercion preserves invalid input for later validation, yet current dynamic dispatch validates only allowed/required/disabled option keys. Establish an explicit compatible scalar-validation contract for extension authors."
+type: Feature
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-14T16:21:40.172Z"
+updated_at: "2026-10-14T16:21:40.172Z"
+author: "harness:codex"
+acceptance_criteria: Define compatibility for invalid number/boolean tokens and optional no-value presence; Apply shared SDK-owned scalar validation before handler invocation where opted in or required by the supported contract; Preserve canonical switch positional behavior and legacy bool grammar; Independently assert malformed value refusals and valid coercion/default/list cases through public CLI/SDK
+parent: pm-ugqx
+comments[1]{created_at,author,text}:
+  "2026-10-14T16:21:40.172Z","harness:codex","Duplicate check: strict2965-item all-status corpus; focused live extension invalid scalar boolean validation search; title/description scan for coercion and scalar-validation owners found only unrelated closed schema-field/numeric-wrapper work. Actual isolated echo reproduction on2026-10-14 returns exit0 and options.enabled=not-a-boolean. This pre-existing issue is separate from pm-gh1466 false preservation and pm-gh1467 optional arity; leave open/unclaimed and do not silently broaden those compatibility fixes."
+body: ""

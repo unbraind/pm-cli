@@ -6,9 +6,8 @@
 import { Command, Option } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES } from "../sdk/cli-contracts/command-aliases.js";
 import {
-  parseExtensionLongFlagToken,
+  resolveExtensionFlagValueContract,
   resolveExtensionLongFlagName,
-  resolveFlagValueKind,
   type FlagDefinition,
   type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,
@@ -199,22 +198,10 @@ export function resolveExtensionFlagArity(
   takesValue: boolean;
   valueName: string | null;
 } {
-  const declaredValueType =
-    toNonEmptyFlagString(definition.value_type) ??
-    toNonEmptyFlagString(definition.type);
-  const valueType = resolveFlagValueKind(declaredValueType) ?? declaredValueType;
-  const declaredValueName = toNonEmptyFlagString(definition.value_name);
-  const inlineValueName = parseExtensionLongFlagToken(definition.long)?.valueName;
-  const takesValue =
-    valueType !== "boolean" &&
-    (declaredValueName !== null ||
-      inlineValueName != null ||
-      valueType !== null ||
-      toOptionalBoolean(definition.required) === true ||
-      toOptionalBoolean(definition.list) === true);
+  const value = resolveExtensionFlagValueContract(definition);
   return {
-    takesValue,
-    valueName: takesValue ? (declaredValueName ?? inlineValueName ?? "value") : null,
+    takesValue: value.value_arity !== "none",
+    valueName: value.value_name,
   };
 }
 
@@ -559,8 +546,8 @@ function formatDynamicExtensionOptionFlags(
   if (!optionNames) {
     return null;
   }
-  const { valueName } = resolveExtensionFlagArity(definition);
-  const optional = parseExtensionLongFlagToken(definition.long)?.optional === true;
+  const { value_name: valueName, value_arity: arity } = resolveExtensionFlagValueContract(definition);
+  const optional = arity === "optional";
   const optionValueSuffix = valueName ? optional ? ` [${valueName}]` : ` <${valueName}>` : "";
   return `${optionNames.join(", ")}${optionValueSuffix}`;
 }
@@ -673,16 +660,16 @@ function buildDynamicExtensionHelpOptionSummary(
     shortName && shortName.startsWith("-") && !shortName.startsWith("--")
       ? shortName
       : null;
-  const { takesValue, valueName } = resolveExtensionFlagArity(definition);
+  const value = resolveExtensionFlagValueContract(definition);
   const required = toOptionalBoolean(definition.required) === true;
   return {
     flags,
     long: normalizedLong,
     short: normalizedShort,
     description: formatDynamicExtensionOptionDescription(definition),
-    takes_value: takesValue,
-    value_required: takesValue && parseExtensionLongFlagToken(definition.long)?.optional !== true,
-    value_name: valueName,
+    takes_value: value.value_arity !== "none",
+    value_required: value.value_arity === "required",
+    value_name: value.value_name,
     variadic: false,
     required,
     aliases: [],

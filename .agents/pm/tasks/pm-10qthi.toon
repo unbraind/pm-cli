@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-14T05:49:24.833Z"
-updated_at: "2026-10-14T06:03:17.735Z"
+updated_at: "2026-10-14T16:20:41.387Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Use a real necessary CLI action with explicit tracing consent; correlate accepted project ingestion with a privacy-safe hosted trace; distinguish SDK export, client discard and hosted indexing; preserve free-tier sampling and consent defaults"
@@ -16,7 +16,8 @@ confidence: medium
 expected_result: "A current legitimate command trace is queryable with useful safe command identity, or the exact external ingestion limitation is documented with bounded recovery guidance."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-58yzil,related,"2026-10-14T05:49:24.833Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-14T05:49:24.833Z","harness:codex","Duplicate check: complete2959-item all-status corpus plus Sentry trace search and fresh open/in-progress reads; closed pm-58yzil delivers explicit consent tracing and remains completed. New operational acceptance scope: fresh CLI trace and spans queries return empty, spans API metadata ingestion.status=stalled. Project-scoped stats in04:00-06:00UTC show3 accepted transactions and3 accepted/indexed spans, plus24 client-discard spans reason no_parent_span; this aggregate does not identify the traced action. No root-cause claim or fabricated errors. Private receipts retained locally; no credentials or installation identity recorded."
   "2026-10-14T05:51:42.141Z","harness:codex","Additional fresh hosted logs and explicit-project spans queries also report ingestion.status=stalled and return no rows. Project-scoped outcomes prove accepted diagnostic traffic, but accepted-volume totals are not action-specific trace freshness. Keep this operational acceptance task open; no global tracing policy, sampling default or Sentry project settings were changed."
+  "2026-10-14T16:20:41.387Z","harness:codex","Fresh2026-10-14T16:18UTC verification after current work: sentry issue list is:unresolved returns no rows; strict Sentry/telemetry gate passes with max-critical0/max-high0 and required telemetry, finish_error_rate_pct3.18 and failures_without_error_code_rows0. Explicit fresh1h trace query still returns no rows. Telemetry physical flush separately drained1 queued row to0 with queue_empty=true and last_successful_flush_at16:18:06Z. These are separate claims: no action-specific hosted trace freshness proven, so existing operational acceptance remains open/unclaimed. No Sentry policy or global sampling setting was changed."
 body: ""

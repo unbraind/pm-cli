@@ -1,4 +1,7 @@
-/** Canonical coercion kinds an extension flag can declare via `value_type` (or the deprecated `type` alias). The runtime also accepts a few common aliases (`int`/`integer`/`float` -> number, `bool` -> boolean) so author intent is honored without surprises. */
+/** Shared scalar coercion and value-token grammar for contributed flags. */
+import type { FlagDefinition } from "./extension-types.js";
+import { parseExtensionLongFlagToken } from "./flag-definition-validation.js";
+
 /** Canonical scalar value kinds accepted by extension command flag definitions. */
 export type FlagValueKind = "string" | "number" | "boolean";
 
@@ -22,6 +25,41 @@ export function resolveFlagValueKind(raw: unknown): FlagValueKind | null {
   return Object.hasOwn(FLAG_VALUE_KIND_BY_ALIAS, alias)
     ? FLAG_VALUE_KIND_BY_ALIAS[alias]!
     : null;
+}
+
+/** Value-token grammar retained separately from scalar coercion and required flag presence. */
+export interface ExtensionFlagValueContract {
+  /** Canonical kind after coercion; null means the declaration has no explicit scalar type. */
+  value_type: FlagValueKind | null;
+  /** Whether argv consumes no value, a mandatory value, or an optional value. */
+  value_arity: "none" | "required" | "optional";
+  /** Display label for a consumed value; null for switches. */
+  value_name: string | null;
+}
+
+/** Preserve the historical inferred-value declarations as well as explicit labels and scalar kinds. */
+function hasExtensionFlagValueMetadata(definition: Readonly<FlagDefinition>, inlineName: string | null | undefined, declaredType: string | undefined): boolean {
+  return Boolean(definition.value_name?.trim() || inlineName || declaredType || definition.required === true || definition.list === true);
+}
+
+/** Prefer the canonical declaration while retaining the legacy alias when it is absent or blank. */
+function declaredExtensionFlagType(definition: Readonly<FlagDefinition>): string | undefined {
+  return definition.value_type?.trim() || definition.type?.trim();
+}
+
+/** Preserve legacy bool value tokens and inline optionality before canonicalizing the scalar kind. */
+export function resolveExtensionFlagValueContract(definition: Readonly<FlagDefinition>): ExtensionFlagValueContract {
+  const declaredType = declaredExtensionFlagType(definition);
+  const valueType = resolveFlagValueKind(declaredType);
+  const inline = parseExtensionLongFlagToken(definition.long);
+  const declaredName = definition.value_name?.trim() || null;
+  const booleanSwitch = valueType === "boolean" && declaredType?.toLowerCase() !== "bool";
+  const takesValue = !booleanSwitch && hasExtensionFlagValueMetadata(definition, inline?.valueName, declaredType);
+  return {
+    value_type: valueType,
+    value_arity: takesValue ? inline?.optional ? "optional" : "required" : "none",
+    value_name: takesValue ? declaredName ?? inline?.valueName ?? "value" : null,
+  };
 }
 
 /** Flatten a `list` flag value (or default) into its individual entries the same way the runtime does: nested arrays are flattened and comma-joined strings are split, with surrounding whitespace trimmed and empty segments dropped. No type coercion is applied. Shared by the CLI coercion path and the registration-time default validator so the two never disagree. */

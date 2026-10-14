@@ -2,11 +2,13 @@ id: pm-gh1467
 title: "GH-1467: Preserve optional extension value arity in machine contracts"
 description: Investigate reported mismatch where optional extension labels are optional in help and dispatch but required in machine invocation contracts.
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-14T07:54:47.624Z"
-updated_at: "2026-10-14T07:56:04.707Z"
+updated_at: "2026-10-14T16:31:22.218Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#176e34d9400da8196c72660d"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce published and exact-source contract/help/dispatch parity; Carry optional arity through the canonical SDK declaration; Use the existing invocation parity verifier with real Commander observations; Cover optional/required/boolean/alias/repeated values without a second name registry
@@ -19,6 +21,45 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1466,related,"2026-10-14T07:54:47.624Z","harness:codex","cli:create:dep",detected
   pm-11phn1,related,"2026-10-14T07:56:04.446Z","harness:codex","cli:update:dep",detected
   pm-9qcr,related,"2026-10-14T07:56:04.446Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-14T07:54:47.624Z","harness:codex","Duplicate check: complete all-status corpus, fresh flag searches and open/in-progress reads; full closed normalization owner metadata/history read. GH1467 identifies a residual pre-existing mismatch, not a new14 regression, with published14 acceptance still pending. No exact existing owner found. Keep related completed work completed and this new scope open/unclaimed."
+  "2026-10-14T16:06:32.149Z","harness:codex","Implementation scope: retain optional value arity before normalization and carry it through SDK contracts, Commander, JSON help and recovery, without a second flag-name registry. Incorporate issue clarification comments through2026-10-14T09:58Z. Use the existing public parity verifier with actual extension observations plus independent exact dispatch expectations; bind recurring required pre-publication acceptance to candidate tarball digest. Pair with pm-gh1466; only these edited work items are in_progress."
+  "2026-10-14T16:20:26.157Z","harness:codex","Verified official public2026.10.14 tarball against registry SHA512 integrity; unchanged semantic echo fixture reproduces false-to-true with leftover positional false. Candidate source integration now passes37 declared cases across nested/flattened commands: exact boolean values, optional/required arity, list ordering, short forms, remaining operands, required-flag presence and safe refusals. Independent seeded lost-optionality and false-to-true controls are required to fail for their named semantic assertions. Full coverage, complete static and npm/Bun/npx/bunx packed acceptance are running; none is claimed passed yet."
+  "2026-10-14T16:21:41.039Z","harness:codex","Operational intake complete: all24 currently open GitHub issues now have canonical PM-link comments; reports1469-1472 are recorded under their proper owners without reopening delivered work or claiming planning containers. Both GitHub and local pnpm audit currently report zero known vulnerabilities. New registry updates are within the explicit seven-day cooldown; older incompatible major migrations remain with their existing PM owners. Latest pm-changelog2026.10.13 installed through the package-owned path, with no generator edits in this repo. No agent-browser skill found in the enabled host skill/plugin directories."
+  "2026-10-14T16:23:20.870Z","harness:codex","The independently verified public2026.10.14 SDK also reproduces the second failure: --maybe [label] reports help takes_value=true/value_required=false while public SDK machine contracts report value_required=true. Both original bug signatures are now confirmed on an integrity-verified published artifact, not source reconstruction. Source and candidate acceptance are separate from the next future daily release. The new malformed-scalar validation enhancement is recorded as pm-extension-scalar-validation and remains open/unclaimed."
+  "2026-10-14T16:27:14.778Z","harness:codex","Candidate acceptance now also invokes the public PmClient.run extension action directly, with an independent literal expectation for explicit false values, optional presence, ordered list values and remaining operands. The packed receipt includes runtime name/version/platform/architecture, actual export resolution, the whole semantic fixture digest, the runner digest and exact candidate tarball SHA256. The SDK surface snapshot explicitly records the additive optional CliFlagContract.value_arity field and the shared helper exports; legacy core inference remains available when the field is absent."
+  "2026-10-14T16:31:22.217Z","harness:codex","Chrome Computer Use also confirms the latest reviewed DeepScan branch inventory:0 open/confirmed findings,120 fixed, Issue-free, and0 new findings for prior PR1468. These are existing branch observations; the new PR will require its own exact-head analyzers and reviews. No hosted status was copied or manufactured. The baseline optionality probe and all source/packed receipts retain separate evidence scopes."
+learnings[1]{created_at,author,text}:
+  "2026-10-14T16:23:18.005Z","harness:codex","Scalar coercion and argv value arity are distinct contracts. Preserve the original extension declaration before canonicalizing aliases, and assert literal handler options/remaining arguments independently of help-contract agreement. A packed-candidate digest cannot establish a published-installed fix."
+files[17]{path,scope,note}:
+  .github/workflows/release.yml,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  scripts/release/extension-flag-acceptance.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  scripts/release/flag-invocation-parity.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  scripts/release/gate-registry.json,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  scripts/smoke-npx-from-pack.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  sdk/public-surface.json,project,Reviewed additive explicit arity SDK contract
+  src/cli/extension-command-help.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  src/core/extensions/flag-value-types.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  src/sdk/cli-contracts/flag-contracts.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  src/sdk/cli-contracts/runtime-contracts.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  src/sdk/contracts.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  src/sdk/flag-invocation-contracts.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  src/sdk/runtime-primitives.ts,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  tests/fixtures/extensions/flag-semantics.mjs,project,Shared extension flag grammar and recurring exact-candidate acceptance
+  tests/integration/extensions/flag-semantics.integration.spec.ts,project,Independent CLI and SDK behavior oracle
+  tests/unit/extensions/flag-value-contract.spec.ts,project,Public semantic declaration contract
+  tests/unit/scripts/release/extension-flag-acceptance.spec.ts,project,Required result and workflow wiring controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/flag-value-contract.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/sdk/flag-invocation-contracts.spec.ts tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts tests/unit/scripts/flag-invocation-parity.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts,project,240,"harness:codex","2026-10-14T16:20:23.238Z",local_mutation,fix/extension-flag-semantics,"Independent echo oracle, lost-optionality and false-to-true fault controls, public SDK grammar and required runner refusal"
+docs[2]{path,scope,note}:
+  docs/EXTENSION_AUTHOR_CONTRACTS.md,project,Explicit value arity and legacy bool compatibility
+  docs/RELEASING.md,project,Required exact-tarball acceptance and evidence scope
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  owner: pm-gh1467
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/flag-semantics.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts
+  local_checks[2]: node scripts/release/flag-invocation-parity.mjs,"pnpm smoke:npx"
+  hosted_checks[2]: CI / Static quality,"Release / Publish to npm: exact-candidate extension acceptance"
 body: "Source: https://github.com/unbraind/pm-cli/issues/1467\n\n## Summary and scope\nA pre-existing discovery-contract gap remains in exact v2026.10.14 source `2024387a346bb88e0590e07cb3262e03307b997b`: optional extension flag values are correctly described by JSON help, but `contracts.command_flags[].flag_invocations` marks them required. This is not a newly introduced 10.14 regression.\n\n**The new result is an exact-source integration probe, not published-10.14 artifact acceptance.** Official npm retrieval was unavailable. Actual installed 10.13 supplies the runtime control; no mutating action ran.\n\n## Minimal case\nRegister a harmless command with `flags: [{ long: \"--maybe [label]\" }]` and an echo handler returning context.options/context.args.\n\n- New JSON-help summary: `long:\"--maybe\", takes_value:true, value_required:false, value_name:\"label\"`.\n- New `runContracts({command:\"contract probe\",flagsOnly:true}, ...)` result: `flag_invocations` says **`value_required:true`** for `--maybe`.\n- Bare `--maybe` is accepted and produces `maybe:true`; `--maybe label` produces the string. Verified on actual 10.13 and both old/new source compositions.\n- Old contracts already said required and embedded the placeholder in the flag identity. 10.14 repairs that identity but still loses optional arity.\n\n## Evidence\n- [toExtensionFlagContract](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/sdk/cli-contracts/runtime-contracts.ts#L1219-L1259) carries the parsed canonical name/value name but omits the extension declaration's optionality.\n- [Invocation enrichment](https://github.com/unbraind/pm-cli/blob/2024387a346bb88e0590e07cb3262e03307b997b/src/sdk/flag-invocation-contracts.ts#L714-L752) derives optionality from built-in name sets rather than that declaration.\n- The public SDK `verifyCliFlagInvocationParity` reports one `value_required_mismatch` across a five-flag fixture. Correcting only this field in an in-memory control makes parity pass.\n- The #1461 source integration case checks structured help, but does not compare this machine-contract projection.\n\nThe harness uses exact selected source modules with Node TypeScript erasure, real Commander, the full source invocation/contracts functions and existing 10.13 runtime dependencies. Source transformations are confined to isolated test modules. Baseline files remain byte-identical to their retained verified artifact, with isolated HOME/PM path, telemetry disabled and network denied.\n\n## Acceptance proposal\nCarry arity from the shared canonical extension declaration into machine contracts. Reuse the existing parity verifier against actual extension observations instead of adding a second optional-flag name list. Cover bare optional values, supplied values, required values, boolean switches, aliases and repeated values through help, contracts and dispatch. Confirm the same fixture on the published artifact before closure.\n\n## Ownership\nFocused all-status searches found no exact newer owner. Related completed work: #1461 / pm-gh1461 (inline flag identity/help normalization), #817 / pm-11phn1 (semantic invocation metadata), #507 / pm-9qcr (extension arity/recovery). This narrow residual mismatch does not reopen or negate those deliveries. No implementation is included."
