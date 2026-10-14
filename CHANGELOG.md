@@ -13,6 +13,10 @@
 
 - Redact sensitive values in Sentry command context and encoded diagnostic text ([pm-geywoc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-geywoc.toon))
 
+### Other
+
+- Compact SDK declaration whitespace while preserving types and documentation ([pm-chw71s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chw71s.toon))
+
 ## 2026.10.14 - 2026-10-14
 
 ### Added
@@ -52,12 +56,12 @@
 
 ### Other
 
+- Compact declaration indentation while preserving SDK types and documentation ([pm-chw71s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chw71s.toon))
 - Refresh eligible Markdown and lint tooling and record pending dependency migrations ([pm-0uxmwf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0uxmwf.toon))
 - Deduplicate hosted Commander recovery-context projection ([pm-nrj9sy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-nrj9sy.toon))
 - Refresh eligible SDK and CI dependencies ([pm-98f0ec](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-98f0ec.toon))
 - Accept universal SDK read receipts in the public context evaluation reader ([pm-i4kxx1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-i4kxx1.toon))
 - Expose active planning recovery when a canonical item is reopened ([pm-reopen-planning-recovery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-reopen-planning-recovery.toon))
-- Compact declaration indentation while preserving SDK types and documentation ([pm-chw71s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-chw71s.toon))
 
 ## 2026.10.12 - 2026-10-12
 

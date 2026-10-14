@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-14T19:28:32.491Z"
+updated_at: "2026-10-14T21:59:16.708Z"
 reminders[1]{at,text}:
   "2026-10-15T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[214]{created_at,author,text}:
+comments[215]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -299,6 +299,7 @@ comments[214]{created_at,author,text}:
   "2026-10-14T05:03:37.059Z","harness:codex","Same-tag recovery38510184254 completed successfully; all release gates, npm/npx/bunx verification and9 installed-consumer OS/manager rows passed. Stable GitHub Release v2026.10.14 published2026-10-14T04:50:00Z. Publication step skipped the existing immutable version. Original Auto Release38502660564 and Release38505257560 failures remain historical denominator evidence. Candidate mixed-version/continuation source is still unmerged and unreleased; do not attribute its format2 implementation to this published artifact. Rearm the existing daily monitor rather than create a duplicate."
   "2026-10-14T06:34:23.350Z","harness:codex","Subsequent automatic blocker-close retry38514627275 succeeds: it selects the existing v2026.10.14 tag, authoritative successful Release38510184254 and public npm14, and verifies the unchanged2024387a346 immutable target before preparation. No second tag or publication was created. This independently proves the same-day automatic guard after exact-tag recovery. New source changes remain for the next eligible daily cut; the single next reminder remains armed."
   "2026-10-14T19:28:32.490Z","harness:codex","Supplemental next-publication acceptance: the final candidate now requires all40 extension flag cases and all33 diagnostic privacy cases under installed Node and Bun consumers. Preserve the runner/fixture/artifact digest receipts and re-run these public interfaces on the next eligible published release; v2026.10.14 remains the published baseline and is not claimed fixed by local candidate evidence. An upstream pm-changelog occurrence-history correction is being delivered under pmc-reopened-history so the earlier shipped privacy entry remains alongside its new completion."
+  "2026-10-14T21:59:16.707Z","harness:codex","Next eligible publication receipt update: PR1473 final candidate now has 40 independent extension cases and 35 real serialized diagnostic privacy cases across installed Node/Bun consumers; nine packed npm/npx/Bun/bunx workflows pass. Preserve exact artifact/fixture/runner digests and both fixtures during recovery. Current immutable public pm-cli 2026.10.14 remains unchanged; next eligible daily release must prove these inventories from its actual published artifact. Latest upstream pm-changelog 2026.10.14 is published through its official attested workflow and used for native root generation/check. No second same-day root release or retag."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent
