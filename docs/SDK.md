@@ -2670,6 +2670,22 @@ missing. Named expectations use `{ name }`; historical surface-specific aliases
 remain supported. Optional `extensionName` limits a match to one extension.
 The published surface snapshot contains the complete helper signatures.
 
+Output codecs are tracked by [pm-gh1462](../.agents/pm/features/pm-gh1462.toon).
+`decodeToon` and `encodeToon` use the exact TOON implementation shipped by the
+host. They are exported from `/sdk/testing` and `/sdk`, with `ToonDecodeOptions`,
+`ToonEncodeOptions` and `ToonJsonValue` types. Compare decoded values instead of
+matching spaces or quoted scalars, and retain strict decoder errors for malformed
+output:
+
+```ts
+import assert from "node:assert/strict";
+import { decodeToon, encodeToon } from "@unbrained/pm-cli/sdk/testing";
+
+const stdout = "status: open\n"; // Replace with captured host output.
+assert.deepEqual(decodeToon(stdout), { status: "open" });
+assert.deepEqual(decodeToon(encodeToon({ enabled: false })), { enabled: false });
+```
+
 Prefer `createExtensionTestHarness` when testing a package. Its bound methods
 select the correct registry, preventing accidental use of a command registry for
 hooks or services:

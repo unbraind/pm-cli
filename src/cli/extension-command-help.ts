@@ -6,6 +6,9 @@
 import { Command, Option } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES } from "../sdk/cli-contracts/command-aliases.js";
 import {
+  parseExtensionLongFlagToken,
+  resolveExtensionLongFlagName,
+  resolveFlagValueKind,
   type FlagDefinition,
   type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,
@@ -196,41 +199,32 @@ export function resolveExtensionFlagArity(
   takesValue: boolean;
   valueName: string | null;
 } {
-  const valueType =
+  const declaredValueType =
     toNonEmptyFlagString(definition.value_type) ??
     toNonEmptyFlagString(definition.type);
+  const valueType = resolveFlagValueKind(declaredValueType) ?? declaredValueType;
   const declaredValueName = toNonEmptyFlagString(definition.value_name);
+  const inlineValueName = parseExtensionLongFlagToken(definition.long)?.valueName;
   const takesValue =
     valueType !== "boolean" &&
     (declaredValueName !== null ||
+      inlineValueName != null ||
       valueType !== null ||
       toOptionalBoolean(definition.required) === true ||
       toOptionalBoolean(definition.list) === true);
   return {
     takesValue,
-    valueName: takesValue ? (declaredValueName ?? "value") : null,
+    valueName: takesValue ? (declaredValueName ?? inlineValueName ?? "value") : null,
   };
 }
 
 function formatDynamicExtensionFlagHelpLine(
   definition: FlagDefinition,
 ): string | null {
-  const visible = toOptionalBoolean(definition.visible);
-  if (visible === false) {
-    return null;
-  }
-  const longName = toNonEmptyFlagString(definition.long);
-  if (!longName || !longName.startsWith("--") || longName.length < 3) {
-    return null;
-  }
-
-  const shortName = toNonEmptyFlagString(definition.short);
-  const shortPrefix =
-    shortName && shortName.startsWith("-") && !shortName.startsWith("--")
-      ? `${shortName}, `
-      : "";
-  const valueName = toNonEmptyFlagString(definition.value_name);
-  const valueSuffix = valueName ? ` <${valueName}>` : "";
+  const longName = resolveExtensionLongFlagName(definition.long);
+  if (!longName || !longName.startsWith("--") || longName.length < 3) return null;
+  const flags = formatDynamicExtensionOptionFlags(definition);
+  if (!flags) return null;
   const description =
     toNonEmptyFlagString(definition.description) ??
     "Extension-provided option.";
@@ -242,7 +236,7 @@ function formatDynamicExtensionFlagHelpLine(
     markers.push("disabled");
   }
   const markerSuffix = markers.length > 0 ? ` [${markers.join(", ")}]` : "";
-  return `${shortPrefix}${longName}${valueSuffix}  ${description}${markerSuffix}`;
+  return `${flags}  ${description}${markerSuffix}`;
 }
 
 function buildDynamicExtensionFlagHelp(
@@ -542,7 +536,7 @@ function normalizeDynamicExtensionOptionNames(
   if (visible === false) {
     return null;
   }
-  const longName = toNonEmptyFlagString(definition.long);
+  const longName = resolveExtensionLongFlagName(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
   const normalizedShort =
     shortName && shortName.startsWith("-") && !shortName.startsWith("--")
@@ -566,20 +560,15 @@ function formatDynamicExtensionOptionFlags(
     return null;
   }
   const { valueName } = resolveExtensionFlagArity(definition);
-  const optionValueSuffix = valueName ? ` <${valueName}>` : "";
+  const optional = parseExtensionLongFlagToken(definition.long)?.optional === true;
+  const optionValueSuffix = valueName ? optional ? ` [${valueName}]` : ` <${valueName}>` : "";
   return `${optionNames.join(", ")}${optionValueSuffix}`;
 }
 
 function formatDynamicExtensionParseOptionFlags(
   definition: FlagDefinition,
 ): string | null {
-  const optionNames = normalizeDynamicExtensionOptionNames(definition);
-  if (!optionNames) {
-    return null;
-  }
-  const { valueName } = resolveExtensionFlagArity(definition);
-  const valueSuffix = valueName ? ` <${valueName}>` : "";
-  return `${optionNames.join(", ")}${valueSuffix}`;
+  return formatDynamicExtensionOptionFlags(definition);
 }
 
 function formatDynamicExtensionOptionDescription(
@@ -603,7 +592,7 @@ function commandAlreadyHasOption(
   command: Command,
   definition: FlagDefinition,
 ): boolean {
-  const longName = toNonEmptyFlagString(definition.long);
+  const longName = resolveExtensionLongFlagName(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
   return command.options.some((option) => {
     const optionWithNames = option as { long?: string; short?: string };
@@ -674,7 +663,7 @@ function buildDynamicExtensionHelpOptionSummary(
   if (!flags) {
     return null;
   }
-  const longName = toNonEmptyFlagString(definition.long);
+  const longName = resolveExtensionLongFlagName(definition.long);
   const shortName = toNonEmptyFlagString(definition.short);
   const normalizedLong =
     longName && longName.startsWith("--") && longName.length > 2
@@ -692,7 +681,7 @@ function buildDynamicExtensionHelpOptionSummary(
     short: normalizedShort,
     description: formatDynamicExtensionOptionDescription(definition),
     takes_value: takesValue,
-    value_required: takesValue,
+    value_required: takesValue && parseExtensionLongFlagToken(definition.long)?.optional !== true,
     value_name: valueName,
     variadic: false,
     required,

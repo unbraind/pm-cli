@@ -6066,6 +6066,8 @@ describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {
     expect(resolveFlagValueKind("BOOL")).toBe("boolean");
     expect(resolveFlagValueKind("boolean")).toBe("boolean");
     expect(resolveFlagValueKind("numbr")).toBeNull();
+    expect(resolveFlagValueKind("constructor")).toBeNull();
+    expect(resolveFlagValueKind("__proto__")).toBeNull();
     expect(resolveFlagValueKind(7)).toBeNull();
   });
 

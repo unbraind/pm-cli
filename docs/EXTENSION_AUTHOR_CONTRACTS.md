@@ -4,6 +4,25 @@ Tracker: pm-at83
 
 This page records runtime contracts package authors need when they build on the public SDK. For the install, manifest, lifecycle, and troubleshooting overview, see [Packages and Extensions](EXTENSIONS.md).
 
+## Flag Spelling and Output Assertions
+
+Tracked by [pm-gh1461](../.agents/pm/issues/pm-gh1461.toon) and
+[pm-gh1462](../.agents/pm/features/pm-gh1462.toon).
+Prefer `{ long: "--repo", value_name: "project", value_type: "string" }`.
+Legacy `--repo <project>`, `--repo=<project>` and `--label [name]` declarations
+retain one canonical identity, one value placeholder and one help listing.
+Optional brackets permit presence without a value. Explicit `value_name` wins
+over the inline label, and boolean types remain value-free. Runtime contracts
+omit inferred labels for boolean flags, including legacy dynamic `bool` aliases;
+explicit legacy `value_name` metadata remains compatible. The SDK owns the
+canonical long-name rule used by help, option dispatch and contract discovery.
+Typed authors should use canonical `value_type` names (`boolean`, `number`, `string`).
+
+Use `decodeToon` from `@unbrained/pm-cli/sdk/testing` to assert on host output
+semantically; `encodeToon` and the native codec option types are available from
+that subpath and `/sdk`. They use the host's pinned implementation, so a package
+does not need a separate TOON dependency or a private `dist/` import.
+
 ## Telemetry Capture Level
 
 Every `pm` command records a telemetry event. Extension commands use the same telemetry pipeline as core commands and inherit `telemetry.capture_level` from the active settings.

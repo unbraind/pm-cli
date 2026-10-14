@@ -226,6 +226,13 @@ Successful sampled reads defer their start until completion so both lifecycle ev
 
 `pm telemetry stats` reads the local queue and reports, per command bucket, latency percentiles (`duration_p50_ms`/`duration_p95_ms`/`duration_max_ms`, nearest-rank over `command_finish` `duration_ms`), outcome rates (`ok_count`/`error_count`/`error_rate`; a finish event whose `ok` is missing or not strictly `true` is counted conservatively as an error), and `command_resolution_counts`. These are an always-available, zero-network performance and reliability signal for the most recent queued window.
 
+Background completion delivery is tracked by [pm-j8spis](../.agents/pm/issues/pm-j8spis.toon).
+The detached uploader continues draining due events and OTLP spans appended
+during an upload, so completion delivery does not require another command.
+It releases the upload lock between batches and rechecks consent and identity.
+Future retries remain queued, and unchanged eligible work stops the drain;
+foreground commands still perform no export network I/O.
+
 ### Sentry environment variables
 
 Tracing and privacy delivery: [pm-58yzil](../.agents/pm/features/pm-58yzil.toon) and

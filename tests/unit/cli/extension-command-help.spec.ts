@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { describe, expect, it } from "vitest";
 import {
   applyDynamicExtensionFlagOptions,
+  buildResidualDynamicExtensionFlagHelp,
   buildExtensionCommandCollisionWarning,
   collectSafeExtensionCommandPaths,
   ensureCommandPath,
@@ -11,6 +12,36 @@ import {
 } from "../../../src/cli/extension-command-help.js";
 
 describe("dynamic extension Commander options", () => {
+  it("parses optional inline values with and without a supplied value", async () => {
+    for (const [args, expected] of [[[], true], [["example"], "example"]] as const) {
+      const program = new Command().exitOverride();
+      const command = program.command("probe");
+      const definitions = [{ long: "--label [name]" }];
+      applyDynamicExtensionFlagOptions(command, definitions);
+      expect(command.helpInformation()).toContain("--label [name]");
+      expect(buildResidualDynamicExtensionFlagHelp(command, definitions)).toBeNull();
+      let observed: Record<string, unknown> = {};
+      command.action((_, invoked: Command) => { observed = invoked.opts<Record<string, unknown>>(); });
+      await program.parseAsync(["probe", "--label", ...args], { from: "user" });
+      expect(observed).toEqual({ label: expected });
+    }
+  });
+  it("uses explicit value labels and boolean types over legacy inline placeholders", async () => {
+    const program = new Command().exitOverride();
+    const command = program.command("probe");
+    const definitions = [
+      { long: "--number=<legacy>", value_name: "count", value_type: "number", type: "boolean" },
+      { long: "--switch <ignored>", value_type: "boolean" },
+    ];
+    applyDynamicExtensionFlagOptions(command, definitions);
+    expect(buildResidualDynamicExtensionFlagHelp(command, definitions)).toBeNull();
+    expect(command.helpInformation()).toContain("--number <count>");
+    expect(command.helpInformation()).not.toContain("<ignored>");
+    let observed: Record<string, unknown> = {};
+    command.action((_, invoked: Command) => { observed = invoked.opts<Record<string, unknown>>(); });
+    await program.parseAsync(["probe", "--number=4", "--switch"], { from: "user" });
+    expect(observed).toEqual({ number: "4", switch: true });
+  });
   it("accumulates repeated long and short list flag occurrences", async () => {
     const program = new Command().exitOverride();
     const command = program.command("probe");
@@ -47,6 +78,10 @@ describe("dynamic extension Commander options", () => {
   });
 
   it("uses one value-arity contract for typed, required, and list flags", () => {
+    expect(resolveExtensionFlagArity({ value_type: "boolean", type: "number", long: "--switch <ignored>" })).toEqual({
+      takesValue: false,
+      valueName: null,
+    });
     expect(resolveExtensionFlagArity({ value_type: "boolean", required: true })).toEqual({
       takesValue: false,
       valueName: null,

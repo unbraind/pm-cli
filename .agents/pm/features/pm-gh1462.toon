@@ -1,0 +1,67 @@
+id: pm-gh1462
+title: "GH-1462: Publish host-aligned TOON codecs for extension acceptance tests"
+description: "Expose a typed public SDK testing codec over the same pinned TOON implementation used by the host renderer, enabling semantic output assertions without deep imports or duplicated package dependencies."
+type: Feature
+status: closed
+priority: 2
+tags[6]: "area:extensions","area:sdk",github-intake,output,testing,toon
+created_at: "2026-10-13T20:29:33.477Z"
+updated_at: "2026-10-13T22:02:26.362Z"
+closed_at: "2026-10-13T22:02:25.609Z"
+completed_at: "2026-10-13T22:02:25.609Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Public exports decode real host-rendered output semantically; Support encoded and decoded JSON values without quoting assertions; Prove installed/public Node and Bun consumers and TypeScript types; Document the canonical package-author workflow
+parent: pm-ugqx
+risk: low
+confidence: high
+resolution: Public SDK/testing and aggregate SDK now export host-pinned decodeToon and encodeToon plus native options and JSON value types. Author guidance uses semantic decoded assertions and public imports.
+expected_result: Installed Node/Bun and typed package consumers decode actual host TOON without private imports or another dependency pin and preserve native strict codec errors.
+actual_result: "Real isolated npm tarball consumers pass on Node26.9 and Bun; strict TypeScript6 public declarations pass with explicit Node ambient types. Actual extension CLI output decodes through public SDK/testing, root/testing function identities match, native options round-trip Unicode/quotes/newline/false/null, malformed row counts reject, and the isolated production dependency audit reports0 vulnerabilities. The generated surface classifies12 additions with no breaking acknowledgement. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jcyn,related,"2026-10-13T20:29:33.477Z","harness:codex","cli:create:dep",detected
+  pm-ko35zx,related,"2026-10-13T20:29:33.477Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-13T20:29:33.477Z","harness:codex","{\"text\":\"Duplicate check: complete live2956-item all-status corpus with zero omissions and unreadable records, request-specific searches and open/in-progress inventories. Full live closed predecessors pm-jcyn and pm-ko35zx describe shipped adjacent contracts, not this new reported scope. Reuse pm-ugqx parent lineage and relate predecessors without reopening completed work. Full GitHub issue and comments read. Official Git documentation distinguishes -merge binary conflict behavior from the native text/default drivers. Implementation will preserve supported SDK contracts and use real controls.\"}"
+  "2026-10-13T20:53:26.486Z","harness:codex","The new public SDK/testing codec exports delegate directly to the same installed TOON4.1.1 implementation used by host output; the aggregate SDK already reexports testing. Real temporary extension output is decoded through the public package subpath, and typed native options round-trip structured values with Unicode, quotes, newline, false and null. Malformed strict row counts preserve decoder errors. No duplicated codec implementation, dependency pin or private deep import is introduced."
+  "2026-10-13T20:58:41.072Z","harness:codex",Public decoder/encoder exports and option/JSON types are classified in the generated public surface as additive changes. The new host-output acceptance and native strict round-trip checks pass through the actual package SDK/testing subpath. Typecheck and docstring/ESLint gates pass. Full source and real packed external consumers remain pending.
+  "2026-10-13T21:28:01.116Z","harness:codex","Installed public-tarball acceptance now passes on Node26.9 and Bun, including real inline-placeholder extension dispatch and semantic TOON output through /sdk/testing and /sdk; the strict TypeScript6 consumer succeeds with explicit Node ambient types, and its isolated public-registry production dependency audit reports0 vulnerabilities. The earlier fixture typecheck refusal is preserved. Full repository execution initially exposed4 regressions: root integration-file and compact-document ceilings, the short-only residual-help contract, and an older installed merge fence during the published-artifact compatibility matrix. Corrected by relocating the new integration test, moving detail into focused author contracts, retaining the existing long-only residual guard, and refreshing old fences through the current SDK before current reconciliation. All192 targeted regression cases now pass, including all4 actual published writer/reader combinations with values, hashes, unknown fields, restore, native Git merges and verified history. No threshold, coverage denominator or force override changed. Full source coverage is still running and is not yet certified."
+  "2026-10-13T22:02:24.838Z","harness:codex","Real isolated npm tarball consumers pass on Node26.9 and Bun; strict TypeScript6 public declarations pass with explicit Node ambient types. Actual extension CLI output decodes through public SDK/testing, root/testing function identities match, native options round-trip Unicode/quotes/newline/false/null, malformed row counts reject, and the isolated production dependency audit reports0 vulnerabilities. The generated surface classifies12 additions with no breaking acknowledgement. All10,407 tests pass with3 explicit skips and exact100% lines65062/65062, statements68487/68487, functions14115/14115 and branches52549/52549. The complete local static gate passes, including dependency, docstring, export, ESLint, zero-clone, contract, SDK surface, package-boundary, context, graph, record and bounded mutation gates. All192 broad-regression controls and actual four-way published compatibility rows pass. Failed controls and the earlier two-branch coverage gap are retained; gates and denominators are unchanged."
+learnings[1]{created_at,author,text}:
+  "2026-10-13T21:28:07.491Z","harness:codex",Package output tests should decode host-rendered TOON through public SDK/testing exports. Native host codec aliases avoid private imports and duplicated dependency pins; installed TypeScript6 consumer fixtures should explicitly request Node ambient types.
+files[4]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/index.ts,project
+  src/sdk/testing.ts,project
+  tests/integration/extensions/authoring-output.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/authoring-output.integration.spec.ts,project,240,"harness:codex","2026-10-13T21:24:00.196Z",local_mutation,chore/oct13-delivery-evidence
+test_runs[2]:
+  - run_id: test-local-mv75ugkm-ab6cpl
+    kind: test
+    status: passed
+    started_at: "2026-10-13T20:55:28.414Z"
+    finished_at: "2026-10-13T20:55:44.998Z"
+    recorded_at: "2026-10-13T20:55:44.998Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extension-authoring-output.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv787j8s-bjjtq3
+    kind: test
+    status: passed
+    started_at: "2026-10-13T22:01:40.601Z"
+    finished_at: "2026-10-13T22:01:54.220Z"
+    recorded_at: "2026-10-13T22:01:54.220Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/authoring-output.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  docs/EXTENSION_AUTHOR_CONTRACTS.md,project
+  docs/EXTENSIONS.md,project
+  docs/SDK.md,project
+close_reason: Implementation and sandboxed regression evidence complete; awaiting reviewed PR delivery.
+body: "Source: https://github.com/unbraind/pm-cli/issues/1462\n\n## Problem\nExtension packages render through the host, so TOON is their default output, and their acceptance tests need to assert on what the host actually printed. The public SDK (`@unbrained/pm-cli/sdk`, `/sdk/testing`, `/sdk/core`, …) exposes no TOON decoder: there is no `decodeToon`, `parseToon` or equivalent. Authors fall back to one of three bad options:\n1. **Hard-coding quoting**, as in `assert.match(out, /status: \"open\"/)`. This broke when the host renderer started emitting unquoted scalars (unbraind/pm-github#115 CI went red after a toolchain bump).\n2. **Deep-importing internals**: `import { decodeToonItemContent } from \"@unbrained/pm-cli/dist/core/item/toon-decode.js\"`. This sits outside the exports map and can break on any release.\n3. **Adding `@toon-format/toon` as a devDependency pinned to whatever pm-cli uses internally (4.1.1 today).** That duplicates the pin, and any skew means the test parser disagrees with the host renderer.\n\n## Proposal\n- Export `decodeToon(text)` (and ideally `encodeToon(value)`) from `@unbrained/pm-cli/sdk/testing`, or from `/sdk`, backed by exactly the TOON implementation the host renders with.\n- In the authoring docs, recommend asserting host output as `decodeToon(stdout)` rather than by string matching.\n- Optional: `createExtensionTestHarness` gives a `run(...)` result exposing `.parsed` for both `--json` and TOON output.\n\nThat makes extension tests independent of quoting and whitespace changes in the renderer, and removes a reason to reach into `dist/`.\n\n\nImplementation intent\n\nExpose a typed public SDK testing codec over the same pinned TOON implementation used by the host renderer, enabling semantic output assertions without deep imports or duplicated package dependencies."

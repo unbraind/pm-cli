@@ -123,6 +123,11 @@ describe("cli extension loose option parser", () => {
     expect(coerceLooseCommandOptionsWithFlagDefinitions({ dryRun: false, d: true }, definitions)).toEqual({
       dryRun: false,
     });
+    // The permissive loose parser retains a usable short alias when a legacy
+    // descriptor has no valid long spelling; registration validates separately.
+    expect(coerceLooseCommandOptionsWithFlagDefinitions({ r: "4" }, [
+      { long: " invalid ", short: "-r", value_type: "number" },
+    ])).toEqual({ r: 4 });
   });
 
   it("accumulates list-flag values across comma-joined and repeated occurrences (pm-ltbr)", () => {

@@ -1,4 +1,4 @@
-import { access, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -17,6 +17,24 @@ beforeEach(() => {
 });
 afterEach(async () => { await waitForPendingFlush(); vi.unstubAllEnvs(); });
 
+it("stops a detached drain that cannot make progress without changing queued events", async () => {
+  await withTempDir("pm-worker-stagnant-", async (root) => {
+    vi.stubEnv("PM_GLOBAL_PATH", root);
+    const settings = await readSettings(root);
+    settings.telemetry.enabled = true;
+    settings.telemetry.endpoint = "";
+    await writeSettings(root, settings, "test:stagnant-consent");
+    const active = await startTelemetryCommand({ command: "create", pm_version: "fixture", args: [], options: {}, global: { noExtensions: true }, pm_root: root });
+    expect(active).not.toBeNull();
+    await waitForPendingFlush();
+    const queue = path.join(root, "runtime", "telemetry", "events.jsonl");
+    const before = await readFile(queue, "utf8");
+    vi.stubEnv("PM_TELEMETRY_FLUSH_CHILD", "1");
+    await flushTelemetryQueueNow(root);
+    expect(await readFile(queue, "utf8")).toBe(before);
+  });
+});
+
 it("does not initialize storage after a detached worker's root has been removed", async () => {
   await withTempDir("pm-worker-absent-", async (parent) => {
     const root = path.join(parent, "installation");
@@ -30,14 +48,42 @@ it("does not initialize storage after a detached worker's root has been removed"
   });
 });
 
+it("leaves future OTLP retries dormant during detached tail draining", async () => {
+  await withTempDir("pm-worker-future-span-", async (root) => {
+    vi.stubEnv("PM_GLOBAL_PATH", root);
+    vi.stubEnv("PM_TELEMETRY_OTEL_DISABLED", "0");
+    vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://127.0.0.1:9/traces");
+    const settings = await readSettings(root);
+    settings.telemetry.enabled = true;
+    settings.telemetry.endpoint = "";
+    settings.telemetry.installation_id = randomUUID();
+    await writeSettings(root, settings, "test:future-consent");
+    await runWithConfigurationOnlySettings(root, async () => {
+      const command = await startTelemetryCommand({ command: "create", pm_version: "fixture", args: [], options: {}, global: { noExtensions: true }, pm_root: root });
+      await finishTelemetryCommand(command, { ok: true });
+      await waitForPendingFlush();
+    });
+    const queue = path.join(root, "runtime", "telemetry", "otel-spans.jsonl");
+    const entry = JSON.parse(await readFile(queue, "utf8")) as Record<string, unknown>;
+    entry.next_attempt_after = new Date(Date.now() + 60_000).toISOString();
+    const deferred = JSON.stringify(entry) + "\n";
+    await writeFile(queue, deferred);
+    vi.stubEnv("PM_TELEMETRY_FLUSH_CHILD", "1");
+    await flushTelemetryQueueNow(root);
+    expect(await readFile(queue, "utf8")).toBe(deferred);
+  });
+});
+
 it.each([
-  { artifact: "events", status: 202, removeRoot: true },
-  { artifact: "events", status: 503, removeRoot: true },
-  { artifact: "events", status: 202, removeRoot: false },
-  { artifact: "spans", status: 202, removeRoot: true },
-  { artifact: "spans", status: 503, removeRoot: true },
-  { artifact: "spans", status: 202, removeRoot: false },
-] as const)("respects storage ownership during $artifact delivery (HTTP $status, remove=$removeRoot)", async ({ artifact, status, removeRoot }) => {
+  { artifact: "events", status: 202, removeRoot: true, unreadable: null },
+  { artifact: "events", status: 503, removeRoot: true, unreadable: null },
+  { artifact: "events", status: 202, removeRoot: false, unreadable: null },
+  { artifact: "spans", status: 202, removeRoot: true, unreadable: null },
+  { artifact: "spans", status: 503, removeRoot: true, unreadable: null },
+  { artifact: "spans", status: 202, removeRoot: false, unreadable: null },
+  { artifact: "events", status: 202, removeRoot: false, unreadable: "spans" },
+  { artifact: "spans", status: 202, removeRoot: false, unreadable: "events" },
+] as const)("respects storage ownership during $artifact delivery (HTTP $status, remove=$removeRoot, unreadable=$unreadable)", async ({ artifact, status, removeRoot, unreadable }) => {
   await withTempDir("pm-worker-inflight-", async (parent) => {
     const root = path.join(parent, "installation");
     const sentinel = path.join(parent, "unrelated");
@@ -87,9 +133,15 @@ it.each([
         deliverySettings.telemetry.endpoint = endpoint;
         await writeSettings(root, deliverySettings, "test:delivery");
       }
+      const unreadableQueue = path.join(root, "runtime", "telemetry", unreadable === "events" ? "events.jsonl" : "otel-spans.jsonl");
+      if (unreadable !== null) {
+        await rm(unreadableQueue, { force: true });
+        await mkdir(unreadableQueue);
+      }
       vi.stubEnv("PM_TELEMETRY_FLUSH_CHILD", "1");
       await flushTelemetryQueueNow(root);
       await deletion;
+      expect(received).not.toBe("");
       if (artifact === "events") {
         expect((JSON.parse(received) as { events: Array<{ event_type: string }> }).events.map((event) => event.event_type))
           .toEqual(["command_start", "command_finish"]);
@@ -103,6 +155,7 @@ it.each([
         expect(await readFile(queue, "utf8")).toBe("");
         expect((await readSettings(root)).telemetry.installation_id).toBe(settings.telemetry.installation_id);
       }
+      if (unreadable !== null) expect((await stat(unreadableQueue)).isDirectory()).toBe(true);
       expect(await readFile(sentinel, "utf8")).toBe("preserve me");
     } finally {
       server.closeAllConnections();

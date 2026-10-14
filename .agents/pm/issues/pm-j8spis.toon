@@ -1,0 +1,77 @@
+id: pm-j8spis
+title: Resume due telemetry after a concurrent background upload
+description: "A real source get finish remained queued for432.545 seconds until a later invocation, though it eventually paired. The detached worker flushes one snapshot; a concurrent completion can append after that snapshot while its foreground scheduling is refused by the active flush lock. Reconcile and schedule due tail work after releasing that lock, without foreground network I/O, busy retries, or recreating removed storage."
+type: Issue
+status: closed
+priority: 1
+tags[3]: delivery,sdk,telemetry
+created_at: "2026-10-13T16:48:11.966Z"
+updated_at: "2026-10-13T20:01:01.660Z"
+closed_at: "2026-10-13T20:01:00.875Z"
+completed_at: "2026-10-13T20:01:00.875Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: A deterministic real-SDK worker collector receives a finish appended during the first POST without a subsequent user command; future-backoff work does not spin; disabled consent or removed storage cannot restart workers; event and OTLP tail work are covered; existing SDK/CLI performance and security gates pass.
+parent: pm-5oj5
+risk: medium
+confidence: high
+resolution: "Continue due detached event/span draining after each released upload lock, recheck consent and identity, stop stagnant or future-retry work, and snapshot artifacts independently so one unreadable queue cannot block healthy delivery"
+expected_result: Completions appended during uploads deliver without another command and each healthy artifact drains independently without recreating removed storage or foreground network I/O
+actual_result: "Pre-correction real tail control times out and both unreadable-artifact controls deliver nothing; corrected158-case telemetry suite,10399-case full coverage with exact100percent in all4 dimensions, typecheck/lint/secrets and9 packed consumers pass; failed prior prerequisites remain preserved and final hosted/review admission is required"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-58yzil,discovered_from,"2026-10-13T16:48:11.966Z","harness:codex","cli:create:dep",detected
+  pm-sgko,related,"2026-10-13T16:48:11.966Z","harness:codex","cli:create:dep",detected
+  pm-u5c27w,related,"2026-10-13T16:48:11.966Z","harness:codex","cli:create:dep",detected
+comments[10]{created_at,author,text}:
+  "2026-10-13T16:48:11.966Z","harness:codex","Duplicate check: complete2952-item live corpus and all-status flush-worker/finish and appended-flush searches were read, plus live open/in-progress inventories. Closed background-flush and manual partial-drain owners describe shipped distinct behavior; preserve their closures. The new tail scheduling case is evidenced by a real delayed finish and the current single-pass worker/lock code."
+  "2026-10-13T17:17:12.338Z","harness:codex","The real detached-worker regression fails on unchanged source: after the first POST owns the flush lock, append the SDK completion and release that POST; no second user command occurs and completion delivery times out. With post-unlock due-artifact draining it passes in606ms. Detached passes renew their lock, re-read consent and installation inside the queue mutex, preserve removed storage, exclude future retry work, and stop when eligible identities do not change. All155 telemetry assertions pass, including existing revocation and removed-storage controls plus the stagnant-queue case. Focused coverage intentionally does not satisfy the repository-wide denominator; full exact coverage remains required."
+  "2026-10-13T17:35:17.581Z","harness:codex","Planning qualification: medium risk because exporter coordination changes while foreground and retention contracts stay intact; high confidence from the deterministic real-worker failure and corrected pass; estimated90 minutes including preservation, consent/backoff coverage, packed consumers, exact coverage and reviewed operational closeout."
+  "2026-10-13T17:53:24.971Z","harness:codex","Final local source checks:156 linked telemetry tests pass; typecheck, uncached unsuppressed ESLint, secret scanning, SDK surface and import costs, configured context/graph/record gates and all9 packed npm/Bun/npx/bunx workflows pass. Distribution19,965,753 bytes remains under20,000,000 with40 runtime packages. Registered mutation control reports336 total,329 killed and7 documented equivalents, with no failures. Full local coverage received SIGTERM before a verdict; preserve that incomplete receipt and require exact100% hosted coverage. The latest full static run stops only at the qualified get timing369ms versus362ms, recorded under the existing diagnosis without changing thresholds."
+  "2026-10-13T18:22:50.869Z","harness:codex","Fresh corrected-source production receipt:32 real installation command starts from2026-10-13T18:09:00Z through the18:15 observation all pair with finishes, unmatched starts0 and duplicate finishes0. Maximum observed finish delivery0.915seconds; newest backend receipt2026-10-13T18:15:16.941686Z. RabbitMQ ready0/unacked0/total0 with one consumer. A new real pm context Sentry span starts2026-10-13T18:14:07Z and lasts2722.609043ms. Required Sentry/telemetry gate passes:14-day Sentry total0/critical0/high0,7-day finish error rate3.02percent below6percent, and failures missing error codes0. This is a bounded fresh cohort, not a claim that every historical action delivered in real time. Initial5558affc implementation full CodeRabbit review generated no actionable comments; renewed final-head review and hosted exact100percent coverage/static remain pending."
+  "2026-10-13T18:58:50.981Z","harness:codex","Hosted producing source 8f3754863cea9a3b7b4f62bddde4d7440ba5e347 passes every required PR context with CLEAN readiness, no missing contexts and no unresolved threads. This includes full static quality, exact global 100-percent statements/branches/functions/lines, compatibility, Windows and macOS/Ubuntu Node22/24 packed consumers, telemetry regression and security/analyzer checks. The complete source suite is10397 passing tests with3 retained skips; previous failed intake/static receipts remain preserved. Hosted DeepScan and CodeFactor readiness passes with zero annotations. This evidence owns that immutable producing head; later tracker-only evidence changes still require their own exact-head hosted checks and renewed available review before merge. Live production lifecycle/Sentry evidence remains the separately recorded32-pair cohort."
+  "2026-10-13T19:18:37.191Z","harness:codex","CodeRabbit4262928049 is supported by the current helper: a pre-flush snapshot exception exits the outer worker catch before either independently guarded exporter runs. Extend the existing real storage-lifecycle collector table with both unreadable-artifact directions and preserve broken storage while delivering the healthy queue. Demonstrate the same cases fail before correction and pass afterward."
+  "2026-10-13T19:25:15.777Z","harness:codex","Review4262928049 regression control: the existing real SDK storage-lifecycle collector table now includes unreadable events and unreadable spans. Before correction, only those two cases fail because the healthy collector receives nothing; six unchanged delivery/storage cases pass. Independent per-artifact snapshot guards correct both directions while preserving the unreadable directory, real healthy payloads, empty delivered queues and installation identity. Linked full telemetry command now passes158 cases. Typecheck, focused uncached unsuppressed ESLint and strict secrets pass. Full source coverage is running before final closure."
+  "2026-10-13T19:41:16.134Z","harness:codex","Full local coverage attempt terminates with1 actual npm-module prerequisite failure in the existing packed continuation integration and10398 passing tests/3 retained skips; no coverage summary is emitted, so no local full-coverage pass is claimed. This Node26 installation exposes npm on PATH but the actual npm package is outside its module resolver. Retain the failed receipt, resolve the installed module path using the supported NODE_PATH input, and rerun the exact public packed test and full suite without changing tests or thresholds."
+  "2026-10-13T20:00:59.980Z","harness:codex","Final corrected-source local evidence: using the actual installed npm module path through the existing NODE_PATH contract, the packed serialized-cursor test passes; the unchanged full suite then passes10399 tests with3 retained skips and exact covered/total lines65065/65065, statements68486/68486, functions14114/14114 and branches52534/52534. The earlier npm-prerequisite failure remains preserved without coverage measurements.158 linked telemetry cases, typecheck, uncached unsuppressed ESLint, strict secrets, current artifact budget and all9 packed npm/Bun/npx/bunx consumer workflows pass. The two unreadable-artifact regressions fail only on the pre-correction source and now preserve broken storage while delivering healthy queues. Final-head hosted checks and renewed available full review still gate merge."
+files[4]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  src/core/telemetry/runtime.ts,project
+  tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts,project
+  tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry,project,240,"harness:codex","2026-10-13T17:17:11.593Z",local_mutation,chore/oct13-delivery-evidence
+test_runs[2]:
+  - run_id: test-local-mv6yd6v1-osio8r
+    kind: test
+    status: passed
+    started_at: "2026-10-13T17:26:03.034Z"
+    finished_at: "2026-10-13T17:26:21.949Z"
+    recorded_at: "2026-10-13T17:26:21.949Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry,schema,schema,source,local_source_ref
+  - run_id: test-local-mv72gly4-lczcd6
+    kind: test
+    status: passed
+    started_at: "2026-10-13T19:20:39.314Z"
+    finished_at: "2026-10-13T19:20:59.931Z"
+    recorded_at: "2026-10-13T19:20:59.931Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
+close_reason: Drain concurrent tails and isolate telemetry artifact snapshot failures
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-collector-concurrency.spec.ts -t completion-appended
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/telemetry
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-j8spis
+body: ""

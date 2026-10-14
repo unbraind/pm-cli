@@ -11,7 +11,33 @@ import { RESERVED_EXTENSION_HOST_FLAG_NAMES } from "./reserved-host-flags.js";
  * legacy underscore aliases, and an optional value placeholder.
  */
 export const EXTENSION_LONG_FLAG_PATTERN =
-  /^--[a-z0-9][a-z0-9_-]*(?:[ =](?:<[^<>]+>|\[[^[\]]+\]))?$/;
+  /^(--[a-z0-9][a-z0-9_-]*)(?:[ =](<[^<>]+>|\[[^[\]]+\]))?$/;
+
+/** Canonical identity and value syntax of a supported long flag declaration. */
+export interface ExtensionLongFlagSpelling {
+  /** Bare long option identity used for dispatch and discovery. */
+  name: string;
+  /** Inline value label, or null for a bare declaration. */
+  valueName: string | null;
+  /** Whether the inline value uses optional brackets. */
+  optional: boolean;
+}
+
+/** Parse supported legacy placeholder syntax without duplicating its option identity. */
+export function parseExtensionLongFlagToken(value: unknown): ExtensionLongFlagSpelling | null {
+  if (typeof value !== "string") return null;
+  const matched = EXTENSION_LONG_FLAG_PATTERN.exec(value.trim());
+  if (!matched) return null;
+  const placeholder = matched[2];
+  return { name: matched[1]!, valueName: placeholder ? placeholder.slice(1, -1) : null, optional: placeholder?.startsWith("[") ?? false };
+}
+
+/** Resolve supported canonical names while preserving trimmed legacy spellings for permissive consumers. Validation remains separate. */
+export function resolveExtensionLongFlagName(value: unknown): string | null {
+  const parsed = parseExtensionLongFlagToken(value);
+  if (parsed) return parsed.name;
+  return typeof value === "string" ? value.trim() || null : null;
+}
 
 /** Machine-readable failure returned for one invalid extension flag token. */
 export type ExtensionFlagTokenFailure =
