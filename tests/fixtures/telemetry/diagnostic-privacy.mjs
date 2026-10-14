@@ -31,6 +31,8 @@ export const DIAGNOSTIC_PRIVACY_CASES = [
   { id: "incomplete-value", input: `diagnostic {"password":"${marker} unfinished` },
   { id: "incomplete-container", input: `diagnostic {"secret": {"first": "${marker}", "tail": "private tail"` },
   { id: "mismatched-container", input: `diagnostic {"secret": ["${marker}"} suffix` },
+  { id: "escaped-container-close", input: String.raw`{"credentials": {prefix\} ${marker}}}` },
+  { id: "unicode-container-close", input: String.raw`{"credentials": {prefix\u007d ${marker}}}` },
   { id: "unicode-separator", input: JSON.stringify(JSON.stringify({ password: marker })).replaceAll(":", String.raw`\u003a`) },
   { id: "unicode-whitespace", input: String.raw`{"password"\u0020:\u0020"${marker}"}` },
   { id: "unicode-container", input: String.raw`{"secret": \u007b"first": "${marker}", "tail":"private tail"\u007d}` },

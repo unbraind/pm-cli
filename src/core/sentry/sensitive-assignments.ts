@@ -24,6 +24,7 @@ interface DelimiterToken {
   end: number;
   identity: string;
   character: string;
+  width: number;
 }
 
 /** Read one delimiter without retrying every suffix of a backslash run. */
@@ -39,7 +40,7 @@ function readDelimiterToken(value: string, index: number, token: string): Delimi
     remaining /= 2;
   }
   const character = unicode ? String.fromCharCode(Number.parseInt(token.slice(1), 16)) : token;
-  return { index: start, end: index + token.length, identity: `${character}:${width}`, character };
+  return { index: start, end: index + token.length, identity: `${character}:${width}`, character, width };
 }
 
 /** Consume one quoted value, respecting the escaping level of serialized JSON text. */
@@ -54,14 +55,15 @@ function quotedValueEnd(value: string, delimiter: DelimiterToken): number {
 }
 
 /** Finish a balanced container or redact the remaining input on a mismatched close. */
-function closeSensitiveContainer(stack: string[], current: string, end: number, inputEnd: number): number | undefined {
-  if (stack.pop() !== current) return inputEnd;
+function closeSensitiveContainer(stack: Array<{ character: string; width: number }>, current: DelimiterToken, end: number, inputEnd: number): number | undefined {
+  const expected = stack.pop()!;
+  if (expected.character !== current.character || expected.width !== current.width) return inputEnd;
   return stack.length === 0 ? end : undefined;
 }
 
 /** Consume a whole sensitive container; malformed or incomplete input fails closed. */
 function containerValueEnd(value: string, opener: DelimiterToken): number {
-  const stack = [opener.character === "{" ? "}" : "]"];
+  const stack = [{ character: opener.character === "{" ? "}" : "]", width: opener.width }];
   const tokens = /["'{}[\]]|u(?:0022|0027|007b|007d|005b|005d)/gi;
   tokens.lastIndex = opener.end;
   let token: RegExpExecArray | null;
@@ -70,11 +72,11 @@ function containerValueEnd(value: string, opener: DelimiterToken): number {
     if (!delimiter) continue;
     const current = delimiter.character;
     if (current === "{" || current === "[") {
-      stack.push(current === "{" ? "}" : "]");
+      stack.push({ character: current === "{" ? "}" : "]", width: delimiter.width });
       continue;
     }
     if (current === "}" || current === "]") {
-      const end = closeSensitiveContainer(stack, current, delimiter.end, value.length);
+      const end = closeSensitiveContainer(stack, delimiter, delimiter.end, value.length);
       if (end !== undefined) return end;
       continue;
     }

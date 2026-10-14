@@ -6,25 +6,25 @@ status: closed
 priority: 1
 tags[5]: bugfix,observability,privacy,sdk,security
 created_at: "2026-10-13T04:41:25.527Z"
-updated_at: "2026-10-14T19:51:59.612Z"
-closed_at: "2026-10-14T19:13:41.971Z"
-completed_at: "2026-10-14T19:13:41.971Z"
+updated_at: "2026-10-14T21:03:59.047Z"
+closed_at: "2026-10-14T21:03:57.632Z"
+completed_at: "2026-10-14T21:03:57.632Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Positional content and separate option values never enter Sentry context or breadcrumbs; streamed spans and logs scrub sensitive data before export; independent negative controls fail before the fix and pass after; existing error classification and consent remain intact.; Quoted sensitive keys, Unicode delimiters and separators, serialized JSON, and nested containers are redacted at registered hooks and real loopback export; Opaque encoded boundaries fail closed while safe controls, typed attributes, caller scope and linear scanning remain intact; Exact candidate Node and Bun acceptance requires a complete privacy case inventory and retained digests"
 parent: pm-5oj5
 risk: high
 confidence: high
-resolution: "Retain prior command/scope/template redaction and add shared linear scanning for quoted/Unicode keys, delimiters, separators, serialized JSON, complete containers and malformed tails; require complete exact-candidate diagnostic receipts"
-expected_result: "Synthetic sensitive values never survive active event/span/log/final-envelope exports while safe text, typed attributes, caller scope and consent remain intact"
-actual_result: "The same33-case public-SDK fixture fails the verified published14 artifact with the intended leaked-marker assertion and passes candidate Node/Bun serialized loopback exports. All146 focused checks,81 hook cases and exact helper104/104 statements,62/62 branches,10/10 functions,88/88 lines pass; all3 linked privacy commands pass after reviewed clone-local trust acknowledgement. No real secret or external disclosure was observed. Original closure evidence is archived by the audited recurrence. Final whole-scope hosted checks/review are required before merge; published14 remains the failing immutable baseline."
+resolution: "Keep character and encoding width in each sensitive container boundary, rejecting malformed escaped and Unicode-encoded closers without exposing remaining values. Retain prior quoted-key, Unicode, scope, consent and final-envelope protections and require35 installed-consumer cases."
+expected_result: "Synthetic sensitive markers do not survive event, streamed-span or log serialization, including malformed escaped/encoded container boundaries, while safe controls and caller scope remain intact."
+actual_result: The new35-case loopback consumer fails before the fix at escaped-container-close and passes after. Native linked run test-local-mv8l8e8r-61jpg3 passes all3 selected commands and records required_privacy_cases35 at threshold35; current compiled public SDK passes under Node and Bun. Existing unit and integration checks pass after raising the explicit inventory assertion from33 to35. A fresh whole-source exact coverage run is active; exact revised-head hosted coverage/static/smoke/review are required before merge. Published14 remains the original failing baseline; no second same-day pm-cli version or policy relaxation introduced.
 affected_version: 2026.10.14
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-58yzil,discovered_from,"2026-10-13T04:41:25.527Z","harness:codex","cli:create:dep",detected
   pm-t3jxjj,related,"2026-10-13T05:43:51.188Z","harness:codex","cli:update:dep",detected
   pm-mor9pl,related,"2026-10-13T12:54:36.933Z","harness:codex","cli:update:dep",detected
   pm-gh1467,related,"2026-10-14T18:30:03.542Z","harness:codex","cli:update:dep",detected
-comments[26]{created_at,author,text}:
+comments[27]{created_at,author,text}:
   "2026-10-13T04:41:25.527Z","harness:codex","Duplicate check: strict all-status corpus including closed Sentry/privacy lineage and current request-specific search found no owner for raw positional command-context exposure. Reuse pm-58yzil and pm-t3jxjj as related delivery owners."
   "2026-10-13T04:44:24.888Z","harness:codex","Independent pre-fix control: canonical helper test extended with private positional text and a separate token value. Before production edits selected test exits1 because both strings remain in context args. Same assertion and harness retained for after proof; ignored privacy-before.log records exact assertion failure."
   "2026-10-13T05:16:59.000Z","harness:codex","Configured consent control fails before the fix: with a disposable global telemetry.enabled=false and a loopback Sentry DSN, explicit tracing exported a span. CLI now supplies effective consent from its active telemetry receipt to the shared SDK helper before initialization. The unchanged configured-opt-out assertion passes afterward. Fixture telemetry endpoint also points to its loopback collector, preventing external event delivery when test policy is cleared for local Sentry instrumentation. Initial collector experiments emitted3 unfinished fixture starts; those installation identities are separate from the real installation, whose fixed04:30-05:01UTC cohort is112 starts/112 finishes with0 unmatched or duplicate pairs. No historical telemetry records are deleted."
@@ -51,6 +51,7 @@ comments[26]{created_at,author,text}:
   "2026-10-14T19:11:43.713Z","harness:codex","Final candidate verification:146 focused privacy/export checks pass;81 registered-hook tests give exact helper coverage104/104 statements,62/62 branches,10/10 functions,88/88 lines. Packed npm/npx/Bun/bunx9-workflow acceptance passes40 extension and33 diagnostic cases on Node/Bun. Typecheck, graph composition at the unchanged prose bound, record integrity and registered mutation controls pass. Native linked tests are now recorded successful for every selected item, with required case metrics40/40/33; inherited privacy links were reviewed and clone-locally acknowledged without changing trust policy. Complete local static passes all gates through10 SDK import budgets but fails qualified CLI startup ceilings; the existing startup diagnosis retains that failure, and full exact-head hosted static/coverage/review are mandatory before merge. Public2026.10.14 remains the integrity-verified failing baseline; no second same-day release is created."
   "2026-10-14T19:35:45.905Z","harness:codex","Final unchanged published-artifact negative control uses the current33-case loopback diagnostic fixture bytes. Integrity-verified public2026.10.14 consumer fails with Sensitive marker exported: json-key; this is the reported privacy defect at the serialization boundary, not a fixture setup or timeout failure. Candidate installed Node/Bun receipts remain separate; final full-source coverage and hosted PR admission are pending."
   "2026-10-14T19:51:59.611Z","harness:codex","Final frozen source full suite:10466 passed and3 existing skips, all813 test files accounted for (812 pass,1 skipped), exact100/100/100/100 measured coverage with zero uncovered counts. A fresh packed smoke also passes all9 Node/npm/npx/Bun/bunx workflows with complete40 extension and33 privacy case inventories. Published14 still fails the same33-case fixture at json-key; exact-head hosted admission and next eligible public publication remain distinct."
+  "2026-10-14T20:49:26.090Z","harness:codex","Boundary validation before the fix: the current candidate public-SDK loopback fixture with35 inputs fails with Sensitive marker exported: escaped-container-close. This is a real serialized sink failure after the existing33 inputs pass, not a setup failure. An escaped or Unicode-encoded closer has a different encoding width from its raw opener and must not terminate that sensitive container. Track character plus encoding width at every nesting level, retain existing safe controls and require all35 cases without changing transport capacity or deadlines."
 learnings[3]{created_at,author,text}:
   "2026-10-13T05:01:46.510Z","harness:codex",Command args reaching a diagnostic helper are data even when text resembles flags. Redact every argument slot and retain option keys separately; apply privacy at event breadcrumb log and streamed-span export boundaries.
   "2026-10-13T10:21:53.015Z","harness:codex","Privacy at a diagnostic export boundary must consume the entire quoted value, including escaped delimiters and incomplete input. A prefix-only regex can redact the first word while exporting the remaining secret."
@@ -111,7 +112,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: fix/extension-flag-semantics
     note: "Independent public SDK loopback export: errors, spans, logs and scope attributes"
-test_runs[8]:
+test_runs[9]:
   - run_id: test-local-mv6d2996-qxhmcx
     kind: test
     status: passed
@@ -217,13 +218,28 @@ test_runs[8]:
       node scripts/run-tests.mjs test -- tests/unit/core/sentry,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,acknowledged
       node tests/fixtures/telemetry/diagnostic-privacy.mjs .,schema,schema,source,local_source_ref
+  - run_id: test-local-mv8l8e8r-61jpg3
+    kind: test
+    status: passed
+    started_at: "2026-10-14T20:53:37.851Z"
+    finished_at: "2026-10-14T20:54:15.578Z"
+    recorded_at: "2026-10-14T20:54:15.578Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    measurements[1]{name,value,unit,threshold,recorded_at}:
+      required_privacy_cases,35,count,35,"2026-10-14T20:54:15.578Z"
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,acknowledged
+      node tests/fixtures/telemetry/diagnostic-privacy.mjs .,schema,schema,source,local_source_ref
 docs[2]:
   - path: docs/CONFIGURATION.md
     scope: project
   - path: docs/RELEASING.md
     scope: project
     note: Candidate privacy exports remain separate from hosted ingestion
-close_reason: Verified the quoted-key privacy recurrence through registered hooks and real candidate SDK exports in PR1473
+close_reason: Verify escape-level container boundaries in the SDK diagnostic privacy recurrence
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
