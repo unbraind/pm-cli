@@ -23,7 +23,7 @@ it("executes preserved reviewed artifact controls with their transitive imports 
     }));
     expect(controls.WORKSPACE_COMPATIBILITY).toBeTypeOf("string");
     const controlRoot = path.resolve(path.dirname(controls.WORKSPACE_COMPATIBILITY), "../..");
-    for (const file of ["scripts/release/workspace-compatibility.mjs", "scripts/release/workspace-compatibility-policy.json", "scripts/release/utils.mjs", "tests/fixtures/compatibility/custom-fields/index.mjs", "tests/fixtures/compatibility/sdk-reader.mjs"]) {
+    for (const file of ["scripts/release/workspace-compatibility.mjs", "scripts/release/workspace-linked-tests.mjs", "scripts/release/workspace-compatibility-policy.json", "scripts/release/utils.mjs", "tests/fixtures/compatibility/custom-fields/index.mjs", "tests/fixtures/compatibility/sdk-reader.mjs"]) {
       expect(await readFile(path.join(controlRoot, file), "utf8")).toBe(await readFile(file, "utf8"));
     }
     const gate = controls.PACKAGE_ARTIFACT_GATE;

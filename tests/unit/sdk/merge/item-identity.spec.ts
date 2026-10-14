@@ -16,6 +16,12 @@ const document = JSON.stringify({
 });
 
 describe("duplicate item identity boundaries", () => {
+  it("refuses unsupported format markers on every merge side with upgrade guidance", () => {
+    const future = JSON.stringify({ ...JSON.parse(document), pm_format_version: 3 });
+    for (const sides of [[future, document, document], [document, future, document], [document, document, future]]) {
+      expect(() => mergeItemDocuments(sides[0], sides[1], sides[2], { format: "json" })).toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "item_format_version_unsupported" }) }));
+    }
+  });
   it.each(["json", "toon"] as const)("refuses %s add/add documents even when their content is identical", (format) => {
     const content = serializeItemDocument(parseItemDocument(document, { format: "json" }), { format });
     for (const theirs of [content, content.replace("Independent", "Other")]) {

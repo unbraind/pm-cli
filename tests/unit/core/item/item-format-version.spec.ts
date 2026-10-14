@@ -5,6 +5,7 @@ import {
   classifyItemFormatVersion,
   effectiveItemFormatVersion,
   normalizeItemFormatVersion,
+  requiredItemFormatVersion,
   scanItemFormatVersions,
 } from "../../../../src/core/item/item-format-version.js";
 
@@ -62,6 +63,7 @@ describe("classifyItemFormatVersion", () => {
     expect(classifyItemFormatVersion(1, 2)).toBe("outdated");
     expect(classifyItemFormatVersion(2, 2)).toBe("current");
     expect(classifyItemFormatVersion(3, 2)).toBe("ahead");
+    expect(classifyItemFormatVersion(1, 2, 1)).toBe("current");
   });
 });
 
@@ -89,8 +91,25 @@ describe("scanItemFormatVersions", () => {
     const result = scanItemFormatVersions([
       { ref: "baseline", version: 1 },
       { ref: "ahead", version: 2 },
-    ]);
+    ], BASELINE_ITEM_FORMAT_VERSION);
     expect(result.outdated).toEqual([]);
     expect(result.ahead).toEqual(["ahead"]);
+  });
+
+  it("keeps both readable formats current while refusing future formats", () => {
+    expect(scanItemFormatVersions([{ ref: "legacy", version: 1 }, { ref: "editor", version: 2 }, { ref: "future", version: 3 }], CURRENT_ITEM_FORMAT_VERSION, BASELINE_ITEM_FORMAT_VERSION)).toEqual({ outdated: [], ahead: ["future"] });
+  });
+});
+
+
+describe("requiredItemFormatVersion", () => {
+  it("uses the baseline until editor fields exist and never lowers a stored requirement", () => {
+    expect(requiredItemFormatVersion({})).toBe(1);
+    expect(requiredItemFormatVersion({ tests: [] })).toBe(1);
+    expect(requiredItemFormatVersion({ tests: [{ command: "node --version", scope: "project" }] })).toBe(1);
+    for (const stamp of [{ updated_by: "editor" }, { updated_at: "2026-10-14T00:00:00.000Z" }]) {
+      expect(requiredItemFormatVersion({ tests: [{ command: "node --version", scope: "project", ...stamp }] })).toBe(2);
+    }
+    expect(requiredItemFormatVersion({ pm_format_version: 3 })).toBe(3);
   });
 });

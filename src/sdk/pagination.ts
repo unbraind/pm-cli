@@ -10,6 +10,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import type { CliFlagContract } from "./cli-contracts/flag-contracts.js";
+import { decodeReadOutputContinuationCursor } from "./read-output/continuation.js";
 
 const QUERY_CURSOR_VERSION = 1;
 const MAX_CURSOR_LENGTH = 4096;
@@ -164,6 +165,19 @@ export function decodeQueryCursorEnvelope(
     throw invalidCursor("Query cursor is malformed.");
   }
   if (!isQueryCursorEnvelope(parsed)) {
+    let outputCursor = false;
+    try {
+      decodeReadOutputContinuationCursor(normalized);
+      outputCursor = true;
+    } catch {
+      // Only a validated output envelope merits a flag-substitution recovery.
+    }
+    if (outputCursor) {
+      throw new PmCliError("An output cursor must be continued with --output-cursor, not --after.", EXIT_CODE.USAGE, {
+        code: "invalid_query_cursor",
+        nextSteps: [`Repeat the same query, replacing --after with --output-cursor ${normalized}; retain any producer --after cursor from the original page.`],
+      });
+    }
     throw invalidCursor("Query cursor version or payload is unsupported.");
   }
   return parsed;

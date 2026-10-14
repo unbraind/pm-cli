@@ -39,7 +39,7 @@ describe("migrateItemFilesToFormat", () => {
         const markdownPath = getItemPath(pmPath, "Task", id, "json_markdown");
         const toonPath = getItemPath(pmPath, "Task", id, "toon");
         await writeTaskWithFormat(pmPath, id, "json_markdown", "future metadata");
-        const metadata = { ...buildTaskDocument(id, "future metadata").metadata, pm_format_version: 2 };
+        const metadata = { ...buildTaskDocument(id, "future metadata").metadata, pm_format_version: 3 };
         await fs.writeFile(markdownPath, JSON.stringify(metadata));
         if (hasCurrentVariant) await writeTaskWithFormat(pmPath, id, "toon", "current metadata");
         const originalMarkdown = await fs.readFile(markdownPath);

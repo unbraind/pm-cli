@@ -1650,7 +1650,7 @@ describe("runHealth", () => {
           "title: Future format item",
           'description: ""',
           "type: Task",
-          "pm_format_version: 2",
+          "pm_format_version: 3",
           "status: open",
           "priority: 2",
           "tags: []",

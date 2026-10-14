@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   assertProjectRuntimeCompatibility,
+  assertProjectRuntimeFormatGuard,
   comparePmDateVersions,
   discoverProjectRuntimeVersionPins,
   historyItemHashVersionForRuntime,
@@ -27,6 +28,20 @@ async function project(): Promise<string> {
 }
 
 describe("project runtime compatibility", () => {
+  it("honors safe ranges and opaque references without ignoring their resolved older host", async () => {
+    const root = await project();
+    for (const declaration of [">=2026.10.10 <2026.11.0", ">=2026.10.10 <2026.10.10", "latest", "workspace:*", "file:../local"]) {
+      await writeFile(path.join(root, "package.json"), JSON.stringify({ devDependencies: { "@unbrained/pm-cli": declaration } }));
+      expect(() => assertProjectRuntimeFormatGuard(root, 2)).not.toThrow();
+    }
+    const installed = path.join(root, "node_modules/@unbrained/pm-cli");
+    await mkdir(installed, { recursive: true });
+    await writeFile(path.join(installed, "package.json"), JSON.stringify({ version: "2026.10.13" }));
+    expect(() => assertProjectRuntimeFormatGuard(root, 2)).not.toThrow();
+    await writeFile(path.join(installed, "package.json"), JSON.stringify({ version: "2026.10.9" }));
+    expect(() => assertProjectRuntimeFormatGuard(root, 1)).not.toThrow();
+    expect(() => assertProjectRuntimeFormatGuard(root, 2)).toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "project_runtime_item_format_incompatible", reason: "installed-package" }) }));
+  });
   it("compares date versions and rejects unsupported spellings", () => {
     expect(comparePmDateVersions("2026.8.7", "2026.8.8")).toBe(-1);
     expect(comparePmDateVersions("2026.8.8-2", "2026.8.8-1")).toBe(1);
@@ -38,6 +53,8 @@ describe("project runtime compatibility", () => {
 
   it.each([
     [["create", "Task", "x"], true],
+    [["test", "pm-a", "--update", "command=node --version", "--set-json", "{}"], true],
+    [["test", "pm-a", "--update-index", "1", "--set-json", "{}"], true],
     [["close-task", "pm-a"], true],
     [["dedupe-merge", "pm-a"], true],
     [["create", "--help"], false],

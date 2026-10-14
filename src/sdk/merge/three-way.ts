@@ -25,6 +25,7 @@ import {
   type ItemDocumentFormatOptions,
 } from "../../core/item/item-format.js";
 import { splitAcceptanceCriteria } from "../../core/item/parse.js";
+import { normalizeItemFormatVersion, requiredItemFormatVersion } from "../../core/item/item-format-version.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -834,7 +835,7 @@ function parseItemMergeSide(
 ): ItemDocument {
   try {
     const document = canonicalDocument(
-      parseItemDocument(raw, options),
+      parseItemDocument(raw, { ...options, requireSupportedFormat: true }),
       options,
     );
     const reservedField = Object.entries(
@@ -847,6 +848,7 @@ function parseItemMergeSide(
     }
     return document;
   } catch (error) {
+    if (error instanceof PmCliError && error.context?.code === "item_format_version_unsupported") throw error;
     throw new PmCliError(
       `Item merge input (${label}) is not a readable item document: ${String(error)}`,
       EXIT_CODE.GENERIC_FAILURE,
@@ -1093,9 +1095,11 @@ export function mergeItemDocuments(
     fieldsFromTheirs.push("body");
   }
 
+  const mergedMetadata = merged as unknown as ItemMetadata;
+  mergedMetadata.pm_format_version = normalizeItemFormatVersion(Math.max(...[base.metadata, ours.metadata, theirs.metadata, mergedMetadata].map(requiredItemFormatVersion)));
   const mergedRaw = serializeItemDocument(
     {
-      metadata: merged as unknown as ItemMetadata,
+      metadata: mergedMetadata,
       body: bodyOutcome.value as string,
     },
     options,

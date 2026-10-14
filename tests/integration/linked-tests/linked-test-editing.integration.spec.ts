@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runTest, type TestCommandOptions } from "../../../src/sdk/test/execution.js";
@@ -19,6 +19,17 @@ async function capture(context: TempPmContext, id: string) {
 }
 
 describe("linked-test editing and configuration admission", () => {
+  it.each(["2026.10.9", "<2026.10.10", "2026.10.13 || 2026.10.9", "*"])("refuses new editor fields through SDK and CLI while the project selects %s without format admission", async (declaration) => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "older pinned reader", createMode: "progressive" });
+      await runTest(id, { add: ["command=node --version"] }, { path: context.pmPath });
+      await writeFile(path.join(path.dirname(path.dirname(context.pmPath)), "package.json"), JSON.stringify({ devDependencies: { "@unbrained/pm-cli": declaration } }));
+      const before = await capture(context, id);
+      await expect(updateLinkedTest(id, { selector: { index: 1 }, patch: { note: "unsafe" } }, { path: context.pmPath })).rejects.toMatchObject({ code: "project_runtime_item_format_incompatible" });
+      expect(context.runCli(["test", id, "--update-index", "1", "--set-json", '{"note":"unsafe"}', "--json"]).code).toBe(4);
+      expect(await capture(context, id)).toEqual(before);
+    });
+  });
   it("refuses invalid contexts on SDK and both CLI intake paths before persistence", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "context admission", createMode: "progressive" });
@@ -62,6 +73,8 @@ describe("linked-test editing and configuration admission", () => {
       expect(current.tests[0]).toMatchObject({ ...added.tests[0], note: "corrected", timeout_seconds: 90, updated_by: expect.any(String), updated_at: expect.any(String) });
       expect(current.tests[1]).toEqual(added.tests[1]);
       const after = await capture(context, id);
+      const stored = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
+      expect(stored.json).toMatchObject({ item: { pm_format_version: 2 } });
       const events = after.history.slice(before.history.length).trim().split("\n").map((line) => JSON.parse(line) as { op: string; patch: Array<{ path: string }> });
       expect(events).toHaveLength(1);
       expect(events[0].op).toBe("tests_update");

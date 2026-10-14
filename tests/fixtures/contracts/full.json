@@ -24303,6 +24303,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "project_runtime_item_format_incompatible",
+      "class": "conflict",
+      "code": "project_runtime_item_format_incompatible",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Project runtime item format incompatible condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/environment/project-runtime-compatibility.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "project_runtime_stale_mutation",
       "class": "conflict",
       "code": "project_runtime_stale_mutation",
@@ -41970,7 +41987,7 @@
             },
             {
               "flag": "--no-truncate",
-              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
+              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded --output-budget unbounded.",
               "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             }
@@ -43065,7 +43082,7 @@
             },
             {
               "flag": "--no-truncate",
-              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded.",
+              "migration_hint": "--no-truncate is a compatibility alias; prefer --output-limit unbounded --output-budget unbounded.",
               "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
             },

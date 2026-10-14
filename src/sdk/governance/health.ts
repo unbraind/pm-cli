@@ -56,6 +56,8 @@ import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import {
+  BASELINE_ITEM_FORMAT_VERSION,
+  CURRENT_ITEM_FORMAT_VERSION,
   effectiveItemFormatVersion,
   scanItemFormatVersions,
 } from "../../core/item/item-format-version.js";
@@ -756,7 +758,7 @@ async function buildIntegrityCheck(
 > {
   const itemScan = await scanItemIntegrity(pmRoot, typeToFolder, schema);
   const historyScan = await scanHistoryIntegrity(pmRoot);
-  const formatVersionScan = scanItemFormatVersions(itemScan.formatVersions);
+  const formatVersionScan = scanItemFormatVersions(itemScan.formatVersions, CURRENT_ITEM_FORMAT_VERSION, BASELINE_ITEM_FORMAT_VERSION);
   const statusRegistry = resolveRuntimeStatusRegistry(schema);
   const hierarchyIntegrity = analyzeHierarchyIntegrity(
     items,
@@ -821,7 +823,7 @@ async function buildIntegrityCheck(
     ...historyScan.invalidJson.map(
       (entry) => `integrity_history_invalid_json:${entry.id}:L${entry.line}`,
     ),
-    /* c8 ignore start -- outdated-version items are unreachable until CURRENT_ITEM_FORMAT_VERSION advances past the baseline (an effective version below 1 cannot occur); the per-item mapping is covered in item-format-version.spec, and the ahead path below is covered by health-command.spec */
+    /* c8 ignore start -- outdated-version items are unreachable while the supported minimum is the baseline (an effective version below 1 cannot occur); the per-item mapping is covered in item-format-version.spec, and the ahead path below is covered by health-command.spec */
     ...formatVersionScan.outdated.map(
       (entry) => `integrity_item_outdated_format_version:${entry}`,
     ),

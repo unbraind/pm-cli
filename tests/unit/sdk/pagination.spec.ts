@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import path from "node:path";
 import { createSearchCursorFingerprint } from "../../../src/sdk/query/search-pagination.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
+import { encodeReadOutputContinuationCursor } from "../../../src/sdk/read-output/continuation.js";
 import {
   QUERY_CURSOR_CONTRACT,
   createQueryFingerprint,
@@ -270,6 +271,14 @@ describe("SDK query pagination", () => {
     expect(refusal).toMatchObject({ context: {
       code: "invalid_query_cursor",
       nextSteps: ["Repeat the original query without --after to obtain a fresh cursor."],
+    } });
+    const outputCursor = encodeReadOutputContinuationCursor({
+      command: "list", path: "items", offset: 2, total_rows: 5, fingerprint: "snapshot",
+    });
+    try { decodeQueryCursorEnvelope(outputCursor); } catch (error) { refusal = error; }
+    expect(refusal).toMatchObject({ message: expect.stringContaining("An output cursor"), context: {
+      code: "invalid_query_cursor",
+      nextSteps: [`Repeat the same query, replacing --after with --output-cursor ${outputCursor}; retain any producer --after cursor from the original page.`],
     } });
     const payload = { version: 1, fingerprint: "fp", after_id: "a" };
     for (const invalid of [null, 7, "string", [], { ...payload, fingerprint: 2 }, { ...payload, after_id: 2 }, { ...payload, after_id: ["a"] }, { ...payload, snapshot: 1 }, { ...payload, snapshot: ["x"] }]) {

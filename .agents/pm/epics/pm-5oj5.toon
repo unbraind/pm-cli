@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: "area:observability","area:telemetry",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:12.693Z"
-updated_at: "2026-10-12T23:06:33.885Z"
+updated_at: "2026-10-14T07:43:23.010Z"
 author: maintainer-agent
 estimated_minutes: 720
 acceptance_criteria: Telemetry pipeline survives infra restarts without event loss; health and validate advisories carry actionable remediation hints; stats expose percentiles and error rates.
@@ -18,16 +18,38 @@ parent: pm-doxj
 risk: low
 confidence: high
 expected_result: "Telemetry survives infrastructure restarts without loss, and every health or validate advisory names the action that clears it."
-dependencies[8]{id,kind,created_at}:
-  pm-33cw,related,"2026-07-24T23:52:52.009Z"
-  pm-a8lnoh,related,"2026-07-24T23:52:52.009Z"
-  pm-pee5,related,"2026-07-24T23:52:52.009Z"
-  pm-rj3w,related,"2026-07-24T23:52:52.009Z"
-  pm-rtn5h6,related,"2026-07-24T23:52:52.009Z"
-  pm-u9d0,related,"2026-07-24T23:52:52.009Z"
-  pm-w7ccmv,related,"2026-07-24T23:52:52.009Z"
-  pm-xp1xsw,implements,"2026-07-26T05:48:59.930Z"
-comments[20]{created_at,author,text}:
+dependencies[9]:
+  - id: pm-33cw
+    kind: related
+    created_at: "2026-07-24T23:52:52.009Z"
+  - id: pm-a8lnoh
+    kind: related
+    created_at: "2026-07-24T23:52:52.009Z"
+  - id: pm-pee5
+    kind: related
+    created_at: "2026-07-24T23:52:52.009Z"
+  - id: pm-rj3w
+    kind: related
+    created_at: "2026-07-24T23:52:52.009Z"
+  - id: pm-rtn5h6
+    kind: related
+    created_at: "2026-07-24T23:52:52.009Z"
+  - id: pm-u9d0
+    kind: related
+    created_at: "2026-07-24T23:52:52.009Z"
+  - id: pm-w7ccmv
+    kind: related
+    created_at: "2026-07-24T23:52:52.009Z"
+  - id: pm-xp1xsw
+    kind: implements
+    created_at: "2026-07-26T05:48:59.930Z"
+  - id: pm-mor9pl
+    kind: related
+    created_at: "2026-10-14T07:43:22.726Z"
+    author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[25]{created_at,author,text}:
   "2026-06-06T18:32:16.466Z",github-triage-subagent,"Observability/telemetry triage 2026-06-06: latest scheduled Nightly Validation run 27055539337 succeeded across Node 20/22/24/25 plus macOS/Windows matrix. Local node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0 returned ok=true: Sentry checked with 0 critical/high issues, 14 ignored expected CLI errors, telemetry finish_error_rate_pct 1.9, and failures_without_error_code_rows 0. First attempted mode 'warn' was rejected because supported values are off, best-effort, required."
   "2026-06-09T22:33:32.773Z",codex-active-pm-cycle-20260610,"2026-06-10 signal sync snapshot: GH alerts are clean (dependabot/code-scanning/secret-scanning all empty). Sentry org=unbrained project=pm-cli: unresolved issue list is dominated by expected command-error scenarios; recent TypeError clusters (PM-CLI-1G/1H) are currently resolved. Continue monitoring PM-CLI-1J tracker_not_initialized serialization events for UX clarity."
   "2026-09-13T10:18:11.182Z","harness:codex","Context-maintenance correction during PR https://github.com/unbraind/pm-cli/pull/1254: the charter contained an old fixed child count and a hand-maintained open-child list. Replaced that volatile snapshot with the canonical all-status parent query and typed graph. The prior text remains in immutable history; the capability remains open and implementation ownership is not retained for this metadata-only refresh."
@@ -48,4 +70,9 @@ comments[20]{created_at,author,text}:
   "2026-10-12T19:08:10.022Z","harness:codex","Read-only observability check on October12: telemetry is enabled and the local queue flushes successfully; the required Sentry/telemetry gate reports zero critical/high issues and zero failures missing error codes. A fresh24h Sentry trace query, including a successful read with SENTRY_TRACES_SAMPLE_RATE=1, returns no trace rows. Source inspection shows successful-command span helpers use only an already-initialized Sentry client, while initialization is lazy on error-reporting paths. Fresh command traces therefore remain unproven; do not equate the issue-health gate with successful trace delivery. Keep this broader observability capability unclaimed while the four implementation owners are active."
   "2026-10-12T20:39:15.946Z","harness:codex","Final delivery observability audit: Sentry's required14-day issue/telemetry gate passes with zero critical/high issues,3.01% finish error rate and zero failures lacking error codes. The full received-at window since16:49UTC contains1029 starts and1028 finishes, with one older unmatched aggregate action that occurred18:28:48UTC and was received18:30:15UTC; its termination cause is unverified. Keep that historical observation distinct from the current post-review delivery cohort, which is paired in the saved verification receipt. Broker pm.telemetry.events is empty and ingestion is current. Do not claim perfect full-window pairing or fabricate a finish event. Successful-command Sentry trace opt-in remains an unclaimed enhancement; no production history, broker or database was repaired during this read-only audit."
   "2026-10-12T23:06:33.885Z","harness:codex","Current observability receipt October12: the metrics recovery is complete with preserved data and six healthy fresh scrape targets; event ingestion remained live throughout. The earlier production start cohort21:16–22:04 UTC has261 starts,260 finishes,260 matched keys,one unmatched aggregate start,zero duplicates and p95 ingestion lag1.07s. Its cause remains unknown and no synthetic completion was written. Sentry has0 unresolved issues and0 recent traces; successful-command trace freshness remains a separate open enhancement. A fresh local telemetry flush drained the queue completely at its completion instant."
+  "2026-10-14T05:26:26.880Z","harness:codex","October14 operational evidence: Sentry gate has0 critical/high/unresolved blockers and aggregate finish error rate3.25% with0 missing error-code rows. Broker queue is0 and ingestion is current; local flush drains completely. Installation-scoped delivery cohort from04:09UTC pairs62 starts with62 finishes, no unmatched or duplicate sessions. An explicit, consented real get action with trace sampling1 was executed, but hosted Sentry trace queries over1hour still return0; do not infer transport health or trace freshness from the issue/telemetry gates. Existing successful-command tracing implementation pm-58yzil is closed and its full live evidence remains completed. Hosted freshness is a separate observation requiring acceptance evidence, not a demonstrated code regression."
+  "2026-10-14T05:51:43.679Z","harness:codex",Current delivery recorded the separate trace-freshness acceptance follow-up pm-10qthi as open and unclaimed. Hosted spans/logs queries report stalled ingestion despite accepted project diagnostic traffic; exact session telemetry start/finish pairing remains independently verified. Existing successful-command tracing implementation pm-58yzil stays completed.
+  "2026-10-14T05:59:26.834Z","harness:codex","Fresh Sentry issue/API triage corrects the earlier empty cached issue view: PM-CLI-3G and3F firstSeen05:15UTC are a single2026.10.13 embedded eval-host failure and downstream assertion sharing one trace. Full live pm-mor9pl metadata/history proves that exact argv[1] omission is completed; immutable v2026.10.14 source includes the pm prefix adapter. Current hosted gate correctly blocks on1 critical and1 high until the existing real embedded collector regression is freshly verified and these old-version reports are dispositioned. Preserve failures and classify them honestly rather than reopening the shipped fix or suppressing the gate."
+  "2026-10-14T06:09:16.900Z","harness:codex","Disposition evidence: all12 existing real-collector Sentry command tests pass, including the eval-host embedded opt-out control; immutable published v2026.10.14 already contains the closed pm-mor9pl argv adapter. Resolved PM-CLI-3G and its same-trace downstream assertion PM-CLI-3F as old2026.10.13 reports of that shipped fix. No event deletion, capture suppression, threshold change or artificial event was used. Fresh gate verification remains required."
+  "2026-10-14T06:12:04.472Z","harness:codex","Fresh authenticated gate after disposition passes with0 critical,0 high,0 unresolved issues,3.23% telemetry error rate and0 failures lacking canonical codes. This proves the current issue quality threshold, independently of trace freshness; pm-10qthi remains the open hosted-ingestion acceptance task."
 body: "## Charter\nLiving capability epic for observability: pm health checks, validate fix-hints, remediation registry, local telemetry stack (OTLP export, worker, Postgres/RabbitMQ/Grafana on the remote host), Sentry integration, and stats/percentiles.\n\n## Scope\n- In: health/validate/doctor advisory surfaces, remediation-registry completeness, telemetry capture levels + redaction, telemetry stats (percentiles/error-rate/agent-identity), Sentry gates in release flow.\n- Out: CI gates themselves (pm-u9d0), secrets handling policy (never write host IPs/tokens to tracked files — standing rule).\n\n## Live work and outcomes\nUse `pm list --all --parent pm-5oj5 --full` and the typed dependency graph for current child status, ownership, and outcomes. Each canonical child retains its implementation, incident, and verification evidence; historical counts and hand-maintained open-child lists are not a live status source."

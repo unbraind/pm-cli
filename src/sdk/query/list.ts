@@ -1633,11 +1633,13 @@ function resolveListPageLimit(
   options: ListOptions,
   totalRows: number,
 ): number | undefined {
+  const explicitLimit = parseIntegerLimit(options.limit);
+  if (explicitLimit !== undefined) return explicitLimit;
   if (options.noTruncate === true) {
     return undefined;
   }
   return (
-    parseIntegerLimit(options.limit) ?? (totalRows >= 10_000 ? 20 : undefined)
+    totalRows >= 10_000 ? 20 : undefined
   );
 }
 

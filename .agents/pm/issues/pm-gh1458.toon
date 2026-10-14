@@ -2,22 +2,91 @@ id: pm-gh1458
 title: "GH-1458: Preserve linked-test edit history across older published readers and writers"
 description: "Investigate reports that 2026.10.12+ tests_update editor stamps are dropped by older published hosts sharing item_hash_version3, causing false corruption and subsequent nested-field loss. Expand real published-artifact compatibility beyond top-level extension fields and retain original append-only evidence."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: "area:sdk",compatibility,data-durability,github-intake,history,linked-tests
 created_at: "2026-10-13T18:12:38.703Z"
-updated_at: "2026-10-13T18:39:56.075Z"
+updated_at: "2026-10-14T06:48:56.957Z"
+closed_at: "2026-10-14T06:48:56.111Z"
+completed_at: "2026-10-14T06:48:56.111Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Reproduce nested linked-test editor stamps through actual 2026.10.9/10/13 artifacts in isolated trackers; Verify exact nested values, before/after commitments, ordinary mutation, restore and native merge; New writers refuse unsupported format writes or preserve declared cross-version hash semantics; Diagnostics recommend a supported verifier upgrade and never destructive history re-anchoring; Compatibility coverage executes every newly written operation and nested field against supported prior hosts"
 parent: pm-o2kc
 risk: high
 confidence: medium
-expected_result: "Supported mixed-version readers and writers preserve nested linked-test values and history commitments, or refuse unsupported formats with safe upgrade guidance while preserving original evidence."
+resolution: "Persist item format2 with real editor-field writes, preserve required format and immutable history through restore/merge, refuse incompatible project pins and extend real published-artifact acceptance."
+expected_result: Supported mixed-version consumers preserve nested values and commitments or refuse unsupported formats before modifying evidence; legacy baseline records remain readable.
+actual_result: "All105 linked cases and4 baseline plus3 historical artifact rows pass, including exact nested fields, unchanged-byte refusals, SDK reads, restore, native merges and verified original history prefixes;10420 full-suite tests pass at exact100% coverage."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-9djr6d,discovered_from,"2026-10-13T18:12:38.703Z","harness:codex","cli:create:dep",detected
   pm-pae3wo,related,"2026-10-13T18:12:38.703Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-13T18:12:38.703Z","harness:codex","{\"text\":\"Duplicate check: complete live2953-item all-status corpus plus search/open/in-progress reads. Full closed pm-9djr6d implements linked-test editing with provenance; full closed pm-pae3wo implements real two-prior-release matrix for unknown top-level extension fields. Current matrix source tests top-level fields but does not exercise tests_update nested stamps. No existing open owner for this specific reported regression was found. Issue1458 and all paginated comments including independent pm-github occurrence6149865337 read. Treat external reproduction as reported evidence until independently reproduced; retain shipped predecessors and relate them rather than reopening unrelated completed scopes.\"}"
   "2026-10-13T18:39:55.336Z","harness:codex","Hosted static CI38446450129 correctly caught the missing expected_result in this newly created intake. Added the explicit intended outcome through PM without changing acceptance criteria, implementation scope or gate thresholds. This planning correction does not claim the reported feature/defect is implemented."
+  "2026-10-14T04:11:45.727Z","harness:codex","Live intake: full issue body, both external occurrences, canonical linked-test editor and published-workspace matrix metadata/history read. Older published hosts cannot be retroactively patched; reproduce exact legacy artifacts first and use a declared storage compatibility boundary where new persisted nested fields cannot be represented safely. Preserve immutable history and avoid re-anchoring."
+  "2026-10-14T04:35:05.914Z","harness:codex","Independent real-artifact reproduction confirms 2026.10.9 and10.10 silently omit tests_update editor stamps and fail after_hash/current_item_hash commitments while10.13 verifies identical bytes. Additional marker probe proves10.9 predates future-format admission, whereas10.10/13 safely refuse format2. Therefore protect current writes when authoritative project pins select pre-10.10 hosts, retain readable format1, write format2 only when needed, preserve prior history prefixes and minimum format through restoration/merge. Existing legacy format1 editor commitments stay unchanged during read; ordinary real writes append the explicit upgrade. Supported format2 operation requires coordinated verifier/SDK/CI/merge-driver upgrade;9 is only a historical baseline writer, never an admitted guarded reader."
+  "2026-10-14T05:41:05.035Z","harness:codex","Full-suite regression investigation corrected baseline creation receipts: do not add an own undefined pm_format_version property, because consumers can serialize it as invalid legacy data. All33 focused get/reopen/evidence-consistency/cursor keepers now pass. The seven-row real-artifact matrix retains its full acceptance and has an eight-minute bound for contention during whole-suite coverage; no cases or quality thresholds were removed. Declared semver ranges, upper-only ranges, disjunctions and wildcard pins are checked using the existing locked semver7.8.5 payload, with eligible7.8.0 types. Opaque references retain resolved-host admission. Final full coverage and hosted delivery remain pending."
+  "2026-10-14T06:09:18.240Z","harness:codex","Full coverage passes10420 tests with3 retained platform skips; the strict integer gate detects two uncovered branches. Creation only admits fresh linked-test values without editor stamps, so removed its unreachable format-upgrade branch instead of forging a test or ignoring coverage. Real nested editor mutations remain guarded in the shared store, restore and merge. Source-level wrong-cursor recovery is added to the existing pagination keeper. Linked test timeout during concurrent full-suite lease contention is retained and will be rerun after that owner exits; no test case or threshold was removed."
+  "2026-10-14T06:13:26.405Z","harness:codex","Final linked verification passes via pm test --run --progress, including all4 baseline directions plus3 reported-version nested-field rows using actual npm artifacts, native Git merge drivers, exact nested values, immutable history prefixes and unchanged-byte old-host refusal. Packed npm/npx/bunx and Node/Bun SDK evaluation,9-package dogfood, unchanged40-package runtime ledger and migration acceptance pass. Current source adds no creation-time marker; fresh tests stay baseline1 and actual editor/store writes carry2. Whole-suite10420 tests passed; exact100% rerun and final reviewed delivery remain required."
+  "2026-10-14T06:48:53.489Z","harness:codex","Final complete source acceptance passes10420 tests with3 retained platform skips at exact100/100/100/100. Linked105 cases include actual four-direction baseline and three historical nested-field rows, public SDK/hash/value preservation, restore and native Git reconciliation. Legacy format1 stays current; future-format admission refuses before loss. Current health/validate have0 unreadable, parse, future-format, drift or pending merge problems;7 legacy terminal hierarchy warnings are retained. CLI-generated closure and upstream pm-changelog2026.10.13 generation will be reviewed with the source; no post-merge direct-main evidence commit is planned."
+learnings[1]{created_at,author,text}:
+  "2026-10-14T06:03:21.328Z","harness:codex","Preserving nested fields in a new runtime cannot repair older published canonicalizers. Put the reader requirement on the same real write as the new nested fields, retain that requirement while newer history survives restore or merge, and independently prove which oldest hosts actually enforce it."
+files[28]{path,scope}:
+  .github/workflows/release.yml,project
+  package.json,project
+  pnpm-lock.yaml,project
+  runtime-dependencies.json,project
+  scripts/release/workspace-compatibility-policy.json,project
+  scripts/release/workspace-compatibility.mjs,project
+  scripts/release/workspace-linked-tests.mjs,project
+  sdk/public-surface.json,project
+  src/core/item/item-format-version.ts,project
+  src/core/store/item-store.ts,project
+  src/sdk/environment/project-runtime-compatibility.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/governance/health.ts,project
+  src/sdk/governance/validate.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/restore.ts,project
+  src/sdk/merge/three-way.ts,project
+  tests/fixtures/compatibility/sdk-reader.mjs,project
+  tests/integration/linked-tests/linked-test-editing.integration.spec.ts,project
+  tests/integration/registry-acceptance-workflow.spec.ts,project
+  tests/integration/release/workspace-compatibility.integration.spec.ts,project
+  tests/integration/schema/custom-field-roundtrip.integration.spec.ts,project
+  tests/unit/commands/governance/health-command.spec.ts,project
+  tests/unit/commands/governance/validate-command.spec.ts,project
+  tests/unit/core/item/item-format-migration.spec.ts,project
+  tests/unit/core/item/item-format-version.spec.ts,project
+  tests/unit/sdk/merge/item-identity.spec.ts,project
+  tests/unit/sdk/project-runtime-compatibility.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts tests/unit/core/item/item-format-version.spec.ts tests/unit/sdk/project-runtime-compatibility.spec.ts,project,600,"harness:codex","2026-10-14T04:35:04.917Z",local_mutation,feat/mixed-version-context-recovery
+test_runs[1]:
+  - run_id: test-local-mv7pr58w-4h3dyr
+    kind: test
+    status: passed
+    started_at: "2026-10-14T06:11:22.581Z"
+    finished_at: "2026-10-14T06:13:02.672Z"
+    recorded_at: "2026-10-14T06:13:02.672Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/schema/custom-field-roundtrip.integration.spec.ts tests/unit/core/item/item-format-version.spec.ts tests/unit/sdk/project-runtime-compatibility.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/LINKED_TEST_EDITS.md,project
+  docs/TESTING.md,project
+close_reason: Verified guarded nested linked-test storage across actual published hosts
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1458
+  gate_id: published-workspace-compatibility
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/release/workspace-compatibility.integration.spec.ts tests/integration/linked-tests/linked-test-editing.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs coverage,"pnpm quality:static",node scripts/release/workspace-compatibility.mjs
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: "Source: https://github.com/unbraind/pm-cli/issues/1458\n\n## Problem\n`tests_update`, added in 2026.10.12 (\"Edit linked-test metadata in place with preserved provenance\"), writes new per-test fields: `metadata.tests[i].updated_by` and `metadata.tests[i].updated_at`. Hosts older than 2026.10.12 don't know these fields. When they canonicalize the item for hashing they drop them, so they compute a different item hash and report history corruption on a perfectly valid history.\n\nIn a fleet where agents use a newer global `pm` while the repository pins an older `@unbrained/pm-cli`, which is the normal state between Dependabot bumps, a single linked-test edit turns the repo's CI red.\n\n## Real occurrence (public repo unbraind/pm-review, PR #1, pins 2026.10.10)\nAn agent ran `pm test <id> --update … --timeout 600` with a global 2026.10.13 host. History entry 23 of `pm-review-round`:\n```json\n{\"op\":\"tests_update\",\"patch\":[\n {\"op\":\"add\",\"path\":\"/metadata/tests/0/timeout_seconds\",\"value\":600},\n {\"op\":\"add\",\"path\":\"/metadata/tests/0/updated_by\",\"value\":\"codex-agent\"},\n {\"op\":\"add\",\"path\":\"/metadata/tests/0/updated_at\",\"value\":\"2026-10-13T12:56:35.894Z\"},\n {\"op\":\"replace\",\"path\":\"/metadata/updated_at\",\"value\":\"2026-10-13T12:56:35.894Z\"}]}\n```\nSame files, two hosts:\n```text\npm 2026.10.13 history pm-review-round --verify  → ok:true, current_matches_latest:true\npm 2026.10.10 history pm-review-round --verify  → ok:false\n  errors: verify_failed:after_hash_mismatch:entry_23, verify_failed:current_item_hash_mismatch\n```\nCI (pinned 2026.10.10) then fails `pm health` with `history_drift_chain_mismatch:pm-review-round` and `history_drift_hash_mismatch:pm-review-round`.\n\nA second agent in another repo (pm-context) hit the same thing. The pinned host also *rewrote* the tests block and dropped `updated_by`/`updated_at` when it next touched the item, so the \"fix\" an agent reaches for is data loss: re-anchoring history with the older host.\n\n## Why this matters\nThe CLI's core promise is that many agents on many branches can work on one tracker and merge losslessly. Mixed host versions are unavoidable in that world: global installs, pinned devDependencies and CI images all drift. This is the same class as #976, #1040 and #1162, now triggered by a new feature's fields rather than by hashing changes.\n\n## Proposal\n1. **Forward-compatible hashing:** older hosts hash unknown nested fields verbatim instead of dropping them, or the canonical form is declared field-agnostic for `metadata.tests[]` entries.\n2. **Or gate new fields behind a declared format/feature version:** a newer host writing to a tracker whose `settings.json` / format_version predates the feature either refuses or writes the legacy shape, unless the tracker opts in (for example `pm workspace upgrade`).\n3. **Diagnostics:** when verification fails on an op the verifying host doesn't recognize, or on fields it doesn't know, report `history_written_by_newer_host` (naming the op and fields) rather than generic chain/hash drift, and recommend upgrading the verifying host. Never suggest a re-anchor that drops the newer data.\n4. A cross-version test matrix: history written by N verifies under N-1 and N-2 for every new op and field.\n\n\nIntake scope\n\nInvestigate reports that 2026.10.12+ tests_update editor stamps are dropped by older published hosts sharing item_hash_version3, causing false corruption and subsequent nested-field loss. Expand real published-artifact compatibility beyond top-level extension fields and retain original append-only evidence.\n\nDuplicate check: complete live2953-item all-status corpus plus search/open/in-progress reads. Full closed pm-9djr6d implements linked-test editing with provenance; full closed pm-pae3wo implements real two-prior-release matrix for unknown top-level extension fields. Current matrix source tests top-level fields but does not exercise tests_update nested stamps. No existing open owner for this specific reported regression was found. Issue1458 and all paginated comments including independent pm-github occurrence6149865337 read. Treat external reproduction as reported evidence until independently reproduced; retain shipped predecessors and relate them rather than reopening unrelated completed scopes."

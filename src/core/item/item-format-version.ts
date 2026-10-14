@@ -21,13 +21,17 @@ import type { ItemMetadata } from "../../types/index.js";
 export const BASELINE_ITEM_FORMAT_VERSION = 1;
 
 /**
- * The format version this runtime writes and considers current. When a breaking
- * item-metadata change ships, bump this constant and add a migration that
- * rewrites items whose {@link effectiveItemFormatVersion} is lower; items at or
- * above it need no migration. It stays equal to
- * {@link BASELINE_ITEM_FORMAT_VERSION} until the first such change.
+ * Highest item format understood by this runtime. Ordinary records retain the
+ * implicit baseline; linked-test editor stamps require format 2 so earlier
+ * published hosts refuse before dropping fields from their canonical hashes.
+ * Reading legacy records never changes their format or immutable commitments.
  */
-export const CURRENT_ITEM_FORMAT_VERSION = 1;
+export const CURRENT_ITEM_FORMAT_VERSION = 2;
+
+/** Resolve the minimum format needed to retain persisted linked-test editor metadata. */
+export function requiredItemFormatVersion(metadata: Pick<ItemMetadata, "tests" | "pm_format_version">): number {
+  return Math.max(effectiveItemFormatVersion(metadata), metadata.tests?.some((test) => test.updated_by !== undefined || test.updated_at !== undefined) ? 2 : BASELINE_ITEM_FORMAT_VERSION);
+}
 
 /**
  * Resolve the format version an item is effectively stored at. A present,
@@ -76,13 +80,15 @@ export type ItemFormatVersionStatus = "current" | "outdated" | "ahead";
  * Classify a single stored format version against the runtime's current
  * version. Defaults to {@link CURRENT_ITEM_FORMAT_VERSION}; the `current`
  * parameter exists so callers (and tests) can evaluate against a hypothetical
- * future version without mutating the module constant.
+ * future version without mutating the module constant. The minimum defaults to
+ * the maximum for compatibility; workspace diagnostics pass the readable baseline.
  */
 export function classifyItemFormatVersion(
   version: number,
   current: number = CURRENT_ITEM_FORMAT_VERSION,
+  minimum: number = current,
 ): ItemFormatVersionStatus {
-  if (version < current) {
+  if (version < minimum) {
     return "outdated";
   }
   if (version > current) {
@@ -114,11 +120,12 @@ export interface ItemFormatVersionScanResult {
 export function scanItemFormatVersions(
   entries: readonly ItemFormatVersionScanEntry[],
   current: number = CURRENT_ITEM_FORMAT_VERSION,
+  minimum: number = current,
 ): ItemFormatVersionScanResult {
   const outdated: string[] = [];
   const ahead: string[] = [];
   for (const entry of entries) {
-    const status = classifyItemFormatVersion(entry.version, current);
+    const status = classifyItemFormatVersion(entry.version, current, minimum);
     if (status === "outdated") {
       outdated.push(entry.ref);
     } else if (status === "ahead") {

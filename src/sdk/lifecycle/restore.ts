@@ -4,6 +4,8 @@
  * Implements the SDK-owned restore lifecycle operation shared by every surface.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { normalizeItemFormatVersion, requiredItemFormatVersion } from "../../core/item/item-format-version.js";
+import { assertProjectRuntimeFormatGuard } from "../environment/project-runtime-compatibility.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
@@ -38,6 +40,7 @@ import {
   readLocatedItem,
   getItemPath,
   resolvePmRoot,
+  resolveWorkspaceRoot,
   readSettings,
   resolveAuthor,
 } from "../runtime-primitives.js";
@@ -368,6 +371,8 @@ export async function runRestore(
       loadedItemUnderLock,
       history,
     );
+    restoredDocument.metadata.pm_format_version = normalizeItemFormatVersion(Math.max(requiredItemFormatVersion(restoredDocument.metadata), requiredItemFormatVersion(currentState.document.metadata)));
+    assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(pmRoot), requiredItemFormatVersion(restoredDocument.metadata));
     const ownershipWarnings = collectRestoreOwnershipWarnings({
       document: currentState.document,
       author,

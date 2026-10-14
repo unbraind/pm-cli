@@ -637,6 +637,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "project_runtime_item_format_incompatible",
+    meaning: "Project runtime item format incompatible condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/environment/project-runtime-compatibility.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "project_runtime_item_format_incompatible",
+    aliases: [],
+  },
+  {
     code: "project_runtime_stale_mutation",
     meaning: "Project runtime stale mutation condition.",
     stability: "provisional",

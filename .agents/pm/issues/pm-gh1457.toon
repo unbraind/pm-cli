@@ -2,22 +2,81 @@ id: pm-gh1457
 title: "GH-1457: Recover output cursors passed to --after and expose budget continuation controls"
 description: "Investigate and correct reported continuation-kind confusion: budget next_cursor passed to documented --after is rejected without executable --output-cursor recovery, while help hides the consuming flag. Include the same report’s --no-truncate plus explicit --limit behavior."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:sdk",github-intake,output-budget,recovery
 created_at: "2026-10-13T18:12:31.533Z"
-updated_at: "2026-10-13T18:39:52.492Z"
+updated_at: "2026-10-14T06:48:55.120Z"
+closed_at: "2026-10-14T06:48:54.253Z"
+completed_at: "2026-10-14T06:48:54.253Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: Run real isolated CLI list/search/context continuation through advertised help and recovery; Wrong cursor kind yields typed executable recovery or documented compatible dispatch; Help distinguishes query versus output cursors without implying interchangeability; No-truncate and explicit limit behavior is coherent and covered without dropped or repeated rows
 parent: pm-f05lsg
 risk: medium
 confidence: medium
-expected_result: "Agents can follow every advertised list/search/context continuation or execute the refusal recovery without lost or repeated rows, and explicit row limits preserve documented no-truncate behavior."
+resolution: Expose the output continuation flag in list/search/context help and return validated flag-substitution recovery while retaining explicit row and token caps.
+expected_result: Every advertised continuation can be consumed or safely recovered without lost or repeated rows; no-truncate disables only implicit ceilings.
+actual_result: Real list/search/context recovery and explicit-cap controls pass;46 linked cases and10420 full-suite tests pass with exact100% integer coverage and unchanged help budgets.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-10-13T18:12:31.533Z","harness:codex","cli:create:dep",detected
   pm-gh1371,related,"2026-10-13T18:12:31.533Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-13T18:12:31.533Z","harness:codex","{\"text\":\"Duplicate check: complete live2953-item all-status corpus and request-specific search/open/in-progress reads. Full pm-gh1371 is closed for composed pagination and its111-entry history verifies; this report concerns flag discoverability/refusal recovery and no-truncate with explicit limit, not the completed traversal fix. Reuse open pm-f05lsg recovery programme as parent; add related closed pm-gh1371 without reopening shipped work. GH issue body and all paginated comments, including no-truncate follow-up6147611703, read. Reproduction remains pending in this intake.\"}"
   "2026-10-13T18:39:51.614Z","harness:codex","Hosted static CI38446450129 correctly caught the missing expected_result in this newly created intake. Added the explicit intended outcome through PM without changing acceptance criteria, implementation scope or gate thresholds. This planning correction does not claim the reported feature/defect is implemented."
+  "2026-10-14T04:11:44.816Z","harness:codex","Live intake: complete 2959-item all-status corpus has zero omissions and no prior active claims. Read full issue and closed pm-gh1371 metadata/history. This delivery pairs actionable continuation recovery, visible presentation controls and explicit-limit no-truncate behavior with the mixed-version history safety owner. Preserve completed pagination work."
+  "2026-10-14T04:36:55.106Z","harness:codex","Regression evidence: the new isolated CLI keeper fails before changes because list help hides --output-cursor. After correction, it executes wrong-kind refusal recovery across list/search/context and tests complete reads, explicit row caps and explicit token ceilings. A real boundary exposed the previous no-truncate plus limit implementation ignored row caps; resolve explicit producer limits first and disable only the implicit default token ceiling. Keep existing composed continuation, semantic cursor fingerprint and stale-snapshot guards."
+  "2026-10-14T06:13:25.705Z","harness:codex","Final linked verification passes via pm test --run --progress: real list/search/context wrong-kind recovery, actual --output-cursor option discovery, explicit limit plus no-truncate, explicit budget, semantic fingerprints and stale-snapshot controls. The earlier timeout waiting for another build consumer is retained; the rerun passes in isolation. Help/grammar ratchets remain unchanged, docs links pass, and source decoder now independently proves the executable substitution."
+  "2026-10-14T06:48:52.828Z","harness:codex","Final complete source acceptance passes10420 tests with3 retained platform skips and exact100/100/100/100 integer coverage under4 local workers, with no local retries, new ignores or exclusions. Linked46 cases, zero-warning ESLint, typechecks, public SDK/contract snapshots, no-growth help/grammar, zero clones, packed Node/Bun/npm/npx/bunx and9-package dogfood pass. Current canonical validation passes; source delivery is ready for reviewed closure and the package-owned changelog."
+learnings[1]{created_at,author,text}:
+  "2026-10-14T06:03:22.739Z","harness:codex","Output-budget continuation and producer pagination are separate protocols. Help must expose the actual consuming flag, and wrong-kind recovery must preserve the original producer page; no-truncate removes only implicit ceilings while explicit limits remain authoritative."
+files[11]{path,scope}:
+  src/cli/help-content.ts,project
+  src/cli/register-list-query.ts,project
+  src/sdk/cli-program.ts,project
+  src/sdk/pagination.ts,project
+  src/sdk/query/list.ts,project
+  src/sdk/read-output-contracts.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/read-output/cursor-recovery.integration.spec.ts,project
+  tests/unit/commands/query/list-command.spec.ts,project
+  tests/unit/sdk/pagination.spec.ts,project
+  tests/unit/sdk/read-output-contracts.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/cursor-recovery.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,240,"harness:codex","2026-10-14T04:35:04.241Z",local_mutation,feat/mixed-version-context-recovery
+test_runs[2]:
+  - run_id: test-local-mv7pes4n-cdc357
+    kind: test
+    status: failed
+    started_at: "2026-10-14T05:59:25.338Z"
+    finished_at: "2026-10-14T06:03:25.798Z"
+    recorded_at: "2026-10-14T06:03:25.798Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/cursor-recovery.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv7pozhg-5q67jt
+    kind: test
+    status: passed
+    started_at: "2026-10-14T06:11:06.743Z"
+    finished_at: "2026-10-14T06:11:21.892Z"
+    recorded_at: "2026-10-14T06:11:21.892Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/cursor-recovery.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+close_reason: Verified actionable output-cursor recovery and explicit-limit no-truncate behavior
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1457
+  gate_id: repository-context-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/cursor-recovery.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
 body: "Source: https://github.com/unbraind/pm-cli/issues/1457\n\n## Problem (2026.10.13, also 2026.10.10)\nWhen `pm list` output is truncated by the default output token budget, the response carries `next_cursor`, but that cursor is an **output cursor** (`continuation_kind: \"output_cursor\"`). An agent following the help text cannot use it:\n- `pm list --help` documents `--after <cursor>` as \"Continue after an opaque next_cursor from a previous list response\".\n- `pm list --help` does **not** list `--output-cursor` at all.\n- `pm list … --after <that next_cursor>` refuses with `invalid_query_cursor` / \"Query cursor version or payload is unsupported\". The refusal has no recovery hint and never mentions `--output-cursor`, even though the same cursor works with `--output-cursor`.\n\nThe only pointer is buried in `output_budget_truncation.recovery.cli = \"--output-cursor\"`.\n\n## Reproduction (synthetic, about 1 minute)\n```sh\nT=$(mktemp -d) && cd \"$T\" && git init -q && export PM_PATH=$T/.agents/pm PM_AUTHOR=repro\npm init --prefix cr\nfor i in $(seq 1 120); do pm create --type Task --title \"Synthetic continuation item number $i with a deliberately long title\" --description \"$(printf 'padding %.0s' $(seq 1 40))\"; done\nc=$(pm --json list --status all --limit 500 | jq -r .next_cursor)   # applied_limit 33, truncated, continuation_kind output_cursor\npm --json list --status all --limit 500 --after \"$c\"               # invalid_query_cursor, no recovery command\npm --json list --status all --limit 500 --output-cursor \"$c\"       # works (next 33 rows)\n```\n\n## Real-world impact\nA script mirroring 266 knowledge items wrote the documented loop (`--limit 500`, then follow `next_cursor` with `--after`). It failed on the second page. An earlier version that took `.items` without checking `truncated` would silently have seen only the first 129 of 266 rows (the budget cut `--limit 500` down to 129), and would have created duplicates on re-runs.\n\n## Proposal\n1. `--after` should accept an output cursor for the same query fingerprint and continue transparently, since both are opaque continuation tokens for the same query. If they must stay distinct, refuse with a recovery command that substitutes `--output-cursor <cursor>`.\n2. List `--output-cursor` in `pm list --help` (and in search/context help), and make the `--after` help say which `continuation_kind` it accepts.\n3. Consider naming the field after the flag that consumes it: keep `next_cursor` for query cursors and use `next_output_cursor` for budget continuations, or document that `continuation_kind` decides the flag.\n\nRelated closed work: #1371 (budget continuation across producer cursors).\n\n\nIntake scope\n\nInvestigate and correct reported continuation-kind confusion: budget next_cursor passed to documented --after is rejected without executable --output-cursor recovery, while help hides the consuming flag. Include the same report’s --no-truncate plus explicit --limit behavior.\n\nDuplicate check: complete live2953-item all-status corpus and request-specific search/open/in-progress reads. Full pm-gh1371 is closed for composed pagination and its111-entry history verifies; this report concerns flag discoverability/refusal recovery and no-truncate with explicit limit, not the completed traversal fix. Reuse open pm-f05lsg recovery programme as parent; add related closed pm-gh1371 without reopening shipped work. GH issue body and all paginated comments, including no-truncate follow-up6147611703, read. Reproduction remains pending in this intake."
