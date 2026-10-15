@@ -328,6 +328,10 @@ describe("cli extension loose option parser", () => {
         [["--verbose=maybe"], "expects true, false, 1, or 0; received \"maybe\""],
         // An explicitly empty list entry is refused before normalization drops it.
         [["--ids="], "expects a finite number; received \"\""],
+        // An empty CSV segment is malformed under strict validation instead of being dropped.
+        [["--ids=1,,2"], "expects a finite number; received \"\""],
+        // A repeatable occurrence keeps its commas, so the whole token is the malformed value.
+        [["--ports=1,,2"], "expects a finite number; received \"1,,2\""],
         [["--ports", "1", "--ports="], "expects a finite number; received \"\""],
       ] as const) {
         try {

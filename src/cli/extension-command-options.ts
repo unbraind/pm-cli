@@ -505,14 +505,18 @@ function refuseMalformedAttachedSwitchValues(
   }
 }
 
-/** Refuse an explicitly empty list entry (`--ids=`) before list normalization silently drops it. */
+/** Refuse an explicitly empty list entry (`--ids=`, or the empty CSV segment in `--ids=1,,2`) before list normalization silently drops it. Repeatable flags keep commas inside one occurrence, so only CSV lists split. */
 function refuseEmptyStrictListEntries(
   definition: LooseCommandFlagDefinition,
   kind: Exclude<LooseOptionCoercionKind, "string">,
   rawValue: unknown,
+  preserveOccurrenceCommas: boolean,
   commandPath: string | undefined,
 ): void {
-  const entries = Array.isArray(rawValue) ? rawValue.flat(Infinity) : [rawValue];
+  const occurrences = Array.isArray(rawValue) ? rawValue.flat(Infinity) : [rawValue];
+  const entries = preserveOccurrenceCommas
+    ? occurrences
+    : occurrences.flatMap((entry) => (typeof entry === "string" ? entry.split(",") : [entry]));
   for (const entry of entries) {
     if (typeof entry === "string" && entry.trim().length === 0) {
       const failure = describeFlagScalarValueFailure(entry, kind);
@@ -687,7 +691,7 @@ function coerceAccumulatedLooseOption(
 ): unknown {
   const ordered = readOrderedLooseListValues(occurrenceSource, optionKeys, current);
   if (kind && isStrictTypedDefinition(definition, kind)) {
-    refuseEmptyStrictListEntries(definition, kind, ordered, commandPath);
+    refuseEmptyStrictListEntries(definition, kind, ordered, preserveOccurrenceCommas, commandPath);
   }
   const normalized = normalizeAccumulatedFlagValue(ordered, kind, preserveOccurrenceCommas);
   return kind

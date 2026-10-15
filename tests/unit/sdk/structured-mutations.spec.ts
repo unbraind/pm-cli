@@ -785,6 +785,13 @@ describe("bulk creation documents (pm-gh1456)", () => {
       { ...options, upsert: { key: "priority", existing: [{ id: "pm-prio", value: 2 }] } },
     );
     expect(numeric.rows).toEqual([{ index: 0, ref: "n", id: "pm-prio", op: "update", upserted: true }]);
+    // An explicit-id create row carries no alias, so a keyed match records nothing for later @ref rows.
+    const explicitUpsert = resolveItemMutationDocument(
+      '{"id":"pm-explicit","title":"Explicit","type":"Task","priority":2}',
+      { ...options, upsert: { key: "priority", existing: [{ id: "pm-prio", value: 2 }] } },
+    );
+    expect(explicitUpsert.rows).toEqual([{ index: 0, id: "pm-prio", op: "update", upserted: true }]);
+    expect(Object.keys(explicitUpsert.references)).toEqual([]);
     expect(numeric.mutations[0]).toMatchObject({ op: "update", options: { title: "Numeric", priority: 2 } });
   });
 
