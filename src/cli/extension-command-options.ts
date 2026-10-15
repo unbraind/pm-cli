@@ -519,8 +519,23 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
     }
     const isListFlag = definition.list === true;
     const optionKeys = collectLooseOptionKeys(definition);
-    mergeAliasOptionKeys(coerced, canonical, optionKeys, isListFlag);
     const kind = resolveLooseOptionCoercionKind(definition);
+    if (kind && !isListFlag) {
+      // Alias folding keeps the canonical scalar and drops the alias value, so
+      // a malformed alias token must be refused before it is discarded.
+      for (const key of optionKeys) {
+        if (key !== canonical && Object.hasOwn(coerced, key)) {
+          validateStrictScalarOptionValue(
+            definition,
+            canonical,
+            coerceLooseOptionValue(coerced[key], kind),
+            kind,
+            commandPath,
+          );
+        }
+      }
+    }
+    mergeAliasOptionKeys(coerced, canonical, optionKeys, isListFlag);
     const preserveOccurrenceCommas = definition.repeatable === true;
     if (!Object.hasOwn(coerced, canonical)) {
       // Flag was omitted entirely: apply the declared default when present.

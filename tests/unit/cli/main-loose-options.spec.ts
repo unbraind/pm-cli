@@ -284,7 +284,7 @@ describe("cli extension loose option parser", () => {
 
   describe("strict scalar value validation (pm-extension-scalar-validation)", () => {
     const definitions = [
-      { long: "--limit", value_type: "number", value_validation: "strict" },
+      { long: "--limit", short: "-l", value_type: "number", value_validation: "strict" },
       { long: "--enabled", type: "bool", value_validation: "strict" },
       { long: "--verbose", value_type: "boolean", value_validation: "strict" },
       { long: "--ratio", value_type: "number" },
@@ -309,6 +309,8 @@ describe("cli extension loose option parser", () => {
       // A boolean switch followed by a positional keeps its presence semantics.
       expect(coerce(["--verbose", "artifact-A"])).toEqual({ verbose: true });
       expect(coerce(["--ids", "7"])).toEqual({ ids: [7] });
+      // A valid alias value still yields to the canonical spelling.
+      expect(coerce(["--limit", "5", "-l", "7"])).toEqual({ limit: 5 });
     });
 
     it("refuses malformed number and boolean tokens before dispatch with a typed usage error", () => {
@@ -317,6 +319,8 @@ describe("cli extension loose option parser", () => {
         [["--limit"], "received no value"],
         [["--enabled", "not-a-boolean"], "expects true, false, 1, or 0; received \"not-a-boolean\""],
         [["--ids", "1,x"], "expects a finite number; received \"x\""],
+        // A malformed alias value is refused even though the canonical value would win the merge.
+        [["--limit", "5", "-l", "junk"], "expects a finite number; received \"junk\""],
       ] as const) {
         try {
           coerce([...args]);

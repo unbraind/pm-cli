@@ -849,7 +849,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm claim pm-a1b2 --author "release-service" --message "Explicit non-agent identity override"',
     ],
     tips: [
-      "Claim is an atomic test-and-set: an item held by another principal refuses with already_claimed_by. Use --if-available to skip it without failing, or --force only for a coordinated takeover; --force is also required for terminal items, and for stale locks when governance.force_required_for_stale_lock is enabled.",
+      "Claim is an atomic test-and-set: a non-terminal item held by another principal refuses with already_claimed_by. Use --if-available to skip that item without failing. Terminal items still require --force, even when --if-available is set. Use --force for coordinated takeovers; stale locks require --force only when governance.force_required_for_stale_lock is enabled.",
       "Harness identity is automatic; use --author only to assert an intentional external principal.",
     ],
   },

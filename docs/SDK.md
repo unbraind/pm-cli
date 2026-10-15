@@ -1283,7 +1283,7 @@ const plan = await planItemMutationDocument({
   pmRoot,
   input: [
     '{"title":"Imported A","type":"Task","external_id":"ext-1"}',
-    '{"ref":"b","title":"Imported B","type":"Feature","parent":"@row-1"}',
+    '{"ref":"b","title":"Imported B","type":"Feature","parent":"@row-1","external_id":"ext-2"}',
   ].join("\n"),
   upsertKey: "external_id",
 });
