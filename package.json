@@ -95,6 +95,7 @@
     "LICENSE",
     "AGENTS.md",
     "docs/**",
+    "!docs/ecosystem-review-*.json",
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",
