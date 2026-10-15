@@ -1269,7 +1269,10 @@ JSON Lines and op-less create documents (records shaped like `pm create
 --stdin-json` input, optionally wrapped as `{ ref, item }`), synthesizes
 `row-<n>` aliases for records without `ref`/`id`, derives a stable
 `transaction_id` from the document bytes when none is supplied, and resolves
-`upsertKey` against existing items so matching create records become updates.
+`upsertKey` against existing items so matching create records become updates;
+records that match nothing carry a `unique` guard that `commitItemMutations`
+re-checks under the writer lock and refuses with `upsert_key_conflict` when a
+concurrent writer created the key value after planning.
 The returned `rows` receipt maps every input record, in order, to its resolved
 `id` and `op`:
 

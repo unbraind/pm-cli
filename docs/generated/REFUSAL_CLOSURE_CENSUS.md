@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 414
+- Catalog error codes: 415
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 395
-- Coverage fraction: 0.045894
+- Uncovered error codes: 396
+- Coverage fraction: 0.045783
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -361,6 +361,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `unsafe_init_recovery` | `unsafe_init_recovery` | uncovered | none | 0 |
 | `unsupported_update_option` | `unsupported_update_option` | uncovered | none | 0 |
 | `upsert_key_ambiguous` | `upsert_key_ambiguous` | uncovered | none | 0 |
+| `upsert_key_conflict` | `upsert_key_conflict` | uncovered | none | 0 |
 | `upsert_key_duplicate` | `upsert_key_duplicate` | uncovered | none | 0 |
 | `upsert_key_missing` | `upsert_key_missing` | uncovered | none | 0 |
 | `validate_command_references_stale_pm_ids` | `validate_command_references_stale_pm_ids` | uncovered | none | 0 |

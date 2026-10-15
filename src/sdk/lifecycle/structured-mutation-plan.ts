@@ -6,23 +6,13 @@
  * transaction id when the caller omits one, and returns the resolved batch
  * ready for `previewItemMutations` or `commitItemMutations`.
  */
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import {
-  normalizeRuntimeSchemaSettings,
-  resolveRuntimeFieldRegistry,
-} from "../../core/schema/runtime-schema.js";
-import { loadGuardedRuntimeSchema } from "../item-transaction.js";
-import { listAllItemMetadataLight } from "../../core/store/item-store.js";
-import {
-  isConfigurationOnlySettingsRead,
-  readSettings,
-} from "../../core/store/settings.js";
-import type { ItemMetadata, ItemTypeDefinition, PmSettings } from "../../types/index.js";
+import { resolveRuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
+import { listUpsertKeyCandidates, resolveTransactionSchema } from "../item-transaction.js";
+import { readSettings } from "../../core/store/settings.js";
+import type { PmSettings } from "../../types/index.js";
 import {
   deriveMutationTransactionId,
   resolveItemMutationDocument,
-  type ItemMutationUpsertCandidate,
   type ResolvedItemMutationDocument,
 } from "../structured-mutations.js";
 
@@ -50,77 +40,13 @@ export interface PlannedItemMutationDocument extends ResolvedItemMutationDocumen
   upsert_key?: string;
 }
 
-/** Schema facts the plan needs, hydrated the same way whether or not the host scoped settings reads to configuration only. */
-interface PlanSchemaContext {
-  /** Runtime schema with statuses, fields, and workflows merged from their files. */
-  schema: PmSettings["schema"];
-  /** Custom item types declared in the types file, when the settings read skipped hydration. */
-  typeDefinitionsFromFile: ItemTypeDefinition[];
-}
-
-/**
- * Resolve the runtime schema for planning. A preview host may scope settings
- * reads to inline configuration only (no schema hydration, no scaffolding), in
- * which case declared custom fields and types live solely in their schema
- * files; load them through the transaction preview's guarded reader (no
- * symlinks, special files, or out-of-root paths are ever opened in place) so
- * document rows still route through declared fields and upsert still scans
- * custom-type folders.
- */
-async function resolvePlanSchema(
-  pmRoot: string,
-  settings: PmSettings,
-): Promise<PlanSchemaContext> {
-  if (!isConfigurationOnlySettingsRead(pmRoot)) {
-    return { schema: normalizeRuntimeSchemaSettings(settings.schema), typeDefinitionsFromFile: [] };
-  }
-  const loaded = await loadGuardedRuntimeSchema(pmRoot, settings.schema);
-  return { schema: loaded.schema, typeDefinitionsFromFile: loaded.type_definitions_from_file ?? [] };
-}
-
-/** Read the upsert key value from existing item metadata, covering core and declared custom keys. */
-function readExistingUpsertValue(item: ItemMetadata, key: string): unknown {
-  return (item as unknown as Record<string, unknown>)[key];
-}
-
-/** Collect every existing item that carries a value for the upsert key. */
-async function listUpsertCandidates(
-  pmRoot: string,
-  settings: PmSettings,
-  planSchema: PlanSchemaContext,
-  key: string,
-): Promise<ItemMutationUpsertCandidate[]> {
-  const typeRegistry = resolveItemTypeRegistry(
-    {
-      ...settings,
-      item_types: {
-        ...settings.item_types,
-        definitions: [
-          ...(settings.item_types?.definitions ?? []),
-          ...planSchema.typeDefinitionsFromFile,
-        ],
-      },
-    },
-    getActiveExtensionRegistrations(),
-  );
-  const items = await listAllItemMetadataLight(
-    pmRoot,
-    settings.item_format,
-    typeRegistry.type_to_folder,
-    undefined,
-    planSchema.schema,
-  );
-  return items.flatMap((item) => {
-    const value = readExistingUpsertValue(item, key);
-    return value == null ? [] : [{ id: item.id, value }];
-  });
-}
-
 /**
  * Resolve a mutation document against the workspace. Reads happen before the
  * writer lock; the returned batch is deterministic for the same document,
  * schema, and existing items, so interrupted or repeated imports replay
- * through the transaction journal instead of duplicating work.
+ * through the transaction journal instead of duplicating work. Create rows
+ * left by keyed upsert carry a `unique` guard that the commit re-checks under
+ * the lock, so a concurrent writer cannot slip a duplicate in after planning.
  */
 export async function planItemMutationDocument(
   options: PlanItemMutationDocumentOptions,
@@ -129,14 +55,14 @@ export async function planItemMutationDocument(
   const explicit = options.transactionId?.trim() ?? "";
   const transactionId =
     explicit.length > 0 ? explicit : deriveMutationTransactionId(options.input);
-  const planSchema = await resolvePlanSchema(options.pmRoot, settings);
+  const planSchema = await resolveTransactionSchema(options.pmRoot, settings);
   const upsertKey = options.upsertKey?.trim();
   const upsert =
     upsertKey === undefined || upsertKey.length === 0
       ? undefined
       : {
           key: upsertKey,
-          existing: await listUpsertCandidates(options.pmRoot, settings, planSchema, upsertKey),
+          existing: await listUpsertKeyCandidates(options.pmRoot, settings, planSchema, upsertKey),
         };
   const resolved = resolveItemMutationDocument(options.input, {
     transactionId,

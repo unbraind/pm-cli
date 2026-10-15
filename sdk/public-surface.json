@@ -2406,6 +2406,13 @@
       ],
       "package_version": "2026.10.15",
       "reason": "pm-extension-scalar-validation: describeFlagScalarValueFailure was introduced in this same change and its kind parameter is narrowed to number|boolean before first publication; no released consumer exists."
+    },
+    {
+      "changes": [
+        "signature ./sdk:BulkItemCreateMutation"
+      ],
+      "package_version": "2026.10.15",
+      "reason": "BulkItemCreateMutation gains the optional unique guard that keyed upsert sets on unmatched create rows; existing callers that omit it are unaffected"
     }
   ],
   "entrypoints": {
@@ -4396,7 +4403,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BulkItemCreateMutation",
-          "signature": "export interface BulkItemCreateMutation { op: \"create\"; id: string; options: PmClientFullMutationOptions; }"
+          "signature": "export interface BulkItemCreateMutation { op: \"create\"; id: string; options: PmClientFullMutationOptions; unique?: BulkItemUniqueKey; }"
         },
         {
           "classification": "advanced_export",
@@ -4415,6 +4422,12 @@
           "kind": "interface",
           "name": "BulkItemReleaseMutation",
           "signature": "export interface BulkItemReleaseMutation { op: \"release\"; id: string; options?: PmClientFullMutationOptions; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "BulkItemUniqueKey",
+          "signature": "export interface BulkItemUniqueKey { key: string; value: unknown; }"
         },
         {
           "classification": "advanced_export",
@@ -10853,6 +10866,12 @@
           "kind": "interface",
           "name": "ListTreeMetadata",
           "signature": "export interface ListTreeMetadata { tree_depth: number; tree_parent: string | null; tree_children: number; tree_title: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listUpsertKeyCandidates",
+          "signature": "(pmRoot: string, settings: PmSettings, schemaContext: TransactionSchemaContext, key: string) => Promise<ItemMutationUpsertCandidate[]> | calls: (pmRoot: string, settings: PmSettings, schemaContext: TransactionSchemaContext, key: string) => Promise<ItemMutationUpsertCandidate[]>"
         },
         {
           "classification": "supported",
@@ -17469,6 +17488,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveTransactionSchema",
+          "signature": "(pmRoot: string, settings: PmSettings) => Promise<TransactionSchemaContext> | calls: (pmRoot: string, settings: PmSettings) => Promise<TransactionSchemaContext>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveTypeDefinition",
           "signature": "(typeName: string | undefined, registry: ItemTypeRegistry) => ResolvedItemTypeDefinition | undefined | calls: (typeName: string | undefined, registry: ItemTypeRegistry) => ResolvedItemTypeDefinition | undefined"
         },
@@ -19557,6 +19582,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "stableUpsertValue",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "stableValueEquals",
           "signature": "(left: unknown, right: unknown) => boolean | calls: (left: unknown, right: unknown) => boolean"
         },
@@ -20369,6 +20400,12 @@
           "kind": "function",
           "name": "toReplayDocument",
           "signature": "(document: ItemDocument) => ReplayDocument | calls: (document: ItemDocument) => ReplayDocument"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TransactionSchemaContext",
+          "signature": "export interface TransactionSchemaContext { schema: PmSettings[\"schema\"]; typeDefinitionsFromFile: ItemTypeDefinition[]; }"
         },
         {
           "classification": "advanced_export",
@@ -36387,6 +36424,7 @@
     "unsafe_init_recovery",
     "unsupported_update_option",
     "upsert_key_ambiguous",
+    "upsert_key_conflict",
     "upsert_key_duplicate",
     "upsert_key_missing",
     "validate_command_references_stale_pm_ids",

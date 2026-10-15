@@ -726,8 +726,32 @@ describe("bulk creation documents (pm-gh1456)", () => {
       options: { title: "Renamed", externalId: "ext-1", tags: '["sync"]' },
     });
     expect(resolved.mutations[0]).not.toHaveProperty("options.documentAnnotationSnapshot");
+    // Rows that matched nothing carry the key for the lock-held re-check; matched rows do not.
+    expect(resolved.mutations[0]).not.toHaveProperty("unique");
+    expect(resolved.mutations[1]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-2" } });
+    expect(resolved.mutations[3]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-3" } });
     expect(resolved.mutations[2]).toMatchObject({ op: "update", id: "pm-other", options: { title: "Option row" } });
     expect(resolved.references).toMatchObject({ "row-1": "pm-existing", opt: "pm-other" });
+  });
+
+  it("accepts a unique guard only on create rows that carry a key and a value", () => {
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"update","id":"pm-a","options":{"title":"x"},"unique":{"key":"k","value":1}}]', options),
+    ).toThrow("unique is only valid for create operations");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":{"key":" ","value":1}}]', options),
+    ).toThrow("unique must be an object with a non-empty key and a value");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":"k"}]', options),
+    ).toThrow("unique must be an object");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":{"key":"k","value":null}}]', options),
+    ).toThrow("unique must be an object");
+    const explicit = resolveItemMutationDocument(
+      '[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":{"key":" external_id ","value":"ext-1"}}]',
+      options,
+    );
+    expect(explicit.mutations[0]).toMatchObject({ unique: { key: "external_id", value: "ext-1" } });
   });
 
   it("refuses missing, duplicate, and ambiguous upsert keys before any write", () => {

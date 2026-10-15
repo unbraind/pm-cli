@@ -7,6 +7,7 @@ import {
   commitItemMutations,
   get,
   type BulkItemMutation,
+  type BulkItemUniqueKey,
   type WorkspaceTransactionTransitionContext,
 } from "../../../src/sdk/index.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
@@ -715,6 +716,14 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
           mutations: [{ op: "close", id: "pm-x", reason: "  " }],
         }),
       ).rejects.toThrow("requires a non-empty reason");
+      for (const unique of [null, "k", ["k"], { key: " ", value: 1 }, { key: "k" }, { key: "k", value: null }]) {
+        await expect(
+          commitItemMutations({
+            ...base,
+            mutations: [{ op: "create", id: "pm-x", options: { title: "x", type: "Task" }, unique: unique as unknown as BulkItemUniqueKey }],
+          }),
+        ).rejects.toThrow("unique must be an object with a non-empty key and a value");
+      }
       await expect(
         commitItemMutations({
           ...base,

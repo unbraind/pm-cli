@@ -687,7 +687,11 @@ of that item and is reported with `upserted: true`. The record keeps its
 then resolves to the matched item. A record missing the key, two records
 sharing a key value, or a key value matching several existing items refuses
 before any write (`upsert_key_missing`, `upsert_key_duplicate`,
-`upsert_key_ambiguous`).
+`upsert_key_ambiguous`). Matching happens before the writer lock, so every
+record that matched nothing carries its key into the commit, which re-checks
+it under the lock: when another writer created an item with that key value
+after planning, the transaction refuses with `upsert_key_conflict` before any
+write, and a re-run plans the record as an update of that item.
 
 ```bash
 printf '%s\n' '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}' \

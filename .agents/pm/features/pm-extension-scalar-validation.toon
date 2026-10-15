@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-14T16:21:40.172Z"
-updated_at: "2026-10-15T19:58:04.047Z"
+updated_at: "2026-10-15T22:07:43.694Z"
 closed_at: "2026-10-15T15:10:35.660Z"
 completed_at: "2026-10-15T15:10:35.660Z"
 author: "harness:codex"
@@ -17,7 +17,7 @@ risk: medium
 confidence: high
 resolution: "FlagDefinition.value_validation (coerce default, strict) declared in extension-types, validated at registration (unknown policy and strict on string/untyped flags refused), and enforced before dispatch in the loose option coercer: malformed number/boolean tokens refuse with extension_flag_value_invalid naming flag, command, expected grammar and received token; list entries validated individually; switch presence, --no- negation, the legacy bool optional-value grammar and defaults preserved. Shared helper describeFlagScalarValueFailure exported through runtime-primitives."
 expected_result: "Extension authors can declare scalar validation that rejects malformed boolean and numeric inputs before dispatch while preserving valid aliases, defaults, optional presence and list ordering across public SDK and CLI."
-actual_result: "Public CLI integration test with a file-based extension: valid coercions, bare legacy bool, switch followed by positional, malformed number/bool/list refusals (exit 2) and activation refusal for strict on a string flag surfaced by pm package doctor; unit tests cover coercer and registration branches. Linked tests pass; exact coverage 100/100/100/100."
+actual_result: "Post-fix run on 2026-10-16 through pm test --run after the PR #1479 review follow-ups (alias pre-validation, attached switch tokens, empty and CSV-empty strict list entries, plain-object option bags): linked unit and integration tests pass; the loose option coercer and extension-flag integration spec sit at 100 percent statement and branch coverage in the per-file report; CI coverage gate green on the last head."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1466,discovered_from,"2026-10-14T16:47:25.265Z","harness:codex","cli:update:dep",detected
 comments[6]{created_at,author,text}:
@@ -36,13 +36,24 @@ files[6]{path,scope,note}:
   tests/integration/extensions/extension-flag-value-validation.integration.spec.ts,project,public CLI strict scalar acceptance
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/main-loose-options.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/integration/extensions/extension-flag-value-validation.integration.spec.ts,project,600,"harness:claude-code","2026-10-15T12:49:49.780Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mv9od0dk-7isyds
     kind: test
     status: passed
     started_at: "2026-10-15T15:09:23.612Z"
     finished_at: "2026-10-15T15:09:35.912Z"
     recorded_at: "2026-10-15T15:09:35.912Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/main-loose-options.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/integration/extensions/extension-flag-value-validation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mva39gpi-1s1eid
+    kind: test
+    status: passed
+    started_at: "2026-10-15T22:06:32.872Z"
+    finished_at: "2026-10-15T22:06:44.694Z"
+    recorded_at: "2026-10-15T22:06:44.694Z"
     passed: 1
     failed: 0
     skipped: 0

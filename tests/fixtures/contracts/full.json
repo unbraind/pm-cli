@@ -26045,6 +26045,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "upsert_key_conflict",
+      "class": "conflict",
+      "code": "upsert_key_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Upsert key conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "upsert_key_duplicate",
       "class": "usage",
       "code": "upsert_key_duplicate",
@@ -37425,6 +37442,10 @@
                 "ref": {
                   "description": "Batch-local create alias; its deterministic id can be referenced as @alias by any row.",
                   "type": "string"
+                },
+                "unique": {
+                  "description": "Create-only guard {key,value} re-checked under the writer lock; keyed upsert sets it on rows that matched nothing at planning time.",
+                  "type": "object"
                 }
               },
               "type": "object"

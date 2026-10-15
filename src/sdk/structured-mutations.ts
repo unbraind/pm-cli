@@ -24,11 +24,11 @@ import {
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
 } from "./cli-contracts/commander-mutation-options.js";
 import type { PmClientFullMutationOptions } from "./runtime.js";
-import type { BulkItemMutation } from "./item-transaction.js";
+import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 
-const MUTATION_ROW_KEYS = ["op", "id", "reason", "options"] as const;
+const MUTATION_ROW_KEYS = ["op", "id", "reason", "options", "unique"] as const;
 const REFERENCED_MUTATION_ROW_KEYS = [
   ...MUTATION_ROW_KEYS,
   "ref",
@@ -367,6 +367,29 @@ export interface ParseItemMutationBatchOptions {
   runtimeFields?: readonly RuntimeFieldDefinitionResolved[];
 }
 
+/** Validate the optional unique-key guard: only create rows may carry one, and it needs a non-empty key and a present value. */
+function validateMutationUniqueKey(
+  value: unknown,
+  op: BulkItemMutation["op"],
+  index: number,
+): BulkItemUniqueKey | undefined {
+  if (value === undefined) return undefined;
+  if (op !== "create") {
+    throw new PmCliError(
+      `Mutation ${index + 1} unique is only valid for create operations.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const key = isPlainObject(value) && typeof value.key === "string" ? value.key.trim() : "";
+  if (!isPlainObject(value) || key.length === 0 || value.value === undefined || value.value === null) {
+    throw new PmCliError(
+      `Mutation ${index + 1} unique must be an object with a non-empty key and a value.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { key, value: value.value };
+}
+
 function validateMutationRow(
   value: unknown,
   index: number,
@@ -386,6 +409,7 @@ function validateMutationRow(
     );
   }
   const options = validateMutationOptions(mutation.options, op, index, runtimeFields);
+  const unique = validateMutationUniqueKey(mutation.unique, op, index);
   if (typeof id !== "string" || id.trim().length === 0) {
     throw new PmCliError(
       `Mutation ${index + 1} requires a non-empty id.`,
@@ -428,6 +452,7 @@ function validateMutationRow(
     op,
     id: normalizedId,
     options: options as PmClientFullMutationOptions,
+    ...(unique === undefined ? {} : { unique }),
   };
 }
 
@@ -842,7 +867,8 @@ function canonicalizeUpsertValue(value: unknown): unknown {
   );
 }
 
-function stableUpsertValue(value: unknown): string {
+/** Canonical comparison form of an upsert key value: trimmed strings, otherwise key-sorted JSON. Shared by the planner and the lock-held commit guard. */
+export function stableUpsertValue(value: unknown): string {
   return typeof value === "string"
     ? value.trim()
     : JSON.stringify(canonicalizeUpsertValue(value));
@@ -871,7 +897,11 @@ function applyKeyedUpsert(
     if (row.op !== "create") continue;
     const stable = readStableUpsertKey(row, key, index, seen);
     const match = resolveUpsertMatch(existingByValue.get(stable) ?? [], key, stable);
-    if (match === undefined) continue;
+    if (match === undefined) {
+      // No match before the lock: the commit re-checks this key under the lock.
+      row.unique = { key, value: readUpsertKeyValue(row, key) };
+      continue;
+    }
     const id = normalizeItemId(match, idPrefix);
     if (typeof row.ref === "string") {
       // Later rows may still address this record as @ref; it now names the matched item.

@@ -650,6 +650,53 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
     });
   });
 
+  it("re-checks keyed upsert under the writer lock so a concurrent writer cannot create a duplicate after planning", async () => {
+    await withTempPmPath(async (context) => {
+      const { planItemMutationDocument } = await import("../../src/sdk/lifecycle/structured-mutation-plan.js");
+      const { commitItemMutations, previewItemMutations } = await import("../../src/sdk/item-transaction.js");
+      const { WorkspaceTransactionInterruptedError } = await import("../../src/sdk/index.js");
+      expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
+      const input = '{"title":"Planned","type":"Task","external_id":"ext-race"}';
+      const plan = await planItemMutationDocument({ pmRoot: context.pmPath, input, upsertKey: "external_id" });
+      expect(plan.mutations[0]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-race" } });
+      // Another writer lands the same key between planning and commit.
+      const rival = context.runCli(["item", "mutate", "--json"], {
+        expectJson: true,
+        input: '{"title":"Rival","type":"Task","external_id":"ext-race"}',
+      });
+      expect(rival.code).toBe(0);
+      const rivalId = (rival.json as { rows: Array<{ id: string }> }).rows[0]!.id;
+      const commit = { pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "import-agent", mutations: plan.mutations };
+      await expect(previewItemMutations(commit)).rejects.toMatchObject({
+        context: { code: "upsert_key_conflict", transaction_operation: { index: 0, op: "create" } },
+      });
+      await expect(commitItemMutations(commit)).rejects.toMatchObject({ context: { code: "upsert_key_conflict" } });
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 1 });
+      // Re-planning resolves the row as an update of the rival item.
+      const replanned = await planItemMutationDocument({ pmRoot: context.pmPath, input, upsertKey: "external_id" });
+      expect(replanned.rows).toEqual([{ index: 0, ref: "row-1", id: rivalId, op: "update", upserted: true }]);
+      // A plan resumes and replays as itself: the items it already created are not collisions for its
+      // own guards when a resumed step scans again, and a second row reuses the first row's lock-held scan.
+      const fresh = await planItemMutationDocument({
+        pmRoot: context.pmPath,
+        input: '{"title":"Fresh","type":"Task","external_id":"ext-fresh"}\n{"title":"Fresh too","type":"Task","external_id":"ext-fresh-2"}',
+        upsertKey: "external_id",
+      });
+      const freshCommit = { pmRoot: context.pmPath, transactionId: fresh.transaction_id, author: "import-agent", mutations: fresh.mutations };
+      await expect(
+        commitItemMutations({
+          ...freshCommit,
+          onTransition(transition) {
+            if (transition.transition === "step_recorded") throw new WorkspaceTransactionInterruptedError("crash after the first create");
+          },
+        }),
+      ).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+      expect((await commitItemMutations(freshCommit)).recovered).toBe(true);
+      expect((await commitItemMutations(freshCommit)).recovered).toBe(true);
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 3 });
+    });
+  });
+
   it("routes pm create many to the bulk surface instead of creating an item titled many", async () => {
     await withTempPmPath(async (context) => {
       const refused = context.runCli(["create", "many", "--json"]);

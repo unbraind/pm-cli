@@ -1,12 +1,12 @@
 id: pm-jsm9im
-title: Item text with an unpaired surrogate reaches the TOON encoder and fails as an unclassified TypeError instead of a typed field refusal
+title: Refuse item text with an unpaired surrogate as a typed field error before TOON encoding
 description: "Sentry PM-CLI-3H (first seen 2026-10-15T13:12Z, pm-cli 2026.10.14, environment ci, win32, from an external consumer's oracle test job): TypeError \"Cannot encode string value containing an unpaired surrogate U+D83D at index 239\" thrown by @toon-format/toon assertNoLoneSurrogate during item serialization. pm accepted text containing a lone surrogate (a JSON \\ud83d escape, or a string truncated between the halves of an emoji) and only failed at TOON encode time with an untyped TypeError: exit 1, pm.error_code unclassified_runtime_error, captured as an unexpected fault, so the release telemetry gate treats it as a blocker. Expected: a typed usage refusal before encoding that names the offending field and code-unit index and tells the caller how to repair the text."
 type: Issue
 status: closed
 priority: 1
 tags[5]: "area:storage",refusal,sentry,toon,unicode
 created_at: "2026-10-15T13:21:41.694Z"
-updated_at: "2026-10-15T15:46:12.897Z"
+updated_at: "2026-10-15T22:05:49.766Z"
 closed_at: "2026-10-15T15:10:40.441Z"
 completed_at: "2026-10-15T15:10:40.441Z"
 author: "harness:claude-code"

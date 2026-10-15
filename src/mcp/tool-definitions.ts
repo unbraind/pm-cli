@@ -444,6 +444,11 @@ const RAW_TOOLS: ToolDefinition[] = [
                 description:
                   "Create document using pm create field names (title, type, description, body, tags, parent, custom fields).",
               },
+              unique: {
+                type: "object",
+                description:
+                  "Create-only guard {key,value} re-checked under the writer lock; keyed upsert sets it on rows that matched nothing at planning time.",
+              },
             },
             additionalProperties: false,
           },
