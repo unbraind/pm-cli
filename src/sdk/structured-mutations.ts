@@ -147,7 +147,12 @@ export interface ItemMutationUpsertCandidate {
 export interface ItemMutationUpsertOptions {
   /** Item field (core or declared custom metadata key) whose value identifies an existing item. */
   key: string;
-  /** Existing items that carry a value for the key, read before the writer lock. */
+  /**
+   * Existing items that carry a value for the key, read before the writer
+   * lock. Items this very document would create (its deterministic create
+   * ids) are never candidates, so a replay of a committed import keeps its
+   * original create plan instead of mutating into updates.
+   */
   existing: readonly ItemMutationUpsertCandidate[];
 }
 
@@ -742,6 +747,29 @@ function parseMutationDocumentRows(
   });
 }
 
+/**
+ * Drop candidates whose id this document itself would create (explicit create
+ * ids and ids derived from the stable transaction id), so a replay of an
+ * already committed import resolves to the same create plan and the journal
+ * recovers it instead of refusing a mutated plan.
+ */
+function excludeOwnCreateIds(
+  upsert: ItemMutationUpsertOptions,
+  rows: ReadonlyArray<Record<string, unknown>>,
+  options: ResolveItemMutationDocumentOptions,
+): ItemMutationUpsertOptions {
+  const ownIds = new Set(Object.values(collectMutationReferences(rows, options)));
+  for (const row of rows) {
+    if (row.op === "create" && typeof row.id === "string" && row.id.trim().length > 0) {
+      ownIds.add(normalizeItemId(row.id, options.idPrefix));
+    }
+  }
+  return {
+    ...upsert,
+    existing: upsert.existing.filter((candidate) => !ownIds.has(candidate.id)),
+  };
+}
+
 /** Give every create row an alias so omitted ids derive deterministically and the receipt can name each record. */
 function synthesizeMissingReferences(
   rows: Array<Record<string, unknown>>,
@@ -912,11 +940,15 @@ function convertRowToUpsertUpdate(
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): void {
   // readUpsertKeyValue found the key, so the row carries either an item document or an options object.
+  const updateKeys = new Set([
+    ...MUTATION_OPTION_KEYS.update,
+    ...runtimeFieldOptionKeys("update", runtimeFields),
+  ]);
   const options = isPlainObject(row.item)
     ? itemDocumentToBatchOptions(row.item, "update", runtimeFields)
     : Object.fromEntries(
         Object.entries(row.options as Record<string, unknown>).filter(([optionKey]) =>
-          MUTATION_OPTION_KEYS.update.includes(optionKey),
+          updateKeys.has(optionKey),
         ),
       );
   delete row.item;
@@ -977,12 +1009,17 @@ export function resolveItemMutationDocument(
   options: ResolveItemMutationDocumentOptions,
 ): ResolvedItemMutationDocument {
   const rows = parseMutationDocumentRows(input);
+  synthesizeMissingReferences(rows);
   const upserted =
     options.upsert === undefined
       ? new Set<number>()
-      : applyKeyedUpsert(rows, options.upsert, options.idPrefix, options.runtimeFields ?? []);
+      : applyKeyedUpsert(
+          rows,
+          excludeOwnCreateIds(options.upsert, rows, options),
+          options.idPrefix,
+          options.runtimeFields ?? [],
+        );
   convertItemDocumentRows(rows, options.runtimeFields ?? []);
-  synthesizeMissingReferences(rows);
   const references = collectMutationReferences(rows, options);
   assertAcyclicCreateReferences(rows);
 

@@ -2017,22 +2017,45 @@ function serializeJsonMarkdownItemDocument(
 /** A high surrogate without a following low surrogate, or a low surrogate without a preceding high one. */
 const LONE_SURROGATE_PATTERN = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u;
 
-/** Locate the first string in the payload that is not well-formed UTF-16 (an unpaired surrogate), returning its dotted path and code-unit index. */
+/**
+ * Locate the first string in the payload, at any depth and including object
+ * keys, that is not well-formed UTF-16 (an unpaired surrogate), returning its
+ * dotted path and code-unit index. The payload is a JSON clone, so it is
+ * finite and acyclic.
+ */
 function findIllFormedItemText(
   value: unknown,
   path: string,
-  depth: number,
-): { path: string; index: number } | null {
-  if (typeof value === "string") {
-    const index = value.search(LONE_SURROGATE_PATTERN);
-    return index < 0 ? null : { path, index };
+): IllFormedItemText | null {
+  if (typeof value === "string") return illFormedText(value, path);
+  if (value === null || typeof value !== "object") return null;
+  if (Array.isArray(value)) {
+    return firstIllFormed(value.map((entry, position) => () => findIllFormedItemText(entry, `${path}[${position}]`)));
   }
-  if (depth > 6 || value === null || typeof value !== "object") return null;
-  const entries = Array.isArray(value)
-    ? value.map((entry, position) => [`${path}[${position}]`, entry] as const)
-    : Object.entries(value).map(([key, entry]) => [path ? `${path}.${key}` : key, entry] as const);
-  for (const [childPath, entry] of entries) {
-    const found = findIllFormedItemText(entry, childPath, depth + 1);
+  return firstIllFormed(
+    Object.entries(value).map(([key, entry]) => () => {
+      const childPath = path ? `${path}.${key}` : key;
+      return illFormedText(key, `${childPath} (key)`) ?? findIllFormedItemText(entry, childPath);
+    }),
+  );
+}
+
+/** One ill-formed string located inside the encodable payload. */
+interface IllFormedItemText {
+  path: string;
+  index: number;
+}
+
+/** Report the first lone surrogate in one string, or null when it is well-formed. */
+function illFormedText(text: string, path: string): IllFormedItemText | null {
+  const index = text.search(LONE_SURROGATE_PATTERN);
+  return index < 0 ? null : { path, index };
+}
+
+/** Run the probes in order and return the first hit. */
+function firstIllFormed(probes: ReadonlyArray<() => IllFormedItemText | null>): IllFormedItemText | null {
+  for (const probe of probes) {
+    const found = probe();
     if (found !== null) return found;
   }
   return null;
@@ -2045,7 +2068,7 @@ function findIllFormedItemText(
  * PM-CLI-3H). Naming the field and index keeps the refusal actionable.
  */
 function assertWellFormedItemText(payload: Record<string, unknown>): void {
-  const found = findIllFormedItemText(payload, "", 0);
+  const found = findIllFormedItemText(payload, "");
   if (found === null) return;
   throw new PmCliError(
     `Item field ${found.path} contains an unpaired surrogate code unit at index ${found.index}; TOON requires well-formed Unicode text.`,

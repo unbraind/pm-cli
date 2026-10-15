@@ -418,7 +418,9 @@ const HANDLERS: Record<string, ToolHandler> = {
           ...controls,
         }),
     );
-    const { transactionId: _committedTransactionId, ...commitResult } = result;
+    const commitResult = Object.fromEntries(
+      Object.entries(result).filter(([key]) => key !== "transactionId"),
+    );
     return {
       ...commitResult,
       ...receipt,

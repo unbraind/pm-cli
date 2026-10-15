@@ -630,6 +630,11 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
           { index: 1, ref: "row-2", op: "create" },
         ],
       });
+      const upsertReplay = context.runCli(["item", "mutate", "--upsert-key", "external_id", "--json"], {
+        expectJson: true,
+        input: '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}\n{"title":"Imported C","type":"Task","external_id":"ext-3"}',
+      });
+      expect(upsertReplay.json).toMatchObject({ status: "committed", recovered: true });
       const renamed = context.runCli(["get", first!.id, "--json"], { expectJson: true }).json as { item: { title: string } };
       expect(renamed.item.title).toBe("Imported A (renamed)");
       expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 3 });

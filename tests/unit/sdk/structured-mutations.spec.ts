@@ -790,6 +790,7 @@ describe("bulk creation documents (pm-gh1456)", () => {
       { ...options, runtimeFields, upsert: { key: "external_id", existing: [{ id: "pm-camel", value: "ext-camel" }] } },
     );
     expect(resolved.rows).toEqual([{ index: 0, id: "pm-camel", op: "update", upserted: true }]);
+    expect(resolved.mutations[0]).toMatchObject({ options: { title: "Camel", externalId: "ext-camel" } });
     const mixed = resolveItemMutationDocument(
       '[{"op":"update","id":"pm-a","options":{"title":"Untouched"}},{"title":"Keyed","type":"Task","external_id":"ext-k"}]',
       { ...options, runtimeFields, upsert: { key: "external_id", existing: [] } },
@@ -804,5 +805,22 @@ describe("bulk creation documents (pm-gh1456)", () => {
         upsert: { key: "external_id", existing: [] },
       }),
     ).toThrow("missing the upsert key");
+  });
+
+  it("never matches the ids this document itself would create, so a committed import replays as the same plan", () => {
+    const first = resolveItemMutationDocument('{"title":"Own","type":"Task","external_id":"own-1"}', { ...options, runtimeFields });
+    const ownId = first.rows[0]!.id;
+    const replay = resolveItemMutationDocument('{"title":"Own","type":"Task","external_id":"own-1"}', {
+      ...options,
+      runtimeFields,
+      upsert: { key: "external_id", existing: [{ id: ownId, value: "own-1" }] },
+    });
+    expect(replay.rows).toEqual([{ index: 0, ref: "row-1", id: ownId, op: "create" }]);
+    const explicit = resolveItemMutationDocument('[{"op":"create","id":"pm-fixed","options":{"title":"Fixed","type":"Task","externalId":"fixed-1"}}]', {
+      ...options,
+      runtimeFields,
+      upsert: { key: "external_id", existing: [{ id: "pm-fixed", value: "fixed-1" }, { id: "pm-other", value: "other" }] },
+    });
+    expect(explicit.rows).toEqual([{ index: 0, id: "pm-fixed", op: "create" }]);
   });
 });

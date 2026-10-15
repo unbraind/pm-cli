@@ -119,6 +119,20 @@ describe("item document text well-formedness (Sentry PM-CLI-3H)", () => {
     ).toThrowError(expect.objectContaining<PmCliError>({ context: expect.objectContaining({ field: "comments[0].text" }) }));
   });
 
+  it("scans extension values at any depth and object keys", () => {
+    const deep = { l1: { l2: { l3: { l4: { l5: { l6: { l7: { l8: "deep \uD83D" } } } } } } } };
+    const extension = { extensionFieldNames: ["payload"] };
+    expect(() => serializeItemDocument(document({ payload: deep }), extension)).toThrowError(
+      expect.objectContaining<PmCliError>({ context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "payload.l1.l2.l3.l4.l5.l6.l7.l8" }) }),
+    );
+    expect(() => serializeItemDocument(document({ payload: { ["bad\uDC00key"]: "value" } }), extension)).toThrowError(
+      expect.objectContaining<PmCliError>({ context: expect.objectContaining({ field: "payload.bad\uDC00key (key)" }) }),
+    );
+    expect(() => serializeItemDocument(document({ payload: { list: ["ok", { inner: "\uD83D" }] } }), extension)).toThrowError(
+      expect.objectContaining<PmCliError>({ context: expect.objectContaining({ field: "payload.list[1].inner" }) }),
+    );
+  });
+
   it("keeps whole emoji and astral characters encodable", () => {
     expect(serializeItemDocument(document({ description: "Ship it 🚀 \u{1F600}" }))).toContain("Ship it");
   });
