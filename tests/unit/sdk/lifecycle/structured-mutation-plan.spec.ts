@@ -49,7 +49,7 @@ describe("planItemMutationDocument (pm-gh1456)", () => {
       });
       expect(byCustom).toMatchObject({ upsert_key: "external_id" });
       expect(byCustom.rows).toEqual([
-        { index: 0, id: seededId, op: "update", upserted: true },
+        { index: 0, ref: "row-1", id: seededId, op: "update", upserted: true },
         { index: 1, ref: "row-2", id: expect.any(String), op: "create" },
       ]);
 
@@ -60,7 +60,7 @@ describe("planItemMutationDocument (pm-gh1456)", () => {
           input: '{"title":"Seed","type":"Task","priority":1}',
         }),
       );
-      expect(byTitle.rows).toEqual([{ index: 0, id: seededId, op: "update", upserted: true }]);
+      expect(byTitle.rows).toEqual([{ index: 0, ref: "row-1", id: seededId, op: "update", upserted: true }]);
 
       await expect(
         planItemMutationDocument({ pmRoot: context.pmPath, upsertKey: "external_id", input: '{"title":"No key","type":"Task"}' }),
@@ -81,7 +81,7 @@ describe("planItemMutationDocument schema and settings variants", () => {
       const scoped = await runWithConfigurationOnlySettings(context.pmPath, () =>
         planItemMutationDocument({ pmRoot: context.pmPath, upsertKey: "title", input: '{"title":"Seeded incident","type":"incident","priority":1}' }),
       );
-      expect(scoped.rows).toEqual([{ index: 0, id: expect.any(String), op: "update", upserted: true }]);
+      expect(scoped.rows).toEqual([{ index: 0, ref: "row-1", id: expect.any(String), op: "update", upserted: true }]);
       const { rm } = await import("node:fs/promises");
       const path = await import("node:path");
       await rm(path.join(context.pmPath, "schema", "types.json"), { force: true });

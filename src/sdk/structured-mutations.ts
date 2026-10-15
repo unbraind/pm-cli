@@ -758,7 +758,7 @@ function excludeOwnCreateIds(
   rows: ReadonlyArray<Record<string, unknown>>,
   options: ResolveItemMutationDocumentOptions,
 ): ItemMutationUpsertOptions {
-  const ownIds = new Set(Object.values(collectMutationReferences(rows, options)));
+  const ownIds = new Set(Object.values(collectMutationReferences(rows, options, Object.create(null) as Record<string, string>)));
   for (const row of rows) {
     if (row.op === "create" && typeof row.id === "string" && row.id.trim().length > 0) {
       ownIds.add(normalizeItemId(row.id, options.idPrefix));
@@ -845,6 +845,7 @@ function applyKeyedUpsert(
   upsert: ItemMutationUpsertOptions,
   idPrefix: string,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+  references: Record<string, string>,
 ): Set<number> {
   const key = upsert.key.trim();
   if (key.length === 0) {
@@ -858,7 +859,12 @@ function applyKeyedUpsert(
     const stable = readStableUpsertKey(row, key, index, seen);
     const match = resolveUpsertMatch(existingByValue.get(stable) ?? [], key, stable);
     if (match === undefined) continue;
-    convertRowToUpsertUpdate(row, normalizeItemId(match, idPrefix), runtimeFields);
+    const id = normalizeItemId(match, idPrefix);
+    if (typeof row.ref === "string") {
+      // Later rows may still address this record as @ref; it now names the matched item.
+      references[row.ref] = id;
+    }
+    convertRowToUpsertUpdate(row, id, runtimeFields);
     upserted.add(index);
   }
   return upserted;
@@ -961,8 +967,8 @@ function convertRowToUpsertUpdate(
 function collectMutationReferences(
   rows: ReadonlyArray<Record<string, unknown>>,
   options: ResolveItemMutationDocumentOptions,
+  references: Record<string, string>,
 ): Record<string, string> {
-  const references = Object.create(null) as Record<string, string>;
   for (const [index, row] of rows.entries()) {
     if (row.ref === undefined) continue;
     if (row.op !== "create") {
@@ -1010,6 +1016,9 @@ export function resolveItemMutationDocument(
 ): ResolvedItemMutationDocument {
   const rows = parseMutationDocumentRows(input);
   synthesizeMissingReferences(rows);
+  // Keyed upsert converts a matched create row to an update and drops its alias, so the receipt reads the aliases first.
+  const inputReferences = rows.map((row) => (typeof row.ref === "string" ? row.ref : undefined));
+  const references = Object.create(null) as Record<string, string>;
   const upserted =
     options.upsert === undefined
       ? new Set<number>()
@@ -1018,9 +1027,10 @@ export function resolveItemMutationDocument(
           excludeOwnCreateIds(options.upsert, rows, options),
           options.idPrefix,
           options.runtimeFields ?? [],
+          references,
         );
   convertItemDocumentRows(rows, options.runtimeFields ?? []);
-  const references = collectMutationReferences(rows, options);
+  collectMutationReferences(rows, options, references);
   assertAcyclicCreateReferences(rows);
 
   const resolvedRows = rows.map((row) => {
@@ -1069,7 +1079,7 @@ export function resolveItemMutationDocument(
     );
   }
   const receiptRows = mutations.map((mutation, index): ResolvedItemMutationRow => {
-    const reference = rows[index]?.ref;
+    const reference = inputReferences[index];
     return {
       index,
       ...(typeof reference === "string" ? { ref: reference } : {}),

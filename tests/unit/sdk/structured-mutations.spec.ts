@@ -708,14 +708,18 @@ describe("bulk creation documents (pm-gh1456)", () => {
         '{"title":"Renamed","type":"Task","external_id":"ext-1","tags":["sync"]}',
         '{"title":"Fresh","type":"Task","external_id":"ext-2"}',
         '{"op":"create","ref":"opt","options":{"title":"Option row","type":"Task","field":["external_id=ext-9"]}}',
+        '{"op":"create","ref":"child","options":{"title":"Child of upsert","type":"Task","parent":"@opt","externalId":"ext-3"}}',
       ].join("\n"),
       { ...options, runtimeFields, upsert },
     );
     expect(resolved.rows).toEqual([
-      { index: 0, id: "pm-existing", op: "update", upserted: true },
+      { index: 0, ref: "row-1", id: "pm-existing", op: "update", upserted: true },
       { index: 1, ref: "row-2", id: expect.any(String), op: "create" },
-      { index: 2, id: "pm-other", op: "update", upserted: true },
+      { index: 2, ref: "opt", id: "pm-other", op: "update", upserted: true },
+      { index: 3, ref: "child", id: expect.any(String), op: "create" },
     ]);
+    // A later row may still address the upserted record by its alias, which now names the matched item.
+    expect(resolved.mutations[3]).toMatchObject({ op: "create", options: { parent: "pm-other" } });
     expect(resolved.mutations[0]).toMatchObject({
       op: "update",
       id: "pm-existing",
@@ -723,7 +727,7 @@ describe("bulk creation documents (pm-gh1456)", () => {
     });
     expect(resolved.mutations[0]).not.toHaveProperty("options.documentAnnotationSnapshot");
     expect(resolved.mutations[2]).toMatchObject({ op: "update", id: "pm-other", options: { title: "Option row" } });
-    expect(resolved.references).not.toHaveProperty("opt");
+    expect(resolved.references).toMatchObject({ "row-1": "pm-existing", opt: "pm-other" });
   });
 
   it("refuses missing, duplicate, and ambiguous upsert keys before any write", () => {
@@ -780,7 +784,7 @@ describe("bulk creation documents (pm-gh1456)", () => {
       '[{"op":"create","ref":"n","options":{"title":"Numeric","type":"Task","priority":2}}]',
       { ...options, upsert: { key: "priority", existing: [{ id: "pm-prio", value: 2 }] } },
     );
-    expect(numeric.rows).toEqual([{ index: 0, id: "pm-prio", op: "update", upserted: true }]);
+    expect(numeric.rows).toEqual([{ index: 0, ref: "n", id: "pm-prio", op: "update", upserted: true }]);
     expect(numeric.mutations[0]).toMatchObject({ op: "update", options: { title: "Numeric", priority: 2 } });
   });
 
@@ -789,7 +793,7 @@ describe("bulk creation documents (pm-gh1456)", () => {
       '[{"op":"create","ref":"camel","options":{"title":"Camel","type":"Task","externalId":"ext-camel"}}]',
       { ...options, runtimeFields, upsert: { key: "external_id", existing: [{ id: "pm-camel", value: "ext-camel" }] } },
     );
-    expect(resolved.rows).toEqual([{ index: 0, id: "pm-camel", op: "update", upserted: true }]);
+    expect(resolved.rows).toEqual([{ index: 0, ref: "camel", id: "pm-camel", op: "update", upserted: true }]);
     expect(resolved.mutations[0]).toMatchObject({ options: { title: "Camel", externalId: "ext-camel" } });
     const mixed = resolveItemMutationDocument(
       '[{"op":"update","id":"pm-a","options":{"title":"Untouched"}},{"title":"Keyed","type":"Task","external_id":"ext-k"}]',

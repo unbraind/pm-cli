@@ -682,9 +682,11 @@ pm item mutate --from items.jsonl --json             # commit; re-running replay
 `--upsert-key <field>` makes a re-run safe for changed data: a create record
 whose field value matches exactly one existing item (core field such as
 `title`, or a declared custom field such as `external_id`) becomes an update
-of that item and is reported with `upserted: true`; a record missing the key,
-two records sharing a key value, or a key value matching several existing
-items refuses before any write (`upsert_key_missing`, `upsert_key_duplicate`,
+of that item and is reported with `upserted: true`. The record keeps its
+`ref` in the receipt, and later records may still address it as `@ref`, which
+then resolves to the matched item. A record missing the key, two records
+sharing a key value, or a key value matching several existing items refuses
+before any write (`upsert_key_missing`, `upsert_key_duplicate`,
 `upsert_key_ambiguous`).
 
 ```bash

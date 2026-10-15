@@ -289,6 +289,7 @@ describe("cli extension loose option parser", () => {
       { long: "--verbose", value_type: "boolean", value_validation: "strict" },
       { long: "--ratio", value_type: "number" },
       { long: "--ids", value_type: "number", list: true, value_validation: "strict" },
+      { long: "--ports", value_type: "number", list: true, repeatable: true, value_validation: "strict" },
     ];
 
     function coerce(args: string[]): Record<string, unknown> {
@@ -311,6 +312,8 @@ describe("cli extension loose option parser", () => {
       expect(coerce(["--ids", "7"])).toEqual({ ids: [7] });
       // A valid alias value still yields to the canonical spelling.
       expect(coerce(["--limit", "5", "-l", "7"])).toEqual({ limit: 5 });
+      // An attached boolean literal on a switch is accepted; repeatable entries keep their order.
+      expect(coerce(["--verbose=false", "--ports", "8080", "--ports=9090"])).toEqual({ verbose: false, ports: [8080, 9090] });
     });
 
     it("refuses malformed number and boolean tokens before dispatch with a typed usage error", () => {
@@ -321,6 +324,11 @@ describe("cli extension loose option parser", () => {
         [["--ids", "1,x"], "expects a finite number; received \"x\""],
         // A malformed alias value is refused even though the canonical value would win the merge.
         [["--limit", "5", "-l", "junk"], "expects a finite number; received \"junk\""],
+        // An attached non-boolean token on a switch is malformed, unlike a following positional.
+        [["--verbose=maybe"], "expects true, false, 1, or 0; received \"maybe\""],
+        // An explicitly empty list entry is refused before normalization drops it.
+        [["--ids="], "expects a finite number; received \"\""],
+        [["--ports", "1", "--ports="], "expects a finite number; received \"\""],
       ] as const) {
         try {
           coerce([...args]);

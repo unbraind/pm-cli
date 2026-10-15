@@ -51,7 +51,7 @@
   },
   "src/cli/extension-command-options.ts": {
     "sonarjs/cognitive-complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/core/checkpoint/checkpoint-gc.ts": {
