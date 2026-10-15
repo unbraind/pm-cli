@@ -6,27 +6,29 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-14T05:57:30.561Z"
-updated_at: "2026-10-15T05:46:14.530Z"
-closed_at: "2026-10-15T05:46:13.801Z"
-completed_at: "2026-10-15T05:46:13.801Z"
+updated_at: "2026-10-15T06:04:20.055Z"
+closed_at: "2026-10-15T06:04:19.270Z"
+completed_at: "2026-10-15T06:04:19.270Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Independently reproduce exit0 closed receipt; Preserve useful missing evidence guidance using success follow-up identity; Keep failure recovery unchanged; Update generated guidance and public receipt contracts with meaningful regression evidence
 parent: pm-f05lsg
 risk: low
 confidence: medium
-resolution: "Successful warning closes expose typed follow_up evidence completion instead of failure recovery; SDK, CLI and MCP compact/full receipts preserve it and docs explain migration. Failed close recovery remains available."
-expected_result: A durable successful close must never invite another close attempt; only missing evidence is offered as an argv-safe update with original history preserved.
-actual_result: "Pre-fix regression failed; current linked102 tests pass. Canonical10478-test suite reaches exact100 percent coverage in all four metrics. Complete final static, package Node/Bun lifecycle and npm/npx/bunx smoke pass; exact-head hosted PR checks and review are required before merge."
+resolution: Successful warn closes use typed follow_up evidence completion across SDK CLI and MCP; compact receipts retain guidance and all relevant operator guides now distinguish successful evidence updates from failed-close recovery.
+expected_result: Successful close guidance always directs an evidence-only update; failure recovery remains specific to rejected operations and immutable close history is preserved.
+actual_result: "Canonical10478 tests reached exact100 percent coverage; current102 close and150 lifecycle regressions plus complete static and packed npm/npx/Bun/bunx acceptance pass. Review documentation correction passes build, docs/skills, relative links and focused content checks. Final revised-head hosted checks and review must pass before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1457,related,"2026-10-14T05:57:30.561Z","harness:codex","cli:create:dep",detected
   pm-gh1465,related,"2026-10-15T04:54:04.192Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-14T05:57:30.561Z","harness:codex","Duplicate check: full2959-item corpus includes completed historical close warning and failure recovery owners; fresh request-specific search and open/in-progress reads found no owner for success receipt identity. GH1464 body and all comments read; report observed2026.10.13. This is intake only and remains open, unclaimed. Related cursor UX work is separately active under pm-gh1457."
   "2026-10-15T04:14:49.207Z","harness:codex","Live intake: strict all-status full corpus 2968/2968, no omissions/unreadable records; 2688 closed items included. Read GH1464, comments and completed lifecycle/recovery lineage. GitHub has zero open PRs and zero open Dependabot/code/secret alerts; all23 open issues already carry canonical PM comments. Implement successful-close follow_up separately from failure recovery alongside pm-gh1465 in one reviewed lifecycle delivery."
   "2026-10-15T04:30:46.899Z","harness:codex","Pre-fix negative evidence: unchanged new regression rejects successful recovery identity. Candidate close follow_up now survives full and default compact CLI/MCP receipts; failed strict/already-terminal recovery remains unchanged and evidence-only update preserves original history bytes. Focused38 tests and linked close suite pass. Public snapshot explicitly acknowledges the successful-close receipt migration. Full coverage and static gate remain pending."
   "2026-10-15T04:59:45.839Z","harness:codex",Full live validation returns structural success with zero history drift. It retains170 legacy terminal resolution advisories; this delivery supplies complete close evidence for its own items and does not manufacture historical evidence. The declared hosted check names are acceptance targets until the new PR completes.
   "2026-10-15T05:36:18.648Z","harness:codex","Canonical full suite passes10478 tests with3 platform skips; exact coverage is100 percent for65348/65348 lines,68808/68808 statements,14159/14159 functions and52742/52742 branches. Current linked close regression passes102 tests. Successful guidance remains an evidence-only follow_up in SDK/CLI/MCP compact and full receipts; failed-close recovery is retained. Hosted exact-head acceptance remains a delivery requirement, separate from this local proof."
+  "2026-10-15T06:01:12.132Z","harness:codex","Review remediation: accepted CodeRabbit outside-diff finding at docs/AGENT_GUIDE.md112. Correct the stale success guidance and run build plus focused content/link checks. No inline thread exists, so retain the assessment here and react to the useful review without adding a top-level acknowledgement. The separate scope advisory is declined: the user explicitly requested release/security/observability and PM-backlog upkeep in this combined delivery; retain the canonical operational evidence and queued enhancement rather than delete audited history."
+  "2026-10-15T06:04:16.714Z","harness:codex","Review correction passes pnpm build, quality:docs-skills, quality:docs-links and focused content checks: the successful warning-close paragraph names follow_up.suggested_command_args, its obsolete success recovery wording is absent, and failed-close recovery remains explicit. The final committed package additionally passed fresh npx/bunx smoke and installed Node/Bun acceptance including immutable CLI pause/handoff refusal. Only this item was reopened/claimed for the documentation remediation; release it before the next push."
 learnings[1]{created_at,author,text}:
   "2026-10-15T04:59:44.946Z","harness:codex","A successful mutation may need another action, but it should not reuse failure recovery or retry keys. Preserve typed follow-up guidance through the default compact envelope and keep evidence updates separate from the original immutable close event."
 files[8]{path,scope}:
@@ -67,7 +69,7 @@ docs[3]{path,scope}:
   .agents/skills/pm-developer/references/COMMAND_PLAYBOOK.md,project
   docs/CLOSE_EVIDENCE_RECOVERY.md,project
   docs/SDK.md,project
-close_reason: Implemented successful-close follow-up guidance and verified transport/history behavior
+close_reason: Delivered successful-close follow-up and corrected all operator guidance after PR review
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

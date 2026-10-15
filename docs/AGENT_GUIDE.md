@@ -109,8 +109,9 @@ pm close <item-id> "Acceptance criteria met; verification passed." --resolution 
 pm release <item-id>
 ```
 
-If a warning close omitted evidence, use its `recovery.suggested_retry_args`
-to append an evidence update while preserving the original close event. See
+If a successful warning close omitted evidence, use its `follow_up.suggested_command_args`
+to append an evidence update while preserving the original close event. Failed closes
+retain `recovery.suggested_retry_args`. See
 [Close Evidence Recovery](CLOSE_EVIDENCE_RECOVERY.md).
 
 For real subprocess tests, set `cwd`, `PM_PATH`, and `PM_GLOBAL_PATH` to the

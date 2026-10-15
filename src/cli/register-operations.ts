@@ -1387,7 +1387,7 @@ export function registerOperationCommands(program: Command): void {
   const releaseCommand = program
     .command("release")
     .option("--pause", "Use open status")
-    .option("--handoff <status>", "Release to a configured queue; requires --message evidence")
+    .option("--handoff <status>", "Needs --message")
     .argument("<id>", "Item id")
     .option("--author <value>", "Author")
     .option("--message <value>", "Message")
