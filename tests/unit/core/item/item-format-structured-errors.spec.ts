@@ -117,6 +117,14 @@ describe("item document text well-formedness (Sentry PM-CLI-3H)", () => {
     expect(() =>
       serializeItemDocument(document({ comments: [{ created_at: FIXED_TS, author: "a", text: "\uDC00 low first" }] })),
     ).toThrowError(expect.objectContaining<PmCliError>({ context: expect.objectContaining({ field: "comments[0].text" }) }));
+    // The non-TOON format persists the same text and refuses it the same way, in metadata and in the body.
+    expect(() => serializeItemDocument(document({ description: truncatedEmoji }), { format: "json_markdown" })).toThrowError(
+      expect.objectContaining<PmCliError>({ context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "description" }) }),
+    );
+    expect(() => serializeItemDocument({ ...document(), body: "body \uD83D" }, { format: "json_markdown" })).toThrowError(
+      expect.objectContaining<PmCliError>({ context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "body" }) }),
+    );
+    expect(serializeItemDocument({ ...document(), body: "well-formed 😀" }, { format: "json_markdown" })).toContain("well-formed 😀");
   });
 
   it("scans extension values at any depth and object keys", () => {

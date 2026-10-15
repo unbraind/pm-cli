@@ -2398,7 +2398,7 @@
         "signature ./sdk/runtime:FlagDefinition"
       ],
       "package_version": "2026.10.15",
-      "reason": "pm-gh1456 adds optional rows/runtimeFields/upsert to the mutation document contract and an optional parse-options argument; pm-extension-scalar-validation adds the optional FlagDefinition.value_validation policy. All additions are optional and backward compatible."
+      "reason": "pm-gh1456 adds the required rows receipt to ResolvedItemMutationDocument (a caller that constructs that result type by hand must now supply rows; consumers reading it are unaffected), optional runtimeFields/upsert resolve options, and an optional parse-options argument on parseItemMutationBatch; pm-extension-scalar-validation adds the optional FlagDefinition.value_validation policy."
     },
     {
       "changes": [

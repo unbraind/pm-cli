@@ -2006,8 +2006,12 @@ function serializeJsonMarkdownItemDocument(
 ): string {
   const normalizedMetadata = normalizeItemMetadata(document.metadata, options);
   const orderedMetadata = orderItemMetadata(normalizedMetadata);
-  const serializedMetadata = JSON.stringify(orderedMetadata, null, 2);
   const normalizedBody = normalizeBody(document.body ?? "");
+  // Persisted item text is refused in every format, not only before TOON encoding.
+  assertWellFormedItemText(
+    JSON.parse(JSON.stringify({ ...orderedMetadata, body: normalizedBody })) as Record<string, unknown>,
+  );
+  const serializedMetadata = JSON.stringify(orderedMetadata, null, 2);
   if (!normalizedBody) {
     return `${serializedMetadata}\n`;
   }
