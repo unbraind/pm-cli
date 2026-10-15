@@ -1,4 +1,4 @@
-import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { assertBoundedPointRead, measurePointReadCosts, runEntrypoint } from "../../../scripts/bench/point-read-costs.mjs";
 
@@ -33,7 +33,7 @@ describe("point-read corpus scaling", () => {
 
   it("runs default and explicit standalone measurements without import side effects", async () => {
     const output = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const script = path.resolve("scripts/bench/point-read-costs.mjs");
+    const script = fileURLToPath(new URL("../../../scripts/bench/point-read-costs.mjs", import.meta.url));
     await expect(runEntrypoint([process.execPath])).resolves.toBe(false);
     await expect(runEntrypoint()).resolves.toBe(false);
     await expect(runEntrypoint([process.execPath, script, "5"])).resolves.toBe(true);

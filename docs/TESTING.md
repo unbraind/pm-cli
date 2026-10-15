@@ -659,6 +659,12 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   while avoiding a shared serial job deadline. See GitHub's
   [job dependency semantics](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-jobs#defining-prerequisite-jobs).
 
+  The real point-read corpus keeper runs with the lifecycle latency keeper in
+  the existing sequential performance phase after parallel contracts. Its
+  1,500-item corpus, work-observer assertions and 30-second deadline remain
+  unchanged. Standalone script identity is resolved from the test module URL,
+  independently of temporary SDK working directories.
+
   The real-filesystem regression for this contract is tracked by
   [pm-5iwfkj](../.agents/pm/issues/pm-5iwfkj.toon).
 
