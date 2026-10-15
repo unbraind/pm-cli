@@ -648,13 +648,18 @@ jobs:
           fail_ci_if_error: true
           verbose: false
 
-  windows-regression:
-    name: Windows regression (Node 24)
+  windows-regression-cohorts:
+    name: Windows regression cohort (${{ matrix.cohort }}, Node 24)
     # Gate this focused Windows slice on a green foundation build; the job is
     # otherwise self-contained because it must install and run on windows-latest.
     needs: build-foundation
     runs-on: windows-latest
     timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        cohort: [scripts, native]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -713,14 +718,22 @@ jobs:
       # the full tests/unit/scripts/
       # directory now runs so a fresh Windows-only script regression fails this
       # required per-PR check rather than only the nightly.
-      # Bound concurrent subprocess-heavy keepers; preserve every selected test and deadline.
-      - name: Run Windows source-import and script regression tests
+      # pm-bj7rq0: bound each subprocess-heavy cohort without serializing all Windows keepers.
+      - name: Run Windows script regression tests
+        if: matrix.cohort == 'scripts'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+        run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/scripts/
+
+      - name: Run Windows source-import regression tests
+        if: matrix.cohort == 'native'
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts
 
       # pm-q91qyd: interception cannot prove the native npm.cmd execution boundary.
       - name: Verify native release-ledger npm and Git providers
+        if: matrix.cohort == 'native'
         env:
           PM_PATH: ${{ runner.temp }}/pm-ledger-project
           PM_GLOBAL_PATH: ${{ runner.temp }}/pm-ledger-global
@@ -732,6 +745,7 @@ jobs:
       # pm-96fsma / pm-wlqxg3: zero-byte restore and invalid-tail salvage must
       # run on Windows too, alongside history-only replay through real Git merges.
       - name: Run Windows history durability and recovery regressions
+        if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts
@@ -739,11 +753,13 @@ jobs:
       # pm-gh1405 / pm-gh1390: verify both Git object formats and durable
       # receipt settlement across real worktrees on the native Windows runner.
       - name: Verify merge receipt recovery and settlement on Windows
+        if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts
 
       - name: Verify nested linked-test dependency junctions
+        if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts
@@ -751,6 +767,7 @@ jobs:
       # pm-n912nt: retain native invalid-ancestor errors and resolved cursor scope before merge.
       # pm-gh1409: imported source identities must resolve on native filesystem boundaries.
       - name: Verify transactional settings and preview portability on Windows
+        if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-store.spec.ts tests/unit/sdk/transactions/settings-preview.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/commands/query/search-command.spec.ts tests/unit/packages/beads-command.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts
@@ -760,11 +777,25 @@ jobs:
       # nightly previously caught (GH-348). Run just that integration case here so
       # a Windows-only install regression fails this required per-PR check.
       - name: Run Windows packed-npm-extension install regression test
+        if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"
 
       - name: Verify copied plugin first-install command transport
+        if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts
+
+  windows-regression:
+    name: Windows regression (Node 24)
+    needs: windows-regression-cohorts
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Require every Windows cohort
+        env:
+          COHORT_RESULT: ${{ needs.windows-regression-cohorts.result }}
+        run: test "$COHORT_RESULT" = success

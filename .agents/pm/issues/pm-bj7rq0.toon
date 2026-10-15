@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-15T05:17:14.267Z"
+updated_at: "2026-10-15T06:37:54.934Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -19,7 +19,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[17]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-09-28T06:20:35.648Z","harness:codex","text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
   "2026-09-28T08:54:59.030Z","harness:codex","Additional live evidence 2026-09-28: during Plan receipt/evidence-note delivery, the static SDK entrypoint gate failed sdk/merge median-of-five at 240 ms against the unchanged 226 ms ceiling. Full-suite invocation-profile also exceeded its scheduling margin and two source scans hit 30-second timeouts while a separate tracker assurance scan ran; all three tests passed unchanged in a focused rerun without that competing scan. This is correlation, not causal attribution. Isolated SDK/transport reruns are pending; no performance ratchet was changed."
   "2026-09-28T09:03:00.923Z","harness:codex","Untouched-base comparison completed in a separate temporary clone at f3163466b with the same installed dependencies and Node 26.9.0. Base SDK import gate failed aggregate 514/500 ms and merge 252/226 ms; base CLI failed get 388/362, next 448/440, create 403/398 ms. Candidate isolated Node 26 rerun failed merge 232/226 and five CLI operations. Candidate Node 24.12.0 passed all 10 SDK imports; CLI failures moved to list 432/419, context 442/433, claim 425/415 ms. This confirms admission failures also exist on the unchanged base, not a clean local performance qualification. It does not identify the cause or exclude smaller regressions. Preserve all budgets; use hosted exact-head checks and continue this canonical diagnosis separately."
@@ -37,16 +37,48 @@ comments[17]{created_at,author,text}:
   "2026-10-15T05:09:06.360Z","harness:codex","Current local candidate static reached SDK import admission, but the first benchmark was explicitly runner-unqualified: bare-Node maximum control median121ms exceeds unchanged106ms. Do not call that a product regression or pass. With no other local verification process running, a separate quiet run passes all10 SDK entrypoint budgets and its control rules without budget/margin changes. The independent CLI floor and remaining static stages are still pending, and exact-head hosted acceptance remains mandatory. Broad runner diagnosis stays open/unclaimed."
   "2026-10-15T05:12:05.160Z","harness:codex","Retain the independent CLI floor result: the runner qualifies (control43/78ms below106ms), but get best374ms exceeds unchanged362ms; the other5 operations pass. This is a failed local product admission, not an unqualified result and not an all-green local static receipt. No retry or baseline increase used to erase it. Remaining correctness gates are proceeding separately; compare the immutable published baseline and require the complete exact-head hosted static gate."
   "2026-10-15T05:17:14.266Z","harness:codex","Controlled immutable comparison completed with identical current benchmark scripts and unchanged ceilings: published npm artifact2026.10.15 qualifies at49ms control and fails next445/440ms, while the frozen lifecycle candidate qualifies at46ms and passes all six operations (get336ms). This does not erase the earlier qualified candidate get374/362ms failure, establish historical causation, or exclude smaller regressions. Preserve all reports and require complete exact-head hosted static acceptance; no performance budget, margin, sample count or qualification rule changed."
-files[6]{path,scope}:
-  scripts/bench/cli-transport-budgets.json,project
-  scripts/bench/cli-transport-floor.mjs,project
-  scripts/bench/runner-qualification.mjs,project
-  scripts/bench/sdk-entrypoint-costs.mjs,project
-  tests/unit/scripts/cli-transport-floor.spec.ts,project
-  tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,project,900,"harness:codex","2026-10-10T18:26:47.322Z",local_mutation,feat/executable-agent-recovery,Separate runner qualification and product admission with retained fail-closed diagnostics
-test_runs[1]:
+  "2026-10-15T06:30:41.464Z","harness:codex","Active CI execution remediation for PR1476: immutable55bde25 Windows job exceeded its12-minute limit after the source-import/script step passed1981 tests (12 skips) in578s; the same step took464s on passing52626a. All completed subsequent steps passed, with cancellation before final native keepers. Preserve both attempts. Split scripts and native guards into two parallel Windows cohorts with the same two-worker cap and12-minute deadline; preserve every selected test and require both cohorts through a stable fail-closed Windows regression(Node24) check. This addresses serial execution occupancy, not the unproved historical runtime variability; return this broad diagnosis open/unclaimed after validation."
+  "2026-10-15T06:35:52.953Z","harness:codex","Negative control rejects the old serial workflow; revised20-test workflow suite passes, including executing the aggregate shell check against success/failure/cancelled/skipped/empty outcomes. Independent before/after comparison preserves all38 selected test-path occurrences and the native release-ledger command. Typecheck, ESLint, read-only workflow permissions and docs/content-link gates pass. Initial linked run records a trust_refusal for the pre-existing command from its earlier branch; the new workflow command passed. The existing commands have been reviewed as sandbox-safe local run-tests invocations; acknowledge them for this clone without enabling untrusted execution or changing budgets."
+  "2026-10-15T06:37:39.760Z","harness:codex","Both acknowledged linked commands now pass:27 runner/admission control tests and20 workflow contracts. The negative run and trust_refusal remain recorded; acknowledgement was separate and clone-local, with no untrusted-execution policy change. The two Windows cohorts retain all38 selected path occurrences and native provider acceptance; only execution topology changes, with the stable required aggregate rejecting failure/cancelled/skipped/empty results. Hosted revised-head acceptance is still required. Historical timing causation remains unproved, so return this canonical diagnosis open/unclaimed after this bounded execution fix. The updated CodSpeed report claims40.05 percent on untouched decodeQueryCursor but also flags different runtime environments and unmeasured system-call cost; do not claim a measured product improvement from that comparison."
+  "2026-10-15T06:37:54.934Z","harness:codex","Evidence count correction: the current runner/admission-control command executes36 tests (18 CLI and18 SDK), not the older27-test count stated in the preceding note. Together with20 workflow contracts, both linked commands pass56 tests. Their retained stdout is authoritative; no test selection, budget or outcome changed."
+files[8]:
+  - path: .github/workflows/ci.yml
+    scope: project
+    note: Preserve Windows keepers in parallel bounded cohorts and fail-closed required aggregation
+  - path: scripts/bench/cli-transport-budgets.json
+    scope: project
+  - path: scripts/bench/cli-transport-floor.mjs
+    scope: project
+  - path: scripts/bench/runner-qualification.mjs
+    scope: project
+  - path: scripts/bench/sdk-entrypoint-costs.mjs
+    scope: project
+  - path: tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    note: Required cohort coverage and unsuccessful-outcome refusal
+  - path: tests/unit/scripts/cli-transport-floor.spec.ts
+    scope: project
+  - path: tests/unit/scripts/sdk-entrypoint-costs.spec.ts
+    scope: project
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts
+    scope: project
+    timeout_seconds: 900
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-10T18:26:47.322Z"
+      source_kind: local_mutation
+      source_ref: feat/executable-agent-recovery
+    note: Separate runner qualification and product admission with retained fail-closed diagnostics
+  - command: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-15T06:33:56.471Z"
+      source_kind: local_mutation
+      source_ref: feat/lifecycle-handoff-and-success-followups
+test_runs[3]:
   - run_id: test-local-mv2rulsx-dp8j2s
     kind: test
     status: passed
@@ -58,8 +90,36 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,local_source_ref
-docs[3]{path,scope}:
-  docs/ECOSYSTEM_PLANNING_REVIEW.md,project
-  docs/performance/runner-qualification.md,project
-  docs/TESTING.md,project
+  - run_id: test-local-mv95y7kb-ccw2uo
+    kind: test
+    status: failed
+    started_at: "2026-10-15T06:33:57.228Z"
+    finished_at: "2026-10-15T06:34:12.299Z"
+    recorded_at: "2026-10-15T06:34:12.299Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv961n9w-l3nq27
+    kind: test
+    status: passed
+    started_at: "2026-10-15T06:36:16.690Z"
+    finished_at: "2026-10-15T06:36:52.628Z"
+    recorded_at: "2026-10-15T06:36:52.628Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/sdk-entrypoint-costs.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[3]:
+  - path: docs/ECOSYSTEM_PLANNING_REVIEW.md
+    scope: project
+  - path: docs/performance/runner-qualification.md
+    scope: project
+  - path: docs/TESTING.md
+    scope: project
+    note: Document bounded Windows cohort execution and stable required check
 body: ""
