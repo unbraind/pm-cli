@@ -14,6 +14,7 @@ import {
 } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
+import { describeUnknownError } from "./error-runtime.js";
 import {
   CLOSE_FLAG_CONTRACTS,
   RELEASE_FLAG_CONTRACTS,
@@ -32,6 +33,13 @@ const REFERENCED_MUTATION_ROW_KEYS = [
   ...MUTATION_ROW_KEYS,
   "ref",
 ] as const;
+/** Row keys accepted before document rows are normalized into create options. */
+const DOCUMENT_MUTATION_ROW_KEYS = [
+  ...REFERENCED_MUTATION_ROW_KEYS,
+  "item",
+] as const;
+const DERIVED_TRANSACTION_ID_PREFIX = "mutate-";
+const SYNTHESIZED_REFERENCE_PREFIX = "row-";
 const MUTATION_DOCUMENT_KEYS = ["schema_version", "mutations"] as const;
 const MUTATION_REFERENCE_SOURCE = "[a-z][a-z0-9._-]{0,63}";
 const MUTATION_REFERENCE_PATTERN = new RegExp(
@@ -127,12 +135,46 @@ const MUTATION_OPTION_KEYS: Readonly<
   ),
 };
 
+/** One existing workspace item considered by keyed upsert resolution. */
+export interface ItemMutationUpsertCandidate {
+  /** Canonical id of the existing item. */
+  id: string;
+  /** Current value of the upsert key field on that item. */
+  value: unknown;
+}
+
+/** Keyed-upsert policy applied to create rows of one mutation document. */
+export interface ItemMutationUpsertOptions {
+  /** Item field (core or declared custom metadata key) whose value identifies an existing item. */
+  key: string;
+  /** Existing items that carry a value for the key, read before the writer lock. */
+  existing: readonly ItemMutationUpsertCandidate[];
+}
+
 /** Controls for resolving one versioned mutation document. */
 export interface ResolveItemMutationDocumentOptions {
   /** Stable transaction identity used to derive replay-safe create ids. */
   transactionId: string;
   /** Workspace item-id prefix. */
   idPrefix: string;
+  /** Resolved schema fields that route document keys through declared option names. */
+  runtimeFields?: readonly RuntimeFieldDefinitionResolved[];
+  /** Optional keyed upsert: create rows matching one existing item become updates. */
+  upsert?: ItemMutationUpsertOptions;
+}
+
+/** Input-ordered receipt row mapping one source record to its resolved mutation. */
+export interface ResolvedItemMutationRow {
+  /** Zero-based position of the source record in the document. */
+  index: number;
+  /** Batch-local alias when the row declared or received one. */
+  ref?: string;
+  /** Concrete item id the mutation targets. */
+  id: string;
+  /** Operation applied for this row after upsert resolution. */
+  op: BulkItemMutation["op"];
+  /** Whether keyed upsert turned a create row into an update of an existing item. */
+  upserted?: true;
 }
 
 /** Fully validated mutation document ready for preview or commit. */
@@ -143,6 +185,18 @@ export interface ResolvedItemMutationDocument {
   mutations: BulkItemMutation[];
   /** Batch-local alias to concrete-id receipt. */
   references: Record<string, string>;
+  /** Input-ordered receipt mapping each source record to its resolved id and operation. */
+  rows: ResolvedItemMutationRow[];
+}
+
+/**
+ * Derive a stable transaction id from the exact document bytes so that
+ * re-running an identical import resumes or replays the same journal instead
+ * of duplicating items. Any change to the document yields a new id.
+ */
+export function deriveMutationTransactionId(input: string): string {
+  const digest = crypto.createHash("sha256").update(input).digest("hex");
+  return `${DERIVED_TRANSACTION_ID_PREFIX}${digest.slice(0, 24)}`;
 }
 
 /** Validated transaction controls shared by atomic CLI and MCP adapters. */
@@ -277,6 +331,7 @@ function validateMutationOptions(
   options: unknown,
   op: BulkItemMutation["op"],
   index: number,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): Record<string, unknown> | undefined {
   if (options === undefined) return undefined;
   if (!isPlainObject(options)) {
@@ -285,19 +340,33 @@ function validateMutationOptions(
       EXIT_CODE.USAGE,
     );
   }
+  const allowed = [
+    ...MUTATION_OPTION_KEYS[op],
+    ...runtimeFieldOptionKeys(op, runtimeFields),
+  ];
   for (const key of Object.keys(options)) {
-    if (!MUTATION_OPTION_KEYS[op].includes(key)) {
+    if (!allowed.includes(key)) {
       throw unknownKeyError(
         `mutation ${index + 1} ${op} options`,
         key,
-        MUTATION_OPTION_KEYS[op],
+        allowed,
       );
     }
   }
   return options;
 }
 
-function validateMutationRow(value: unknown, index: number): BulkItemMutation {
+/** Workspace schema context that widens the option keys a batch row may carry. */
+export interface ParseItemMutationBatchOptions {
+  /** Declared schema fields whose option targets create/update rows may set. */
+  runtimeFields?: readonly RuntimeFieldDefinitionResolved[];
+}
+
+function validateMutationRow(
+  value: unknown,
+  index: number,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): BulkItemMutation {
   const mutation = validateMutationObject(value, index);
   const { op, id, reason } = mutation;
   if (
@@ -311,7 +380,7 @@ function validateMutationRow(value: unknown, index: number): BulkItemMutation {
       EXIT_CODE.USAGE,
     );
   }
-  const options = validateMutationOptions(mutation.options, op, index);
+  const options = validateMutationOptions(mutation.options, op, index, runtimeFields);
   if (typeof id !== "string" || id.trim().length === 0) {
     throw new PmCliError(
       `Mutation ${index + 1} requires a non-empty id.`,
@@ -358,7 +427,10 @@ function validateMutationRow(value: unknown, index: number): BulkItemMutation {
 }
 
 /** Parse a JSON array, or an object containing `mutations`, into an atomic mutation batch. */
-export function parseItemMutationBatch(input: string): BulkItemMutation[] {
+export function parseItemMutationBatch(
+  input: string,
+  parseOptions: ParseItemMutationBatchOptions = {},
+): BulkItemMutation[] {
   const parsed = parseJsonValue(input, "Mutation batch");
   const rows = Array.isArray(parsed)
     ? parsed
@@ -371,8 +443,9 @@ export function parseItemMutationBatch(input: string): BulkItemMutation[] {
       EXIT_CODE.USAGE,
     );
   }
+  const runtimeFields = parseOptions.runtimeFields ?? [];
   return rows.map((row, index) => {
-    const mutation = validateMutationRow(row, index);
+    const mutation = validateMutationRow(row, index, runtimeFields);
     if (mutation.options !== undefined) {
       preserveMutationStdinTokenLiterals(mutation.options);
     }
@@ -489,13 +562,145 @@ function assertAcyclicCreateReferences(
   for (const reference of graph.keys()) visit(reference);
 }
 
+/**
+ * Parse JSON Lines: one JSON object per non-empty line. Returns null when the
+ * input is not line-delimited so the caller can report the whole-document
+ * JSON error instead of a misleading per-line one.
+ */
+function parseJsonLinesRows(input: string): unknown[] | null {
+  const lines = input.split(/\r?\n/u);
+  const candidates = lines
+    .map((line, index) => ({ line: line.trim(), number: index + 1 }))
+    .filter((entry) => entry.line.length > 0);
+  if (candidates.length < 2) return null;
+  const rows: unknown[] = [];
+  for (const entry of candidates) {
+    let row: unknown;
+    try {
+      row = JSON.parse(entry.line) as unknown;
+    } catch (error: unknown) {
+      throw new PmCliError(
+        `Mutation document line ${entry.number} must be one valid JSON object: ${describeUnknownError(error)}`,
+        EXIT_CODE.USAGE,
+        {
+          code: "stdin_json_invalid",
+          required: "Provide one JSON object per line (JSON Lines), a JSON array, or a {schema_version, mutations} document.",
+          why: "Structured mutation input must parse deterministically before any tracker write begins.",
+        },
+      );
+    }
+    if (!isPlainObject(row)) {
+      throw new PmCliError(
+        `Mutation document line ${entry.number} must be a JSON object.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+/** Whether a parsed object is a versioned envelope rather than a single record. */
+function isMutationEnvelope(value: Record<string, unknown>): boolean {
+  return Object.hasOwn(value, "mutations") || Object.hasOwn(value, "schema_version");
+}
+
+/** Parse the raw document into its envelope, accepting arrays, envelopes, single records, and JSON Lines. */
+function parseMutationDocumentEnvelope(input: string): unknown {
+  let parsed: unknown;
+  try {
+    parsed = parseJsonValue(input, "Mutation document");
+  } catch (error: unknown) {
+    const rows = parseJsonLinesRows(input);
+    if (rows === null) throw error;
+    return { schema_version: 1, mutations: rows };
+  }
+  if (Array.isArray(parsed)) return { schema_version: 1, mutations: parsed };
+  if (isPlainObject(parsed) && !isMutationEnvelope(parsed)) {
+    return { schema_version: 1, mutations: [parsed] };
+  }
+  return parsed;
+}
+
+/**
+ * Normalize one source record into the `op`-keyed row grammar. A record
+ * without `op` is a create document whose remaining keys are item fields; a
+ * create row may also carry the document under `item` instead of `options`.
+ */
+function normalizeDocumentRow(
+  row: Record<string, unknown>,
+  index: number,
+): Record<string, unknown> {
+  if (Object.hasOwn(row, "op")) {
+    return validateOperationRow(row, index);
+  }
+  return normalizeCreateDocumentRow(row, index);
+}
+
+/** Validate an explicit `op` row, allowing `item` only on create rows and never beside `options`. */
+function validateOperationRow(
+  row: Record<string, unknown>,
+  index: number,
+): Record<string, unknown> {
+  for (const key of Object.keys(row)) {
+    if (
+      !DOCUMENT_MUTATION_ROW_KEYS.includes(
+        key as (typeof DOCUMENT_MUTATION_ROW_KEYS)[number],
+      )
+    ) {
+      throw unknownKeyError(
+        `mutation ${index + 1}`,
+        key,
+        DOCUMENT_MUTATION_ROW_KEYS,
+      );
+    }
+  }
+  if (row.item !== undefined && row.op !== "create") {
+    throw new PmCliError(
+      `Mutation ${index + 1} item documents are only valid for create operations.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (row.item !== undefined && row.options !== undefined) {
+    throw new PmCliError(
+      `Mutation ${index + 1} must declare either item or options, not both.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { ...row };
+}
+
+/** Lift an op-less record into a create row carrying its document under `item`. */
+function normalizeCreateDocumentRow(
+  row: Record<string, unknown>,
+  index: number,
+): Record<string, unknown> {
+  const { ref, id, item, ...fields } = row;
+  const document = item !== undefined ? item : fields;
+  if (item !== undefined && Object.keys(fields).length > 0) {
+    throw new PmCliError(
+      `Mutation ${index + 1} must not mix item document keys with top-level fields.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (!isPlainObject(document)) {
+    throw new PmCliError(
+      `Mutation ${index + 1} item document must be an object.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return {
+    op: "create",
+    ...(ref === undefined ? {} : { ref }),
+    ...(id === undefined ? {} : { id }),
+    item: document,
+  };
+}
+
 function parseMutationDocumentRows(
   input: string,
 ): Array<Record<string, unknown>> {
-  const parsed = parseJsonValue(input, "Mutation document");
-  const envelope = Array.isArray(parsed)
-    ? { schema_version: 1, mutations: parsed }
-    : parsed;
+  const envelope = parseMutationDocumentEnvelope(input);
   if (!isPlainObject(envelope)) {
     throw new PmCliError(
       "Mutation document must be a JSON array or object.",
@@ -533,21 +738,192 @@ function parseMutationDocumentRows(
         EXIT_CODE.USAGE,
       );
     }
-    for (const key of Object.keys(row)) {
-      if (
-        !REFERENCED_MUTATION_ROW_KEYS.includes(
-          key as (typeof REFERENCED_MUTATION_ROW_KEYS)[number],
-        )
-      ) {
-        throw unknownKeyError(
-          `mutation ${index + 1}`,
-          key,
-          REFERENCED_MUTATION_ROW_KEYS,
-        );
-      }
-    }
-    return { ...row };
+    return normalizeDocumentRow(row, index);
   });
+}
+
+/** Give every create row an alias so omitted ids derive deterministically and the receipt can name each record. */
+function synthesizeMissingReferences(
+  rows: Array<Record<string, unknown>>,
+): void {
+  for (const [index, row] of rows.entries()) {
+    if (row.op !== "create" || row.ref !== undefined) continue;
+    if (typeof row.id === "string" && row.id.trim().length > 0) continue;
+    row.ref = `${SYNTHESIZED_REFERENCE_PREFIX}${index + 1}`;
+  }
+}
+
+/** Convert one create document into batch-ready create or update options. Declared schema fields keep their option targets (`externalId`), which the batch validator admits for the matching operation. */
+function itemDocumentToBatchOptions(
+  item: Record<string, unknown>,
+  mode: "create" | "update",
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): Record<string, unknown> {
+  const converted = itemDocumentToMutationOptions(JSON.stringify(item), mode, {}, runtimeFields);
+  delete converted.stdinJson;
+  delete converted.documentAnnotationSnapshot;
+  return converted;
+}
+
+/** Option keys the declared schema adds to one operation's batch options. */
+function runtimeFieldOptionKeys(
+  op: BulkItemMutation["op"],
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): string[] {
+  if (op !== "create" && op !== "update") return [];
+  return runtimeFields
+    .filter((definition) => definition.commands.includes(op))
+    .map((definition) => runtimeFieldOptionTarget(definition));
+}
+
+/** Replace `item` documents on create rows with the equivalent create options. */
+function convertItemDocumentRows(
+  rows: Array<Record<string, unknown>>,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): void {
+  for (const row of rows) {
+    if (!isPlainObject(row.item)) continue;
+    row.options = itemDocumentToBatchOptions(row.item, "create", runtimeFields);
+    delete row.item;
+  }
+}
+
+/** Read the upsert key value from a create row's document or options. */
+function readUpsertKeyValue(
+  row: Record<string, unknown>,
+  key: string,
+): unknown {
+  if (isPlainObject(row.item) && row.item[key] !== undefined) return row.item[key];
+  const options = isPlainObject(row.options) ? row.options : {};
+  const camel = key.replaceAll(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
+  if (options[key] !== undefined) return options[key];
+  if (options[camel] !== undefined) return options[camel];
+  const fields = Array.isArray(options.field) ? options.field : [];
+  const assignment = fields.map(String).find((entry) => entry.startsWith(`${key}=`));
+  return assignment?.slice(key.length + 1);
+}
+
+function stableUpsertValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : JSON.stringify(value);
+}
+
+/**
+ * Turn create rows whose upsert key matches exactly one existing item into
+ * update rows. Ambiguous matches and duplicate keys inside the batch refuse
+ * before any write so a re-run import never duplicates or overwrites blindly.
+ */
+function applyKeyedUpsert(
+  rows: Array<Record<string, unknown>>,
+  upsert: ItemMutationUpsertOptions,
+  idPrefix: string,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): Set<number> {
+  const key = upsert.key.trim();
+  if (key.length === 0) {
+    throw new PmCliError("Upsert key must be a non-empty field name.", EXIT_CODE.USAGE);
+  }
+  const existingByValue = indexUpsertCandidates(upsert.existing);
+  const seen = new Map<string, number>();
+  const upserted = new Set<number>();
+  for (const [index, row] of rows.entries()) {
+    if (row.op !== "create") continue;
+    const stable = readStableUpsertKey(row, key, index, seen);
+    const match = resolveUpsertMatch(existingByValue.get(stable) ?? [], key, stable);
+    if (match === undefined) continue;
+    convertRowToUpsertUpdate(row, normalizeItemId(match, idPrefix), runtimeFields);
+    upserted.add(index);
+  }
+  return upserted;
+}
+
+/** Group existing item ids by their stable upsert key value, skipping items without one. */
+function indexUpsertCandidates(
+  existing: readonly ItemMutationUpsertCandidate[],
+): Map<string, string[]> {
+  const existingByValue = new Map<string, string[]>();
+  for (const candidate of existing) {
+    if (candidate.value === undefined || candidate.value === null) continue;
+    const stable = stableUpsertValue(candidate.value);
+    existingByValue.set(stable, [...(existingByValue.get(stable) ?? []), candidate.id]);
+  }
+  return existingByValue;
+}
+
+/** Read one create row's upsert key, refusing a missing value or a value already used by an earlier row. */
+function readStableUpsertKey(
+  row: Record<string, unknown>,
+  key: string,
+  index: number,
+  seen: Map<string, number>,
+): string {
+  const value = readUpsertKeyValue(row, key);
+  if (value === undefined || value === null || value === "") {
+    throw new PmCliError(
+      `Mutation ${index + 1} is missing the upsert key "${key}".`,
+      EXIT_CODE.USAGE,
+      {
+        code: "upsert_key_missing",
+        required: `Every create record must carry a non-empty "${key}" value when --upsert-key ${key} is set.`,
+        why: "Keyed upsert identifies existing items by that field; a record without it cannot be matched or safely created.",
+      },
+    );
+  }
+  const stable = stableUpsertValue(value);
+  const previous = seen.get(stable);
+  if (previous !== undefined) {
+    throw new PmCliError(
+      `Mutations ${previous + 1} and ${index + 1} share the upsert key value ${JSON.stringify(stable)} for "${key}".`,
+      EXIT_CODE.USAGE,
+      {
+        code: "upsert_key_duplicate",
+        required: "Each record must carry a distinct upsert key value within one batch.",
+        why: "Two records with the same key would race for the same existing item.",
+      },
+    );
+  }
+  seen.set(stable, index);
+  return stable;
+}
+
+/** Select the single existing item for a key value; several matches refuse, none means create. */
+function resolveUpsertMatch(
+  matches: readonly string[],
+  key: string,
+  stable: string,
+): string | undefined {
+  if (matches.length > 1) {
+    throw new PmCliError(
+      `Upsert key "${key}" value ${JSON.stringify(stable)} matches ${matches.length} existing items: ${matches.join(", ")}.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "upsert_key_ambiguous",
+        required: "Resolve the duplicate existing items or choose a key that is unique per item.",
+        why: "An ambiguous key cannot select one item to update without guessing.",
+      },
+    );
+  }
+  return matches[0];
+}
+
+/** Rewrite a matched create row in place as an update of the existing item. */
+function convertRowToUpsertUpdate(
+  row: Record<string, unknown>,
+  id: string,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): void {
+  // readUpsertKeyValue found the key, so the row carries either an item document or an options object.
+  const options = isPlainObject(row.item)
+    ? itemDocumentToBatchOptions(row.item, "update", runtimeFields)
+    : Object.fromEntries(
+        Object.entries(row.options as Record<string, unknown>).filter(([optionKey]) =>
+          MUTATION_OPTION_KEYS.update.includes(optionKey),
+        ),
+      );
+  delete row.item;
+  delete row.ref;
+  row.op = "update";
+  row.id = id;
+  row.options = options;
 }
 
 function collectMutationReferences(
@@ -601,6 +977,12 @@ export function resolveItemMutationDocument(
   options: ResolveItemMutationDocumentOptions,
 ): ResolvedItemMutationDocument {
   const rows = parseMutationDocumentRows(input);
+  const upserted =
+    options.upsert === undefined
+      ? new Set<number>()
+      : applyKeyedUpsert(rows, options.upsert, options.idPrefix, options.runtimeFields ?? []);
+  convertItemDocumentRows(rows, options.runtimeFields ?? []);
+  synthesizeMissingReferences(rows);
   const references = collectMutationReferences(rows, options);
   assertAcyclicCreateReferences(rows);
 
@@ -637,7 +1019,9 @@ export function resolveItemMutationDocument(
     }
     return resolved;
   });
-  const mutations = parseItemMutationBatch(JSON.stringify(resolvedRows));
+  const mutations = parseItemMutationBatch(JSON.stringify(resolvedRows), {
+    runtimeFields: options.runtimeFields ?? [],
+  });
   const createIds = mutations
     .filter((mutation) => mutation.op === "create")
     .map((mutation) => mutation.id);
@@ -647,7 +1031,17 @@ export function resolveItemMutationDocument(
       EXIT_CODE.USAGE,
     );
   }
-  return { schema_version: 1, mutations, references };
+  const receiptRows = mutations.map((mutation, index): ResolvedItemMutationRow => {
+    const reference = rows[index]?.ref;
+    return {
+      index,
+      ...(typeof reference === "string" ? { ref: reference } : {}),
+      id: mutation.id,
+      op: mutation.op,
+      ...(upserted.has(index) ? { upserted: true as const } : {}),
+    };
+  });
+  return { schema_version: 1, mutations, references, rows: receiptRows };
 }
 
 function serializePairs(

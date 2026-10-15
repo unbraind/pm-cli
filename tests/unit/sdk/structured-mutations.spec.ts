@@ -3,6 +3,7 @@ import { PmCliError } from "../../../src/core/shared/errors.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
 import {
+  deriveMutationTransactionId,
   itemDocumentToMutationOptions,
   parseAtomicMutationControls,
   parseItemMutationBatch,
@@ -594,5 +595,214 @@ describe("structured mutation input", () => {
     expect(() => itemDocumentToMutationOptions("[]", "create")).toThrow(
       "must be a JSON object",
     );
+  });
+});
+
+describe("bulk creation documents (pm-gh1456)", () => {
+  const options = { transactionId: "import-1", idPrefix: "pm-" };
+  const runtimeFields = resolveRuntimeFieldRegistry({
+    ...SETTINGS_DEFAULTS.schema,
+    fields: [{ key: "external_id", type: "string", commands: ["create", "update"] }],
+  }).definitions;
+
+  it("derives a stable transaction id from the exact document bytes", () => {
+    const first = deriveMutationTransactionId('[{"title":"A","type":"Task"}]');
+    expect(first).toMatch(/^mutate-[0-9a-f]{24}$/u);
+    expect(deriveMutationTransactionId('[{"title":"A","type":"Task"}]')).toBe(first);
+    expect(deriveMutationTransactionId('[{"title":"B","type":"Task"}]')).not.toBe(first);
+  });
+
+  it("accepts JSON Lines, single records, and op-less create documents with synthesized refs", () => {
+    const resolved = resolveItemMutationDocument(
+      [
+        '{"title":"First","type":"Task","tags":["import"]}',
+        "",
+        '{"ref":"second","title":"Second","type":"Feature","parent":"@row-1"}',
+        '{"op":"update","id":"@second","options":{"addTags":["linked"]}}',
+      ].join("\n"),
+      options,
+    );
+    expect(resolved.rows).toEqual([
+      { index: 0, ref: "row-1", id: expect.stringMatching(/^pm-[a-z0-9]{12}$/u), op: "create" },
+      { index: 1, ref: "second", id: expect.stringMatching(/^pm-[a-z0-9]{12}$/u), op: "create" },
+      { index: 2, id: resolved.references.second, op: "update" },
+    ]);
+    expect(resolved.mutations[0]).toMatchObject({
+      op: "create",
+      id: resolved.references["row-1"],
+      options: { title: "First", type: "Task", tags: '["import"]' },
+    });
+    expect(resolved.mutations[1]).toMatchObject({
+      op: "create",
+      options: { title: "Second", type: "Feature", parent: resolved.references["row-1"] },
+    });
+    const single = resolveItemMutationDocument('{"title":"Only","type":"Task"}', options);
+    expect(single.mutations).toHaveLength(1);
+    expect(single.rows[0]).toMatchObject({ index: 0, ref: "row-1", op: "create" });
+    const itemRow = resolveItemMutationDocument('[{"op":"create","ref":"doc","item":{"title":"Doc","type":"Task"}}]', options);
+    expect(itemRow.mutations[0]).toMatchObject({ op: "create", options: { title: "Doc", type: "Task" } });
+  });
+
+  it("routes declared schema fields through their option targets and admits them in options rows", () => {
+    const resolved = resolveItemMutationDocument(
+      '{"title":"Keyed","type":"Task","external_id":"ext-1"}',
+      { ...options, runtimeFields },
+    );
+    expect(resolved.mutations[0]).toMatchObject({ options: { externalId: "ext-1" } });
+    expect(
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"a","options":{"title":"Keyed","type":"Task","externalId":"ext-2"}}]',
+        { ...options, runtimeFields },
+      ).mutations[0],
+    ).toMatchObject({ options: { externalId: "ext-2" } });
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"a","options":{"title":"Keyed","type":"Task","externalId":"ext-2"}}]',
+        options,
+      ),
+    ).toThrow('does not recognize key "externalId"');
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"close","id":"pm-a","reason":"done","options":{"externalId":"x"}}]',
+        { ...options, runtimeFields },
+      ),
+    ).toThrow('does not recognize key "externalId"');
+  });
+
+  it("reports malformed JSON Lines by line number and refuses mixed row shapes", () => {
+    expect(() =>
+      resolveItemMutationDocument('{"title":"ok","type":"Task"}\n{not json', options),
+    ).toThrow("Mutation document line 2 must be one valid JSON object");
+    expect(() =>
+      resolveItemMutationDocument('{"title":"ok","type":"Task"}\n[1]', options),
+    ).toThrow("Mutation document line 2 must be a JSON object");
+    expect(() => resolveItemMutationDocument("{not json", options)).toThrow("must be valid JSON");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","item":{"title":"x"},"options":{"title":"y"}}]', options),
+    ).toThrow("either item or options, not both");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"update","id":"pm-a","item":{"title":"x"}}]', options),
+    ).toThrow("only valid for create operations");
+    expect(() =>
+      resolveItemMutationDocument('[{"item":{"title":"x","type":"Task"},"title":"stray"}]', options),
+    ).toThrow("must not mix item document keys");
+    expect(() =>
+      resolveItemMutationDocument('[{"item":"not-an-object"}]', options),
+    ).toThrow("item document must be an object");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","unknown":1}]', options),
+    ).toThrow('does not recognize key "unknown"');
+  });
+
+  it("turns keyed create rows into updates of the one matching existing item", () => {
+    const upsert = {
+      key: "external_id",
+      existing: [
+        { id: "pm-existing", value: "ext-1" },
+        { id: "pm-other", value: "ext-9" },
+        { id: "pm-blank", value: null },
+      ],
+    };
+    const resolved = resolveItemMutationDocument(
+      [
+        '{"title":"Renamed","type":"Task","external_id":"ext-1","tags":["sync"]}',
+        '{"title":"Fresh","type":"Task","external_id":"ext-2"}',
+        '{"op":"create","ref":"opt","options":{"title":"Option row","type":"Task","field":["external_id=ext-9"]}}',
+      ].join("\n"),
+      { ...options, runtimeFields, upsert },
+    );
+    expect(resolved.rows).toEqual([
+      { index: 0, id: "pm-existing", op: "update", upserted: true },
+      { index: 1, ref: "row-2", id: expect.any(String), op: "create" },
+      { index: 2, id: "pm-other", op: "update", upserted: true },
+    ]);
+    expect(resolved.mutations[0]).toMatchObject({
+      op: "update",
+      id: "pm-existing",
+      options: { title: "Renamed", externalId: "ext-1", tags: '["sync"]' },
+    });
+    expect(resolved.mutations[0]).not.toHaveProperty("options.documentAnnotationSnapshot");
+    expect(resolved.mutations[2]).toMatchObject({ op: "update", id: "pm-other", options: { title: "Option row" } });
+    expect(resolved.references).not.toHaveProperty("opt");
+  });
+
+  it("refuses missing, duplicate, and ambiguous upsert keys before any write", () => {
+    const base = { ...options, runtimeFields };
+    expect(() =>
+      resolveItemMutationDocument('{"title":"No key","type":"Task"}', {
+        ...base,
+        upsert: { key: "external_id", existing: [] },
+      }),
+    ).toThrow('missing the upsert key "external_id"');
+    expect(() =>
+      resolveItemMutationDocument(
+        '{"title":"A","type":"Task","external_id":"dup"}\n{"title":"B","type":"Task","external_id":"dup"}',
+        { ...base, upsert: { key: "external_id", existing: [] } },
+      ),
+    ).toThrow("share the upsert key value");
+    try {
+      resolveItemMutationDocument('{"title":"A","type":"Task","external_id":"twice"}', {
+        ...base,
+        upsert: {
+          key: "external_id",
+          existing: [
+            { id: "pm-one", value: "twice" },
+            { id: "pm-two", value: "twice" },
+          ],
+        },
+      });
+      throw new Error("Expected an ambiguous upsert key to be refused.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(PmCliError);
+      expect(error).toMatchObject({
+        exitCode: 4,
+        context: { code: "upsert_key_ambiguous" },
+        message: expect.stringContaining("matches 2 existing items: pm-one, pm-two"),
+      });
+    }
+    expect(() =>
+      resolveItemMutationDocument('{"title":"A","type":"Task"}', {
+        ...base,
+        upsert: { key: "  ", existing: [] },
+      }),
+    ).toThrow("Upsert key must be a non-empty field name");
+  });
+
+  it("covers non-Error line parse failures, explicit document ids, numeric upsert keys, and upsert without runtime fields", () => {
+    const parse = vi.spyOn(JSON, "parse");
+    parse.mockImplementationOnce(() => { throw "whole-document"; }).mockImplementationOnce(() => { throw "line-one"; });
+    expect(() => resolveItemMutationDocument('{"a":1}\n{"b":2}', options)).toThrow("line 1 must be one valid JSON object: Unknown failure");
+    parse.mockRestore();
+    const explicit = resolveItemMutationDocument('{"id":"pm-explicit","title":"Explicit","type":"Task"}', options);
+    expect(explicit.mutations[0]).toMatchObject({ op: "create", id: "pm-explicit" });
+    expect(explicit.rows[0]).toEqual({ index: 0, id: "pm-explicit", op: "create" });
+    const numeric = resolveItemMutationDocument(
+      '[{"op":"create","ref":"n","options":{"title":"Numeric","type":"Task","priority":2}}]',
+      { ...options, upsert: { key: "priority", existing: [{ id: "pm-prio", value: 2 }] } },
+    );
+    expect(numeric.rows).toEqual([{ index: 0, id: "pm-prio", op: "update", upserted: true }]);
+    expect(numeric.mutations[0]).toMatchObject({ op: "update", options: { title: "Numeric", priority: 2 } });
+  });
+
+  it("matches upsert keys through camel-case option targets and refuses rows that carry no document or options", () => {
+    const resolved = resolveItemMutationDocument(
+      '[{"op":"create","ref":"camel","options":{"title":"Camel","type":"Task","externalId":"ext-camel"}}]',
+      { ...options, runtimeFields, upsert: { key: "external_id", existing: [{ id: "pm-camel", value: "ext-camel" }] } },
+    );
+    expect(resolved.rows).toEqual([{ index: 0, id: "pm-camel", op: "update", upserted: true }]);
+    const mixed = resolveItemMutationDocument(
+      '[{"op":"update","id":"pm-a","options":{"title":"Untouched"}},{"title":"Keyed","type":"Task","external_id":"ext-k"}]',
+      { ...options, runtimeFields, upsert: { key: "external_id", existing: [] } },
+    );
+    expect(mixed.rows).toEqual([
+      { index: 0, id: "pm-a", op: "update" },
+      { index: 1, ref: "row-2", id: expect.any(String), op: "create" },
+    ]);
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"bare"}]', {
+        ...options,
+        upsert: { key: "external_id", existing: [] },
+      }),
+    ).toThrow("missing the upsert key");
   });
 });

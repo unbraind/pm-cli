@@ -348,7 +348,7 @@ describe("MCP protocol handshake", () => {
     ).toEqual(["options"]);
     expect(
       contracts.find((contract) => contract.name === "pm_mutate")?.required,
-    ).toEqual(["mutations", "transactionId"]);
+    ).toEqual(["mutations"]);
     expect(
       contracts.find((contract) => contract.name === "pm_health")?.required,
     ).toEqual([]);

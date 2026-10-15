@@ -9,6 +9,8 @@ import path from "node:path";
 import { acquireLock } from "../core/lock/lock.js";
 import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { nowIso } from "../core/shared/time.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 
 /** Durable state reported by a transaction step inspection. */
 export type WorkspaceTransactionStepState =
@@ -341,8 +343,19 @@ function parseJournal(
     !metadataMatches ||
     !statusMatches
   )
-    throw new TypeError(
+    throw new PmCliError(
       `Workspace transaction ${transactionId} journal does not match the supplied plan`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "transaction_plan_mismatch",
+        required: "Replay the exact plan that started this transaction, or start a new transaction with a different id.",
+        why: "A journal records the plan it is resuming; applying a different plan under the same id could skip or duplicate steps.",
+        nextSteps: [
+          "Re-run with the original document to resume or replay it.",
+          "Pass --transaction-id <new-id> (or a new transactionId over MCP) to commit the changed plan as its own transaction.",
+          "Run pm ops gc --scope transactions --dry-run to inspect abandoned journals before pruning them.",
+        ],
+      },
     );
   return {
     ...(journal as WorkspaceTransactionJournal),

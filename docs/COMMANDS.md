@@ -620,14 +620,19 @@ row summaries. See tracker item [pm-awe3t6](../.agents/pm/issues/pm-awe3t6.toon)
 Tracked by [pm-o8z748](../.agents/pm/issues/pm-o8z748.toon) and
 [pm-cyn0y6](../.agents/pm/issues/pm-cyn0y6.toon).
 
-`pm item mutate` is the noun-first CLI adapter over the public SDK resolver and
-`commitItemMutations` primitive. Pipe either the legacy non-empty JSON array or
-a versioned `{ "schema_version": 1, "mutations": [...] }` document, provide one
-stable transaction id, and mix create/update/close/release operations in order.
-Create rows may declare a unique `ref` and omit `id`; exact `@ref` values work
-in target ids, `parent`, `blockedBy`, and dependency `id` fields. The resolver
-derives replay-stable ids before the writer lock and returns a `references`
-receipt:
+`pm item mutate` is the noun-first CLI adapter over the public SDK planner
+(`planItemMutationDocument`) and `commitItemMutations` primitive. Pipe either
+the legacy non-empty JSON array, a versioned
+`{ "schema_version": 1, "mutations": [...] }` document, or JSON Lines (one
+record per line), or read any of them from a file with `--from <path>`. Mix
+create/update/close/release operations in order. Create rows may declare a
+unique `ref` and omit `id`; exact `@ref` values work in target ids, `parent`,
+`blockedBy`, and dependency `id` fields. The resolver derives replay-stable ids
+before the writer lock and returns a `references` receipt plus an input-ordered
+`rows` receipt (`index`, `ref`, `id`, `op`, `upserted`). When `--transaction-id`
+is omitted the id is derived from the exact document bytes
+(`transaction_id_source: "derived"`), so re-running the same import replays the
+same journal instead of duplicating items:
 
 ```bash
 pm item mutate \
@@ -647,9 +652,48 @@ JSON
 Use `--dry-run` to validate and preview without acquiring a writer lock. Reuse
 the exact transaction id and deterministic batch after interruption: the SDK
 journal resumes pending steps and never duplicates a successfully applied
-step. `--create-compensation close|delete`, `--lock-ttl-seconds`, and
+step. A different plan under an already journaled id refuses with
+`transaction_plan_mismatch`; pass a new `--transaction-id` to commit it as its
+own transaction. `--create-compensation close|delete`, `--lock-ttl-seconds`, and
 `--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
 surface is `pm_mutate`.
+
+#### Bulk creation (`pm create many` route)
+
+Tracked by [pm-gh1456](../.agents/pm/features/pm-gh1456.toon). `pm create many`
+is not a command; it refuses with `bulk_create_route` and points here. A record
+without `op` is a create document that uses the same field names as
+`pm create` flags or their JSON equivalents (`title`, `type`, `description`,
+`body`, `tags`, `parent`, `priority`, declared custom fields, ...); a create
+row may also carry that document under `item` instead of `options`. Records
+without `ref` or `id` receive `row-<n>` aliases so the receipt and `@row-<n>`
+references stay addressable. One process, one workspace transaction: every
+record is created or none.
+
+```bash
+cat > items.jsonl <<'JSONL'
+{"title":"Imported A","type":"Task","external_id":"ext-1","tags":["import"]}
+{"ref":"b","title":"Imported B","type":"Feature","external_id":"ext-2","parent":"@row-1"}
+JSONL
+pm item mutate --from items.jsonl --dry-run --json   # validate, derived transaction id
+pm item mutate --from items.jsonl --json             # commit; re-running replays (recovered: true)
+```
+
+`--upsert-key <field>` makes a re-run safe for changed data: a create record
+whose field value matches exactly one existing item (core field such as
+`title`, or a declared custom field such as `external_id`) becomes an update
+of that item and is reported with `upserted: true`; a record missing the key,
+two records sharing a key value, or a key value matching several existing
+items refuses before any write (`upsert_key_missing`, `upsert_key_duplicate`,
+`upsert_key_ambiguous`).
+
+```bash
+printf '%s\n' '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}' \
+  | pm item mutate --upsert-key external_id --json
+```
+
+Over MCP, `pm_mutate` accepts the same document rows as `{ref?, item: {...}}`
+entries, `upsertKey`, and an optional `transactionId`.
 
 `pm item complete` composes evidence, governed closure, and claim release into
 one compensating SDK transaction. It accepts the normal repeatable evidence

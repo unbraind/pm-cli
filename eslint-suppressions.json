@@ -50,9 +50,6 @@
     }
   },
   "src/cli/extension-command-options.ts": {
-    "complexity": {
-      "count": 1
-    },
     "sonarjs/cognitive-complexity": {
       "count": 3
     }

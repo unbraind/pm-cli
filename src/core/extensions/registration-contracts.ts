@@ -47,6 +47,7 @@ const FLAG_DEFINITION_KEYS = new Set([
   "type",
   "value_name",
   "value_type",
+  "value_validation",
   "visible",
 ]);
 
@@ -253,6 +254,34 @@ function validateFlagDefinitions(flags: unknown): void {
       );
     }
     assertFlagValueTypeAndDefault(`registerFlags flags[${index}]`, record);
+    assertFlagValueValidation(`registerFlags flags[${index}]`, record);
+  }
+}
+
+/** Reject an unknown `value_validation` policy, and `strict` on a flag whose declared kind has nothing to validate. */
+function assertFlagValueValidation(
+  label: string,
+  record: Record<string, unknown>,
+): void {
+  if (record.value_validation === undefined) {
+    return;
+  }
+  if (record.value_validation !== "coerce" && record.value_validation !== "strict") {
+    throw new TypeError(
+      `${label}.value_validation must be "coerce" or "strict" (received ${JSON.stringify(record.value_validation)}).`,
+    );
+  }
+  if (record.value_validation !== "strict") {
+    return;
+  }
+  const declaredType =
+    (typeof record.value_type === "string" ? record.value_type : undefined) ??
+    (typeof record.type === "string" ? record.type : undefined);
+  const kind = declaredType === undefined ? null : resolveFlagValueKind(declaredType);
+  if (kind !== "number" && kind !== "boolean") {
+    throw new TypeError(
+      `${label}.value_validation "strict" requires value_type "number" or "boolean" (string values are never malformed).`,
+    );
   }
 }
 

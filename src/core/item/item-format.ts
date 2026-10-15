@@ -2014,6 +2014,55 @@ function serializeJsonMarkdownItemDocument(
   return `${serializedMetadata}\n\n${normalizedBody}\n`;
 }
 
+/** A high surrogate without a following low surrogate, or a low surrogate without a preceding high one. */
+const LONE_SURROGATE_PATTERN = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u;
+
+/** Locate the first string in the payload that is not well-formed UTF-16 (an unpaired surrogate), returning its dotted path and code-unit index. */
+function findIllFormedItemText(
+  value: unknown,
+  path: string,
+  depth: number,
+): { path: string; index: number } | null {
+  if (typeof value === "string") {
+    const index = value.search(LONE_SURROGATE_PATTERN);
+    return index < 0 ? null : { path, index };
+  }
+  if (depth > 6 || value === null || typeof value !== "object") return null;
+  const entries = Array.isArray(value)
+    ? value.map((entry, position) => [`${path}[${position}]`, entry] as const)
+    : Object.entries(value).map(([key, entry]) => [path ? `${path}.${key}` : key, entry] as const);
+  for (const [childPath, entry] of entries) {
+    const found = findIllFormedItemText(entry, childPath, depth + 1);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+/**
+ * Refuse text that TOON cannot encode before the encoder throws an untyped
+ * TypeError. A lone surrogate usually comes from a JSON `\\ud83d` escape or
+ * from truncating a string between the two halves of an emoji (Sentry
+ * PM-CLI-3H). Naming the field and index keeps the refusal actionable.
+ */
+function assertWellFormedItemText(payload: Record<string, unknown>): void {
+  const found = findIllFormedItemText(payload, "", 0);
+  if (found === null) return;
+  throw new PmCliError(
+    `Item field ${found.path} contains an unpaired surrogate code unit at index ${found.index}; TOON requires well-formed Unicode text.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "text_unpaired_surrogate",
+      field: found.path,
+      required: "Provide well-formed UTF-16 text: keep emoji and other astral characters whole and avoid lone \\uD800-\\uDFFF JSON escapes.",
+      why: "The persisted TOON document must decode byte-for-byte; a lone surrogate cannot be encoded and would otherwise surface as an unclassified runtime fault.",
+      nextSteps: [
+        `Repair the ${found.path} value (for example String.prototype.toWellFormed() or re-truncate on a character boundary) and retry.`,
+        "Run pm <command> --help --json to review the text fields the command accepts.",
+      ],
+    },
+  );
+}
+
 function serializeToonItemDocument(
   document: ItemDocument,
   options: Pick<
@@ -2032,6 +2081,7 @@ function serializeToonItemDocument(
     string,
     unknown
   >;
+  assertWellFormedItemText(encodablePayload);
   const serialized = encodeToon(encodablePayload);
   let decoded: unknown;
   try {

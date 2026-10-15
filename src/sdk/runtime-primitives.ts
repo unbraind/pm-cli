@@ -17,10 +17,12 @@ export {
   writeMutationCheckpoint,
 } from "../core/checkpoint/mutation-checkpoint.js";
 export {
+  describeFlagScalarValueFailure,
   flattenFlagListValue,
   resolveExtensionFlagValueContract,
   resolveFlagValueKind,
   type ExtensionFlagValueContract,
+  type FlagScalarValueFailure,
 } from "../core/extensions/flag-value-types.js";
 export {
   createUnknownSubcommandError,

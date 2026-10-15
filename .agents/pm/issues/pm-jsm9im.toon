@@ -1,0 +1,53 @@
+id: pm-jsm9im
+title: Item text with an unpaired surrogate reaches the TOON encoder and fails as an unclassified TypeError instead of a typed field refusal
+description: "Sentry PM-CLI-3H (first seen 2026-10-15T13:12Z, pm-cli 2026.10.14, environment ci, win32, from an external consumer's oracle test job): TypeError \"Cannot encode string value containing an unpaired surrogate U+D83D at index 239\" thrown by @toon-format/toon assertNoLoneSurrogate during item serialization. pm accepted text containing a lone surrogate (a JSON \\ud83d escape, or a string truncated between the halves of an emoji) and only failed at TOON encode time with an untyped TypeError: exit 1, pm.error_code unclassified_runtime_error, captured as an unexpected fault, so the release telemetry gate treats it as a blocker. Expected: a typed usage refusal before encoding that names the offending field and code-unit index and tells the caller how to repair the text."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:storage",refusal,sentry,toon,unicode
+created_at: "2026-10-15T13:21:41.694Z"
+updated_at: "2026-10-15T15:10:41.105Z"
+closed_at: "2026-10-15T15:10:40.441Z"
+completed_at: "2026-10-15T15:10:40.441Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "A lone surrogate in any persisted item text (metadata scalar, comment, note, learning, file note, body) refuses with exit 2 and code text_unpaired_surrogate naming the field path and code-unit index before any encode; Whole emoji and other astral characters still serialize and round-trip; The refusal is a PmCliError so Sentry no longer records an unclassified runtime fault; Unit coverage asserts the field path for a top-level scalar and a nested collection entry"
+parent: pm-o2kc
+risk: high
+confidence: high
+resolution: "serializeToonItemDocument scans the encodable payload for a lone high or low surrogate (strings at any depth up to 6) and refuses with exit 2, code text_unpaired_surrogate, the dotted field path and code-unit index, plus repair guidance; whole surrogate pairs are untouched. Sentry PM-CLI-3H now maps to a PmCliError instead of an unclassified runtime fault."
+expected_result: pm refuses ill-formed Unicode text at the storage boundary with an actionable typed error; Sentry PM-CLI-3H is resolved in the next release.
+actual_result: "Unit tests reproduce the Sentry message shape (truncated emoji at index 239 in description) and a nested comments[0].text value; whole emoji still round-trip. Linked tests pass; exact coverage 100/100/100/100."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5oj5,discovered_from,"2026-10-15T13:54:16.211Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-15T13:22:05.780Z","harness:claude-code","Duplicate check at create time: pm search for \"unpaired surrogate\" and \"lone surrogate unicode well-formed toon encode\" returned no items; grep over src found no surrogate or well-formedness handling. Source: Sentry issue PM-CLI-3H (org unbrained, project pm-cli, id 153837591), latest event 2026-10-15T13:12:45Z, release pm-cli@2026.10.14, environment ci, platform win32, culprit assertNoLoneSurrogate in @toon-format/toon reached from the CLI bundle; the reporting job is an external consumer's oracle test suite, not this repository's CI.\n\nFix (same day): serializeToonItemDocument now scans the encodable payload (strings at any depth up to 6, with dotted/indexed paths) for a high surrogate without a following low surrogate or a low surrogate without a preceding high one and refuses with PmCliError exit 2, code text_unpaired_surrogate, field path and code-unit index, plus repair guidance. Whole surrogate pairs are untouched. Unit tests cover a truncated emoji in description (index 239 reproduces the Sentry message) and a nested comments[0].text value.\n"
+files[1]{path,scope,note}:
+  src/core/item/item-format.ts,project,assertWellFormedItemText before TOON encode (text_unpaired_surrogate)
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-structured-errors.spec.ts,project,300,"harness:claude-code","2026-10-15T13:22:04.006Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+test_runs[2]:
+  - run_id: test-local-mv9ma0y8-1ahbew
+    kind: test
+    status: failed
+    started_at: "2026-10-15T14:06:16.739Z"
+    finished_at: "2026-10-15T14:11:17.456Z"
+    recorded_at: "2026-10-15T14:11:17.456Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-structured-errors.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv9od6v0-y30vlq
+    kind: test
+    status: passed
+    started_at: "2026-10-15T15:09:36.587Z"
+    finished_at: "2026-10-15T15:09:44.315Z"
+    recorded_at: "2026-10-15T15:09:44.315Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-structured-errors.spec.ts,schema,schema,source,local_source_ref
+close_reason: Ill-formed Unicode text is refused before TOON encoding with a typed field error
+body: ""

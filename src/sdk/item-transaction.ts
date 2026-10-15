@@ -22,6 +22,7 @@ import { validateSettings } from "../core/store/settings-validator.js";
 import { resolveWorkspaceRoot } from "../core/store/paths.js";
 import { getSessionStatePath } from "../core/session/session-state.js";
 import { PmCliError } from "../core/shared/errors.js";
+import type { PmSettings } from "../types/index.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { readHistoryEntries } from "./history-read.js";
 import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
@@ -688,6 +689,61 @@ async function readPreviewConfiguration(root: string, relative: string): Promise
   }
 }
 
+/**
+ * Copy the configured schema sections into a disposable configuration root
+ * through the guarded reader (no symlinks, no special files, nothing outside
+ * the tracker) and load them from there, so neither preview nor planning ever
+ * opens an unsafe schema path in place.
+ */
+async function stageGuardedSchemaSections(
+  root: string,
+  configurationRoot: string,
+  schemaSettings: Partial<PmSettings["schema"]> | undefined,
+  configuration?: Map<string, string | undefined>,
+): Promise<Awaited<ReturnType<typeof loadRuntimeSchemaFromOptionalFiles>>> {
+  const schema = normalizeRuntimeSchemaSettings(schemaSettings);
+  for (const [section, configuredPath] of Object.entries(schema.files)) {
+    const relative = path.relative(root, filePathForSchemaSection(root, configuredPath, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS[section as keyof typeof schema.files]));
+    if (relative === "" || !path.resolve(root, relative).startsWith(path.join(root, path.sep))) {
+      throw new PmCliError("Transaction preview requires schema files inside the selected tracker root; relocate the configured schema file before retrying.", EXIT_CODE.USAGE, { code: "transaction_preview_external_schema", field: `schema.files.${section}` });
+    }
+    schema.files[section as keyof typeof schema.files] = relative;
+    const contents = await readPreviewConfiguration(root, relative);
+    configuration?.set(relative, contents);
+    if (contents !== undefined) {
+      const target = path.join(configurationRoot, relative);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, contents);
+    }
+  }
+  return loadRuntimeSchemaFromOptionalFiles(configurationRoot, schema);
+}
+
+/**
+ * Load the runtime schema (statuses, fields, workflows, custom types) with the
+ * preview's guards instead of reading the configured files in place. Hosts
+ * that scope settings reads to inline configuration (dry-run planning) use
+ * this so declared fields stay visible without opening a symlink, FIFO, or
+ * out-of-root schema path; such inputs refuse with
+ * `transaction_preview_non_regular_file` or `transaction_preview_external_schema`.
+ */
+export async function loadGuardedRuntimeSchema(
+  pmRoot: string,
+  schemaSettings: Partial<PmSettings["schema"]> | undefined,
+): Promise<Awaited<ReturnType<typeof loadRuntimeSchemaFromOptionalFiles>>> {
+  await stat(pmRoot);
+  const root = await mkdtemp(path.join(tmpdir(), "pm-schema-plan-"));
+  try {
+    const resolvedRoot = await realpath(pmRoot);
+    return await stageGuardedSchemaSections(resolvedRoot, path.join(root, "configuration"), schemaSettings);
+  } catch (error) {
+    if (await isDisappearingPreviewPath(error)) throw previewSnapshotChangedError();
+    throw error;
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
 /** Resolve storage from captured configuration using pure contracts and disposable schema files. */
 async function resolvePreviewStorage(root: string, configurationRoot: string, registrations: ReturnType<typeof getActiveExtensionRegistrations>) {
   const configuration = new Map<string, string | undefined>();
@@ -698,24 +754,10 @@ async function resolvePreviewStorage(root: string, configurationRoot: string, re
   catch { parsed = null; }
   const validated = validateSettings(parsed);
   const settings = validated.success ? validated.data : undefined;
-  const schema = normalizeRuntimeSchemaSettings(settings?.schema);
-  for (const [section, configuredPath] of Object.entries(schema.files)) {
-    const relative = path.relative(root, filePathForSchemaSection(root, configuredPath, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS[section as keyof typeof schema.files]));
-    if (relative === "" || !path.resolve(root, relative).startsWith(path.join(root, path.sep))) {
-      throw new PmCliError("Transaction preview requires schema files inside the selected tracker root; relocate the configured schema file before retrying.", EXIT_CODE.USAGE, { code: "transaction_preview_external_schema", field: `schema.files.${section}` });
-    }
-    schema.files[section as keyof typeof schema.files] = relative;
-    const contents = await readPreviewConfiguration(root, relative);
-    configuration.set(relative, contents);
-    if (contents !== undefined) {
-      const target = path.join(configurationRoot, relative);
-      await mkdir(path.dirname(target), { recursive: true });
-      await writeFile(target, contents);
-    }
-  }
+  const loaded = await stageGuardedSchemaSections(root, configurationRoot, settings?.schema, configuration);
+  const schema = loaded.schema;
   const sessionPath = path.relative(root, getSessionStatePath(root));
   configuration.set(sessionPath, await readPreviewConfiguration(root, sessionPath));
-  const loaded = await loadRuntimeSchemaFromOptionalFiles(configurationRoot, schema);
   const registry = resolveItemTypeRegistry({ ...SETTINGS_DEFAULTS, item_types: { definitions: [...(settings?.item_types?.definitions ?? []), ...(loaded.type_definitions_from_file ?? [])] } }, registrations);
   const ownedPaths = resolveWorkspaceRoot(root) === root ? [...PM_REQUIRED_SUBDIRS.filter(Boolean), SETTINGS_FILENAME, PM_CONTEXT_INTENTS_FILE, "transactions", ...registry.folders, ...configuration.keys()].map((entry) => path.normalize(entry)) : undefined;
   // Only the disposable copy is rewritten, so absolute in-root schema paths

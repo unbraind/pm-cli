@@ -410,24 +410,26 @@ const RAW_TOOLS: ToolDefinition[] = [
     name: "pm_mutate",
     description:
       "Apply an ordered create/update/close/release batch atomically through the public pm SDK. " +
-      "Create rows may declare ref and omit id; @ref forward references resolve deterministically from the stable transactionId. Set dryRun=true to validate and preview without writes.",
+      "Create rows may declare ref and omit id; @ref forward references resolve deterministically from the stable transactionId, which is derived from the batch when omitted. " +
+      "Bulk creation: rows shaped as {item:{title,type,...}} are create documents using pm create field names; upsertKey updates the existing item whose field matches instead of creating a duplicate. Set dryRun=true to validate and preview without writes.",
     inputSchema: objectSchema(
       {
         transactionId: {
           type: "string",
-          description: "Stable idempotency key for this atomic mutation batch.",
+          description: "Stable idempotency key for this atomic mutation batch; derived from the batch content when omitted.",
         },
         mutations: {
           type: "array",
           minItems: 1,
           description:
-            "Ordered rows shaped as {op:create|update|close|release,id?,ref?,options?,reason?}.",
+            "Ordered rows shaped as {op:create|update|close|release,id?,ref?,options?,reason?} or create documents {ref?,item:{...}}.",
           items: {
             type: "object",
             properties: {
               op: {
                 type: "string",
                 enum: ["create", "update", "close", "release"],
+                description: "Operation; omitted rows carrying item are creates.",
               },
               id: idSchema,
               ref: {
@@ -437,10 +439,19 @@ const RAW_TOOLS: ToolDefinition[] = [
               },
               reason: { type: "string" },
               options: { type: "object" },
+              item: {
+                type: "object",
+                description:
+                  "Create document using pm create field names (title, type, description, body, tags, parent, custom fields).",
+              },
             },
-            required: ["op"],
             additionalProperties: false,
           },
+        },
+        upsertKey: {
+          type: "string",
+          description:
+            "Item field whose value identifies an existing item to update instead of creating a duplicate.",
         },
         dryRun: {
           type: "boolean",
@@ -455,7 +466,7 @@ const RAW_TOOLS: ToolDefinition[] = [
         lockTtlSeconds: { type: "number" },
         lockWaitMs: { type: "number" },
       },
-      ["transactionId", "mutations"],
+      ["mutations"],
     ),
   },
   {

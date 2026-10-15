@@ -4,11 +4,19 @@
 
 ### Added
 
+- Validate contributed scalar flag values before extension handler dispatch ([pm-extension-scalar-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-extension-scalar-validation.toon))
+- GH-1456: Discoverable SDK-backed bulk creation with JSONL and keyed upsert ([pm-gh1456](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1456.toon))
 - GH-1465: Represent implementer-to-verifier handoff as project context ([pm-gh1465](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1465.toon))
 
 ### Fixed
 
+- Item text with an unpaired surrogate reaches the TOON encoder and fails as an unclassified TypeError instead of a typed field refusal ([pm-jsm9im](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jsm9im.toon))
+- Align claim guidance with atomic ownership refusal ([pm-5f7ayv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5f7ayv.toon))
 - GH-1464: Distinguish successful close follow-up from failure recovery ([pm-gh1464](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1464.toon))
+
+### Other
+
+- As an MCP host or coding agent, I can discover pm capabilities and complete long-running context workflows through one current stateless protocol ([pm-x705zo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/stories/pm-x705zo.toon))
 
 ## 2026.10.15 - 2026-10-15
 

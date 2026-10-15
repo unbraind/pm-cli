@@ -8,32 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_receipt_history_reference_missing",
-    meaning: "Merge receipt history reference missing condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/diagnostics/remediation.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_receipt_history_reference_missing",
-    aliases: [],
-  },
-  {
-    code: "merge_receipts_pending",
-    meaning: "Merge receipts pending condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/diagnostics/remediation.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_receipts_pending",
-    aliases: [],
-  },
-  {
     code: "merge_reconcile_receipt_evidence_untrusted",
     meaning: "Merge reconcile receipt evidence untrusted condition.",
     stability: "provisional",
@@ -319,6 +293,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/mutation-guard.ts"],
     emitting_commands: ["*"],
     canonical_code: "mutation_author_required",
+    aliases: [],
+  },
+  {
+    code: "mutation_document_unreadable",
+    meaning: "Mutation document unreadable condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["cli/register-structured-mutation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "mutation_document_unreadable",
     aliases: [],
   },
   {
@@ -1456,6 +1443,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "text_unpaired_surrogate",
+    meaning: "Text unpaired surrogate condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/item/item-format.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "text_unpaired_surrogate",
+    aliases: [],
+  },
+  {
     code: "tracked_runtime_cache_files",
     meaning: "Tracked runtime cache files condition.",
     stability: "stable",
@@ -1535,6 +1535,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     owned_states: [
       { state: "selected_tracker_root_is_not_readable", probe_id: "tracker-root-unreadable", entrypoints: ["list"], expected_exit_class: "generic_failure" },
     ],
+  },
+  {
+    code: "transaction_plan_mismatch",
+    meaning: "Transaction plan mismatch condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_plan_mismatch",
+    aliases: [],
   },
   {
     code: "transaction_preview_external_schema",
@@ -1837,6 +1850,45 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["cli/error-guidance.ts"],
     emitting_commands: ["*"],
     canonical_code: "unsupported_update_option",
+    aliases: [],
+  },
+  {
+    code: "upsert_key_ambiguous",
+    meaning: "Upsert key ambiguous condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/structured-mutations.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "upsert_key_ambiguous",
+    aliases: [],
+  },
+  {
+    code: "upsert_key_duplicate",
+    meaning: "Upsert key duplicate condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/structured-mutations.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "upsert_key_duplicate",
+    aliases: [],
+  },
+  {
+    code: "upsert_key_missing",
+    meaning: "Upsert key missing condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/structured-mutations.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "upsert_key_missing",
     aliases: [],
   },
   {

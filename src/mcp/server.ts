@@ -60,10 +60,8 @@ import {
   createReproducibleProcessRunner,
   runWithReproducibleProcessEnvironment,
 } from "../sdk/reproducibility/process.js";
-import {
-  parseAtomicMutationControls,
-  resolveItemMutationDocument,
-} from "../sdk/structured-mutations.js";
+import { parseAtomicMutationControls } from "../sdk/structured-mutations.js";
+import { planItemMutationDocument } from "../sdk/lifecycle/structured-mutation-plan.js";
 import {
   resolveAuthor,
   resolvePmRoot,
@@ -364,30 +362,42 @@ const HANDLERS: Record<string, ToolHandler> = {
     );
   },
   pm_mutate: async (args) => {
-    const transactionId = readRequiredString(args, "transactionId");
+    const explicitTransactionId =
+      args.transactionId === undefined ? undefined : readRequiredString(args, "transactionId");
+    const upsertKey =
+      args.upsertKey === undefined ? undefined : readRequiredString(args, "upsertKey");
     const controls = parseAtomicMutationControls(args);
     const cwd = typeof args.cwd === "string" ? args.cwd : process.cwd();
     const pmRoot = resolvePmRoot(
       cwd,
       typeof args.path === "string" ? args.path : undefined,
     );
-    const resolved = resolveItemMutationDocument(
-      JSON.stringify({ schema_version: 1, mutations: args.mutations }),
-      {
-        transactionId,
-        idPrefix: (await readSettings(pmRoot)).id_prefix,
-      },
+    const extensionScope = { cwd: typeof args.cwd === "string" ? args.cwd : undefined, path: pmRoot, noExtensions: args.noExtensions === true };
+    const plan = await runWithActiveExtensions(extensionScope, () =>
+      planItemMutationDocument({
+        pmRoot,
+        input: JSON.stringify({ schema_version: 1, mutations: args.mutations }),
+        ...(explicitTransactionId === undefined ? {} : { transactionId: explicitTransactionId }),
+        ...(upsertKey === undefined ? {} : { upsertKey }),
+      }),
     );
-    const { mutations, references } = resolved;
+    const { mutations, references, rows } = plan;
+    const transactionId = plan.transaction_id;
+    const receipt = {
+      transaction_id: transactionId,
+      transaction_id_source: plan.transaction_id_source,
+      ...(plan.upsert_key === undefined ? {} : { upsert_key: plan.upsert_key }),
+    };
     if (args.dryRun === true) {
-      const validation = await runWithActiveExtensions({ cwd: typeof args.cwd === "string" ? args.cwd : undefined, path: pmRoot, noExtensions: args.noExtensions === true }, () => previewItemMutations({ pmRoot, transactionId, author: resolveAuthor(typeof args.author === "string" ? args.author : undefined, "unknown"), mutations }));
+      const validation = await runWithActiveExtensions(extensionScope, () => previewItemMutations({ pmRoot, transactionId, author: resolveAuthor(typeof args.author === "string" ? args.author : undefined, "unknown"), mutations }));
       return {
-        transaction_id: transactionId,
+        ...receipt,
         dry_run: true,
         validation,
         mutation_count: mutations.length,
         mutations,
         references,
+        rows,
       };
     }
     const result = await runWithActiveExtensions(
@@ -408,12 +418,13 @@ const HANDLERS: Record<string, ToolHandler> = {
           ...controls,
         }),
     );
-    const { transactionId: committedTransactionId, ...commitResult } = result;
+    const { transactionId: _committedTransactionId, ...commitResult } = result;
     return {
       ...commitResult,
-      transaction_id: committedTransactionId,
+      ...receipt,
       mutation_count: mutations.length,
       references,
+      rows,
     };
   },
   ...Object.fromEntries(

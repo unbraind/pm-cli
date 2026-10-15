@@ -1262,6 +1262,44 @@ await commitItemMutations({
 });
 ```
 
+For imports, use `planItemMutationDocument` (tracked by
+[pm-gh1456](../.agents/pm/features/pm-gh1456.toon)). It reads the workspace
+schema so declared custom fields route through their option targets, accepts
+JSON Lines and op-less create documents (records shaped like `pm create
+--stdin-json` input, optionally wrapped as `{ ref, item }`), synthesizes
+`row-<n>` aliases for records without `ref`/`id`, derives a stable
+`transaction_id` from the document bytes when none is supplied, and resolves
+`upsertKey` against existing items so matching create records become updates.
+The returned `rows` receipt maps every input record, in order, to its resolved
+`id` and `op`:
+
+```ts
+import {
+  commitItemMutations,
+  planItemMutationDocument,
+} from "@unbrained/pm-cli/sdk";
+
+const plan = await planItemMutationDocument({
+  pmRoot,
+  input: [
+    '{"title":"Imported A","type":"Task","external_id":"ext-1"}',
+    '{"ref":"b","title":"Imported B","type":"Feature","parent":"@row-1"}',
+  ].join("\n"),
+  upsertKey: "external_id",
+});
+const result = await commitItemMutations({
+  pmRoot,
+  author: "import-agent",
+  transactionId: plan.transaction_id,
+  mutations: plan.mutations,
+});
+console.log(plan.transaction_id_source, plan.rows, result.recovered);
+```
+
+Re-running the same document replays the same transaction (`recovered: true`);
+a changed document under the same explicit id refuses with
+`transaction_plan_mismatch`.
+
 `buildItemCompletionMutations` creates the ordered evidence/update, close, and
 release plan for inspection. `commitItemCompletion` executes that plan through
 the same durable coordinator, restoring annotations, linked artifacts,
@@ -2243,9 +2281,21 @@ same list/default semantics as core flags:
 - `default` (a scalar, or an array of scalars for a `list` flag) is applied when
   the flag is omitted; for a `list` flag the default is flattened into the
   accumulated array exactly like a provided value — comma-joined strings (e.g.
-  `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements. A default
+  `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements.   A default
   that would not cleanly coerce under the declared `value_type` (e.g.
   `value_type: "number", default: "abc"`) is rejected at registration.
+- `value_validation` (`"coerce"` | `"strict"`, tracked by
+  [pm-extension-scalar-validation](../.agents/pm/features/pm-extension-scalar-validation.toon))
+  decides what happens to a `number`/`boolean` token that does not coerce.
+  `coerce` is the compatible default: the raw token reaches the handler for its
+  own validation (`--limit abc` arrives as `"abc"`). `strict` refuses the
+  invocation before dispatch with `extension_flag_value_invalid` (exit 2),
+  naming the flag, the command, the expected grammar, and the received token;
+  list entries are checked one by one. Switch presence (`--verbose`,
+  `--no-verbose`), the legacy `bool` optional-value grammar (`--enabled` alone
+  is `true`), declared defaults, and string flags are unaffected. `strict` on a
+  `string` or untyped flag is rejected at registration because there is nothing
+  to validate.
 
 ```ts
 api.registerFlags("report", [
@@ -2256,7 +2306,7 @@ api.registerFlags("report", [
     list: true,
     default: "all",
   },
-  { long: "--limit", value_type: "number", default: 20 },
+  { long: "--limit", value_type: "number", default: 20, value_validation: "strict" },
 ]);
 ```
 

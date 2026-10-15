@@ -116,3 +116,33 @@ export function isFlagDefaultValueCoercible(
     ["true", "false", "1", "0"].includes(value.trim().toLowerCase())
   );
 }
+
+/** One refused scalar token, described for a typed usage error. */
+export interface FlagScalarValueFailure {
+  /** Declared kind the token failed to satisfy. */
+  kind: Exclude<FlagValueKind, "string">;
+  /** Original token as the caller supplied it (`true` when the flag carried no value). */
+  received: unknown;
+  /** Accepted token grammar, for the recovery message. */
+  expected: string;
+}
+
+/**
+ * Describe why a coerced scalar is still malformed under a `number` or
+ * `boolean` kind, or return null when it coerced cleanly. A value-less
+ * occurrence (`true`) of a `number` flag is malformed; a value-less occurrence
+ * of a `boolean` flag is switch presence and is accepted.
+ */
+export function describeFlagScalarValueFailure(
+  value: unknown,
+  kind: Exclude<FlagValueKind, "string">,
+): FlagScalarValueFailure | null {
+  if (kind === "number") {
+    return typeof value === "number" && Number.isFinite(value)
+      ? null
+      : { kind, received: value, expected: "a finite number" };
+  }
+  return typeof value === "boolean"
+    ? null
+    : { kind, received: value, expected: "true, false, 1, or 0" };
+}

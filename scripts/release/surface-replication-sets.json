@@ -599,7 +599,7 @@
     },
     {
       "path": "src/cli/register-mutation.ts",
-      "expected_count": 13,
+      "expected_count": 14,
       "rule_ownership": "all_occurrences",
       "owner": "pm-185870",
       "disposition": "transport_validation",
@@ -647,7 +647,7 @@
     },
     {
       "path": "src/cli/register-structured-mutation.ts",
-      "expected_count": 4,
+      "expected_count": 5,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
@@ -671,7 +671,7 @@
     },
     {
       "path": "src/cli/extension-command-options.ts",
-      "expected_count": 3,
+      "expected_count": 4,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",

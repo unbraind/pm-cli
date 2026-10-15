@@ -965,6 +965,14 @@ export interface RegisteredExporterArtifactOutputContract {
 /** Restricts flag value type values accepted by command, SDK, and storage contracts. */
 export type FlagValueType = "string" | "number" | "boolean";
 
+/**
+ * How a typed scalar flag treats a value token that does not coerce under its
+ * declared `value_type`. `coerce` (default, compatible) forwards the original
+ * token to the handler for its own validation; `strict` refuses the invocation
+ * with a typed usage error before the handler runs.
+ */
+export type FlagValueValidation = "coerce" | "strict";
+
 /** Documents the flag definition payload exchanged by command, SDK, and package integrations. */
 export interface FlagDefinition {
   /** Value that configures or reports long for this contract. */
@@ -995,6 +1003,14 @@ export interface FlagDefinition {
   repeatable?: boolean;
   /** Default value applied when the flag is omitted. Surfaced to runtime contracts and help output. A `list` flag may default to an array of scalars (e.g. `["a", "b"]`); the array is flattened/coerced like any list value. */
   default?: string | number | boolean | Array<string | number | boolean>;
+  /**
+   * Scalar validation policy for `number`/`boolean` flags. `strict` refuses a
+   * malformed value token (`--limit abc`, `--enabled maybe`, or a value-less
+   * `--limit`) before dispatch; `coerce` (default) keeps the historical
+   * behaviour of forwarding the raw token. Switch presence (`--verbose`,
+   * `--no-verbose`) and the legacy `bool` optional-value grammar are unaffected.
+   */
+  value_validation?: FlagValueValidation;
 }
 
 /** Documents the schema field definition payload exchanged by command, SDK, and package integrations. */

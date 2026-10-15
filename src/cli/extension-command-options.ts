@@ -4,6 +4,8 @@
  * Provides CLI runtime support for Extension Command Options.
  */
 import {
+  describeFlagScalarValueFailure,
+  resolveExtensionFlagValueContract,
   resolveExtensionLongFlagName,
   EXIT_CODE,
   PmCliError,
@@ -33,6 +35,8 @@ export interface LooseCommandFlagDefinition {
   repeatable?: boolean;
   /** Value used when callers omit the option. */
   default?: unknown;
+  /** `strict` refuses malformed number/boolean tokens before dispatch; `coerce` (default) forwards them. */
+  value_validation?: string;
 }
 const UNSAFE_LOOSE_OPTION_KEYS = new Set([
   "__proto__",
@@ -409,11 +413,97 @@ function readOrderedLooseListValues(
     .map((occurrence) => occurrence.value);
 }
 
+/** Whether a declared `boolean` flag is a value-less switch (as opposed to the legacy `bool` optional-value grammar), per the shared value contract. */
+function isBooleanSwitchDefinition(
+  definition: LooseCommandFlagDefinition,
+): boolean {
+  return (
+    resolveExtensionFlagValueContract(
+      definition as Parameters<typeof resolveExtensionFlagValueContract>[0],
+    ).value_arity === "none"
+  );
+}
+
+/**
+ * Refuse a strict-validated scalar whose coerced value is still malformed and
+ * return the value to store. A `boolean` switch keeps its canonical presence
+ * semantics: a following positional token that the loose parser read as its
+ * value is not a malformed boolean, so the switch resolves to `true`.
+ */
+function validateStrictScalarOptionValue(
+  definition: LooseCommandFlagDefinition,
+  canonical: string,
+  value: unknown,
+  kind: LooseOptionCoercionKind,
+  commandPath: string | undefined,
+): unknown {
+  // Registration refuses strict on string flags; untyped values never reach here.
+  if (definition.value_validation !== "strict" || kind === "string") {
+    return value;
+  }
+  const isSwitch = kind === "boolean" && isBooleanSwitchDefinition(definition);
+  const normalizeEntry = (entry: unknown): unknown => {
+    const failure = describeFlagScalarValueFailure(entry, kind);
+    if (failure === null) return entry;
+    if (isSwitch && typeof entry === "string") return true;
+    // A definition with a resolvable canonical key always has a printable label.
+    const label = formatLooseOptionLabel(definition) as string;
+    const scope = commandPath ? ` for extension command '${commandPath}'` : "";
+    const received =
+      entry === true ? "no value" : JSON.stringify(entry);
+    throw new PmCliError(
+      `Option '${label}'${scope} expects ${failure.expected}; received ${received}.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "extension_flag_value_invalid",
+        required: `Pass ${label} ${kind === "number" ? "<number>" : "<true|false|1|0>"}.`,
+        why: `The flag declares value_type ${kind} with value_validation strict, so a malformed token is refused before the extension handler runs.`,
+        nextSteps: [
+          `Re-run with a valid ${kind} value for ${label}.`,
+          `Run pm ${commandPath ?? "<command>"} --help to review the declared flag contract.`,
+        ],
+      },
+    );
+  };
+  return Array.isArray(value) ? value.map(normalizeEntry) : normalizeEntry(value);
+}
+
+/** Fold short/alias spellings into the canonical option key: scalars keep the canonical value, list flags concatenate every spelling's values. */
+function mergeAliasOptionKeys(
+  coerced: Record<string, unknown>,
+  canonical: string,
+  optionKeys: readonly string[],
+  isListFlag: boolean,
+): void {
+  for (const key of optionKeys) {
+    if (key === canonical || !Object.hasOwn(coerced, key)) {
+      continue;
+    }
+    if (Object.hasOwn(coerced, canonical)) {
+      if (isListFlag) {
+        const canonicalValue = coerced[canonical];
+        const aliasValue = coerced[key];
+        coerced[canonical] = [
+          ...(Array.isArray(canonicalValue)
+            ? canonicalValue
+            : [canonicalValue]),
+          ...(Array.isArray(aliasValue) ? aliasValue : [aliasValue]),
+        ].filter((value) => value != null);
+      }
+      delete coerced[key];
+      continue;
+    }
+    coerced[canonical] = coerced[key];
+    delete coerced[key];
+  }
+}
+
 /** Implements coerce loose command options with flag definitions for the public runtime surface of this module. */
 export function coerceLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
   occurrenceSource: Record<string, unknown> = options,
+  commandPath?: string,
 ): Record<string, unknown> {
   if (definitions.length === 0) {
     return options;
@@ -429,29 +519,7 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
     }
     const isListFlag = definition.list === true;
     const optionKeys = collectLooseOptionKeys(definition);
-    for (const key of optionKeys) {
-      if (key === canonical || !Object.hasOwn(coerced, key)) {
-        continue;
-      }
-      if (Object.hasOwn(coerced, canonical)) {
-        if (!isListFlag) {
-          delete coerced[key];
-          continue;
-        }
-        const canonicalValue = coerced[canonical];
-        const aliasValue = coerced[key];
-        coerced[canonical] = [
-          ...(Array.isArray(canonicalValue)
-            ? canonicalValue
-            : [canonicalValue]),
-          ...(Array.isArray(aliasValue) ? aliasValue : [aliasValue]),
-        ].filter((value) => value != null);
-        delete coerced[key];
-        continue;
-      }
-      coerced[canonical] = coerced[key];
-      delete coerced[key];
-    }
+    mergeAliasOptionKeys(coerced, canonical, optionKeys, isListFlag);
     const kind = resolveLooseOptionCoercionKind(definition);
     const preserveOccurrenceCommas = definition.repeatable === true;
     if (!Object.hasOwn(coerced, canonical)) {
@@ -476,12 +544,21 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
         kind,
         preserveOccurrenceCommas,
       );
+      if (kind) {
+        coerced[canonical] = validateStrictScalarOptionValue(definition, canonical, coerced[canonical], kind, commandPath);
+      }
       continue;
     }
     if (!kind) {
       continue;
     }
-    coerced[canonical] = coerceLooseOptionValue(coerced[canonical], kind);
+    coerced[canonical] = validateStrictScalarOptionValue(
+      definition,
+      canonical,
+      coerceLooseOptionValue(coerced[canonical], kind),
+      kind,
+      commandPath,
+    );
   }
   return coerced;
 }

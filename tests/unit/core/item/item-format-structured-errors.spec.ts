@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseItemDocument } from "../../../../src/core/item/item-format.js";
+import { parseItemDocument, serializeItemDocument } from "../../../../src/core/item/item-format.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 
 describe("item document structured SDK errors", () => {
@@ -77,5 +77,49 @@ describe("item document structured SDK errors", () => {
         }),
       }),
     );
+  });
+});
+
+describe("item document text well-formedness (Sentry PM-CLI-3H)", () => {
+  const FIXED_TS = "2026-10-15T00:00:00.000Z";
+  function document(overrides: Record<string, unknown>) {
+    return {
+      metadata: {
+        id: "pm-1",
+        title: "Title",
+        status: "open",
+        priority: "P2",
+        type: "Task",
+        created_at: FIXED_TS,
+        updated_at: FIXED_TS,
+        tags: [],
+        dependencies: [],
+        links: [],
+        test_links: [],
+        comments: [],
+        notes: [],
+        history_events: [],
+        ...overrides,
+      },
+      body: "",
+    } as never;
+  }
+
+  it("refuses a lone surrogate with a typed usage error naming the field and index instead of a TOON TypeError", () => {
+    const truncatedEmoji = `Imported ${"x".repeat(230)}\uD83D`;
+    expect(() => serializeItemDocument(document({ description: truncatedEmoji }))).toThrowError(
+      expect.objectContaining<PmCliError>({
+        exitCode: 2,
+        context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "description" }),
+        message: expect.stringContaining("index 239"),
+      }),
+    );
+    expect(() =>
+      serializeItemDocument(document({ comments: [{ created_at: FIXED_TS, author: "a", text: "\uDC00 low first" }] })),
+    ).toThrowError(expect.objectContaining<PmCliError>({ context: expect.objectContaining({ field: "comments[0].text" }) }));
+  });
+
+  it("keeps whole emoji and astral characters encodable", () => {
+    expect(serializeItemDocument(document({ description: "Ship it 🚀 \u{1F600}" }))).toContain("Ship it");
   });
 });

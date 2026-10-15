@@ -3,6 +3,8 @@
  *
  * Registers the noun-first CLI adapter for public SDK atomic item mutations.
  */
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import type { Command } from "commander";
 import {
   createStdinTokenResolver,
@@ -12,6 +14,8 @@ import {
   resolveAuthor,
   resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
+import { describeUnknownError } from "../sdk/error-runtime.js";
+import { planItemMutationDocument } from "../sdk/lifecycle/structured-mutation-plan.js";
 import {
   buildItemCompletionMutations,
   commitItemCompletion,
@@ -19,10 +23,7 @@ import {
   previewItemMutations,
 } from "../sdk/item-transaction.js";
 import { runReopen } from "../sdk/lifecycle/reopen.js";
-import {
-  parseAtomicMutationControls,
-  resolveItemMutationDocument,
-} from "../sdk/structured-mutations.js";
+import { parseAtomicMutationControls } from "../sdk/structured-mutations.js";
 import {
   collect,
   getGlobalOptions,
@@ -58,39 +59,72 @@ async function runItemReopenAction(
   printResult(result, globalOptions);
 }
 
+/** Read the mutation document from `--from <path>` (or `-` for stdin) or from the default stdin JSON channel. */
+async function readItemMutateInput(
+  options: Record<string, unknown>,
+): Promise<string> {
+  const from = typeof options.from === "string" ? options.from.trim() : "";
+  if (from.length > 0 && from !== "-") {
+    try {
+      return await readFile(path.resolve(process.cwd(), from), "utf8");
+    } catch (error: unknown) {
+      throw new PmCliError(
+        `pm item mutate could not read --from ${from}: ${describeUnknownError(error)}`,
+        EXIT_CODE.USAGE,
+        {
+          code: "mutation_document_unreadable",
+          required: "Pass a readable JSON, JSON Lines, or envelope document path, or `-` for stdin.",
+          why: "The whole document must be available before any tracker write begins.",
+        },
+      );
+    }
+  }
+  const input = await createStdinTokenResolver().resolveValue(
+    "-",
+    "--stdin-json",
+  );
+  return input ?? "";
+}
+
 /** Preview or commit the ordered item plan through the shared lifecycle coordinator. */
 async function runItemMutateAction(
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
-  const input = await createStdinTokenResolver().resolveValue(
-    "-",
-    "--stdin-json",
-  );
-  if (input === undefined || input.trim().length === 0) {
+  const input = await readItemMutateInput(options);
+  if (input.trim().length === 0) {
     throw new PmCliError(
-      "pm item mutate requires a non-empty JSON batch on stdin.",
+      "pm item mutate requires a non-empty JSON batch on stdin or via --from <path>.",
       EXIT_CODE.USAGE,
     );
   }
-  const transactionId =
-    typeof options.transactionId === "string"
-      ? options.transactionId.trim()
-      : "";
-  if (transactionId.length === 0) {
+  if (options.transactionId !== undefined && (typeof options.transactionId !== "string" || options.transactionId.trim().length === 0)) {
     throw new PmCliError(
-      "pm item mutate requires --transaction-id <value>.",
+      "pm item mutate requires --transaction-id <value> to be non-empty when provided.",
       EXIT_CODE.USAGE,
     );
   }
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
   const settings = await readSettings(pmRoot);
-  const resolved = resolveItemMutationDocument(input, {
-    transactionId,
-    idPrefix: settings.id_prefix,
+  const plan = await planItemMutationDocument({
+    pmRoot,
+    input,
+    settings,
+    ...(typeof options.transactionId === "string"
+      ? { transactionId: options.transactionId }
+      : {}),
+    ...(typeof options.upsertKey === "string"
+      ? { upsertKey: options.upsertKey }
+      : {}),
   });
-  const { mutations, references } = resolved;
+  const { mutations, references, rows } = plan;
+  const transactionId = plan.transaction_id;
+  const receipt = {
+    transaction_id: transactionId,
+    transaction_id_source: plan.transaction_id_source,
+    ...(plan.upsert_key === undefined ? {} : { upsert_key: plan.upsert_key }),
+  };
   const controls = parseAtomicMutationControls(options);
   const author = resolveAuthor(
     typeof options.author === "string" ? options.author : globalOptions.author,
@@ -100,12 +134,13 @@ async function runItemMutateAction(
     const validation = await previewItemMutations({ pmRoot, transactionId, author, mutations });
     printResult(
       {
-        transaction_id: transactionId,
+        ...receipt,
         dry_run: true,
         validation,
         mutation_count: mutations.length,
         mutations,
         references,
+        rows,
       },
       globalOptions,
     );
@@ -119,7 +154,7 @@ async function runItemMutateAction(
     ...controls,
   });
   printResult(
-    { ...result, mutation_count: mutations.length, references },
+    { ...result, ...receipt, mutation_count: mutations.length, references, rows },
     globalOptions,
   );
 }
@@ -257,11 +292,13 @@ export function registerStructuredMutationCommands(program: Command): void {
     .action(runItemReopenAction);
   itemCommand
     .command("mutate")
-    .requiredOption(
+    .option(
       "--transaction-id <value>",
-      "Stable idempotency key used to resume an interrupted batch",
+      "Stable idempotency key used to resume an interrupted batch; derived from the document when omitted",
     )
     .option("--stdin-json", "Read the JSON mutation array from stdin", true)
+    .option("--from <path>", "Read the JSON, JSON Lines, or envelope document from a file (- for stdin)")
+    .option("--upsert-key <field>", "Update the existing item whose field matches instead of creating a duplicate")
     .option("--dry-run", "Validate and preview the batch without writing")
     .option(
       "--create-compensation <mode>",

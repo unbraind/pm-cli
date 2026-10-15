@@ -410,6 +410,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     tips: [
       "Use --schedule-preset lightweight for Reminder/Meeting/Event when you want minimal required create inputs.",
       "Use --type <value> to load type-aware policy guidance in --help output.",
+      "Bulk creation is pm item mutate --from items.jsonl (JSON Lines, array, or envelope; --upsert-key <field> makes re-runs idempotent).",
     ],
   },
   focus: {
@@ -848,7 +849,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm claim pm-a1b2 --author "release-service" --message "Explicit non-agent identity override"',
     ],
     tips: [
-      "Claim takeover for non-terminal items does not require --force; --force is reserved for terminal/lock overrides.",
+      "Claim is an atomic test-and-set: an item held by another principal refuses with already_claimed_by. Use --if-available to skip it without failing, or --force only for a coordinated takeover; --force is also required for terminal items and stale locks.",
       "Harness identity is automatic; use --author only to assert an intentional external principal.",
     ],
   },

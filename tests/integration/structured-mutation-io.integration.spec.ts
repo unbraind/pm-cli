@@ -575,3 +575,131 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
     });
   });
 });
+
+describe("bulk creation through item mutate (pm-gh1456)", () => {
+  it("imports JSON Lines from a file, replays idempotently, and upserts by a declared field", async () => {
+    await withTempPmPath(async (context) => {
+      const { writeFile } = await import("node:fs/promises");
+      const path = await import("node:path");
+      expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
+      const file = path.join(context.tempRoot, "items.jsonl");
+      await writeFile(
+        file,
+        [
+          '{"title":"Imported A","type":"Task","external_id":"ext-1","tags":["import"]}',
+          '{"ref":"b","title":"Imported B","type":"Feature","external_id":"ext-2","parent":"@row-1"}',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const dryRun = context.runCli(["item", "mutate", "--from", file, "--dry-run", "--json"], { expectJson: true });
+      expect(dryRun.code).toBe(0);
+      expect(dryRun.json).toMatchObject({
+        dry_run: true,
+        transaction_id_source: "derived",
+        mutation_count: 2,
+        validation: { validated: true },
+        rows: [
+          { index: 0, ref: "row-1", op: "create" },
+          { index: 1, ref: "b", op: "create" },
+        ],
+      });
+      const committed = context.runCli(["item", "mutate", "--from", file, "--json"], { expectJson: true });
+      expect(committed.code).toBe(0);
+      const committedJson = committed.json as { transaction_id: string; rows: Array<{ id: string; ref?: string }> };
+      expect(committed.json).toMatchObject({ status: "committed", recovered: false, transaction_id_source: "derived" });
+      expect(committedJson.transaction_id).toBe((dryRun.json as { transaction_id: string }).transaction_id);
+      const [first, second] = committedJson.rows;
+      const secondItem = context.runCli(["get", second!.id, "--json"], { expectJson: true }).json as { item: { parent?: string; external_id?: string } };
+      expect(secondItem.item).toMatchObject({ parent: first!.id, external_id: "ext-2" });
+
+      const replay = context.runCli(["item", "mutate", "--from", file, "--json"], { expectJson: true });
+      expect(replay.json).toMatchObject({ status: "committed", recovered: true });
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 2 });
+
+      const upsert = context.runCli(["item", "mutate", "--upsert-key", "external_id", "--json"], {
+        expectJson: true,
+        input: '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}\n{"title":"Imported C","type":"Task","external_id":"ext-3"}',
+      });
+      expect(upsert.code).toBe(0);
+      expect(upsert.json).toMatchObject({
+        status: "committed",
+        upsert_key: "external_id",
+        rows: [
+          { index: 0, id: first!.id, op: "update", upserted: true },
+          { index: 1, ref: "row-2", op: "create" },
+        ],
+      });
+      const renamed = context.runCli(["get", first!.id, "--json"], { expectJson: true }).json as { item: { title: string } };
+      expect(renamed.item.title).toBe("Imported A (renamed)");
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 3 });
+
+      const missingKey = context.runCli(["item", "mutate", "--upsert-key", "external_id", "--json"], {
+        input: '{"title":"No key","type":"Task"}',
+      });
+      expect(missingKey.code).toBe(2);
+      expect(missingKey.stderr).toContain("upsert_key_missing");
+      const unreadable = context.runCli(["item", "mutate", "--from", path.join(context.tempRoot, "missing.jsonl"), "--json"]);
+      expect(unreadable.code).toBe(2);
+      expect(unreadable.stderr).toContain("mutation_document_unreadable");
+    });
+  });
+
+  it("routes pm create many to the bulk surface instead of creating an item titled many", async () => {
+    await withTempPmPath(async (context) => {
+      const refused = context.runCli(["create", "many", "--json"]);
+      expect(refused.code).toBe(2);
+      expect(refused.stderr).toContain("bulk_create_route");
+      expect(refused.stderr).toContain("pm item mutate --from");
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 0 });
+      const explicit = context.runCli(["create", "--title", "many", "--type", "Task", "--json"], { expectJson: true });
+      expect(explicit.code).toBe(0);
+    });
+  });
+
+  it("accepts MCP document rows with forward references and keyed upsert without a transaction id", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
+      const created = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "pm_mutate",
+          arguments: {
+            path: context.pmPath,
+            mutations: [
+              { ref: "m1", item: { title: "MCP doc", type: "Task", external_id: "mcp-1" } },
+              { op: "update", id: "@m1", options: { addTags: ["mcp"] } },
+            ],
+          },
+        },
+      });
+      const createdResult = (created?.structuredContent as { result: { status: string; transaction_id: string; transaction_id_source: string; rows: Array<{ id: string; op: string }> } }).result;
+      expect(createdResult).toMatchObject({ status: "committed", transaction_id_source: "derived", rows: [{ op: "create" }, { op: "update" }] });
+      expect(createdResult.transaction_id).toMatch(/^mutate-[0-9a-f]{24}$/u);
+
+      const upserted = await handleRequest({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "pm_mutate",
+          arguments: {
+            path: context.pmPath,
+            upsertKey: "external_id",
+            dryRun: true,
+            mutations: [{ item: { title: "MCP doc renamed", type: "Task", external_id: "mcp-1" } }],
+          },
+        },
+      });
+      expect(upserted?.structuredContent).toMatchObject({
+        result: {
+          dry_run: true,
+          upsert_key: "external_id",
+          rows: [{ index: 0, id: createdResult.rows[0]!.id, op: "update", upserted: true }],
+        },
+      });
+    });
+  });
+});

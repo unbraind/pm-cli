@@ -2,22 +2,58 @@ id: pm-gh1456
 title: "GH-1456: Discoverable SDK-backed bulk creation with JSONL and keyed upsert"
 description: "Extend the shipped atomic SDK/CLI mutation primitive with a discoverable bulk-create workflow, JSONL input and optional keyed upsert. The existing pm item mutate surface already commits ordered create/update/close batches and must be reused rather than reimplemented."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-13T18:39:48.477Z"
+updated_at: "2026-10-15T15:10:34.802Z"
+closed_at: "2026-10-15T15:10:34.121Z"
+completed_at: "2026-10-15T15:10:34.121Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Document and execute the existing atomic create batch as the immediate recovery; Any create-many adapter delegates to public SDK transaction primitives; JSONL/ref resolution and keyed upsert preserve input order and validate before persistence; Interrupted or repeated imports preserve complete history and stable idempotency
 parent: pm-n7rr
 risk: medium
 confidence: medium
+resolution: "pm item mutate accepts JSON Lines, single records and op-less create documents (pm create field names, optionally {ref,item}), reads them with --from <path>, synthesizes row-<n> aliases, returns an input-ordered rows receipt, derives a stable transaction id from the document bytes when --transaction-id is omitted, and resolves --upsert-key against existing items via the new SDK planner planItemMutationDocument (schema hydrated through the transaction preview's guarded loader under the dry-run configuration-only scope). pm_mutate accepts item rows, upsertKey and an optional transactionId. pm create many refuses with bulk_create_route. Journal/plan mismatch is the typed transaction_plan_mismatch refusal."
 expected_result: "Agents create an ordered batch through the existing SDK-backed atomic CLI surface, with discoverable JSONL/ref input and stable keyed-upsert semantics that retain history and idempotency."
+actual_result: "Sandbox and integration tests: 2-record JSON Lines import committed in one transaction, replay of the same file returned recovered:true with no duplicates, upsert by a declared custom field updated the matched item and created the unmatched one, dry-run under the configuration-only scope validated with declared fields present, missing/duplicate/ambiguous keys refused before any write, MCP document rows with @ref forward references and upsertKey committed. Linked tests pass; exact coverage 100/100/100/100."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
   pm-y9hq,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-13T18:12:30.417Z","harness:codex","{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
   "2026-10-13T18:39:47.760Z","harness:codex","Hosted static CI38446450129 correctly caught the missing expected_result in this newly created intake. Added the explicit intended outcome through PM without changing acceptance criteria, implementation scope or gate thresholds. This planning correction does not claim the reported feature/defect is implemented."
+  "2026-10-15T12:29:33.446Z","harness:claude-code","Implementation note (2026-10-15): bulk creation lands on the existing atomic surface instead of a new top-level command. The SDK resolver now accepts JSON Lines, single records, and op-less create documents (pm create field names, optionally wrapped as {ref, item}); records without ref/id receive row-<n> aliases; declared schema fields are admitted on create/update option rows via their option targets. A new planner, planItemMutationDocument, reads the workspace (schema hydration also under the configuration-only dry-run scope, where declared fields otherwise vanish), derives a stable transaction id from the document bytes when none is given, and resolves --upsert-key against existing items (custom or core field): one match becomes an update (rows[].upserted), a missing key, an in-batch duplicate, or several matches refuse before any write. CLI adds --from <path> and --upsert-key and makes --transaction-id optional; MCP pm_mutate accepts item rows, upsertKey and an optional transactionId. pm create many refuses with bulk_create_route and names the route. The journal/plan mismatch is now a typed transaction_plan_mismatch refusal instead of an unknown_error.\n\nMeasured in a sandbox: 2-record JSON Lines import committed in one transaction; replay returned recovered:true with no duplicates; upsert by external_id updated the matched item and created the unmatched one; dry-run under the configuration-only scope validated with the declared field present.\n"
+files[11]{path,scope,note}:
+  src/cli/register-mutation.ts,project,pm create many route refusal (bulk_create_route)
+  src/cli/register-structured-mutation.ts,project,"--from, --upsert-key, optional --transaction-id, rows receipt"
+  src/mcp/server.ts,project,pm_mutate uses the planner; upsertKey; derived transactionId
+  src/mcp/tool-definitions.ts,project,"pm_mutate schema: item rows, upsertKey, optional transactionId"
+  src/sdk/cli-contracts/flag-contracts.ts,project,item mutate flag contracts --from/--upsert-key
+  src/sdk/item-transaction.ts,project,guarded schema staging shared with planning (loadGuardedRuntimeSchema)
+  src/sdk/lifecycle/structured-mutation-plan.ts,project,"workspace-aware planner: derived transaction id, schema hydration, upsert candidates"
+  src/sdk/structured-mutations.ts,project,"JSON Lines, document rows, synthesized refs, keyed upsert, rows receipt"
+  src/sdk/workspace-transaction.ts,project,typed transaction_plan_mismatch refusal
+  tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts,project,"guarded schema loader: declared fields, snapshot-change and persistent error branches"
+  tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts,project,planner unit coverage incl. guarded FIFO refusal
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,project,900,"harness:claude-code","2026-10-15T14:23:43.700Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+test_runs[1]:
+  - run_id: test-local-mv9ocq88-n3ojpa
+    kind: test
+    status: passed
+    started_at: "2026-10-15T15:08:49.537Z"
+    finished_at: "2026-10-15T15:09:22.760Z"
+    recorded_at: "2026-10-15T15:09:22.760Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,bulk recipe
+  docs/COMMANDS.md,project,Bulk creation section
+  docs/SDK.md,project,planItemMutationDocument
+close_reason: "Bulk creation delivered on pm item mutate with JSON Lines, document rows, derived transaction ids and keyed upsert"
 body: "Source: https://github.com/unbraind/pm-cli/issues/1456\n\n## Problem\n`pm update many` exists, but there is no CLI counterpart for creating items in bulk. An agent that needs to record N items has to spawn N `pm create` processes, and each one pays full startup plus workspace load. Typical cases:\n- importing findings or review threads;\n- mirroring notes into the tracker;\n- seeding a plan;\n- converting a spec into tasks.\n\n**Measured on 2026.10.13** (Linux, Node 26, a tracker of about 940 items growing to about 1,200):\n- 266 sequential `pm --json create --type <custom type> --title … --description … --body-file … --tags …` calls took **10 m 24 s wall time**, about 2.3 s per item.\n- 2 m 54 s of that was user CPU, so most of the cost is per-process startup and workspace reads, repeated 266 times.\n- The run is not atomic. An interruption leaves a partial import, and the caller has to build its own idempotency, for example by listing existing items and matching on a custom key field.\n\nThe SDK already has the primitive. #613 added a bulk multi-item atomic-mutation helper on top of `commitWorkspaceTransaction`. It just isn't reachable from the CLI.\n\n## Proposal\n`pm create many` (alias `pm create --from -`) reads JSONL or a JSON array from a file or stdin. Each record uses the same field names as `pm create` flags or their JSON equivalents, including custom fields, `body`, `tags`, dependencies and comments.\n- One process and one workspace transaction: all records are created or none, with history and merge receipts written as usual.\n- `--dry-run` validates every record first: types, required custom fields, dependency references (including references to other records in the same batch, through client-side `ref` keys), and duplicate-title detection against the existing tracker.\n- Optional idempotency key, `--upsert-by <field>`: an existing item whose field matches is updated instead of duplicated. That makes re-running an import safe.\n- The `--json` receipt lists created and updated ids in input order, mapped to each record's `ref`.\n\n## Why it matters for agents\nProject management is context management. The moments an agent wants to write many items at once (triage imports, review-thread capture, plan expansion) are exactly the moments a 2-3 s per-item cost and a non-atomic loop push it to skip tracking or to batch lossy summaries instead.\n\n\nIntake scope\n\nExtend the shipped atomic SDK/CLI mutation primitive with a discoverable bulk-create workflow, JSONL input and optional keyed upsert. The existing pm item mutate surface already commits ordered create/update/close batches and must be reused rather than reimplemented.\n\nDuplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive."

@@ -281,4 +281,72 @@ describe("cli extension loose option parser", () => {
     // No operands at all.
     expect(collectLoosePositionalArgs(["--file", "path"])).toEqual([]);
   });
+
+  describe("strict scalar value validation (pm-extension-scalar-validation)", () => {
+    const definitions = [
+      { long: "--limit", value_type: "number", value_validation: "strict" },
+      { long: "--enabled", type: "bool", value_validation: "strict" },
+      { long: "--verbose", value_type: "boolean", value_validation: "strict" },
+      { long: "--ratio", value_type: "number" },
+      { long: "--ids", value_type: "number", list: true, value_validation: "strict" },
+    ];
+
+    function coerce(args: string[]): Record<string, unknown> {
+      const parsed = parseLooseCommandOptions(args);
+      return coerceLooseCommandOptionsWithFlagDefinitions(parsed, definitions, parsed, "acme echo");
+    }
+
+    it("keeps valid coercions, defaults, switch presence, and the legacy bool grammar", () => {
+      expect(coerce(["--limit", "5", "--enabled", "true", "--verbose", "--ratio", "abc", "--ids", "1,2"])).toEqual({
+        limit: 5,
+        enabled: true,
+        verbose: true,
+        ratio: "abc",
+        ids: [1, 2],
+      });
+      expect(coerce(["--enabled"])).toEqual({ enabled: true });
+      expect(coerce(["--no-verbose"])).toEqual({ verbose: false });
+      // A boolean switch followed by a positional keeps its presence semantics.
+      expect(coerce(["--verbose", "artifact-A"])).toEqual({ verbose: true });
+      expect(coerce(["--ids", "7"])).toEqual({ ids: [7] });
+    });
+
+    it("refuses malformed number and boolean tokens before dispatch with a typed usage error", () => {
+      for (const [args, fragment] of [
+        [["--limit", "abc"], "Option '--limit' for extension command 'acme echo' expects a finite number; received \"abc\"."],
+        [["--limit"], "received no value"],
+        [["--enabled", "not-a-boolean"], "expects true, false, 1, or 0; received \"not-a-boolean\""],
+        [["--ids", "1,x"], "expects a finite number; received \"x\""],
+      ] as const) {
+        try {
+          coerce([...args]);
+          throw new Error("Expected a strict scalar refusal for " + args.join(" "));
+        } catch (error) {
+          expect(error).toBeInstanceOf(PmCliError);
+          expect(error).toMatchObject({
+            exitCode: EXIT_CODE.USAGE,
+            context: { code: "extension_flag_value_invalid" },
+            message: expect.stringContaining(fragment),
+          });
+        }
+      }
+      // Without strict validation the historical passthrough is unchanged.
+      const parsed = parseLooseCommandOptions(["--ratio", "abc", "--limit", "abc"]);
+      expect(coerceLooseCommandOptionsWithFlagDefinitions(parsed, [{ long: "--ratio", value_type: "number" }, { long: "--limit", value_type: "number", value_validation: "coerce" }])).toEqual({ ratio: "abc", limit: "abc" });
+      // Without a command path the message still names the flag.
+      const bare = parseLooseCommandOptions(["--limit", "abc"]);
+      expect(() => coerceLooseCommandOptionsWithFlagDefinitions(bare, definitions)).toThrow("Option '--limit' expects a finite number");
+    });
+
+    it("treats a legacy type:boolean switch as presence and never validates string kinds", () => {
+      const legacy = parseLooseCommandOptions(["--legacy-switch", "artifact-B"]);
+      expect(
+        coerceLooseCommandOptionsWithFlagDefinitions(legacy, [{ long: "--legacy-switch", type: "boolean", value_validation: "strict" }]),
+      ).toEqual({ legacySwitch: true });
+      const text = parseLooseCommandOptions(["--name", "anything"]);
+      expect(
+        coerceLooseCommandOptionsWithFlagDefinitions(text, [{ long: "--name", value_type: "string", value_validation: "strict" }]),
+      ).toEqual({ name: "anything" });
+    });
+  });
 });

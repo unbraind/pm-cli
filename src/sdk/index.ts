@@ -723,6 +723,7 @@ export * from "./workspace-transaction-gc.js";
 export * from "./item-transaction.js";
 export * from "./item-metadata-index.js";
 export * from "./structured-mutations.js";
+export * from "./lifecycle/structured-mutation-plan.js";
 export * from "./runtime-primitives.js";
 export * from "./error-runtime.js";
 export * from "./error-code-catalog.js";

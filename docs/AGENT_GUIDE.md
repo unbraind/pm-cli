@@ -181,6 +181,8 @@ Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_append`/`pm_close`, and
 
 `pm create --parent <id>` fails fast when the parent cannot be found. Use `--allow-missing-parent` only for deliberate imports or staged backlog reconstruction.
 
+To record many items at once (triage imports, review-thread capture, plan expansion), do not loop `pm create`: write one record per line and commit them in one workspace transaction with `pm item mutate --from items.jsonl --json` (`--dry-run` first). Records use `pm create` field names, `@row-<n>`/`@ref` references link records to each other, the transaction id is derived from the document so a re-run replays instead of duplicating, and `--upsert-key <field>` turns records that match an existing item into updates. `pm create many` refuses with this route. See [Bulk creation](COMMANDS.md#bulk-creation-pm-create-many-route).
+
 ## Guide Routing for Agents
 
 Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI documentation routing is useful.
@@ -188,8 +190,9 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 ## Ownership Rules
 
 - Claim before heavy edits.
-- `pm claim <id>` can take over non-terminal work from another owner.
-- Use `--force` only for explicit override paths.
+- `pm claim <id>` is an atomic test-and-set. An item already held by a different principal refuses with `already_claimed_by`; the same principal re-claiming is a no-op.
+- Pass `--if-available` to treat a held item as a skip (`skipped: true`, exit 0) instead of a failure, for example when several agents pull from one queue.
+- Use `--force` only for a coordinated takeover of another owner's claim; it is also required to claim terminal items and to override stale locks. Never force a takeover without explicit approval.
 - Release when pausing, handing off, or after close.
 
 ### Implementation-to-verification handoff
