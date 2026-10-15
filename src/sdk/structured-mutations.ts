@@ -831,8 +831,21 @@ function readUpsertKeyValue(
   return assignment?.slice(key.length + 1);
 }
 
+/** Sort plain-object keys recursively so equivalent object values serialize identically regardless of insertion order; arrays keep their order. */
+function canonicalizeUpsertValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalizeUpsertValue);
+  if (!isPlainObject(value)) return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => [key, canonicalizeUpsertValue(nested)]),
+  );
+}
+
 function stableUpsertValue(value: unknown): string {
-  return typeof value === "string" ? value.trim() : JSON.stringify(value);
+  return typeof value === "string"
+    ? value.trim()
+    : JSON.stringify(canonicalizeUpsertValue(value));
 }
 
 /**

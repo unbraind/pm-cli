@@ -792,6 +792,12 @@ describe("bulk creation documents (pm-gh1456)", () => {
     );
     expect(explicitUpsert.rows).toEqual([{ index: 0, id: "pm-prio", op: "update", upserted: true }]);
     expect(Object.keys(explicitUpsert.references)).toEqual([]);
+    // Object-valued keys match on content, not on key insertion order.
+    const objectKeyed = resolveItemMutationDocument(
+      '{"op":"create","ref":"o","options":{"title":"Object keyed","type":"Task","meta":{"b":[1,{"d":1,"c":2}],"a":2}}}',
+      { ...options, upsert: { key: "meta", existing: [{ id: "pm-object", value: { a: 2, b: [1, { c: 2, d: 1 }] } }] } },
+    );
+    expect(objectKeyed.rows).toEqual([{ index: 0, ref: "o", id: "pm-object", op: "update", upserted: true }]);
     expect(numeric.mutations[0]).toMatchObject({ op: "update", options: { title: "Numeric", priority: 2 } });
   });
 

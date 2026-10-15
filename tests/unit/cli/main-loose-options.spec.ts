@@ -349,6 +349,14 @@ describe("cli extension loose option parser", () => {
       // Without strict validation the historical passthrough is unchanged.
       const parsed = parseLooseCommandOptions(["--ratio", "abc", "--limit", "abc"]);
       expect(coerceLooseCommandOptionsWithFlagDefinitions(parsed, [{ long: "--ratio", value_type: "number" }, { long: "--limit", value_type: "number", value_validation: "coerce" }])).toEqual({ ratio: "abc", limit: "abc" });
+      // A plain options object (no parse-time occurrences) still validates strict lists: scalar and pre-split numeric values pass, an empty entry refuses.
+      const idsDefinition = { long: "--ids", value_type: "number", list: true, value_validation: "strict" };
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ ids: "1,2" }, [idsDefinition])).toEqual({ ids: [1, 2] });
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ ids: [3, 4] }, [idsDefinition])).toEqual({ ids: [3, 4] });
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ ports: "8080" }, [{ long: "--ports", value_type: "number", list: true, repeatable: true, value_validation: "strict" }])).toEqual({ ports: [8080] });
+      expect(() => coerceLooseCommandOptionsWithFlagDefinitions({ ids: [3, ""] }, [idsDefinition])).toThrow('received ""');
+      // A plain options object carries no parse-time occurrences, so an attached-value check is impossible and the switch keeps presence semantics.
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ verbose: "maybe" }, [{ long: "--verbose", value_type: "boolean", value_validation: "strict" }])).toEqual({ verbose: true });
       // Without a command path the message still names the flag.
       const bare = parseLooseCommandOptions(["--limit", "abc"]);
       expect(() => coerceLooseCommandOptionsWithFlagDefinitions(bare, definitions)).toThrow("Option '--limit' expects a finite number");
