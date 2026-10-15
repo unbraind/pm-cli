@@ -856,13 +856,18 @@ function readUpsertKeyValue(
   return assignment?.slice(key.length + 1);
 }
 
+/** Total, locale-independent key order: code-unit comparison never reports two distinct keys as equal, unlike collation. */
+function compareCodeUnits(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 /** Sort plain-object keys recursively so equivalent object values serialize identically regardless of insertion order; arrays keep their order. */
 function canonicalizeUpsertValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalizeUpsertValue);
   if (!isPlainObject(value)) return value;
   return Object.fromEntries(
     Object.entries(value)
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => compareCodeUnits(left, right))
       .map(([key, nested]) => [key, canonicalizeUpsertValue(nested)]),
   );
 }

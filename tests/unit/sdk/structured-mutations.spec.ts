@@ -822,6 +822,12 @@ describe("bulk creation documents (pm-gh1456)", () => {
       { ...options, upsert: { key: "meta", existing: [{ id: "pm-object", value: { a: 2, b: [1, { c: 2, d: 1 }] } }] } },
     );
     expect(objectKeyed.rows).toEqual([{ index: 0, ref: "o", id: "pm-object", op: "update", upserted: true }]);
+    // Keys that collate equal (precomposed and decomposed e-acute) are still distinct, so insertion order never leaks into the match.
+    const collating = resolveItemMutationDocument(
+      '{"op":"create","ref":"c","options":{"title":"Collating","type":"Task","meta":{"e\u0301":2,"\u00e9":1}}}',
+      { ...options, upsert: { key: "meta", existing: [{ id: "pm-collate", value: { "\u00e9": 1, "e\u0301": 2 } }] } },
+    );
+    expect(collating.rows).toEqual([{ index: 0, ref: "c", id: "pm-collate", op: "update", upserted: true }]);
     expect(numeric.mutations[0]).toMatchObject({ op: "update", options: { title: "Numeric", priority: 2 } });
   });
 
