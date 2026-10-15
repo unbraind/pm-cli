@@ -42,8 +42,6 @@ import {
   resolveRuntimeStatusRegistry,
   type RuntimeFieldRegistry,
   type RuntimeStatusRegistry,
-  describeAllowedTransitions,
-  evaluateTransition,
   resolveTypeWorkflows,
   type NormalizedTypeWorkflow,
   EXIT_CODE,
@@ -65,6 +63,7 @@ import {
 } from "../runtime-primitives.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 import { runClose } from "./close.js";
+import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -714,42 +713,6 @@ function parseStatus(
   return normalized;
 }
 
-/** Enforce per-type allowed-transition rules (governance.workflow_enforcement). `off` (default) or an unrestricted type is a no-op. `strict` throws on a disallowed transition; `warn` returns a warning string surfaced on the update result. The target status is the raw `--status` value (resolved case-insensitively through the registry inside evaluateTransition). */
-function enforceTypeWorkflowTransition(params: {
-  enforcement: GovernanceWorkflowEnforcement;
-  typeWorkflows: NormalizedTypeWorkflow[];
-  statusRegistry: RuntimeStatusRegistry;
-  typeName: string;
-  fromStatus: string;
-  toStatus: string;
-}): string | undefined {
-  if (params.enforcement === "off" || params.typeWorkflows.length === 0) {
-    return undefined;
-  }
-  const result = evaluateTransition({
-    typeName: params.typeName,
-    fromStatus: params.fromStatus,
-    toStatus: params.toStatus,
-    typeWorkflows: params.typeWorkflows,
-    statusRegistry: params.statusRegistry,
-  });
-  if (!result.hasRule || result.allowed) {
-    return undefined;
-  }
-  const normalizedFrom =
-    normalizeStatusInput(params.fromStatus, params.statusRegistry) ??
-    params.fromStatus;
-  const normalizedTo =
-    normalizeStatusInput(params.toStatus, params.statusRegistry) ??
-    params.toStatus;
-  const message =
-    `Disallowed transition for type "${params.typeName}": ${normalizedFrom} -> ${normalizedTo}. ` +
-    `Allowed transitions: ${describeAllowedTransitions(result.allowedTransitions)}.`;
-  if (params.enforcement === "strict") {
-    throw new PmCliError(message, EXIT_CODE.USAGE);
-  }
-  return `workflow_transition_not_allowed: ${message}`;
-}
 
 interface ParsedDependencyUpdates {
   additions: Dependency[];

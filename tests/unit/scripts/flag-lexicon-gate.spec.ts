@@ -16,7 +16,7 @@ describe("flag lexicon gate", () => {
   it("passes the generated corpus and blocks seeded command growth", () => {
     expect(verifyFlagLexiconGate()).toMatchObject({
       ok: true,
-      baseline_entry_count: 3_079,
+      baseline_entry_count: 3_080,
       findings: [],
     });
     expect(verifyFlagLexiconGate({ injectMismatch: true })).toMatchObject({

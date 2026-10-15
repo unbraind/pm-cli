@@ -292,7 +292,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   workspace: 23,
   contracts: 29,
   claim: 39,
-  release: 24,
+  // pm-gh1465: one configured queue flag, with no spare flag allowance.
+  release: 25,
   "start-task": 23,
   "pause-task": 23,
   "close-task": 24,

@@ -9166,6 +9166,10 @@
           "value_type": "boolean"
         },
         {
+          "flag": "--handoff",
+          "value_name": "status"
+        },
+        {
           "flag": "--id",
           "value_name": "item-id"
         },
@@ -38862,6 +38866,50 @@
       "description": "Release a pm item claim.",
       "input_schema": {
         "additionalProperties": true,
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "handoff"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "message"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "pause": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "pause"
+                  ]
+                },
+                {
+                  "properties": {
+                    "handoff": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "handoff"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "assignee": {
             "description": "Assignee identity.",
@@ -38881,6 +38929,10 @@
           "fullChangedFields": {
             "description": "Full Changed Fields.",
             "type": "boolean"
+          },
+          "handoff": {
+            "description": "Release into a configured non-terminal queue with a required evidence message.",
+            "type": "string"
           },
           "id": {
             "description": "pm item id, for example pm-abc1.",
@@ -63287,6 +63339,50 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "handoff"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "message"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "pause": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "pause"
+                  ]
+                },
+                {
+                  "properties": {
+                    "handoff": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "handoff"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "release",
@@ -63307,6 +63403,10 @@
           "fullChangedFields": {
             "description": "Full Changed Fields.",
             "type": "boolean"
+          },
+          "handoff": {
+            "description": "Release into a configured non-terminal queue with a required evidence message.",
+            "type": "string"
           },
           "id": {
             "description": "Item identifier for read or mutation actions.",
@@ -63794,10 +63894,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.21.1"
+    "x-schema-version": "4.22.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.21.1",
+  "schema_version": "4.22.0",
   "selected": {
     "action": null,
     "availability_only": false,

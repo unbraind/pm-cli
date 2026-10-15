@@ -375,9 +375,9 @@
     },
     {
       "command": "release",
-      "help_bytes": 281,
-      "estimated_tokens": 71,
-      "maximum_tokens": 71
+      "help_bytes": 371,
+      "estimated_tokens": 93,
+      "maximum_tokens": 93
     },
     {
       "command": "start-task",

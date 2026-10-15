@@ -125,6 +125,7 @@ import type {
   ClaimNextResult,
   ClaimResult,
   ReleaseResult,
+  ReleaseMutationOptions,
 } from "./lifecycle/claim.js";
 import type { CloseResult } from "./lifecycle/close.js";
 import { type CopyResult } from "./lifecycle/copy.js";
@@ -300,6 +301,7 @@ export type {
   CloseResult,
   CreateResult,
   ReleaseResult,
+  ReleaseMutationOptions,
   UpdateResult
 };
 
@@ -1462,22 +1464,22 @@ export class PmClient {
   /** Release an item's active claim using the same mutation path as `pm release`. */
   release(
     id: string,
-    options: PmClientFullMutationOptions & { pause: true },
+    options: PmClientFullMutationOptions & ReleaseMutationOptions & { pause: true },
   ): Promise<PauseTaskResult>;
   /** Return the base receipt when composition is disabled or omitted. */
   release(
     id: string,
-    options?: PmClientFullMutationOptions & { pause?: false },
+    options?: PmClientFullMutationOptions & ReleaseMutationOptions & { pause?: false },
   ): Promise<ReleaseResult>;
   /** Preserve both receipt shapes when the composition flag is dynamic. */
   release(
     id: string,
-    options?: PmClientFullMutationOptions & { pause?: boolean },
+    options?: PmClientFullMutationOptions & ReleaseMutationOptions & { pause?: boolean },
   ): Promise<ReleaseResult | PauseTaskResult>;
   /** Dispatch lifecycle mutation options through the shared SDK runtime. */
   release(
     id: string,
-    options: PmClientFullMutationOptions & { pause?: boolean } = {},
+    options: PmClientFullMutationOptions & ReleaseMutationOptions & { pause?: boolean } = {},
   ): Promise<ReleaseResult | PauseTaskResult> {
     return this.runTyped("release", {
       id,
@@ -2301,28 +2303,28 @@ export function claimNext(
 /** Release an item's active claim without constructing a reusable client. */
 export function release(
   id: string,
-  options: PmClientFullMutationOptions & { pause: true },
+  options: PmClientFullMutationOptions & ReleaseMutationOptions & { pause: true },
   clientOptions?: PmClientOptions,
 ): Promise<PauseTaskResult>;
 
 /** Return the base receipt when composition is disabled or omitted. */
 export function release(
   id: string,
-  options?: PmClientFullMutationOptions & { pause?: false },
+  options?: PmClientFullMutationOptions & ReleaseMutationOptions & { pause?: false },
   clientOptions?: PmClientOptions,
 ): Promise<ReleaseResult>;
 
 /** Preserve both receipt shapes when the composition flag is dynamic. */
 export function release(
   id: string,
-  options?: PmClientFullMutationOptions & { pause?: boolean },
+  options?: PmClientFullMutationOptions & ReleaseMutationOptions & { pause?: boolean },
   clientOptions?: PmClientOptions,
 ): Promise<ReleaseResult | PauseTaskResult>;
 
 /** Dispatch lifecycle mutation options through the shared SDK runtime. */
 export function release(
   id: string,
-  options: PmClientFullMutationOptions & { pause?: boolean } = {},
+  options: PmClientFullMutationOptions & ReleaseMutationOptions & { pause?: boolean } = {},
   clientOptions: PmClientOptions = {},
 ): Promise<ReleaseResult | PauseTaskResult> {
   return new PmClient(clientOptions).release(id, options);

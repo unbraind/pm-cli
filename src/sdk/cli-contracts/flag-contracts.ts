@@ -971,6 +971,7 @@ export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for release flag contracts, shared by SDK and presentation-layer consumers. */
 export const RELEASE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--pause", value_type: "boolean" },
+  { flag: "--handoff", value_name: "status" },
   { flag: "--id", value_name: "item-id" },
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },

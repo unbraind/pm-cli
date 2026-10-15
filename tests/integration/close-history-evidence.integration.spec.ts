@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { runClose } from "../../src/cli/commands/lifecycle/close.js";
+import { runAction } from "../../src/sdk/runtime.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -19,6 +20,19 @@ interface HistoryEntry {
 }
 
 describe("close history evidence", () => {
+  it.each(["CLI", "MCP"])("preserves successful evidence follow-up in the default compact %s receipt", async (transport) => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Successful close receipt" });
+      let result: unknown;
+      if (transport === "CLI") {
+        const closed = context.runCli(["close", id, "Delivered", "--validate-close", "warn", "--json"], { expectJson: true, preserveDefaultMutationOutput: true });
+        expect(closed.code).toBe(0);
+        result = closed.json;
+      } else result = await runAction({ action: "close", id, reason: "Delivered", path: context.pmPath, options: { validateClose: "warn" } });
+      expect(result).toMatchObject({ id, status: "closed", follow_up: { kind: "complete_close_evidence", missing: ["--resolution", "--expected-result", "--actual-result"], suggested_command: expect.stringContaining("update"), suggested_command_args: ["--pm-path", context.pmPath, "update", id, "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"] } });
+      expect(result).not.toHaveProperty("recovery");
+    });
+  });
   it("routes warning closes and terminal retries to an evidence-only update", async () => {
     await withTempPmPath(async (context) => {
       for (const mode of ["warning", "terminal"]) {
@@ -31,13 +45,14 @@ describe("close history evidence", () => {
           { validateClose: "warn", resolution: "Implemented" },
           { path: context.pmPath },
         );
-        expect(closed).toHaveProperty("recovery.suggested_retry_args");
-        const recovery = (
-          closed as unknown as { recovery: { suggested_retry_args: string[] } }
-        ).recovery;
+        expect(closed).not.toHaveProperty("recovery");
+        expect(closed).toHaveProperty("follow_up.suggested_command_args");
+        const followUp = (
+          closed as unknown as { follow_up: { suggested_command_args: string[] } }
+        ).follow_up;
         const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
         const before = await readFile(historyPath, "utf8");
-        let args = recovery.suggested_retry_args.map((token) =>
+        let args = followUp.suggested_command_args.map((token) =>
           token === "<value>" ? "Verified evidence" : token,
         );
         if (mode === "terminal") {
@@ -97,7 +112,7 @@ describe("close history evidence", () => {
         parent: "none",
       });
 
-      await runClose(
+      const complete = await runClose(
         id,
         "Acceptance criteria and verification complete",
         {
@@ -108,6 +123,7 @@ describe("close history evidence", () => {
         },
         { path: context.pmPath },
       );
+      expect(complete).not.toHaveProperty("follow_up");
 
       const history = (
         await readFile(

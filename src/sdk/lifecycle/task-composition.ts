@@ -11,7 +11,8 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { runClaim, runRelease, type ClaimMutationOptions } from "./claim.js";
+import { runClaim, runRelease, type ReleaseMutationOptions } from "./claim.js";
+import { resolveReleaseHandoff } from "./release-handoff.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
@@ -19,7 +20,7 @@ import { mutationOptionsWithOverrides } from "../runtime-input.js";
 import type { StartTaskResult, PauseTaskResult, CloseTaskResult } from "../runtime-public-contracts.js";
 
 /** Ownership inputs shared by the explicit-item start and pause compositions. */
-export interface TaskCompositionOptions extends ClaimMutationOptions {
+export interface TaskCompositionOptions extends ReleaseMutationOptions {
   /** Permit the same ownership and terminal overrides as constituent mutations. */
   force?: boolean;
   /** Ranked selection cannot be combined with an explicit-item composition. */
@@ -67,7 +68,9 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
 /** Return work to its configured open status, then release ownership. */
 export async function runPauseTask(id: string, options: TaskCompositionOptions, global: GlobalOptions): Promise<PauseTaskResult> {
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
-  const status = resolveRuntimeStatusRegistry(settings.schema).open_status;
+  const registry = resolveRuntimeStatusRegistry(settings.schema);
+  resolveReleaseHandoff({ ...options, pause: true }, registry);
+  const status = registry.open_status;
   const update = await runUpdate(id, mutationOptionsWithOverrides(options, { status }, ["assignee", "pause"]) as UpdateCommandOptions, global);
   const canonicalId = update.item.id as string;
   const release = await finishComposition(canonicalId, "update", /** Release the persisted update identity only after its open-status mutation succeeds. */ () => runRelease(canonicalId, options.force === true, global, options));

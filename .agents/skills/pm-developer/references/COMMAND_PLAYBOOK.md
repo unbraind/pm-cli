@@ -45,7 +45,7 @@ pm close-many --ids <ID>,<ID> --reason "<shared reason>" --dry-run
 pm test <ID> --run --progress
 node scripts/run-tests.mjs coverage
 pm comments <ID> "Evidence: linked tests passed; coverage remained green."
-pm close <ID> "Acceptance criteria met with verification evidence." --validate-close warn
+pm close <ID> "Verified" --resolution "Delivered change" --expected "Required outcome" --actual "Observed outcome" --validate-close warn
 pm release <ID>
 ```
 

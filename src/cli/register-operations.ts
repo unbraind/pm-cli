@@ -800,6 +800,7 @@ async function runReleaseAction(
   const result = await runRelease(id, Boolean(options.force), globalOptions, {
     ...buildLifecycleMutationOptions(options),
     ownershipReleaseBypass: options.ownershipReleaseBypass === true,
+    handoff: options.handoff,
   } as Parameters<typeof runRelease>[3]);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(
@@ -852,7 +853,7 @@ async function runPauseTaskAction(
   await printLifecycleAliasHint(command);
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const result = await runPauseTask(id, { ...buildLifecycleMutationOptions(options), force: Boolean(options.force) }, globalOptions);
+  const result = await runPauseTask(id, { ...buildLifecycleMutationOptions(options), handoff: readOptionString(options, "handoff"), force: Boolean(options.force) }, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result.release);
   printResult(result, globalOptions);
   if (globalOptions.profile) {
@@ -1386,6 +1387,7 @@ export function registerOperationCommands(program: Command): void {
   const releaseCommand = program
     .command("release")
     .option("--pause", "Use open status")
+    .option("--handoff <status>", "Release to a configured queue; requires --message evidence")
     .argument("<id>", "Item id")
     .option("--author <value>", "Author")
     .option("--message <value>", "Message")

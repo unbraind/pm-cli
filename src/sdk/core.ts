@@ -103,6 +103,7 @@ export {
   type PmActionOptions,
   type PmClientOptions,
   type ReleaseResult,
+  type ReleaseMutationOptions,
   type PreviousTerminalEvidence,
   type RecurrenceReceipt,
   type ReopenCommandOptions,
@@ -168,3 +169,5 @@ export type {
   ItemType,
   PmSettings,
 } from "../types/index.js";
+
+export type { CloseEvidenceFollowUp } from "./lifecycle-policy.js";

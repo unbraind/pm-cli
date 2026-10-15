@@ -691,7 +691,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   close: {
     why: "Transitions work to terminal closed state with explicit rationale.",
     examples: [
-      'pm close pm-a1b2 "Done" --release-assignment --validate-close warn',
+      'pm close pm-a1b2 "Done" --resolution "Delivered" --expected "Required outcome" --actual "Verified outcome" --release-assignment --validate-close warn',
       'pm close pm-a1b2 "Done" --validate-close',
       'pm close pm-a1b2 "Done" --validate-close off',
       'pm close pm-a1b2 "Done" --validate-close strict',
@@ -854,7 +854,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   release: {
     why: "Releases an active claim when paused, handed off, or completed.",
-    examples: ['pm release pm-a1b2 --pause'],
+    examples: ['pm release pm-a1b2 --pause', 'pm release pm-a1b2 --handoff review --message "Implemented; run linked verification"'],
+    tips: ["Register the project queue with pm schema add-status review --role active before using --handoff."],
   },
   "start-task": {
     why: "Lifecycle alias that claims an item and sets status to in_progress.",

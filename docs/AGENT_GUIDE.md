@@ -191,6 +191,29 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 - Use `--force` only for explicit override paths.
 - Release when pausing, handing off, or after close.
 
+### Implementation-to-verification handoff
+
+Tracked by [pm-gh1465](../.agents/pm/features/pm-gh1465.toon).
+Projects define their own queues using the existing schema primitives:
+
+```bash
+pm schema add-status review --role active --description "Implementation complete; awaiting verification"
+pm release <item-id> --handoff review --message "Implemented X; verify with the linked regression"
+pm list --status review
+```
+
+Handoff requires a claimed, non-terminal item and an evidence message. It changes
+the status and releases ownership in one history event, preserving workflow
+transition and approval policies. It cannot be combined with `--pause` or target
+the configured in-progress or a terminal status. The result includes `handoff`
+with the source status, destination status, and evidence message. No fixed review
+state is added to projects. `pm context` retains the queue's status while counting
+it separately from in-progress work; use `pm list --status review` to select the
+verification queue. A verifier can claim it, close with normal evidence, or use
+`pm claim <item-id> --start` when rework begins. `pm item reopen` remains for
+terminal items. SDK `client.release(id, { handoff: "review", message: "..." })`
+and MCP release options use the same atomic transition.
+
 ## Reviewed Delivery Closeout
 
 Before closing repository defects, set `escape_class` and structured
