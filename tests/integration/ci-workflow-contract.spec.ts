@@ -248,6 +248,30 @@ describe("GitHub workflow contract", () => {
     }
   });
 
+  it("requires both Windows cohorts and refuses unsuccessful aggregate outcomes", async () => {
+    const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
+    const cohorts = workflow.jobs["windows-regression-cohorts"];
+    expect(cohorts.strategy).toEqual({ "fail-fast": false, "max-parallel": 2, matrix: { cohort: ["scripts", "native"] } });
+    expect(cohorts["timeout-minutes"]).toBe(12);
+    expect(cohorts["continue-on-error"]).toBeUndefined();
+    const scripted = cohorts.steps.filter((step: { run?: string }) => step.run?.includes("node scripts/run-tests.mjs"));
+    expect(scripted.filter((step: { if?: string }) => step.if === "matrix.cohort == 'scripts'")).toHaveLength(1);
+    expect(scripted.every((step: { if?: string }) => ["matrix.cohort == 'scripts'", "matrix.cohort == 'native'"].includes(step.if ?? ""))).toBe(true);
+    const aggregate = workflow.jobs["windows-regression"];
+    expect(aggregate.name).toBe("Windows regression (Node 24)");
+    expect(aggregate.needs).toBe("windows-regression-cohorts");
+    expect(aggregate.if).toBe("always()");
+    expect(aggregate["continue-on-error"]).toBeUndefined();
+    const gate = aggregate.steps[0];
+    expect(gate.env.COHORT_RESULT).toBe("${{ needs.windows-regression-cohorts.result }}");
+    const bash = process.platform === "win32" ? path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Git", "bin", "bash.exe") : "bash";
+    for (const result of ["success", "failure", "cancelled", "skipped", ""]) {
+      const execute = () => execFileSync(bash, ["-c", gate.run], { env: { ...process.env, COHORT_RESULT: result }, stdio: "pipe" });
+      if (result === "success") expect(execute).not.toThrow();
+      else expect(execute).toThrow();
+    }
+  });
+
   it("requires native preview regressions to consume the validated build", async () => {
     const ciWorkflow = normalizeWorkflow(
       await readFile(
@@ -277,7 +301,7 @@ describe("GitHub workflow contract", () => {
         name: "macOS",
         condition: "matrix.os == 'macos-latest'",
       },
-      { job: "windows-regression", name: "Windows", condition: undefined },
+      { job: "windows-regression-cohorts", name: "Windows", condition: "matrix.cohort == 'native'" },
     ]) {
       const portability = runtimeJobs[platform.job].steps.find(
         (step) =>
@@ -319,7 +343,7 @@ describe("GitHub workflow contract", () => {
     const coverageJob = extractWorkflowJob(ciWorkflow, "coverage");
     const windowsRegressionJob = extractWorkflowJob(
       ciWorkflow,
-      "windows-regression",
+      "windows-regression-cohorts",
     );
 
     expectContainsAll(ciWorkflow, [
@@ -540,7 +564,8 @@ describe("GitHub workflow contract", () => {
     });
     expect(completionStep?.["continue-on-error"]).toBeUndefined();
     expectContainsAll(windowsRegressionJob, [
-      "name: Windows regression (Node 24)",
+      "name: Windows regression cohort (${{ matrix.cohort }}, Node 24)",
+      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/scripts/",
       "name: Restore exact TypeScript and Vitest caches",
       "needs: build-foundation",
       "runs-on: windows-latest",
@@ -553,7 +578,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       'PM_RUN_TESTS_SKIP_BUILD: "1"',
-      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/scripts/ tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
+      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
       "name: Verify copied plugin first-install command transport",
       "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",

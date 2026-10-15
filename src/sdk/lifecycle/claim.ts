@@ -20,6 +20,7 @@ import {
 } from "../runtime-primitives.js";
 import { wrapOwnershipConflict } from "../annotations.js";
 import { describeItemOwnershipConflict } from "../ownership-source.js";
+import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import {
   runNext,
   type NextRecommendation,
@@ -125,6 +126,15 @@ export interface ReleaseResult {
   warnings?: string[];
   /** Concrete recovery commands when releasing ownership leaves work in progress. */
   suggestions?: string[];
+  /** Evidence and queue transition recorded with the ownership release. */
+  handoff?: {
+    /** Lifecycle status observed under the item lock. */
+    from_status: string;
+    /** Project-defined queue receiving the unclaimed work. */
+    to_status: string;
+    /** Author-supplied evidence retained in the release history event. */
+    message: string;
+  };
 }
 
 /** Documents the claim mutation options payload exchanged by command, SDK, and package integrations. */
@@ -140,7 +150,12 @@ export interface ClaimMutationOptions {
 }
 
 /** Documents the release mutation options payload exchanged by command, SDK, and package integrations. */
-export type ReleaseMutationOptions = ClaimMutationOptions;
+export interface ReleaseMutationOptions extends ClaimMutationOptions {
+  /** Configured non-terminal queue to enter atomically with release. */
+  handoff?: string;
+  /** Pause composition, mutually exclusive with a handoff queue. */
+  pause?: boolean;
+}
 
 /** Implements run claim for the public runtime surface of this module. */
 export async function runClaim(
@@ -380,6 +395,12 @@ export async function runRelease(
       }
     ).ownershipReleaseBypass === true;
   let previousAssignee: string | null = null;
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const handoffStatus = resolveReleaseHandoff(options, statusRegistry);
+  if (handoffStatus !== undefined && ownershipReleaseBypass) {
+    throw new PmCliError("Ownership-release bypass only clears ownership; it cannot change a handoff status.", EXIT_CODE.USAGE);
+  }
+  let handoff: ReleaseResult["handoff"];
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
   try {
@@ -394,12 +415,14 @@ export async function runRelease(
       bypassAssigneeConflict: ownershipReleaseBypass,
       mutate(document) {
         previousAssignee = document.metadata.assignee ?? null;
+        const transition = handoffStatus === undefined ? undefined : applyReleaseHandoff(document.metadata, handoffStatus, settings, statusRegistry, options.message!);
+        handoff = transition?.receipt;
         if (!previousAssignee && !document.metadata.claim_principal) {
           return { changedFields: [] };
         }
         delete document.metadata.assignee;
         delete document.metadata.claim_principal;
-        return { changedFields: ["assignee", "claim_principal"] };
+        return { changedFields: ["assignee", "claim_principal", ...(transition?.changedFields ?? [])], warnings: transition?.warnings };
       },
     });
   } catch (error: unknown) {
@@ -420,7 +443,6 @@ export async function runRelease(
     itemId: result.item.id,
   });
 
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const stillInProgress = normalizeStatusForRegistry(result.item.status, statusRegistry) === normalizeStatusForRegistry(statusRegistry.in_progress_status, statusRegistry);
 
   return {
@@ -429,8 +451,9 @@ export async function runRelease(
     changed_fields: result.changedFields,
     previous_assignee: previousAssignee,
     forced: force,
+    ...(handoff === undefined ? {} : { handoff }),
+    ...(result.warnings.length > 0 || stillInProgress ? { warnings: [...result.warnings, ...(stillInProgress ? ["released_unclaimed_in_progress"] : [])] } : {}),
     ...(stillInProgress ? {
-      warnings: ["released_unclaimed_in_progress"],
       suggestions: [`${result.item.id} remains ${result.item.status} and unclaimed. If work is paused, run pm release ${result.item.id} --pause to move it to ${statusRegistry.open_status}.`],
     } : {}),
   };

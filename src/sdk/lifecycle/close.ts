@@ -3,7 +3,6 @@
  *
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
-import type { PmCliErrorRecoveryPayload } from "../../core/shared/errors.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   toItemRecord,
@@ -32,6 +31,7 @@ import {
   requireTerminalReason,
   type CloseOperationOptions,
   type CloseOperationResult,
+  type CloseEvidenceFollowUp,
   type TerminalTransitionPolicy,
 } from "../lifecycle-policy.js";
 import type { ItemMetadata } from "../../types/index.js";
@@ -67,7 +67,7 @@ export interface CloseResult {
   /** Changed metadata fields. */
   changed_fields: string[];
   /** Evidence-only update guidance when acceptance fields are missing. */
-  recovery?: PmCliErrorRecoveryPayload;
+  follow_up?: CloseEvidenceFollowUp;
   /** Validation and lifecycle receipts. */
   warnings: string[];
 }
@@ -150,7 +150,7 @@ function findMissingCloseValidationFields(
 }
 
 /** Build an argv-safe update that appends acceptance evidence without repeating a terminal transition. */
-function closeEvidenceRecovery(metadata: ItemMetadata, pmRoot: string, options: CloseCommandOptions = {}): PmCliErrorRecoveryPayload | undefined {
+function closeEvidenceRecovery(metadata: ItemMetadata, pmRoot: string, options: CloseCommandOptions = {}): { missing: string[]; suggested_retry: string; suggested_retry_args: string[] } | undefined {
   const missing = findMissingCloseValidationFields(metadata);
   if (missing.length === 0) return undefined;
   const values = { resolution: options.resolution, expected_result: options.expectedResult, actual_result: options.actualResult };
@@ -739,11 +739,16 @@ export async function closeItem(
     },
   });
 
-  const recovery = validateCloseMode === "warn" ? closeEvidenceRecovery(result.item, pmRoot) : undefined;
+  const evidence = validateCloseMode === "warn" ? closeEvidenceRecovery(result.item, pmRoot) : undefined;
   return {
     item: toItemRecord(result.item),
     changed_fields: result.changedFields,
-    ...(recovery ? { recovery } : {}),
+    ...(evidence ? { follow_up: {
+      kind: "complete_close_evidence" as const,
+      missing: evidence.missing,
+      suggested_command: evidence.suggested_retry,
+      suggested_command_args: evidence.suggested_retry_args,
+    } } : {}),
     warnings: [
       ...result.warnings,
       ...(await autoUnblockResolvedDependents(

@@ -96,7 +96,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       'pm create --create-mode progressive --title "..." --description "..." --type Task',
       "pm claim <ID>",
       "pm update <ID> --status in_progress",
-      'pm close <ID> "<reason with evidence>" --validate-close warn',
+      'pm close <ID> "<reason>" --resolution "<change>" --expected "<expected outcome>" --actual "<observed outcome>" --validate-close warn',
     ],
     workflows: [
       {
@@ -193,7 +193,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
           "pm update <ID> --status in_progress",
           "pm files <ID> --add path=<file>,scope=project",
           "pm test <ID> --run --progress",
-          'pm close <ID> "<evidence>" --validate-close warn',
+          'pm close <ID> "<reason>" --resolution "<change>" --expected "<expected outcome>" --actual "<observed outcome>" --validate-close warn',
         ],
       },
     ],

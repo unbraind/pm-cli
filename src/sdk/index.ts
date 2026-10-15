@@ -1076,6 +1076,7 @@ export {
   type ReindexOptions,
   type ReindexResult,
   type ReleaseResult,
+  type ReleaseMutationOptions,
   type ReopenCommandOptions,
   type ReopenResult,
   type RestoreResult,

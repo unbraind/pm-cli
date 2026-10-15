@@ -117,9 +117,12 @@ export async function runMcpTaskCompositionAction(
 
 /** Release ownership with the same compact/full controls used by claiming and pausing. */
 export async function runMcpReleaseAction(context: LifecycleMutationActionContext): Promise<unknown> {
-  if (context.options.pause === true) return runMcpTaskCompositionAction(context, "pause_task");
   const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
-  const result = await runRelease(requireLifecycleItemId(context, runnerOptions), context.force === true, context.global, runnerOptions);
+  const options = mutationOptionsWithOverrides(runnerOptions, {
+    message: readRuntimeString(Object.hasOwn(runnerOptions, "message") ? runnerOptions : context.args, "message"),
+  });
+  if (options.pause === true) return runMcpTaskCompositionAction({ ...context, options }, "pause_task");
+  const result = await runRelease(requireLifecycleItemId(context, options), context.force === true || options.force === true, context.global, options);
   return projectMutationResult(result, { changedFields, idOnly, compactEnvelope: changedFields === "compact" && !idOnly });
 }
 

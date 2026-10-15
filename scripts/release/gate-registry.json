@@ -517,7 +517,7 @@
     {
       "id": "mcp-option-contracts",
       "owner": "pm-v0s2rm",
-      "pipelines": ["ci.yml#build-test", "ci.yml#coverage-shards", "ci.yml#windows-regression", "nightly.yml#nightly", "release.yml#release"],
+      "pipelines": ["ci.yml#build-test", "ci.yml#coverage-shards", "ci.yml#windows-regression-cohorts", "nightly.yml#nightly", "release.yml#release"],
       "failure_taxonomy": ["mcp_unknown_option_contract_drift"],
       "bypass": { "allowed": false, "audit": "Every Vitest run installs the warning reporter; intentional negative tests require exact file, test, option, tool and action identities with a recorded reason." },
       "negative_control": {
@@ -544,7 +544,7 @@
         "ci.yml#build-foundation",
         "ci.yml#build-test",
         "ci.yml#gates",
-        "ci.yml#windows-regression",
+        "ci.yml#windows-regression-cohorts",
         "docs.yml#docs",
         "nightly.yml#nightly",
         "nightly.yml#quality",
@@ -573,6 +573,7 @@
         "ci.yml#coverage",
         "ci.yml#coverage-shards",
         "ci.yml#windows-regression",
+        "ci.yml#windows-regression-cohorts",
         "nightly.yml#nightly",
         "release.yml#release"
       ],

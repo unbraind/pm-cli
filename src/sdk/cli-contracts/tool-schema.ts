@@ -47,6 +47,7 @@ const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: typeof BASE_ACTION_SCOPED_PARA
 const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   ...BASE_TOOL_PARAMETER_PROPERTIES,
   pause: { type: "boolean" },
+  handoff: { type: "string" },
   releaseAssignment: { type: "boolean" },
   hashAlgorithm: { type: "string", enum: ["sha256", "sha512"] },
 };
@@ -55,6 +56,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
 const PM_TOOL_PARAMETER_METADATA: typeof BASE_TOOL_PARAMETER_METADATA = {
   ...BASE_TOOL_PARAMETER_METADATA,
   pause: { description: "Return work to its configured open status before releasing ownership." },
+  handoff: { description: "Release into a configured non-terminal queue with a required evidence message." },
   releaseAssignment: { description: "Release assignment after recording closure evidence." },
   hashAlgorithm: { description: "Digest for detached history bundles; defaults to sha256." },
 };
@@ -1436,7 +1438,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     },
     release: {
       required: ["id"],
-      optional: ["pause", ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+      optional: ["pause", "handoff", ...LIFECYCLE_AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+      dependentAnyOfRequired: [
+        { property: "handoff", anyOfRequired: [["message"]] },
+      ],
+      mutuallyExclusiveWhen: [
+        [{ property: "pause", schema: { const: true } }, { property: "handoff", schema: { type: "string" } }],
+      ],
     },
     "start-task": {
       required: ["id"],
@@ -1569,7 +1577,7 @@ function actionScopedToolParameterDefinition(
   ) {
     return { type: "string", enum: ["json", "toon"] };
   }
-  return key === "pause" || key === "releaseAssignment" || key === "hashAlgorithm"
+  return key === "pause" || key === "handoff" || key === "releaseAssignment" || key === "hashAlgorithm"
     ? PM_TOOL_PARAMETER_PROPERTIES[key]
     : BASE_TOOL_PARAMETER_PROPERTIES[key];
 }
@@ -1862,7 +1870,7 @@ function createLazyContractSchema(
 }
 
 /** Canonical version of the action-scoped strict MCP tool-parameters schema (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the MCP server, the `pm contracts` command, SDK consumers, and contract tests bind to one version constant. Bump the patch/minor for additive, backward-compatible schema changes; bump the MAJOR for breaking changes — the major also drives the `$id` `tool-parameters-v{major}` slug, so the two never drift. */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.21.1" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.22.0" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
@@ -1872,7 +1880,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR =
   PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
 
 /** Version of the provider-compatible flat tool-parameters schema (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict schema because the flat projection evolves independently. */
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.10.0" as const;
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.11.0" as const;
 
 /** Public contract for pm tool parameters schema, shared by SDK and presentation-layer consumers. */
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> =

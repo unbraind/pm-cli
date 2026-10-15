@@ -5,7 +5,7 @@
  * item enters a terminal lifecycle state.
  */
 import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError, type PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
+import { PmCliError } from "../core/shared/errors.js";
 import type { ItemMetadata } from "../types/index.js";
 
 /** The author-controlled field from which a terminal reason was derived. */
@@ -55,9 +55,21 @@ export interface CloseOperationResult {
   /** Metadata fields changed by the transition. */
   changed_fields: string[];
   /** Evidence-only update guidance when a successful warning close leaves acceptance fields missing. */
-  recovery?: PmCliErrorRecoveryPayload;
+  follow_up?: CloseEvidenceFollowUp;
   /** Validation and lifecycle policy receipts. */
   warnings: string[];
+}
+
+/** Optional evidence completion after a successful, durable close. */
+export interface CloseEvidenceFollowUp {
+  /** Close succeeded; this guidance does not request another close attempt. */
+  kind: "complete_close_evidence";
+  /** Only the evidence flags that remain missing. */
+  missing: string[];
+  /** Readable evidence-only update command. */
+  suggested_command: string;
+  /** Authoritative argument vector retaining the tracker and item identity. */
+  suggested_command_args: string[];
 }
 
 /** Candidate author-controlled sources for one terminal transition reason. */

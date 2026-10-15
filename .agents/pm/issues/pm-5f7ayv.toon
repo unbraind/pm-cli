@@ -1,0 +1,22 @@
+id: pm-5f7ayv
+title: Align claim guidance with atomic ownership refusal
+description: "Current pm claim --help --explain says non-terminal takeover does not require --force, and Agent Guide repeats the older takeover policy. Current SDK runClaim correctly rejects a different claim principal without force or permits an explicit --if-available skip. Reconcile user and agent guidance with the shipped atomic semantics without weakening ownership."
+type: Issue
+status: open
+priority: 3
+tags[3]: agent-ux,documentation,lifecycle
+created_at: "2026-10-15T04:39:17.189Z"
+updated_at: "2026-10-15T04:39:17.189Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Reproduce explained help and distinct-principal claim behavior; Search all public and generated claim ownership guidance; Preserve atomic test-and-set and non-destructive --if-available semantics; Validate documented examples without invoking an unauthorized real takeover
+parent: pm-dj98
+risk: low
+confidence: high
+expected_result: "Help and agent documentation describe the current claim, skip and explicitly approved takeover contracts consistently."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8t5x,related,"2026-10-15T04:39:17.189Z","harness:codex","cli:create:dep",detected
+  pm-gh1465,discovered_from,"2026-10-15T04:39:17.189Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-15T04:39:17.189Z","harness:codex","Duplicate check: strict complete2968-item all-status corpus including2688 closed items, fresh claim/takeover/help search plus open/in-progress lists. Full live closed ownership-guidance and atomic-claim lineage read; no open exact owner for stale explained-help guidance. Current explained help directly reproduces the old no-force sentence. Queued open/unclaimed; no change to already completed claim-safety behavior."
+body: ""

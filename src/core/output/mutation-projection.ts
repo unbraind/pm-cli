@@ -209,7 +209,7 @@ function projectCompactMutationEnvelope(result: unknown, includeItem: boolean): 
   return compact;
 }
 
-/** Keep lifecycle context, warnings, and executable recovery alongside the compact identity. */
+/** Keep lifecycle context, warnings, recovery, and successful follow-up alongside the compact identity. */
 function appendCompactMutationEvidence(result: Record<string, unknown>, item: Record<string, unknown>, compact: Record<string, unknown>): void {
   const closeReason =
     typeof result.close_reason === "string"
@@ -223,7 +223,9 @@ function appendCompactMutationEvidence(result: Record<string, unknown>, item: Re
 
   if (Array.isArray(result.warnings) && result.warnings.length > 0)
     compact.warnings = result.warnings;
-  if (isPlainObject(result.recovery)) compact.recovery = result.recovery;
+  for (const key of ["recovery", "follow_up", "handoff"]) {
+    if (isPlainObject(result[key])) compact[key] = result[key];
+  }
   if (typeof result.claimed_by === "string" || typeof result.released_by === "string") {
     for (const key of ["claimed_by", "released_by", "previous_assignee", "forced", "skipped", "available", "attempts", "suggestions"]) {
       if (Object.hasOwn(result, key)) compact[key] = result[key];

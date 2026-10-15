@@ -21824,6 +21824,13 @@
       "accepted_spellings": [
         "--author"
       ]
+    },
+    {
+      "command": "release",
+      "canonical_flag": "--handoff",
+      "accepted_spellings": [
+        "--handoff"
+      ]
     }
   ]
 }

@@ -67,6 +67,13 @@ const allSourceCoverageThresholds = {
   statements: 100,
 };
 
+// Keep real corpus/latency keepers out of competing contract workers without
+// changing their corpus, assertions, or deadlines (pm-bj7rq0).
+const sequentialPerformanceSpecs = [
+  "tests/integration/scratch-lifecycle.integration.spec.ts",
+  "tests/unit/scripts/point-read-costs.spec.ts",
+];
+
 export default defineConfig({
   cacheDir: ".cache/vitest",
   plugins: [stripScriptShebang],
@@ -117,7 +124,7 @@ export default defineConfig({
         test: {
           name: "contracts",
           include: ["tests/**/*.spec.ts"],
-          exclude: [...configDefaults.exclude, "tests/integration/scratch-lifecycle.integration.spec.ts"],
+          exclude: [...configDefaults.exclude, ...sequentialPerformanceSpecs],
           sequence: { groupOrder: 0 },
         },
       },
@@ -125,7 +132,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "lifecycle-performance",
-          include: ["tests/integration/scratch-lifecycle.integration.spec.ts"],
+          include: sequentialPerformanceSpecs,
           sequence: { groupOrder: 1 },
           fileParallelism: false,
           maxWorkers: 1,

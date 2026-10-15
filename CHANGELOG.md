@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- GH-1465: Represent implementer-to-verifier handoff as project context ([pm-gh1465](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1465.toon))
+
+### Fixed
+
+- GH-1464: Distinguish successful close follow-up from failure recovery ([pm-gh1464](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1464.toon))
+
 ## 2026.10.15 - 2026-10-15
 
 ### Fixed

@@ -946,6 +946,27 @@ recurrence reason, accepts only the workspace open or in-progress target, and
 returns the terminal evidence captured atomically before the update path clears
 it from active metadata.
 
+Lifecycle handoff and receipt guidance are tracked by
+[pm-gh1465](../.agents/pm/features/pm-gh1465.toon) and
+[pm-gh1464](../.agents/pm/issues/pm-gh1464.toon). Register a project-specific
+queue with `client.schemaAddStatus("review", { role: ["active"] })`, then call
+`client.release(id, { handoff: "review", message: "Implemented; run linked verification" })`.
+The SDK atomically changes status and clears ownership in one release history
+event, applying project ownership, type-transition, and workflow policies.
+`ReleaseMutationOptions` declares the handoff option; `ReleaseResult.handoff`
+identifies the source and destination states and evidence. `client.list({ status:
+"review" })` selects the verifier queue; context preserves its status without
+counting it as in-progress work. The destination must already exist, be
+non-terminal, and differ from the configured in-progress status. Handoff needs
+a claimed source and evidence message, and cannot be combined with pause.
+
+A successful warning-mode close with missing evidence returns optional
+`follow_up: CloseEvidenceFollowUp`. Its `kind` is `complete_close_evidence` and
+`suggested_command_args` selects an evidence-only update of the same item and
+tracker. Consumers migrating from successful-close `recovery` should read
+`follow_up` instead; a successful close never asks for a retry. Failed close
+commands retain failure recovery. See [close evidence guidance](CLOSE_EVIDENCE_RECOVERY.md).
+
 ### Atomic workspace transactions
 
 Tracked by [pm-4e12](../.agents/pm/features/pm-4e12.toon), with the VCS

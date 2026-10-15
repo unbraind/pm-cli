@@ -2,21 +2,25 @@ id: pm-gh1465
 title: "GH-1465: Represent implementer-to-verifier handoff as project context"
 description: Assess reported lifecycle ambiguity when completed implementation is released for verification; distinguish a customizable project review queue from active work and preserve handoff evidence.
 type: Feature
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-14T07:54:40.366Z"
-updated_at: "2026-10-14T18:59:21.281Z"
+updated_at: "2026-10-15T06:10:27.431Z"
+closed_at: "2026-10-15T06:09:34.666Z"
+completed_at: "2026-10-15T06:09:34.666Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce claimed release warning and current status contracts; Evaluate existing custom status/workflow primitives before adding baseline states; Design explicit history-backed handoff and verifier context without marking inactive work in progress; Cover context selection and close/reopen semantics
 parent: pm-dj98
 risk: medium
 confidence: medium
-expected_result: Projects can express implementation-complete verification queues and accountable handoff without leaving inactive items in progress.
+resolution: "Project-defined evidence-backed handoff is atomic across SDK CLI and MCP, obeys workflow and ownership policies, and preserves compact receipts. Concise release help fits the existing512-byte command ceiling; compact help is328 bytes with an82-token cap."
+expected_result: "Verification queues remain customizable and separate from active work, invalid handoffs preserve ownership/history, and progressive help stays within existing token-surface ceilings."
+actual_result: "Current150 linked lifecycle tests and14 final flag/handoff checks pass. Initial hosted coverage100 percent in all four metrics, static and Windows checks passed. The failed552/512 help attempt is preserved; corrected509/512 help passes all58 surfaces without ceiling increases. Build, native contract/lexicon gates and packed Node/Bun acceptance pass. Require revised-head hosted checks/review before merge."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-1wujzi,related,"2026-10-14T16:47:28.244Z","harness:codex","cli:update:dep",detected
-comments[2]:
+comments[14]:
   - created_at: "2026-10-14T07:54:40.366Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status corpus, fresh handoff searches and open/in-progress inventories; full canonical concurrency parent read. GH1465 body/all comments read. Report is intake, not independently reproduced; no exact existing owner found. Remains open/unclaimed."
@@ -24,4 +28,98 @@ comments[2]:
     author: "harness:codex"
     text: "Typed context link after full live reads: implementer-to-verifier handoff requires occupancy/claim-history context, which is already owned by pm-1wujzi. Record related rather than inventing a blocker or duplicate umbrella. This is planning enrichment; both owners remain open and unclaimed."
     edited_at: "2026-10-14T18:59:21.281Z"
+  - created_at: "2026-10-15T04:14:49.997Z"
+    author: "harness:codex"
+    text: "Live intake and design: custom schema statuses and existing SDK lifecycle operations already provide project-neutral state semantics. Implement explicit release --handoff <configured-status> with required evidence message, preserving custom workflow enforcement and ownership in one atomic item mutation; verifier queues use list/context status filters. Do not add a mandatory baseline review status or fabricate active ownership. Preserve close/reopen semantics and history; test SDK, CLI and MCP parity."
+  - created_at: "2026-10-15T04:20:09.973Z"
+    author: "harness:codex"
+    text: "Regression evidence: pre-change tests fail on undeclared CLI handoff and SDK ownership cleared with status still in_progress. Candidate SDK and CLI atomic transitions pass; flat MCP evidence hoisting needed correction. Existing context has no status filter, so correction to initial design note: query verification queue with list --status review; context retains original review status and its in_progress count excludes queued work. Ownership uses existing project enforcement; strict-policy non-owner refusal is tested explicitly."
+  - created_at: "2026-10-15T04:31:48.432Z"
+    author: "harness:codex"
+    text: "Current observability evidence after frozen lifecycle source: explicit per-process SDK tracing around a real successful stats action exported one pm.command root span with HTTP200 and flush=true. A fresh hosted Sentry trace view matches the exact exported trace/span identity and root pm stats at2026-10-15T04:30:31.526Z. Identifiers remain only in ignored private receipts. Recent unresolved high/critical issue gate is0; required telemetry gate passes at3.07 percent rolling finish errors with0 missing-code rows. API/worker/storage healthy and physical queue empty at the separate check. This is action-specific trace proof, separate from daily release and rolling historical reliability."
+  - created_at: "2026-10-15T04:43:47.625Z"
+    author: "harness:codex"
+    text: "Full-run findings resolved without excluding tests: move the new acceptance keeper into tests/integration/lifecycle to retain the120-file directory cap. The requested new --handoff capability adds exactly one canonical release flag: ratchet24 to25 with no spare allowance; measured release help is371 bytes/93 estimated tokens versus previous71, and only that help budget changes. Preserve all3079 historical spellings and freeze the new spelling as3080. All initial8 failures were these declared budgets/density plus local npm resolution; NODE_PATH set to the current npm global module root restores the unchanged real packed Node/Bun continuation keeper. Initial run:10470 pass,8 fail, no coverage report; it is not acceptance evidence."
+  - created_at: "2026-10-15T04:56:32.106Z"
+    author: "harness:codex"
+    text: "Final schema contract now versions strict4.22.0 and provider1.11.0. The strict release schema advertises that handoff requires message and rejects simultaneous pause; focused SDK/CLI/MCP plus schema-parity tests and final typechecks pass. Static source, security, contract, recovery and SDK gates passed through the graph check, which correctly caught one prose peer reference without its typed edge. Added the real related edge to the paired close item rather than weakening the graph ratchet. Final canonical static, stable packed consumers and full coverage are running in order."
+  - created_at: "2026-10-15T05:19:01.241Z"
+    author: "harness:codex"
+    text: "Stable packed acceptance passed: canonical pnpm smoke:npx exercised npx and bunx plus nine packaged extensions. Independently installed current artifact passes the handoff/close-follow-up/history oracle under both Node26.9.0 and Bun1.4.2; history verification and original-byte prefix preservation pass. Artifact size admission passes with distribution19995867 bytes below20000000; the total artifact includes its separately accounted runtime bundle. Full exact coverage is running; no publication is claimed for this source."
+  - created_at: "2026-10-15T05:23:14.454Z"
+    author: "harness:codex"
+    text: "Independent final CLI negative control exposed a transport omission: release --pause --handoff review exits0 and changes history because the CLI pause adapter drops handoff before the shared SDK refusal. SDK conflict tests already refuse correctly. Add a CLI-specific immutable-history/ownership regression and forward the declared handoff through that adapter; preserve the existing shared validation. The currently running full suite is pre-correction evidence and will not certify the revised source."
+  - created_at: "2026-10-15T05:36:19.379Z"
+    author: "harness:codex"
+    text: "Final adapter correction is verified: the same real CLI conflict changes from exit0/history-changed to exit2/history-unchanged. The current linked150-test handoff/composition/claim/update suite passes, including unchanged ownership on conflict. Full pre-correction source coverage was100 percent across all four metrics and10478 tests; the final adapter assertion is verified separately and exact-head hosted coverage/static remain mandatory. Final typecheck passes. No performance budget was relaxed."
+  - created_at: "2026-10-15T05:46:12.967Z"
+    author: "harness:codex"
+    text: "Complete final pnpm quality:static passes on the revised source, including dependency/security audit, exports/docstrings/lint, generated contracts/guidance, package/grammar/flag/refusal/context/gate registry, SDK public surface, all SDK import and CLI transport budgets, graph composition, record integrity and configured mutation admission. Mutation inventory348:341 killed and7 reviewed equivalents,97.9885 percent raw score; no budget changes. Current linked102 close and150 lifecycle tests pass. Hosted exact-head coverage, checks, analyzers and bot review are the remaining PR admission steps."
+  - created_at: "2026-10-15T06:07:04.175Z"
+    author: "harness:codex"
+    text: "Hosted immutable run38688843570 failed only Gates(smokes): commands.release552 bytes exceeds512 in measure-agent-token-surface, a separate gate outside quality:static. Retain the failed attempt. Shorten only the new handoff description to Needs --message (43 bytes saved), preserving deeper configured-queue explanation and required runtime validation. Keep the512-byte ceiling unchanged and tighten the earlier compact help allowance to its new actual measurement; no global token or performance budget increase."
+  - created_at: "2026-10-15T06:09:33.901Z"
+    author: "harness:codex"
+    text: "Correction verified: full rendered release help509/512 bytes; all58 agent token surfaces pass unchanged ceilings. Compact help328 bytes/82 tokens, with only its release baseline tightened from93 to82. Flag lexicon and generated contract snapshot checks pass, along with14 focused flag/handoff tests. Initial immutable hosted coverage is100/100/100/100, hosted static and Windows regression pass; only the original smoke help limit failed. Require the revised exact head to repeat all hosted acceptance."
+  - created_at: "2026-10-15T06:10:27.431Z"
+    author: "harness:codex"
+    text: "Additional PR1476 report inventory: CodSpeed reports11 unchanged benchmarks and no performance alteration; it retains a CPU-instrumentation system-call caveat for untouched createQueryFingerprint, which is not a wall-time claim or a product regression. Codecov reports all modified coverable lines covered and no failed tests. Sourcery substantive review is unavailable due its250000-character seven-day budget; Greptile review is unavailable because its trial ended. CodeRabbit completed the initial review with the accepted guide correction recorded on pm-gh1464. Request updated reviews after the revised push; unavailable reviews are limitations, never approvals."
+learnings[1]{created_at,author,text}:
+  "2026-10-15T04:30:48.580Z","harness:codex","A project-defined handoff queue plus one atomic status/ownership release preserves implementation context without adding compulsory baseline lifecycle states. Exercise default compact receipts independently from full SDK results: otherwise useful handoff or success-follow-up guidance can disappear in projection."
+files[25]{path,scope}:
+  scripts/release/flag-help-baseline.json,project
+  scripts/release/flag-spelling-baseline.json,project
+  sdk/public-surface.json,project
+  src/cli/register-operations.ts,project
+  src/core/output/mutation-projection.ts,project
+  src/core/schema/type-workflows.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/core.ts,project
+  src/sdk/index.ts,project
+  src/sdk/lifecycle/claim.ts,project
+  src/sdk/lifecycle/mcp-actions.ts,project
+  src/sdk/lifecycle/release-handoff.ts,project
+  src/sdk/lifecycle/task-composition.ts,project
+  src/sdk/lifecycle/update.ts,project
+  src/sdk/lifecycle/workflow-transition.ts,project
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/lifecycle/release-handoff.integration.spec.ts,project
+  tests/types/lifecycle-composition.test-d.ts,project
+  tests/unit/scripts/flag-lexicon-gate.spec.ts,project
+  tests/unit/sdk/action-schema-parity.spec.ts,project
+  tests/unit/sdk/execution/release-handoff.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle/release-handoff.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/sdk/execution/release-handoff.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,project,300,"harness:codex","2026-10-15T04:42:50.231Z",local_mutation,feat/lifecycle-handoff-and-success-followups
+test_runs[2]:
+  - run_id: test-local-mv91dbza-brmktt
+    kind: test
+    status: passed
+    started_at: "2026-10-15T04:25:30.815Z"
+    finished_at: "2026-10-15T04:25:59.781Z"
+    recorded_at: "2026-10-15T04:25:59.781Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release-handoff.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/sdk/execution/release-handoff.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mv93u4yj-elh6be
+    kind: test
+    status: passed
+    started_at: "2026-10-15T05:34:40.783Z"
+    finished_at: "2026-10-15T05:35:03.066Z"
+    recorded_at: "2026-10-15T05:35:03.066Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle/release-handoff.integration.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/unit/sdk/execution/release-handoff.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  docs/AGENT_GUIDE.md,project
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  docs/SDK.md,project
+close_reason: Delivered atomic configurable handoff and corrected hosted help-surface regression
 body: "Source: https://github.com/unbraind/pm-cli/issues/1465\n\n## Problem\n\nMulti-agent work commonly splits into **implementer → verifier**: an agent finishes, releases its claim, and an orchestrator (or reviewer) verifies the evidence before closing. pm has no lifecycle state for \"done, awaiting verification\". The allowed statuses are `draft, open, in_progress, blocked, closed, canceled`.\n\nSo every implementer ends with:\n\n```text\n$ pm release pm-dfrf\nstatus: \"in_progress\"\nwarnings[1]: released_unclaimed_in_progress\nsuggestions[1]: \"pm-dfrf remains in_progress and unclaimed. If work is paused, run pm release pm-dfrf --pause to move it to open.\"\n```\n\nThe warning is accurate, but in this workflow it is the intended outcome, not an anomaly. In one orchestration session (2026-10-14) two independent agents reported this warning as a probable pm bug. Neither available option fits:\n- `--pause` (back to `open`) loses the fact that the work is done.\n- `in_progress` + unclaimed reads as abandoned work. A verifier also cannot query its queue: `pm list --status in_progress` mixes active work with handed-off work.\n\n## Repro (2026.10.14)\n\n```bash\nd=$(mktemp -d) && cd \"$d\" && git init -q && pm init >/dev/null\nid=$(pm create --type Task --title t --description d --acceptance-criteria a --json | jq -r .id)\npm claim \"$id\" && pm update \"$id\" --status in_progress && pm release \"$id\"\npm update \"$id\" --status in_review   # Invalid --status value. Allowed: draft, open, in_progress, blocked, closed, canceled\n```\n\n## Suggested change\n\nOne of the following, or both:\n1. A first-class review state, e.g. `in_review` (terminal-adjacent, not counted as active work), with `pm list --status in_review` as the verifier's queue. `pm close` from `in_review` keeps the existing close validation, and `pm item reopen`/`pm update --status in_progress` sends it back with a reason.\n2. `pm release <id> --handoff [--to <principal>] [--message <evidence summary>]`. It records the handoff (who, when, to whom, summary) in history, sets the review state (or a `handoff_to` field), and does not emit `released_unclaimed_in_progress`.\n\nContext management benefit: `pm context` could surface \"awaiting your verification\" separately from \"in progress\". That is exactly the split an orchestrator needs when 5–10 agents finish at different times."

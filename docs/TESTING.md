@@ -650,6 +650,21 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   The real filesystem and CLI snapshot suite runs in the required Node 22
   telemetry regression job and native Windows regression job before merge.
 
+  Windows execution is tracked by [pm-bj7rq0](../.agents/pm/issues/pm-bj7rq0.toon).
+  Script and native keeper cohorts run independently on Windows Node 24. Their
+  source/script keeper steps retain the two-worker cap, and each cohort retains
+  the 12-minute deadline. The required
+  `Windows regression (Node 24)` check waits for both cohorts and fails if either
+  fails, is cancelled, or is skipped. This preserves every selected regression
+  while avoiding a shared serial job deadline. See GitHub's
+  [job dependency semantics](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-jobs#defining-prerequisite-jobs).
+
+  The real point-read corpus keeper runs with the lifecycle latency keeper in
+  the existing sequential performance phase after parallel contracts. Its
+  1,500-item corpus, work-observer assertions and 30-second deadline remain
+  unchanged. Standalone script identity is resolved from the test module URL,
+  independently of temporary SDK working directories.
+
   The real-filesystem regression for this contract is tracked by
   [pm-5iwfkj](../.agents/pm/issues/pm-5iwfkj.toon).
 

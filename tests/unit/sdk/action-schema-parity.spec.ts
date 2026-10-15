@@ -18,6 +18,7 @@ import { PM_TOOL_PARAMETER_PROPERTIES } from "../../../src/sdk/cli-contracts/too
 import { PM_POSITIONAL_ACTION_CONTRACTS } from "../../../src/sdk/cli-contracts/grammar-contracts.js";
 import {
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
+  PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION,
   pmToolActionNestedOptionKeys,
 } from "../../../src/sdk/cli-contracts/tool-schema.js";
 import { analyzeSdkActionCoverage } from "../../../src/sdk/runtime.js";
@@ -52,8 +53,18 @@ describe("action-scoped MCP schema parity", () => {
     expect(schema.properties?.definition).toMatchObject({ type: ["object", "string"] });
     expect(PM_TOOL_PARAMETER_PROPERTIES.definition).toEqual({ type: "object" });
   });
-  it("versions install planning and explicit claim receipt projections", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.21.1");
+  it("versions install planning and lifecycle handoff contracts", () => {
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.22.0");
+    expect(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("1.11.0");
+    const release = _testOnlyCliContracts.buildActionScopedToolSchema("release") as SchemaWithProperties & { allOf: Array<{ if?: { required?: string[] }; then?: unknown }> };
+    expect(release.properties?.handoff).toMatchObject({ type: "string" });
+    const handoffRequirement = release.allOf.find((entry) => entry.if?.required?.includes("handoff"));
+    expect(handoffRequirement?.if).toEqual({ required: ["handoff"] });
+    expect(handoffRequirement?.then).toEqual({ anyOf: [{ required: ["message"] }] });
+    expect(release.allOf).toContainEqual({ not: { allOf: [
+      { properties: { pause: { const: true } }, required: ["pause"] },
+      { properties: { handoff: { type: "string" } }, required: ["handoff"] },
+    ] } });
     for (const action of ["extension", "package", "extension-manage", "package-manage"] as const) {
       const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
       expect(schema.properties?.offline, action).toMatchObject({ type: "boolean" });

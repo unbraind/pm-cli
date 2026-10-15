@@ -3,9 +3,20 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import { PmClient } from "../../../../src/sdk/runtime.js";
-import { runRelease } from "../../../../src/sdk/lifecycle/claim.js";
+import { runRelease, type ReleaseMutationOptions } from "../../../../src/sdk/lifecycle/claim.js";
 
 describe("release handoff guidance", () => {
+  it("rejects malformed destinations and ownership-only bypass before changing queue state", async () => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath });
+      expect(context.runCli(["schema", "add-status", "review", "--role", "active"]).code).toBe(0);
+      await client.create({ id: "pm-bypasshandoff", title: "Handoff bypass boundary", type: "Task", createMode: "progressive" });
+      await client.claim("pm-bypasshandoff");
+      await expect(runRelease("pm-bypasshandoff", false, { path: context.pmPath }, { handoff: 42, message: "Ready" } as unknown as ReleaseMutationOptions)).rejects.toThrow("configured non-terminal status");
+      await expect(runRelease("pm-bypasshandoff", false, { path: context.pmPath }, { handoff: "review", message: "Ready", ownershipReleaseBypass: true } as ReleaseMutationOptions)).rejects.toThrow("only clears ownership");
+      expect((await client.get("pm-bypasshandoff")).item).toMatchObject({ status: "open", assignee: expect.any(String) });
+    });
+  });
   it("returns source SDK guidance for unfinished work and no warning for open work", async () => {
     await withTempPmPath(async (context) => {
       const client = new PmClient({ pmRoot: context.pmPath });

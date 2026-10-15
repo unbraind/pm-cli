@@ -26,6 +26,10 @@ void claim<true>("pm-example");
 void claim("pm-example", undefined, {});
 const methodReleaseBase: Promise<ReleaseResult> = client.release("pm-example");
 void methodReleaseBase;
+const methodHandoff: Promise<ReleaseResult> = client.release("pm-example", { handoff: "review", message: "Ready for verification" });
+void methodHandoff;
+// @ts-expect-error A handoff destination is a configured status token.
+void client.release("pm-example", { handoff: 42 });
 const methodReleaseFalse: Promise<ReleaseResult> = client.release("pm-example", { pause: false });
 void methodReleaseFalse;
 const methodReleaseComposed: Promise<PauseTaskResult> = client.release("pm-example", { pause: true });
@@ -36,6 +40,10 @@ void methodReleaseDynamic;
 void client.release<true>("pm-example");
 const helperReleaseBase: Promise<ReleaseResult> = release("pm-example");
 void helperReleaseBase;
+const helperHandoff: Promise<ReleaseResult> = release("pm-example", { handoff: "review", message: "Ready for verification" });
+void helperHandoff;
+// @ts-expect-error The convenience wrapper shares the status-token contract.
+void release("pm-example", { handoff: false });
 const helperReleaseFalse: Promise<ReleaseResult> = release("pm-example", { pause: false });
 void helperReleaseFalse;
 const helperReleaseComposed: Promise<PauseTaskResult> = release("pm-example", { pause: true });
