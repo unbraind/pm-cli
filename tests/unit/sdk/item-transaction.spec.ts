@@ -54,6 +54,58 @@ async function readItem(
 }
 
 describe("SDK bulk item-mutation transactions (GH-613)", () => {
+  it.each(["close", "release"] as const)("refreshes unique-key scans after an intervening %s", async (op) => {
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "Lifecycle scan target");
+      const closing = op === "close";
+      expect(context.runCli(closing ? ["update", target, "--status", "in_progress", "--json"] : ["claim", target, "--author", "bulk-agent", "--json"]).code).toBe(0);
+      const key = closing ? "status" : "assignee";
+      const first = closing ? "open" : "first-owner";
+      const last = closing ? "closed" : "bulk-agent";
+      const options = { pmRoot: context.pmPath, transactionId: `unique-scan-${op}`, author: "bulk-agent", createCompensation: "delete" as const, mutations: [
+        { op: "create", id: "pm-lifecycle-first", options: { title: "First", type: "Task", [key]: first }, unique: { key, value: first } },
+        closing ? { op: "close", id: target, reason: "Scan closure" } : { op: "release", id: target },
+        { op: "create", id: "pm-lifecycle-last", options: { title: "Last", type: "Task", [key]: last, ...(closing ? { closeReason: "Created terminal item" } : {}) }, unique: { key, value: last } },
+      ] satisfies BulkItemMutation[] };
+      for (const execute of [previewItemMutations, commitItemMutations]) {
+        if (closing) await expect(execute(options)).rejects.toMatchObject({ context: { code: "upsert_key_conflict" } });
+        else await expect(execute(options)).resolves.toBeDefined();
+      }
+      if (closing) {
+        expect((await readItem(context.pmPath, target)).status).toBe("in_progress");
+        await expect(readItem(context.pmPath, "pm-lifecycle-first")).rejects.toThrow();
+      } else {
+        expect((await readItem(context.pmPath, target)).assignee).toBeUndefined();
+        expect((await readItem(context.pmPath, "pm-lifecycle-last")).assignee).toBe("bulk-agent");
+      }
+    });
+  });
+
+  it.each(["into", "away", "created"] as const)("refreshes unique-key scans after an intervening update: %s", async (mode) => {
+    await withTempPmPath(async (context) => {
+      const target = mode === "created" ? "pm-scan-first" : createSeedItem(context, "Existing scan target");
+      const original = mode === "away" ? "B" : "original";
+      if (mode !== "created") expect(context.runCli(["update", target, "--description", original, "--json"]).code).toBe(0);
+      const options = { pmRoot: context.pmPath, transactionId: `unique-scan-${mode}`, author: "bulk-agent", createCompensation: "delete" as const, mutations: [
+        { op: "create", id: "pm-scan-first", options: { title: "First", type: "Task", description: "A" }, unique: { key: "description", value: "A" } },
+        { op: "update", id: target, options: { description: mode === "away" ? "C" : "B" } },
+        { op: "create", id: "pm-scan-last", options: { title: "Last", type: "Task", description: "B" }, unique: { key: "description", value: "B" } },
+      ] satisfies BulkItemMutation[] };
+      for (const execute of [previewItemMutations, commitItemMutations]) {
+        if (mode === "away") await expect(execute(options)).resolves.toBeDefined();
+        else await expect(execute(options)).rejects.toMatchObject({ context: { code: "upsert_key_conflict" } });
+      }
+      if (mode === "away") {
+        expect((await readItem(context.pmPath, target)).description).toBe("C");
+        expect((await readItem(context.pmPath, "pm-scan-last")).description).toBe("B");
+      } else {
+        await expect(readItem(context.pmPath, "pm-scan-first")).rejects.toThrow();
+        await expect(readItem(context.pmPath, "pm-scan-last")).rejects.toThrow();
+        if (mode !== "created") expect((await readItem(context.pmPath, target)).description).toBe(original);
+      }
+    });
+  });
+
   it.each([
     { key: "description", value: "shared", other: " shared ", options: { description: "shared" } },
     { key: "tags", value: ["shared"], other: ["shared"], options: { tags: '["shared"]' } },

@@ -291,7 +291,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/lifecycle/mutation-option-validation.ts"],
-    emitting_commands: ["mutation-option-validation"],
+    emitting_commands: ["item mutate"],
     canonical_code: "mutation_option_value_invalid",
     aliases: [],
   },

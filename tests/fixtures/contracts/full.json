@@ -23950,7 +23950,7 @@
       "class": "usage",
       "code": "mutation_option_value_invalid",
       "emitting_commands": [
-        "mutation-option-validation"
+        "item mutate"
       ],
       "exit_code": 2,
       "meaning": "Mutation option value invalid condition.",

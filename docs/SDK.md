@@ -1282,6 +1282,9 @@ concurrent writer created the key value after planning; matched records become
 updates carrying a `match` guard checked against the locked target document,
 after acquiring its item lock. It refuses with `upsert_match_changed` when the
 target's key changed in between, including changes made by ordinary item updates.
+Successful update, close and release steps invalidate cached unique-key scans
+inside a mixed batch, so subsequent creates see the current persisted values,
+including changes to earlier creates in that batch.
 The returned `rows` receipt maps every input record, in order, to its resolved
 `id` and `op`:
 

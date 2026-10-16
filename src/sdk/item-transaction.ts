@@ -141,14 +141,15 @@ export async function listUpsertKeyCandidates(
 
 /** Per-transaction index of existing upsert-key values, scanned lazily under the writer lock. */
 interface UniqueKeyIndex {
-  /** Existing item ids per canonical key value, excluding the ids this transaction creates. */
+  /** Existing item ids per canonical key value. */
   lookup(key: string): Promise<Map<string, string[]>>;
+  /** Drop cached scans after a step may have changed existing key values. */
+  invalidate(): void;
 }
 
-/** Build the lazily scanned unique-key index for one transaction; each key is scanned at most once, on first use inside the lock. */
+/** Lazily scan each key once until a non-create step changes the transaction's current item state. */
 function createUniqueKeyIndex(
   pmRoot: string,
-  ownCreateIds: ReadonlySet<string>,
 ): UniqueKeyIndex {
   const scans = new Map<string, Promise<Map<string, string[]>>>();
   const scan = async (key: string): Promise<Map<string, string[]>> => {
@@ -156,7 +157,6 @@ function createUniqueKeyIndex(
     const schemaContext = await resolveTransactionSchema(pmRoot, settings);
     const byValue = new Map<string, string[]>();
     for (const candidate of await listUpsertKeyCandidates(pmRoot, settings, schemaContext, key)) {
-      if (ownCreateIds.has(candidate.id)) continue;
       const stable = stableUpsertValue(candidate.value);
       byValue.set(stable, [...(byValue.get(stable) ?? []), candidate.id]);
     }
@@ -168,12 +168,10 @@ function createUniqueKeyIndex(
       scans.set(key, pending);
       return pending;
     },
+    invalidate() {
+      scans.clear();
+    },
   };
-}
-
-/** Ids a batch creates itself; they are never collisions for its own unique-key guards, so a replay keeps its original plan. */
-function ownCreateIds(mutations: readonly BulkItemMutation[]): Set<string> {
-  return new Set(mutations.filter((mutation) => mutation.op === "create").map((mutation) => mutation.id));
 }
 
 /** Refuse a planned create whose upsert key now collides with an item another writer created after planning. */
@@ -541,7 +539,7 @@ function buildCreateStep(
 
 /** Build the workspace-transaction step for one item update. */
 function buildUpdateStep(
-  config: { pmRoot: string; author: string; transactionId: string },
+  config: BulkMutationStepConfig,
   mutation: BulkItemUpdateMutation,
   stepId: string,
 ): WorkspaceTransactionStep {
@@ -585,6 +583,7 @@ function buildUpdateStep(
             validate: (document) => assertUpsertMatchCurrent(document, mutation.id, match),
           }, applyUpdate);
       const updatedItem = updated.item as Record<string, unknown>;
+      config.uniqueIndex.invalidate();
       return { id: String(updatedItem.id), op: "update" };
     },
     async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
@@ -595,7 +594,7 @@ function buildUpdateStep(
 
 /** Build the workspace-transaction step for one item closure. */
 function buildCloseStep(
-  config: { pmRoot: string; author: string; transactionId: string },
+  config: BulkMutationStepConfig,
   mutation: BulkItemCloseMutation,
   stepId: string,
 ): WorkspaceTransactionStep {
@@ -637,6 +636,7 @@ function buildCloseStep(
         { pmRoot: config.pmRoot },
       );
       const closedItem = closed.item as Record<string, unknown>;
+      config.uniqueIndex.invalidate();
       return { id: String(closedItem.id), op: "close" };
     },
     async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
@@ -647,7 +647,7 @@ function buildCloseStep(
 
 /** Build the workspace-transaction step for one claim release. */
 function buildReleaseStep(
-  config: { pmRoot: string; author: string; transactionId: string },
+  config: BulkMutationStepConfig,
   mutation: BulkItemReleaseMutation,
   stepId: string,
 ): WorkspaceTransactionStep {
@@ -689,6 +689,7 @@ function buildReleaseStep(
         { pmRoot: config.pmRoot },
       );
       const releasedItem = released.item as Record<string, unknown>;
+      config.uniqueIndex.invalidate();
       return { id: String(releasedItem.id), op: "release" };
     },
     async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
@@ -1041,7 +1042,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
     let validated = false;
     await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
-      const config: BulkMutationStepConfig = { ...identity, pmRoot: stagedRoot, createCompensation: "close", uniqueIndex: createUniqueKeyIndex(stagedRoot, ownCreateIds(mutations)) };
+      const config: BulkMutationStepConfig = { ...identity, pmRoot: stagedRoot, createCompensation: "close", uniqueIndex: createUniqueKeyIndex(stagedRoot) };
       const steps = mutations.map((mutation, index) => {
         const step = buildStepForMutation(config, mutation, index);
         return {
@@ -1086,7 +1087,7 @@ export async function commitItemMutations(
     author: options.author,
     transactionId: options.transactionId,
     createCompensation,
-    uniqueIndex: createUniqueKeyIndex(options.pmRoot, ownCreateIds(mutations)),
+    uniqueIndex: createUniqueKeyIndex(options.pmRoot),
   };
   const committed = await commitWorkspaceTransaction({
     pmRoot: options.pmRoot,

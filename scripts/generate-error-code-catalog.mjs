@@ -50,6 +50,7 @@ const QUERY_EMITTING_COMMAND_BY_MODULE = new Map([
 
 const LIFECYCLE_EMITTING_COMMAND_BY_MODULE = new Map([
   ["reopen", "item reopen"],
+  ["mutation-option-validation", "item mutate"],
 ]);
 
 const GENERATED_CATALOG_PART_COUNT = 2;
