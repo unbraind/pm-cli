@@ -669,6 +669,34 @@ describe("bulk creation documents (pm-gh1456)", () => {
     ).toThrow('does not recognize key "externalId"');
   });
 
+  it("reads an options-row upsert key through the declared option target when the metadata key differs", () => {
+    const aliased = resolveRuntimeFieldRegistry({
+      ...SETTINGS_DEFAULTS.schema,
+      fields: [{ key: "classification", metadata_key: "escape_class", type: "string", commands: ["create", "update"] }],
+    }).definitions;
+    const resolved = resolveItemMutationDocument(
+      '[{"op":"create","ref":"c","options":{"title":"Classified","type":"Task","classification":"production_defect"}},{"title":"Documented","type":"Task","escape_class":"review_caught_late"},{"op":"create","ref":"f","options":{"title":"Fielded","type":"Task","field":["escape_class=unclassified"]}}]',
+      { ...options, runtimeFields: aliased, upsert: { key: "escape_class", existing: [{ id: "pm-prod", value: "production_defect" }, { id: "pm-doc", value: "review_caught_late" }, { id: "pm-field", value: "unclassified" }] } },
+    );
+    expect(resolved.rows).toEqual([
+      { index: 0, ref: "c", id: "pm-prod", op: "update", upserted: true },
+      { index: 1, ref: "row-2", id: "pm-doc", op: "update", upserted: true },
+      { index: 2, ref: "f", id: "pm-field", op: "update", upserted: true },
+    ]);
+    expect(resolved.mutations[0]).toMatchObject({ match: { key: "escape_class", value: "production_defect" } });
+  });
+
+  it("refuses an explicit ref that collides with the alias a later row would be synthesized", () => {
+    expect(() =>
+      resolveItemMutationDocument('{"ref":"row-2","title":"Claims the alias","type":"Task"}\n{"title":"Needs row-2","type":"Task"}', options),
+    ).toThrow('Mutation 2 receives the synthesized ref "row-2", but another row declares that ref');
+    // Declaring an unused alias is fine; only a collision with a row that needs it refuses.
+    expect(resolveItemMutationDocument('{"ref":"row-9","title":"Free alias","type":"Task"}\n{"title":"Gets row-2","type":"Task"}', options).rows).toMatchObject([
+      { index: 0, ref: "row-9" },
+      { index: 1, ref: "row-2" },
+    ]);
+  });
+
   it("reports malformed JSON Lines by line number and refuses mixed row shapes", () => {
     expect(() =>
       resolveItemMutationDocument('{"title":"ok","type":"Task"}\n{not json', options),
@@ -848,6 +876,12 @@ describe("bulk creation documents (pm-gh1456)", () => {
       { ...options, runtimeFields, upsert: { key: "external_id", existing: [{ id: "pm-camel", value: "ext-camel" }] } },
     );
     expect(resolved.rows).toEqual([{ index: 0, ref: "camel", id: "pm-camel", op: "update", upserted: true }]);
+    // Without a declared field the camel-case option spelling still resolves the key.
+    const undeclared = resolveItemMutationDocument(
+      '[{"op":"create","ref":"camel","options":{"title":"Camel","type":"Task","externalId":"ext-camel"}}]',
+      { ...options, upsert: { key: "external_id", existing: [{ id: "pm-camel", value: "ext-camel" }] } },
+    );
+    expect(undeclared.rows).toEqual([{ index: 0, ref: "camel", id: "pm-camel", op: "update", upserted: true }]);
     expect(resolved.mutations[0]).toMatchObject({ options: { title: "Camel", externalId: "ext-camel" } });
     const mixed = resolveItemMutationDocument(
       '[{"op":"update","id":"pm-a","options":{"title":"Untouched"}},{"title":"Keyed","type":"Task","external_id":"ext-k"}]',

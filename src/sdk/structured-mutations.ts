@@ -803,10 +803,19 @@ function excludeOwnCreateIds(
 function synthesizeMissingReferences(
   rows: Array<Record<string, unknown>>,
 ): void {
+  const declared = new Set(rows.map((row) => row.ref).filter((ref): ref is string => typeof ref === "string"));
   for (const [index, row] of rows.entries()) {
     if (row.op !== "create" || row.ref !== undefined) continue;
     if (typeof row.id === "string" && row.id.trim().length > 0) continue;
-    row.ref = `${SYNTHESIZED_REFERENCE_PREFIX}${index + 1}`;
+    const synthesized = `${SYNTHESIZED_REFERENCE_PREFIX}${index + 1}`;
+    if (declared.has(synthesized)) {
+      // Without this check the collision surfaces later as a duplicate ref the document never declared twice.
+      throw new PmCliError(
+        `Mutation ${index + 1} receives the synthesized ref "${synthesized}", but another row declares that ref. Rename it or give mutation ${index + 1} its own ref; ${SYNTHESIZED_REFERENCE_PREFIX}<n> aliases are reserved for rows without one.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    row.ref = synthesized;
   }
 }
 
@@ -845,13 +854,18 @@ function convertItemDocumentRows(
   }
 }
 
-/** Read the upsert key value from a create row's document or options. */
+/** Read the upsert key value from a create row's document or options. A declared field whose metadata key differs from its option name is read through its option target. */
 function readUpsertKeyValue(
   row: Record<string, unknown>,
   key: string,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): unknown {
   if (isPlainObject(row.item) && row.item[key] !== undefined) return row.item[key];
   const options = isPlainObject(row.options) ? row.options : {};
+  const declared = runtimeFields.find((field) => field.metadata_key === key);
+  if (declared !== undefined && options[runtimeFieldOptionTarget(declared)] !== undefined) {
+    return options[runtimeFieldOptionTarget(declared)];
+  }
   const camel = key.replaceAll(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
   if (options[key] !== undefined) return options[key];
   if (options[camel] !== undefined) return options[camel];
@@ -904,11 +918,11 @@ function applyKeyedUpsert(
   const upserted = new Set<number>();
   for (const [index, row] of rows.entries()) {
     if (row.op !== "create") continue;
-    const stable = readStableUpsertKey(row, key, index, seen);
+    const stable = readStableUpsertKey(row, key, index, seen, runtimeFields);
     const match = resolveUpsertMatch(existingByValue.get(stable) ?? [], key, stable);
     if (match === undefined) {
       // No match before the lock: the commit re-checks this key under the lock.
-      row.unique = { key, value: readUpsertKeyValue(row, key) };
+      row.unique = { key, value: readUpsertKeyValue(row, key, runtimeFields) };
       continue;
     }
     const id = normalizeItemId(match, idPrefix);
@@ -916,7 +930,7 @@ function applyKeyedUpsert(
       // Later rows may still address this record as @ref; it now names the matched item.
       references[row.ref] = id;
     }
-    convertRowToUpsertUpdate(row, id, runtimeFields, { key, value: readUpsertKeyValue(row, key) });
+    convertRowToUpsertUpdate(row, id, runtimeFields, { key, value: readUpsertKeyValue(row, key, runtimeFields) });
     upserted.add(index);
   }
   return upserted;
@@ -941,8 +955,9 @@ function readStableUpsertKey(
   key: string,
   index: number,
   seen: Map<string, number>,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): string {
-  const value = readUpsertKeyValue(row, key);
+  const value = readUpsertKeyValue(row, key, runtimeFields);
   if (value === undefined || value === null || value === "") {
     throw new PmCliError(
       `Mutation ${index + 1} is missing the upsert key "${key}".`,

@@ -142,6 +142,9 @@ describe("item document text well-formedness (Sentry PM-CLI-3H)", () => {
   });
 
   it("keeps whole emoji and astral characters encodable", () => {
-    expect(serializeItemDocument(document({ description: "Ship it 🚀 \u{1F600}" }))).toContain("Ship it");
+    const description = "Ship it 🚀 \u{1F600}";
+    // Both astral characters survive serialization intact in either format.
+    expect(serializeItemDocument(document({ description }))).toContain(description);
+    expect(serializeItemDocument(document({ description }), { format: "json_markdown" })).toContain(JSON.stringify(description));
   });
 });

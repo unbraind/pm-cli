@@ -400,12 +400,9 @@ const HANDLERS: Record<string, ToolHandler> = {
         rows,
       };
     }
+    // The commit activates extensions from the same resolved root the plan and preview used.
     const result = await runWithActiveExtensions(
-      {
-        cwd: typeof args.cwd === "string" ? args.cwd : undefined,
-        path: typeof args.path === "string" ? args.path : undefined,
-        noExtensions: args.noExtensions === true,
-      },
+      extensionScope,
       () =>
         commitItemMutations({
           pmRoot,
