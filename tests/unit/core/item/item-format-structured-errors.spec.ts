@@ -82,7 +82,7 @@ describe("item document structured SDK errors", () => {
 
 describe("item document text well-formedness (Sentry PM-CLI-3H)", () => {
   const FIXED_TS = "2026-10-15T00:00:00.000Z";
-  function document(overrides: Record<string, unknown>) {
+  function document(overrides: Record<string, unknown> = {}) {
     return {
       metadata: {
         id: "pm-1",
@@ -125,6 +125,9 @@ describe("item document text well-formedness (Sentry PM-CLI-3H)", () => {
       expect.objectContaining<PmCliError>({ context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "body" }) }),
     );
     expect(serializeItemDocument({ ...document(), body: "well-formed 😀" }, { format: "json_markdown" })).toContain("well-formed 😀");
+    expect(() => serializeItemDocument(document({ body: "metadata \uD83D" }), { format: "json_markdown", extensionFieldNames: ["body"] })).toThrowError(
+      expect.objectContaining<PmCliError>({ context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "body" }) }),
+    );
   });
 
   it("scans extension values at any depth and object keys", () => {

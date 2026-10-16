@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { readdir } from "node:fs/promises";
 import {
   _testOnlyItemTransaction,
   WorkspaceTransactionInterruptedError,
   buildItemCompletionMutations,
   commitItemCompletion,
   commitItemMutations,
+  previewItemMutations,
   get,
   type BulkItemMutation,
   type BulkItemUniqueKey,
@@ -52,6 +54,33 @@ async function readItem(
 }
 
 describe("SDK bulk item-mutation transactions (GH-613)", () => {
+  it.each([
+    { key: "description", value: "shared", other: " shared ", options: { description: "shared" } },
+    { key: "tags", value: ["shared"], other: ["shared"], options: { tags: '["shared"]' } },
+  ])("refuses duplicate direct SDK unique guards before journals or item writes: $key", async (guard) => {
+    await withTempPmPath(async (context) => {
+      const before = await readdir(context.pmPath, { recursive: true });
+      for (const execute of [previewItemMutations, commitItemMutations]) {
+        await expect(execute({ pmRoot: context.pmPath, transactionId: "direct-unique-duplicates", author: "bulk-agent", mutations: [
+          { op: "create", id: "pm-guard-a", options: { title: "First", type: "Task", ...guard.options }, unique: { key: guard.key, value: guard.value } },
+          { op: "create", id: "pm-guard-b", options: { title: "Second", type: "Task", ...guard.options }, unique: { key: guard.key, value: guard.other } },
+        ] })).rejects.toMatchObject({ exitCode: 2, context: { code: "upsert_key_duplicate" } });
+        expect(await readdir(context.pmPath, { recursive: true })).toEqual(before);
+      }
+    });
+  });
+
+  it("keeps identical unique values independent across metadata keys", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await commitItemMutations({ pmRoot: context.pmPath, transactionId: "independent-unique-keys", author: "bulk-agent", mutations: [
+        { op: "create", id: "pm-title-guard", options: { title: "Shared", type: "Task", description: "Different" }, unique: { key: "title", value: "Shared" } },
+        { op: "create", id: "pm-description-guard", options: { title: "Other", type: "Task", description: "Shared" }, unique: { key: "description", value: "Shared" } },
+      ] });
+      expect(result.status).toBe("committed");
+      expect((await readItem(context.pmPath, "pm-description-guard")).description).toBe("Shared");
+    });
+  });
+
   it("commits a create/update/close batch atomically and replays the committed result", async () => {
     await withTempPmPath(async (context) => {
       const updateTarget = createSeedItem(context, "bulk-update-target");

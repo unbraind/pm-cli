@@ -755,6 +755,33 @@ function assertValidBulkMutation(
   }
 }
 
+/** Validate the complete batch before journal work, including uniqueness guards supplied directly through the SDK. */
+function assertValidBulkMutations(mutations: readonly BulkItemMutation[]): void {
+  if (mutations.length === 0) throw new TypeError("Bulk item transaction requires at least one mutation");
+  const keys = new Map<string, Map<string, number>>();
+  for (const [index, mutation] of mutations.entries()) {
+    assertValidBulkMutation(mutation, index);
+    if (mutation.op !== "create" || mutation.unique === undefined) continue;
+    const { key, value } = mutation.unique;
+    const values = keys.get(key) ?? new Map<string, number>();
+    const stable = stableUpsertValue(value);
+    const previous = values.get(stable);
+    if (previous !== undefined) {
+      throw new PmCliError(
+        `Bulk create mutations ${previous + 1} and ${index + 1} share the upsert key value ${JSON.stringify(stable)} for "${key}".`,
+        EXIT_CODE.USAGE,
+        {
+          code: "upsert_key_duplicate",
+          required: "Each create must carry a distinct unique key value within one batch.",
+          why: "Direct SDK batches must preserve the same uniqueness invariant as planned document rows.",
+        },
+      );
+    }
+    values.set(stable, index);
+    keys.set(key, values);
+  }
+}
+
 /** Evidence and explicit limits of a non-writing semantic transaction preview. */
 export interface ItemMutationPreviewValidation {
   /** True when the coordinator executed staged validation; false for an already committed journal replay. */
@@ -1003,8 +1030,7 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string, regis
 export async function previewItemMutations(options: Pick<CommitItemMutationsOptions, "pmRoot" | "transactionId" | "author" | "mutations">): Promise<ItemMutationPreviewValidation> {
   const identity = validateWorkspaceTransactionIdentity(options);
   const mutations = [...options.mutations];
-  if (mutations.length === 0) throw new TypeError("Bulk item transaction requires at least one mutation");
-  for (const [index, mutation] of mutations.entries()) assertValidBulkMutation(mutation, index);
+  assertValidBulkMutations(mutations);
   const registrations = getActiveExtensionRegistrations();
   const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
   const stagedRoot = path.join(root, "tracker");
@@ -1046,12 +1072,7 @@ export async function commitItemMutations(
   options: CommitItemMutationsOptions,
 ): Promise<CommitItemMutationsResult> {
   const mutations = [...options.mutations];
-  if (mutations.length === 0) {
-    throw new TypeError("Bulk item transaction requires at least one mutation");
-  }
-  for (const [index, mutation] of mutations.entries()) {
-    assertValidBulkMutation(mutation, index);
-  }
+  assertValidBulkMutations(mutations);
   const createCompensation = options.createCompensation ?? "close";
   if (!["close", "delete"].includes(createCompensation)) {
     throw new TypeError(

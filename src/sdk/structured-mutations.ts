@@ -607,14 +607,23 @@ function parseJsonLinesRows(input: string): unknown[] | null {
     .map((line, index) => ({ line: line.trim(), number: index + 1 }))
     .filter((entry) => entry.line.length > 0);
   if (candidates.length < 2) return null;
-  const rows: unknown[] = [];
-  for (const entry of candidates) {
-    let row: unknown;
+  const parsed = candidates.map((entry) => {
     try {
-      row = JSON.parse(entry.line) as unknown;
+      return { ...entry, ok: true as const, value: JSON.parse(entry.line) as unknown };
     } catch (error: unknown) {
+      return { ...entry, ok: false as const, error };
+    }
+  });
+  const first = parsed[0]!;
+  // A standalone opener or closing wrapper identifies formatted JSON; an
+  // independently complete object row otherwise establishes JSON Lines.
+  if (!first.ok && (first.line.startsWith("[") || first.line === "{" || parsed.at(-1)!.line === "}")) return null;
+  if (!parsed.some((entry) => entry.ok && isPlainObject(entry.value))) return null;
+  const rows: unknown[] = [];
+  for (const entry of parsed) {
+    if (!entry.ok) {
       throw new PmCliError(
-        `Mutation document line ${entry.number} must be one valid JSON object: ${describeUnknownError(error)}`,
+        `Mutation document line ${entry.number} must be one valid JSON object: ${describeUnknownError(entry.error)}`,
         EXIT_CODE.USAGE,
         {
           code: "stdin_json_invalid",
@@ -623,13 +632,13 @@ function parseJsonLinesRows(input: string): unknown[] | null {
         },
       );
     }
-    if (!isPlainObject(row)) {
+    if (!isPlainObject(entry.value)) {
       throw new PmCliError(
         `Mutation document line ${entry.number} must be a JSON object.`,
         EXIT_CODE.USAGE,
       );
     }
-    rows.push(row);
+    rows.push(entry.value);
   }
   return rows;
 }
@@ -665,10 +674,16 @@ function normalizeDocumentRow(
   row: Record<string, unknown>,
   index: number,
 ): Record<string, unknown> {
-  if (Object.hasOwn(row, "op")) {
-    return validateOperationRow(row, index);
+  const normalized = Object.hasOwn(row, "op")
+    ? validateOperationRow(row, index)
+    : normalizeCreateDocumentRow(row, index);
+  if (normalized.op === "create" && normalized.id === undefined && isPlainObject(normalized.item) && normalized.item.id !== undefined) {
+    if (typeof normalized.item.id !== "string") {
+      throw new PmCliError(`Mutation ${index + 1} item id must be a string.`, EXIT_CODE.USAGE);
+    }
+    normalized.id = normalized.item.id;
   }
-  return normalizeCreateDocumentRow(row, index);
+  return normalized;
 }
 
 /** Validate an explicit `op` row, allowing `item` only on create rows and never beside `options`. */

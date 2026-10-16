@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: agent-ux,"area:sdk",github-intake
 created_at: "2026-10-16T04:07:17.204Z"
-updated_at: "2026-10-16T04:09:47.325Z"
+updated_at: "2026-10-16T05:21:43.928Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Both ordinary and context-intent compaction preserve astral pairs across the cutoff and nested values; JSON and TOON render without manufactured lone surrogates; input immutability, unbounded reads, preserved exceptions and exact budget receipts remain covered"
@@ -16,6 +16,10 @@ confidence: medium
 severity: high
 expected_result: "Bounded output compaction preserves valid Unicode prefixes in JSON and TOON through a shared primitive, without changing budget accounting or unbounded output."
 actual_result: Reporter reproduction retained in the body; implementation and installed-artifact acceptance remain pending.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cxr0jb,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
+  pm-hb7ug8,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
+  pm-jsm9im,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-10-16T04:07:17.204Z","harness:codex","Duplicate check 2026-10-16: strict complete all-status corpus of 2971 items with zero omissions plus request-specific keyword searches and live open/in_progress reads. No item references GH-1478. Existing foundational owners retain their prior completed scope; this child records the distinct newly reported defect. Kept open and unclaimed while finishing PR 1479."
   "2026-10-16T04:09:47.325Z","harness:codex","Live Sentry correlation 2026-10-16: PM-CLI-3H remains unresolved with124 events, latest2026-10-15T16:48:14Z from pm-cli@2026.10.14 Windows CI. Auto Release run38842025410 and GitHub issue1483 are blocked by this fault. This output-projection defect is distinct from pm-jsm9im, whose implemented refusal rejects already-malformed persisted item inputs. The release gate must retain this blocker until the actual compaction boundary is fixed and verified."

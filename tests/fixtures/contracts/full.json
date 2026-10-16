@@ -26073,6 +26073,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
+        "sdk/item-transaction.ts",
         "sdk/structured-mutations.ts"
       ],
       "stability": "provisional"

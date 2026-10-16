@@ -2009,8 +2009,9 @@ function serializeJsonMarkdownItemDocument(
   const normalizedBody = normalizeBody(document.body ?? "");
   // Persisted item text is refused in every format, not only before TOON encoding.
   assertWellFormedItemText(
-    JSON.parse(JSON.stringify({ ...orderedMetadata, body: normalizedBody })) as Record<string, unknown>,
+    JSON.parse(JSON.stringify(orderedMetadata)) as Record<string, unknown>,
   );
+  assertWellFormedItemText({ body: normalizedBody });
   const serializedMetadata = JSON.stringify(orderedMetadata, null, 2);
   if (!normalizedBody) {
     return `${serializedMetadata}\n`;

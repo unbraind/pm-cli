@@ -698,6 +698,8 @@ describe("bulk creation documents (pm-gh1456)", () => {
   });
 
   it("reports malformed JSON Lines by line number and refuses mixed row shapes", () => {
+    expect(() => resolveItemMutationDocument('{not json}\n{"title":"ok","type":"Task"}', options)).toThrow("Mutation document line 1 must be one valid JSON object");
+    expect(() => resolveItemMutationDocument('[1]\n{"title":"ok","type":"Task"}', options)).toThrow("Mutation document line 1 must be a JSON object");
     expect(() =>
       resolveItemMutationDocument('{"title":"ok","type":"Task"}\n{not json', options),
     ).toThrow("Mutation document line 2 must be one valid JSON object");
@@ -720,6 +722,32 @@ describe("bulk creation documents (pm-gh1456)", () => {
     expect(() =>
       resolveItemMutationDocument('[{"op":"create","ref":"a","unknown":1}]', options),
     ).toThrow('does not recognize key "unknown"');
+  });
+
+  it.each([
+    '{\n  "title": "Pretty",\n  "type": invalid\n}',
+    '[\n  {"title":"Pretty","type":"Task"},\n]',
+    '{"title":"Pretty",\n  "type": invalid\n}',
+    '{"title": invalid\n"type": invalid',
+  ])("retains the whole-document diagnostic for malformed formatted JSON: %s", (input) => {
+    expect(() => resolveItemMutationDocument(input, options)).toThrow("Mutation document must be valid JSON");
+  });
+
+  it.each([
+    { item: { id: "pm-wrapped", title: "Wrapped", type: "Task" } },
+    { op: "create", item: { id: "pm-wrapped", title: "Wrapped", type: "Task" } },
+    { id: "pm-wrapped", item: { id: "pm-ignored", title: "Wrapped", type: "Task" } },
+    { op: "create", id: "pm-wrapped", item: { id: "pm-ignored", title: "Wrapped", type: "Task" } },
+  ])("uses document ids while preserving an explicit row id: %j", (row) => {
+    const resolved = resolveItemMutationDocument(JSON.stringify([{ ...row, ref: "wrapped" }, { op: "update", id: "@wrapped", options: { description: "Follow-up" } }]), options);
+    expect(resolved.mutations.map((mutation) => mutation.id)).toEqual(["pm-wrapped", "pm-wrapped"]);
+    expect(resolved.references).toEqual({ wrapped: "pm-wrapped" });
+    expect(resolved.rows.map((receipt) => receipt.id)).toEqual(["pm-wrapped", "pm-wrapped"]);
+    expect(() => resolveItemMutationDocument(JSON.stringify([row, { id: "pm-wrapped", title: "Collision", type: "Task" }]), options)).toThrow("Duplicate resolved create id");
+  });
+
+  it.each([123, null])("refuses a non-string wrapped document id: %j", (id) => {
+    expect(() => resolveItemMutationDocument(JSON.stringify({ item: { id, title: "Invalid id", type: "Task" } }), options)).toThrow("item id must be a string");
   });
 
   it("turns keyed create rows into updates of the one matching existing item", () => {
