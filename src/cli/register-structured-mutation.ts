@@ -62,9 +62,16 @@ async function runItemReopenAction(
 /** Read the mutation document from `--from <path>` (or `-` for stdin) or from the default stdin JSON channel. */
 async function readItemMutateInput(
   options: Record<string, unknown>,
+  command: Command,
 ): Promise<string> {
   const from = typeof options.from === "string" ? options.from.trim() : "";
   if (from.length > 0 && from !== "-") {
+    if (command.getOptionValueSource("stdinJson") === "cli") {
+      throw new PmCliError(
+        "pm item mutate cannot combine --from <path> with explicit --stdin-json. Select one input source.",
+        EXIT_CODE.USAGE,
+      );
+    }
     try {
       return await readFile(path.resolve(process.cwd(), from), "utf8");
     } catch (error: unknown) {
@@ -92,7 +99,7 @@ async function runItemMutateAction(
   command: Command,
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
-  const input = await readItemMutateInput(options);
+  const input = await readItemMutateInput(options, command);
   if (input.trim().length === 0) {
     throw new PmCliError(
       "pm item mutate requires a non-empty JSON batch on stdin or via --from <path>.",

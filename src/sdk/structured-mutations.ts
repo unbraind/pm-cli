@@ -562,12 +562,15 @@ function referencedAliases(value: unknown): string[] {
     .filter((reference): reference is string => reference !== undefined);
 }
 
+/** Retain original create aliases in the graph even after keyed upsert converts their rows to updates. */
 function assertAcyclicCreateReferences(
   rows: ReadonlyArray<Record<string, unknown>>,
+  inputReferences: ReadonlyArray<string | undefined>,
 ): void {
   const graph = new Map<string, string[]>();
-  for (const row of rows) {
-    if (row.op !== "create" || typeof row.ref !== "string") continue;
+  for (const [index, row] of rows.entries()) {
+    const reference = inputReferences[index];
+    if (reference === undefined) continue;
     const mutationOptions = isPlainObject(row.options) ? row.options : {};
     const dependencies = Array.isArray(mutationOptions.dep)
       ? mutationOptions.dep
@@ -575,7 +578,7 @@ function assertAcyclicCreateReferences(
         ? []
         : [mutationOptions.dep];
     graph.set(
-      row.ref,
+      reference,
       [mutationOptions.parent, mutationOptions.blockedBy, ...dependencies]
         .flatMap(referencedAliases),
     );
@@ -1129,7 +1132,7 @@ export function resolveItemMutationDocument(
         );
   convertItemDocumentRows(rows, options.runtimeFields ?? []);
   collectMutationReferences(rows, options, references);
-  assertAcyclicCreateReferences(rows);
+  assertAcyclicCreateReferences(rows, inputReferences);
 
   const resolvedRows = rows.map((row) => {
     const resolved = { ...row };

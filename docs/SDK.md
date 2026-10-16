@@ -2287,7 +2287,7 @@ same list/default semantics as core flags:
 - `default` (a scalar, or an array of scalars for a `list` flag) is applied when
   the flag is omitted; for a `list` flag the default is flattened into the
   accumulated array exactly like a provided value — comma-joined strings (e.g.
-  `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements.   A default
+  `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements. A default
   that would not cleanly coerce under the declared `value_type` (e.g.
   `value_type: "number", default: "abc"`) is rejected at registration.
 - `value_validation` (`"coerce"` | `"strict"`, tracked by

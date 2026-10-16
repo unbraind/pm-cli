@@ -131,6 +131,18 @@ describe("structured mutation command registration", () => {
     expect(mocks.runCreate).toHaveBeenCalledTimes(3);
   });
 
+  it("refuses an explicitly selected stdin channel beside a file before reading either", async () => {
+    const command = programWithGlobals();
+    registerStructuredMutationCommands(command);
+    mocks.stdin = '{"title":"Different stdin document","type":"Task"}';
+    await expect(command.parseAsync([
+      "item", "mutate", "--from", "missing-conflicting-input.jsonl", "--stdin-json",
+    ], { from: "user" })).rejects.toMatchObject({
+      exitCode: 2, message: expect.stringContaining("cannot combine --from <path> with explicit --stdin-json"),
+    });
+    expect(mocks.planItemMutationDocument).not.toHaveBeenCalled();
+  });
+
   it("reads mutation documents from --from paths and threads --upsert-key into the planner", async () => {
     const { mkdtemp, writeFile, rm } = await import("node:fs/promises");
     const os = await import("node:os");
@@ -145,11 +157,19 @@ describe("structured mutation command registration", () => {
       expect(mocks.commitItemMutations).toHaveBeenLastCalledWith(
         expect.objectContaining({ transactionId: "from-file", mutations: [expect.objectContaining({ id: "pm-a", op: "update" })] }),
       );
+      const fileCommand = programWithGlobals();
+      registerStructuredMutationCommands(fileCommand);
+      await fileCommand.parseAsync(["item", "mutate", "--from", file], { from: "user" });
       await expect(
         structuredMutationTestOnly.runItemMutateAction({ from: path.join(dir, "missing.jsonl") }, command),
       ).rejects.toMatchObject({ context: expect.objectContaining({ code: "mutation_document_unreadable" }) });
       await expect(structuredMutationTestOnly.runItemMutateAction({ from: "-" }, command)).rejects.toThrow("non-empty JSON batch");
       mocks.stdin = JSON.stringify([{ op: "update", id: "pm-a", options: { title: "A" } }]);
+      for (const source of [[], ["--from", "-"]]) {
+        const stdinCommand = programWithGlobals();
+        registerStructuredMutationCommands(stdinCommand);
+        await stdinCommand.parseAsync(["item", "mutate", "--stdin-json", ...source], { from: "user" });
+      }
       mocks.planItemMutationDocument.mockResolvedValueOnce({
         schema_version: 1,
         mutations: [{ op: "update", id: "pm-a", options: { title: "A" } }],

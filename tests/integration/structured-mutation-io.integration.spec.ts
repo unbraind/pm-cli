@@ -8,6 +8,17 @@ function itemId(payload: unknown): string {
 }
 
 describe("structured SDK/CLI/MCP mutation IO", () => {
+  it("names the missing or malformed MCP mutations argument before planning", async () => {
+    await withTempPmPath(async (context) => {
+      for (const mutations of [undefined, null, "not an array", {}, []]) {
+        await expect(handleRequest({
+          jsonrpc: "2.0", id: 1, method: "tools/call",
+          params: { name: "pm_mutate", arguments: { path: context.pmPath, mutations } },
+        })).rejects.toMatchObject({ exitCode: 2, message: "pm_mutate requires a non-empty mutations array." });
+      }
+    });
+  });
+
   it("applies, previews, and resumes atomic CLI batches", async () => {
     await withTempPmPath(async (context) => {
       const mutations = [
@@ -592,8 +603,13 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
         ].join("\n"),
         "utf8",
       );
+      const conflicting = context.runCli(["item", "mutate", "--from", file, "--stdin-json", "--dry-run", "--json"], {
+        input: '{"title":"Different stdin input","type":"Task"}', expectJson: true,
+      });
+      expect(conflicting.code, conflicting.stderr).toBe(2);
+      expect(conflicting.stderr).toContain("cannot combine --from <path> with explicit --stdin-json");
       const dryRun = context.runCli(["item", "mutate", "--from", file, "--dry-run", "--json"], { expectJson: true });
-      expect(dryRun.code).toBe(0);
+      expect(dryRun.code, dryRun.stderr).toBe(0);
       expect(dryRun.json).toMatchObject({
         dry_run: true,
         transaction_id_source: "derived",

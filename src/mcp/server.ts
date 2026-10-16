@@ -11,6 +11,7 @@ import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
   resolvePmCliVersion,
+  EXIT_CODE,
   PmCliError,
   decodeHtmlEntitiesInOptions,
   levenshteinDistanceWithinLimit,
@@ -362,6 +363,9 @@ const HANDLERS: Record<string, ToolHandler> = {
     );
   },
   pm_mutate: async (args) => {
+    if (!Array.isArray(args.mutations) || args.mutations.length === 0) {
+      throw new PmCliError("pm_mutate requires a non-empty mutations array.", EXIT_CODE.USAGE);
+    }
     const explicitTransactionId =
       args.transactionId === undefined ? undefined : readRequiredString(args, "transactionId");
     const upsertKey =

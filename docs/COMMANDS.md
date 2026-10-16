@@ -649,6 +649,10 @@ pm item mutate \
 JSON
 ```
 
+`--from <path>` selects a file and rejects an explicitly supplied `--stdin-json`.
+Default stdin input, explicit `--stdin-json` without a file, and `--from -`
+remain supported.
+
 Use `--dry-run` to validate and preview without acquiring a writer lock. Reuse
 the exact transaction id and deterministic batch after interruption: the SDK
 journal resumes pending steps and never duplicates a successfully applied

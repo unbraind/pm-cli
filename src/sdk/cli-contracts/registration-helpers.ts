@@ -72,13 +72,13 @@ export async function applyActiveCommandResultService(
   return override.handled ? override.result : result;
 }
 
-/** Synchronize parser-derived options with Commander and its action arguments. */
+/** Synchronize parser-derived values without relabeling declared defaults as explicit CLI input. */
 export function syncCommanderActionOptions(
   actionCommand: Command,
   commandOptions: Record<string, unknown>,
 ): void {
   for (const [key, value] of Object.entries(commandOptions)) {
-    actionCommand.setOptionValueWithSource(key, value, "cli");
+    actionCommand.setOptionValueWithSource(key, value, actionCommand.getOptionValueSource(key) ?? "cli");
   }
 }
 

@@ -750,6 +750,18 @@ describe("bulk creation documents (pm-gh1456)", () => {
     expect(() => resolveItemMutationDocument(JSON.stringify({ item: { id, title: "Invalid id", type: "Task" } }), options)).toThrow("item id must be a string");
   });
 
+  it.each([false, true])("refuses parent cycles after keyed upsert, including two matches: %s", (bothMatched) => {
+    const rows = [
+      { op: "create", ref: "a", options: { title: "A", type: "Task", externalId: "key-a", parent: "@b" } },
+      { op: "create", ref: "b", options: { title: "B", type: "Task", externalId: "key-b", parent: "@a" } },
+    ];
+    const existing = [{ id: "pm-existing-a", value: "key-a" }];
+    if (bothMatched) existing.push({ id: "pm-existing-b", value: "key-b" });
+    expect(() => resolveItemMutationDocument(JSON.stringify(rows), {
+      ...options, runtimeFields, upsert: { key: "external_id", existing },
+    })).toThrow("Mutation reference cycle");
+  });
+
   it("turns keyed create rows into updates of the one matching existing item", () => {
     const upsert = {
       key: "external_id",
