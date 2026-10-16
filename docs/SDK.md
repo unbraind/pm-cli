@@ -1302,9 +1302,12 @@ const result = await commitItemMutations({
 console.log(plan.transaction_id_source, plan.rows, result.recovered);
 ```
 
-Re-running the same document replays the same transaction (`recovered: true`);
-a changed document under the same explicit id refuses with
-`transaction_plan_mismatch`.
+After a successful commit, an unchanged resolved mutation plan replays the
+same transaction (`recovered: true`). The planner excludes items created by
+that transaction from upsert matching, retaining those create rows.
+If document edits, external matches, or schema context change the resolved
+plan under that committed id, the coordinator refuses with
+`transaction_plan_mismatch`; use a new transaction id for the changed import.
 
 `buildItemCompletionMutations` creates the ordered evidence/update, close, and
 release plan for inspection. `commitItemCompletion` executes that plan through

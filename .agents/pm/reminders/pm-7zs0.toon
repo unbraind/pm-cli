@@ -6,9 +6,9 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-16T07:31:13.013Z"
+updated_at: "2026-10-16T09:43:06.452Z"
 reminders[1]{at,text}:
-  "2026-10-16T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
+  "2026-10-17T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[220]:
+comments[221]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -747,6 +747,9 @@ comments[220]:
     author: "harness:codex"
     text: "Latest Sentry inventory before PR 1479 push now reports two unresolved faults: PM-CLI-3H has 196 events and last activity at 2026-10-16 04:25:56 UTC (output compaction, pm-gh1478); PM-CLI-3M has one event at 04:05:53 UTC (numeric raw-option value escaping as trim TypeError, pm-bulk-option-validation). The current automatic-release blocker is still issue 1483 and no recovery release was triggered. GitHub Dependabot, code-scanning and secret-scanning inventories remain empty."
     edited_at: "2026-10-16T07:31:08.608Z"
+  - created_at: "2026-10-16T09:43:04.766Z"
+    author: "harness:codex"
+    text: "Rearmed the one-shot release-health check for 2026-10-17 at 06:00 UTC before releasing this claim. The prior occurrence and failed-release observations remain in immutable history. This schedules the next health audit; it dispatches no release and changes no publication guard."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent
