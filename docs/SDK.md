@@ -1135,8 +1135,8 @@ with `transaction_create_compensated` while a creation's latest closure belongs
 to compensation, even if its close prose was edited. Review its immutable history
 and explicitly reopen it before retrying; the SDK preserves later lifecycle
 decisions instead of silently reopening the item or reporting it committed.
-A later explicit user close takes precedence over the earlier compensation
-close and is preserved when the transaction resumes.
+A later explicit user close or status update takes precedence over the earlier
+compensation close and is preserved when the transaction resumes.
 Updates stamp a
 durable history marker for applied-detection and are compensated by restoring
 the captured pre-mutation version; closes treat an already-terminal target as

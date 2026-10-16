@@ -337,7 +337,7 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     });
   });
 
-  it("preserves a later user closure when retrying a compensated creation", async () => {
+  it.each(["close", "update"])("preserves a later user closure when retrying a compensated creation (%s)", async (operation) => {
     await withTempPmPath(async (context) => {
       const options = { pmRoot: context.pmPath, transactionId: "later-user-close", author: "bulk-agent", mutations: [
         { op: "create", id: "pm-user-closed", options: { title: "User closed", type: "Task" } },
@@ -346,7 +346,8 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       await expect(commitItemMutations(options)).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
       expect(context.runCli(["create", "--id", "pm-user-later", "--title", "Later target", "--type", "Task", "--json"]).code).toBe(0);
       await reopen("pm-user-closed", "Review compensated creation", {}, { pmRoot: context.pmPath });
-      await close("pm-user-closed", "User completion", { author: "later-user" }, { pmRoot: context.pmPath });
+      if (operation === "close") await close("pm-user-closed", "User completion", { author: "later-user" }, { pmRoot: context.pmPath });
+      else await update("pm-user-closed", { status: "closed", closeReason: "User completion", author: "later-user" }, { pmRoot: context.pmPath });
       const before = await readItem(context.pmPath, "pm-user-closed");
       for (let attempt = 0; attempt < 2; attempt++) {
         await expect(commitItemMutations(options)).resolves.toMatchObject({ status: "committed", recovered: true });

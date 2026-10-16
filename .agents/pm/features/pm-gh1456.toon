@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-16T22:01:41.716Z"
-closed_at: "2026-10-16T22:01:37.731Z"
-completed_at: "2026-10-16T22:01:37.731Z"
+updated_at: "2026-10-16T22:27:57.570Z"
+closed_at: "2026-10-16T22:27:55.332Z"
+completed_at: "2026-10-16T22:27:55.332Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Document and execute the existing atomic create batch as the immediate recovery; Any create-many adapter delegates to public SDK transaction primitives; JSONL/ref resolution and keyed upsert preserve input order and validate before persistence; Interrupted or repeated imports preserve complete history and stable idempotency
 parent: pm-n7rr
 risk: medium
 confidence: medium
-resolution: "SDK-backed JSONL/document bulk creation, keyed guarded upserts, stable references and transaction replay are shared by CLI and MCP. Retry recognizes the latest compensation closure, refuses unresolved rollback and preserves subsequent user lifecycle decisions."
-expected_result: "Bulk creation remains atomic and replay-safe; compensation-owned closed creates require explicit reconciliation, while later user closure and intentionally terminal creation recovery remain intact."
-actual_result: "107 linked SDK/CLI/MCP cases pass, including two new public-SDK lifecycle scenarios; isolated 81e baseline fails exactly the later-user-close regression and passes the terminal-create control. Typecheck and focused lint pass. Prior full local deadline remains qualified; final-head hosted exact coverage, analyzers and renewed review are pending delivery gates."
+resolution: "SDK-first JSONL/document bulk creation, stable references, guarded upserts and replay are shared by CLI and MCP. Latest-close compensation ownership preserves later explicit or routed user closure. The generated refusal census includes the additive conflict code."
+expected_result: "Compensation retries preserve user lifecycle decisions, and generated SDK/agent contracts agree with implemented refusals under unchanged quality bounds."
+actual_result: "108 linked SDK/CLI/MCP cases pass with unchanged c1dfe27 production code. Three public SDK controls pass on c1dfe27; the earlier81e baseline fails the later-explicit-close regression. Typecheck/lint and generated agent-surface, catalogue and full-contract checks pass; first-party artifact is19,119,278 bytes across1684files. Final hosted checks and renewed incremental review remain required."
 dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
   pm-y9hq,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
@@ -32,7 +32,7 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,related,"2026-10-16T05:26:38.990Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-16T06:04:05.871Z","harness:codex","cli:update:dep",detected
   pm-jm7m3o,related,"2026-10-16T17:11:59.882Z","harness:codex","cli:update:dep",detected
-comments[53]:
+comments[55]:
   - created_at: "2026-10-13T18:12:30.417Z"
     author: "harness:codex"
     text: "{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
@@ -194,6 +194,12 @@ comments[53]:
   - created_at: "2026-10-16T22:01:29.269Z"
     author: "harness:codex"
     text: "Latest review refinement: inspect only the latest immutable close event when recognizing transaction compensation. A later explicit reopen followed by a user close is preserved on both first successful retry and committed replay. A terminal creation interrupted before journal recording also resumes without being mistaken for compensation. The 107-case linked SDK/CLI/MCP cohort passes; an isolated worktree at 81e35e54e59533410b359e407524cce750e24065 fails the new later-user-close regression while the terminal-create positive control passes. Four-project typecheck and focused ESLint pass. Final-head hosted exact coverage and renewed incremental review remain required; no coverage thresholds or review filters changed."
+  - created_at: "2026-10-16T22:23:37.833Z"
+    author: "harness:codex"
+    text: "Additional release review control: the public update --status closed path delegates to routeCloseStatusUpdate/runClose and already records the canonical close event. The c1dfe27 baseline passes all three focused controls (explicit close, routed status update and interrupted terminal creation), so the speculative broader history scan was discarded before commit. Production remains the reviewed latest-close predicate. The expanded108-case linked SDK/CLI/MCP cohort passes with that production implementation. Added the routed status update as a positive lifecycle preservation control and clarified the SDK documentation; typecheck and focused lint pass."
+  - created_at: "2026-10-16T22:27:52.345Z"
+    author: "harness:codex"
+    text: "Hosted c1dfe27 static gate identified a stale generated REFUSAL_CLOSURE_CENSUS: the new transaction_create_compensated catalogue entry was missing from its census. Regenerated through contracts:agent-surfaces:update; the census now lists419 codes and400 explicitly uncovered rows, retaining19 executable codes against the unchanged18-code ratchet. Generated agent surfaces, error catalogue and full command contract checks pass. This is a generated-document synchronization fix; the production latest-close predicate remains unchanged from c1dfe27. The final linked SDK/CLI/MCP cohort passes108 cases, including routed-update and interrupted-terminal positive controls."
 learnings[5]{created_at,author,text}:
   "2026-10-16T04:25:15.096Z","harness:codex",A workspace transaction lock serializes bulk transactions but does not fence ordinary item writers. Revalidate a planned match against the same document read under the target item lock; resolve shortened SDK ids to canonical identity before scoping a target-specific guard. Prove the race at the actual item-lock boundary with a separate ordinary writer and verify its history remains intact.
   "2026-10-16T07:31:18.265Z","harness:codex",Preserve Commander option origins when forwarding normalized SDK values. A default-true flag must remain a default; relabeling every value as CLI input breaks safe explicit-input conflict checks.
@@ -346,28 +352,6 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/bulk-create-scalar-validation-claim-guidance
 test_runs[20]:
-  - run_id: test-local-mvb36xqb-gfhu5n
-    kind: test
-    status: failed
-    started_at: "2026-10-16T14:35:38.892Z"
-    finished_at: "2026-10-16T14:52:32.963Z"
-    recorded_at: "2026-10-16T14:52:32.963Z"
-    passed: 0
-    failed: 1
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-  - run_id: test-local-mvb4ec8t-87nyz7
-    kind: test
-    status: passed
-    started_at: "2026-10-16T15:25:34.889Z"
-    finished_at: "2026-10-16T15:26:17.981Z"
-    recorded_at: "2026-10-16T15:26:17.981Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
   - run_id: test-local-mvb4fpj6-mivjy0
     kind: test
     status: failed
@@ -566,9 +550,39 @@ test_runs[20]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
-docs[3]{path,scope,note}:
-  docs/AGENT_GUIDE.md,project,bulk recipe
-  docs/COMMANDS.md,project,Bulk creation section
-  docs/SDK.md,project,Preservation-first compensated create retry contract
-close_reason: Bulk creation and compensated retry lifecycle acceptance implemented and verified locally; final hosted delivery proceeds through PR 1479.
+  - run_id: test-local-mvbj77tl-ezazoz
+    kind: test
+    status: passed
+    started_at: "2026-10-16T22:18:25.942Z"
+    finished_at: "2026-10-16T22:20:39.896Z"
+    recorded_at: "2026-10-16T22:20:39.896Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvbjacot-277ixo
+    kind: test
+    status: passed
+    started_at: "2026-10-16T22:21:58.113Z"
+    finished_at: "2026-10-16T22:23:06.172Z"
+    recorded_at: "2026-10-16T22:23:06.172Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+docs[4]:
+  - path: docs/AGENT_GUIDE.md
+    scope: project
+    note: bulk recipe
+  - path: docs/COMMANDS.md
+    scope: project
+    note: Bulk creation section
+  - path: docs/generated/REFUSAL_CLOSURE_CENSUS.md
+    scope: project
+  - path: docs/SDK.md
+    scope: project
+    note: Preservation-first compensated create retry contract
+close_reason: "Bulk SDK implementation, lifecycle review controls and generated refusal census synchronized for reviewed delivery."
 body: "Source: https://github.com/unbraind/pm-cli/issues/1456\n\n## Problem\n`pm update many` exists, but there is no CLI counterpart for creating items in bulk. An agent that needs to record N items has to spawn N `pm create` processes, and each one pays full startup plus workspace load. Typical cases:\n- importing findings or review threads;\n- mirroring notes into the tracker;\n- seeding a plan;\n- converting a spec into tasks.\n\n**Measured on 2026.10.13** (Linux, Node 26, a tracker of about 940 items growing to about 1,200):\n- 266 sequential `pm --json create --type <custom type> --title … --description … --body-file … --tags …` calls took **10 m 24 s wall time**, about 2.3 s per item.\n- 2 m 54 s of that was user CPU, so most of the cost is per-process startup and workspace reads, repeated 266 times.\n- The run is not atomic. An interruption leaves a partial import, and the caller has to build its own idempotency, for example by listing existing items and matching on a custom key field.\n\nThe SDK already has the primitive. #613 added a bulk multi-item atomic-mutation helper on top of `commitWorkspaceTransaction`. It just isn't reachable from the CLI.\n\n## Proposal\n`pm create many` (alias `pm create --from -`) reads JSONL or a JSON array from a file or stdin. Each record uses the same field names as `pm create` flags or their JSON equivalents, including custom fields, `body`, `tags`, dependencies and comments.\n- One process and one workspace transaction: all records are created or none, with history and merge receipts written as usual.\n- `--dry-run` validates every record first: types, required custom fields, dependency references (including references to other records in the same batch, through client-side `ref` keys), and duplicate-title detection against the existing tracker.\n- Optional idempotency key, `--upsert-by <field>`: an existing item whose field matches is updated instead of duplicated. That makes re-running an import safe.\n- The `--json` receipt lists created and updated ids in input order, mapped to each record's `ref`.\n\n## Why it matters for agents\nProject management is context management. The moments an agent wants to write many items at once (triage imports, review-thread capture, plan expansion) are exactly the moments a 2-3 s per-item cost and a non-atomic loop push it to skip tracking or to batch lossy summaries instead.\n\n\nIntake scope\n\nExtend the shipped atomic SDK/CLI mutation primitive with a discoverable bulk-create workflow, JSONL input and optional keyed upsert. The existing pm item mutate surface already commits ordered create/update/close batches and must be reused rather than reimplemented.\n\nDuplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive."
