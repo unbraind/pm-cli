@@ -10,7 +10,7 @@
 
 ### Fixed
 
-- GH-1478: Read-output compaction splits valid emoji at 240 code units, crashing TOON and emitting lone surrogates in JSON ([pm-gh1478](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1478.toon))
+- Preserve surrogate pairs in bounded JSON and TOON output ([pm-gh1478](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1478.toon))
 - Refuse item text with an unpaired surrogate as a typed field error before TOON encoding ([pm-jsm9im](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jsm9im.toon))
 - Return typed refusals for malformed raw duration options ([pm-bulk-option-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bulk-option-validation.toon))
 - Align claim guidance with atomic ownership refusal ([pm-5f7ayv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5f7ayv.toon))

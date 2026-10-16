@@ -1,12 +1,12 @@
 id: pm-gh1478
-title: "GH-1478: Read-output compaction splits valid emoji at 240 code units, crashing TOON and emitting lone surrogates in JSON"
+title: Preserve surrogate pairs in bounded JSON and TOON output
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1478. Bounded output compaction preserves valid Unicode prefixes in JSON and TOON through a shared primitive, without changing budget accounting or unbounded output."
 type: Issue
 status: closed
 priority: 1
 tags[3]: agent-ux,"area:sdk",github-intake
 created_at: "2026-10-16T04:07:17.204Z"
-updated_at: "2026-10-16T20:59:27.847Z"
+updated_at: "2026-10-16T21:53:04.748Z"
 closed_at: "2026-10-16T20:38:15.817Z"
 completed_at: "2026-10-16T20:38:15.817Z"
 author: "harness:codex"
@@ -23,12 +23,13 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-cxr0jb,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
   pm-hb7ug8,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
   pm-jsm9im,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-16T04:07:17.204Z","harness:codex","Duplicate check 2026-10-16: strict complete all-status corpus of 2971 items with zero omissions plus request-specific keyword searches and live open/in_progress reads. No item references GH-1478. Existing foundational owners retain their prior completed scope; this child records the distinct newly reported defect. Kept open and unclaimed while finishing PR 1479."
   "2026-10-16T04:09:47.325Z","harness:codex","Live Sentry correlation 2026-10-16: PM-CLI-3H remains unresolved with124 events, latest2026-10-15T16:48:14Z from pm-cli@2026.10.14 Windows CI. Auto Release run38842025410 and GitHub issue1483 are blocked by this fault. This output-projection defect is distinct from pm-jsm9im, whose implemented refusal rejects already-malformed persisted item inputs. The release gate must retain this blocker until the actual compaction boundary is fixed and verified."
   "2026-10-16T20:12:21.015Z","harness:codex","Release recovery scope: live scheduled Auto Release 38867421163 failed before publication at sentry-telemetry-gate with PM-CLI-3H and PM-CLI-3M. The raw duration fix is already part of PR1479; implementing the distinct Unicode output-compaction repair in the same PR to enable an October16 release after reviewed merge and live gate verification."
   "2026-10-16T20:38:08.450Z","harness:codex","Source remediation for release recovery: ordinary read budgets, context-intent compaction, compact recurrence receipts and action-only diagnostics now share unicodeSafePrefix from the existing private text-normalization module. It backs up only when a boundary splits a valid surrogate pair and preserves already-malformed input for the encoder to reject. All 111 focused cases pass, including cutoff238/239/240, nested arrays/records, exact rendered token receipts, unchanged original input, unbounded reads and real CLI/MCP JSON/TOON output. Four regressions fail against prior716fb6a5a emitting implementations with the new utility available but unwired; three positive controls pass. Four-project typecheck, ESLint, actual global source-quality gate, unchanged SDK surface and docs links pass. Directory and docstring budgets remain unchanged; the test lives in the existing read-output cohort and the helper in the existing shared module. Full local coverage previously timed out at1200 seconds before this addition without a final artifact; exact-head hosted full coverage remains mandatory. Both Sentry faults remain unresolved until the reviewed source is merged and the resolutions can be bound to its commit."
   "2026-10-16T20:55:12.580Z","harness:codex","Final delivery evidence: all nine packed npm/npx/Bun/bunx consumer workflows pass with the completed output-compaction code. The terminal defect gate passes350 governed defects with zero findings; tracker context, graph, record integrity and full storage/history validation pass. No items remain in progress. Canonical full-source coverage remains a hosted exact-head requirement; the recorded local1200-second timeout is retained."
+  "2026-10-16T21:53:04.747Z","harness:codex","Review wording correction: the generated Fixed entry must describe the delivered Unicode-safe behavior. Renamed this closed source item through PM, preserving its implementation closure and history; regenerate through pm-changelog rather than editing CHANGELOG.md."
 learnings[2]{created_at,author,text}:
   "2026-10-16T20:38:09.721Z","harness:codex","UTF-16 slice offsets can bisect a valid astral pair. Bound output through one shared prefix primitive, back up rather than exceed the declared ceiling, and estimate the rendered result after adding its suffix. Preserve malformed input for established validation instead of silently substituting replacement characters."
   "2026-10-16T20:59:27.846Z","harness:codex",Directory ceilings apply to tests as well as production. Put read-output regressions in their existing SDK cohort and shared text helpers in an existing private utility module; verify the actual source gate and canonical generated archive after moving files.

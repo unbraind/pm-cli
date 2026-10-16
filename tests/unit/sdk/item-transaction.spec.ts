@@ -7,6 +7,7 @@ import {
   commitItemCompletion,
   commitItemMutations,
   previewItemMutations,
+  close,
   get,
   reopen,
   update,
@@ -333,6 +334,40 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       expect((await readItem(context.pmPath, "pm-retry-created")).status).toBe("open");
       await expect(commitItemMutations(options)).resolves.toMatchObject({ status: "committed", recovered: true });
       expect((await readItem(context.pmPath, "pm-retry-created")).status).toBe("open");
+    });
+  });
+
+  it("preserves a later user closure when retrying a compensated creation", async () => {
+    await withTempPmPath(async (context) => {
+      const options = { pmRoot: context.pmPath, transactionId: "later-user-close", author: "bulk-agent", mutations: [
+        { op: "create", id: "pm-user-closed", options: { title: "User closed", type: "Task" } },
+        { op: "close", id: "pm-user-later", reason: "Later row" },
+      ] satisfies BulkItemMutation[] };
+      await expect(commitItemMutations(options)).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+      expect(context.runCli(["create", "--id", "pm-user-later", "--title", "Later target", "--type", "Task", "--json"]).code).toBe(0);
+      await reopen("pm-user-closed", "Review compensated creation", {}, { pmRoot: context.pmPath });
+      await close("pm-user-closed", "User completion", { author: "later-user" }, { pmRoot: context.pmPath });
+      const before = await readItem(context.pmPath, "pm-user-closed");
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await expect(commitItemMutations(options)).resolves.toMatchObject({ status: "committed", recovered: true });
+        expect(await readItem(context.pmPath, "pm-user-closed")).toEqual(before);
+        expect((await readItem(context.pmPath, "pm-user-later")).status).toBe("closed");
+      }
+    });
+  });
+
+  it("recovers an intentionally terminal creation interrupted before journal recording", async () => {
+    await withTempPmPath(async (context) => {
+      const options = { pmRoot: context.pmPath, transactionId: "terminal-create-recovery", author: "bulk-agent", mutations: [
+        { op: "create", id: "pm-terminal-created", options: { title: "Terminal create", type: "Task", status: "closed", closeReason: "Created as terminal", createMode: "progressive" } },
+      ] satisfies BulkItemMutation[] };
+      await expect(commitItemMutations({ ...options, onTransition(transition) {
+        if (transition.transition === "step_applied") throw new WorkspaceTransactionInterruptedError("crash after terminal create before journal recording");
+      } })).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+      const before = await readItem(context.pmPath, "pm-terminal-created");
+      expect(before.status).toBe("closed");
+      await expect(commitItemMutations(options)).resolves.toMatchObject({ status: "committed", recovered: true });
+      expect(await readItem(context.pmPath, "pm-terminal-created")).toEqual(before);
     });
   });
 

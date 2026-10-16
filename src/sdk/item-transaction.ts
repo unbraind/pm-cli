@@ -509,10 +509,11 @@ function buildCreateStep(
           snapshot.id,
         );
         const reason = `Compensated: interrupted bulk transaction ${config.transactionId}`;
-        const compensated = history.some((entry) => entry.op === "close" && entry.patch.some((change) =>
+        const latestClose = history.filter((entry) => entry.op === "close").at(-1);
+        const compensated = latestClose?.patch.some((change) =>
           change.op === "add" || change.op === "replace"
             ? change.path === "/metadata/close_reason" && change.value === reason
-            : false));
+            : false) ?? false;
         if (compensated) throw new PmCliError(
           `Created item ${snapshot.id} remains closed by transaction compensation; explicitly reopen or reconcile it before retrying.`,
           EXIT_CODE.CONFLICT,
@@ -520,7 +521,7 @@ function buildCreateStep(
             code: "transaction_create_compensated",
             item_id: snapshot.id,
             required: "Review the compensated item and explicitly reopen it before retrying the same document.",
-            why: "An existing closed item is not an applied creation. Automatically reopening it could overwrite later lifecycle decisions.",
+            why: "This item's latest closure belongs to transaction compensation. Automatically reopening it could overwrite later lifecycle decisions.",
             nextSteps: [`Run pm item reopen ${snapshot.id} "Retry compensated creation" after reviewing its history, then retry the transaction.`],
           },
         );
