@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-16T09:58:58.191Z"
-closed_at: "2026-10-16T09:56:07.959Z"
-completed_at: "2026-10-16T09:56:07.959Z"
+updated_at: "2026-10-16T11:37:24.854Z"
+closed_at: "2026-10-16T11:37:23.593Z"
+completed_at: "2026-10-16T11:37:23.593Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Document and execute the existing atomic create batch as the immediate recovery; Any create-many adapter delegates to public SDK transaction primitives; JSONL/ref resolution and keyed upsert preserve input order and validate before persistence; Interrupted or repeated imports preserve complete history and stable idempotency
 parent: pm-n7rr
 risk: medium
 confidence: medium
-resolution: "SDK-first bulk creation validates JSON/JSONL documents and direct batch uniqueness, preserves wrapped IDs and stable references, guards selected keys under the actual item lock, and rejects reference cycles involving matched upserts. CLI input selection distinguishes explicit flags from preserved parser defaults; MCP rejects malformed mutation arrays before planning. Private canonical key comparison returns zero for equal strings. SDK documentation distinguishes committed-plan replay from changes that produce transaction_plan_mismatch."
+resolution: "SDK-first bulk creation validates JSON/JSONL documents and direct batch uniqueness, preserves wrapped IDs and stable references, guards selected keys under the actual item lock, and rejects reference cycles involving matched upserts. CLI input selection distinguishes explicit flags from preserved parser defaults; MCP rejects malformed mutation arrays before planning. Private canonical key comparison returns zero for equal strings. SDK documentation distinguishes committed-plan replay from changes that produce transaction_plan_mismatch. Agent, command and SDK guides consistently require the original transaction identity and unchanged committed plan; fully compensated attempts may accept a new plan."
 expected_result: "Bulk identities, uniqueness, diagnostics and match preconditions remain consistent through SDK, CLI and MCP without partial writes."
-actual_result: "The selected 91 linked SDK/CLI/MCP tests pass, including replay controls. Final documentation passes build and the docs/skills link gate. Head 85d868f passed all 26 required hosted checks with 100/100/100/100 coverage; metadata and documentation follow-up still requires its own exact-head CI and full review. Earlier functional, classifier and negative-control evidence remains recorded."
+actual_result: "Build and documentation link gate pass after documentation-only corrections. Runtime and tests are unchanged from head 94345b4, whose 26 required hosted checks passed with 100/100/100/100 source coverage and zero bounded-mutation timeouts. Final documentation/metadata head requires renewed full review and its own hosted checks."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
   pm-y9hq,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
@@ -31,7 +31,7 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-srns,related,"2026-10-16T05:21:42.403Z","harness:codex","cli:update:dep",detected
   pm-998juj,related,"2026-10-16T05:26:38.990Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-16T06:04:05.871Z","harness:codex","cli:update:dep",detected
-comments[33]:
+comments[34]:
   - created_at: "2026-10-13T18:12:30.417Z"
     author: "harness:codex"
     text: "{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
@@ -133,6 +133,9 @@ comments[33]:
   - created_at: "2026-10-16T09:58:58.190Z"
     author: "harness:codex"
     text: "Final package verification refreshed npm latest: pm-changelog is now 2026.10.16. Both configured generation and check installed that version successfully and reported CHANGELOG.md unchanged across 2677 closed items. Storage/history validation reports ok=true with no warnings; all three tracker assurance gates and terminal defect evidence pass. No claimed or in-progress items remain."
+  - created_at: "2026-10-16T11:37:22.702Z"
+    author: "harness:codex"
+    text: "Final full-review documentation follow-up: verified deriveMutationTransactionId hashes the exact input bytes and parseJournal accepts changed plans only after full compensation. Agent, command and SDK guides now distinguish original transaction identity, unchanged committed/resumable plans, formatting-only edits and fully compensated retries. Runtime code and tests are unchanged. pnpm build and pnpm quality:docs-links pass; reviewed parent 94345b4 passed all 26 required checks, 100/100/100/100 coverage and bounded mutation controls (341 killed, 7 equivalent, zero timeouts). New documentation/metadata head still requires hosted checks and full review."
 learnings[2]{created_at,author,text}:
   "2026-10-16T04:25:15.096Z","harness:codex",A workspace transaction lock serializes bulk transactions but does not fence ordinary item writers. Revalidate a planned match against the same document read under the target item lock; resolve shortened SDK ids to canonical identity before scoping a target-specific guard. Prove the race at the actual item-lock boundary with a separate ordinary writer and verify its history remains intact.
   "2026-10-16T07:31:18.265Z","harness:codex",Preserve Commander option origins when forwarding normalized SDK values. A default-true flag must remain a default; relabeling every value as CLI input breaks safe explicit-input conflict checks.
@@ -318,5 +321,5 @@ docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,bulk recipe
   docs/COMMANDS.md,project,Bulk creation section
   docs/SDK.md,project,Describe matched upsert preconditions inside the target item lock
-close_reason: Complete bulk mutation implementation and clarify committed-plan replay after final review.
+close_reason: Complete final review documentation for byte-derived identity and compensated retry semantics.
 body: "Source: https://github.com/unbraind/pm-cli/issues/1456\n\n## Problem\n`pm update many` exists, but there is no CLI counterpart for creating items in bulk. An agent that needs to record N items has to spawn N `pm create` processes, and each one pays full startup plus workspace load. Typical cases:\n- importing findings or review threads;\n- mirroring notes into the tracker;\n- seeding a plan;\n- converting a spec into tasks.\n\n**Measured on 2026.10.13** (Linux, Node 26, a tracker of about 940 items growing to about 1,200):\n- 266 sequential `pm --json create --type <custom type> --title … --description … --body-file … --tags …` calls took **10 m 24 s wall time**, about 2.3 s per item.\n- 2 m 54 s of that was user CPU, so most of the cost is per-process startup and workspace reads, repeated 266 times.\n- The run is not atomic. An interruption leaves a partial import, and the caller has to build its own idempotency, for example by listing existing items and matching on a custom key field.\n\nThe SDK already has the primitive. #613 added a bulk multi-item atomic-mutation helper on top of `commitWorkspaceTransaction`. It just isn't reachable from the CLI.\n\n## Proposal\n`pm create many` (alias `pm create --from -`) reads JSONL or a JSON array from a file or stdin. Each record uses the same field names as `pm create` flags or their JSON equivalents, including custom fields, `body`, `tags`, dependencies and comments.\n- One process and one workspace transaction: all records are created or none, with history and merge receipts written as usual.\n- `--dry-run` validates every record first: types, required custom fields, dependency references (including references to other records in the same batch, through client-side `ref` keys), and duplicate-title detection against the existing tracker.\n- Optional idempotency key, `--upsert-by <field>`: an existing item whose field matches is updated instead of duplicated. That makes re-running an import safe.\n- The `--json` receipt lists created and updated ids in input order, mapped to each record's `ref`.\n\n## Why it matters for agents\nProject management is context management. The moments an agent wants to write many items at once (triage imports, review-thread capture, plan expansion) are exactly the moments a 2-3 s per-item cost and a non-atomic loop push it to skip tracking or to batch lossy summaries instead.\n\n\nIntake scope\n\nExtend the shipped atomic SDK/CLI mutation primitive with a discoverable bulk-create workflow, JSONL input and optional keyed upsert. The existing pm item mutate surface already commits ordered create/update/close batches and must be reused rather than reimplemented.\n\nDuplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive."

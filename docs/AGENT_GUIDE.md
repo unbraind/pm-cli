@@ -181,7 +181,9 @@ Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_append`/`pm_close`, and
 
 `pm create --parent <id>` fails fast when the parent cannot be found. Use `--allow-missing-parent` only for deliberate imports or staged backlog reconstruction.
 
-To record many items at once (triage imports, review-thread capture, plan expansion), do not loop `pm create`: write one record per line and commit them in one workspace transaction with `pm item mutate --from items.jsonl --json` (`--dry-run` first). Records use `pm create` field names, `@row-<n>`/`@ref` references link records to each other, the transaction id is derived from the document so a re-run replays instead of duplicating, and `--upsert-key <field>` turns records that match an existing item into updates. `pm create many` refuses with this route. See [Bulk creation](COMMANDS.md#bulk-creation-pm-create-many-route).
+To record many items at once (triage imports, review-thread capture, plan expansion), do not loop `pm create`: write one record per line and commit them in one workspace transaction with `pm item mutate --from items.jsonl --json` (`--dry-run` first). Records use `pm create` field names, `@row-<n>`/`@ref` references link records to each other, and `--upsert-key <field>` turns records that match an existing item into updates. `pm create many` refuses with this route.
+
+The default transaction id derives from the exact document bytes, so even a formatting-only edit selects a new id. To replay a committed import, reuse its transaction id and keep the resolved mutation plan unchanged. For formatting-only edits, pass the original id explicitly with `--transaction-id <id>`; replay still requires the same resolved plan. See [Bulk creation](COMMANDS.md#bulk-creation-pm-create-many-route).
 
 ## Guide Routing for Agents
 

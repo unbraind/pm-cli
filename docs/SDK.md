@@ -1302,9 +1302,11 @@ const result = await commitItemMutations({
 console.log(plan.transaction_id_source, plan.rows, result.recovered);
 ```
 
-After a successful commit, an unchanged resolved mutation plan replays the
-same transaction (`recovered: true`). The planner excludes items created by
-that transaction from upsert matching, retaining those create rows.
+After a successful commit, reuse its transaction id and unchanged resolved
+mutation plan to replay it (`recovered: true`). A formatting-only edit changes
+the derived id; pass the original id explicitly to replay an unchanged plan.
+The planner excludes items created by that transaction from upsert matching,
+retaining those create rows.
 If document edits, external matches, or schema context change the resolved
 plan under that committed id, the coordinator refuses with
 `transaction_plan_mismatch`; use a new transaction id for the changed import.

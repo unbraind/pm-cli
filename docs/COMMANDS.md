@@ -631,8 +631,8 @@ unique `ref` and omit `id`; exact `@ref` values work in target ids, `parent`,
 before the writer lock and returns a `references` receipt plus an input-ordered
 `rows` receipt (`index`, `ref`, `id`, `op`, `upserted`). When `--transaction-id`
 is omitted the id is derived from the exact document bytes
-(`transaction_id_source: "derived"`), so re-running the same import replays the
-same journal instead of duplicating items:
+(`transaction_id_source: "derived"`), so identical bytes select the same
+journal. Replaying a committed import also requires an unchanged resolved plan:
 
 ```bash
 pm item mutate \
@@ -656,10 +656,13 @@ remain supported.
 Use `--dry-run` to validate and preview without acquiring a writer lock. Reuse
 the exact transaction id and deterministic batch after interruption: the SDK
 journal resumes pending steps and never duplicates a successfully applied
-step. A different plan under an already journaled id refuses with
-`transaction_plan_mismatch`; pass a new `--transaction-id` to commit it as its
-own transaction. `--create-compensation close|delete`, `--lock-ttl-seconds`, and
-`--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
+step. A different plan under a committed or resumable journal refuses with
+`transaction_plan_mismatch`; pass a new `--transaction-id` to commit that changed
+plan as its own transaction. A fully compensated attempt has nothing left to
+resume and may accept a new plan under the same transaction id. Formatting-only
+edits change a derived id; pass the original id explicitly to replay them when
+the resolved plan is unchanged. `--create-compensation close|delete`,
+`--lock-ttl-seconds`, and `--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
 surface is `pm_mutate`.
 
 #### Bulk creation (`pm create many` route)
