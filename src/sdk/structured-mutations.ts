@@ -900,9 +900,9 @@ function readUpsertKeyValue(
   return assignment?.slice(key.length + 1);
 }
 
-/** Total, locale-independent order for the distinct keys of one object: code-unit comparison never reports two of them as equal, unlike collation. */
+/** Locale-independent code-unit order, with equal strings comparing as zero. */
 function compareCodeUnits(left: string, right: string): number {
-  return left < right ? -1 : 1;
+  return left < right ? -1 : Number(left !== right);
 }
 
 /** Sort plain-object keys recursively so equivalent object values serialize identically regardless of insertion order; arrays keep their order. */
