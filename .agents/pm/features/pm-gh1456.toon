@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-16T06:04:06.763Z"
-closed_at: "2026-10-16T05:40:20.042Z"
-completed_at: "2026-10-16T05:40:20.042Z"
+updated_at: "2026-10-16T06:26:08.989Z"
+closed_at: "2026-10-16T06:26:06.518Z"
+completed_at: "2026-10-16T06:26:06.518Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Document and execute the existing atomic create batch as the immediate recovery; Any create-many adapter delegates to public SDK transaction primitives; JSONL/ref resolution and keyed upsert preserve input order and validate before persistence; Interrupted or repeated imports preserve complete history and stable idempotency
 parent: pm-n7rr
 risk: medium
 confidence: medium
-resolution: "SDK-first bulk creation supports JSON/JSONL document rows, stable references, preserved wrapped IDs, keyed upserts and item-lock-held match validation. Direct SDK preview and commit reject duplicate unique guards before journals or writes. CLI and MCP share the planner and actionable typed refusals."
+resolution: "SDK-first bulk creation supports JSON/JSONL document rows, stable references, preserved wrapped IDs, keyed upserts and item-lock-held match validation. Direct SDK preview and commit reject duplicate unique guards before journals or writes. CLI and MCP share the planner and actionable typed refusals. Document option validation, envelope normalization and forward-reference identity at their implementation boundaries."
 expected_result: "Bulk identities, uniqueness, diagnostics and match preconditions remain consistent through SDK, CLI and MCP without partial writes."
-actual_result: "106 linked tests pass, including deterministic ordinary-writer race controls, canonical short IDs, malformed formatted JSON, wrapped IDs and direct SDK duplicate guards. Nine pre-fix regressions fail and the corrected focused tests pass. Earlier parent full coverage is 100/100/100/100; final current-head CI is pending."
+actual_result: "106 linked bulk tests, generated contract checks and focused ESLint pass after documentation review. The preceding exact runtime head8fa4816af4580cfb37d77e97b5906f5b6b5220d6 passes all26 required contexts, full100/100/100/100 source coverage and341 killed plus seven equivalent bounded mutations with no timeout. CodeRabbit full review has no actionable findings. Final documentation-head checks and full review remain required."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
   pm-y9hq,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
@@ -31,7 +31,7 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-srns,related,"2026-10-16T05:21:42.403Z","harness:codex","cli:update:dep",detected
   pm-998juj,related,"2026-10-16T05:26:38.990Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-16T06:04:05.871Z","harness:codex","cli:update:dep",detected
-comments[25]{created_at,author,text}:
+comments[26]{created_at,author,text}:
   "2026-10-13T18:12:30.417Z","harness:codex","{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
   "2026-10-13T18:39:47.760Z","harness:codex","Hosted static CI38446450129 correctly caught the missing expected_result in this newly created intake. Added the explicit intended outcome through PM without changing acceptance criteria, implementation scope or gate thresholds. This planning correction does not claim the reported feature/defect is implemented."
   "2026-10-15T12:29:33.446Z","harness:claude-code","Implementation note (2026-10-15): bulk creation lands on the existing atomic surface instead of a new top-level command. The SDK resolver now accepts JSON Lines, single records, and op-less create documents (pm create field names, optionally wrapped as {ref, item}); records without ref/id receive row-<n> aliases; declared schema fields are admitted on create/update option rows via their option targets. A new planner, planItemMutationDocument, reads the workspace (schema hydration also under the configuration-only dry-run scope, where declared fields otherwise vanish), derives a stable transaction id from the document bytes when none is given, and resolves --upsert-key against existing items (custom or core field): one match becomes an update (rows[].upserted), a missing key, an in-batch duplicate, or several matches refuse before any write. CLI adds --from <path> and --upsert-key and makes --transaction-id optional; MCP pm_mutate accepts item rows, upsertKey and an optional transactionId. pm create many refuses with bulk_create_route and names the route. The journal/plan mismatch is now a typed transaction_plan_mismatch refusal instead of an unknown_error.\n\nMeasured in a sandbox: 2-record JSON Lines import committed in one transaction; replay returned recovered:true with no duplicates; upsert by external_id updated the matched item and created the unmatched one; dry-run under the configuration-only scope validated with the declared field present.\n"
@@ -57,6 +57,7 @@ comments[25]{created_at,author,text}:
   "2026-10-16T05:36:21.576Z","harness:codex","Final static reached the generated error-code catalog check and correctly detected that direct SDK duplicate-upsert refusal adds another emitting source. Regenerated the catalog with pnpm contracts:errors:update; the public code and recovery contract are unchanged. Four-project typecheck and the terminal defect-evidence gate pass. Rerunning the complete static command after this generated-source refresh."
   "2026-10-16T05:40:18.547Z","harness:codex","Regenerated the runtime contract fixture after refreshing its SDK error catalog dependency. The generated diff only adds sdk/item-transaction.ts to the existing upsert_key_duplicate emitting sources. No error code, schema, threshold or refusal policy changes. Full static will be rerun with both generated artifacts synchronized."
   "2026-10-16T06:02:18.466Z","harness:codex","Final frozen-source package checks pass: npx and bunx smoke across nine packages; artifact gate retains the unchanged20000000 first-party-byte ceiling with19100342 bytes/1678 files and the complete4745-file runtime closure. Graph composition and record integrity pass; all114 linked functional cases pass. Four TypeScript projects, generated contracts, terminal defect evidence, version consistency and tracked-secret scan pass. Latest pm-changelog2026.10.15 generates/checks the changelog. The complete local static command did not pass: qualified SDK/CLI performance failures and a bounded-mutation timeout are retained in the related canonical diagnosis, with no relaxed budget or timeout reclassification. Complete final-head hosted static/coverage acceptance remains mandatory before merge. Required telemetry reliability passes at2.84 percent failures with zero missing error-code rows; Sentry correctly blocks release on the two separately tracked faults. Fresh trace/span discovery is empty, so ingestion is not claimed. All27 open GitHub issues have PM-link comments, all three security-alert inventories are empty, and the only open PR is this delivery."
+  "2026-10-16T06:26:04.348Z","harness:codex","Hosted exact head8fa4816af4580cfb37d77e97b5906f5b6b5220d6 passes all26 required contexts and reports CLEAN: complete static/mutation, merged100/100/100/100 source coverage, all Windows cohorts, six packed first-run consumers, security and analyzer checks. CI run38859170072; bounded mutation is341 killed, zero timeout, seven classified equivalents. CodeRabbit full review covers that exact head with no actionable comments and no unresolved threads. Greptile is unavailable because its trial expired; Sourcery skipped; neither is represented as approval. Final pre-merge documentation warning prompted substantive comments on the touched option-validation, envelope-normalization and forward-reference functions. The106 linked bulk tests, generated contracts and focused ESLint pass on this documentation-only follow-up. The routing warning describes a proposed alternative spelling: canonical acceptance explicitly extends the already shipped atomic item mutate primitive, with actionable create-many guidance. The combined PM scope follows the requested multi-item delivery. Require a fresh full review and all checks again on the documentation commit."
 learnings[1]{created_at,author,text}:
   "2026-10-16T04:25:15.096Z","harness:codex",A workspace transaction lock serializes bulk transactions but does not fence ordinary item writers. Revalidate a planned match against the same document read under the target item lock; resolve shortened SDK ids to canonical identity before scoping a target-specific guard. Prove the race at the actual item-lock boundary with a separate ordinary writer and verify its history remains intact.
 files[20]{path,scope,note}:
@@ -107,7 +108,7 @@ tests[3]:
       source_kind: local_mutation
       source_ref: feat/bulk-create-scalar-validation-claim-guidance
     note: Direct SDK duplicate unique guards are rejected by preview and commit before writes
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-mv9ocq88-n3ojpa
     kind: test
     status: passed
@@ -148,6 +149,19 @@ test_runs[4]:
     started_at: "2026-10-16T05:26:46.088Z"
     finished_at: "2026-10-16T05:27:57.686Z"
     recorded_at: "2026-10-16T05:27:57.686Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/store/item-mutation-precondition.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mval2gs6-92xv39
+    kind: test
+    status: passed
+    started_at: "2026-10-16T06:24:06.737Z"
+    finished_at: "2026-10-16T06:25:11.286Z"
+    recorded_at: "2026-10-16T06:25:11.286Z"
     passed: 3
     failed: 0
     skipped: 0

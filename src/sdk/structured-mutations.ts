@@ -332,6 +332,10 @@ function validateMutationObject(
   return value;
 }
 
+/**
+ * Refuse undeclared core and extension option targets before SDK dispatch.
+ * Keep an absent options bag absent so operation-specific defaults still apply.
+ */
 function validateMutationOptions(
   options: unknown,
   op: BulkItemMutation["op"],
@@ -746,6 +750,10 @@ function normalizeCreateDocumentRow(
   };
 }
 
+/**
+ * Normalize accepted input through the shared envelope before resolving IDs.
+ * Reject unsupported versions and malformed rows before transaction planning.
+ */
 function parseMutationDocumentRows(
   input: string,
 ): Array<Record<string, unknown>> {
@@ -1049,6 +1057,11 @@ function convertRowToUpsertUpdate(
   row.match = match;
 }
 
+/**
+ * Register create aliases before resolving links, including forward references.
+ * Each alias keeps an explicit normalized ID or a transaction-derived stable ID;
+ * duplicate aliases and aliases on other operations are refused before writes.
+ */
 function collectMutationReferences(
   rows: ReadonlyArray<Record<string, unknown>>,
   options: ResolveItemMutationDocumentOptions,
