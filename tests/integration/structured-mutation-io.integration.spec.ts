@@ -672,9 +672,27 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
       });
       await expect(commitItemMutations(commit)).rejects.toMatchObject({ context: { code: "upsert_key_conflict" } });
       expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 1 });
-      // Re-planning resolves the row as an update of the rival item.
+      // Re-planning resolves the row as an update of the rival item, carrying the key it was selected by.
       const replanned = await planItemMutationDocument({ pmRoot: context.pmPath, input, upsertKey: "external_id" });
       expect(replanned.rows).toEqual([{ index: 0, ref: "row-1", id: rivalId, op: "update", upserted: true }]);
+      expect(replanned.mutations[0]).toMatchObject({ op: "update", id: rivalId, match: { key: "external_id", value: "ext-race" } });
+      // The rival's key moves between planning and commit: the update re-reads it under the lock and refuses.
+      const moved = context.runCli(["item", "mutate", "--json"], {
+        expectJson: true,
+        input: `{"op":"update","id":"${rivalId}","options":{"externalId":"ext-moved"}}`,
+      });
+      expect(moved.code).toBe(0);
+      const replannedCommit = { pmRoot: context.pmPath, transactionId: replanned.transaction_id, author: "import-agent", mutations: replanned.mutations };
+      await expect(previewItemMutations(replannedCommit)).rejects.toMatchObject({
+        context: { code: "upsert_match_changed", transaction_operation: { index: 0, op: "update", id: rivalId } },
+      });
+      await expect(commitItemMutations(replannedCommit)).rejects.toMatchObject({ context: { code: "upsert_match_changed" } });
+      expect((context.runCli(["get", rivalId, "--json"], { expectJson: true }).json as { item: { title: string } }).item.title).toBe("Rival");
+      // With the key moved, the same document plans a guarded create again and commits under its derived id.
+      const afterMove = await planItemMutationDocument({ pmRoot: context.pmPath, input, upsertKey: "external_id" });
+      expect(afterMove.mutations[0]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-race" } });
+      expect((await commitItemMutations({ pmRoot: context.pmPath, transactionId: afterMove.transaction_id, author: "import-agent", mutations: afterMove.mutations })).status).toBe("committed");
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 2 });
       // A plan resumes and replays as itself: the items it already created are not collisions for its
       // own guards when a resumed step scans again, and a second row reuses the first row's lock-held scan.
       const fresh = await planItemMutationDocument({
@@ -693,7 +711,7 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
       ).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
       expect((await commitItemMutations(freshCommit)).recovered).toBe(true);
       expect((await commitItemMutations(freshCommit)).recovered).toBe(true);
-      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 3 });
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 4 });
     });
   });
 

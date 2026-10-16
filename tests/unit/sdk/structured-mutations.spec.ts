@@ -726,8 +726,11 @@ describe("bulk creation documents (pm-gh1456)", () => {
       options: { title: "Renamed", externalId: "ext-1", tags: '["sync"]' },
     });
     expect(resolved.mutations[0]).not.toHaveProperty("options.documentAnnotationSnapshot");
-    // Rows that matched nothing carry the key for the lock-held re-check; matched rows do not.
+    // Rows that matched nothing carry the key for the lock-held re-check; matched rows carry the selection instead.
     expect(resolved.mutations[0]).not.toHaveProperty("unique");
+    expect(resolved.mutations[0]).toMatchObject({ op: "update", match: { key: "external_id", value: "ext-1" } });
+    expect(resolved.mutations[2]).toMatchObject({ op: "update", match: { key: "external_id", value: "ext-9" } });
+    expect(resolved.mutations[1]).not.toHaveProperty("match");
     expect(resolved.mutations[1]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-2" } });
     expect(resolved.mutations[3]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-3" } });
     expect(resolved.mutations[2]).toMatchObject({ op: "update", id: "pm-other", options: { title: "Option row" } });
@@ -752,6 +755,14 @@ describe("bulk creation documents (pm-gh1456)", () => {
       options,
     );
     expect(explicit.mutations[0]).toMatchObject({ unique: { key: "external_id", value: "ext-1" } });
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"match":{"key":"k","value":1}}]', options),
+    ).toThrow("match is only valid for update operations");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"update","id":"pm-a","options":{"title":"x"},"match":{"key":"k"}}]', options),
+    ).toThrow("match must be an object with a non-empty key and a value");
+    const matched = resolveItemMutationDocument('[{"op":"update","id":"pm-a","options":{"title":"x"},"match":{"key":"k","value":[1]}}]', options);
+    expect(matched.mutations[0]).toMatchObject({ op: "update", match: { key: "k", value: [1] } });
   });
 
   it("refuses missing, duplicate, and ambiguous upsert keys before any write", () => {

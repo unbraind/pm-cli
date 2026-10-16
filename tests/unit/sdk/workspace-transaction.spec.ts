@@ -880,3 +880,41 @@ describe("workspace SDK transactions", () => {
     }
   });
 });
+
+describe("workspace transaction journals after a rolled-back attempt", () => {
+  it("accepts a re-planned document under the same id once the previous attempt is compensated, but never while it is resumable", async () => {
+    const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
+    try {
+      let failFirst = true;
+      const applied = new Set<string>();
+      const step = (id: string) => ({
+        id,
+        inspect: async () => ({ state: applied.has(id) ? ("applied" as const) : ("pending" as const), ...(applied.has(id) ? { result: { id } } : {}) }),
+        prepareCompensation: async () => ({ id }),
+        apply: async () => {
+          if (failFirst) {
+            failFirst = false;
+            throw new Error("rival writer changed the key");
+          }
+          applied.add(id);
+          return { id };
+        },
+        compensate: async () => {
+          applied.delete(id);
+        },
+      });
+      const base = { pmRoot, transactionId: "replanned-import", author: "agent" };
+      await expect(commitWorkspaceTransaction({ ...base, steps: [step("create-row-1")] })).rejects.toThrow("rival writer changed the key");
+      const journalFile = path.join(pmRoot, "transactions", "sdk", "replanned-import.json");
+      expect(JSON.parse(await readFile(journalFile, "utf8"))).toMatchObject({ status: "compensated", attempt: 1 });
+      // The rolled-back attempt holds nothing to resume, so the re-planned step set starts attempt 2.
+      const committed = await commitWorkspaceTransaction({ ...base, steps: [step("update-row-1")] });
+      expect(committed).toMatchObject({ recovered: true, results: { "update-row-1": { id: "update-row-1" } } });
+      expect(JSON.parse(await readFile(journalFile, "utf8"))).toMatchObject({ status: "committed", attempt: 2, stepIds: ["update-row-1"] });
+      // A committed journal still replays only its own plan.
+      await expect(commitWorkspaceTransaction({ ...base, steps: [step("create-row-2")] })).rejects.toMatchObject({ context: { code: "transaction_plan_mismatch" } });
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+});

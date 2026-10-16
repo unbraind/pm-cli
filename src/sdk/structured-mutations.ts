@@ -28,7 +28,7 @@ import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js"
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 
-const MUTATION_ROW_KEYS = ["op", "id", "reason", "options", "unique"] as const;
+const MUTATION_ROW_KEYS = ["op", "id", "reason", "options", "unique", "match"] as const;
 const REFERENCED_MUTATION_ROW_KEYS = [
   ...MUTATION_ROW_KEYS,
   "ref",
@@ -367,23 +367,25 @@ export interface ParseItemMutationBatchOptions {
   runtimeFields?: readonly RuntimeFieldDefinitionResolved[];
 }
 
-/** Validate the optional unique-key guard: only create rows may carry one, and it needs a non-empty key and a present value. */
-function validateMutationUniqueKey(
+/** Validate an optional key guard (`unique` on create rows, `match` on update rows): it needs a non-empty key and a present value. */
+function validateMutationKeyGuard(
   value: unknown,
   op: BulkItemMutation["op"],
   index: number,
+  field: "unique" | "match",
 ): BulkItemUniqueKey | undefined {
   if (value === undefined) return undefined;
-  if (op !== "create") {
+  const allowedOp = field === "unique" ? "create" : "update";
+  if (op !== allowedOp) {
     throw new PmCliError(
-      `Mutation ${index + 1} unique is only valid for create operations.`,
+      `Mutation ${index + 1} ${field} is only valid for ${allowedOp} operations.`,
       EXIT_CODE.USAGE,
     );
   }
   const key = isPlainObject(value) && typeof value.key === "string" ? value.key.trim() : "";
   if (!isPlainObject(value) || key.length === 0 || value.value === undefined || value.value === null) {
     throw new PmCliError(
-      `Mutation ${index + 1} unique must be an object with a non-empty key and a value.`,
+      `Mutation ${index + 1} ${field} must be an object with a non-empty key and a value.`,
       EXIT_CODE.USAGE,
     );
   }
@@ -409,7 +411,8 @@ function validateMutationRow(
     );
   }
   const options = validateMutationOptions(mutation.options, op, index, runtimeFields);
-  const unique = validateMutationUniqueKey(mutation.unique, op, index);
+  const unique = validateMutationKeyGuard(mutation.unique, op, index, "unique");
+  const match = validateMutationKeyGuard(mutation.match, op, index, "match");
   if (typeof id !== "string" || id.trim().length === 0) {
     throw new PmCliError(
       `Mutation ${index + 1} requires a non-empty id.`,
@@ -453,6 +456,7 @@ function validateMutationRow(
     id: normalizedId,
     options: options as PmClientFullMutationOptions,
     ...(unique === undefined ? {} : { unique }),
+    ...(match === undefined ? {} : { match }),
   };
 }
 
@@ -912,7 +916,7 @@ function applyKeyedUpsert(
       // Later rows may still address this record as @ref; it now names the matched item.
       references[row.ref] = id;
     }
-    convertRowToUpsertUpdate(row, id, runtimeFields);
+    convertRowToUpsertUpdate(row, id, runtimeFields, { key, value: readUpsertKeyValue(row, key) });
     upserted.add(index);
   }
   return upserted;
@@ -992,6 +996,7 @@ function convertRowToUpsertUpdate(
   row: Record<string, unknown>,
   id: string,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+  match: BulkItemUniqueKey,
 ): void {
   // readUpsertKeyValue found the key, so the row carries either an item document or an options object.
   const updateKeys = new Set([
@@ -1010,6 +1015,8 @@ function convertRowToUpsertUpdate(
   row.op = "update";
   row.id = id;
   row.options = options;
+  // The commit re-reads this key under the lock before updating the selected item.
+  row.match = match;
 }
 
 function collectMutationReferences(

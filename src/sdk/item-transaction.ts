@@ -197,6 +197,31 @@ async function assertUniqueKeyFree(
   );
 }
 
+/** Refuse a planned keyed-upsert update whose target no longer carries the key value it was selected by. */
+async function assertUpsertMatchCurrent(
+  pmRoot: string,
+  id: string,
+  match: BulkItemUniqueKey,
+): Promise<void> {
+  const located = await get(id, {}, { pmRoot });
+  const current = (located.item as Record<string, unknown>)[match.key];
+  const expected = stableUpsertValue(match.value);
+  // An absent key serializes to undefined, which never equals the expected string.
+  if (stableUpsertValue(current) === expected) return;
+  throw new PmCliError(
+    `Item ${id} no longer carries upsert key "${match.key}" value ${JSON.stringify(expected)}; the plan selected it before the key changed.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "upsert_match_changed",
+      required: "Re-plan the document so the row is resolved against the current key values.",
+      why: "Keyed upsert selects its target before the writer lock, so the update re-reads the key under the lock instead of updating a mismatched item blindly.",
+      nextSteps: [
+        "Re-run pm item mutate with the same document and --upsert-key; the re-plan creates or re-targets the row from the current key values.",
+      ],
+    },
+  );
+}
+
 /** Whether a create row's unique-key guard has the shape the commit path relies on. */
 function isValidUniqueKey(value: unknown): value is BulkItemUniqueKey {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
@@ -221,6 +246,13 @@ export interface BulkItemUpdateMutation {
   id: string;
   /** Update options forwarded to the public `update` runtime primitive. */
   options: PmClientFullMutationOptions;
+  /**
+   * Keyed-upsert selection re-checked under the writer lock. The planner
+   * chose this target by key value before the lock; the commit re-reads the
+   * key and refuses with `upsert_match_changed` when the value was changed or
+   * removed after planning, so the update never lands on a mismatched item.
+   */
+  match?: BulkItemUniqueKey;
 }
 
 /** One atomic item closure inside a bulk mutation batch. */
@@ -534,6 +566,9 @@ function buildUpdateStep(
       return prepareRestoreCompensation(config.pmRoot, mutation);
     },
     async apply(): Promise<WorkspaceTransactionJsonValue> {
+      if (mutation.match !== undefined) {
+        await assertUpsertMatchCurrent(config.pmRoot, mutation.id, mutation.match);
+      }
       const updated = await update(
         mutation.id,
         mergeTransactionMutationOptions(mutation.options, {
@@ -705,6 +740,11 @@ function assertValidBulkMutation(
   if (mutation.op === "create" && mutation.unique !== undefined && !isValidUniqueKey(mutation.unique)) {
     throw new TypeError(
       `Bulk create mutation ${index + 1} unique must be an object with a non-empty key and a value`,
+    );
+  }
+  if (mutation.op === "update" && mutation.match !== undefined && !isValidUniqueKey(mutation.match)) {
+    throw new TypeError(
+      `Bulk update mutation ${index + 1} match must be an object with a non-empty key and a value`,
     );
   }
 }

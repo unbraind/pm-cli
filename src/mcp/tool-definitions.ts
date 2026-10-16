@@ -449,6 +449,11 @@ const RAW_TOOLS: ToolDefinition[] = [
                 description:
                   "Create-only guard {key,value} re-checked under the writer lock; keyed upsert sets it on rows that matched nothing at planning time.",
               },
+              match: {
+                type: "object",
+                description:
+                  "Update-only guard {key,value} re-read under the writer lock; keyed upsert sets it on rows it converted into updates of a matched item.",
+              },
             },
             additionalProperties: false,
           },

@@ -324,10 +324,14 @@ function parseJournal(
   const journal = parsed as Partial<WorkspaceTransactionJournal>;
   const identityMatches =
     journal.schemaVersion === 1 && journal.transactionId === transactionId;
+  // A compensated attempt was rolled back step by step and holds nothing to
+  // resume, so a re-planned document may start a fresh attempt under the same
+  // id; every other status must replay the exact plan it recorded.
   const stepsMatch =
-    Array.isArray(journal.stepIds) &&
-    journal.stepIds.length === stepIds.length &&
-    journal.stepIds.every((stepId, index) => stepId === stepIds[index]);
+    journal.status === "compensated" ||
+    (Array.isArray(journal.stepIds) &&
+      journal.stepIds.length === stepIds.length &&
+      journal.stepIds.every((stepId, index) => stepId === stepIds[index]));
   const lifecycleMatches = hasValidJournalLifecycle(journal, stepIds);
   const metadataMatches = hasValidJournalMetadata(journal);
   const statusMatches = [

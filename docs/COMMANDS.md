@@ -691,7 +691,12 @@ before any write (`upsert_key_missing`, `upsert_key_duplicate`,
 record that matched nothing carries its key into the commit, which re-checks
 it under the lock: when another writer created an item with that key value
 after planning, the transaction refuses with `upsert_key_conflict` before any
-write, and a re-run plans the record as an update of that item.
+write, and a re-run plans the record as an update of that item. A record that
+did match is committed as an update that re-reads the key under the lock and
+refuses with `upsert_match_changed` when the key was changed or removed after
+planning. Either refusal rolls the attempt back completely, and a rolled-back
+attempt leaves its derived transaction id reusable, so re-running the same
+document simply starts a fresh attempt from the current key values.
 
 ```bash
 printf '%s\n' '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}' \

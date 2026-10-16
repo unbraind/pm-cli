@@ -1892,6 +1892,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "upsert_match_changed",
+    meaning: "Upsert match changed condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/item-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "upsert_match_changed",
+    aliases: [],
+  },
+  {
     code: "validate_command_references_stale_pm_ids",
     meaning: "Validate command references stale pm ids condition.",
     stability: "stable",

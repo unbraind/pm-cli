@@ -26096,6 +26096,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "upsert_match_changed",
+      "class": "conflict",
+      "code": "upsert_match_changed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Upsert match changed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "validate_command_references_stale_pm_ids",
       "class": "generic_failure",
       "code": "validate_command_references_stale_pm_ids",
@@ -37421,6 +37438,10 @@
                 },
                 "item": {
                   "description": "Create document using pm create field names (title, type, description, body, tags, parent, custom fields).",
+                  "type": "object"
+                },
+                "match": {
+                  "description": "Update-only guard {key,value} re-read under the writer lock; keyed upsert sets it on rows it converted into updates of a matched item.",
                   "type": "object"
                 },
                 "op": {

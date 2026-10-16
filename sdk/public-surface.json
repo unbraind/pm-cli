@@ -2413,6 +2413,13 @@
       ],
       "package_version": "2026.10.15",
       "reason": "BulkItemCreateMutation gains the optional unique guard that keyed upsert sets on unmatched create rows; existing callers that omit it are unaffected"
+    },
+    {
+      "changes": [
+        "signature ./sdk:BulkItemUpdateMutation"
+      ],
+      "package_version": "2026.10.15",
+      "reason": "BulkItemUpdateMutation gains the optional match guard that keyed upsert sets on converted update rows; callers that omit it are unaffected"
     }
   ],
   "entrypoints": {
@@ -4433,7 +4440,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BulkItemUpdateMutation",
-          "signature": "export interface BulkItemUpdateMutation { op: \"update\"; id: string; options: PmClientFullMutationOptions; }"
+          "signature": "export interface BulkItemUpdateMutation { op: \"update\"; id: string; options: PmClientFullMutationOptions; match?: BulkItemUniqueKey; }"
         },
         {
           "classification": "advanced_export",
@@ -36427,6 +36434,7 @@
     "upsert_key_conflict",
     "upsert_key_duplicate",
     "upsert_key_missing",
+    "upsert_match_changed",
     "validate_command_references_stale_pm_ids",
     "validate_files_missing_linked_paths",
     "validate_files_orphaned_paths",

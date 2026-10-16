@@ -727,6 +727,12 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       await expect(
         commitItemMutations({
           ...base,
+          mutations: [{ op: "update", id: "pm-x", options: { title: "x" }, match: { key: "k" } as unknown as BulkItemUniqueKey }],
+        }),
+      ).rejects.toThrow("match must be an object with a non-empty key and a value");
+      await expect(
+        commitItemMutations({
+          ...base,
           createCompensation: "explode" as unknown as "close",
           mutations: [
             {
