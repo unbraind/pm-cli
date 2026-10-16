@@ -23946,6 +23946,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "mutation_option_value_invalid",
+      "class": "usage",
+      "code": "mutation_option_value_invalid",
+      "emitting_commands": [
+        "mutation-option-validation"
+      ],
+      "exit_code": 2,
+      "meaning": "Mutation option value invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/mutation-option-validation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "mutation_secret_guard_blocked",
       "class": "conflict",
       "code": "mutation_secret_guard_blocked",
@@ -25579,6 +25596,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/store/tracker-preflight.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "transaction_journal_invalid",
+      "class": "conflict",
+      "code": "transaction_journal_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction journal invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-transaction.ts"
       ],
       "stability": "provisional"
     },

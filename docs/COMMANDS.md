@@ -665,6 +665,14 @@ the resolved plan is unchanged. `--create-compensation close|delete`,
 `--lock-ttl-seconds`, and `--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
 surface is `pm_mutate`.
 
+Raw mutation `options` use command option types: write `estimatedMinutes: "45"`.
+Item documents may instead use numeric `estimated_minutes: 45`. A non-string
+raw estimate refuses before journal or item writes with
+`mutation_option_value_invalid` (exit 2), identifying the row and option.
+Corrupt durable journals refuse with `transaction_journal_invalid`; preserve
+the journal and inspect or restore verified state before retrying. Changing the
+transaction id does not safely recover unknown previously applied work.
+
 #### Bulk creation (`pm create many` route)
 
 Tracked by [pm-gh1456](../.agents/pm/features/pm-gh1456.toon). `pm create many`
@@ -689,7 +697,10 @@ pm item mutate --from items.jsonl --json             # commit; re-running replay
 `--upsert-key <field>` makes a re-run safe for changed data: a create record
 whose field value matches exactly one existing item (core field such as
 `title`, or a declared custom field such as `external_id`) becomes an update
-of that item and is reported with `upserted: true`. The record keeps its
+of that item and is reported with `upserted: true`. Matching and lock-held
+guards use the field's stored metadata key; declared field
+keys and their SDK option targets (for example `externalId`) resolve to that
+same stored key. The record keeps its
 `ref` in the receipt, and later records may still address it as `@ref`, which
 then resolves to the matched item. A record missing the key, two records
 sharing a key value, or a key value matching several existing items refuses

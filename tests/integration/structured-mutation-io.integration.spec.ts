@@ -8,6 +8,35 @@ function itemId(payload: unknown): string {
 }
 
 describe("structured SDK/CLI/MCP mutation IO", () => {
+  it("refuses raw numeric duration options before writes and permits a corrected compensated retry", async () => {
+    await withTempPmPath(async (context) => {
+      const { readFile } = await import("node:fs/promises");
+      const path = await import("node:path");
+      const { commitItemMutations } = await import("../../src/sdk/item-transaction.js");
+      const transactionId = "duration-options";
+      const earlier = { op: "create" as const, id: "pm-before-duration", options: { title: "Before duration", type: "Task" } };
+      const invalid = { op: "create" as const, id: "pm-duration", options: { title: "Duration", type: "Task", estimatedMinutes: 45 } };
+      await expect(commitItemMutations({ pmRoot: context.pmPath, transactionId, author: "test", mutations: [earlier, invalid] })).rejects.toMatchObject({ exitCode: 2, context: { code: "mutation_option_value_invalid" }, message: expect.stringContaining("Mutation 2") });
+      const flags = ["item", "mutate", "--transaction-id", transactionId, "--json"];
+      const refused = context.runCli(flags, { input: JSON.stringify([invalid]), expectJson: true });
+      expect(refused.code).toBe(2);
+      expect(refused.stderr).toContain("mutation_option_value_invalid");
+      await expect(handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "pm_mutate", arguments: { path: context.pmPath, transactionId, mutations: [invalid] } } })).rejects.toMatchObject({ exitCode: 2, context: { code: "mutation_option_value_invalid" } });
+      const journalPath = path.join(context.pmPath, "transactions", "sdk", `${transactionId}.json`);
+      await expect(readFile(journalPath)).rejects.toMatchObject({ code: "ENOENT" });
+      for (const id of [earlier.id, invalid.id]) {
+        expect(context.runCli(["get", id, "--json"]).code).toBe(3);
+        await expect(readFile(path.join(context.pmPath, "history", `${id}.jsonl`))).rejects.toMatchObject({ code: "ENOENT" });
+      }
+      const attempt = (estimatedMinutes: string) => context.runCli(flags, { input: JSON.stringify([{ ...invalid, options: { ...invalid.options, estimatedMinutes } }]), expectJson: true });
+      expect(attempt("-1").code).toBe(2);
+      expect(JSON.parse(await readFile(journalPath, "utf8"))).toMatchObject({ status: "compensated" });
+      expect(attempt("45").json).toMatchObject({ status: "committed", recovered: true });
+      expect(attempt("45").json).toMatchObject({ status: "committed", recovered: true });
+      expect(context.runCli(["get", invalid.id, "--json", "--full"], { expectJson: true }).json).toMatchObject({ item: { estimated_minutes: 45 } });
+    });
+  });
+
   it("names the missing or malformed MCP mutations argument before planning", async () => {
     await withTempPmPath(async (context) => {
       for (const mutations of [undefined, null, "not an array", {}, []]) {
@@ -633,9 +662,10 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
       expect(replay.json).toMatchObject({ status: "committed", recovered: true });
       expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 2 });
 
-      const upsert = context.runCli(["item", "mutate", "--upsert-key", "external_id", "--json"], {
+      const upsertInput = '{"op":"create","options":{"title":"Imported A (renamed)","type":"Task","externalId":"ext-1"}}\n{"op":"create","options":{"title":"Imported C","type":"Task","externalId":"ext-3"}}';
+      const upsert = context.runCli(["item", "mutate", "--upsert-key", "externalId", "--json"], {
         expectJson: true,
-        input: '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}\n{"title":"Imported C","type":"Task","external_id":"ext-3"}',
+        input: upsertInput,
       });
       expect(upsert.code).toBe(0);
       expect(upsert.json).toMatchObject({
@@ -648,7 +678,7 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
       });
       const upsertReplay = context.runCli(["item", "mutate", "--upsert-key", "external_id", "--json"], {
         expectJson: true,
-        input: '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}\n{"title":"Imported C","type":"Task","external_id":"ext-3"}',
+        input: upsertInput,
       });
       expect(upsertReplay.json).toMatchObject({ status: "committed", recovered: true });
       const renamed = context.runCli(["get", first!.id, "--json"], { expectJson: true }).json as { item: { title: string } };

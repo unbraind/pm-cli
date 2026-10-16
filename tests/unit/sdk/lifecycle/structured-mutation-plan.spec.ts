@@ -6,6 +6,29 @@ import { planItemMutationDocument } from "../../../../src/sdk/lifecycle/structur
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("planItemMutationDocument (pm-gh1456)", () => {
+  it("canonicalizes custom upsert keys before matching and guarding persisted values", async () => {
+    await withTempPmPath(async (context) => {
+      const { writeFile } = await import("node:fs/promises");
+      const path = await import("node:path");
+      await writeFile(path.join(context.pmPath, "schema", "fields.json"), JSON.stringify({ fields: [
+        { key: "external_id", metadata_key: "shadow_key", type: "string" },
+        { key: "ticket_reference", metadata_key: "external_id", type: "string", commands: ["create", "update"] },
+      ] }));
+      const seed = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "alias-seed", input: '{"title":"Seed","type":"Task","external_id":"ext-1"}' });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: seed.transaction_id, author: "seed", mutations: seed.mutations });
+      for (const key of ["external_id", "ticket_reference", "ticketReference"]) {
+        const plan = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: `alias-${key}`, upsertKey: key, input: '{"op":"create","options":{"title":"Renamed","type":"Task","ticketReference":"ext-1"}}' });
+        expect(plan).toMatchObject({ upsert_key: "external_id", rows: [{ id: seed.rows[0]!.id, op: "update", upserted: true }], mutations: [{ match: { key: "external_id", value: "ext-1" } }] });
+        await commitItemMutations({ pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "update", mutations: plan.mutations });
+      }
+      const missing = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "alias-missing", upsertKey: "ticketReference", input: '{"title":"New","type":"Task","external_id":"ext-2"}' });
+      expect(missing.mutations[0]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-2" } });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: missing.transaction_id, author: "create", mutations: missing.mutations });
+      const items = context.runCli(["list", "--status", "all", "--json"], { expectJson: true }).json as { items: Array<{ id: string }> };
+      expect(items.items.map((item) => item.id).sort()).toEqual([seed.rows[0]!.id, missing.rows[0]!.id].sort());
+    });
+  });
+
   it("derives or keeps the transaction id and resolves declared fields even under configuration-only reads", async () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);

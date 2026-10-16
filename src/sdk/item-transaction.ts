@@ -28,6 +28,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import type { ItemDocument, ItemTypeDefinition, PmSettings } from "../types/index.js";
 import { stableUpsertValue, type ItemMutationUpsertCandidate } from "./structured-mutations.js";
 import { stableStringify } from "../core/shared/serialization.js";
+import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 import { readHistoryEntries } from "./history-read.js";
 import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
 import {
@@ -753,6 +754,7 @@ function assertValidBulkMutation(
       `Bulk update mutation ${index + 1} match must be an object with a non-empty key and a value`,
     );
   }
+  assertMutationOptionValueTypes(mutation.options, mutation.op, index);
 }
 
 /** Validate the complete batch before journal work, including uniqueness guards supplied directly through the SDK. */

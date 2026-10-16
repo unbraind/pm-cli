@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_root_not_found",
-    meaning: "Merge root not found condition.",
-    stability: "stable",
-    exit_code: 3,
-    class: "not_found",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/merge/install.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_root_not_found",
-    aliases: [],
-  },
-  {
     code: "missing_allowed_values",
     meaning: "Missing allowed values condition.",
     stability: "provisional",
@@ -293,6 +280,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["cli/register-structured-mutation.ts"],
     emitting_commands: ["*"],
     canonical_code: "mutation_document_unreadable",
+    aliases: [],
+  },
+  {
+    code: "mutation_option_value_invalid",
+    meaning: "Mutation option value invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/lifecycle/mutation-option-validation.ts"],
+    emitting_commands: ["mutation-option-validation"],
+    canonical_code: "mutation_option_value_invalid",
     aliases: [],
   },
   {
@@ -1522,6 +1522,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     owned_states: [
       { state: "selected_tracker_root_is_not_readable", probe_id: "tracker-root-unreadable", entrypoints: ["list"], expected_exit_class: "generic_failure" },
     ],
+  },
+  {
+    code: "transaction_journal_invalid",
+    meaning: "Transaction journal invalid condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_journal_invalid",
+    aliases: [],
   },
   {
     code: "transaction_plan_mismatch",

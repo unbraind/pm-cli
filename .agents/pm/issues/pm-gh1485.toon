@@ -1,0 +1,33 @@
+id: pm-gh1485
+title: "GH-1485: Bound history-index reader contention before authoritative appends"
+description: "Evaluate and bound writer delay from exclusive history-event-index readers while preserving authoritative history, invalidation, fallback and late-fact visibility. The reported mixed reader/writer workload retained correctness but breached its 2000ms real-time delivery SLO in one traced run."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:history","area:locking",github-intake,performance
+created_at: "2026-10-16T13:01:36.615Z"
+updated_at: "2026-10-16T13:01:36.615Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Reproduce with isolated traced and untraced cohorts and report writer lock wait separately from downstream detection; Choose and document a bounded snapshot/fair-lock/critical-section protocol from measured attribution; Preserve authoritative fallback, committed invalidation and late-fact visibility; Prove zero lost or duplicate events, zero history drift and the declared end-to-end latency budget under mixed SDK and CLI writers."
+goal: project management = context management
+objective: Measure reader-versus-writer lock attribution and implement a bounded history-index read/write protocol without losing committed facts.
+value: UI and agent watchers can observe project context without delaying authoritative mutations beyond a measured collaboration budget.
+why_now: GH-1485 reports a 2247.5ms pre-append delay with at least 2071.0ms waiting for the history-index lock under 100 readers and ten writer lanes.
+parent: pm-lvyd
+risk: high
+confidence: medium
+severity: medium
+expected_result: "History-index reads preserve committed-fact correctness while writer delay and end-to-end delivery remain within an explicit, reproducible collaboration budget."
+actual_result: "Intake only: GH-1485 reports one breached traced run among three, 50 updates and 5000 receipts delivered exactly once, on a shared four-CPU host. The attribution includes scheduling/open/retry overhead and has not been reproduced here. No fix or performance acceptance is claimed."
+component: history event index concurrency
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-a7207g,related,"2026-10-16T13:01:36.615Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-16T13:01:36.615Z","harness:codex","Duplicate check: live open/in-progress reads and all-status keyword searches for queryHistoryEventIndex, history-index and writer starvation found the closed Windows invalidation owner and the broad concurrency throughput parent. Full live parent and prior-fix data distinguish this latency report from the completed portable invalidation regression. Reuse pm-lvyd as parent and preserve the closed fix; do not file a duplicate broad concurrency epic."
+files[2]{path,scope}:
+  src/core/history/event-index.ts,project
+  tests/unit/core/history/event-index.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts,project,300,"harness:codex","2026-10-16T13:01:36.615Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+body: "Source: [GitHub issue 1485](https://github.com/unbraind/pm-cli/issues/1485).\n\nThe report links the public pm-web capacity harness and unbraind/pm-web issue 211. It separates three untraced and three traced runs, pre-append delay, index-lock wait lower bound, downstream SDK classification, polling and SSE delivery. The proposed investigation must retain those distinctions and must not infer universal starvation from one perturbed run. This PR records intake only; implementation remains unclaimed."

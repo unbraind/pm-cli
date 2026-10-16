@@ -12,6 +12,20 @@ import {
 } from "../../../src/sdk/structured-mutations.js";
 
 describe("structured mutation input", () => {
+  it("rejects non-string duration options with row-level typed recovery", () => {
+    for (const op of ["create", "update"] as const) {
+      for (const value of [45, null, false, {}, []]) {
+        expect(() => parseItemMutationBatch(JSON.stringify([{ op, id: "pm-duration", options: { estimatedMinutes: value } }]))).toThrowError(expect.objectContaining({
+          exitCode: 2,
+          message: `Mutation 1 ${op} option "estimatedMinutes" must be a string.`,
+          context: expect.objectContaining({ code: "mutation_option_value_invalid", required: expect.stringContaining('"45"') }),
+        }));
+      }
+      expect(parseItemMutationBatch(JSON.stringify([{ op, id: "pm-duration", options: { estimatedMinutes: "45" } }]))[0]).toMatchObject({ options: { estimatedMinutes: "45" } });
+    }
+    expect(resolveItemMutationDocument('{"title":"Numeric document","type":"Task","estimated_minutes":45}', { transactionId: "numeric-document", idPrefix: "pm-" }).mutations[0]).toMatchObject({ options: { estimatedMinutes: "45" } });
+  });
+
   it("normalizes shared atomic controls and rejects invalid transport values", () => {
     expect(parseAtomicMutationControls({})).toEqual({});
     expect(

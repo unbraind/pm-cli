@@ -6,7 +6,7 @@
  * transaction id when the caller omits one, and returns the resolved batch
  * ready for `previewItemMutations` or `commitItemMutations`.
  */
-import { resolveRuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
+import { resolveRuntimeFieldRegistry, runtimeFieldOptionTarget } from "../../core/schema/runtime-schema.js";
 import { listUpsertKeyCandidates, resolveTransactionSchema } from "../item-transaction.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { PmSettings } from "../../types/index.js";
@@ -24,7 +24,7 @@ export interface PlanItemMutationDocumentOptions {
   input: string;
   /** Explicit stable transaction id; omitted ids derive from the document bytes. */
   transactionId?: string;
-  /** Item field whose value identifies an existing item to update instead of creating. */
+  /** Stored field key, declared field key or option target identifying existing items. Stored keys take precedence over aliases. */
   upsertKey?: string;
   /** Already-read settings, to avoid a second settings read on hot paths. */
   settings?: PmSettings;
@@ -56,7 +56,11 @@ export async function planItemMutationDocument(
   const transactionId =
     explicit.length > 0 ? explicit : deriveMutationTransactionId(options.input);
   const planSchema = await resolveTransactionSchema(options.pmRoot, settings);
-  const upsertKey = options.upsertKey?.trim();
+  const runtimeFields = resolveRuntimeFieldRegistry(planSchema.schema).definitions;
+  const suppliedKey = options.upsertKey?.trim();
+  const declaredField = runtimeFields.find((field) => field.metadata_key === suppliedKey) ??
+    runtimeFields.find((field) => field.key === suppliedKey || runtimeFieldOptionTarget(field) === suppliedKey);
+  const upsertKey = declaredField?.metadata_key ?? suppliedKey;
   const upsert =
     upsertKey === undefined || upsertKey.length === 0
       ? undefined
@@ -67,7 +71,7 @@ export async function planItemMutationDocument(
   const resolved = resolveItemMutationDocument(options.input, {
     transactionId,
     idPrefix: settings.id_prefix,
-    runtimeFields: resolveRuntimeFieldRegistry(planSchema.schema).definitions,
+    runtimeFields,
     ...(upsert === undefined ? {} : { upsert }),
   });
   return {

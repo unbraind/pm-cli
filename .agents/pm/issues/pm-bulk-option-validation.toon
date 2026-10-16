@@ -2,11 +2,13 @@ id: pm-bulk-option-validation
 title: Raw bulk options escape as an unclassified trim error for a numeric string-valued option
 description: item mutate admits raw options with numeric estimatedMinutes even though Update/CreateCommandOptions requires a string; parsing then escapes with unknown_error and e.trim is not a function. Validate values before invoking lifecycle handlers and return typed field-level recovery.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:sdk",bulk-mutations
 created_at: "2026-10-16T04:10:54.273Z"
-updated_at: "2026-10-16T04:45:25.004Z"
+updated_at: "2026-10-16T12:55:25.602Z"
+closed_at: "2026-10-16T12:55:24.819Z"
+completed_at: "2026-10-16T12:55:24.819Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Numeric values on declared string-only raw mutation options receive a typed usage refusal; The diagnostic identifies row and option plus an actionable correction; No item or history changes survive refusal; Corrected retry under the same compensated transaction id succeeds
@@ -14,10 +16,43 @@ parent: pm-f05lsg
 risk: medium
 confidence: medium
 severity: medium
+resolution: "Shared SDK-owned raw duration validation rejects non-string estimatedMinutes with mutation_option_value_invalid, exit 2 and actionable row/option guidance. Parsed JSON/JSONL, direct SDK preview/commit, CLI and MCP share the guard; item documents retain numeric estimated_minutes."
 expected_result: Malformed atomic option scalar types are refused with a stable usage code naming the row and option before any item or history write.
-actual_result: "PR1479 live intake supplied estimatedMinutes:120 in raw options and returned exit1 unknown_error with e.trim is not a function. Correcting it to string 120 let the compensated transaction replay and commit once."
-comments[2]{created_at,author,text}:
+actual_result: "86 linked SDK/CLI/MCP cases pass, including zero-write refusals, numeric item documents and corrected/replayed compensated retries. Five regressions fail on unchanged 7271f10c9. Full source verification passes 10538 tests, three skips and exact 100/100/100/100 coverage with zero uncovered counts. Typecheck, focused lint, generated contracts and packed consumers pass. Hosted final-head checks/full review remain required; Sentry PM-CLI-3M status is not changed by this closure."
+comments[4]{created_at,author,text}:
   "2026-10-16T04:10:54.273Z","harness:codex","Duplicate check: complete live2971-item all-status corpus plus estimatedMinutes trim keyword search found no dedicated owner. Existing pm-f05lsg owns recovery closure and this child records the concrete bulk-options input boundary. Recorded during PR1479 closeout and left open unclaimed."
   "2026-10-16T04:45:25.004Z","harness:codex","Sentry correlation confirmed on 2026-10-16: PM-CLI-3M has one unresolved TypeError e.trim is not a function at 04:05:53 UTC, matching the real malformed raw-options intake described here. Keep this concrete refusal-quality owner open and unclaimed. Do not resolve the Sentry fault by attributing it to the unrelated persisted Unicode validation."
+  "2026-10-16T12:32:23.019Z","harness:codex","Verified regressions on isolated unchanged head 7271f10c9: five filtered cases fail across four files, including actual CLI import commit with the aliased upsert key, custom metadata mapping, raw parser and direct-SDK value refusals, and corrupt journal classification. The corrected five-file linked command passes 86 tests. Canonical stored-key precedence and object-valued journal-status controls also pass. The SDK helper directory-cap check passes after moving it into lifecycle; the 120-file cap is unchanged."
+  "2026-10-16T12:55:23.928Z","harness:codex","Implemented the Sentry PM-CLI-3M raw duration boundary: one shared validator runs before parsed batches and direct SDK preview/commit journal work. SDK, CLI and MCP invalid estimates refuse with mutation_option_value_invalid and exit 2, naming row/operation/option and a quoted correction. Natural item documents retain numeric estimates. The regression proves no item/history/journal write on malformed types and a corrected string retry after a compensated grammar failure commits once and replays. Full linked source run on pm-gh1456 passes 10538 tests and exact 100/100/100/100 coverage. Packed npx/bunx nine-package smoke and all ten external package checks pass, with the one cache-only retry isolated from shared npm data. Sentry status and published-version verification remain separate; no alert was suppressed."
+files[5]{path,scope}:
+  src/sdk/item-transaction.ts,project
+  src/sdk/lifecycle/mutation-option-validation.ts,project
+  src/sdk/structured-mutations.ts,project
+  tests/integration/structured-mutation-io.integration.spec.ts,project
+  tests/unit/sdk/structured-mutations.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,900,"harness:codex","2026-10-16T12:10:02.212Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+test_runs[1]:
+  - run_id: test-local-mvay4lrh-cf0uqo
+    kind: test
+    status: passed
+    started_at: "2026-10-16T12:30:16.961Z"
+    finished_at: "2026-10-16T12:30:46.061Z"
+    recorded_at: "2026-10-16T12:30:46.061Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: Refuse malformed raw duration estimates before any journal or item write.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-bulk-option-validation
+  gate_id: test-coverage
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts -t \"canonicalizes custom upsert|rejects non-string duration|rejects forged journal|refuses raw numeric|imports JSON Lines\""
+  local_checks[3]: node scripts/run-tests.mjs coverage,pnpm typecheck,"pnpm quality:docs-links"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

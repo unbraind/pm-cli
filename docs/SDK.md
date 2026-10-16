@@ -1270,7 +1270,9 @@ JSON Lines and op-less create documents (records shaped like `pm create
 `row-<n>` aliases for records without `ref`/`id`, derives a stable
 `transaction_id` from the document bytes when none is supplied, and resolves
 `upsertKey` against existing items so matching create records become updates;
-records that match nothing carry a `unique` guard that `commitItemMutations`
+declared field keys and their option targets resolve to the stored metadata
+key before candidate reads and lock-held guards.
+Records that match nothing carry a `unique` guard that `commitItemMutations`
 re-checks under the writer lock and refuses with `upsert_key_conflict` when a
 concurrent writer created the key value after planning; matched records become
 updates carrying a `match` guard checked against the locked target document,
@@ -1310,6 +1312,9 @@ retaining those create rows.
 If document edits, external matches, or schema context change the resolved
 plan under that committed id, the coordinator refuses with
 `transaction_plan_mismatch`; use a new transaction id for the changed import.
+Corrupt journal JSON, lifecycle state or metadata instead refuses with
+`transaction_journal_invalid`. Preserve and inspect or restore the journal;
+starting a new id can duplicate work whose durable state cannot be verified.
 
 `buildItemCompletionMutations` creates the ordered evidence/update, close, and
 release plan for inspection. `commitItemCompletion` executes that plan through

@@ -650,7 +650,7 @@ describe("workspace SDK transactions", () => {
           author: "agent",
           steps: [createTestStep("step", state, [])],
         }),
-      ).rejects.toThrow("does not match");
+      ).rejects.toMatchObject({ context: { code: "transaction_plan_mismatch" } });
       await writeFile(
         path.join(journalDir, "drift.json"),
         "not-json\n",
@@ -663,7 +663,7 @@ describe("workspace SDK transactions", () => {
           author: "agent",
           steps: [createTestStep("step", state, [])],
         }),
-      ).rejects.toThrow("invalid JSON");
+      ).rejects.toMatchObject({ context: { code: "transaction_journal_invalid" }, message: expect.stringContaining("invalid JSON") });
       await writeFile(path.join(journalDir, "drift.json"), "null\n", "utf8");
       await expect(
         commitWorkspaceTransaction({
@@ -672,7 +672,7 @@ describe("workspace SDK transactions", () => {
           author: "agent",
           steps: [createTestStep("step", state, [])],
         }),
-      ).rejects.toThrow("journal is invalid");
+      ).rejects.toMatchObject({ context: { code: "transaction_journal_invalid" } });
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }
@@ -714,6 +714,15 @@ describe("workspace SDK transactions", () => {
         { ...base, results: { step: { value: 1 } } },
         { ...base, status: "committed" },
         { ...base, status: "compensated", completedStepIds: ["step"] },
+        { ...base, stepIds: null },
+        { ...base, stepIds: [1] },
+        { ...base, stepIds: ["step", "step"] },
+        { ...base, attempt: 1.5 },
+        { ...base, author: null },
+        { ...base, createdAt: null },
+        { ...base, updatedAt: null },
+        { ...base, status: "unknown" },
+        { ...base, status: { toString: null } },
       ];
       for (const journal of malformed) {
         await writeFile(
@@ -728,7 +737,9 @@ describe("workspace SDK transactions", () => {
             author: "agent",
             steps,
           }),
-        ).rejects.toThrow(/journal (?:is invalid|does not match)/);
+        ).rejects.toMatchObject({ exitCode: 4, context: { code: "transaction_journal_invalid" } });
+        expect(JSON.parse(await readFile(path.join(journalDir, "forged.json"), "utf8"))).toEqual(journal);
+        expect(state).toEqual({ state: "pending", value: 0 });
       }
     } finally {
       await rm(pmRoot, { recursive: true, force: true });

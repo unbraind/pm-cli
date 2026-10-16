@@ -2743,4 +2743,17 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     canonical_code: "merge_reconcile_receipt_evidence_untrusted",
     aliases: [],
   },
+  {
+    code: "merge_root_not_found",
+    meaning: "Merge root not found condition.",
+    stability: "stable",
+    exit_code: 3,
+    class: "not_found",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/install.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_root_not_found",
+    aliases: [],
+  },
 ];

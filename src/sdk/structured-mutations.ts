@@ -27,6 +27,7 @@ import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
+import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 
 const MUTATION_ROW_KEYS = ["op", "id", "reason", "options", "unique", "match"] as const;
 const REFERENCED_MUTATION_ROW_KEYS = [
@@ -362,6 +363,7 @@ function validateMutationOptions(
       );
     }
   }
+  assertMutationOptionValueTypes(options, op, index);
   return options;
 }
 
