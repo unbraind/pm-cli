@@ -8,6 +8,7 @@ import { buildDeletedItemError } from "../history/tombstone.js";
 import { normalizeHistoryOperationForWrite } from "../history/operation-contract.js";
 import { enforceWorkflowMutation } from "../policy/workflow-policy-store.js";
 import { recordItemMetadataEnumeration } from "./item-metadata-read-work.js";
+import { assertItemMutationPreconditions } from "./item-mutation-precondition.js";
 import path from "node:path";
 import {
   getActiveExtensionRegistrations,
@@ -676,6 +677,7 @@ async function mutateItemWithDeferredHistoryContext(
   } = prepared;
 
   try {
+    assertItemMutationPreconditions(params.pmRoot, document);
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,

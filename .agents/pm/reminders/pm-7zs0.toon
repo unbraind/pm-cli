@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-15T08:05:12.807Z"
+updated_at: "2026-10-16T04:45:25.772Z"
 reminders[1]{at,text}:
   "2026-10-16T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
@@ -16,7 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
-actual_result: "October15 v2026.10.15 is the verified published baseline: successful morning_dispatcher Auto Release38672635111 and Release38675448313 produced immutable tag9de83bcd9f46c1966c4bdb20639f0b6067b4687b; npm/npx/Bun/bunx/MCP verification passes, including independent exact-artifact40 extension and35 diagnostic-privacy cases on Node24 and Bun1.4.2. The lifecycle/CI changes tracked in PR1476 are not included in that immutable publication and require their own next eligible release. Original-attempt historical release reliability remains a separate observation."
+actual_result: "2026-10-16: latest public npm version remains2026.10.15. Morning-dispatcher Auto Release38842025410 failed at the Sentry gate before publication; issue1483 and pm-gh1478 track unresolved output-compaction fault PM-CLI-3H. Preserve the single-release-per-day guard and do not retrigger until remediation."
 dependencies[13]:
   - id: pm-7n5a
     kind: related
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[218]{created_at,author,text}:
+comments[220]{created_at,author,text}:
   "2026-06-10T14:44:30.277Z",maintainer-agent,"2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
   "2026-06-16T11:26:49.976Z",codex-sdk-cli-consolidation-20260616,"Auto-release gate reproduced locally with SENTRY_PERSONAL_ADMIN_TOKEN; failing high issue was PM-CLI-1Q (handled CommandError: all items failed to apply). Added count-agnostic handled pattern 'item(s) failed to apply' and blocking_short_ids/blocking_titles output for diagnostics. Gate now passes in strict mode with max-high=0."
   "2026-06-16T11:46:33.866Z",codex-sdk-cli-consolidation-20260616,"Release-health verification: sentry-telemetry gate now passes in strict mode (max-critical=0,max-high=0) after expected handled-CommandError classification update; output now includes blocking_short_ids/blocking_titles for actionable diagnostics."
@@ -303,6 +303,8 @@ comments[218]{created_at,author,text}:
   "2026-10-15T04:27:16.873Z","harness:codex","Daily release2026-10-15 verified from live systems: Auto Release38672635111 succeeded with declared morning_dispatcher origin; immutable tag9de83bcd9f46c1966c4bdb20639f0b6067b4687b published by Release38675448313. Anonymous published-release verifier passed npm, npx, bunx and MCP consumers. Retained hosted artifact proves40 extension cases and35 diagnostic-privacy cases against actual2026.10.15 on Node and Bun, with fixture/runner/artifact digests. Registry latest2026.10.15. No second automatic cut was triggered; new lifecycle candidate is separately unmerged and unpublished. pm-changelog latest2026.10.14 native configured generation/check passes. Standing reminder remains open for next eligible publication."
   "2026-10-15T04:29:58.624Z","harness:codex","Publication provenance clarification and completion: the hosted40-extension/35-privacy receipt is Node24 evidence. Independently fetched the exact registry2026.10.15 tarball and ran the same complete oracle under Bun1.4.2:40/40 extension and35/35 diagnostic privacy cases pass. Its SHA256 equals the hosted prepublish candidate, so Node and Bun now have independent exact-artifact proof rather than an inferred shared-runtime claim. The reminder is re-armed for2026-10-16 and returned to open/unclaimed."
   "2026-10-15T08:02:32.856Z","harness:codex","Accepted outside-diff review finding: refreshed actual_result from the old October12 snapshot to the verified October15 baseline already recorded in immutable evidence comments. Rechecked live npm latest2026.10.15 and GitHub release published2026-10-15T04:09:27Z. Preserve the distinction between that published artifact and the separate PR1476 candidate; no second automatic release or tag mutation. Preserve next reminder2026-10-16 and return this standing daily reminder open/unclaimed."
+  "2026-10-16T04:07:19.793Z","harness:codex","2026-10-16 live release audit during PR1479 closeout: Auto Release run38842025410 (morning_dispatcher, workflow_dispatch) failed before tag/publication at sentry-telemetry-gate. Issue1483 is the current blocker. Live npm latest and pm-changelog both remain2026.10.15. Required Sentry/telemetry gate reports one high issue PM-CLI-3H, zero critical issues, seven-day telemetry error rate2.88percent and zero failures missing error codes. PM-CLI-3H has124 events, last2026-10-15T16:48:14Z, producer2026.10.14 on Windows CI. GH1478 identifies output compaction splitting valid surrogate pairs, distinct from the persisted malformed-input refusal implemented in pm-jsm9im. Do not mark the current compaction fault resolved from that separate fix or retry publication before remediation. Fresh24h trace query returned no traces. Retain the existing daily guard and automatic-release history, with no duplicate release trigger."
+  "2026-10-16T04:45:25.772Z","harness:codex","Latest Sentry inventory before PR1479 push now reports two unresolved faults: PM-CLI-3H has 196 events and last activity at 2026-10-16 04:25:56 UTC (output compaction, pm-gh1478); PM-CLI-3M has one event at 04:05:53 UTC (numeric raw-option value escaping as trim TypeError, pm-bulk-option-validation). The current automatic-release blocker is still issue1483 and no recovery release was triggered. GitHub Dependabot, code-scanning and secret-scanning inventories remain empty."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

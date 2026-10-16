@@ -18,13 +18,14 @@ import {
 import { EXIT_CODE, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS, SETTINGS_FILENAME } from "../core/shared/constants.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
+import { runWithItemMutationPrecondition } from "../core/store/item-mutation-precondition.js";
 import { isConfigurationOnlySettingsRead, readSettings } from "../core/store/settings.js";
 import { DEFAULT_RUNTIME_SCHEMA_FILE_PATHS, filePathForSchemaSection, loadRuntimeSchemaFromOptionalFiles, normalizeRuntimeSchemaSettings } from "../core/schema/runtime-schema.js";
 import { validateSettings } from "../core/store/settings-validator.js";
 import { resolveWorkspaceRoot } from "../core/store/paths.js";
 import { getSessionStatePath } from "../core/session/session-state.js";
 import { PmCliError } from "../core/shared/errors.js";
-import type { ItemTypeDefinition, PmSettings } from "../types/index.js";
+import type { ItemDocument, ItemTypeDefinition, PmSettings } from "../types/index.js";
 import { stableUpsertValue, type ItemMutationUpsertCandidate } from "./structured-mutations.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { readHistoryEntries } from "./history-read.js";
@@ -198,13 +199,12 @@ async function assertUniqueKeyFree(
 }
 
 /** Refuse a planned keyed-upsert update whose target no longer carries the key value it was selected by. */
-async function assertUpsertMatchCurrent(
-  pmRoot: string,
+function assertUpsertMatchCurrent(
+  document: ItemDocument,
   id: string,
   match: BulkItemUniqueKey,
-): Promise<void> {
-  const located = await get(id, {}, { pmRoot });
-  const current = (located.item as Record<string, unknown>)[match.key];
+): void {
+  const current = (document.metadata as Record<string, unknown>)[match.key];
   const expected = stableUpsertValue(match.value);
   // An absent key serializes to undefined, which never equals the expected string.
   if (stableUpsertValue(current) === expected) return;
@@ -247,9 +247,9 @@ export interface BulkItemUpdateMutation {
   /** Update options forwarded to the public `update` runtime primitive. */
   options: PmClientFullMutationOptions;
   /**
-   * Keyed-upsert selection re-checked under the writer lock. The planner
-   * chose this target by key value before the lock; the commit re-reads the
-   * key and refuses with `upsert_match_changed` when the value was changed or
+   * Keyed-upsert selection re-checked under the target item lock. The planner
+   * chose this target by key value before the lock; the commit checks the
+   * locked document and refuses with `upsert_match_changed` when the value was changed or
    * removed after planning, so the update never lands on a mismatched item.
    */
   match?: BulkItemUniqueKey;
@@ -566,10 +566,7 @@ function buildUpdateStep(
       return prepareRestoreCompensation(config.pmRoot, mutation);
     },
     async apply(): Promise<WorkspaceTransactionJsonValue> {
-      if (mutation.match !== undefined) {
-        await assertUpsertMatchCurrent(config.pmRoot, mutation.id, mutation.match);
-      }
-      const updated = await update(
+      const applyUpdate = () => update(
         mutation.id,
         mergeTransactionMutationOptions(mutation.options, {
           author: config.author,
@@ -577,6 +574,15 @@ function buildUpdateStep(
         }),
         { pmRoot: config.pmRoot },
       );
+      const match = mutation.match;
+      const updated = match === undefined
+        ? await applyUpdate()
+        : await runWithItemMutationPrecondition({
+            pmRoot: config.pmRoot,
+            // Direct SDK callers may use an unprefixed item id; the locked store uses its canonical identity.
+            id: String(((await get(mutation.id, {}, { pmRoot: config.pmRoot })).item as Record<string, unknown>).id),
+            validate: (document) => assertUpsertMatchCurrent(document, mutation.id, match),
+          }, applyUpdate);
       const updatedItem = updated.item as Record<string, unknown>;
       return { id: String(updatedItem.id), op: "update" };
     },

@@ -1273,8 +1273,9 @@ JSON Lines and op-less create documents (records shaped like `pm create
 records that match nothing carry a `unique` guard that `commitItemMutations`
 re-checks under the writer lock and refuses with `upsert_key_conflict` when a
 concurrent writer created the key value after planning; matched records become
-updates carrying a `match` guard that refuses with `upsert_match_changed` when
-the target's key changed in between.
+updates carrying a `match` guard checked against the locked target document,
+after acquiring its item lock. It refuses with `upsert_match_changed` when the
+target's key changed in between, including changes made by ordinary item updates.
 The returned `rows` receipt maps every input record, in order, to its resolved
 `id` and `op`:
 

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:storage",refusal,sentry,toon,unicode
 created_at: "2026-10-15T13:21:41.694Z"
-updated_at: "2026-10-15T22:53:34.870Z"
+updated_at: "2026-10-16T04:19:58.485Z"
 closed_at: "2026-10-15T15:10:40.441Z"
 completed_at: "2026-10-15T15:10:40.441Z"
 author: "harness:claude-code"
@@ -15,7 +15,7 @@ acceptance_criteria: "A lone surrogate in any persisted item text (metadata scal
 parent: pm-o2kc
 risk: high
 confidence: high
-resolution: "serializeToonItemDocument scans the encodable payload for a lone high or low surrogate (strings at any depth up to 6) and refuses with exit 2, code text_unpaired_surrogate, the dotted field path and code-unit index, plus repair guidance; whole surrogate pairs are untouched. Sentry PM-CLI-3H now maps to a PmCliError instead of an unclassified runtime fault."
+resolution: "Item serialization checks all metadata strings and object keys recursively to their leaves plus the body before either TOON or JSON/markdown persistence, refusing lone surrogates with text_unpaired_surrogate, field path, code-unit index and repair guidance while preserving whole surrogate pairs. This persisted-input validation is separate from the still-open output-compaction defect pm-gh1478."
 expected_result: pm refuses ill-formed Unicode text at the storage boundary with an actionable typed error; Sentry PM-CLI-3H is resolved in the next release.
 actual_result: "Unit tests reproduce the Sentry message shape (truncated emoji at index 239 in description) and a nested comments[0].text value; whole emoji still round-trip. Linked tests pass; exact coverage 100/100/100/100."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:

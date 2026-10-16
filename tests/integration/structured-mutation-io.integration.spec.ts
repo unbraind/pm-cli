@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { handleRequest } from "../../src/mcp/server.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -727,6 +727,39 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
     });
   });
 
+  it.each(["pm-item-lock-race", "item-lock-race"])("rejects a key moved by an ordinary writer immediately before the upsert acquires the item lock (%s)", async (requestId) => {
+    await withTempPmPath(async (context) => {
+      const { planItemMutationDocument } = await import("../../src/sdk/lifecycle/structured-mutation-plan.js");
+      const { commitItemMutations } = await import("../../src/sdk/item-transaction.js");
+      const locks = await import("../../src/core/lock/lock.js");
+      const originalAcquire = locks.acquireLock;
+      const id = "pm-item-lock-race";
+      expect(context.runCli(["create", "--id", id, "--title", "Original", "--type", "Task", "--description", "original-key", "--json"]).code).toBe(0);
+      const plan = await planItemMutationDocument({
+        pmRoot: context.pmPath,
+        input: '{"title":"Imported","type":"Task","description":"original-key"}',
+        upsertKey: "description",
+      });
+      let moved = false;
+      const lockBoundary = vi.spyOn(locks, "acquireLock").mockImplementation(async (...args) => {
+        if (args[0] === context.pmPath && args[1] === id && !moved) {
+          moved = true;
+          // A separate CLI process writes through the ordinary item lock while the importer has not acquired it.
+          expect(context.runCli(["update", id, "--description", "moved-key", "--json"]).code).toBe(0);
+        }
+        return originalAcquire(...args);
+      });
+      try {
+        await expect(commitItemMutations({ pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "import-agent", mutations: [{ ...plan.mutations[0]!, id: requestId }] })).rejects.toMatchObject({ context: { code: "upsert_match_changed" } });
+      } finally {
+        lockBoundary.mockRestore();
+      }
+      expect(moved).toBe(true);
+      expect(context.runCli(["get", id, "--json"], { expectJson: true }).json).toMatchObject({ item: { title: "Original", description: "moved-key" } });
+      expect(context.runCli(["history", id, "--verify", "--json"]).code).toBe(0);
+    });
+  });
+
   it("accepts MCP document rows with forward references and keyed upsert without a transaction id", async () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
@@ -745,7 +778,10 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
           },
         },
       });
-      const createdResult = (created?.structuredContent as { result: { status: string; transaction_id: string; transaction_id_source: string; rows: Array<{ id: string; op: string }> } }).result;
+      if (created?.structuredContent === undefined) {
+        throw new Error("Created MCP mutation response content is required");
+      }
+      const createdResult = (created.structuredContent as { result: { status: string; transaction_id: string; transaction_id_source: string; rows: Array<{ id: string; op: string }> } }).result;
       expect(createdResult).toMatchObject({ status: "committed", transaction_id_source: "derived", rows: [{ op: "create" }, { op: "update" }] });
       expect(createdResult.transaction_id).toMatch(/^mutate-[0-9a-f]{24}$/u);
 

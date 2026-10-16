@@ -4,8 +4,8 @@
 
 ### Added
 
-- Validate contributed scalar flag values before extension handler dispatch ([pm-extension-scalar-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-extension-scalar-validation.toon))
 - GH-1456: Discoverable SDK-backed bulk creation with JSONL and keyed upsert ([pm-gh1456](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1456.toon))
+- Validate contributed scalar flag values before extension handler dispatch ([pm-extension-scalar-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-extension-scalar-validation.toon))
 - GH-1465: Represent implementer-to-verifier handoff as project context ([pm-gh1465](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1465.toon))
 
 ### Fixed
