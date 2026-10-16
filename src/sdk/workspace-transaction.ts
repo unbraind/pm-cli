@@ -321,7 +321,7 @@ function invalidJournal(transactionId: string, detail: string): PmCliError {
   );
 }
 
-/** Refuse a different transaction identity or plan while retaining the original journal. */
+/** Refuse a different step plan while retaining the valid original journal. */
 function journalPlanMismatch(transactionId: string): PmCliError {
   return new PmCliError(
     `Workspace transaction ${transactionId} journal does not match the supplied plan`,
@@ -356,7 +356,7 @@ function parseJournal(
   const journal = parsed as Partial<WorkspaceTransactionJournal>;
   const identityMatches =
     journal.schemaVersion === 1 && journal.transactionId === transactionId;
-  if (!identityMatches) throw journalPlanMismatch(transactionId);
+  if (!identityMatches) throw invalidJournal(transactionId, "schema version or transaction id does not match the journal file");
   const recordedStepIds = journal.stepIds;
   if (
     !Array.isArray(recordedStepIds) ||

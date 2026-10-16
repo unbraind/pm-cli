@@ -650,7 +650,7 @@ describe("workspace SDK transactions", () => {
           author: "agent",
           steps: [createTestStep("step", state, [])],
         }),
-      ).rejects.toMatchObject({ context: { code: "transaction_plan_mismatch" } });
+      ).rejects.toMatchObject({ context: { code: "transaction_journal_invalid" } });
       await writeFile(
         path.join(journalDir, "drift.json"),
         "not-json\n",
@@ -704,6 +704,9 @@ describe("workspace SDK transactions", () => {
       };
       const malformed = [
         [],
+        { ...base, schemaVersion: undefined },
+        { ...base, schemaVersion: 2 },
+        { ...base, transactionId: "other" },
         { ...base, results: [] },
         { ...base, compensationData: [] },
         { ...base, compensationData: { step: { before: true } } },
@@ -725,9 +728,10 @@ describe("workspace SDK transactions", () => {
         { ...base, status: { toString: null } },
       ];
       for (const journal of malformed) {
+        const raw = `${JSON.stringify(journal)}\n`;
         await writeFile(
           path.join(journalDir, "forged.json"),
-          `${JSON.stringify(journal)}\n`,
+          raw,
           "utf8",
         );
         await expect(
@@ -738,7 +742,7 @@ describe("workspace SDK transactions", () => {
             steps,
           }),
         ).rejects.toMatchObject({ exitCode: 4, context: { code: "transaction_journal_invalid" } });
-        expect(JSON.parse(await readFile(path.join(journalDir, "forged.json"), "utf8"))).toEqual(journal);
+        expect(await readFile(path.join(journalDir, "forged.json"), "utf8")).toBe(raw);
         expect(state).toEqual({ state: "pending", value: 0 });
       }
     } finally {

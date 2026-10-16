@@ -6,6 +6,15 @@ import { planItemMutationDocument } from "../../../../src/sdk/lifecycle/structur
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("planItemMutationDocument (pm-gh1456)", () => {
+  it.each(["", " \t\n "])("refuses supplied blank upsert keys before writes: %j", async (upsertKey) => {
+    await withTempPmPath(async (context) => {
+      const { readdir } = await import("node:fs/promises");
+      const before = await readdir(context.pmPath, { recursive: true });
+      await expect(planItemMutationDocument({ pmRoot: context.pmPath, upsertKey, input: '{"title":"Never created","type":"Task"}' })).rejects.toMatchObject({ exitCode: 2, message: "Upsert key must be a non-empty field name." });
+      expect(await readdir(context.pmPath, { recursive: true })).toEqual(before);
+    });
+  });
+
   it("persists and upserts wrapped camelCase core fields under their stored metadata keys", async () => {
     await withTempPmPath(async (context) => {
       const input = (title: string) => JSON.stringify({ item: { title, type: "Task", acceptanceCriteria: "wrapped-key" } });

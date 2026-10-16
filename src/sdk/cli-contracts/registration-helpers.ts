@@ -72,13 +72,15 @@ export async function applyActiveCommandResultService(
   return override.handled ? override.result : result;
 }
 
-/** Synchronize parser-derived values without relabeling declared defaults as explicit CLI input. */
+/** Preserve unchanged option origins and label parser/preflight overrides as explicit input. */
 export function syncCommanderActionOptions(
   actionCommand: Command,
   commandOptions: Record<string, unknown>,
 ): void {
   for (const [key, value] of Object.entries(commandOptions)) {
-    actionCommand.setOptionValueWithSource(key, value, actionCommand.getOptionValueSource(key) ?? "cli");
+    const source = actionCommand.getOptionValueSource(key);
+    const unchanged = source !== undefined && Object.is(actionCommand.getOptionValue(key), value);
+    actionCommand.setOptionValueWithSource(key, value, unchanged ? source : "cli");
   }
 }
 

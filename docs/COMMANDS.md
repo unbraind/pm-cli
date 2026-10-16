@@ -669,7 +669,8 @@ Raw mutation `options` use command option types: write `estimatedMinutes: "45"`.
 Item documents may instead use numeric `estimated_minutes: 45`. A non-string
 raw estimate refuses before journal or item writes with
 `mutation_option_value_invalid` (exit 2), identifying the row and option.
-Corrupt durable journals refuse with `transaction_journal_invalid`; preserve
+Corrupt durable journals, including a wrong stored schema version or transaction
+identity, refuse with `transaction_journal_invalid`; preserve
 the journal and inspect or restore verified state before retrying. Changing the
 transaction id does not safely recover unknown previously applied work.
 

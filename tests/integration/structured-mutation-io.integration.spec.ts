@@ -8,6 +8,16 @@ function itemId(payload: unknown): string {
 }
 
 describe("structured SDK/CLI/MCP mutation IO", () => {
+  it("refuses a blank upsert flag instead of silently creating an item", async () => {
+    await withTempPmPath(async (context) => {
+      const refused = context.runCli(["item", "mutate", "--upsert-key", "  ", "--json"], { input: '{"id":"pm-blank-key","title":"Never created","type":"Task"}', expectJson: true });
+      expect(refused.code).toBe(2);
+      expect(refused.stderr).toContain("Upsert key must be a non-empty field name");
+      expect(context.runCli(["get", "pm-blank-key", "--json"]).code).toBe(3);
+      expect(context.runCli(["list", "--status", "all", "--json"], { expectJson: true }).json).toMatchObject({ count: 0 });
+    });
+  });
+
   it("refuses raw numeric duration options before writes and permits a corrected compensated retry", async () => {
     await withTempPmPath(async (context) => {
       const { readFile } = await import("node:fs/promises");

@@ -1273,6 +1273,7 @@ JSON Lines and op-less create documents (records shaped like `pm create
 core camelCase option names (such as `acceptanceCriteria`) and declared field
 keys or option targets resolve to the stored metadata key before candidate
 reads and lock-held guards.
+An explicitly supplied blank `upsertKey` is a usage error; omit it to select plain creation.
 Unrelated extension metadata keys retain their exact spelling, including camelCase.
 Item documents also accept known core camelCase option names, including inside
 `{ item }` wrappers. Exact stored metadata keys win when both spellings appear.
@@ -1321,7 +1322,7 @@ retaining those create rows.
 If document edits, external matches, or schema context change the resolved
 plan under that committed id, the coordinator refuses with
 `transaction_plan_mismatch`; use a new transaction id for the changed import.
-Corrupt journal JSON, lifecycle state or metadata instead refuses with
+Corrupt journal JSON, stored schema version/transaction identity, lifecycle state or metadata instead refuses with
 `transaction_journal_invalid`. Preserve and inspect or restore the journal;
 starting a new id can duplicate work whose durable state cannot be verified.
 

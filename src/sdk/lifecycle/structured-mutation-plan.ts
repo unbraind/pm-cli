@@ -10,6 +10,8 @@ import { resolveRuntimeFieldRegistry, runtimeFieldOptionTarget } from "../../cor
 import { listUpsertKeyCandidates, resolveTransactionSchema } from "../item-transaction.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveCoreUpsertMetadataKey } from "./core-item-fields.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import type { PmSettings } from "../../types/index.js";
 import {
   deriveMutationTransactionId,
@@ -52,18 +54,21 @@ export interface PlannedItemMutationDocument extends ResolvedItemMutationDocumen
 export async function planItemMutationDocument(
   options: PlanItemMutationDocumentOptions,
 ): Promise<PlannedItemMutationDocument> {
+  const suppliedKey = options.upsertKey?.trim();
+  if (suppliedKey !== undefined && suppliedKey.length === 0) {
+    throw new PmCliError("Upsert key must be a non-empty field name.", EXIT_CODE.USAGE);
+  }
   const settings = options.settings ?? (await readSettings(options.pmRoot));
   const explicit = options.transactionId?.trim() ?? "";
   const transactionId =
     explicit.length > 0 ? explicit : deriveMutationTransactionId(options.input);
   const planSchema = await resolveTransactionSchema(options.pmRoot, settings);
   const runtimeFields = resolveRuntimeFieldRegistry(planSchema.schema).definitions;
-  const suppliedKey = options.upsertKey?.trim();
   const declaredField = runtimeFields.find((field) => field.metadata_key === suppliedKey) ??
     runtimeFields.find((field) => field.key === suppliedKey || runtimeFieldOptionTarget(field) === suppliedKey);
   const upsertKey = declaredField?.metadata_key ?? resolveCoreUpsertMetadataKey(suppliedKey);
   const upsert =
-    upsertKey === undefined || upsertKey.length === 0
+    upsertKey === undefined
       ? undefined
       : {
           key: upsertKey,
