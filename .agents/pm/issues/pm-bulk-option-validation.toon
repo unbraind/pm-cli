@@ -1,12 +1,12 @@
 id: pm-bulk-option-validation
-title: Raw bulk options escape as an unclassified trim error for a numeric string-valued option
+title: Return typed refusals for malformed raw duration options
 description: item mutate admits raw options with numeric estimatedMinutes even though Update/CreateCommandOptions requires a string; parsing then escapes with unknown_error and e.trim is not a function. Validate values before invoking lifecycle handlers and return typed field-level recovery.
 type: Issue
 status: closed
 priority: 2
 tags[3]: agent-ux,"area:sdk",bulk-mutations
 created_at: "2026-10-16T04:10:54.273Z"
-updated_at: "2026-10-16T12:55:25.602Z"
+updated_at: "2026-10-16T14:29:20.705Z"
 closed_at: "2026-10-16T12:55:24.819Z"
 completed_at: "2026-10-16T12:55:24.819Z"
 author: "harness:codex"

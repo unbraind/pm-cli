@@ -1273,6 +1273,7 @@ JSON Lines and op-less create documents (records shaped like `pm create
 core camelCase option names (such as `acceptanceCriteria`) and declared field
 keys or option targets resolve to the stored metadata key before candidate
 reads and lock-held guards.
+Unrelated extension metadata keys retain their exact spelling, including camelCase.
 Records that match nothing carry a `unique` guard that `commitItemMutations`
 re-checks under the writer lock and refuses with `upsert_key_conflict` when a
 concurrent writer created the key value after planning; matched records become

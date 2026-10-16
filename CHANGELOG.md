@@ -4,13 +4,13 @@
 
 ### Added
 
-- Validate contributed scalar flag values before extension handler dispatch ([pm-extension-scalar-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-extension-scalar-validation.toon))
 - GH-1456: Discoverable SDK-backed bulk creation with JSONL and keyed upsert ([pm-gh1456](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1456.toon))
+- Validate contributed scalar flag values before extension handler dispatch ([pm-extension-scalar-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-extension-scalar-validation.toon))
 - GH-1465: Represent implementer-to-verifier handoff as project context ([pm-gh1465](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1465.toon))
 
 ### Fixed
 
-- Raw bulk options escape as an unclassified trim error for a numeric string-valued option ([pm-bulk-option-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bulk-option-validation.toon))
+- Return typed refusals for malformed raw duration options ([pm-bulk-option-validation](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bulk-option-validation.toon))
 - Refuse item text with an unpaired surrogate as a typed field error before TOON encoding ([pm-jsm9im](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jsm9im.toon))
 - Align claim guidance with atomic ownership refusal ([pm-5f7ayv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5f7ayv.toon))
 - GH-1464: Distinguish successful close follow-up from failure recovery ([pm-gh1464](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1464.toon))

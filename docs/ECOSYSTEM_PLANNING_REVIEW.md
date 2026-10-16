@@ -27,11 +27,15 @@ it is not silently equated with the earlier item snapshot. History-drift
 validation passed across all 2,826 current items. The public SDK independently
 verified hash chains for all 2,841 collected streams with zero failures.
 
-[The per-item census](https://github.com/unbraind/pm-cli/blob/main/docs/ecosystem-review-2026-09-28.json) (kept in the repository; not shipped in the npm package) records every snapshot
+[The per-item census](https://github.com/unbraind/pm-cli/blob/main/docs/ecosystem-review-2026-09-28.json) records every snapshot
 ID, status, content fingerprint, structural classification, missing planning
 fields, historical evidence gaps, and remediation owner. These are mechanical
 findings, not invented historical estimates, outcomes, or review approvals.
 The full raw corpus stays outside public documentation.
+
+The census is intentionally excluded from npm. This packaged page uses its
+canonical GitHub file URL under the [documentation policy](../AGENTS.md#documentation-policy),
+so installed readers can access the data without a broken package-relative path.
 
 | Measure | Initial observation | Interpretation |
 | --- | ---: | --- |

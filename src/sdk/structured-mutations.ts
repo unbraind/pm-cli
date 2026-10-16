@@ -10,7 +10,6 @@ import { normalizeItemId, normalizePrefix } from "../core/item/id.js";
 import { preserveMutationStdinTokenLiterals } from "../core/item/parse.js";
 import {
   EXIT_CODE,
-  ITEM_PROJECT_CONTEXT_KEYS,
 } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
@@ -26,6 +25,7 @@ import {
 import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
+import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS } from "./lifecycle/core-item-fields.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 
@@ -84,41 +84,7 @@ const UPDATE_READ_ONLY_ITEM_KEYS = new Set([
   "completed_at",
   "id",
 ]);
-const ITEM_FIELD_KEYS = new Set([
-  "id",
-  "title",
-  "description",
-  "type",
-  "status",
-  "priority",
-  "tags",
-  "body",
-  "deadline",
-  "estimated_minutes",
-  "acceptance_criteria",
-  "definition_of_ready",
-  "order",
-  "rank",
-  "assignee",
-  ...ITEM_PROJECT_CONTEXT_KEYS,
-  "affected_version",
-  "fixed_version",
-  "component",
-  "regression",
-  "customer_impact",
-  "close_reason",
-  "completed_at",
-  "dependencies",
-  "comments",
-  "notes",
-  "learnings",
-  "files",
-  "tests",
-  "docs",
-  "reminders",
-  "events",
-  "type_options",
-]);
+
 const MUTATION_OPTION_KEYS: Readonly<
   Record<BulkItemMutation["op"], readonly string[]>
 > = {

@@ -9,6 +9,7 @@
 import { resolveRuntimeFieldRegistry, runtimeFieldOptionTarget } from "../../core/schema/runtime-schema.js";
 import { listUpsertKeyCandidates, resolveTransactionSchema } from "../item-transaction.js";
 import { readSettings } from "../../core/store/settings.js";
+import { resolveCoreUpsertMetadataKey } from "./core-item-fields.js";
 import type { PmSettings } from "../../types/index.js";
 import {
   deriveMutationTransactionId,
@@ -60,8 +61,7 @@ export async function planItemMutationDocument(
   const suppliedKey = options.upsertKey?.trim();
   const declaredField = runtimeFields.find((field) => field.metadata_key === suppliedKey) ??
     runtimeFields.find((field) => field.key === suppliedKey || runtimeFieldOptionTarget(field) === suppliedKey);
-  const upsertKey = declaredField?.metadata_key ??
-    suppliedKey?.replace(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`);
+  const upsertKey = declaredField?.metadata_key ?? resolveCoreUpsertMetadataKey(suppliedKey);
   const upsert =
     upsertKey === undefined || upsertKey.length === 0
       ? undefined

@@ -89,6 +89,7 @@ For real repository tracking, do not override `PM_PATH`. If a script must target
 
 - Keep this file and [README](README.md) short.
 - Move details into focused docs under `docs/` and keep links relative/GitHub-compatible.
+- Packaged pages may use canonical GitHub file URLs for repository-only files intentionally excluded from npm. State that exclusion beside the link; keep links between packaged pages relative.
 - Add tracker references near the top of new docs when a `pm` item created the change.
 - Link documentation changes back to the active item with `pm docs`.
 

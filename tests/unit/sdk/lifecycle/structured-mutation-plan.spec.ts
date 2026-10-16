@@ -6,6 +6,24 @@ import { planItemMutationDocument } from "../../../../src/sdk/lifecycle/structur
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("planItemMutationDocument (pm-gh1456)", () => {
+  it("preserves camelCase extension metadata keys outside the core field vocabulary", async () => {
+    await withTempPmPath(async (context) => {
+      const { mkdir, writeFile } = await import("node:fs/promises");
+      const path = await import("node:path");
+      const directory = path.join(context.pmPath, "extensions", "legacy-fields");
+      await mkdir(directory, { recursive: true });
+      await writeFile(path.join(directory, "manifest.json"), JSON.stringify({ name: "legacy-fields", version: "1.0.0", entry: "./index.mjs", capabilities: ["schema"] }));
+      await writeFile(path.join(directory, "index.mjs"), 'export default { activate(api) { api.registerItemFields([{ name: "legacyId", type: "string" }]); } };');
+      const seed = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "legacy-seed", input: '{"id":"pm-legacy","title":"Legacy","type":"Task","legacyId":"legacy-1"}' });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: seed.transaction_id, author: "seed", mutations: seed.mutations });
+      const plan = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "legacy-update", upsertKey: "legacyId", input: '{"title":"Renamed legacy","type":"Task","legacyId":"legacy-1"}' });
+      expect(plan).toMatchObject({ upsert_key: "legacyId", rows: [{ id: "pm-legacy", op: "update", upserted: true }], mutations: [{ match: { key: "legacyId", value: "legacy-1" } }] });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "update", mutations: plan.mutations });
+      expect(context.runCli(["get", "pm-legacy", "--json", "--full"], { expectJson: true }).json).toMatchObject({ item: { title: "Renamed legacy", legacyId: "legacy-1" } });
+      expect(context.runCli(["list", "--status", "all", "--json"], { expectJson: true }).json).toMatchObject({ count: 1 });
+    });
+  });
+
   it("matches core camelCase option targets using stored keys across distinct transactions", async () => {
     await withTempPmPath(async (context) => {
       const fields = [
