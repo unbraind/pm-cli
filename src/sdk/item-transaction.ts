@@ -143,6 +143,8 @@ export async function listUpsertKeyCandidates(
 interface UniqueKeyIndex {
   /** Existing item ids per canonical key value. */
   lookup(key: string): Promise<Map<string, string[]>>;
+  /** Advance cached scans from the created item's metadata without another project scan. */
+  recordCreate(item: Readonly<Record<string, unknown>>): Promise<void>;
   /** Drop cached scans after a step may have changed existing key values. */
   invalidate(): void;
 }
@@ -167,6 +169,15 @@ function createUniqueKeyIndex(
       const pending = scans.get(key) ?? scan(key);
       scans.set(key, pending);
       return pending;
+    },
+    async recordCreate(item) {
+      for (const [key, pending] of scans) {
+        const value = item[key];
+        if (value == null) continue;
+        const byValue = await pending;
+        const stable = stableUpsertValue(value);
+        byValue.set(stable, [...(byValue.get(stable) ?? []), String(item.id)]);
+      }
     },
     invalidate() {
       scans.clear();
@@ -505,6 +516,7 @@ function buildCreateStep(
         { pmRoot: config.pmRoot },
       );
       const createdItem = created.item as Record<string, unknown>;
+      await config.uniqueIndex.recordCreate(createdItem);
       return { id: String(createdItem.id), op: "create" };
     },
     async compensate(): Promise<void> {

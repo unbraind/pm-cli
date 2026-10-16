@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-16T17:12:05.241Z"
-closed_at: "2026-10-16T17:12:04.343Z"
-completed_at: "2026-10-16T17:12:04.343Z"
+updated_at: "2026-10-16T18:03:51.362Z"
+closed_at: "2026-10-16T18:03:50.457Z"
+completed_at: "2026-10-16T18:03:50.457Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Document and execute the existing atomic create batch as the immediate recovery; Any create-many adapter delegates to public SDK transaction primitives; JSONL/ref resolution and keyed upsert preserve input order and validate before persistence; Interrupted or repeated imports preserve complete history and stable idempotency
 parent: pm-n7rr
 risk: medium
 confidence: medium
-resolution: "SDK-first bulk creation preserves stable references and wrapped IDs, guards upsert keys under item locks and validates reference cycles before writes. Declared upsert field names and option targets canonicalize to stored metadata keys, with stored-key precedence. Parsed and direct batches share duration-type validation. Corrupt JSON/lifecycle/metadata/status/step records refuse with transaction_journal_invalid; valid identity/plan differences retain transaction_plan_mismatch and fully compensated attempts can replan. Documentation, SDK error-code contracts and generated surfaces match these behaviors. Core camelCase option names normalize to their stored snake_case keys after declared-field resolution; six core-field upserts under distinct transaction ids retain one item. A shared private core-field vocabulary restricts camelCase conversion to known core metadata; unrelated extension keys retain exact spelling. Shared document-key resolution accepts known core camelCase names inside direct or wrapped item documents, preserving exact stored-key precedence through lookup and persistence. Unique-key scans are invalidated after successful update, close and release; rescans include earlier creates. Uninterrupted create-only batches retain lazy scans. All core-key overload declarations and implementation carry TSDoc."
-expected_result: "Bulk imports preserve references, canonical keys, replay and atomic safety. Mixed batches observe current unique-key values after every successful non-create step, including changes to earlier creates, and release cleared values for reuse."
-actual_result: "94 linked SDK/CLI/MCP tests, eight catalog-generator tests and nine packed npx/bunx consumers pass. Five uniqueness scenarios cover updates into and away from conflicts, updates to an earlier created item, close and release. Old 65e05f248 fails the controls; a corrected close fixture supplies a valid terminal-create reason and old code incorrectly accepts it. Source static assurance passes, including the original 100% export-docstring threshold. The wider static command stopped on cleared expected fields for the two reopened owners, which were restored through PM. Full local execution records 10546 passes, three skips and one unchanged MRTR task-status wait failure; it passes alone, and no final local coverage artifact exists. Final-head hosted coverage and full review remain required."
+resolution: "SDK-first bulk creation preserves stable references and wrapped IDs, guards upsert keys under item locks and validates reference cycles before writes. Declared upsert field names and option targets canonicalize to stored metadata keys, with stored-key precedence. Parsed and direct batches share duration-type validation. Corrupt JSON/lifecycle/metadata/status/step records refuse with transaction_journal_invalid; valid identity/plan differences retain transaction_plan_mismatch and fully compensated attempts can replan. Documentation, SDK error-code contracts and generated surfaces match these behaviors. Core camelCase option names normalize to their stored snake_case keys after declared-field resolution; six core-field upserts under distinct transaction ids retain one item. A shared private core-field vocabulary restricts camelCase conversion to known core metadata; unrelated extension keys retain exact spelling. Shared document-key resolution accepts known core camelCase names inside direct or wrapped item documents, preserving exact stored-key precedence through lookup and persistence. Unique-key scans are invalidated after successful update, close and release; rescans include earlier creates. Uninterrupted create-only batches retain lazy scans. All core-key overload declarations and implementation carry TSDoc. Every create advances all cached unique-key scans from its returned normalized metadata, covering unguarded creates and records guarded on a different key or value. All matching ids are retained and absent metadata is skipped without another project scan."
+expected_result: "Each guarded create observes all prior successful writes and normalized metadata values in its transaction, including unguarded and differently guarded creates. Bulk imports retain references, replay, atomic compensation and lazy project scans."
+actual_result: "100 linked SDK/CLI/MCP tests and 10553 complete-source tests pass (three skipped). Exact source coverage is 100/100/100/100 with every one of 69226 statements, 53150 branches, 14253 functions and 65717 lines covered. Five current regressions fail on isolated unchanged 552ec58d0; the missing-metadata positive control passes there. Current cases prove unguarded creates, different guard keys/values, normalized tag arrays, omitted metadata and complete matching-id diagnostics. Typecheck, lint, the actual static source gate, zero-change SDK surface, contracts and nine packed npx/bunx consumers pass. A live candidate read at 18:00 UTC records one backend start/finish pair, zero failure and nine healthy stack services. Sentry still reports the two tracked unresolved faults, with empty recent trace/span discovery. Final-head hosted checks and renewed full review remain required."
 dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
   pm-y9hq,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
@@ -32,7 +32,7 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,related,"2026-10-16T05:26:38.990Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-16T06:04:05.871Z","harness:codex","cli:update:dep",detected
   pm-jm7m3o,related,"2026-10-16T17:11:59.882Z","harness:codex","cli:update:dep",detected
-comments[48]:
+comments[49]:
   - created_at: "2026-10-13T18:12:30.417Z"
     author: "harness:codex"
     text: "{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
@@ -179,9 +179,13 @@ comments[48]:
   - created_at: "2026-10-16T17:09:10.536Z"
     author: "harness:codex"
     text: "Unique-key cache review remediation: invalidate after successful update/close/release and include earlier creates in rescans. Keep lazy scans for uninterrupted create-only batches. Document every overload declaration and implementation without changing the static gate. 94 linked SDK/CLI/MCP tests and eight catalog-generator tests pass; nine packed npx/bunx consumers pass. Five uniqueness scenarios cover updates into and away from conflicts, updates to an earlier created item, close and release. Old 65e05f248 fails the controls; the close fixture now supplies a valid terminal-create reason and old code incorrectly accepts it. Source static assurance passes, including the original 100% export-docstring threshold. The wider local static command stopped on cleared expected fields for the two reopened owners; concrete expectations were restored through PM. Full local source execution records 10546 passes, three skips and one unchanged MRTR task-status wait failure; that case passes alone and no final local coverage artifact exists. Final-head hosted coverage and full review remain required. Hound stayed pending on 65e05f248 without a target URL; Chrome confirms this repository is active, but the dashboard has no job detail. New review-wait UX intake pm-jm7m3o is open and unclaimed."
-learnings[2]{created_at,author,text}:
+  - created_at: "2026-10-16T18:03:48.593Z"
+    author: "harness:codex"
+    text: "Create-cache review remediation: advance every cached key scan from the created item metadata rather than assuming the guard describes every field written. This handles unguarded and differently guarded records, actual normalized values and multiple matching ids without another project scan. Metadata absent on the created item is ignored consistently with candidate scans. The array control uses canonical lowercase guard values because tags normalize on write. 100 linked SDK/CLI/MCP tests and 10553 complete-source tests pass (three skipped). Exact source coverage is 100/100/100/100 with every one of 69226 statements, 53150 branches, 14253 functions and 65717 lines covered. Five current regressions fail on isolated unchanged 552ec58d0; the missing-metadata positive control passes there. Current cases prove unguarded creates, different guard keys/values, normalized tag arrays, omitted metadata and complete matching-id diagnostics. Typecheck, lint, the actual static source gate, zero-change SDK surface, contracts and nine packed npx/bunx consumers pass. A live candidate read at 18:00 UTC records one backend start/finish pair, zero failure and nine healthy stack services. Sentry still reports the two tracked unresolved faults, with empty recent trace/span discovery. Final-head hosted checks and renewed full review remain required."
+learnings[3]{created_at,author,text}:
   "2026-10-16T04:25:15.096Z","harness:codex",A workspace transaction lock serializes bulk transactions but does not fence ordinary item writers. Revalidate a planned match against the same document read under the target item lock; resolve shortened SDK ids to canonical identity before scoping a target-specific guard. Prove the race at the actual item-lock boundary with a separate ordinary writer and verify its history remains intact.
   "2026-10-16T07:31:18.265Z","harness:codex",Preserve Commander option origins when forwarding normalized SDK values. A default-true flag must remain a default; relabeling every value as CLI input breaks safe explicit-input conflict checks.
+  "2026-10-16T18:03:49.466Z","harness:codex","A create guard covers only its own precondition; the record can write other keys or normalized values. Keep indexes current from returned item metadata across all cached keys, preserve all matching ids, and keep project scans lazy. Guard values must use the stored canonical representation, such as lowercase tags."
 files[28]:
   - path: .agents/pm/assurance.json
     scope: project
@@ -325,58 +329,6 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/bulk-create-scalar-validation-claim-guidance
 test_runs[20]:
-  - run_id: test-local-mvagrhpj-jhqz2a
-    kind: test
-    status: passed
-    started_at: "2026-10-16T04:23:49.591Z"
-    finished_at: "2026-10-16T04:24:40.807Z"
-    recorded_at: "2026-10-16T04:24:40.807Z"
-    passed: 2
-    failed: 0
-    skipped: 0
-    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/store/item-mutation-precondition.spec.ts,schema,schema,source,local_source_ref
-  - run_id: test-local-mvaj0vee-g4mlum
-    kind: test
-    status: passed
-    started_at: "2026-10-16T05:26:46.088Z"
-    finished_at: "2026-10-16T05:27:57.686Z"
-    recorded_at: "2026-10-16T05:27:57.686Z"
-    passed: 3
-    failed: 0
-    skipped: 0
-    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/store/item-mutation-precondition.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
-  - run_id: test-local-mval2gs6-92xv39
-    kind: test
-    status: passed
-    started_at: "2026-10-16T06:24:06.737Z"
-    finished_at: "2026-10-16T06:25:11.286Z"
-    recorded_at: "2026-10-16T06:25:11.286Z"
-    passed: 3
-    failed: 0
-    skipped: 0
-    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/store/item-mutation-precondition.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
-  - run_id: test-local-mvanksi8-crloba
-    kind: test
-    status: passed
-    started_at: "2026-10-16T07:34:04.710Z"
-    finished_at: "2026-10-16T07:35:25.520Z"
-    recorded_at: "2026-10-16T07:35:25.520Z"
-    passed: 4
-    failed: 0
-    skipped: 0
-    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/core/store/item-mutation-precondition.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
-      node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
   - run_id: test-local-mvaoxys4-ez6qil
     kind: test
     status: passed
@@ -553,9 +505,53 @@ test_runs[20]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvb92wiy-g8ofz3
+    kind: test
+    status: failed
+    started_at: "2026-10-16T17:36:48.591Z"
+    finished_at: "2026-10-16T17:37:22.474Z"
+    recorded_at: "2026-10-16T17:37:22.474Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvb96150-9x6wn8
+    kind: test
+    status: failed
+    started_at: "2026-10-16T17:39:21.024Z"
+    finished_at: "2026-10-16T17:39:48.420Z"
+    recorded_at: "2026-10-16T17:39:48.420Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvb98cyn-io3nli
+    kind: test
+    status: passed
+    started_at: "2026-10-16T17:40:43.798Z"
+    finished_at: "2026-10-16T17:41:37.053Z"
+    recorded_at: "2026-10-16T17:41:37.053Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvb9uu7u-3s3152
+    kind: test
+    status: passed
+    started_at: "2026-10-16T17:43:27.698Z"
+    finished_at: "2026-10-16T17:59:05.850Z"
+    recorded_at: "2026-10-16T17:59:05.850Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,bulk recipe
   docs/COMMANDS.md,project,Bulk creation section
   docs/SDK.md,project,Describe matched upsert preconditions inside the target item lock
-close_reason: Keep uniqueness guards current across mixed batch steps and document every core-key overload.
+close_reason: Keep cached unique keys current after every create without rescanning the project.
 body: "Source: https://github.com/unbraind/pm-cli/issues/1456\n\n## Problem\n`pm update many` exists, but there is no CLI counterpart for creating items in bulk. An agent that needs to record N items has to spawn N `pm create` processes, and each one pays full startup plus workspace load. Typical cases:\n- importing findings or review threads;\n- mirroring notes into the tracker;\n- seeding a plan;\n- converting a spec into tasks.\n\n**Measured on 2026.10.13** (Linux, Node 26, a tracker of about 940 items growing to about 1,200):\n- 266 sequential `pm --json create --type <custom type> --title … --description … --body-file … --tags …` calls took **10 m 24 s wall time**, about 2.3 s per item.\n- 2 m 54 s of that was user CPU, so most of the cost is per-process startup and workspace reads, repeated 266 times.\n- The run is not atomic. An interruption leaves a partial import, and the caller has to build its own idempotency, for example by listing existing items and matching on a custom key field.\n\nThe SDK already has the primitive. #613 added a bulk multi-item atomic-mutation helper on top of `commitWorkspaceTransaction`. It just isn't reachable from the CLI.\n\n## Proposal\n`pm create many` (alias `pm create --from -`) reads JSONL or a JSON array from a file or stdin. Each record uses the same field names as `pm create` flags or their JSON equivalents, including custom fields, `body`, `tags`, dependencies and comments.\n- One process and one workspace transaction: all records are created or none, with history and merge receipts written as usual.\n- `--dry-run` validates every record first: types, required custom fields, dependency references (including references to other records in the same batch, through client-side `ref` keys), and duplicate-title detection against the existing tracker.\n- Optional idempotency key, `--upsert-by <field>`: an existing item whose field matches is updated instead of duplicated. That makes re-running an import safe.\n- The `--json` receipt lists created and updated ids in input order, mapped to each record's `ref`.\n\n## Why it matters for agents\nProject management is context management. The moments an agent wants to write many items at once (triage imports, review-thread capture, plan expansion) are exactly the moments a 2-3 s per-item cost and a non-atomic loop push it to skip tracking or to batch lossy summaries instead.\n\n\nIntake scope\n\nExtend the shipped atomic SDK/CLI mutation primitive with a discoverable bulk-create workflow, JSONL input and optional keyed upsert. The existing pm item mutate surface already commits ordered create/update/close batches and must be reused rather than reimplemented.\n\nDuplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive."

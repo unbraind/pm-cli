@@ -54,6 +54,40 @@ async function readItem(
 }
 
 describe("SDK bulk item-mutation transactions (GH-613)", () => {
+  it.each<{
+    name: string; key: string; first: unknown; middle?: unknown; last: unknown;
+    middleUnique?: BulkItemUniqueKey; seed?: boolean; commits?: boolean;
+  }>([
+    { name: "unguarded", key: "description", first: "A", middle: "B", last: "B" },
+    { name: "different guard key", key: "description", first: "A", middle: "B", last: "B", middleUnique: { key: "title", value: "Middle" } },
+    { name: "different guard value", key: "description", first: "A", middle: "B", last: "B", middleUnique: { key: "description", value: "C" } },
+    { name: "normalized array values", key: "tags", first: ["a"], middle: ["B"], last: ["b"] },
+    { name: "missing metadata", key: "external_id", first: "A", last: "B", commits: true },
+    { name: "all matching ids", key: "description", first: "A", middle: "C", last: "C", seed: true },
+  ])("keeps cached key values current after creates: $name", async (scenario) => {
+    await withTempPmPath(async (context) => {
+      if (scenario.key === "external_id") expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
+      if (scenario.seed) expect(context.runCli(["create", "--id", "pm-scan-existing", "--title", "Existing", "--type", "Task", "--description", "C", "--json"]).code).toBe(0);
+      const optionsFor = (title: string, value: unknown) => ({ title, type: "Task", ...(value === undefined ? {} : { [scenario.key === "external_id" ? "externalId" : scenario.key]: Array.isArray(value) ? value.join(",") : value }) });
+      const options = { pmRoot: context.pmPath, transactionId: `created-key-${scenario.name.replaceAll(" ", "-")}`, author: "bulk-agent", createCompensation: "delete" as const, mutations: [
+        { op: "create", id: "pm-scan-first", options: optionsFor("First", scenario.first), unique: { key: scenario.key, value: scenario.first } },
+        { op: "create", id: "pm-scan-middle", options: optionsFor("Middle", scenario.middle), ...(scenario.middleUnique ? { unique: scenario.middleUnique } : {}) },
+        { op: "create", id: "pm-scan-last", options: optionsFor("Last", scenario.last), unique: { key: scenario.key, value: scenario.last } },
+      ] satisfies BulkItemMutation[] };
+      for (const execute of [previewItemMutations, commitItemMutations]) {
+        if (scenario.commits) await expect(execute(options)).resolves.toBeDefined();
+        else if (scenario.seed) await expect(execute(options)).rejects.toThrow(/pm-scan-existing, pm-scan-middle/u);
+        else await expect(execute(options)).rejects.toMatchObject({ context: { code: "upsert_key_conflict" } });
+      }
+      if (scenario.commits) {
+        expect((await readItem(context.pmPath, "pm-scan-last")).external_id).toBe("B");
+        expect((await readItem(context.pmPath, "pm-scan-middle")).external_id).toBeUndefined();
+      } else {
+        for (const id of ["pm-scan-first", "pm-scan-middle", "pm-scan-last"]) await expect(readItem(context.pmPath, id)).rejects.toThrow();
+      }
+    });
+  });
+
   it.each(["close", "release"] as const)("refreshes unique-key scans after an intervening %s", async (op) => {
     await withTempPmPath(async (context) => {
       const target = createSeedItem(context, "Lifecycle scan target");

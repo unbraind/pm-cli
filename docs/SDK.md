@@ -1285,6 +1285,8 @@ target's key changed in between, including changes made by ordinary item updates
 Successful update, close and release steps invalidate cached unique-key scans
 inside a mixed batch, so subsequent creates see the current persisted values,
 including changes to earlier creates in that batch.
+Every create also advances cached scans from its returned metadata, including
+unguarded creates and records guarded on a different key, without a new project scan.
 The returned `rows` receipt maps every input record, in order, to its resolved
 `id` and `op`:
 
