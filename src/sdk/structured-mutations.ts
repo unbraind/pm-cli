@@ -25,7 +25,7 @@ import {
 import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
-import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS } from "./lifecycle/core-item-fields.js";
+import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS, resolveCoreUpsertMetadataKey } from "./lifecycle/core-item-fields.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 
@@ -848,19 +848,27 @@ function convertItemDocumentRows(
   }
 }
 
+/** Preserve declared metadata spelling before resolving aliases from the known core vocabulary. */
+function itemDocumentMetadataKey(key: string, runtimeFields: readonly RuntimeFieldDefinitionResolved[]): string {
+  return runtimeFields.some((field) => field.metadata_key === key) ? key : resolveCoreUpsertMetadataKey(key);
+}
+
 /** Read the upsert key value from a create row's document or options. A declared field whose metadata key differs from its option name is read through its option target. */
 function readUpsertKeyValue(
   row: Record<string, unknown>,
   key: string,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): unknown {
-  if (isPlainObject(row.item) && row.item[key] !== undefined) return row.item[key];
+  const camel = key.replaceAll(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
+  if (isPlainObject(row.item)) {
+    if (row.item[key] !== undefined) return row.item[key];
+    if (itemDocumentMetadataKey(camel, runtimeFields) === key && row.item[camel] !== undefined) return row.item[camel];
+  }
   const options = isPlainObject(row.options) ? row.options : {};
   const declared = runtimeFields.find((field) => field.metadata_key === key);
   if (declared !== undefined && options[runtimeFieldOptionTarget(declared)] !== undefined) {
     return options[runtimeFieldOptionTarget(declared)];
   }
-  const camel = key.replaceAll(/_([a-z])/gu, (_match, letter: string) => letter.toUpperCase());
   if (options[key] !== undefined) return options[key];
   if (options[camel] !== undefined) return options[camel];
   const fields = Array.isArray(options.field) ? options.field : [];
@@ -1344,7 +1352,9 @@ export function itemDocumentToMutationOptions(
   const { item, linked } = resolveItemDocument(parsed);
   const documentOptions: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(item)) {
-    appendItemDocumentEntry(documentOptions, key, value, mode, runtimeFields, explicitOptions);
+    const metadataKey = itemDocumentMetadataKey(key, runtimeFields);
+    if (metadataKey !== key && Object.hasOwn(item, metadataKey)) continue;
+    appendItemDocumentEntry(documentOptions, metadataKey, value, mode, runtimeFields, explicitOptions);
   }
   appendFacetOptions(documentOptions, item, mode === "update");
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);

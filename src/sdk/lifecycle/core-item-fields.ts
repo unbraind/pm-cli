@@ -39,6 +39,8 @@ export const CORE_ITEM_FIELD_KEYS: ReadonlySet<string> = new Set([
 ]);
 
 /** Normalize only known core option targets; preserve unrelated extension metadata keys verbatim. */
+export function resolveCoreUpsertMetadataKey(key: string): string;
+export function resolveCoreUpsertMetadataKey(key: string | undefined): string | undefined;
 export function resolveCoreUpsertMetadataKey(key: string | undefined): string | undefined {
   if (key === undefined) return undefined;
   const stored = key.replace(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`);

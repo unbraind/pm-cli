@@ -6,6 +6,26 @@ import { planItemMutationDocument } from "../../../../src/sdk/lifecycle/structur
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("planItemMutationDocument (pm-gh1456)", () => {
+  it("persists and upserts wrapped camelCase core fields under their stored metadata keys", async () => {
+    await withTempPmPath(async (context) => {
+      const input = (title: string) => JSON.stringify({ item: { title, type: "Task", acceptanceCriteria: "wrapped-key" } });
+      const seed = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "wrapped-alias-seed", upsertKey: "acceptanceCriteria", input: input("Seed") });
+      expect(seed.mutations[0]).toMatchObject({ op: "create", unique: { key: "acceptance_criteria", value: "wrapped-key" } });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: seed.transaction_id, author: "seed", mutations: seed.mutations });
+      const plan = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "wrapped-alias-update", upsertKey: "acceptance_criteria", input: input("Renamed") });
+      expect(plan).toMatchObject({ rows: [{ id: seed.rows[0]!.id, op: "update", upserted: true }], mutations: [{ match: { key: "acceptance_criteria", value: "wrapped-key" } }] });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "update", mutations: plan.mutations });
+      const result = context.runCli(["get", seed.rows[0]!.id, "--json", "--full"], { expectJson: true }).json as { item: Record<string, unknown> };
+      expect(result.item).toMatchObject({ title: "Renamed", acceptance_criteria: "wrapped-key" });
+      expect(result.item).not.toHaveProperty("acceptanceCriteria");
+      const storedWins = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "wrapped-alias-stored-wins", upsertKey: "acceptanceCriteria", input: JSON.stringify({ item: { title: "Stored wins", type: "Task", acceptance_criteria: "wrapped-key", acceptanceCriteria: "ignored-alias" } }) });
+      expect(storedWins.mutations[0]).toMatchObject({ match: { key: "acceptance_criteria", value: "wrapped-key" } });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: storedWins.transaction_id, author: "update", mutations: storedWins.mutations });
+      expect(context.runCli(["get", seed.rows[0]!.id, "--json", "--full"], { expectJson: true }).json).toMatchObject({ item: { title: "Stored wins", acceptance_criteria: "wrapped-key" } });
+      expect(context.runCli(["list", "--status", "all", "--json"], { expectJson: true }).json).toMatchObject({ count: 1 });
+    });
+  });
+
   it("preserves camelCase extension metadata keys outside the core field vocabulary", async () => {
     await withTempPmPath(async (context) => {
       const { mkdir, writeFile } = await import("node:fs/promises");
