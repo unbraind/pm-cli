@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-16T07:47:37.536Z"
-closed_at: "2026-10-16T07:47:36.591Z"
-completed_at: "2026-10-16T07:47:36.591Z"
+updated_at: "2026-10-16T08:13:45.395Z"
+closed_at: "2026-10-16T08:13:44.349Z"
+completed_at: "2026-10-16T08:13:44.349Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Document and execute the existing atomic create batch as the immediate recovery; Any create-many adapter delegates to public SDK transaction primitives; JSONL/ref resolution and keyed upsert preserve input order and validate before persistence; Interrupted or repeated imports preserve complete history and stable idempotency
@@ -17,7 +17,7 @@ risk: medium
 confidence: medium
 resolution: "SDK-first bulk creation validates JSON/JSONL documents and direct batch uniqueness, preserves wrapped IDs and stable references, guards selected keys under the actual item lock, and rejects reference cycles involving matched upserts. CLI input selection distinguishes explicit flags from preserved parser defaults; MCP rejects malformed mutation arrays before planning."
 expected_result: "Bulk identities, uniqueness, diagnostics and match preconditions remain consistent through SDK, CLI and MCP without partial writes."
-actual_result: "All four linked commands pass 148 tests; five regression cases fail on the isolated unchanged head and pass after the fixes. Real CLI default and explicit input behavior, 13 IO cases, four TypeScript projects, generated contracts, focused lint, nine packaged npx/bunx consumers, the unchanged artifact budget and SDK surface pass. Final hosted checks and fresh full review remain required before merge."
+actual_result: "148 linked functional tests and 18 classification controls pass. The real six-site CLI transport census has zero violations and no applied waivers. Hosted b98f152 passes full source coverage and all required runtime, analyzer and packaged-consumer checks; its static failure was the stale five-site inventory. The final manifest commit still requires whole-head hosted static and fresh full review."
 dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
   pm-y9hq,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
@@ -31,7 +31,7 @@ dependencies[12]{id,kind,created_at,author,source_kind,author_source}:
   pm-srns,related,"2026-10-16T05:21:42.403Z","harness:codex","cli:update:dep",detected
   pm-998juj,related,"2026-10-16T05:26:38.990Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-16T06:04:05.871Z","harness:codex","cli:update:dep",detected
-comments[29]:
+comments[30]:
   - created_at: "2026-10-13T18:12:30.417Z"
     author: "harness:codex"
     text: "{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
@@ -121,11 +121,15 @@ comments[29]:
   - created_at: "2026-10-16T07:47:35.695Z"
     author: "harness:codex"
     text: "Final local verification: all four linked commands pass 148 tests. The real CLI integration independently rejects explicit file plus stdin selection and still accepts the default file route; all 13 IO cases pass. All nine packaged npx/bunx workflows pass, the SDK surface has zero classified changes, and the unchanged first-party artifact budget passes at 19,101,201 bytes across 1,678 files with the complete 4,745-file runtime closure. Four TypeScript projects, generated contracts and focused ESLint pass. The five demonstrated pre-fix regressions remain recorded in the isolated control. Final hosted static, source coverage and full review are required after this commit; earlier qualified local admission failures remain historical evidence, without any budget or timeout waiver."
+  - created_at: "2026-10-16T08:13:40.677Z"
+    author: "harness:codex"
+    text: "Hosted b98f152 passes full source coverage and every required runtime, analyzer and consumer check; static stops at the exact CLI refusal census because the newly implemented explicit input-channel guard changes the observed count from five to six. Declared that additional site as transport validation before SDK dispatch, preserving the existing ownership and exact count matching. The real census gate now passes with zero violations and no applied waivers; all 18 linked classification controls pass, including fail-closed mismatch behavior. The prior 148 functional cases remain passed on the same runtime source. Final whole-head static and full review must pass before merge."
 learnings[2]{created_at,author,text}:
   "2026-10-16T04:25:15.096Z","harness:codex",A workspace transaction lock serializes bulk transactions but does not fence ordinary item writers. Revalidate a planned match against the same document read under the target item lock; resolve shortened SDK ids to canonical identity before scoping a target-specific guard. Prove the race at the actual item-lock boundary with a separate ordinary writer and verify its history remains intact.
   "2026-10-16T07:31:18.265Z","harness:codex",Preserve Commander option origins when forwarding normalized SDK values. A default-true flag must remain a default; relabeling every value as CLI input breaks safe explicit-input conflict checks.
-files[23]{path,scope,note}:
+files[24]{path,scope,note}:
   .agents/pm/assurance.json,project,Audited rejected-duplicate ledger entry; all real intake references receive typed relationships without changing bounds
+  scripts/release/surface-replication-sets.json,project,Exact inventory declares the additional CLI-only explicit input-channel refusal without moving domain validation out of SDK
   src/cli/register-mutation.ts,project,pm create many route refusal (bulk_create_route)
   src/cli/register-structured-mutation.ts,project,"--from, --upsert-key, optional --transaction-id, rows receipt"
   src/core/store/item-mutation-precondition.ts,project,Request-local target-specific locked mutation preconditions
@@ -148,7 +152,7 @@ files[23]{path,scope,note}:
   tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts,project,"guarded schema loader: declared fields, snapshot-change and persistent error branches"
   tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts,project,planner unit coverage incl. guarded FIFO refusal
   tests/unit/sdk/structured-mutations.spec.ts,project,Formatted JSON versus JSONL diagnostics and wrapped document identity precedence
-tests[4]:
+tests[5]:
   - command: node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/lifecycle/guarded-runtime-schema.spec.ts tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts
     scope: project
     timeout_seconds: 900
@@ -184,7 +188,16 @@ tests[4]:
       source_kind: local_mutation
       source_ref: feat/bulk-create-scalar-validation-claim-guidance
     note: Preserve parser provenance needed by file and explicit stdin selection
-test_runs[6]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-16T08:12:40.131Z"
+      source_kind: local_mutation
+      source_ref: feat/bulk-create-scalar-validation-claim-guidance
+    note: Exact CLI refusal census and fail-closed classification controls
+test_runs[7]:
   - run_id: test-local-mv9ocq88-n3ojpa
     kind: test
     status: passed
@@ -259,6 +272,17 @@ test_runs[6]:
       node scripts/run-tests.mjs test -- tests/unit/core/store/item-mutation-precondition.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/item-transaction.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvaoxys4-ez6qil
+    kind: test
+    status: passed
+    started_at: "2026-10-16T08:13:09.850Z"
+    finished_at: "2026-10-16T08:13:39.796Z"
+    recorded_at: "2026-10-16T08:13:39.796Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/surface-replication-gate.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,bulk recipe
   docs/COMMANDS.md,project,Bulk creation section
