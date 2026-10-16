@@ -283,6 +283,28 @@ describe("cli extension loose option parser", () => {
   });
 
   describe("strict scalar value validation (pm-extension-scalar-validation)", () => {
+    it("checks attached boolean list switch values before normalization without changing valid CSV or repeatable entries", () => {
+      for (const repeatable of [false, true]) {
+        const definition = { long: "--choices", short: "-c", value_type: "boolean", list: true, repeatable, value_validation: "strict" };
+        const coerceList = (args: string[]) => {
+          const parsed = parseLooseCommandOptions(args);
+          return coerceLooseCommandOptionsWithFlagDefinitions(parsed, [definition], parsed, "acme echo");
+        };
+        for (const args of [["--choices=maybe"], ["--choices=true", "-c=maybe"], ["--choices="]]) {
+          expect(() => coerceList(args)).toThrowError(expect.objectContaining({ exitCode: 2, context: expect.objectContaining({ code: "extension_flag_value_invalid" }) }));
+        }
+        expect(coerceList(["--choices=true", "-c=false", "--choices=1", "-c=0"])).toEqual({ choices: [true, false, true, false] });
+        expect(coerceList(["--choices", "artifact-A"])).toEqual({ choices: [true] });
+        if (repeatable) {
+          expect(() => coerceList(["--choices=true,false"])).toThrow('received "true,false"');
+        } else {
+          expect(coerceList(["--choices=true,false,1,0"])).toEqual({ choices: [true, false, true, false] });
+          expect(() => coerceList(["--choices=true,maybe"])).toThrow('received "maybe"');
+          expect(() => coerceList(["--choices=true,,false"])).toThrow('received ""');
+        }
+      }
+    });
+
     const definitions = [
       { long: "--limit", short: "-l", value_type: "number", value_validation: "strict" },
       { long: "--enabled", type: "bool", value_validation: "strict" },

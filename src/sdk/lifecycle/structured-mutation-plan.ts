@@ -60,7 +60,8 @@ export async function planItemMutationDocument(
   const suppliedKey = options.upsertKey?.trim();
   const declaredField = runtimeFields.find((field) => field.metadata_key === suppliedKey) ??
     runtimeFields.find((field) => field.key === suppliedKey || runtimeFieldOptionTarget(field) === suppliedKey);
-  const upsertKey = declaredField?.metadata_key ?? suppliedKey;
+  const upsertKey = declaredField?.metadata_key ??
+    suppliedKey?.replace(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`);
   const upsert =
     upsertKey === undefined || upsertKey.length === 0
       ? undefined

@@ -495,12 +495,17 @@ function refuseMalformedAttachedSwitchValues(
   }
   for (const occurrence of readLooseOccurrences(occurrenceSource, optionKeys)) {
     if (occurrence.attached !== true) continue;
-    const failure = describeFlagScalarValueFailure(
-      coerceLooseOptionValue(occurrence.value, "boolean"),
-      "boolean",
-    );
-    if (failure !== null) {
-      refuseStrictScalarValue(definition, "boolean", occurrence.value, failure.expected, commandPath);
+    const values = definition.list === true && definition.repeatable !== true
+      ? flattenFlagListValue(occurrence.value)
+      : [occurrence.value];
+    for (const value of values) {
+      const failure = describeFlagScalarValueFailure(
+        coerceLooseOptionValue(value, "boolean"),
+        "boolean",
+      );
+      if (failure !== null) {
+        refuseStrictScalarValue(definition, "boolean", value, failure.expected, commandPath);
+      }
     }
   }
 }
@@ -632,6 +637,9 @@ function coerceDefinedLooseOption(
     }
     return;
   }
+  if (kind === "boolean" && isStrictTypedDefinition(definition, kind)) {
+    refuseMalformedAttachedSwitchValues(definition, optionKeys, occurrenceSource, commandPath);
+  }
   if (isListFlag) {
     coerced[canonical] = coerceAccumulatedLooseOption(
       definition,
@@ -646,9 +654,6 @@ function coerceDefinedLooseOption(
   }
   if (!kind) {
     return;
-  }
-  if (kind === "boolean" && isStrictTypedDefinition(definition, kind)) {
-    refuseMalformedAttachedSwitchValues(definition, optionKeys, occurrenceSource, commandPath);
   }
   coerced[canonical] = validateStrictScalarOptionValue(
     definition,

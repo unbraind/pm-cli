@@ -698,8 +698,9 @@ pm item mutate --from items.jsonl --json             # commit; re-running replay
 whose field value matches exactly one existing item (core field such as
 `title`, or a declared custom field such as `external_id`) becomes an update
 of that item and is reported with `upserted: true`. Matching and lock-held
-guards use the field's stored metadata key; declared field
-keys and their SDK option targets (for example `externalId`) resolve to that
+guards use the field's stored metadata key; core option names such as
+`acceptanceCriteria`, declared field keys and their SDK option targets
+(for example `externalId`) resolve to that
 same stored key. The record keeps its
 `ref` in the receipt, and later records may still address it as `@ref`, which
 then resolves to the matched item. A record missing the key, two records

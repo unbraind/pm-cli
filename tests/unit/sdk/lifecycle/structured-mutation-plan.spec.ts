@@ -6,6 +6,27 @@ import { planItemMutationDocument } from "../../../../src/sdk/lifecycle/structur
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("planItemMutationDocument (pm-gh1456)", () => {
+  it("matches core camelCase option targets using stored keys across distinct transactions", async () => {
+    await withTempPmPath(async (context) => {
+      const fields = [
+        ["acceptanceCriteria", "acceptance_criteria", "criteria-key"],
+        ["definitionOfReady", "definition_of_ready", "ready-key"],
+        ["estimatedMinutes", "estimated_minutes", "45"],
+        ["affectedVersion", "affected_version", "v1"],
+        ["fixedVersion", "fixed_version", "v2"],
+        ["customerImpact", "customer_impact", "impact-key"],
+      ] as const;
+      const seed = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: "core-alias-seed", input: JSON.stringify({ title: "Seed", type: "Task", ...Object.fromEntries(fields.map(([, stored, value]) => [stored, value])) }) });
+      await commitItemMutations({ pmRoot: context.pmPath, transactionId: seed.transaction_id, author: "seed", mutations: seed.mutations });
+      for (const [key, stored, value] of fields) {
+        const plan = await planItemMutationDocument({ pmRoot: context.pmPath, transactionId: `core-${key}`, upsertKey: key, input: JSON.stringify([{ op: "create", options: { title: "Renamed", type: "Task", [key]: value } }]) });
+        expect(plan).toMatchObject({ upsert_key: stored, rows: [{ id: seed.rows[0]!.id, op: "update", upserted: true }], mutations: [{ match: { key: stored, value } }] });
+        await commitItemMutations({ pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "update", mutations: plan.mutations });
+      }
+      expect(context.runCli(["list", "--status", "all", "--json"], { expectJson: true }).json).toMatchObject({ count: 1 });
+    });
+  });
+
   it("canonicalizes custom upsert keys before matching and guarding persisted values", async () => {
     await withTempPmPath(async (context) => {
       const { writeFile } = await import("node:fs/promises");

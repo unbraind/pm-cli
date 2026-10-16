@@ -37,6 +37,8 @@ describe("extension flag value validation (pm-extension-scalar-validation)", () 
           { long: "--verbose", value_type: "boolean", value_validation: "strict" },
           { long: "--ratio", value_type: "number" },
           { long: "--ids", value_type: "number", list: true, value_validation: "strict" },
+          { long: "--choices", short: "-c", value_type: "boolean", list: true, value_validation: "strict" },
+          { long: "--toggles", short: "-t", value_type: "boolean", list: true, repeatable: true, value_validation: "strict" },
         ]),
       );
       const valid = context.runCli(
@@ -51,17 +53,24 @@ describe("extension flag value validation (pm-extension-scalar-validation)", () 
       });
       const bareBool = context.runCli(["acme", "echo", "--enabled", "--json"], { expectJson: true });
       expect(bareBool.json).toMatchObject({ options: { enabled: true } });
+      const validLists = context.runCli(["acme", "echo", "--choices=true,false", "--toggles=true", "--toggles=false", "--json"], { expectJson: true });
+      expect(validLists.code).toBe(0);
+      expect(validLists.json).toMatchObject({ options: { choices: [true, false], toggles: [true, false] } });
 
       for (const [args, code, fragment] of [
         [["--limit", "abc"], "extension_flag_value_invalid", "expects a finite number; received"],
         [["--enabled", "not-a-boolean"], "extension_flag_value_invalid", "expects true, false, 1, or 0"],
         [["--ids", "1,x"], "extension_flag_value_invalid", "expects a finite number; received"],
+        [["--choices=maybe"], "extension_flag_value_invalid", "expects true, false, 1, or 0"],
+        [["--choices=true,maybe"], "extension_flag_value_invalid", "received \"maybe\""],
+        [["--toggles=true", "--toggles=maybe"], "extension_flag_value_invalid", "received \"maybe\""],
       ] as const) {
         const refused = context.runCli(["acme", "echo", ...args, "--json"]);
         expect(refused.code).toBe(2);
-        expect(refused.stderr).toContain(code);
-        expect(refused.stderr).toContain(fragment);
-        expect(refused.stderr).toContain("for extension command 'acme echo'");
+        const refusal = JSON.parse(refused.stderr) as { code: string; detail: string };
+        expect(refusal.code).toBe(code);
+        expect(refusal.detail).toContain(fragment);
+        expect(refusal.detail).toContain("for extension command 'acme echo'");
       }
     });
   });

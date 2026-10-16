@@ -1270,8 +1270,9 @@ JSON Lines and op-less create documents (records shaped like `pm create
 `row-<n>` aliases for records without `ref`/`id`, derives a stable
 `transaction_id` from the document bytes when none is supplied, and resolves
 `upsertKey` against existing items so matching create records become updates;
-declared field keys and their option targets resolve to the stored metadata
-key before candidate reads and lock-held guards.
+core camelCase option names (such as `acceptanceCriteria`) and declared field
+keys or option targets resolve to the stored metadata key before candidate
+reads and lock-held guards.
 Records that match nothing carry a `unique` guard that `commitItemMutations`
 re-checks under the writer lock and refuses with `upsert_key_conflict` when a
 concurrent writer created the key value after planning; matched records become
@@ -2307,7 +2308,9 @@ same list/default semantics as core flags:
   own validation (`--limit abc` arrives as `"abc"`). `strict` refuses the
   invocation before dispatch with `extension_flag_value_invalid` (exit 2),
   naming the flag, the command, the expected grammar, and the received token;
-  list entries are checked one by one. Switch presence (`--verbose`,
+  list entries are checked one by one, including attached values on boolean
+  list switches. CSV boolean lists accept `true,false`; repeatable boolean
+  lists keep each occurrence as one value. Switch presence (`--verbose`,
   `--no-verbose`), the legacy `bool` optional-value grammar (`--enabled` alone
   is `true`), declared defaults, and string flags are unaffected. `strict` on a
   `string` or untyped flag is rejected at registration because there is nothing
