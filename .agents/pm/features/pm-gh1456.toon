@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-16T19:08:41.963Z"
-closed_at: "2026-10-16T19:08:40.744Z"
-completed_at: "2026-10-16T19:08:40.744Z"
+updated_at: "2026-10-16T20:25:08.576Z"
+closed_at: "2026-10-16T20:25:05.759Z"
+completed_at: "2026-10-16T20:25:05.759Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Document and execute the existing atomic create batch as the immediate recovery; Any create-many adapter delegates to public SDK transaction primitives; JSONL/ref resolution and keyed upsert preserve input order and validate before persistence; Interrupted or repeated imports preserve complete history and stable idempotency
 parent: pm-n7rr
 risk: medium
 confidence: medium
-resolution: "SDK-first bulk creation preserves stable references and wrapped IDs, guards upsert keys under item locks and validates reference cycles before writes. Declared upsert field names and option targets canonicalize to stored metadata keys, with stored-key precedence. Parsed and direct batches share duration-type validation. Corrupt JSON/lifecycle/metadata/status/step records refuse with transaction_journal_invalid; valid identity/plan differences retain transaction_plan_mismatch and fully compensated attempts can replan. Documentation, SDK error-code contracts and generated surfaces match these behaviors. Core camelCase option names normalize to their stored snake_case keys after declared-field resolution; six core-field upserts under distinct transaction ids retain one item. A shared private core-field vocabulary restricts camelCase conversion to known core metadata; unrelated extension keys retain exact spelling. Shared document-key resolution accepts known core camelCase names inside direct or wrapped item documents, preserving exact stored-key precedence through lookup and persistence. Unique-key scans are invalidated after successful update, close and release; rescans include earlier creates. Uninterrupted create-only batches retain lazy scans. All core-key overload declarations and implementation carry TSDoc. Every create advances all cached unique-key scans from its returned normalized metadata, covering unguarded creates and records guarded on a different key or value. All matching ids are retained and absent metadata is skipped without another project scan. Changed parser/preflight values are labeled cli while unchanged origins persist. Explicit blank upsert keys refuse before writes. Invalid stored journal schema version or transaction id receives transaction_journal_invalid with preservation-first recovery; valid step-plan differences retain transaction_plan_mismatch."
-expected_result: "Bulk imports preserve explicit option intent, refuse blank requested upsert keys without writes, and retain corrupt journal bytes with safe recovery. Valid committed plans still replay and distinct valid plans retain their established refusal."
-actual_result: "103 linked SDK/CLI/MCP tests and 39 registration-helper tests pass. Six current regression controls fail on isolated unchanged 2a13a6f23: changed default/environment origins, two blank-key SDK variants, CLI blank-key refusal and corrupt journal identity/schema classes. Corrupt journal bytes and pending step state are preserved. Existing valid-plan mismatch behavior remains covered. Typecheck, ESLint, actual source static quality, zero-change SDK surface, contracts, docs links and nine packed npx/bunx consumers pass. The latest full local run reached its unchanged 1200-second linked deadline and produced no final summary or coverage artifact; prior 2a13a6f23 source passed 10553 tests with exact global coverage. Final-head hosted coverage and renewed full review remain required."
+resolution: "Implement SDK-owned JSON/JSONL and document bulk planning shared by CLI and MCP, stable references and receipts, typed option/journal refusals, atomic replay, lock-held upsert validation, canonical stored-key identity and current unique-key caches. Preserve parser option origins only for unchanged values. Refuse a still-closed compensated creation using immutable close history until explicit reconciliation, then resume without duplication."
+expected_result: "Bulk mutations preserve identity, explicit option intent and lifecycle state; compensated create retries cannot silently commit a closed item, while reconciled retries and committed replay remain safe."
+actual_result: "105 SDK/CLI/MCP cases and39 registration-helper cases pass. Current retry and diagnostic regressions fail on prior716fb6a5a. Typecheck, lint, source assurance, contracts and additive SDK surface checks pass; nine packed consumers pass before the separate Unicode-output addition. Full local execution timed out at the unchanged1200-second bound without a coverage artifact. Final-head hosted coverage and full review remain required before merge."
 dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-xm7c,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
   pm-y9hq,related,"2026-10-13T18:12:30.417Z","harness:codex","cli:create:dep",detected
@@ -32,7 +32,7 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,related,"2026-10-16T05:26:38.990Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-16T06:04:05.871Z","harness:codex","cli:update:dep",detected
   pm-jm7m3o,related,"2026-10-16T17:11:59.882Z","harness:codex","cli:update:dep",detected
-comments[50]:
+comments[52]:
   - created_at: "2026-10-13T18:12:30.417Z"
     author: "harness:codex"
     text: "{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
@@ -185,12 +185,19 @@ comments[50]:
   - created_at: "2026-10-16T19:08:38.387Z"
     author: "harness:codex"
     text: "Final review corrections: source provenance is retained only when current and synchronized values are identical; changed parser/preflight overrides become explicit cli values. A supplied blank upsert key refuses before settings reads or writes instead of disabling keyed import. Only an omitted key selects plain creation; a resolved empty schema key reaches the established refusal rather than silently skipping upsert. Stored journal schema/version identity corruption now uses preservation-first transaction_journal_invalid, while valid step-plan differences retain transaction_plan_mismatch. 103 linked SDK/CLI/MCP tests and 39 registration-helper tests pass. Six current regression controls fail on isolated unchanged 2a13a6f23: changed default/environment origins, two blank-key SDK variants, CLI blank-key refusal and corrupt journal identity/schema classes. Corrupt journal bytes and pending step state are preserved. Existing valid-plan mismatch behavior remains covered. Typecheck, ESLint, actual source static quality, zero-change SDK surface, contracts, docs links and nine packed npx/bunx consumers pass. The latest full local run reached its unchanged 1200-second linked deadline and produced no final summary or coverage artifact; prior 2a13a6f23 source passed 10553 tests with exact global coverage. Final-head hosted coverage and renewed full review remain required."
-learnings[4]{created_at,author,text}:
+  - created_at: "2026-10-16T19:35:19.107Z"
+    author: "harness:codex"
+    text: Full review on 716fb6a5a found compensated create retries can adopt a closed item as applied. Preserve the closed item and refuse automatic retry until it is explicitly reopened or reconciled; use immutable compensation history rather than mutable close prose as ownership evidence. This avoids silently reviving later user edits or losing original lifecycle intent.
+  - created_at: "2026-10-16T20:24:59.704Z"
+    author: "harness:codex"
+    text: "Final create-retry review remediation: a closed target with immutable close-history evidence of this transaction compensation refuses with typed transaction_create_compensated (conflict4). Mutable close prose cannot bypass the guard. Explicitly reopening the retained item permits the same document to resume and replay with that creation open, without duplication. The current 105 SDK/CLI/MCP linked cases and 39 helper cases pass. Two retry variants and the format-neutral diagnostic regression fail on isolated prior716fb6a5a; three failures are at the intended assertions. Current complete-source execution is qualified by the unchanged1200-second deadline and missing final coverage artifact; require final-head hosted exact coverage. The additive error catalogue, public SDK snapshot, contracts and SDK retry documentation are updated; no budgets or deadlines were relaxed."
+learnings[5]{created_at,author,text}:
   "2026-10-16T04:25:15.096Z","harness:codex",A workspace transaction lock serializes bulk transactions but does not fence ordinary item writers. Revalidate a planned match against the same document read under the target item lock; resolve shortened SDK ids to canonical identity before scoping a target-specific guard. Prove the race at the actual item-lock boundary with a separate ordinary writer and verify its history remains intact.
   "2026-10-16T07:31:18.265Z","harness:codex",Preserve Commander option origins when forwarding normalized SDK values. A default-true flag must remain a default; relabeling every value as CLI input breaks safe explicit-input conflict checks.
   "2026-10-16T18:03:49.466Z","harness:codex","A create guard covers only its own precondition; the record can write other keys or normalized values. Keep indexes current from returned item metadata across all cached keys, preserve all matching ids, and keep project scans lazy. Guard values must use the stored canonical representation, such as lowercase tags."
   "2026-10-16T19:08:39.545Z","harness:codex","Presence and provenance are semantic inputs: distinguish omitted options from explicitly blank values, preserve default origins only for unchanged values, and classify corrupt stored identity separately from a valid journal whose requested plan changed. Corruption recovery must preserve bytes and avoid advising a new id."
-files[28]:
+  "2026-10-16T20:06:54.828Z","harness:codex","A stable create id proves existence, not successful lifecycle state after rollback. Refuse a still-closed compensated creation using immutable close history, and require explicit reconciliation before adopting it on retry."
+files[29]:
   - path: .agents/pm/assurance.json
     scope: project
     note: Audited rejected-duplicate ledger entry; all real intake references receive typed relationships without changing bounds
@@ -225,12 +232,15 @@ files[28]:
   - path: src/sdk/cli-contracts/registration-helpers.ts
     scope: project
     note: Preserve declared option origins through normalized SDK to CLI forwarding
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+    note: Generated additive compensated-create refusal catalog partition
   - path: src/sdk/generated/generated-error-code-catalog-part-2.ts
     scope: project
     note: Generated duplicate-upsert error source includes the direct SDK transaction boundary
   - path: src/sdk/item-transaction.ts
     scope: project
-    note: Canonical matched-target identity and item-lock-held upsert preconditions through the public update pipeline
+    note: Refuse compensation-closed creates during retry until explicit reconciliation
   - path: src/sdk/lifecycle/core-item-fields.ts
     scope: project
   - path: src/sdk/lifecycle/structured-mutation-plan.ts
@@ -333,39 +343,6 @@ tests[7]:
       source_kind: local_mutation
       source_ref: feat/bulk-create-scalar-validation-claim-guidance
 test_runs[20]:
-  - run_id: test-local-mvayrgib-ca48vx
-    kind: test
-    status: passed
-    started_at: "2026-10-16T12:32:28.467Z"
-    finished_at: "2026-10-16T12:48:32.338Z"
-    recorded_at: "2026-10-16T12:48:32.338Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
-  - run_id: test-local-mvb0mpgb-qs9vr7
-    kind: test
-    status: passed
-    started_at: "2026-10-16T13:40:22.402Z"
-    finished_at: "2026-10-16T13:40:49.883Z"
-    recorded_at: "2026-10-16T13:40:49.883Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
-  - run_id: test-local-mvb1caxs-s6jsp1
-    kind: test
-    status: passed
-    started_at: "2026-10-16T13:43:45.611Z"
-    finished_at: "2026-10-16T14:00:44.127Z"
-    recorded_at: "2026-10-16T14:00:44.127Z"
-    passed: 1
-    failed: 0
-    skipped: 0
-    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
-      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
   - run_id: test-local-mvb2h8h3-6ec1hh
     kind: test
     status: passed
@@ -553,9 +530,42 @@ test_runs[20]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mvbdfr9u-hbouo0
+    kind: test
+    status: passed
+    started_at: "2026-10-16T19:38:25.458Z"
+    finished_at: "2026-10-16T19:39:20.658Z"
+    recorded_at: "2026-10-16T19:39:20.658Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvbedpvf-i40a6s
+    kind: test
+    status: failed
+    started_at: "2026-10-16T19:45:44.435Z"
+    finished_at: "2026-10-16T20:05:45.143Z"
+    recorded_at: "2026-10-16T20:05:45.143Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mvbegea5-81ijbn
+    kind: test
+    status: passed
+    started_at: "2026-10-16T20:06:21.418Z"
+    finished_at: "2026-10-16T20:07:50.092Z"
+    recorded_at: "2026-10-16T20:07:50.092Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,bulk recipe
   docs/COMMANDS.md,project,Bulk creation section
-  docs/SDK.md,project,Describe matched upsert preconditions inside the target item lock
-close_reason: Preserve explicit option intent and refuse corrupt journal identity safely.
+  docs/SDK.md,project,Preservation-first compensated create retry contract
+close_reason: Preserve compensated create lifecycle state and explicit mutation intent across safe retries.
 body: "Source: https://github.com/unbraind/pm-cli/issues/1456\n\n## Problem\n`pm update many` exists, but there is no CLI counterpart for creating items in bulk. An agent that needs to record N items has to spawn N `pm create` processes, and each one pays full startup plus workspace load. Typical cases:\n- importing findings or review threads;\n- mirroring notes into the tracker;\n- seeding a plan;\n- converting a spec into tasks.\n\n**Measured on 2026.10.13** (Linux, Node 26, a tracker of about 940 items growing to about 1,200):\n- 266 sequential `pm --json create --type <custom type> --title … --description … --body-file … --tags …` calls took **10 m 24 s wall time**, about 2.3 s per item.\n- 2 m 54 s of that was user CPU, so most of the cost is per-process startup and workspace reads, repeated 266 times.\n- The run is not atomic. An interruption leaves a partial import, and the caller has to build its own idempotency, for example by listing existing items and matching on a custom key field.\n\nThe SDK already has the primitive. #613 added a bulk multi-item atomic-mutation helper on top of `commitWorkspaceTransaction`. It just isn't reachable from the CLI.\n\n## Proposal\n`pm create many` (alias `pm create --from -`) reads JSONL or a JSON array from a file or stdin. Each record uses the same field names as `pm create` flags or their JSON equivalents, including custom fields, `body`, `tags`, dependencies and comments.\n- One process and one workspace transaction: all records are created or none, with history and merge receipts written as usual.\n- `--dry-run` validates every record first: types, required custom fields, dependency references (including references to other records in the same batch, through client-side `ref` keys), and duplicate-title detection against the existing tracker.\n- Optional idempotency key, `--upsert-by <field>`: an existing item whose field matches is updated instead of duplicated. That makes re-running an import safe.\n- The `--json` receipt lists created and updated ids in input order, mapped to each record's `ref`.\n\n## Why it matters for agents\nProject management is context management. The moments an agent wants to write many items at once (triage imports, review-thread capture, plan expansion) are exactly the moments a 2-3 s per-item cost and a non-atomic loop push it to skip tracking or to batch lossy summaries instead.\n\n\nIntake scope\n\nExtend the shipped atomic SDK/CLI mutation primitive with a discoverable bulk-create workflow, JSONL input and optional keyed upsert. The existing pm item mutate surface already commits ordered create/update/close batches and must be reused rather than reimplemented.\n\nDuplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive."

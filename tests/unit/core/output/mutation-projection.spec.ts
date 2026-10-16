@@ -82,7 +82,7 @@ describe("projectMutationResult", () => {
   });
 
   it("bounds terminal recurrence evidence in compact mutation envelopes", () => {
-    const oversized = "x".repeat(1000);
+    const oversized = `${"x".repeat(254)}😀${"x".repeat(1000)}`;
     const projected = projectMutationResult(
       {
         item: { id: "pm-a1b2", status: "open" },
@@ -106,9 +106,9 @@ describe("projectMutationResult", () => {
       };
     };
     expect(projected.recurrence.previous_terminal.close_reason).toBe(
-      `${"x".repeat(255)}…`,
+      `${"x".repeat(254)}…`,
     );
-    expect(projected.recurrence.reason).toBe(`${"x".repeat(255)}…`);
+    expect(projected.recurrence.reason).toBe(`${"x".repeat(254)}…`);
     expect(projected.recurrence.previous_terminal.resolution).toBe(
       "Short evidence",
     );

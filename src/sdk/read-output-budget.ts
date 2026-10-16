@@ -5,6 +5,7 @@
  * read-output contract without expanding its public declaration module.
  */
 import { formatBuiltInOutput } from "../core/output/output.js";
+import { unicodeSafePrefix } from "../core/shared/text-normalization.js";
 import type { PmReadOutputReceipt } from "./read-output-contracts.js";
 import {
   countReadOutputRows,
@@ -166,7 +167,7 @@ function compactStrings(value: unknown, state: StringCompactionState, preserveSt
   if (typeof value === "string") {
     if (preserveStrings || value.length <= 240) return value;
     state.compacted = true;
-    return `${value.slice(0, 240)}…`;
+    return `${unicodeSafePrefix(value, 240)}…`;
   }
   if (Array.isArray(value)) {
     return value.map((entry) => compactStrings(entry, state, preserveStrings));

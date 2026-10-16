@@ -36408,6 +36408,7 @@
     "tracker_root_missing",
     "tracker_root_not_directory",
     "tracker_root_unreadable",
+    "transaction_create_compensated",
     "transaction_journal_invalid",
     "transaction_plan_mismatch",
     "transaction_preview_external_schema",

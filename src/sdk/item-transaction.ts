@@ -53,8 +53,8 @@ import {
 
 /**
  * One atomic item creation inside a bulk mutation batch. The explicit `id`
- * doubles as the idempotency key: recovery treats an existing item with this id
- * as the already-applied result, so ids must be stable and transaction-owned.
+ * doubles as the idempotency key: recovery adopts an existing item unless it
+ * remains closed after compensation. IDs must be stable and transaction-owned.
  */
 export interface BulkItemCreateMutation {
   /** Discriminates the creation operation. */
@@ -307,7 +307,8 @@ export interface CommitItemMutationsOptions {
   /**
    * Compensation strategy for created items: `close` (default) preserves the
    * item and its history with an explanatory close reason, `delete` removes
-   * the item document (its history stream is retained by `pm delete`).
+   * the item document (its history stream is retained by `pm delete`). A retry
+   * refuses a still-closed compensated creation until explicitly reopened.
    */
   createCompensation?: "close" | "delete";
   /** Lock lifetime in seconds; size this above the longest expected attempt. */
@@ -501,6 +502,28 @@ function buildCreateStep(
       const snapshot = await readItemSnapshot(config.pmRoot, mutation.id);
       if (snapshot === undefined) {
         return { state: "pending" };
+      }
+      if (snapshot.closedAt !== undefined) {
+        const history = await readHistoryEntries(
+          path.join(config.pmRoot, "history", `${snapshot.id}.jsonl`),
+          snapshot.id,
+        );
+        const reason = `Compensated: interrupted bulk transaction ${config.transactionId}`;
+        const compensated = history.some((entry) => entry.op === "close" && entry.patch.some((change) =>
+          change.op === "add" || change.op === "replace"
+            ? change.path === "/metadata/close_reason" && change.value === reason
+            : false));
+        if (compensated) throw new PmCliError(
+          `Created item ${snapshot.id} remains closed by transaction compensation; explicitly reopen or reconcile it before retrying.`,
+          EXIT_CODE.CONFLICT,
+          {
+            code: "transaction_create_compensated",
+            item_id: snapshot.id,
+            required: "Review the compensated item and explicitly reopen it before retrying the same document.",
+            why: "An existing closed item is not an applied creation. Automatically reopening it could overwrite later lifecycle decisions.",
+            nextSteps: [`Run pm item reopen ${snapshot.id} "Retry compensated creation" after reviewing its history, then retry the transaction.`],
+          },
+        );
       }
       return { state: "applied", result: { id: snapshot.id, op: "create" } };
     },

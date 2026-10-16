@@ -6,32 +6,34 @@ status: closed
 priority: 1
 tags[5]: "area:storage",refusal,sentry,toon,unicode
 created_at: "2026-10-15T13:21:41.694Z"
-updated_at: "2026-10-16T05:32:06.448Z"
-closed_at: "2026-10-16T05:32:05.591Z"
-completed_at: "2026-10-16T05:32:05.591Z"
+updated_at: "2026-10-16T20:25:14.817Z"
+closed_at: "2026-10-16T20:25:12.578Z"
+completed_at: "2026-10-16T20:25:12.578Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "A lone surrogate in any persisted item text (metadata scalar, comment, note, learning, file note, body) refuses with exit 2 and code text_unpaired_surrogate naming the field path and code-unit index before any encode; Whole emoji and other astral characters still serialize and round-trip; The refusal is a PmCliError so Sentry no longer records an unclassified runtime fault; Unit coverage asserts the field path for a top-level scalar and a nested collection entry"
 parent: pm-o2kc
 risk: high
 confidence: high
-resolution: "Reject lone surrogates in persisted item values and object keys at any depth before serialization, with a typed field-aware usage refusal. JSON/Markdown metadata named body is validated independently from the Markdown body."
-expected_result: All persisted metadata and document text receive the same typed lone-surrogate refusal without hiding a metadata field behind the body projection.
-actual_result: All eight linked format tests pass. The metadata-body collision fails before the fix and passes after it. Valid paired Unicode remains encodable. Output compaction is separately tracked and remains outside this persisted-input fix.
+resolution: "Reject lone surrogates in persisted metadata, object keys and document body before serialization in both formats, including full-depth values and metadata named body. Diagnostics name persisted item text, retaining field/index and repair guidance without incorrectly naming only TOON."
+expected_result: Both persisted formats receive accurate typed Unicode refusals with field and index details.
+actual_result: "All8 linked format cases pass, and the new JSON/Markdown wording regression fails on prior716fb6a5a. The emitted-output repair is tracked independently by pm-gh1478; no source test is represented as public-release verification."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oj5,discovered_from,"2026-10-15T13:54:16.211Z","harness:claude-code","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-15T13:22:05.780Z","harness:claude-code","Duplicate check at create time: pm search for \"unpaired surrogate\" and \"lone surrogate unicode well-formed toon encode\" returned no items; grep over src found no surrogate or well-formedness handling. Source: Sentry issue PM-CLI-3H (org unbrained, project pm-cli, id 153837591), latest event 2026-10-15T13:12:45Z, release pm-cli@2026.10.14, environment ci, platform win32, culprit assertNoLoneSurrogate in @toon-format/toon reached from the CLI bundle; the reporting job is an external consumer's oracle test suite, not this repository's CI.\n\nFix (same day): serializeToonItemDocument now scans the encodable payload (strings at any depth up to 6, with dotted/indexed paths) for a high surrogate without a following low surrogate or a low surrogate without a preceding high one and refuses with PmCliError exit 2, code text_unpaired_surrogate, field path and code-unit index, plus repair guidance. Whole surrogate pairs are untouched. Unit tests cover a truncated emoji in description (index 239 reproduces the Sentry message) and a nested comments[0].text value.\n"
   "2026-10-15T15:46:12.897Z","harness:claude-code","Review follow-up (PR #1479, CodeRabbit): the well-formedness scan now walks the encodable payload to its leaves (no depth cap; the payload is a JSON clone, so finite and acyclic) and also checks object keys, because @toon-format/toon 4.1.x rejects an unpaired surrogate in an object key with the same untyped TypeError. Refusals name nested paths such as payload.list[1].inner and keys as payload.<key> (key). Tests cover a depth-8 extension value, a key, and a nested array entry.\n"
   "2026-10-15T22:53:34.870Z","harness:claude-code","Review follow-up (PR #1479, CodeRabbit, seventh pass): the unpaired-surrogate refusal ran only in the TOON branch of serializeItemDocument, so a workspace using the JSON/markdown item format still persisted ill-formed text. The normalized metadata and body are now checked before either serialization branch writes, and the unit spec covers the non-TOON format for a metadata field and the body."
   "2026-10-16T05:21:50.754Z","harness:codex","Review regression reproduced: extension metadata named body containing a lone surrogate passed JSON/markdown serialization because validation overwrote that metadata key with the separate document body. Scan the original ordered metadata and normalized document body separately. The same test fails before the change and passes afterward while retaining typed field/index recovery and valid astral text."
   "2026-10-16T05:32:03.085Z","harness:codex","The final review regression proves that an extension metadata field named body must be scanned independently of the separate Markdown body. JSON metadata and document text are now validated separately; the eight linked format cases pass, including arbitrary depth and object keys. The pre-fix metadata-body case fails at the intended missing-refusal assertion. This persisted-input change does not fix the separately tracked output-compaction fault, and no Sentry issue was closed merely to clear a release gate."
+  "2026-10-16T19:35:21.273Z","harness:codex",Full review on 716fb6a5a found persisted-text Unicode refusal still names TOON when the selected format is JSON/Markdown. Make message and recovery explanation format-neutral while preserving field/index details.
+  "2026-10-16T20:25:10.573Z","harness:codex","Final review correction: both the typed refusal message and recovery explanation now refer to persisted item text, accurately covering TOON and JSON/Markdown. Field and UTF-16 code-unit index details are preserved. All8 linked format cases pass; the new wording assertion fails on prior716fb6a5a. The distinct emitted-output compaction repair is now implemented separately under pm-gh1478 in this PR for release recovery."
 files[2]{path,scope,note}:
-  src/core/item/item-format.ts,project,Scan JSON metadata and the separate body independently so an extension body field cannot be hidden
+  src/core/item/item-format.ts,project,Format-neutral persisted Unicode refusal
   tests/unit/core/item/item-format-structured-errors.spec.ts,project,Pre-fix and post-fix metadata body collision regression
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-structured-errors.spec.ts,project,300,"harness:claude-code","2026-10-15T13:22:04.006Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mv9ma0y8-1ahbew
     kind: test
     status: failed
@@ -65,7 +67,18 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-structured-errors.spec.ts,schema,schema,source,local_source_ref
-close_reason: Typed persisted-text refusal covers metadata and document body independently in every supported format.
+  - run_id: test-local-mvbdg3zl-7y919u
+    kind: test
+    status: passed
+    started_at: "2026-10-16T19:39:21.935Z"
+    finished_at: "2026-10-16T19:39:37.137Z"
+    recorded_at: "2026-10-16T19:39:37.137Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-structured-errors.spec.ts,schema,schema,source,local_source_ref
+close_reason: Use format-neutral field-aware persisted Unicode refusals.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

@@ -8,6 +8,8 @@ import {
   commitItemMutations,
   previewItemMutations,
   get,
+  reopen,
+  update,
   type BulkItemMutation,
   type BulkItemUniqueKey,
   type WorkspaceTransactionTransitionContext,
@@ -309,6 +311,28 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       ).resolves.toBe(false);
       const reopened = await readItem(context.pmPath, closeTarget);
       expect(reopened.status).toBe("open");
+    });
+  });
+
+  it.each([false, true])("refuses a compensated create retry until explicitly reopened (changed close prose: %s)", async (changedReason) => {
+    await withTempPmPath(async (context) => {
+      const options = { pmRoot: context.pmPath, transactionId: "closed-create-retry", author: "bulk-agent", mutations: [
+        { op: "create", id: "pm-retry-created", options: { title: "Retry created", type: "Task", assignee: "bulk-agent" } },
+        { op: "close", id: "pm-retry-later", reason: "Later row" },
+      ] satisfies BulkItemMutation[] };
+      await expect(commitItemMutations(options)).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+      expect((await readItem(context.pmPath, "pm-retry-created")).status).toBe("closed");
+      expect(context.runCli(["create", "--id", "pm-retry-later", "--title", "Later target", "--type", "Task", "--json"]).code).toBe(0);
+      if (changedReason) await update("pm-retry-created", { closeReason: "Reviewed rollback" }, { pmRoot: context.pmPath });
+      const before = await readItem(context.pmPath, "pm-retry-created");
+      await expect(commitItemMutations(options)).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "transaction_create_compensated", item_id: "pm-retry-created" } });
+      expect(await readItem(context.pmPath, "pm-retry-created")).toEqual(before);
+      expect((await readItem(context.pmPath, "pm-retry-later")).status).toBe("open");
+      await reopen("pm-retry-created", "Explicitly retry compensated creation", {}, { pmRoot: context.pmPath });
+      await expect(commitItemMutations(options)).resolves.toMatchObject({ status: "committed", recovered: true });
+      expect((await readItem(context.pmPath, "pm-retry-created")).status).toBe("open");
+      await expect(commitItemMutations(options)).resolves.toMatchObject({ status: "committed", recovered: true });
+      expect((await readItem(context.pmPath, "pm-retry-created")).status).toBe("open");
     });
   });
 
@@ -758,6 +782,7 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
         "2-create-terminal",
       );
       await expect(terminalStep.compensate()).resolves.toBeUndefined();
+      await expect(terminalStep.inspect()).resolves.toMatchObject({ state: "applied" });
 
       for (const data of [undefined, null, [], {}]) {
         await expect(

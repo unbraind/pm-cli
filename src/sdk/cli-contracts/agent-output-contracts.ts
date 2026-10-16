@@ -6,6 +6,7 @@
  * output policy without coupling package authors to pm's renderer.
  */
 import { stripVTControlCharacters } from "node:util";
+import { unicodeSafePrefix } from "../../core/shared/text-normalization.js";
 import { resolvePmHistoryOperation } from "./command-aliases.js";
 import { PM_CORE_COMMAND_NAMES } from "./enum-contracts.js";
 
@@ -390,7 +391,7 @@ function compactDiagnosticRecovery(
 
 function truncateDiagnosticString(value: unknown, maximum: number): unknown {
   if (typeof value !== "string" || value.length <= maximum) return value;
-  return `${value.slice(0, Math.max(1, maximum - 3))}...`;
+  return `${unicodeSafePrefix(value, Math.max(1, maximum - 3))}...`;
 }
 
 function truncateDiagnosticUtf8Text(

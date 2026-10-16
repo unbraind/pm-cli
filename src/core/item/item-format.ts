@@ -2067,7 +2067,7 @@ function firstIllFormed(probes: ReadonlyArray<() => IllFormedItemText | null>): 
 }
 
 /**
- * Refuse text that TOON cannot encode before the encoder throws an untyped
+ * Refuse ill-formed persisted item text before an encoder throws an untyped
  * TypeError. A lone surrogate usually comes from a JSON `\\ud83d` escape or
  * from truncating a string between the two halves of an emoji (Sentry
  * PM-CLI-3H). Naming the field and index keeps the refusal actionable.
@@ -2076,13 +2076,13 @@ function assertWellFormedItemText(payload: Record<string, unknown>): void {
   const found = findIllFormedItemText(payload, "");
   if (found === null) return;
   throw new PmCliError(
-    `Item field ${found.path} contains an unpaired surrogate code unit at index ${found.index}; TOON requires well-formed Unicode text.`,
+    `Item field ${found.path} contains an unpaired surrogate code unit at index ${found.index}; persisted item text requires well-formed Unicode.`,
     EXIT_CODE.USAGE,
     {
       code: "text_unpaired_surrogate",
       field: found.path,
       required: "Provide well-formed UTF-16 text: keep emoji and other astral characters whole and avoid lone \\uD800-\\uDFFF JSON escapes.",
-      why: "The persisted TOON document must decode byte-for-byte; a lone surrogate cannot be encoded and would otherwise surface as an unclassified runtime fault.",
+      why: "Persisted item text must remain well-formed in every supported format; a lone surrogate can cause an unclassified encoder fault.",
       nextSteps: [
         `Repair the ${found.path} value (for example String.prototype.toWellFormed() or re-truncate on a character boundary) and retry.`,
         "Run pm <command> --help --json to review the text fields the command accepts.",

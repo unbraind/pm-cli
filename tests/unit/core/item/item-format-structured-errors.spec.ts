@@ -119,7 +119,10 @@ describe("item document text well-formedness (Sentry PM-CLI-3H)", () => {
     ).toThrowError(expect.objectContaining<PmCliError>({ context: expect.objectContaining({ field: "comments[0].text" }) }));
     // The non-TOON format persists the same text and refuses it the same way, in metadata and in the body.
     expect(() => serializeItemDocument(document({ description: truncatedEmoji }), { format: "json_markdown" })).toThrowError(
-      expect.objectContaining<PmCliError>({ context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "description" }) }),
+      expect.objectContaining<PmCliError>({
+        context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "description", why: expect.stringContaining("every supported format") }),
+        message: "Item field description contains an unpaired surrogate code unit at index 239; persisted item text requires well-formed Unicode.",
+      }),
     );
     expect(() => serializeItemDocument({ ...document(), body: "body \uD83D" }, { format: "json_markdown" })).toThrowError(
       expect.objectContaining<PmCliError>({ context: expect.objectContaining({ code: "text_unpaired_surrogate", field: "body" }) }),

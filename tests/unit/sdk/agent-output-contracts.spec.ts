@@ -317,13 +317,14 @@ describe("agent output contracts", () => {
     const projected = projectPmDiagnosticOutput(
       {
         code: "oversized_required_action",
-        required: "retry ".repeat(2_000),
+        required: `${"x".repeat(156)}😀${"retry ".repeat(2_000)}`,
         detail: "detail ".repeat(5_000),
       },
       { maxEstimatedTokens: 192 },
     );
 
     expect(projected.required).toMatch(/\.\.\.$/u);
+    expect(projected.required).toBe(`${"x".repeat(156)}...`);
     expect(String(projected.required).length).toBeLessThanOrEqual(160);
     expect(projected.diagnostic_output!.estimated_tokens).toBeLessThanOrEqual(
       192,

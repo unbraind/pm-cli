@@ -25601,6 +25601,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "transaction_create_compensated",
+      "class": "conflict",
+      "code": "transaction_create_compensated",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction create compensated condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "transaction_journal_invalid",
       "class": "conflict",
       "code": "transaction_journal_invalid",

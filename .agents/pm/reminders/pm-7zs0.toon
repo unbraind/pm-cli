@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-16T09:43:06.452Z"
+updated_at: "2026-10-16T20:55:10.660Z"
 reminders[1]{at,text}:
   "2026-10-17T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
@@ -16,7 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
-actual_result: "2026-10-16: latest public npm version remains 2026.10.15. Morning-dispatcher Auto Release 38842025410 failed at the Sentry gate before publication; issue 1483 and pm-gh1478 track unresolved output-compaction fault PM-CLI-3H. Preserve the single-release-per-day guard and do not retrigger until remediation."
+actual_result: "2026-10-16 late release handoff: public npm/GitHub latest remains2026.10.15. Scheduled38867421163 failed before publication on Sentry PM-CLI-3H and3M. Both source mechanisms are now fixed in PR1479 under pm-gh1478 and pm-bulk-option-validation; final reviewed merge, commit-bound Sentry resolution, guarded recovery and published2026.10.16 verification remain pending. The next standing health reminder remains2026-10-17 at06:00 UTC."
 dependencies[13]:
   - id: pm-7n5a
     kind: related
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[221]:
+comments[223]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -750,6 +750,12 @@ comments[221]:
   - created_at: "2026-10-16T09:43:04.766Z"
     author: "harness:codex"
     text: "Rearmed the one-shot release-health check for 2026-10-17 at 06:00 UTC before releasing this claim. The prior occurrence and failed-release observations remain in immutable history. This schedules the next health audit; it dispatches no release and changes no publication guard."
+  - created_at: "2026-10-16T20:12:23.655Z"
+    author: "harness:codex"
+    text: "User explicitly requested completing the October16 release today. Live audit at20:10 UTC: scheduled38867421163 failed pre-tag on PM-CLI-3H and3M; npm/GitHub latest remains2026.10.15. Bringing pm-gh1478 output-compaction remediation into PR1479 alongside the completed raw-duration fix, then verify Sentry remediation, merge the reviewed head and invoke guarded same-day release recovery. No release tag or package exists for October16 yet; keep automatic same-day deduplication intact."
+  - created_at: "2026-10-16T20:38:20.419Z"
+    author: "harness:codex"
+    text: "Release handoff: both current Sentry fault mechanisms now have source fixes in PR1479 (pm-gh1478 and pm-bulk-option-validation), with reproducing regression controls and passing focused tests. After exact-head checks/full review and merge, bind the two Sentry resolutions to the actual fixing commit, verify the mandatory health gate and invoke the existing guarded recovery for October16. Publication remains unverified at this handoff. Recent successful-command Sentry tracing also requires PM_SENTRY_TRACE_COMMANDS=1 in addition to SENTRY_TRACES_SAMPLE_RATE=1; use both for the final real-action observability probe."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

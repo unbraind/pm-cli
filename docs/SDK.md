@@ -483,6 +483,12 @@ not renderer-specific code, so package authors can reuse
 `resolvePmCommandOutputBudget`, and
 `estimatePmOutputTokens` in custom transports.
 
+Read-output, context-intent, recurrence and diagnostic string compaction retain
+Unicode-safe prefixes. A cutoff through a surrogate pair backs up one UTF-16
+code unit before adding its suffix. Rendering and token receipts use the actual
+retained text; unbounded reads and preserved-string exceptions are unchanged.
+Tracked by [pm-gh1478](../.agents/pm/issues/pm-gh1478.toon).
+
 ```ts
 import {
   definePmCommandOutputBudget,
@@ -1124,7 +1130,12 @@ bulk sync), `commitItemMutations` wraps the coordinator so callers describe
 the mutations instead of hand-writing a step array. The helper wires the
 crash-consistency contract for you: creates use their resolved stable `id` as
 the idempotency key (exists-by-id inspection) and are compensated by closing
-the item (or deleting it with `createCompensation: "delete"`); updates stamp a
+the item (or deleting it with `createCompensation: "delete"`). A retry refuses
+with `transaction_create_compensated` while a creation remains closed after
+compensation, even if its close prose was edited. Review its immutable history
+and explicitly reopen it before retrying; the SDK preserves later lifecycle
+decisions instead of silently reopening the item or reporting it committed.
+Updates stamp a
 durable history marker for applied-detection and are compensated by restoring
 the captured pre-mutation version; closes treat an already-terminal target as
 applied and are likewise compensated by version restore; releases restore the
