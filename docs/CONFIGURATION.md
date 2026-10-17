@@ -156,6 +156,9 @@ Ordinary subdirectories still share their repository's tracker, including
 root-layout trackers. To deliberately share a tracker across repository
 boundaries, pass `--pm-path <tracker-root>` or set `PM_PATH` explicitly.
 This shared SDK discovery policy also applies to CLI and MCP commands.
+Directory aliases follow physical ancestry, including missing descendants of
+an existing alias. Unexpected directory or `.git` lookup errors stop discovery
+instead of falling through to an enclosing tracker.
 
 Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. The wrapper `node scripts/run-tests.mjs ...` does that automatically.
 

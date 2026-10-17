@@ -352,6 +352,7 @@ function telemetryFlushRunnerPath(): string {
   );
 }
 
+/** Select foreground lifetime from explicit worker flags or a recognized test environment. */
 function shouldFlushInline(): boolean {
   if (parseBooleanTrueLike(process.env[PM_TELEMETRY_INLINE_FLUSH_ENV])) {
     return true;
@@ -2540,6 +2541,7 @@ async function dueTelemetryArtifactIds(globalPmRoot: string, retentionDays: numb
   return ids;
 }
 
+/** Serialize foreground snapshots or dispatch one detached worker for queued production delivery. */
 function scheduleTelemetryFlush(
   globalPmRoot: string,
   endpoint: string,

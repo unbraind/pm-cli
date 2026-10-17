@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, readdir, stat } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, symlink } from "node:fs/promises";
 import path from "node:path";
 import { expect, it, vi } from "vitest";
 import { PmClient } from "../../../src/sdk/core.js";
@@ -9,6 +9,7 @@ import { runDirectDistCli } from "../../helpers/cliRunner.js";
 import { expectJsonErrorEnvelope } from "../../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
+/** Compare all tracker bytes, including unexpected files created by a misrouted operation. */
 async function trackerBytes(root: string): Promise<Record<string, string>> {
   const hashes: Record<string, string> = {};
   for (const name of (await readdir(root, { recursive: true })).sort()) {
@@ -23,6 +24,7 @@ it.each(["checkout", "worktree", "submodule"])("keeps implicit SDK, CLI and MCP 
     const env = { ...context.env };
     for (const key of Object.keys(env)) if (key.startsWith("GIT_")) delete env[key];
     delete env.PM_PATH;
+    /** Run only disposable fixture Git commands without inherited repository selectors. */
     const git = (cwd: string, args: string[]) => execFileSync("git", args, { cwd, env, encoding: "utf8", stdio: "pipe" });
     git(context.tempRoot, ["init", "--initial-branch=main"]);
     const inner = path.join(context.tempRoot, "vendor", "inner");
@@ -38,6 +40,8 @@ it.each(["checkout", "worktree", "submodule"])("keeps implicit SDK, CLI and MCP 
     const cwd = path.join(inner, "src");
     const localRoot = path.join(inner, ".agents", "pm");
     await mkdir(cwd);
+    const alias = path.join(context.tempRoot, "linked-source");
+    await symlink(cwd, alias, process.platform === "win32" ? "junction" : "dir");
     const before = await trackerBytes(context.pmPath);
     const create = ["create", "--title", "Boundary fixture", "--type", "Task", "--description", "Disposable boundary control", "--priority", "2", "--json"];
     for (const args of [create, ["list", "--json"], ["config", "project", "set", "ux_deprecation_hints", "false", "--json"]]) {
@@ -52,6 +56,7 @@ it.each(["checkout", "worktree", "submodule"])("keeps implicit SDK, CLI and MCP 
     try {
       const client = new PmClient({ cwd, noExtensions: true });
       await expect(client.create({ title: "SDK boundary fixture", type: "Task", description: "Disposable boundary control", priority: "2" })).rejects.toMatchObject({ context: { code: "tracker_root_missing", resolved_path: localRoot } });
+      await expect(new PmClient({ cwd: alias, noExtensions: true }).create({ title: "Aliased SDK boundary fixture", type: "Task", description: "Disposable physical boundary control", priority: "2" })).rejects.toMatchObject({ context: { code: "tracker_root_missing", resolved_path: localRoot } });
       await expect(handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "pm_create", arguments: { options: { title: "MCP boundary fixture", type: "Task", description: "Disposable boundary control", priority: "2" } } } })).rejects.toMatchObject({ context: { code: "tracker_root_missing", resolved_path: localRoot, recovery: { suggested_retry_args: ["--pm-path", localRoot, "init", "--defaults", "--agent-guidance", "skip"] } } });
     } finally {
       process.chdir(originalCwd);

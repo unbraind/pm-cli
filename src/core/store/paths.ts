@@ -3,7 +3,7 @@
  *
  * Reads and writes tracker storage with format-aware helpers for Paths.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -13,6 +13,7 @@ import {
   TYPE_TO_FOLDER,
 } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { isFileAbsentError } from "../fs/fs-utils.js";
 import { toDefaultFolder } from "../item/type-registry.js";
 import type { ItemFormat, ItemType } from "../../types/index.js";
 
@@ -52,6 +53,33 @@ function pathExists(pathValue: string): boolean {
   }
 }
 
+/** Resolve physical ancestry while preserving the uncreated suffix of an initialization target. */
+function physicalDiscoveryStart(cwd: string): string {
+  let ancestor = path.resolve(cwd);
+  const missing: string[] = [];
+  while (path.dirname(ancestor) !== ancestor) {
+    try {
+      return path.join(realpathSync(ancestor), ...missing);
+    } catch (error) {
+      if (!isFileAbsentError(error)) throw error;
+      missing.unshift(path.basename(ancestor));
+      ancestor = path.dirname(ancestor);
+    }
+  }
+  return path.join(realpathSync(ancestor), ...missing);
+}
+
+/** Distinguish an absent repository marker from a lookup failure that must stop discovery. */
+function repositoryBoundaryExists(marker: string): boolean {
+  try {
+    statSync(marker);
+    return true;
+  } catch (error) {
+    if (isFileAbsentError(error)) return false;
+    throw error;
+  }
+}
+
 // Adopting a bare <dir>/settings.json during implicit ancestor discovery must
 // not let an unrelated tool's settings.json hijack tracker resolution (and
 // receive pm writes), so root-layout candidates need a pm-specific marker.
@@ -76,7 +104,7 @@ function isPmSettingsFile(settingsPath: string): boolean {
 
 /** Find a tracker in the current repository, retaining its local target when initialization is required. */
 function discoverPmRootFromAncestors(cwd: string): string | undefined {
-  let current = path.resolve(cwd);
+  let current = physicalDiscoveryStart(cwd);
   while (true) {
     const candidateRoot = path.join(current, PM_DIRNAME);
     const candidateSettingsPath = path.join(candidateRoot, SETTINGS_FILENAME);
@@ -97,7 +125,7 @@ function discoverPmRootFromAncestors(cwd: string): string | undefined {
     // A nested checkout, worktree or submodule owns a separate context. Keep
     // missing-root recovery inside that repository instead of adopting its
     // enclosing repository's tracker. Explicit paths bypass discovery below.
-    if (pathExists(path.join(current, ".git"))) {
+    if (repositoryBoundaryExists(path.join(current, ".git"))) {
       return candidateRoot;
     }
     const parent = path.dirname(current);
