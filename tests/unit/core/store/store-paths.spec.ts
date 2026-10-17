@@ -117,6 +117,37 @@ describe("core/store/paths", () => {
     }
   });
 
+  it.each(["directory", "file"])("stops implicit discovery at a .git %s while honoring explicit roots", (kind) => {
+    const root = mkdtempSync(path.join(os.tmpdir(), "pm-git-boundary-"));
+    try {
+      const outer = path.join(root, ".agents", "pm");
+      const inner = path.join(root, "vendor", "inner");
+      const cwd = path.join(inner, "src");
+      mkdirSync(outer, { recursive: true });
+      mkdirSync(cwd, { recursive: true });
+      writeFileSync(path.join(outer, "settings.json"), "{}");
+      if (kind === "directory") mkdirSync(path.join(inner, ".git"));
+      else writeFileSync(path.join(inner, ".git"), "gitdir: ../../.git/modules/inner\n");
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(cwd)).toBe(path.join(inner, ".agents", "pm"));
+        expect(resolveImplicitPmRoot(cwd)).toBe(path.join(inner, ".agents", "pm"));
+        expect(resolvePmRoot(cwd, outer)).toBe(outer);
+      });
+      withEnvVar("PM_PATH", outer, () => {
+        expect(resolvePmRoot(cwd)).toBe(outer);
+        expect(resolveImplicitPmRoot(cwd)).toBe(path.join(inner, ".agents", "pm"));
+      });
+      writeFileSync(path.join(inner, "settings.json"), '{"id_prefix":"inner-"}');
+      expect(resolveImplicitPmRoot(cwd)).toBe(inner);
+      const local = path.join(inner, ".agents", "pm");
+      mkdirSync(local, { recursive: true });
+      writeFileSync(path.join(local, "settings.json"), "{}");
+      expect(resolveImplicitPmRoot(cwd)).toBe(local);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("resolvePmRoot discovers root-layout trackers by walking ancestors (GH-495)", () => {
     const tempRoot = mkdtempSync(
       path.join(os.tmpdir(), "pm-path-discovery-rootlayout-"),

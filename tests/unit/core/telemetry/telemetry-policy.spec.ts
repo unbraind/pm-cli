@@ -59,6 +59,12 @@ it.each([
   [{}, false],
   [{ VITEST: "" }, true],
   [{ VITEST_WORKER_ID: "1" }, true],
+  [{ NODE_TEST_CONTEXT: "child-v8" }, true],
+  [{ NODE_TEST_CONTEXT: "" }, true],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "invalid" }, true],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "dogfood" }, false],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SEND_TEST_EVENTS: "true" }, false],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SEND_TEST_EVENTS: "1", DO_NOT_TRACK: "1" }, true],
   [{ NODE_ENV: " TEST " }, true],
   [{ NODE_ENV: "test", PM_TELEMETRY_SOURCE_CONTEXT: "invalid" }, true],
   [{ NODE_ENV: "test", PM_TELEMETRY_SOURCE_CONTEXT: "dogfood" }, false],
@@ -68,6 +74,15 @@ it.each([
   [{ DO_NOT_TRACK: "1", PM_TELEMETRY_SOURCE_CONTEXT: "user" }, true],
 ] as const)("resolves process consent %j", (env, disabled) => {
   expect(resolveTelemetryEnvironmentPolicy(env).telemetry_disabled).toBe(disabled);
+});
+
+it("uses native Node test attribution and inline lifetime after an explicit opt in", () => {
+  for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_ENV", "PM_TELEMETRY_SOURCE_CONTEXT", "PM_TELEMETRY_INLINE_FLUSH", "PM_TELEMETRY_FLUSH_CHILD"]) vi.stubEnv(key, "");
+  vi.stubEnv("VITEST", undefined);
+  vi.stubEnv("VITEST_WORKER_ID", undefined);
+  vi.stubEnv("NODE_TEST_CONTEXT", "child-v8");
+  expect(_testOnly.resolveTelemetrySourceContext({})).toEqual({ source_context: "test", source_context_source: "inferred" });
+  expect(_testOnly.shouldFlushInline()).toBe(true);
 });
 
 it.each([undefined, "", "bad", "0", "-1", "2", "Infinity", "0.25", "1"])("validates read inclusion probability %s", (raw) => {

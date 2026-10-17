@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-17T13:17:35.944Z"
+updated_at: "2026-10-17T17:08:50.326Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -19,7 +19,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[32]:
+comments[33]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -117,6 +117,9 @@ comments[32]:
   - created_at: "2026-10-17T13:17:35.944Z"
     author: "harness:codex"
     text: "PR1490 review follow-up local transport-floor observation: qualified runner, context best434ms against433ms ceiling, p50=455ms, p95=490ms; all other operations pass. The earlier independently built original-base create399ms/398ms observation remains separate evidence. No causal equivalence or latency fix is claimed; existing budgets and admission rules remain unchanged. Current revised source must pass the hosted static gate before merge."
+  - created_at: "2026-10-17T17:08:50.326Z"
+    author: "harness:codex"
+    text: "October17 SDK-isolation local static run: unchanged CLI transport floor refuses with benchmark_product_budget_exceeded on a qualified Node26.9.0 runner. Best observations are get385ms/362ms, next456ms/440ms, create424ms/398ms and claim417ms/415ms; bare-Node controls remain qualified. The same gate, budgets, sample counts and admission policy are unchanged by this delivery. This is a current local refusal, not a diagnosis or latency pass; preserve the existing independently built baseline observations and require final-head hosted Gates(static) before merge. Other local static stages through tracker-quality and SDK-import checks pass."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

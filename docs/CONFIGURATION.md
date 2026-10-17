@@ -148,6 +148,15 @@ For command-level tracker targeting, prefer `--pm-path <tracker-root>`. The old
 itself, not the repository workspace. During `pm init`, explicit tracker paths
 that look like workspace roots are rejected unless `--force` is provided.
 
+Implicit discovery checks the current directory and its ancestors up to the
+nearest `.git` directory or file, including worktrees and submodules. An
+uninitialized repository selects its own `.agents/pm` and returns initialization
+recovery instead of reading or changing an enclosing repository's tracker.
+Ordinary subdirectories still share their repository's tracker, including
+root-layout trackers. To deliberately share a tracker across repository
+boundaries, pass `--pm-path <tracker-root>` or set `PM_PATH` explicitly.
+This shared SDK discovery policy also applies to CLI and MCP commands.
+
 Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. The wrapper `node scripts/run-tests.mjs ...` does that automatically.
 
 ### Telemetry environment variables
@@ -212,7 +221,16 @@ Interaction rules:
 - `pm health --check-telemetry --json` surfaces flush and OTLP export diagnostics (`pending_otel_spans`, `last_otel_attempt_at`, `last_otel_success_at`, `last_otel_failure_at`, `last_otel_failure_error`) and the active `env_overrides` (including `telemetry_inline_flush` and `telemetry_source_context`) so agents can self-diagnose a stalled endpoint.
 - An explicit `PM_AUTHOR` override adds a privacy-preserving agent-identity dimension to `command_start`/`command_finish` events so overridden invocations can be segmented in dashboards without leaking the raw author string. At `redacted`/`max` capture the events carry `author_context_hash` — the same installation-id-keyed one-way SHA-256 used for `pm_root_hash`/`cwd_hash`, so the same author hashes consistently within an installation but differently across installations. At `minimal` capture only a boolean `has_author_context` is emitted. The raw `PM_AUTHOR` value is never exported.
 
-Test environments inferred from `VITEST`, `VITEST_WORKER_ID`, or `NODE_ENV=test` suppress telemetry before identity creation. A valid explicit `PM_TELEMETRY_SOURCE_CONTEXT` or `PM_TELEMETRY_SEND_TEST_EVENTS=1` permits intentional test delivery. Point such tests at a local collector. Neither setting overrides a hard opt-out. `pm telemetry status` exposes effective `enabled`, persisted `configured_enabled`, and `env_overrides` so an empty queue is distinguishable from disabled delivery.
+Test environments inferred from `VITEST`, `VITEST_WORKER_ID`, `NODE_TEST_CONTEXT`
+(native `node --test` children), or `NODE_ENV=test` suppress telemetry and Sentry
+before identity creation. A valid explicit `PM_TELEMETRY_SOURCE_CONTEXT` or
+`PM_TELEMETRY_SEND_TEST_EVENTS=1` permits intentional test delivery. Point such
+tests at a local collector. Inferred tests use inline telemetry flushing even
+after an opt in, so CLI delivery settles before process exit and disposable-root
+cleanup. SDK telemetry completion also awaits inline delivery before returning.
+Neither setting overrides a hard opt-out. `pm telemetry status` exposes effective `enabled`, persisted
+`configured_enabled`, and `env_overrides` so an empty queue is distinguishable
+from disabled delivery.
 
 SDK consumers that previously used `TelemetryStatusSummary.enabled` to display the saved preference should read `configured_enabled` instead. Use `enabled` to determine whether this process permits delivery.
 

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:history","horizon:current",performance,scale
 created_at: "2026-09-28T15:28:35.030Z"
-updated_at: "2026-09-28T15:41:10.456Z"
+updated_at: "2026-10-17T17:02:57.019Z"
 author: "harness:claude-code"
 estimated_minutes: 960
 acceptance_criteria: "Strict verification is incremental: a verified-prefix receipt (prefix byte length, prefix content digest, last after_hash, replay-state digest) lets validate --check-history-drift and history --verify re-check an unchanged prefix by hashing bytes and replay only appended entries; Negative controls: a byte change inside a previously verified prefix, a truncated stream, a reordered line and a receipt from another stream each force full replay and are reported exactly as today; validate --check-history-drift and history --verify join the scale budgets at the 10k, 100k and 1M tiers with fixtures that include long-lived note-accumulating items, each with a declared latency ceiling; A synthetic 10k-entry living item verifies with a measured growth exponent below 1.2, or an accepted ADR in the decision log selects a collection-digest hash epoch behind format_version gating with a lossless migration; Verdict equivalence over the real corpus plus deterministic corruptions is a checked-in regression, not a one-off script; No part of the fix depends on history-compact or any other entry-removing rewrite"
@@ -24,4 +24,6 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-mi2x,discovered_from,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
   pm-o87av6,implements,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-09-28T15:28:35.030Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-17T17:02:57.019Z","harness:codex","October17 observation during SDK isolation verification: the real health --summary action is green but its Sentry command span at2026-10-17T16:56:25Z lasts102154.94ms on the current2986-item tracker under concurrent local verification load. This is an observed latency sample, not an attribution proof or a new defect owner. Reuse this existing history-verification performance lineage if profiling confirms that boundary; no performance implementation is claimed here."
 body: ""

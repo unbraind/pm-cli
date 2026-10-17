@@ -74,7 +74,7 @@ function isPmSettingsFile(settingsPath: string): boolean {
   }
 }
 
-/** Find the nearest initialized tracker in conventional or explicitly marked root layout. */
+/** Find a tracker in the current repository, retaining its local target when initialization is required. */
 function discoverPmRootFromAncestors(cwd: string): string | undefined {
   let current = path.resolve(cwd);
   while (true) {
@@ -93,6 +93,12 @@ function discoverPmRootFromAncestors(cwd: string): string | undefined {
       isPmSettingsFile(rootLayoutSettingsPath)
     ) {
       return current;
+    }
+    // A nested checkout, worktree or submodule owns a separate context. Keep
+    // missing-root recovery inside that repository instead of adopting its
+    // enclosing repository's tracker. Explicit paths bypass discovery below.
+    if (pathExists(path.join(current, ".git"))) {
+      return candidateRoot;
     }
     const parent = path.dirname(current);
     if (parent === current) {
