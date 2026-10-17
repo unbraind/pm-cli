@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:sdk",changelog-exclude,release-closeout
 created_at: "2026-10-17T12:56:15.476Z"
-updated_at: "2026-10-17T13:17:38.865Z"
+updated_at: "2026-10-17T13:36:01.844Z"
 closed_at: "2026-10-17T13:17:37.781Z"
 completed_at: "2026-10-17T13:17:37.781Z"
 author: "harness:codex"
@@ -23,15 +23,17 @@ confidence: 95
 resolution: "Reject non-RFC3339 dependency timestamps, expose optional legacy creation provenance in SDK types, scope structured-check rendering to health verdict payloads, and align the live reminder summary with October18. Correct the packaged dependency tracker URL and document test fixture intent."
 expected_result: "All four accepted review findings are corrected without losing legacy reads, new edge provenance, validation compression, or authoritative health structure."
 actual_result: "334focused tests and complete typecheck pass. Reviewed SDK snapshot explicitly acknowledges the optional read field. Build, static contract checks, tracker/graph/history integrity and mutation controls pass. Existing local latency limitation is recorded under pm-bj7rq0 and remains subject to required hosted acceptance."
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,related,"2026-10-17T12:56:15.476Z","harness:codex","cli:create:dep",detected
   pm-gh1482,related,"2026-10-17T12:56:15.476Z","harness:codex","cli:create:dep",detected
   pm-gh1486,related,"2026-10-17T12:56:15.476Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+  pm-bj7rq0,related,"2026-10-17T13:36:01.467Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-10-17T12:56:15.476Z","harness:codex","Duplicate check: live keyword search and open/in_progress inventory found no active review closeout. Reuse pm-ul0ow4 delivery parent and related pm-gh1482, pm-gh1486, pm-7zs0; all prior implementation items remain closed. Review anchors 4302702409,4302702413,4302702419,4302702423 on head3622a20."
   "2026-10-17T12:56:34.932Z","harness:codex","Review analysis: strict timestamp check is valid; mutable reminder schedule summary is stale and has been updated through PM. GetResult already exposes Partial<Dependency>, but full list and core read types require further inspection before dismissing the read-type finding. Renderer exclusion must target the health verdict payload only."
   "2026-10-17T12:58:25.190Z","harness:codex","Read-type finding confirmed beyond GetResult: raw full list rows and lower-level ItemMetadata dependency reads expose Dependency.created_at as required, although legacy records omit it. Marking that provenance optional matches supported stored data. Create/update seed contracts already allow omission and synthesize real current provenance for new edges, so no required write-input field is removed. Added negative compile-time use checks for Dependency, ListedItem and GetResult."
   "2026-10-17T13:17:36.704Z","harness:codex","Review verification: 334 focused tests across5files and all four typecheck projects pass. Strict timestamp regressions cover informal dates and invalid calendar dates. SDK negative compile-time controls require provenance narrowing for Dependency, ListedItem and GetResult. Validation adaptive encoding round-trips heterogeneous details while health retains structured checks via its verdict marker. Initial uniform nested test fixture was naturally encoded by TOON4.4 and was corrected to heterogeneous validation reports. Build, docstrings, tracker quality, graph, record integrity, registry, SDK snapshot, entrypoint costs and348mutation controls pass (341killed/7equivalent/0survivors). Local qualified context latency434ms/433ms remains under pm-bj7rq0; hosted static acceptance is pending. Three missing planning fields on this review task were completed, and exact tracker-quality rerun passes."
+  "2026-10-17T13:36:01.467Z","harness:codex","CI39036093963 caught one new prose-edge gap after the final evidence comment named the latency owner without a typed relationship. Add the related edge to the existing canonical latency item; the reviewed source, budgets and graph threshold are unchanged. All other required checks, including exact coverage and hosted latency acceptance, passed on bcf3f65e8."
 files[8]{path,scope}:
   sdk/public-surface.json,project
   src/core/item/item-format.ts,project
