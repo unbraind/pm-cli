@@ -3465,6 +3465,7 @@ describe("runHealth", () => {
         ok: false,
         checks: [],
         warnings,
+        failed_because: [],
         generated_at: "2026-08-14T00:00:00.000Z",
       } as HealthResult,
       {},

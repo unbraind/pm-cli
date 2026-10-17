@@ -365,6 +365,12 @@ function boundedHealthCheckDetails(check: HealthCheck): Record<string, unknown> 
   return Buffer.byteLength(JSON.stringify(summarized)) < Buffer.byteLength(JSON.stringify(check.details)) ? summarized : check.details;
 }
 
+/** Retain sampled warnings and every blocking cause in input order with linear membership cost. */
+function retainHealthFindings(result: HealthResult, warnings: readonly string[]): HealthResult["findings"] {
+  const retained = new Set([...warnings, ...result.failed_because]);
+  return (result.findings ?? []).filter((finding) => retained.has(finding.warning));
+}
+
 /** Bound diagnostic detail and warnings while retaining every blocking cause and the authoritative verdict. */
 function applyBriefHealthProjection(result: HealthResult): HealthResult {
   const warningsSummary = summarizeStringList(
@@ -381,11 +387,7 @@ function applyBriefHealthProjection(result: HealthResult): HealthResult {
       details: boundedHealthCheckDetails(check),
     })),
     warnings: warningsSummary.sample,
-    findings: result.findings.filter(
-      (finding) =>
-        warningsSummary.sample.includes(finding.warning) ||
-        result.failed_because.includes(finding.warning),
-    ),
+    findings: retainHealthFindings(result, warningsSummary.sample),
     failed_because: result.failed_because,
     projection: {
       mode: "brief",
@@ -424,11 +426,7 @@ function applySummaryHealthProjection(result: HealthResult): HealthResult {
       })),
     warning_count: warningsSummary.count,
     warnings: warningsSummary.sample,
-    findings: result.findings.filter(
-      (finding) =>
-        warningsSummary.sample.includes(finding.warning) ||
-        result.failed_because.includes(finding.warning),
-    ),
+    findings: retainHealthFindings(result, warningsSummary.sample),
     failed_because: result.failed_because,
     projection: {
       mode: "summary",
@@ -467,19 +465,14 @@ export function projectHealthResult(
   summaryMode: boolean,
 ): HealthResult {
   const warningCount = result.warning_count ?? result.warnings.length;
+  const warnings = result.warnings.slice(0, HEALTH_WARNING_LIMIT);
   const boundedResult: HealthResult = {
     ...result,
     warning_count: warningCount,
     warning_limit: HEALTH_WARNING_LIMIT,
     warnings_truncated: warningCount > HEALTH_WARNING_LIMIT,
-    warnings: result.warnings.slice(0, HEALTH_WARNING_LIMIT),
-    findings: (result.findings ?? []).filter(
-      (finding) =>
-        result.warnings
-          .slice(0, HEALTH_WARNING_LIMIT)
-          .includes(finding.warning) ||
-        result.failed_because.includes(finding.warning),
-    ),
+    warnings,
+    findings: retainHealthFindings(result, warnings),
   };
   const projected = selectHealthProjection(boundedResult, options, summaryMode);
   return {

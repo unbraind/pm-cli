@@ -1,0 +1,67 @@
+id: pm-ev43uo
+title: "PR1490 health projection: retain findings with linear membership"
+description: ""
+type: Task
+status: closed
+priority: 2
+tags[3]: "area:sdk",changelog-exclude,release-closeout
+created_at: "2026-10-17T13:56:05.136Z"
+updated_at: "2026-10-17T14:00:52.558Z"
+closed_at: "2026-10-17T14:00:51.737Z"
+completed_at: "2026-10-17T14:00:51.737Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "All three projection paths use shared constant-time warning membership; Blocking causes outside both warning samples remain complete and ordered, including duplicate finding rows; Public SDK signatures and verdict behavior stay compatible"
+definition_of_ready: "Live parent and review lineage, exact-head finding, and all three retention paths inspected. No active duplicate exists."
+goal: universal-context-management
+objective: bounded-health-evidence
+value: Keep health projection cost linear while retaining every blocking cause and declared warning sample.
+why_now: Fresh review4302868874 found repeated scans of the unbounded blocking-cause array before merge.
+parent: pm-dl94xj
+risk: low
+confidence: 98
+resolution: "Share a Set-backed membership filter across standard/full, brief and summary health projection paths, compute the bounded warning sample once, and preserve every deciding finding in input order."
+expected_result: "Projection retention cost grows linearly with warnings, blocking causes and findings while all existing verdict and evidence semantics remain compatible."
+actual_result: "75focused tests,4final fixture tests, full typecheck, focused ESLint and the unchanged public SDK snapshot pass. The220warning/101failure regression proves out-of-sample blockers, order, duplicates, verdicts and input preservation for every projection."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1486,related,"2026-10-17T13:56:05.136Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-17T13:56:05.136Z","harness:codex","Duplicate check: live search plus open/in_progress inventory found no active retention follow-up. This is the single new review4302868874 after the prior review task completed. Reuse its parent lineage and the health issue; no implementation item is reopened or duplicated."
+  "2026-10-17T13:58:17.605Z","harness:codex","The shared helper indexes retained warnings and all deciding causes once, then filters findings in original order. A220warning/101failure fixture preserves blockers outside both samples, duplicate findings, verdicts, and input immutability across standard/brief/summary/full. Two older test-only inputs omitted the required failed_because array; update those fixtures to declare no blockers instead of adding a production fallback solely for tests. Their existing receipt and redaction assertions remain intact."
+  "2026-10-17T14:00:50.891Z","harness:codex","Verification:75focused health/CLI/SDK tests and complete typecheck pass. The final canonical severity fixture also passes its4unit cases. Focused ESLint passes and the public SDK snapshot reports zero changes. Shared Set membership removes all three repeated array-scan predicates and the per-finding warning slice, while retaining original finding order, duplicate rows and complete blocking causes across all four projections."
+files[3]{path,scope}:
+  src/sdk/governance/health/projection.ts,project
+  tests/unit/commands/governance/health-command.spec.ts,project
+  tests/unit/sdk/health-check-only-contract.spec.ts,project
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts,project,240,"harness:codex","2026-10-17T13:56:30.973Z",local_mutation,fix/sdk-read-context-contracts
+  pnpm typecheck,project,240,"harness:codex","2026-10-17T13:56:32.189Z",local_mutation,fix/sdk-read-context-contracts
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-finding-contract.spec.ts,project,240,"harness:codex","2026-10-17T13:58:16.720Z",local_mutation,fix/sdk-read-context-contracts
+test_runs[2]:
+  - run_id: test-local-mvcgofrc-4fkuz8
+    kind: test
+    status: failed
+    started_at: "2026-10-17T13:56:47.762Z"
+    finished_at: "2026-10-17T13:57:50.664Z"
+    recorded_at: "2026-10-17T13:57:50.664Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+  - run_id: test-local-mvcgqj9j-f3oop0
+    kind: test
+    status: passed
+    started_at: "2026-10-17T13:58:18.581Z"
+    finished_at: "2026-10-17T13:59:28.519Z"
+    recorded_at: "2026-10-17T13:59:28.519Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/governance/health-command.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/health-finding-contract.spec.ts,schema,schema,source,local_source_ref
+close_reason: Complete the final PR1490 health retention performance review.
+body: ""
