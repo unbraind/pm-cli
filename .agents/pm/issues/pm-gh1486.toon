@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[2]: github-intake,release-closeout
 created_at: "2026-10-17T02:29:25.793Z"
-updated_at: "2026-10-17T11:30:44.255Z"
-closed_at: "2026-10-17T11:30:43.200Z"
-completed_at: "2026-10-17T11:30:43.200Z"
+updated_at: "2026-10-17T12:03:19.460Z"
+closed_at: "2026-10-17T12:03:17.763Z"
+completed_at: "2026-10-17T12:03:17.763Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Reproduce on isolated empty and representative trackers with real extension registration; compare default, brief, summary and explicit full output bytes with identical verdicts; passing checks avoid registry dumps while full evidence remains available; nested evidence stays structured in JSON/TOON; add an independent extension-growth negative control without raising output budgets."
@@ -21,21 +21,22 @@ parent: pm-5t33or
 risk: medium
 confidence: high
 severity: medium
-resolution: "Passing extension health emits bounded counts by default, explicit full output restores registry evidence, brief detail avoids expansion, and nested TOON checks stay structured through shared SDK projection logic."
+resolution: "Passing extension health emits bounded counts by default, explicit full output restores registry evidence, brief detail avoids expansion, and nested TOON checks stay structured through shared SDK projection logic. New packaged documentation tracker references use hosted URLs with explicit npm exclusion notes."
 expected_result: Health context stays bounded under registry growth while all authoritative verdicts and blocking causes remain unchanged.
-actual_result: "Real 40-command extension growth and all-mode verdict tests pass; passing detail remains below 256 bytes, full evidence is restored and TOON decodes nested objects. Full hosted CI and literal coverage pass at dc37ae86551953c7aed141c2d1810f56e8e01534."
+actual_result: "Real 40-command extension growth and all-mode verdict tests pass; passing detail remains below 256 bytes, full evidence is restored and TOON decodes nested objects. Full hosted CI and literal coverage pass at dc37ae86551953c7aed141c2d1810f56e8e01534. Packaged-page tracker URLs and exclusion notes are corrected; build and documentation link checks pass."
 component: health output projection
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-du93sr,related,"2026-10-17T02:29:25.793Z","harness:codex","cli:create:dep",detected
   pm-nbht,related,"2026-10-17T02:33:11.891Z","harness:codex","cli:update:dep",detected
   pm-gh1482,related,"2026-10-17T10:41:17.046Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-17T02:29:25.793Z","harness:codex","Duplicate-check evidence: Live search1486 and health output plus open/in-progress inventories found no owner for this new report. Read completed pm-nbht and pm-du93sr and the open budget parentpm-5t33or; retain their shipped contracts and link the new default/brief intake as distinct residual scope."
   "2026-10-17T09:13:25.453Z","harness:codex","Implementation scope: reproduce real extension-growth output in isolated trackers; preserve summary/check-only and explicit full evidence, authoritative verdicts and actionable warnings. Bundle related SDK read-context defects pm-gh1481 and pm-gh1482; no output budget or quality threshold increase."
   "2026-10-17T09:22:11.799Z","harness:codex","SDK compatibility decision: the previously implicit default evidence projection now has an additive standard discriminator; brief, summary and explicit full remain supported. The conservative SDK signature gate requires a recorded acknowledgement for union widening; updated its snapshot with that exact rationale. Full results and authoritative verdicts are preserved; no public symbol was removed."
   "2026-10-17T09:38:51.569Z","harness:codex","Verification found the existing health-file and integration-directory ceilings. Extract projection logic into a focused SDK module and place the new real-boundary regression under tests/integration/read-output; preserve all file/directory, coverage and output-token thresholds. Chrome also confirms no open Semgrep findings match pm-cli main after refresh."
   "2026-10-17T09:57:04.104Z","harness:codex","Final focused acceptance passes for count-only healthy extension details, explicit full restoration, authoritative verdict equality, UTF-8 byte non-expansion per brief check, and structured TOON round trips. Projection implementation is in src/sdk/governance/health/projection.ts so the health engine remains below the existing implementation-line ceiling; the fixture under read-output restores the directory cap. No quality ceiling was raised."
   "2026-10-17T10:41:25.936Z","harness:codex","Current production revision passed the complete local functional suite: 819 files, 10575 tests, three existing skips. Literal coverage correctly refused two newly exposed migration-summary lines after removing the old exclusion; added a behavioral case proving migration counts survive without record expansion or input mutation, and the focused health suite passes 63/63. No ignores, denominator, deadlines or thresholds changed. Final full-source coverage and unchanged static admission will be required from the hosted PR head before closing this cohort. Three independent integration regressions fail against the original revision at their intended defects; same-surface source-mutant controls also pass."
+  "2026-10-17T12:03:16.527Z","harness:codex","Final package-content inspection found three new tracker references pointing at repository files excluded from npm. Changed the new references in COMMANDS and OUTPUT_PROJECTION_CONTRACTS to canonical hosted GitHub file URLs and stated the exclusion beside them, preserving relative links between packaged pages. Build and focused documentation link checks pass; runtime source remains identical to the verified dc37 head."
 learnings[1]{created_at,author,text}:
   "2026-10-17T10:17:03.771Z","harness:codex","Linked-test trust is pinned to source provenance. Inspect the exact stored commands, acknowledge them in a separate non-executing --acknowledge-linked-tests invocation, then run them normally; this preserves project trust policy without allowing arbitrary untrusted commands."
 files[9]:
@@ -102,9 +103,10 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/integration/health-diagnostic-guidance.integration.spec.ts,schema,schema,source,acknowledged
       node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-command.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/core/output/output.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
   docs/OUTPUT_PROJECTION_CONTRACTS.md,project
-close_reason: Implemented and verified the related read-context cohort in PR 1490.
+close_reason: Implemented and verified the read-context fix and completed packaged documentation delivery in PR 1490.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

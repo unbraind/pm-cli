@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- GH-1489: Keep all-status list filters independent of field projection ([pm-gh1489](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1489.toon))
 - GH-1486: Keep passing health diagnostics concise by default ([pm-gh1486](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1486.toon))
+- GH-1489: Keep all-status list filters independent of field projection ([pm-gh1489](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1489.toon))
 - GH-1482: Read legacy dependency timestamps safely and diagnose invalid values ([pm-gh1482](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1482.toon))
 - GH-1481: Retain explicitly requested sort values in brief list projections ([pm-gh1481](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1481.toon))
 

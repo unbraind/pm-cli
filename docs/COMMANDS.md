@@ -212,14 +212,17 @@ pm list --all --sort updated --order desc
 Brief list rows include an explicitly selected sort field (including normalized
 aliases such as `updated_at`) and declare it in `projection.fields`. Explicit
 `--fields`, compact and full projections retain their requested fields.
-This rule is shared by SDK list queries ([pm-gh1481](../.agents/pm/issues/pm-gh1481.toon)).
+This rule is shared by SDK list queries.
 
 Lifecycle filters such as `--all` and `--status all` retain the canonical `list`
 command's brief default; they select rows without expanding item fields. Use
 `--full`, `--compact`, `--brief`, `--fields` or `--include-body` to choose more
 evidence explicitly. Raw SDK list calls keep their full default, and explicit
-`--all --full --strict-read` remains a complete corpus read
-([pm-gh1489](../.agents/pm/issues/pm-gh1489.toon)).
+`--all --full --strict-read` remains a complete corpus read.
+The implementation records
+[pm-gh1481](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1481.toon)
+and [pm-gh1489](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1489.toon)
+are repository-only tracker files, excluded from the npm package.
 
 New dependency writes record `created_at`. Legacy rows without a timestamp remain
 readable: they sort before timestamped rows, with deterministic id/kind/source
