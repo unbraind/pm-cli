@@ -1,0 +1,57 @@
+id: pm-gh1489
+title: "GH-1489: Keep all-status list filters independent of field projection"
+description: "The CLI resolves status filters to legacy family names before applying default projections, so all/draft/canceled filters inherit full metadata instead of the canonical list default. Apply the SDK-declared default for the invoked command independently of row selection; retain explicit projection selectors and raw SDK full reads."
+type: Issue
+status: in_progress
+priority: 2
+tags[3]: agent-ux,"area:sdk",github-intake
+created_at: "2026-10-17T10:45:26.373Z"
+updated_at: "2026-10-17T10:51:47.671Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#81240a0dcc86a37a628664f9"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Both all-status spellings preserve implicit brief fields and requested sort values; Explicit projection selectors remain authoritative; Complete SDK raw reads and explicit full strict CLI reads stay full; A real CLI regression fails against the pre-fix behavior
+definition_of_ready: Live issue and all-status duplicate checks read; real CLI negative control fails at the full-versus-brief projection mismatch; explicit and raw SDK compatibility boundaries are defined
+goal: project management = context management
+objective: Select all lifecycle statuses without silently expanding item fields
+value: Agents include completed context without paying for unrelated full metadata and comments
+why_now: New GitHub report is the same read-context cohort as the active brief-list and health fixes
+parent: pm-5t33or
+risk: low
+confidence: 95
+expected_result: "CLI all-status filters retain the ordinary brief projection unless fields, compact, brief or full are explicitly requested; raw SDK defaults and full strict corpus reads remain compatible"
+actual_result: GH-1489 reports --all and --status all silently select full fields and expand the same five-item query from 534 to 6514 bytes
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1481,related,"2026-10-17T10:45:27.896Z","harness:codex","cli:update:dep",detected
+  pm-gh1486,related,"2026-10-17T10:45:27.896Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-17T10:45:26.373Z","harness:codex","Duplicate check: latest all-status full corpus plus request-specific searches for 1489 and all projection, open and in-progress lists, and the complete GitHub issue/comments show no canonical item for this newly reported defect. Reuse the existing read-context parent and implement in PR 1490 with related items rather than create a separate PR."
+  "2026-10-17T10:51:47.670Z","harness:codex","The independent real-CLI test fails before the fix specifically because all-status selection returns projection.mode full with fields null instead of the invoked list brief contract. Applying the SDK-declared default for the original command, rather than its status-derived family alias, fixes all/draft/canceled filters without changing raw SDK defaults. PM-linked verification passes 55/55 tests across real CLI reads and command registration: both all-status spellings select open plus closed work, explicit fields/compact/full remain authoritative, sort fields remain visible, and full strict reads restore historical descriptions. Initial fixture-setup failures are excluded from negative-control evidence."
+files[2]{path,scope}:
+  src/cli/register-list-query.ts,project
+  tests/integration/read-output/read-context-contracts.integration.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/cli/register-list-query.spec.ts,project,"harness:codex","2026-10-17T10:48:46.447Z",local_mutation,fix/sdk-read-context-contracts
+test_runs[1]:
+  - run_id: test-local-mvc9z7v9-1tdbxy
+    kind: test
+    status: passed
+    started_at: "2026-10-17T10:50:00.710Z"
+    finished_at: "2026-10-17T10:50:16.341Z"
+    recorded_at: "2026-10-17T10:50:16.341Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/cli/register-list-query.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts,node scripts/run-tests.mjs test -- tests/unit/cli/register-list-query.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-gh1489
+body: ""

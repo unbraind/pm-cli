@@ -334,7 +334,8 @@ async function runRegisteredListCommand(params: {
     effectiveDependencyBlocked,
     effectiveExcludeTerminal,
   } = selection;
-  applyDefaultListProjection(listOptions, effectiveName);
+  // Status filters select rows without replacing the invoked command's SDK default.
+  applyDefaultListProjection(listOptions, params.name);
   Object.assign(listOptions, { projectionCommand: effectiveName });
   if (effectiveExcludeTerminal) listOptions.excludeTerminal = true;
   listOptions.dependencyBlocked = effectiveDependencyBlocked;

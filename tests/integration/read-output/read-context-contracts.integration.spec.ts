@@ -26,6 +26,36 @@ describe("SDK read context contracts", () => {
     });
   });
 
+  it("keeps status selection independent of implicit and explicit field projections", async () => {
+    await withTempPmPath(async (context) => {
+      context.runCli(["create", "Active context", "--type", "Task"]);
+      const created = context.runCli(["create", "Completed context", "--type", "Task", "--description", "Detailed historical context ".repeat(30), "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+      const closed = context.runCli(["close", id, "Completed", "--resolution", "Completed", "--expected", "Completed", "--actual", "Completed", "--validate-close", "warn"]);
+      expect(closed.code, JSON.stringify(closed)).toBe(0);
+
+      const read = (flags: string[]) => {
+        const result = context.runCli(["list", ...flags, "--json", "--output-budget", "unbounded"], { expectJson: true });
+        expect(result.code).toBe(0);
+        return result.json as Awaited<ReturnType<typeof runList>>;
+      };
+      for (const filter of [["--all"], ["--status", "all"]]) {
+        const implicit = read(filter);
+        expect(implicit.projection).toMatchObject({ mode: "brief", fields: ["id", "status", "type", "title"] });
+        expect(implicit.items.map((item) => item.status).sort()).toEqual(["closed", "open"]);
+        expect(read([...filter, "--sort", "priority"]).projection?.fields).toContain("priority");
+        expect(read([...filter, "--fields", "id,title"]).projection).toMatchObject({ mode: "fields", fields: ["id", "title"] });
+        expect(read([...filter, "--compact"]).projection?.mode).toBe("compact");
+        const full = read([...filter, "--full", "--strict-read"]);
+        expect(full.projection?.mode).toBe("full");
+        expect(full.items.find((item) => item.id === id)?.description).toContain("Detailed historical context");
+      }
+      for (const status of ["draft", "canceled"]) expect(read(["--status", status]).projection?.mode).toBe("brief");
+      expect((await runList(undefined, {}, { path: context.pmPath })).projection?.mode).toBe("full");
+    });
+  });
+
   it("preserves timestamp-free legacy rows and diagnoses invalid supplied timestamps without changing the source", async () => {
     await withTempPmPath(async (context) => {
       const file = path.join(context.pmPath, "tasks", "pm-malformed.toon");
