@@ -1395,11 +1395,18 @@ describe("core/telemetry/runtime", () => {
       expect(active).not.toBeNull();
       await waitForFetchCalls(fetchMock, 1);
 
-      await finishTelemetryCommand(active, {
+      const completion = finishTelemetryCommand(active, {
         ok: true,
         result: { count: 0, items: [] },
       });
+      // Completion owns inline delivery, while capture must still permit a
+      // second event to be appended during the first collector request.
+      await vi.waitFor(async () => {
+        const queued = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+        expect(queued).toContain('"event_type":"command_finish"');
+      });
       resolveFirstFetch?.(new Response("{}", { status: 200 }));
+      await completion;
       await waitForPendingFlush();
       await sleep(50);
 

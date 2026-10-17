@@ -29,6 +29,7 @@ it.each([
   ["zero rate", { PM_SENTRY_TRACE_COMMANDS: "1", SENTRY_TRACES_SAMPLE_RATE: "0" }, true, false, false, false],
   ["consent opt-out", { PM_SENTRY_TRACE_COMMANDS: "1", DO_NOT_TRACK: "1" }, true, false, false, false],
   ["test isolation", { PM_SENTRY_TRACE_COMMANDS: "1", VITEST: "1" }, true, false, false, false],
+  ["native test isolation", { PM_SENTRY_TRACE_COMMANDS: "1", NODE_TEST_CONTEXT: "child-v8" }, true, false, false, false],
   ["preinitialized opt-out", { PM_SENTRY_TRACE_COMMANDS: "1" }, false, false, true, false],
   ["preinitialized allowed", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, true, true, false],
   ["preinitialized default", { PM_SENTRY_TRACE_COMMANDS: "1" }, true, false, true, true],

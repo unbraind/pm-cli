@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -71,7 +71,7 @@ describe("core/store/paths", () => {
   });
 
   it("resolvePmRoot discovers initialized pm root by walking ancestors", () => {
-    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-"));
+    const tempRoot = mkdtempSync(path.join(realpathSync(os.tmpdir()), "pm-path-discovery-"));
     try {
       const projectRoot = path.join(tempRoot, "project");
       const discoveredPmRoot = path.join(projectRoot, ".agents", "pm");
@@ -94,7 +94,7 @@ describe("core/store/paths", () => {
 
   it("resolveImplicitPmRoot discovers the workspace tracker while PM_PATH selects another tracker", () => {
     const tempRoot = mkdtempSync(
-      path.join(os.tmpdir(), "pm-path-implicit-discovery-"),
+      path.join(realpathSync(os.tmpdir()), "pm-path-implicit-discovery-"),
     );
     try {
       const projectRoot = path.join(tempRoot, "project");
@@ -117,9 +117,40 @@ describe("core/store/paths", () => {
     }
   });
 
+  it.each(["directory", "file"])("stops implicit discovery at a .git %s while honoring explicit roots", (kind) => {
+    const root = mkdtempSync(path.join(realpathSync(os.tmpdir()), "pm-git-boundary-"));
+    try {
+      const outer = path.join(root, ".agents", "pm");
+      const inner = path.join(root, "vendor", "inner");
+      const cwd = path.join(inner, "src");
+      mkdirSync(outer, { recursive: true });
+      mkdirSync(cwd, { recursive: true });
+      writeFileSync(path.join(outer, "settings.json"), "{}");
+      if (kind === "directory") mkdirSync(path.join(inner, ".git"));
+      else writeFileSync(path.join(inner, ".git"), "gitdir: ../../.git/modules/inner\n");
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(cwd)).toBe(path.join(inner, ".agents", "pm"));
+        expect(resolveImplicitPmRoot(cwd)).toBe(path.join(inner, ".agents", "pm"));
+        expect(resolvePmRoot(cwd, outer)).toBe(outer);
+      });
+      withEnvVar("PM_PATH", outer, () => {
+        expect(resolvePmRoot(cwd)).toBe(outer);
+        expect(resolveImplicitPmRoot(cwd)).toBe(path.join(inner, ".agents", "pm"));
+      });
+      writeFileSync(path.join(inner, "settings.json"), '{"id_prefix":"inner-"}');
+      expect(resolveImplicitPmRoot(cwd)).toBe(inner);
+      const local = path.join(inner, ".agents", "pm");
+      mkdirSync(local, { recursive: true });
+      writeFileSync(path.join(local, "settings.json"), "{}");
+      expect(resolveImplicitPmRoot(cwd)).toBe(local);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it("resolvePmRoot discovers root-layout trackers by walking ancestors (GH-495)", () => {
     const tempRoot = mkdtempSync(
-      path.join(os.tmpdir(), "pm-path-discovery-rootlayout-"),
+      path.join(realpathSync(os.tmpdir()), "pm-path-discovery-rootlayout-"),
     );
     try {
       // `pm init <dir>` writes settings.json directly into <dir>.
@@ -153,7 +184,7 @@ describe("core/store/paths", () => {
 
   it("resolvePmRoot prefers a .agents/pm tracker over a root-layout tracker at the same level", () => {
     const tempRoot = mkdtempSync(
-      path.join(os.tmpdir(), "pm-path-discovery-precedence-"),
+      path.join(realpathSync(os.tmpdir()), "pm-path-discovery-precedence-"),
     );
     try {
       const projectRoot = path.join(tempRoot, "project");
@@ -180,7 +211,7 @@ describe("core/store/paths", () => {
 
   it("resolvePmRoot ignores ancestor settings.json files without pm markers", () => {
     const tempRoot = mkdtempSync(
-      path.join(os.tmpdir(), "pm-path-discovery-foreign-"),
+      path.join(realpathSync(os.tmpdir()), "pm-path-discovery-foreign-"),
     );
     try {
       // An unrelated tool's settings.json at an ancestor must not hijack
@@ -218,7 +249,7 @@ describe("core/store/paths", () => {
 
   it("resolvePmRoot ignores ancestor pm directories until initialized", () => {
     const tempRoot = mkdtempSync(
-      path.join(os.tmpdir(), "pm-path-discovery-uninitialized-"),
+      path.join(realpathSync(os.tmpdir()), "pm-path-discovery-uninitialized-"),
     );
     try {
       const projectRoot = path.join(tempRoot, "project");
@@ -239,7 +270,7 @@ describe("core/store/paths", () => {
 
   it("resolvePmRoot redirects an explicit project-root path into its initialized .agents/pm", () => {
     const tempRoot = mkdtempSync(
-      path.join(os.tmpdir(), "pm-path-explicit-projectroot-"),
+      path.join(realpathSync(os.tmpdir()), "pm-path-explicit-projectroot-"),
     );
     try {
       const projectRoot = path.join(tempRoot, "project");
@@ -265,7 +296,7 @@ describe("core/store/paths", () => {
 
   it("resolvePmRoot keeps an explicit path that is already a tracker root verbatim", () => {
     const tempRoot = mkdtempSync(
-      path.join(os.tmpdir(), "pm-path-explicit-trackerroot-"),
+      path.join(realpathSync(os.tmpdir()), "pm-path-explicit-trackerroot-"),
     );
     try {
       // `pm init --path <dir>` writes settings.json directly at <dir>.

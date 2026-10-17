@@ -16,6 +16,7 @@ import { isActiveCommandUnextended, runWithIsolatedExtensionRuntime } from "../e
 import { resolveAutomaticReadSampleRate } from "./read-sampling.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
+  isTelemetryTestEnvironment,
   resolveTelemetryEnvironmentPolicy,
 } from "./policy.js";
 import type { GlobalOptions } from "../shared/command-types.js";
@@ -351,6 +352,7 @@ function telemetryFlushRunnerPath(): string {
   );
 }
 
+/** Select foreground lifetime from explicit worker flags or a recognized test environment. */
 function shouldFlushInline(): boolean {
   if (parseBooleanTrueLike(process.env[PM_TELEMETRY_INLINE_FLUSH_ENV])) {
     return true;
@@ -358,12 +360,7 @@ function shouldFlushInline(): boolean {
   if (parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV])) {
     return true;
   }
-  const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
-  return (
-    typeof process.env.VITEST === "string" ||
-    typeof process.env.VITEST_WORKER_ID === "string" ||
-    nodeEnv === "test"
-  );
+  return isTelemetryTestEnvironment();
 }
 
 async function readRuntimeState(
@@ -855,12 +852,7 @@ function resolveTelemetrySourceContext(
 
 /** Infer test, automated, or interactive execution from the process and output mode. */
 function inferTelemetrySourceContext(globalOptions: GlobalOptions): TelemetrySourceContext {
-  const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
-  if (
-    typeof process.env.VITEST === "string" ||
-    typeof process.env.VITEST_WORKER_ID === "string" ||
-    nodeEnv === "test"
-  ) {
+  if (isTelemetryTestEnvironment()) {
     return "test";
   }
   const nonTty = process.stdin.isTTY !== true || process.stdout.isTTY !== true;
@@ -2041,7 +2033,7 @@ async function flushPendingOtelSpans(
   await writeRuntimeState(globalPmRoot, statePatch);
 }
 
-/** Flush both telemetry artifacts under the same worker invocation: the event ingest queue and the pending OTLP span queue. Used by the detached flush worker and the inline (test) path so OTLP export always happens off the foreground command's critical path. */
+/** Flush event and OTLP queues together for a detached worker or inline test delivery, isolating each artifact's failures for a later retry. */
 async function flushTelemetryArtifacts(
   globalPmRoot: string,
   endpoint: string,
@@ -2549,25 +2541,22 @@ async function dueTelemetryArtifactIds(globalPmRoot: string, retentionDays: numb
   return ids;
 }
 
+/** Serialize foreground snapshots or dispatch one detached worker for queued production delivery. */
 function scheduleTelemetryFlush(
   globalPmRoot: string,
   endpoint: string,
   retentionDays: number,
-): void {
+): Promise<void> | undefined {
   // Preview capture stays in derived queues: detached workers cannot inherit
   // the settings scope that prevents durable schema and identity preparation.
   if (isConfigurationOnlySettingsRead(globalPmRoot)) return;
   if (shouldFlushInline()) {
-    const previousFlush = _lastFlushPromise;
-    const nextFlush = flushTelemetryArtifacts(
-      globalPmRoot,
-      endpoint,
-      retentionDays,
+    // Serialize snapshots: overlapping start/finish flushes could otherwise
+    // export the same queued start twice before either reconciles its receipt.
+    _lastFlushPromise = _lastFlushPromise.then(() =>
+      flushTelemetryArtifacts(globalPmRoot, endpoint, retentionDays),
     );
-    _lastFlushPromise = Promise.allSettled([previousFlush, nextFlush]).then(
-      () => {},
-    );
-    return;
+    return _lastFlushPromise;
   }
 
   try {
@@ -2725,7 +2714,7 @@ export async function startTelemetryCommand(
   }
 }
 
-/** Complete an invocation only while process consent, saved consent, and its installation identity still agree; retain failed reads and weight selected successful pairs. */
+/** Complete an invocation only while consent and installation identity agree; retain failed reads, weight selected pairs and await delivery in inline mode. */
 export async function finishTelemetryCommand(
   activeCommand: ActiveTelemetryCommand | null,
   outcome: TelemetryCommandOutcome,
@@ -2829,7 +2818,7 @@ export async function finishTelemetryCommand(
       return true;
     }, activeCommand.global_pm_root, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
     if (!captured) return;
-    scheduleTelemetryFlush(
+    await scheduleTelemetryFlush(
       activeCommand.global_pm_root,
       activeCommand.endpoint,
       activeCommand.retention_days,
@@ -2918,7 +2907,7 @@ export async function emitTelemetryErrorEvent(
       await appendTelemetryEvent(globalPmRoot, event);
       return installation;
     }, globalPmRoot, TELEMETRY_FOREGROUND_LOCK_WAIT_MS);
-    if (captured) scheduleTelemetryFlush(globalPmRoot, captured.endpoint, captured.retentionDays);
+    if (captured) await scheduleTelemetryFlush(globalPmRoot, captured.endpoint, captured.retentionDays);
   } catch {
     // Telemetry must never block command execution.
   }

@@ -2,11 +2,13 @@ id: pm-gh1484
 title: "GH-1484: Infer native Node test telemetry and bound intentional test flush lifetime"
 description: "GitHub #1484 reports that SDK package suites using node --test inherit NODE_TEST_CONTEXT=child-v8 without Vitest flags or NODE_ENV=test. Current inference omits that signal, so child CLI invocations can be recorded as ordinary activity. The report also describes an ENOTEMPTY cleanup race with a detached telemetry worker. Source inspection confirms the missing signal in consent and inline-flush selection; the reported cleanup race is not reproduced by this intake."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:sdk","area:telemetry",github-intake,test-isolation
 created_at: "2026-10-16T09:35:02.376Z"
-updated_at: "2026-10-16T09:37:06.080Z"
+updated_at: "2026-10-17T17:58:37.406Z"
+closed_at: "2026-10-17T17:36:11.507Z"
+completed_at: "2026-10-17T17:36:11.507Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Native Node test children are inferred before identity creation, storage or export; explicit test-event consent and source-context overrides retain their documented behavior; intentional test delivery has a bounded worker lifetime and cleanup proof; ordinary production delivery and the existing deleted-root guard remain covered; Node and Bun package consumers have published-SDK regression evidence and updated configuration guidance."
@@ -20,23 +22,87 @@ risk: medium
 confidence: high
 severity: medium
 environment: "SDK-consuming package suites, native Node test children and disposable global trackers"
-expected_result: Native Node tests receive consistent telemetry isolation; opted-in test delivery completes safely before disposable roots are removed.
-actual_result: "Intake only: source policy and inline-flush selection recognize Vitest and NODE_ENV=test but omit NODE_TEST_CONTEXT. GitHub reports an SDK-package cleanup failure. No current fix or new cleanup reproduction is claimed."
+resolution: "One native-test predicate governs consent, attribution and inline lifetime. Inline snapshots serialize, and completion/error delivery settles before returning, preserving asynchronous start capture and ordinary detached delivery."
+expected_result: Native Node tests suppress telemetry and Sentry before identity by default; explicit test consent and source overrides retain hard opt-out precedence and complete safe local delivery before cleanup.
+actual_result: "Pre-fix native contracts fail; both linked commands pass with zero refused or skipped selections. Real node --test and packed npm/Node/Bun consumers prove default suppression, consent, source attribution, one start/finish pair and immediate cleanup. Existing in-flight append, worker ownership and Sentry controls pass. The full local run has six isolated-green environment/timing failures and no coverage summary; hosted exact coverage/static are required before merge."
 affected_version: 2026.10.15
 component: telemetry
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-745epp,related,"2026-10-16T09:35:02.376Z","harness:codex","cli:create:dep",detected
   pm-p5u6,related,"2026-10-16T09:35:02.376Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text,edited_at}:
-  "2026-10-16T09:35:02.376Z","harness:codex","Duplicate check 2026-10-16: all-status exact keyword search for NODE_TEST_CONTEXT returned zero records; broader searches and live open/in-progress reads found no specific active owner. Full current metadata and history for closed pm-745epp and pm-p5u6 distinguish their shipped Vitest/Node-environment and deleted-root ownership fixes from this newly reported native Node signal and cleanup-lifetime case. Reuse those relationships under the observability parent, with this report-specific child. Source: [GitHub #1484](https://github.com/unbraind/pm-cli/issues/1484). This is open, unclaimed intake for subsequent implementation.","2026-10-16T09:37:06.080Z"
-files[5]{path,scope,note}:
+comments[11]:
+  - created_at: "2026-10-16T09:35:02.376Z"
+    author: "harness:codex"
+    text: "Duplicate check 2026-10-16: all-status exact keyword search for NODE_TEST_CONTEXT returned zero records; broader searches and live open/in-progress reads found no specific active owner. Full current metadata and history for closed pm-745epp and pm-p5u6 distinguish their shipped Vitest/Node-environment and deleted-root ownership fixes from this newly reported native Node signal and cleanup-lifetime case. Reuse those relationships under the observability parent, with this report-specific child. Source: [GitHub #1484](https://github.com/unbraind/pm-cli/issues/1484). This is open, unclaimed intake for subsequent implementation."
+    edited_at: "2026-10-16T09:37:06.080Z"
+  - created_at: "2026-10-17T16:45:39.954Z"
+    author: "harness:codex"
+    text: "Implementation intake: live source and GH1484 confirm missing native Node test inference in consent, source attribution and flush selection. Reuse shared test-environment detection across those decisions; prove suppression before identity and opted-in delivery before disposable root cleanup, preserving opt-out precedence and production detached delivery."
+  - created_at: "2026-10-17T16:54:49.785Z"
+    author: "harness:codex"
+    text: "Regression proof: four native-test contract cases fail on pre-fix main5544dc3, demonstrating missing suppression and test attribution. Final focused telemetry controls pass: native Node default suppression before identity and Sentry, hard opt-out precedence, explicit source and test-event consent, local start/finish delivery with immediate SDK cleanup, existing deleted-root worker ownership and production Sentry controls. Real loopback execution additionally exposed overlapping inline queue snapshots; serialize those flushes and await completion/error delivery while keeping start capture asynchronous. No temporary-path heuristic changes normal production behavior."
+  - created_at: "2026-10-17T16:58:37.297Z"
+    author: "harness:codex"
+    text: "Repository hygiene evidence on October17: all26 open GitHub issues already have canonical PM-item comments; zero open PRs at intake; Dependabot, code-scanning and secret-scanning alert inventories are empty, and pnpm audit reports zero known vulnerabilities. Latest pm-changelog2026.10.16 activates cleanly and its configured full-history check passes. Registry census finds ten dependency releases below the seven-day window and two older incompatible majors (TypeScript7 peer/API migration and npm-package-arg14 runtime floor); canonical migration owners were refreshed without claiming their implementation."
+  - created_at: "2026-10-17T17:00:17.719Z"
+    author: "harness:codex"
+    text: "Live operational acceptance: strict Sentry gate with max-critical0/max-high0 and required remote telemetry passes; no unresolved Sentry issues, finish error rate2.63percent over the maintained window and zero failures missing an error code. Explicitly traced real context/health actions produce recent Sentry span descriptions and remote start/finish observations. Foreground telemetry flush drains one physical client queue entry to zero, and independent broker inspection reports zero queued/ready/unacknowledged entries. These are observed actions and queue snapshots, not a claim that every historical action was captured."
+  - created_at: "2026-10-17T17:02:26.694Z"
+    author: "harness:codex"
+    text: "Observability evidence clarification: full fresh span rows identify our health action at2026-10-17T16:56:25Z, duration102154.94ms. The returned context span is from16:29:36Z, before this action window; it proves recent context tracing but must not be labeled the context invocation just issued. Remote telemetry independently confirms complete context/health lifecycle pairs. The earlier compact span descriptions alone were insufficient for exact-invocation attribution."
+  - created_at: "2026-10-17T17:29:42.792Z"
+    author: "harness:codex"
+    text: "Full local Node26 coverage run completed:10592 passed,6 failed,3 skipped across822 spec files, without a coverage summary. All new repository-boundary/native-test integrations and telemetry policy/runtime controls pass. Failures comprise extension-startup and absence-gate timeouts, two scale-benchmark timeouts, a linked-test3-second assertion at3713ms, and packed continuation unable to resolve npm/package.json in this Homebrew Node setup. Isolated reruns will distinguish persistence; no global coverage pass or weakened timeout/budget is claimed. Final-head hosted coverage remains required."
+  - created_at: "2026-10-17T17:33:15.638Z"
+    author: "harness:codex"
+    text: "Packed artifact acceptance passes in independent npm and Bun installations: public SDK refuses nested-repository mutation without changing outer bytes, recovers by initializing the local tracker, suppresses native test traffic before identity, and completes one local start/finish pair before immediate root cleanup. Installed npx and bunx dispatch both report 2026.10.17. All six broad-run failures pass in their isolated source suites (100 unit tests and 8 integration tests); packed continuation passes Node and Bun after exposing this host's existing npm module directory through NODE_PATH. Full local coverage remains unavailable; hosted exact coverage is mandatory."
+  - created_at: "2026-10-17T17:35:32.304Z"
+    author: "harness:codex"
+    text: "Final local acceptance: both linked test commands pass after clone-local acknowledgement, with zero trust refusals, assertion failures or skipped selections. Public npm/Node and Bun SDK fixtures pass boundary, identity suppression, serialized paired delivery and immediate cleanup; npx/bunx dispatch passes. Targeted remote pairing for this installation and repository confirms exactly one context start/finish and one health start/finish in the observed action window. Full-source local execution and qualified transport-budget limitations remain documented; required hosted exact coverage and static checks will decide merge readiness."
+  - created_at: "2026-10-17T17:39:31.002Z"
+    author: "harness:codex"
+    text: "Terminal evidence verification passes after closure: defect gate reports zero findings across 356 governed terminal defects; the selected close event retains resolution, expected and actual results. Graph and record assurance, linked tests, packed npm/Node/Bun consumers and installed dispatch checks pass. Source verification limitations remain explicit in the close event and PR: the local full run produced no coverage summary, and the final hosted gates must certify exact coverage and static quality. Both implementation claims are released and the complete tracker has zero items in progress."
+  - created_at: "2026-10-17T17:58:37.404Z"
+    author: "harness:codex"
+    text: "PR #1492 source head 14535f09868ab376be038913761b25516729ca1d has clean required checks and independently verified hosted exact 100/100/100/100 coverage. Sourcery's guide correctly notes that the optional temporary-root heuristic from the original proposal is absent: storage location alone does not establish test intent, and forcing foreground network work for ordinary temporary installations would change production behavior. The implemented acceptance boundary uses native/Vitest/Node environment signals; custom harnesses can explicitly set PM_TELEMETRY_INLINE_FLUSH=1. This design preserves ordinary detached delivery while the real native test and public SDK cleanup controls pass. Sourcery review budget, Greptile trial expiry and cubic monthly line quota are unavailable review evidence, not approvals; CodeRabbit full review will be requested explicitly."
+notes[1]{created_at,author,text}:
+  "2026-10-17T16:54:50.868Z","harness:codex","Test design: retain existing concurrent-append regression and resolve its held collector response before awaiting inline completion. New child-process coverage uses the public SDK and Node own test signal, rather than mocked runner inference. The collector sees a start/finish pair before the owned temporary telemetry root is deleted."
+learnings[1]{created_at,author,text}:
+  "2026-10-17T16:58:39.124Z","harness:codex","Test inference is one consent boundary shared by suppression, source attribution and worker lifetime. Inline delivery also needs serialized snapshots and an awaited completion boundary; otherwise test cleanup can outlive delivery even without a detached worker."
+files[8]{path,scope,note}:
+  src/core/sentry/instrument.ts,project,Shared test isolation boundary
   src/core/telemetry/policy.ts,project,Consent and inferred source policy
   src/core/telemetry/runtime.ts,project,Inline versus detached delivery and worker ownership
-  src/core/sentry/instrument.ts,project,Shared test isolation boundary
-  tests/unit/core/telemetry/telemetry-policy.spec.ts,project,Native test consent controls to extend
+  tests/integration/telemetry/native-test-isolation.integration.spec.ts,project,Real native Node tests and loopback delivery with immediate SDK root cleanup
+  tests/integration/telemetry/sentry-command-tracing.spec.ts,project,"Consent precedence, attribution, in-flight queue preservation and native Sentry suppression"
+  tests/unit/core/telemetry/telemetry-policy.spec.ts,project,"Consent precedence, attribution, in-flight queue preservation and native Sentry suppression"
+  tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,"Consent precedence, attribution, in-flight queue preservation and native Sentry suppression"
   tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts,project,Intentional test delivery and cleanup controls to extend
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts tests/unit/core/sentry/instrument.spec.ts,project,900,"harness:codex","2026-10-16T09:37:05.469Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance,Existing isolated consent and worker boundaries to extend for the reported native Node case
+  node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts tests/integration/telemetry/sentry-command-tracing.spec.ts tests/unit/core/sentry/instrument.spec.ts,project,900,"harness:codex","2026-10-17T16:52:03.149Z",local_mutation,fix/sdk-workspace-test-isolation,Native Node consent and awaited inline completion with production delivery controls
+test_runs[1]:
+  - run_id: test-local-mvcofg67-4ml2f1
+    kind: test
+    status: passed
+    started_at: "2026-10-17T17:34:22.186Z"
+    finished_at: "2026-10-17T17:34:48.223Z"
+    recorded_at: "2026-10-17T17:34:48.223Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts tests/unit/core/sentry/instrument.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts tests/integration/telemetry/sentry-command-tracing.spec.ts tests/unit/core/sentry/instrument.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
-  docs/CONFIGURATION.md,project,Document native Node test inference and intentional delivery
+  docs/CONFIGURATION.md,project,"Native Node inference, hard opt-outs and inline completion lifetime"
+close_reason: Implemented and verified native Node test consent and inline telemetry completion for reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts (new native test cases fail on base 5544dc3 in an isolated checkout)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/telemetry/telemetry-policy.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts tests/integration/telemetry/sentry-command-tracing.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-gh1484
 body: ""

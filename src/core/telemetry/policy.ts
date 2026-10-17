@@ -9,6 +9,16 @@ const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 /** Supported explicit classifications for intentional telemetry delivery. */
 export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood"] as const;
 const SOURCE_CONTEXTS = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
+
+/** Share native and package test signals across consent, attribution and flush lifetime. */
+export function isTelemetryTestEnvironment(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  return typeof env.VITEST === "string" ||
+    typeof env.VITEST_WORKER_ID === "string" ||
+    typeof env.NODE_TEST_CONTEXT === "string" ||
+    (env.NODE_ENV ?? "").trim().toLowerCase() === "test";
+}
 /** Fixed core reads eligible only after runtime ownership has been established. */
 export const TELEMETRY_SAMPLEABLE_READS: ReadonlySet<string> = new Set([
   "stats", "ops stats", "list", "get", "next", "context", "activity", "aggregate",
@@ -40,9 +50,7 @@ export function resolveTelemetryEnvironmentPolicy(
 ): { telemetry_disabled: boolean; do_not_track: boolean; test_suppressed: boolean } {
   const doNotTrack = telemetryEnvironmentFlag("DO_NOT_TRACK", env);
   const override = (env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim().toLowerCase();
-  const inferredTest = typeof env.VITEST === "string" ||
-    typeof env.VITEST_WORKER_ID === "string" ||
-    (env.NODE_ENV ?? "").trim().toLowerCase() === "test";
+  const inferredTest = isTelemetryTestEnvironment(env);
   const testSuppressed = inferredTest && !SOURCE_CONTEXTS.has(override) &&
     !telemetryEnvironmentFlag("PM_TELEMETRY_SEND_TEST_EVENTS", env);
   return {
