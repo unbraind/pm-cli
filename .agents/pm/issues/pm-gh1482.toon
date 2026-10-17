@@ -1,14 +1,14 @@
 id: pm-gh1482
-title: "GH-1482: pm get crashes with TypeError (localeCompare) when two or more dependency rows lack created_at, and pm validate does not flag them"
+title: "GH-1482: Read legacy dependency timestamps safely and diagnose invalid values"
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1482. Reading multiple dependency rows missing timestamps yields a stable safe result or a typed actionable diagnostic, and validation exposes malformed required data."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:sdk",github-intake
 created_at: "2026-10-16T04:07:41.807Z"
-updated_at: "2026-10-17T10:16:59.956Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#81240a0dcc86a37a628664f9"
+updated_at: "2026-10-17T11:30:42.151Z"
+closed_at: "2026-10-17T11:30:41.364Z"
+completed_at: "2026-10-17T11:30:41.364Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Two or more dependency rows without created_at never produce an unhandled TypeError; Ordering or typed refusal is deterministic and documents recovery; Validation and health expose required-field defects where appropriate
@@ -20,8 +20,9 @@ parent: pm-33cw
 risk: medium
 confidence: medium
 severity: high
-expected_result: "Reading multiple dependency rows missing timestamps yields a stable safe result or a typed actionable diagnostic, and validation exposes malformed required data."
-actual_result: Reporter reproduction retained in the body; implementation and installed-artifact acceptance remain pending.
+resolution: "Legacy dependency rows without timestamps sort deterministically without inventing provenance; invalid supplied timestamps return typed field diagnostics exposed by get, validation and health."
+expected_result: "Legacy records remain readable and byte-preserved, while malformed supplied values never escape as localeCompare TypeError."
+actual_result: "Legacy ordering and JSON/Markdown round-trip contracts pass; null, numeric and invalid supplied timestamps are diagnosed without mutating source bytes. Full hosted CI and literal coverage pass at dc37ae86551953c7aed141c2d1810f56e8e01534."
 comments[4]{created_at,author,text}:
   "2026-10-16T04:07:41.807Z","harness:codex","Duplicate check 2026-10-16: strict complete all-status corpus of 2971 items with zero omissions plus request-specific keyword searches and live open/in_progress reads. No item references GH-1482. Existing foundational owners retain their prior completed scope; this child records the distinct newly reported defect. Kept open and unclaimed while finishing PR 1479."
   "2026-10-17T09:13:24.509Z","harness:codex","Implementation scope: reproduce missing dependency created_at against current checkout, preserve valid persisted-format semantics and use a typed actionable read/validation result. Bundled with pm-gh1481/pm-gh1486; all other backlog items remain unclaimed."
@@ -49,6 +50,7 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-validation.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
+close_reason: Implemented and verified the related read-context cohort in PR 1490.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

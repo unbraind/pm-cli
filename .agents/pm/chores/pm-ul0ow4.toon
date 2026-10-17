@@ -2,13 +2,13 @@ id: pm-ul0ow4
 title: Refresh eligible October 17 dependencies with SDK codec compatibility proof
 description: "Update seven-day-eligible compatible dependencies with full codec, SDK, packed-consumer and static-quality proof. Preserve canonical major-migration owners and record recent-release deferrals."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[3]: "area:dependencies","area:sdk",maintenance
 created_at: "2026-10-17T09:19:42.155Z"
-updated_at: "2026-10-17T10:41:20.777Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#81240a0dcc86a37a628664f9"
+updated_at: "2026-10-17T11:38:57.725Z"
+closed_at: "2026-10-17T11:30:46.970Z"
+completed_at: "2026-10-17T11:30:46.970Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Eligible compatible updates are installed and the runtime lock is current; full coverage, static quality and npm/Bun packed consumers pass; remaining newer versions carry concrete age/engine/peer dispositions under canonical owners"
@@ -20,7 +20,9 @@ why_now: "Live registry census found eligible TOON 4.4.0, Node typings 26.6.5, j
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "Eligible published dependencies preserve the SDK/CLI contracts, literal 100/100/100/100 full-source coverage, static quality and packed npm/npx/Bun/bunx consumers, with zero known vulnerabilities."
+resolution: "Updated TOON to 4.4.0, Node types to 26.6.5, jscpd to 5.4.1 and knip to 6.41.0; regenerated the runtime lock and validated eligible updates against SDK and packed consumers."
+expected_result: "Eligible dependency updates preserve full-source coverage, static quality, package compatibility and supported npm/Bun entrypoints without known vulnerabilities."
+actual_result: "All required hosted checks, exact-head analyzers and literal full-source coverage pass; package artifacts, nine packed consumers and published-artifact workspace compatibility pass. Newer major or too-recent versions remain explicitly tracked by their existing owners. Source proof: https://github.com/unbraind/pm-cli/actions/runs/39027854416."
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-ko35zx,related,"2026-10-17T09:54:01.794Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-17T10:41:19.884Z","harness:codex","cli:update:dep",detected
@@ -28,10 +30,12 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-fokyhh,related,"2026-10-17T10:41:19.884Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-10-17T10:41:19.884Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-17T10:41:19.884Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-17T09:19:42.155Z","harness:codex","Duplicate check: complete live all-status 2981-item corpus and 75846 raw activity events read with no omissions; request-specific dependency and TOON searches plus open/in_progress inventories reviewed. Completed pm-ko35zx covers 4.1.1 only; pm-t3jxjj, pm-fokyhh, pm-do5b and pm-ksr40d retain separate major compatibility migrations. No open owner covers these eligible versions."
   "2026-10-17T09:21:00.987Z","harness:codex","Registry census 2026-10-17: updated TOON4.1.1 to4.4.0 (8.53days old), Node typings26.6.4 to26.6.5 (7.61days), jscpd5.4.0 to5.4.1 (7.90days), knip6.39.0 to6.41.0 (8.06days). Latest gpt-tokenizer4.0.3, Greptile3.6.2, marked18.1.1, typescript-eslint8.71.2, CodSpeed6.0.1, Unicorn78, Sentry11.8 and Vitest5.0.5 remain below seven days. TypeScript7 and npm-package-arg14 retain documented tooling/runtime-floor migrations. No known vulnerabilities or GitHub security alerts; no open dependency PR exists."
   "2026-10-17T10:39:36.642Z","harness:codex",Static quality found one missing expected_result on this newly created chore; added the explicit expected-result field through pm update and the unchanged tracker-context-quality assertions now pass 47/47. CLI transport latency remains locally unaccepted and documented under existing pm-bj7rq0 with a same-host original-revision comparison; require exact-head hosted static admission rather than weaken a bound. Latest published pm-changelog is 2026.10.16 and its generator check currently passes. Upstream workflow/prepare compatibility work is already in pm-changelog PR 254 with pmc-38z4 lineage; no generator discrepancy or local changelog workaround was introduced.
+  "2026-10-17T11:30:37.124Z","harness:codex","Verified production source dc37ae86551953c7aed141c2d1810f56e8e01534 in PR 1490: https://github.com/unbraind/pm-cli/actions/runs/39027854416 passed every required context with CLEAN readiness and no missing contexts. Complete suite: 819 files, 10577 tests passed, three existing skips. Exact coverage artifact has lines 65745/65745, statements 69260/69260, functions 14261/14261, branches 53198/53198; no threshold or denominator changes. Exact-head hosted analysis gate passes, including CodeFactor and DeepScan with zero new issues. CodeRabbit actionable reminder feedback is fixed, verified and resolved; helper docstrings were strengthened. Further CodeRabbit review is rate-limited, Sourcery budget is exhausted, Greptile trial has ended and cubic is neutral: these are unavailable reviews, not approvals. Final source package-artifact and nine packed npm/npx/Bun/bunx consumers pass, and real packed SDK continuation matrices pass under Node and native Bun. Required live Sentry/telemetry gate passes with zero blocking issues, 2.7 percent finish-error rate and zero failure rows missing error codes. Deferred newer dependency versions retain their canonical age/engine/peer owners; this cohort does not close historical release reliability or analyzer limitations."
+  "2026-10-17T11:38:57.724Z","harness:codex","Reviewed closeout inputs: npm latest pm-changelog 2026.10.16 generated exactly five Unreleased entries (four fixes and this dependency refresh) after remote tag refresh; generation and check pass, and every earlier release section remains byte-identical. Terminal assurance passes 354 governed defects with zero findings after completing the new intake taxonomy through an audited reopen and closure. Tracker-context, graph-composition and record-integrity gates pass. Full validation checks 2702 closed records and 2983 histories with zero drift; 170 pre-existing legacy resolution advisories remain unchanged. Strict complete in-progress inventory is zero. Tracker closure and generated changelog are included in this PR for final-head review; no post-merge tracker write is required."
 files[3]{path,scope}:
   package.json,project
   pnpm-lock.yaml,project
@@ -52,4 +56,7 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/release/runtime-lock.mjs check,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-validation.spec.ts tests/unit/core/output/output.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Implemented and verified the related read-context cohort in PR 1490.
 body: ""

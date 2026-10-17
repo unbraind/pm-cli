@@ -2,13 +2,13 @@ id: pm-gh1489
 title: "GH-1489: Keep all-status list filters independent of field projection"
 description: "The CLI resolves status filters to legacy family names before applying default projections, so all/draft/canceled filters inherit full metadata instead of the canonical list default. Apply the SDK-declared default for the invoked command independently of row selection; retain explicit projection selectors and raw SDK full reads."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:sdk",github-intake
 created_at: "2026-10-17T10:45:26.373Z"
-updated_at: "2026-10-17T11:10:28.938Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#81240a0dcc86a37a628664f9"
+updated_at: "2026-10-17T11:35:29.222Z"
+closed_at: "2026-10-17T11:35:28.240Z"
+completed_at: "2026-10-17T11:35:28.240Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: Both all-status spellings preserve implicit brief fields and requested sort values; Explicit projection selectors remain authoritative; Complete SDK raw reads and explicit full strict CLI reads stay full; A real CLI regression fails against the pre-fix behavior
@@ -20,8 +20,9 @@ why_now: New GitHub report is the same read-context cohort as the active brief-l
 parent: pm-5t33or
 risk: low
 confidence: 95
-expected_result: "CLI all-status filters retain the ordinary brief projection unless fields, compact, brief or full are explicitly requested; raw SDK defaults and full strict corpus reads remain compatible"
-actual_result: GH-1489 reports --all and --status all silently select full fields and expand the same five-item query from 534 to 6514 bytes
+resolution: Lifecycle filters use the invoked list command SDK default independently of status-derived aliases; all-status filters stay brief while explicit projections and raw SDK full defaults remain compatible.
+expected_result: "All statuses can be selected without silently expanding metadata, with complete full strict audit reads still available."
+actual_result: "55 real CLI/registration contracts and both cursor suites pass; both all-status spellings select open plus closed work, and explicit full cursor fixtures preserve every original budget and recovery assertion. Full hosted CI and literal coverage pass at dc37ae86551953c7aed141c2d1810f56e8e01534."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1481,related,"2026-10-17T10:45:27.896Z","harness:codex","cli:update:dep",detected
   pm-gh1486,related,"2026-10-17T10:45:27.896Z","harness:codex","cli:update:dep",detected
@@ -62,6 +63,8 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/integration/read-output/cursor-recovery.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
+close_reason: Implemented and verified the related read-context cohort in PR 1490; terminal intake classification is complete.
+escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   gate_id: coverage
