@@ -868,6 +868,7 @@ function parseFieldSelectors(raw: string | undefined): string[] | undefined {
   return [...new Set(selectors)];
 }
 
+/** Resolve one explicit projection and keep requested sort context visible in brief rows. */
 function parseProjectionConfig(
   options: ListRuntimeOptions,
   invokedCommand: ListCommandName = options.projectionCommand ?? "list",
@@ -901,9 +902,10 @@ function parseProjectionConfig(
     };
   }
   if (briefRequested) {
+    const sortField = parseSortField(options.sort);
     return {
       mode: "brief",
-      fields: [...BRIEF_LIST_FIELDS],
+      fields: [...new Set<string>([...BRIEF_LIST_FIELDS, ...(sortField ? [sortField] : [])])],
     };
   }
   if (compactRequested) {
@@ -988,6 +990,7 @@ const LIST_SORT_FIELD_ALIASES: ReadonlyMap<string, ListSortField> = new Map<
   ["create", "created_at"],
 ]);
 
+/** Resolve friendly timestamp aliases before checking the canonical sortable field set. */
 function parseSortField(raw: string | undefined): ListSortField | undefined {
   if (raw === undefined) {
     return undefined;

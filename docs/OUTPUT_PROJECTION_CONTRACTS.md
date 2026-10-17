@@ -1,5 +1,15 @@
 # Output Projection and Omission Contracts
 
+Passing extension health defaults are tracked by
+[pm-gh1486](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1486.toon),
+a repository-only tracker file excluded from the npm package. Standard `pm health` output
+reports healthy extension counts and `restore_with: "pm health --full"` rather
+than the command registry. Its `standard` projection declares the omitted full
+check details. Warning and failure details remain available by default.
+`--full` restores structured evidence; `--brief` never expands an individual
+check's serialized detail beyond the standard projection. Summary and check-only
+verdict semantics remain unchanged. SDK `runHealth` and MCP use the same engine.
+
 Tracker references: [pm-p258tx](../.agents/pm/features/pm-p258tx.toon),
 [pm-cyrfjq](../.agents/pm/issues/pm-cyrfjq.toon), and
 [pm-qhnq6t](../.agents/pm/issues/pm-qhnq6t.toon). The universal row and

@@ -349,6 +349,31 @@ describe("runHealth", () => {
     });
   });
 
+  it("keeps migration counts without expanding migration records in brief health", () => {
+    const migrationStatus = {
+      applied_count: 2,
+      pending_count: 1,
+      failed_count: 1,
+      applied: [{ id: "installed" }],
+      pending: [{ id: "next" }],
+      failed: [{ id: "repair", message: "full diagnostic evidence" }],
+    };
+    const before = structuredClone(migrationStatus);
+    const details = healthInternals.summarizeHealthCheckDetails(
+      {
+        name: "extensions",
+        status: "warn",
+        details: { activation: { migration_status: migrationStatus } },
+      },
+      3,
+    );
+
+    expect(
+      (details.activation as Record<string, unknown>).migration_status,
+    ).toEqual({ applied_count: 2, pending_count: 1, failed_count: 1 });
+    expect(migrationStatus).toEqual(before);
+  });
+
   it("covers additional health helper edge branches", async () => {
     expect(healthInternals.normalizeEndpointForDisplay("   ")).toBe("");
     expect(
@@ -486,7 +511,7 @@ describe("runHealth", () => {
     vi.stubEnv("PM_AGENT_PROBES", "0");
     await withTempPmPath(async (context) => {
       createSeedItem(context);
-      const health = await runHealth({ path: context.pmPath });
+      const health = await runHealth({ path: context.pmPath }, { full: true });
       expect(health.ok).toBe(true);
       expect(health.warnings).toEqual([]);
       expect(health.checks.map((check) => check.name)).toEqual([
@@ -2079,7 +2104,7 @@ describe("runHealth", () => {
         force: true,
       });
 
-      const health = await runHealth({ path: context.pmPath });
+      const health = await runHealth({ path: context.pmPath }, { full: true });
       expect(health.ok).toBe(false);
       expect(health.warnings).toEqual([
         "missing_directory:history",
@@ -3216,7 +3241,7 @@ describe("runHealth", () => {
         "utf8",
       );
 
-      const health = await runHealth({ path: context.pmPath });
+      const health = await runHealth({ path: context.pmPath }, { full: true });
       expect(health.ok).toBe(false);
       expect(health.warnings).toEqual([
         "extension_manifest_invalid:project:broken-manifest",
@@ -3273,7 +3298,7 @@ describe("runHealth", () => {
       const skipped = await runHealth({
         path: context.pmPath,
         noExtensions: true,
-      });
+      }, { full: true });
       expect(skipped.ok).toBe(true);
       expect(skipped.warnings).toEqual([]);
       const skippedCheck = skipped.checks.find(
@@ -3365,14 +3390,10 @@ describe("runHealth", () => {
       ).toBe(true);
       const extensionCheck = health.checks.find((c) => c.name === "extensions");
       expect(extensionCheck?.details).toMatchObject({
-        discovered: {
-          count: 0,
-          sample: [],
-          truncated: false,
-        },
-        activation: {
-          command_handler_count: 0,
-        },
+        loaded_count: 0,
+        failed_count: 0,
+        warning_count: 0,
+        restore_with: "pm health --full",
       });
       expect(extensionCheck?.details).not.toHaveProperty("roots");
     });
@@ -3444,6 +3465,7 @@ describe("runHealth", () => {
         ok: false,
         checks: [],
         warnings,
+        failed_because: [],
         generated_at: "2026-08-14T00:00:00.000Z",
       } as HealthResult,
       {},
@@ -3495,7 +3517,7 @@ describe("runHealth", () => {
     });
   });
 
-  it("omits the remediation_map from history_drift details in brief projection mode", async () => {
+  it("retains shorter history_drift evidence rather than expanding it for brief mode", async () => {
     await withTempPmPath(async (context) => {
       const missingId = createSeedItem(context);
       await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), {
@@ -3507,7 +3529,11 @@ describe("runHealth", () => {
         (check) => check.name === "history_drift",
       );
       expect(historyDriftCheck).toBeDefined();
-      expect(historyDriftCheck?.details).not.toHaveProperty("remediation_map");
+      expect(historyDriftCheck?.details).toHaveProperty("remediation_map");
+      const standard = await runHealth({ path: context.pmPath });
+      expect(JSON.stringify(historyDriftCheck?.details).length).toBeLessThanOrEqual(
+        JSON.stringify(standard.checks.find((check) => check.name === "history_drift")?.details).length,
+      );
     });
   });
 

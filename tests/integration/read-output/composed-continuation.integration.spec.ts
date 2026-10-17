@@ -184,8 +184,8 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       await cp(context.pmPath, otherTracker, { recursive: true });
       await verifyAmountOnlyProducers(run, context.pmPath);
       for (const query of [
-        ["list", "--all", "--limit", "25", "--output-budget", "1700"],
-        ["list", "--all", "--limit", "25", "--output-limit", "20", "--output-budget", "1700"],
+        ["list", "--all", "--full", "--limit", "25", "--output-budget", "1700"],
+        ["list", "--all", "--full", "--limit", "25", "--output-limit", "20", "--output-budget", "1700"],
         ["search", "Matrix", "--mode", "keyword", "--status", "all", "--limit", "25", "--output-budget", "1500"],
         ["context", "--limit", "25", "--output-budget", "1500"],
         ["context", "--fields", "id", "--limit", "25", "--output-budget", "1300"],
@@ -270,7 +270,7 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       }
       // Deleting the last delivered identity exercises the producer's positional
       // fallback; compare the entire ordered suffix without deduplicating it.
-      const deletionBase = ["list", "--all", "--tag", "matrix", "--limit", "25", "--output-limit", "20", "--output-budget", "1700", "--json"];
+      const deletionBase = ["list", "--all", "--full", "--tag", "matrix", "--limit", "25", "--output-limit", "20", "--output-budget", "1700", "--json"];
       const complete = await run(["list", "--all", "--tag", "matrix", "--no-truncate", "--output-budget", "unbounded", "--json"]);
       expect(complete.code).toBe(0);
       const orderedIds = (complete.json as ReadPage).items!.map(({ id }) => id);

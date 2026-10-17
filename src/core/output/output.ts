@@ -371,7 +371,8 @@ function renderToonValue(value: unknown, depth: number): string {
           key,
           entry,
           depth,
-          !Object.hasOwn(value, `${key}_encoding`),
+          !Object.hasOwn(value, `${key}_encoding`) &&
+            !(key === "checks" && isPlainObject(value.verdict) && value.verdict.authority === "ok"),
         ),
       )
       .join("\n");

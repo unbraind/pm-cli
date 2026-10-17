@@ -8,7 +8,8 @@ describe("advertised cursor recovery (GH-1457)", () => {
       for (let index = 0; index < 20; index += 1) {
         expect((await run(["create", "Task", `Cursor recovery ${index}`, "--id", `cursor-recovery-with-a-long-stable-identity-to-exercise-budget-continuation-${index}`, "--status", "in_progress", "--description", "long context ".repeat(80), "--create-mode", "progressive"])).code).toBe(0);
       }
-      for (const command of [["list", "--all"], ["search", "Cursor", "--mode", "keyword", "--status", "all"], ["context", "--token-budget", "100000"]]) {
+      // Request wide rows explicitly so the unchanged budget must produce a cursor.
+      for (const command of [["list", "--all", "--full"], ["search", "Cursor", "--mode", "keyword", "--status", "all"], ["context", "--token-budget", "100000"]]) {
         const help = await runCliInProcess([command[0], "--help"]);
         expect(help.stdout).toMatch(/^\s+--output-cursor <cursor>/mu);
         expect(help.stdout).toContain("continuation_kind");
@@ -30,7 +31,7 @@ describe("advertised cursor recovery (GH-1457)", () => {
       expect(complete.json).toMatchObject({ count: 20, truncated: false, has_more: false });
       const capped = await run(["list", "--all", "--no-truncate", "--limit", "5"]);
       expect(capped.json).toMatchObject({ count: 5, has_more: true });
-      const explicitBudget = await run(["list", "--all", "--no-truncate", "--limit", "100", "--output-budget", "1600"]);
+      const explicitBudget = await run(["list", "--all", "--full", "--no-truncate", "--limit", "100", "--output-budget", "1600"]);
       expect(explicitBudget.json).toHaveProperty("output_budget_truncation");
     });
   }, 30_000);

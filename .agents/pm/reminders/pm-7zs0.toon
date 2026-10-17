@@ -6,9 +6,9 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-17T02:35:06.591Z"
+updated_at: "2026-10-17T12:56:32.241Z"
 reminders[1]{at,text}:
-  "2026-10-17T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
+  "2026-10-18T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
@@ -16,7 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "Every eligible UTC day publishes once through reviewed producer and tag-driven acceptance; verify actual public registry, consumers and observability while preserving historical failures."
-actual_result: "Verified public2026.10.17 at02:22UTC: producer38989409879 and Release38991739473 succeeded; npm exact/latest17, all nine cross-platform npm/Bun acceptance jobs and independent installed public SDK/CLI/npx/bunx checks pass. Two real actions have paired telemetry and current Sentry spans. Historical October16 miss and rolling reliability failures remain documented. Standing next health occurrence2026-10-17T06:00Z remains scheduled. New reports1486/1487 are open intake, not release fixes."
+actual_result: "Verified public2026.10.17 at02:22UTC: producer38989409879 and Release38991739473 succeeded; npm exact/latest17, all nine cross-platform npm/Bun acceptance jobs and independent installed public SDK/CLI/npx/bunx checks pass. Two real actions have paired telemetry and current Sentry spans. Historical October16 miss and rolling reliability failures remain documented. Standing next health occurrence2026-10-18T06:00Z is scheduled after the October17 verification. New reports1486/1487 are open intake, not release fixes."
 dependencies[13]:
   - id: pm-7n5a
     kind: related
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[228]:
+comments[230]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -771,6 +771,12 @@ comments[228]:
   - created_at: "2026-10-17T02:35:06.591Z"
     author: "harness:codex"
     text: "Reviewed post-release closeout validation: current build and latest pm-changelog2026.10.16 generation/check pass; CHANGELOG.md is unchanged after tag refresh. Tracker-context, graph-composition and record-integrity assurance gates pass. The graph gate caught one missing related link to completed summary-mode ownerpm-nbht; recording that genuine relationship through PM restored the unchanged bound. Terminal defect evidence passes350 governed defects with zero findings; docs links and tracked-secret scan pass, and pnpm audit reports no known vulnerabilities. Full validation verifies2981 histories with zero drift;170 pre-existing legacy closure-field warnings remain advisory, not newly repaired. Strict complete active-item inventory has total0. New intake1486/1487 and the retired-hook cleanup stay open and unclaimed. These merge-dependent/publication results will land through a normal main-based reviewed metadata PR, preserving source delivery and release provenance."
+  - created_at: "2026-10-17T09:22:14.325Z"
+    author: "harness:codex"
+    text: "Live October17 continuation: npm latest and GitHub latest are2026.10.17; native scheduled39012559040 successfully selected same_day verification of the existing target. Required-mode live Sentry/telemetry gate passes with0 unresolved critical/high issues,1.87 percent one-day finish error rate and0 failed rows lacking error codes. GitHub open PRs and Dependabot/code-scanning/secret-scanning alerts are0; every28 open issue has a PM-link comment. Package verification and new SDK change acceptance are recorded separately."
+  - created_at: "2026-10-17T12:06:10.785Z"
+    author: "harness:codex"
+    text: "Post-change observability acceptance: Sentry span list returns the real successful command spans pm context at 2026-10-17T11:44:59+00:00 (1127.1 ms); pm health at 2026-10-17T11:39:55+00:00 (1454.8 ms). The documented one-command tracing opt-in was used without changing persistent consent or configuration. Required Sentry/telemetry issue/reliability checks pass. Configured inline event flush drained the physical client queue from one to zero, and an independent broker read confirms zero messages, ready entries and unacknowledged deliveries. The next standing release-health reminder remains 2026-10-18T06:00:00Z."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent
@@ -806,10 +812,11 @@ notes[11]:
   - created_at: "2026-10-14T17:17:20.656Z"
     author: "harness:codex"
     text: "Next eligible daily publication must keep source/packed and published-installed claims distinct. For pm-gh1466/pm-gh1467, rerun scripts/release/extension-flag-acceptance.mjs verifyInstalledExtensionFlags against the integrity-verified new public package on Node and Bun, retaining its40 required case identities and exact registry artifact identity. Current public2026.10.14 is the independently reproduced failing baseline, not the fixed candidate. Do not overwrite it or create a second automatic release today. Existing published release38510184254 and later same-day guard38531806166 already passed; historical reliability and Sentry trace freshness retain their separate owners."
-learnings[3]{created_at,author,text}:
+learnings[4]{created_at,author,text}:
   "2026-07-26T13:11:41.088Z","harness:codex","Credential fallback must follow the gate's access obligation, not only its strictness mode: a configured but stale environment token is stronger evidence that Sentry access is expected, so best-effort should try the authenticated CLI before failing the release while tokenless best-effort may remain optional."
   "2026-07-26T15:52:22.655Z","harness:codex","A hidden npm package version can return 404 to both anonymous and authenticated metadata reads while the immutable publish endpoint still knows the version exists. Same-tag recovery must use the access mutation as the existence-sensitive operation, permit publish only on a definitive package-not-found response, and fail closed for every credential or registry error."
   "2026-10-17T02:29:02.321Z","harness:codex","A successful Auto Release can be an intentional guarded skip. Prove release availability with its immutable tag, exact producer/publisher runs, anonymous npm version and dist-tag, GitHub release and installed consumers; preserve the original missed-day and first-attempt reliability evidence."
+  "2026-10-17T12:06:11.626Z","harness:codex","Observed with the current Sentry CLI: trace list can be empty while span list returns fresh SDK streaming spans. Use span list for successful-command span acceptance, and keep issue counts, span detail, paired events and physical queue drain as separate evidence claims."
 files[20]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,record project pm-changelog 2026.6.27 managed package metadata
   .github/workflows/auto-release.yml,project,close stale blocked-release issue after successful scheduled publish

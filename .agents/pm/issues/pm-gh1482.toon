@@ -1,22 +1,62 @@
 id: pm-gh1482
-title: "GH-1482: pm get crashes with TypeError (localeCompare) when two or more dependency rows lack created_at, and pm validate does not flag them"
+title: "GH-1482: Read legacy dependency timestamps safely and diagnose invalid values"
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1482. Reading multiple dependency rows missing timestamps yields a stable safe result or a typed actionable diagnostic, and validation exposes malformed required data."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:sdk",github-intake
 created_at: "2026-10-16T04:07:41.807Z"
-updated_at: "2026-10-16T04:07:41.807Z"
+updated_at: "2026-10-17T11:30:42.151Z"
+closed_at: "2026-10-17T11:30:41.364Z"
+completed_at: "2026-10-17T11:30:41.364Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Two or more dependency rows without created_at never produce an unhandled TypeError; Ordering or typed refusal is deterministic and documents recovery; Validation and health expose required-field defects where appropriate
+goal: project management = context management
+objective: Keep legacy relationship context readable and diagnose invalid supplied timestamp provenance before sorting
+value: Imported project data remains usable and byte-preserved while malformed explicit data gets actionable diagnostics
+why_now: GitHub 1482 and the retained legacy-read controls establish the missing-timestamp crash boundary
 parent: pm-33cw
 risk: medium
 confidence: medium
 severity: high
-expected_result: "Reading multiple dependency rows missing timestamps yields a stable safe result or a typed actionable diagnostic, and validation exposes malformed required data."
-actual_result: Reporter reproduction retained in the body; implementation and installed-artifact acceptance remain pending.
-comments[1]{created_at,author,text}:
+resolution: "Legacy dependency rows without timestamps sort deterministically without inventing provenance; invalid supplied timestamps return typed field diagnostics exposed by get, validation and health."
+expected_result: "Legacy records remain readable and byte-preserved, while malformed supplied values never escape as localeCompare TypeError."
+actual_result: "Legacy ordering and JSON/Markdown round-trip contracts pass; null, numeric and invalid supplied timestamps are diagnosed without mutating source bytes. Full hosted CI and literal coverage pass at dc37ae86551953c7aed141c2d1810f56e8e01534."
+comments[4]{created_at,author,text}:
   "2026-10-16T04:07:41.807Z","harness:codex","Duplicate check 2026-10-16: strict complete all-status corpus of 2971 items with zero omissions plus request-specific keyword searches and live open/in_progress reads. No item references GH-1482. Existing foundational owners retain their prior completed scope; this child records the distinct newly reported defect. Kept open and unclaimed while finishing PR 1479."
+  "2026-10-17T09:13:24.509Z","harness:codex","Implementation scope: reproduce missing dependency created_at against current checkout, preserve valid persisted-format semantics and use a typed actionable read/validation result. Bundled with pm-gh1481/pm-gh1486; all other backlog items remain unclaimed."
+  "2026-10-17T09:38:49.727Z","harness:codex","Compatibility correction from the broad regression suite: existing actionable-get-receipts deliberately supports timestamp-free legacy dependencies. The final fix will preserve those rows and sort absent timestamps deterministically; typed item_document_invalid is reserved for invalid supplied timestamps. The initial strict-absence attempt is superseded, and the existing regression controls are retained."
+  "2026-10-17T09:57:02.459Z","harness:codex","Corrected boundary proof passes: all 181 focused tests, including timestamp-free legacy read contracts and the safe/unsafe source-mutant controls. The same final read-context suite fails all three cases on isolated baseline eeeaf3ececc4fc18c6c41cf3c4a5d3218e92a0aa under the same updated dependencies. Missing timestamps remain absent and sort deterministically; null/numeric/invalid supplied timestamps return typed field diagnostics and validation/health expose corruption without rewriting source bytes."
+learnings[1]{created_at,author,text}:
+  "2026-10-17T09:30:38.660Z","harness:codex","Dependency created_at is canonical write provenance, but timestamp-free legacy persisted rows already have an explicit supported read/omission contract. Validate a sorting fix against actionable-get-receipts before strengthening read-time schema validation; absence must not acquire an invented timestamp."
+files[3]{path,scope}:
+  src/core/item/item-format.ts,project
+  tests/integration/read-output/read-context-contracts.integration.spec.ts,project
+  tests/unit/core/item/item-format-validation.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-validation.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts,project,240,"harness:codex","2026-10-17T09:48:09.409Z",local_mutation,fix/sdk-read-context-contracts
+test_runs[1]:
+  - run_id: test-local-mvc7xvfr-gu16hr
+    kind: test
+    status: passed
+    started_at: "2026-10-17T09:52:55.114Z"
+    finished_at: "2026-10-17T09:53:14.343Z"
+    recorded_at: "2026-10-17T09:53:14.343Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-validation.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/regressions/actionable-get-receipts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: Implemented and verified the related read-context cohort in PR 1490.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-gh1482
 body: "## Observed (pm 2026.10.15; also on 2026.10.14)\n\nA dependency row with only `id` and `kind` (no `created_at`) makes `pm get` crash with an unhandled TypeError:\n\n```console\n$ pm update rp-xhnl --dep \"id=rp-138k,kind=blocks\" --dep \"id=rp-ono1,kind=related\"\n# then the dependency table in tasks/rp-xhnl.toon is reduced to\n#   dependencies[2]{id,kind}:\n#     rp-138k,blocks\n#     rp-ono1,related\n$ pm get rp-xhnl\nCannot read properties of undefined (reading 'localeCompare')\n$ pm list --limit 5     # still works\n$ pm validate           # no check flags the malformed dependency rows\n```\n\nSupplying `created_at` on each dependency makes the item readable again. A single dependency row without `created_at` does not crash; two or more do. That suggests the dependency sort compares `created_at` with `localeCompare` without guarding against `undefined`.\n\n## How agents hit this\n\nDependency rows written by imports, by hand-edited `.toon` files, by other implementations of the format, or by older tools can lack `created_at`. pm-rust's differential suite hit it with fixture items, and pm-rust now has to keep timestamps in every fixture row to work around it. For an agent, the failure is opaque: no item id, no field name, no recovery hint, and `pm validate` reports nothing.\n\n## Expected\n\n- Reading an item never crashes on a missing optional dependency field. Sort with a stable fallback, for example by `created_at` when present, then `kind`, then `id`.\n- Or, if `created_at` is meant to be required, `pm validate` / `pm health` names the item and dependency rows. Reads then fail with a typed, actionable error that has a recovery command, not a TypeError."

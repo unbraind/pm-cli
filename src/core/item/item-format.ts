@@ -58,7 +58,7 @@ import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
-import { compareTimestampStrings, isTimestampLiteral } from "../shared/time.js";
+import { compareTimestampStrings, isRfc3339DateTime, isTimestampLiteral } from "../shared/time.js";
 import { coerceFiniteNumber } from "../shared/primitives.js";
 
 const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set([
@@ -753,6 +753,7 @@ function assertRuntimeUnknownItemMetadataFields(
   }
 }
 
+/** Reject invalid stored fields before normalization can hide their original diagnostics. */
 function assertValidItemMetadata(
   itemMetadata: unknown,
   runtimeContext?: RuntimeSchemaValidationContext,
@@ -782,21 +783,28 @@ function assertValidItemMetadata(
   assertRuntimeUnknownItemMetadataFields(record, runtimeContext);
 }
 
+/** Validate supplied timestamps and order legacy rows without fabricating missing provenance. */
 function sortDependencies(
   values: Dependency[] | undefined,
 ): Dependency[] | undefined {
   if (!values || values.length === 0) return undefined;
   return [...values]
-    .map((value) => ({
-      id: value.id.trim(),
-      kind: value.kind,
-      created_at: value.created_at,
-      author: value.author?.trim() || undefined,
-      source_kind: value.source_kind?.trim() || undefined,
-      author_source: value.author_source,
-    }))
+    .map((value, index) => {
+      assertItemMetadataCondition(
+        value.created_at === undefined || (typeof value.created_at === "string" && isRfc3339DateTime(value.created_at)),
+        `dependencies.${index}.created_at requires a valid timestamp; restore the dependency timestamp from its source record`,
+      );
+      return {
+        id: value.id.trim(),
+        kind: value.kind,
+        created_at: value.created_at,
+        author: value.author?.trim() || undefined,
+        source_kind: value.source_kind?.trim() || undefined,
+        author_source: value.author_source,
+      };
+    })
     .sort((a, b) => {
-      const byCreated = compareTimestampStrings(a.created_at, b.created_at);
+      const byCreated = compareTimestampStrings(a.created_at ?? "", b.created_at ?? "");
       if (byCreated !== 0) return byCreated;
       const byId = a.id.localeCompare(b.id);
       if (byId !== 0) return byId;
