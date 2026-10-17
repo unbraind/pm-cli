@@ -2,11 +2,13 @@ id: pm-gh1486
 title: "GH-1486: Keep passing health diagnostics concise by default"
 description: Triage excessive default health output with installed extensions and the non-monotonic brief projection reported in GH-1486 on2026.10.15. Preserve explicit full evidence and the shipped compact check-only/summary contract.
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[2]: github-intake,release-closeout
 created_at: "2026-10-17T02:29:25.793Z"
-updated_at: "2026-10-17T02:33:12.228Z"
+updated_at: "2026-10-17T10:41:25.936Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#81240a0dcc86a37a628664f9"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Reproduce on isolated empty and representative trackers with real extension registration; compare default, brief, summary and explicit full output bytes with identical verdicts; passing checks avoid registry dumps while full evidence remains available; nested evidence stays structured in JSON/TOON; add an independent extension-growth negative control without raising output budgets."
@@ -16,21 +18,97 @@ objective: Passing default health diagnostics summarize counts/verdicts; request
 value: "Preserve reliable, economical project context and explicit evidence across repositories and tool integrations."
 why_now: New live GitHub report or integration observation arrived during verified2026.10.17 release closeout.
 parent: pm-5t33or
-risk: low
-confidence: medium
+risk: medium
+confidence: high
 severity: medium
 expected_result: Passing default health diagnostics summarize counts/verdicts; requested extension evidence stays structured and brief is never larger than default for a check.
 actual_result: "Intake only: reporter measured23476 default bytes,7841 brief and636 summary on an empty tracker with one global extension; extensions comprised12590 bytes. No reproduction or new fix is claimed."
 component: health output projection
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-du93sr,related,"2026-10-17T02:29:25.793Z","harness:codex","cli:create:dep",detected
   pm-nbht,related,"2026-10-17T02:33:11.891Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-gh1482,related,"2026-10-17T10:41:17.046Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-10-17T02:29:25.793Z","harness:codex","Duplicate-check evidence: Live search1486 and health output plus open/in-progress inventories found no owner for this new report. Read completed pm-nbht and pm-du93sr and the open budget parentpm-5t33or; retain their shipped contracts and link the new default/brief intake as distinct residual scope."
-files[2]{path,scope,note}:
-  src/cli/commands/governance/health.ts,project,Existing CLI health adapter; intake linkage only
-  src/sdk/governance/health.ts,project,Existing SDK health projection owner to inspect during reproduction
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/integration/health-diagnostic-guidance.integration.spec.ts,project,240,"harness:codex","2026-10-17T02:30:02.945Z",local_mutation,docs/release-2026-10-17-evidence,Existing sandbox-safe health contract controls; new report reproduction remains future work
+  "2026-10-17T09:13:25.453Z","harness:codex","Implementation scope: reproduce real extension-growth output in isolated trackers; preserve summary/check-only and explicit full evidence, authoritative verdicts and actionable warnings. Bundle related SDK read-context defects pm-gh1481 and pm-gh1482; no output budget or quality threshold increase."
+  "2026-10-17T09:22:11.799Z","harness:codex","SDK compatibility decision: the previously implicit default evidence projection now has an additive standard discriminator; brief, summary and explicit full remain supported. The conservative SDK signature gate requires a recorded acknowledgement for union widening; updated its snapshot with that exact rationale. Full results and authoritative verdicts are preserved; no public symbol was removed."
+  "2026-10-17T09:38:51.569Z","harness:codex","Verification found the existing health-file and integration-directory ceilings. Extract projection logic into a focused SDK module and place the new real-boundary regression under tests/integration/read-output; preserve all file/directory, coverage and output-token thresholds. Chrome also confirms no open Semgrep findings match pm-cli main after refresh."
+  "2026-10-17T09:57:04.104Z","harness:codex","Final focused acceptance passes for count-only healthy extension details, explicit full restoration, authoritative verdict equality, UTF-8 byte non-expansion per brief check, and structured TOON round trips. Projection implementation is in src/sdk/governance/health/projection.ts so the health engine remains below the existing implementation-line ceiling; the fixture under read-output restores the directory cap. No quality ceiling was raised."
+  "2026-10-17T10:41:25.936Z","harness:codex","Current production revision passed the complete local functional suite: 819 files, 10575 tests, three existing skips. Literal coverage correctly refused two newly exposed migration-summary lines after removing the old exclusion; added a behavioral case proving migration counts survive without record expansion or input mutation, and the focused health suite passes 63/63. No ignores, denominator, deadlines or thresholds changed. Final full-source coverage and unchanged static admission will be required from the hosted PR head before closing this cohort. Three independent integration regressions fail against the original revision at their intended defects; same-surface source-mutant controls also pass."
+learnings[1]{created_at,author,text}:
+  "2026-10-17T10:17:03.771Z","harness:codex","Linked-test trust is pinned to source provenance. Inspect the exact stored commands, acknowledge them in a separate non-executing --acknowledge-linked-tests invocation, then run them normally; this preserves project trust policy without allowing arbitrary untrusted commands."
+files[9]:
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/cli/commands/governance/health.ts
+    scope: project
+    note: Existing CLI health adapter; intake linkage only
+  - path: src/core/output/output.ts
+    scope: project
+  - path: src/sdk/governance/health.ts
+    scope: project
+    note: Existing SDK health projection owner to inspect during reproduction
+  - path: src/sdk/governance/health/projection.ts
+    scope: project
+  - path: tests/integration/read-output/read-context-contracts.integration.spec.ts
+    scope: project
+  - path: tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+  - path: tests/unit/commands/governance/health-command.spec.ts
+    scope: project
+  - path: tests/unit/sdk/health-check-only-contract.spec.ts
+    scope: project
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/integration/health-diagnostic-guidance.integration.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-17T02:30:02.945Z"
+      source_kind: local_mutation
+      source_ref: docs/release-2026-10-17-evidence
+    note: Existing sandbox-safe health contract controls; new report reproduction remains future work
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-command.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/core/output/output.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-17T09:48:11.340Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-read-context-contracts
+test_runs[2]:
+  - run_id: test-local-mvc7yuwt-2py65e
+    kind: test
+    status: failed
+    started_at: "2026-10-17T09:53:15.282Z"
+    finished_at: "2026-10-17T09:54:00.317Z"
+    recorded_at: "2026-10-17T09:54:00.317Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/integration/health-diagnostic-guidance.integration.spec.ts,schema,schema,source,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-command.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/core/output/output.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvc83m65-fwshr7
+    kind: test
+    status: passed
+    started_at: "2026-10-17T09:56:43.716Z"
+    finished_at: "2026-10-17T09:57:42.269Z"
+    recorded_at: "2026-10-17T09:57:42.269Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/integration/health-diagnostic-guidance.integration.spec.ts,schema,schema,source,acknowledged
+      node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-command.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/core/output/output.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-gh1486
 body: "Source: https://github.com/unbraind/pm-cli/issues/1486\n\nThe existing pm-nbht delivered summary mode, and pm-du93sr delivered compact check-only guidance; their completed closures are preserved. This new report concerns the default/brief surfaces and extension registry expansion, including a history_drift brief projection larger than default. Reproduce before choosing an additive verbose-detail flag or changing default projection. Keep SDK semantics authoritative and CLI/MCP output behavior aligned."

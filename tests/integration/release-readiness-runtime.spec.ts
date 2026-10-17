@@ -2201,6 +2201,7 @@ describe("release readiness runtime coverage", () => {
         "warning_count",
         "warning_limit",
         "warnings_truncated",
+        "projection",
         "omission_receipt",
       ]);
 

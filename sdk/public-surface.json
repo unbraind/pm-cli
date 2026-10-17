@@ -2420,6 +2420,15 @@
       ],
       "package_version": "2026.10.15",
       "reason": "BulkItemUpdateMutation gains the optional match guard that keyed upsert sets on converted update rows; callers that omit it are unaffected"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HealthResult",
+        "signature ./sdk/governance:HealthResult",
+        "signature ./sdk/runtime:HealthResult"
+      ],
+      "package_version": "2026.10.17",
+      "reason": "Add the standard health projection discriminator for concise passing extension counts; explicit full evidence and authoritative verdicts remain compatible."
     }
   ],
   "entrypoints": {
@@ -9144,7 +9153,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"standard\" | \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -27672,7 +27681,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"standard\" | \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -33228,7 +33237,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"standard\" | \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",

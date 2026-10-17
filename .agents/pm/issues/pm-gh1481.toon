@@ -2,21 +2,60 @@ id: pm-gh1481
 title: "GH-1481: Agent UX: pm list --sort <field> omits the sort key from the brief projection"
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1481. An explicit list sort makes its sort key visible in the implicit brief projection, while explicit requested fields remain authoritative."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,"area:sdk",github-intake
 created_at: "2026-10-16T04:07:33.061Z"
-updated_at: "2026-10-16T04:07:33.061Z"
+updated_at: "2026-10-17T10:41:15.716Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#81240a0dcc86a37a628664f9"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Explicit sort fields appear in implicit brief projection and projection.fields; Explicit --fields remains authoritative; SDK and CLI share the projection rule
+goal: project management = context management
+objective: Expose the value behind explicit brief-list ordering through the shared SDK projection
+value: Agents can prioritize and explain ordering without a second read or mistaken null priorities
+why_now: GitHub 1481 reproduces a recurring extra-read and misreporting trap in the current published interface
 parent: pm-5t33or
 risk: medium
 confidence: medium
 severity: medium
 expected_result: "An explicit list sort makes its sort key visible in the implicit brief projection, while explicit requested fields remain authoritative."
 actual_result: Reporter reproduction retained in the body; implementation and installed-artifact acceptance remain pending.
-comments[1]{created_at,author,text}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1482,related,"2026-10-17T10:41:14.988Z","harness:codex","cli:update:dep",detected
+  pm-gh1486,related,"2026-10-17T10:41:14.988Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-10-16T04:07:33.061Z","harness:codex","Duplicate check 2026-10-16: strict complete all-status corpus of 2971 items with zero omissions plus request-specific keyword searches and live open/in_progress reads. No item references GH-1481. Existing foundational owners retain their prior completed scope; this child records the distinct newly reported defect. Kept open and unclaimed while finishing PR 1479."
+  "2026-10-17T09:13:22.818Z","harness:codex","Implementation scope: one reviewed SDK read-context PR with pm-gh1482 and pm-gh1486. Live strict all-status intake read 2981 complete items (2697 closed, 211 open, 59 draft, 14 canceled), with zero omissions and no pre-existing in_progress items. Preserve explicit fields/compact/full controls while making implicit brief ordering values visible."
+files[2]:
+  - path: src/sdk/query/list.ts
+    scope: project
+    note: Expose selected sort values through shared brief projection
+  - path: tests/integration/read-output/read-context-contracts.integration.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts,project,240,"harness:codex","2026-10-17T09:48:07.651Z",local_mutation,fix/sdk-read-context-contracts
+test_runs[1]:
+  - run_id: test-local-mvc7xezc-j0euz7
+    kind: test
+    status: passed
+    started_at: "2026-10-17T09:52:34.047Z"
+    finished_at: "2026-10-17T09:52:53.016Z"
+    recorded_at: "2026-10-17T09:52:53.016Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-gh1481
 body: "## Observed (pm 2026.10.15)\n\n```console\n$ pm list --status open --limit 2 --sort priority --format json | jq -c '.items[0]|keys'\n[\"id\",\"status\",\"title\",\"type\"]\n```\n\nThe result is ordered by `priority`, but the brief projection (`id,status,type,title`) leaves the sort key out. The ordering is visible but the value behind it isn't. An agent that asked for priority order and reads `.priority` gets `null` for every row. Then it either re-runs with `--fields id,priority,...` or misreports priorities. That happened in this session: a backlog survey printed `pnull` for every item.\n\nThe same applies to `--sort updated_at` / `created_at` / `deadline`.\n\n## Proposal\n\nWhen `--sort <field>` is given and `--fields` is not, add the sort field to the brief projection. In TOON that is one extra column. Record it in `projection.fields` so the omission receipt stays accurate. An explicit `--fields` stays authoritative."

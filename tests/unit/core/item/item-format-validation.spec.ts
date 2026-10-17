@@ -45,6 +45,28 @@ function parseItemDocument(
 }
 
 describe("item-format metadata validation", () => {
+  it("sorts timestamp-free legacy dependencies without inventing provenance", () => {
+    const parsed = parseItemDocument(buildSource({ dependencies: [
+      { id: "pm-z", kind: "related" },
+      { id: "pm-new", kind: "related", created_at: FIXED_TS },
+      { id: "pm-a", kind: "related" },
+    ] }));
+    expect(parsed.metadata.dependencies?.map((dependency) => dependency.id)).toEqual(["pm-a", "pm-z", "pm-new"]);
+    expect(parsed.metadata.dependencies?.[0]?.created_at).toBeUndefined();
+    expect(parseItemDocument(serializeItemDocument(parsed, { format: "json_markdown" })).metadata.dependencies).toEqual(parsed.metadata.dependencies);
+  });
+
+  it.each([null, 42, "invalid"])("refuses dependency timestamps %s before sorting", (created_at) => {
+    expect(() => parseItemDocument(buildSource({ dependencies: [
+      { id: "pm-a", kind: "related", created_at },
+      { id: "pm-b", kind: "related", created_at },
+    ] }))).toThrowError(expect.objectContaining({
+      code: "item_document_invalid",
+      context: expect.objectContaining({ field: "dependencies.0.created_at", reason: "schema_validation_error" }),
+      message: expect.stringContaining("restore the dependency timestamp from its source record"),
+    }));
+  });
+
   it("parses and normalizes valid item metadata", () => {
     const parsed = parseItemDocument(buildSource());
     expect(parsed.metadata.id).toBe("pm-validate");

@@ -209,6 +209,18 @@ Each aggregate row carries an explicit `group_label`: a blank/null group value (
 pm list --all --sort updated --order desc
 ```
 
+Brief list rows include an explicitly selected sort field (including normalized
+aliases such as `updated_at`) and declare it in `projection.fields`. Explicit
+`--fields`, compact and full projections retain their requested fields.
+This rule is shared by SDK list queries ([pm-gh1481](../.agents/pm/issues/pm-gh1481.toon)).
+
+New dependency writes record `created_at`. Legacy rows without a timestamp remain
+readable: they sort before timestamped rows, with deterministic id/kind/source
+tie-breakers and no invented provenance. An invalid supplied timestamp produces
+`item_document_invalid` with the item path and dependency field.
+`pm validate --check-storage-integrity` and `pm health --check-only --full` expose
+that malformed item ([pm-gh1482](../.agents/pm/issues/pm-gh1482.toon)).
+
 ### Incremental "what changed since" filters
 
 Every `list*` command accepts `--updated-after`/`--updated-before`/`--created-after`/`--created-before`. `pm search` now supports the SAME filter surface as `pm list` (full parity): `--status`, `--type`, `--tag`, `--priority`, `--deadline-before`/`--deadline-after`, `--updated-after`/`--updated-before`, `--created-after`/`--created-before`, `--assignee`, `--sprint`, `--release`, and `--parent`, all with identical semantics. These keep a long-running agent's context focused on the slice it cares about instead of re-scanning the whole tracker:

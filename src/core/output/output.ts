@@ -284,7 +284,7 @@ function renderToonObjectEntry(
     if (entry.length === 0) return `${indent}${key}: []`;
     const expanded = indentToon(encodeToon({ [key]: entry }), depth);
     if (
-      allowNestedTable &&
+      allowNestedTable && key !== "checks" &&
       entry.length >= 2 &&
       entry.every(isPlainObject) &&
       !tabularObjectArray(entry) &&

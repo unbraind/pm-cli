@@ -901,9 +901,10 @@ function parseProjectionConfig(
     };
   }
   if (briefRequested) {
+    const sortField = parseSortField(options.sort);
     return {
       mode: "brief",
-      fields: [...BRIEF_LIST_FIELDS],
+      fields: [...new Set<string>([...BRIEF_LIST_FIELDS, ...(sortField ? [sortField] : [])])],
     };
   }
   if (compactRequested) {

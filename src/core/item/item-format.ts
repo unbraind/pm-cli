@@ -787,16 +787,22 @@ function sortDependencies(
 ): Dependency[] | undefined {
   if (!values || values.length === 0) return undefined;
   return [...values]
-    .map((value) => ({
-      id: value.id.trim(),
-      kind: value.kind,
-      created_at: value.created_at,
-      author: value.author?.trim() || undefined,
-      source_kind: value.source_kind?.trim() || undefined,
-      author_source: value.author_source,
-    }))
+    .map((value, index) => {
+      assertItemMetadataCondition(
+        value.created_at === undefined || (typeof value.created_at === "string" && isTimestampLiteral(value.created_at)),
+        `dependencies.${index}.created_at requires a valid timestamp; restore the dependency timestamp from its source record`,
+      );
+      return {
+        id: value.id.trim(),
+        kind: value.kind,
+        created_at: value.created_at,
+        author: value.author?.trim() || undefined,
+        source_kind: value.source_kind?.trim() || undefined,
+        author_source: value.author_source,
+      };
+    })
     .sort((a, b) => {
-      const byCreated = compareTimestampStrings(a.created_at, b.created_at);
+      const byCreated = compareTimestampStrings(a.created_at ?? "", b.created_at ?? "");
       if (byCreated !== 0) return byCreated;
       const byId = a.id.localeCompare(b.id);
       if (byId !== 0) return byId;
