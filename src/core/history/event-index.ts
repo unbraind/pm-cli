@@ -184,6 +184,7 @@ async function recoverAbandonedHistoryEventIndexInvalidations(
   return { pending, committed: invalidations.committed };
 }
 
+/** Serialize marker publication and recovery, honoring optional zero-retry repair. */
 async function withHistoryEventIndexInvalidationLock<T>(
   pmRoot: string,
   operation: () => Promise<T>,
@@ -243,6 +244,7 @@ async function invalidateHistoryEventIndex(pmRoot: string): Promise<void> {
   }
 }
 
+/** Serialize projection writers without requiring readers to join their lock queue. */
 async function withHistoryEventIndexLock<T>(
   pmRoot: string,
   operation: () => Promise<T>,
@@ -704,14 +706,17 @@ export async function appendHistoryEntryWithEventIndex(
         if (version?.value !== EVENT_INDEX_VERSION) {
           throw new TypeError("Unsupported history event index version");
         }
-      } catch {
+      } catch (error: unknown) {
         database?.close();
+        if (isHistoryIndexSqliteContention(error)) throw error;
         await fs.rm(targetPath, { force: true });
         await append();
         return;
       }
       try {
-        database.exec("PRAGMA busy_timeout = 5000");
+        // The projection is optional: native readers must not delay authority
+        // at BEGIN or COMMIT after the filesystem writer lock was acquired.
+        database.exec("PRAGMA busy_timeout = 0");
         database.exec("BEGIN IMMEDIATE");
       } catch (error: unknown) {
         database.close();
@@ -751,7 +756,7 @@ export async function appendHistoryEntryWithEventIndex(
       await invalidateHistoryEventIndex(pmRoot);
       return;
     }
-    if (!(error instanceof PmCliError) || error.code !== "lock_conflict") {
+    if (!isHistoryIndexWriteContention(error)) {
       throw error;
     }
     let pendingMarkerPath: string | undefined;
@@ -886,6 +891,14 @@ function isHistoryIndexSqliteContention(error: unknown): boolean {
     error !== null &&
     "errcode" in error &&
     [5, 6].includes(error.errcode as number)
+  );
+}
+
+/** Either native or file-lock contention permits the authoritative append fallback. */
+function isHistoryIndexWriteContention(error: unknown): boolean {
+  return (
+    isHistoryIndexSqliteContention(error) ||
+    (error instanceof PmCliError && error.code === "lock_conflict")
   );
 }
 
@@ -1044,6 +1057,7 @@ function collectLatestSubstantiveEvents(
   return latest;
 }
 
+/** Treat absent streams as empty while preserving unsafe paths and storage errors. */
 async function readHistoryStreamByteSize(
   pmRoot: string,
   streamId: string,
@@ -1058,6 +1072,7 @@ async function readHistoryStreamByteSize(
   }
 }
 
+/** Compare captured projection receipts with authoritative sizes outside SQLite. */
 async function historyIndexMatchesStreamSizes(
   storedSizes: ReadonlyMap<string, number>,
   pmRoot: string,
@@ -1079,6 +1094,7 @@ async function historyIndexMatchesStreamSizes(
   return true;
 }
 
+/** Include newly created authoritative streams when validating a global snapshot. */
 async function historyIndexValidationStreamIds(
   indexed: readonly string[],
   pmRoot: string,

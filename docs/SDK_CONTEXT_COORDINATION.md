@@ -58,6 +58,10 @@ committed invalidations must still match before a snapshot is returned. A
 concurrent change refuses the optional snapshot; it cannot certify older rows
 using a newer size receipt.
 
+Incremental projection writes also use a zero SQLite busy timeout. Native
+reader or writer contention falls back to the authoritative append and
+invalidation protocol instead of spending a separate SQLite wait budget.
+
 Transient generation changes and SQLite contention use authoritative fallback
 directly. Missing, incompatible, or damaged projections receive one optional
 repair attempt without waiting for either projection lock. Repair failure or invalidation after rebuilding

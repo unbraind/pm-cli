@@ -269,6 +269,7 @@ function resolveMutationEventStart(
   return { sinceTimestamp: new Date(milliseconds).toISOString() };
 }
 
+/** Prefer a validated projection, then attempt optional repair or read authority. */
 async function resolveIndexedMutationEvents(
   pmRoot: string,
   query: NonNullable<Parameters<typeof readHistoryEventIndexPage>[1]>,

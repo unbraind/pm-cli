@@ -32,6 +32,50 @@ afterEach(() => {
 });
 
 describe("history index read snapshots", () => {
+  it.each(["reader", "writer", "exclusive writer"] as const)(
+    "preserves authoritative append without waiting for a native SQLite %s",
+    async (mode) => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
+        await appendHistoryEntry(historyPath, first);
+        await rebuildHistoryEventIndex(pmPath);
+        const contender = new DatabaseSync(
+          path.join(pmPath, "runtime", "history-event-index.sqlite"),
+        );
+        contender.exec(
+          {
+            reader: "BEGIN",
+            writer: "BEGIN IMMEDIATE",
+            "exclusive writer": "BEGIN EXCLUSIVE",
+          }[mode],
+        );
+        contender.prepare("SELECT COUNT(*) FROM events").get();
+        try {
+          const started = Date.now();
+          await appendHistoryEntry(historyPath, second);
+          expect(Date.now() - started).toBeLessThan(1500);
+          expect(
+            (await fs.readFile(historyPath, "utf8"))
+              .trim()
+              .split("\n")
+              .map((line) => JSON.parse(line)),
+          ).toMatchObject([first, second]);
+          expect(
+            await queryHistoryEventIndex(pmPath, { limit: 10 }),
+          ).toBeNull();
+        } finally {
+          contender.close();
+        }
+        expect(await rebuildHistoryEventIndex(pmPath)).toBe(true);
+        expect(
+          await queryHistoryEventIndex(pmPath, { limit: 10 }),
+        ).toMatchObject({
+          events: [{ entry: first }, { entry: second }],
+        });
+      });
+    },
+  );
+
   it("classifies a native SQLite write transaction as transient instead of rebuilding", async () => {
     const { readHistoryEventIndexPage } =
       await import("../../../../src/core/history/event-index.js");
