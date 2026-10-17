@@ -1,0 +1,30 @@
+id: pm-gh1491
+title: "GH-1491: Investigate shared-prefix add/add conflicts and safe resolution"
+description: "Investigate the reported marker-free preferred-side working files after an add/add merge conflict with shared history, preserving existing creation-ancestry and immutable-history safety."
+type: Issue
+status: open
+priority: 1
+tags[3]: "area:merge",data-integrity,github-intake
+created_at: "2026-10-17T12:32:22.626Z"
+updated_at: "2026-10-17T12:32:22.626Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Add an isolated real-Git shared-prefix add/add regression distinct from independent identity collisions; Preserve both streams through authenticated settlement or recoverable actionable refusal; Keep the existing ambiguous-creation refusal and history-hash invariants; Make conflict status and health/reconciliation guidance explicit for operator resolution
+definition_of_ready: "Report, open settlement lineage and completed ancestry guard were read; require an isolated real-Git reproduction and explicit preservation policy before implementation"
+goal: project management = context management
+objective: Keep multi-agent context lossless or explicitly recoverable at empty-Git-base merge boundaries
+value: Agents can resolve structured conflicts without treating marker-free content as a proven lossless merge
+why_now: A fresh published-version report identifies a potentially destructive operator-resolution boundary not covered by the current read-context delivery
+parent: pm-dj98
+risk: high
+confidence: 75
+expected_result: Both branches are retained through authenticated lossless settlement or an actionable conflict/refusal; ordinary staging must not silently be mistaken for evidence that both sides were preserved
+actual_result: "Reported on 2026.10.17: Git marks item/history AA, working files contain one side without textual markers, and committing that resolution drops the other side from the resolved snapshot. Independent reproduction and root-cause validation remain pending."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1475,related,"2026-10-17T12:32:22.626Z","harness:codex","cli:create:dep",detected
+  pm-qx95lz,related,"2026-10-17T12:32:22.626Z","harness:codex","cli:create:dep",detected
+  pm-wc1r,related,"2026-10-17T12:32:22.626Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-17T12:32:22.626Z","harness:codex","Live duplicate check: keyword add/add search returned eight historical items; full metadata/history reads of the completed identity guard and history-driver foundation plus open settlement UX establish distinct boundaries. The closed identity fix intentionally rejects empty-ancestor identical creates and remains completed. This new report covers shared-prefix add/add conflict artifacts and safe operator resolution; keep it open and unclaimed for isolated reproduction, with no implementation claimed in PR 1490."
+escape_class: production_defect
+body: "GitHub #1491 reports Git add/add conflicts for an item and its history when the Git merge base lacks those files but both sides contain a copied creation/history prefix. Git reports AA while working files remain a marker-free preferred side; staging that file can discard the other branch from the resolved snapshot. The reporter supplies a minimal real-Git cherry-pick reproduction on published 2026.10.17. This delivery has not independently reproduced the case.\n\nPreserve the completed creation-ancestry protections in pm-qx95lz and the structured merge-driver safety work in pm-wc1r. Byte-identical create data must not automatically authorize identity fusion. Evaluate authenticated shared-prefix recovery and actionable refusal artifacts together with the open settlement UX in pm-gh1475. Any later reproduction must use a fresh external temporary repository with isolated project/global trackers; do not replay the report in the real workspace.\n\nSource report: https://github.com/unbraind/pm-cli/issues/1491"

@@ -11,6 +11,7 @@ import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
+/** Build legacy JSON/Markdown fixtures without normalizing away the fields under test. */
 function buildSource(
   overrides: Record<string, unknown> = {},
   body = "Body",
@@ -30,6 +31,7 @@ function buildSource(
   return `${JSON.stringify(itemMetadata, null, 2)}\n\n${body}\n`;
 }
 
+/** Retain complete built-in schema defaults when testing one runtime-schema override. */
 function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
   return {
     ...SETTINGS_DEFAULTS.schema,
@@ -37,6 +39,7 @@ function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/** Select the legacy fixture format explicitly so parser defaults cannot mask regressions. */
 function parseItemDocument(
   content: string,
   options: ItemDocumentFormatOptions = {},
@@ -45,6 +48,28 @@ function parseItemDocument(
 }
 
 describe("item-format metadata validation", () => {
+  it("sorts timestamp-free legacy dependencies without inventing provenance", () => {
+    const parsed = parseItemDocument(buildSource({ dependencies: [
+      { id: "pm-z", kind: "related" },
+      { id: "pm-new", kind: "related", created_at: FIXED_TS },
+      { id: "pm-a", kind: "related" },
+    ] }));
+    expect(parsed.metadata.dependencies?.map((dependency) => dependency.id)).toEqual(["pm-a", "pm-z", "pm-new"]);
+    expect(parsed.metadata.dependencies?.[0]?.created_at).toBeUndefined();
+    expect(parseItemDocument(serializeItemDocument(parsed, { format: "json_markdown" })).metadata.dependencies).toEqual(parsed.metadata.dependencies);
+  });
+
+  it.each([null, 42, "invalid", "Feb 22 2026", "2026-02-30T00:00:00Z"])("refuses dependency timestamps %s before sorting", (created_at) => {
+    expect(() => parseItemDocument(buildSource({ dependencies: [
+      { id: "pm-a", kind: "related", created_at },
+      { id: "pm-b", kind: "related", created_at },
+    ] }))).toThrowError(expect.objectContaining({
+      code: "item_document_invalid",
+      context: expect.objectContaining({ field: "dependencies.0.created_at", reason: "schema_validation_error" }),
+      message: expect.stringContaining("restore the dependency timestamp from its source record"),
+    }));
+  });
+
   it("parses and normalizes valid item metadata", () => {
     const parsed = parseItemDocument(buildSource());
     expect(parsed.metadata.id).toBe("pm-validate");

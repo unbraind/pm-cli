@@ -2420,6 +2420,24 @@
       ],
       "package_version": "2026.10.15",
       "reason": "BulkItemUpdateMutation gains the optional match guard that keyed upsert sets on converted update rows; callers that omit it are unaffected"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HealthResult",
+        "signature ./sdk/governance:HealthResult",
+        "signature ./sdk/runtime:HealthResult"
+      ],
+      "package_version": "2026.10.17",
+      "reason": "Add the standard health projection discriminator for concise passing extension counts; explicit full evidence and authoritative verdicts remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:Dependency",
+        "signature ./sdk/core:Dependency",
+        "signature ./sdk/runtime:Dependency"
+      ],
+      "package_version": "2026.10.17",
+      "reason": "PR1490 review: Dependency.created_at is optional on supported legacy reads; consumers must narrow provenance before string operations. New create/update edges continue to record timestamps."
     }
   ],
   "entrypoints": {
@@ -6570,7 +6588,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at?: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -9144,7 +9162,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"standard\" | \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -25740,7 +25758,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at?: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -27672,7 +27690,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"standard\" | \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -32868,7 +32886,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at?: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -33228,7 +33246,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HealthResult",
-          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
+          "signature": "export interface HealthResult { ok: boolean; verdict?: { authority: \"ok\"; strict_exit?: true; require_merge_drivers?: true; exit_code: number; }; checks: HealthCheck[]; warning_count?: number; warning_limit?: number; warnings_truncated?: boolean; warnings: string[]; findings: HealthFinding[]; failed_because: string[]; projection?: { mode: \"standard\" | \"brief\" | \"summary\" | \"full\"; warning_count: number; warnings_truncated: boolean; detail_limit: number; omitted_checks?: HealthCheck[\"name\"][]; }; generated_at: string; }"
         },
         {
           "classification": "supported",

@@ -1,0 +1,77 @@
+id: pm-dl94xj
+title: "PR 1490 review: tighten timestamp and health rendering contracts"
+description: "Complete the four fresh review threads from PR1490 in its existing delivery. Preserve canonical write contracts, legacy timestamp-free reads, output budgets and all coverage gates."
+type: Task
+status: closed
+priority: 1
+tags[3]: "area:sdk",changelog-exclude,release-closeout
+created_at: "2026-10-17T12:56:15.476Z"
+updated_at: "2026-10-17T13:36:01.844Z"
+closed_at: "2026-10-17T13:17:37.781Z"
+completed_at: "2026-10-17T13:17:37.781Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Reject non-RFC3339 supplied dependency timestamps with the typed field diagnostic; Preserve structured health checks while retaining adaptive encoding for validation checks; Prove supported SDK dependency reads require narrowing before using timestamps; Current reminder summary matches its next scheduled occurrence
+definition_of_ready: "Exact-head review threads and original PM lineage read live; source, read types and renderer contracts inspected."
+goal: universal-context-management
+objective: preserve-sdk-read-contracts
+value: Keep legacy reads safe and health output structured without expanding unrelated validation output.
+why_now: Fresh CodeRabbit review on PR1490 identified bounded follow-up corrections before merge.
+parent: pm-ul0ow4
+risk: low
+confidence: 95
+resolution: "Reject non-RFC3339 dependency timestamps, expose optional legacy creation provenance in SDK types, scope structured-check rendering to health verdict payloads, and align the live reminder summary with October18. Correct the packaged dependency tracker URL and document test fixture intent."
+expected_result: "All four accepted review findings are corrected without losing legacy reads, new edge provenance, validation compression, or authoritative health structure."
+actual_result: "334focused tests and complete typecheck pass. Reviewed SDK snapshot explicitly acknowledges the optional read field. Build, static contract checks, tracker/graph/history integrity and mutation controls pass. Existing local latency limitation is recorded under pm-bj7rq0 and remains subject to required hosted acceptance."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7zs0,related,"2026-10-17T12:56:15.476Z","harness:codex","cli:create:dep",detected
+  pm-gh1482,related,"2026-10-17T12:56:15.476Z","harness:codex","cli:create:dep",detected
+  pm-gh1486,related,"2026-10-17T12:56:15.476Z","harness:codex","cli:create:dep",detected
+  pm-bj7rq0,related,"2026-10-17T13:36:01.467Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-17T12:56:15.476Z","harness:codex","Duplicate check: live keyword search and open/in_progress inventory found no active review closeout. Reuse pm-ul0ow4 delivery parent and related pm-gh1482, pm-gh1486, pm-7zs0; all prior implementation items remain closed. Review anchors 4302702409,4302702413,4302702419,4302702423 on head3622a20."
+  "2026-10-17T12:56:34.932Z","harness:codex","Review analysis: strict timestamp check is valid; mutable reminder schedule summary is stale and has been updated through PM. GetResult already exposes Partial<Dependency>, but full list and core read types require further inspection before dismissing the read-type finding. Renderer exclusion must target the health verdict payload only."
+  "2026-10-17T12:58:25.190Z","harness:codex","Read-type finding confirmed beyond GetResult: raw full list rows and lower-level ItemMetadata dependency reads expose Dependency.created_at as required, although legacy records omit it. Marking that provenance optional matches supported stored data. Create/update seed contracts already allow omission and synthesize real current provenance for new edges, so no required write-input field is removed. Added negative compile-time use checks for Dependency, ListedItem and GetResult."
+  "2026-10-17T13:17:36.704Z","harness:codex","Review verification: 334 focused tests across5files and all four typecheck projects pass. Strict timestamp regressions cover informal dates and invalid calendar dates. SDK negative compile-time controls require provenance narrowing for Dependency, ListedItem and GetResult. Validation adaptive encoding round-trips heterogeneous details while health retains structured checks via its verdict marker. Initial uniform nested test fixture was naturally encoded by TOON4.4 and was corrected to heterogeneous validation reports. Build, docstrings, tracker quality, graph, record integrity, registry, SDK snapshot, entrypoint costs and348mutation controls pass (341killed/7equivalent/0survivors). Local qualified context latency434ms/433ms remains under pm-bj7rq0; hosted static acceptance is pending. Three missing planning fields on this review task were completed, and exact tracker-quality rerun passes."
+  "2026-10-17T13:36:01.467Z","harness:codex","CI39036093963 caught one new prose-edge gap after the final evidence comment named the latency owner without a typed relationship. Add the related edge to the existing canonical latency item; the reviewed source, budgets and graph threshold are unchanged. All other required checks, including exact coverage and hosted latency acceptance, passed on bcf3f65e8."
+files[8]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/item/item-format.ts,project
+  src/core/output/output.ts,project
+  src/sdk/query/list.ts,project
+  src/types.ts,project
+  tests/types/read-output-contracts.test-d.ts,project
+  tests/unit/core/item/item-format-validation.spec.ts,project
+  tests/unit/core/output/output.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-validation.spec.ts tests/unit/core/output/output.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,project,240,"harness:codex","2026-10-17T12:58:22.670Z",local_mutation,fix/sdk-read-context-contracts
+  pnpm typecheck,project,240,"harness:codex","2026-10-17T12:58:23.873Z",local_mutation,fix/sdk-read-context-contracts
+test_runs[2]:
+  - run_id: test-local-mvcemeje-pxgoz3
+    kind: test
+    status: failed
+    started_at: "2026-10-17T12:58:39.560Z"
+    finished_at: "2026-10-17T13:00:16.538Z"
+    recorded_at: "2026-10-17T13:00:16.538Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-validation.spec.ts tests/unit/core/output/output.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+  - run_id: test-local-mvceogeb-59ogas
+    kind: test
+    status: passed
+    started_at: "2026-10-17T13:00:43.518Z"
+    finished_at: "2026-10-17T13:01:52.259Z"
+    recorded_at: "2026-10-17T13:01:52.259Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/item-format-validation.spec.ts tests/unit/core/output/output.spec.ts tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: Complete PR1490 review corrections with focused runtime and compile-time verification.
+body: ""

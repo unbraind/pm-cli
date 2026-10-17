@@ -1,4 +1,5 @@
 import { decode } from "@toon-format/toon";
+import { decodePmTableRows, type PmEncodedTableRows } from "../../../../src/sdk/output/table-rows.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearActiveExtensionHooks,
@@ -197,6 +198,25 @@ describe("core/output/output", () => {
         0,
       ),
     ).toBe("[2]{id,status}:\n  pm-a1b2,open\n  pm-c3d4,closed");
+  });
+
+  it("preserves structured health checks without disabling compact validation checks", () => {
+    const checks = Array.from({ length: 8 }, (_, index) => ({
+      name: `check-${index}`,
+      status: "pass",
+      details: { [`report_${index}`]: { recovery: "Run the validation command again", counts: { passed: index, failed: 0 } } },
+    }));
+    const validation = formatOutput({ ok: true, checks }, {});
+    expect(validation).toContain("checks_encoding:");
+    const decoded = decode(validation) as { checks: PmEncodedTableRows["rows"]; checks_encoding: PmEncodedTableRows["encoding"] };
+    expect(decodePmTableRows({ rows: decoded.checks, encoding: decoded.checks_encoding })).toEqual(checks);
+    const health = { ok: true, verdict: { authority: "ok", exit_code: 0 }, checks };
+    const renderedHealth = formatOutput(health, {});
+    expect(renderedHealth).not.toContain("checks_encoding:");
+    expect(decode(renderedHealth)).toEqual(health);
+    const unrelatedVerdict = formatOutput({ checks, verdict: { authority: "validation" } }, {});
+    expect(unrelatedVerdict).toContain("checks_encoding:");
+    expect(Buffer.byteLength(validation)).toBeLessThan(Buffer.byteLength(formatOutput({ checks, verdict: health.verdict }, {})));
   });
 
   it("covers raw TOON renderer empty collection branches", () => {

@@ -265,8 +265,8 @@ export interface Dependency {
   id: string;
   /** Value that configures or reports kind for this contract. */
   kind: DependencyKind;
-  /** ISO 8601 timestamp recording when created occurred. */
-  created_at: string;
+  /** Creation timestamp when provenance is available; legacy dependency reads may omit it. New edge writers supply it. */
+  created_at?: string;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Value that configures or reports source kind for this contract. */
