@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:sdk","area:telemetry",github-intake,test-isolation
 created_at: "2026-10-16T09:35:02.376Z"
-updated_at: "2026-10-17T17:39:31.002Z"
+updated_at: "2026-10-17T17:58:37.406Z"
 closed_at: "2026-10-17T17:36:11.507Z"
 completed_at: "2026-10-17T17:36:11.507Z"
 author: "harness:codex"
@@ -30,7 +30,7 @@ component: telemetry
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-745epp,related,"2026-10-16T09:35:02.376Z","harness:codex","cli:create:dep",detected
   pm-p5u6,related,"2026-10-16T09:35:02.376Z","harness:codex","cli:create:dep",detected
-comments[10]:
+comments[11]:
   - created_at: "2026-10-16T09:35:02.376Z"
     author: "harness:codex"
     text: "Duplicate check 2026-10-16: all-status exact keyword search for NODE_TEST_CONTEXT returned zero records; broader searches and live open/in-progress reads found no specific active owner. Full current metadata and history for closed pm-745epp and pm-p5u6 distinguish their shipped Vitest/Node-environment and deleted-root ownership fixes from this newly reported native Node signal and cleanup-lifetime case. Reuse those relationships under the observability parent, with this report-specific child. Source: [GitHub #1484](https://github.com/unbraind/pm-cli/issues/1484). This is open, unclaimed intake for subsequent implementation."
@@ -62,6 +62,9 @@ comments[10]:
   - created_at: "2026-10-17T17:39:31.002Z"
     author: "harness:codex"
     text: "Terminal evidence verification passes after closure: defect gate reports zero findings across 356 governed terminal defects; the selected close event retains resolution, expected and actual results. Graph and record assurance, linked tests, packed npm/Node/Bun consumers and installed dispatch checks pass. Source verification limitations remain explicit in the close event and PR: the local full run produced no coverage summary, and the final hosted gates must certify exact coverage and static quality. Both implementation claims are released and the complete tracker has zero items in progress."
+  - created_at: "2026-10-17T17:58:37.404Z"
+    author: "harness:codex"
+    text: "PR #1492 source head 14535f09868ab376be038913761b25516729ca1d has clean required checks and independently verified hosted exact 100/100/100/100 coverage. Sourcery's guide correctly notes that the optional temporary-root heuristic from the original proposal is absent: storage location alone does not establish test intent, and forcing foreground network work for ordinary temporary installations would change production behavior. The implemented acceptance boundary uses native/Vitest/Node environment signals; custom harnesses can explicitly set PM_TELEMETRY_INLINE_FLUSH=1. This design preserves ordinary detached delivery while the real native test and public SDK cleanup controls pass. Sourcery review budget, Greptile trial expiry and cubic monthly line quota are unavailable review evidence, not approvals; CodeRabbit full review will be requested explicitly."
 notes[1]{created_at,author,text}:
   "2026-10-17T16:54:50.868Z","harness:codex","Test design: retain existing concurrent-append regression and resolve its held collector response before awaiting inline completion. New child-process coverage uses the public SDK and Node own test signal, rather than mocked runner inference. The collector sees a start/finish pair before the owned temporary telemetry root is deleted."
 learnings[1]{created_at,author,text}:

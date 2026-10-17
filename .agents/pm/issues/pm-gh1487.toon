@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[2]: github-intake,release-closeout
 created_at: "2026-10-17T02:29:28.964Z"
-updated_at: "2026-10-17T17:39:30.241Z"
+updated_at: "2026-10-17T17:58:36.310Z"
 closed_at: "2026-10-17T17:36:08.884Z"
 completed_at: "2026-10-17T17:36:08.884Z"
 author: "harness:codex"
@@ -29,7 +29,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-69nl,related,"2026-10-17T02:29:56.756Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-17T17:34:14.490Z","harness:codex","cli:update:dep",detected
   pm-gh1484,related,"2026-10-17T17:34:14.490Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-17T02:29:28.964Z","harness:codex","Duplicate-check evidence: Live request-specific searches1487, nested git tracker discovery and enclosing plus open/in-progress inventories found no canonical owner for this cross-repository mutation report. Existing pm-69nl concerns post-init root discovery and is a separate completed behavior; no completed fix is relabeled as outstanding."
   "2026-10-17T16:45:39.048Z","harness:codex","Implementation intake: strict all-status read returned2986/2986 items with complete reads and no omissions; no work initially in progress. Live issue comments independently reproduce unintended outer writes. Implement repository-bounded implicit discovery in the shared public SDK path while preserving deliberate explicit roots, root-layout trackers and ordinary ancestor discovery. Only pm-gh1487 and pm-gh1484 are active in this SDK isolation delivery."
   "2026-10-17T16:54:48.604Z","harness:codex","Regression proof: the same unit harness failed both nested git-marker cases on pre-fix main5544dc3. After the shared resolver change, real checkout/worktree/submodule fixtures pass CLI create/list/config refusals, SDK create and MCP create typed recovery, exact outer tracker byte preservation, explicit cross-root reads/writes, ordinary-directory discovery and local initialization followed by create. Existing init-path controls also pass."
@@ -38,6 +38,7 @@ comments[8]{created_at,author,text}:
   "2026-10-17T17:33:16.422Z","harness:codex",Linked test execution recorded one expected clone-local trust refusal for the older inherited test command while the new 26-case boundary/init set passed. Reviewed both exact sandbox-safe commands and use the CLI's acknowledge-linked-tests recovery rather than changing project trust policy. The final linked run will retain the refusal in immutable history and record fresh executed results.
   "2026-10-17T17:35:33.846Z","harness:codex","Final linked acceptance: both inherited and new boundary/init commands pass after reviewing and acknowledging their exact commands in this clone. Documented relationships to the telemetry-isolation work and existing startup-budget investigation are now typed related edges, preserving the graph-composition ceiling without changing policy. Closure will include all SDK/CLI/MCP refusal, override, recovery and exact-byte regression evidence in the reviewed delivery."
   "2026-10-17T17:39:30.241Z","harness:codex","Reviewed closeout checks pass: graph composition (9 assertions), record integrity, bounded mutation gate, terminal defect-evidence gate (356 governed defects, zero findings), version sync, staged credential scan and documentation links. Full live tracker validation is healthy with zero history drift and the same 170 legacy closure advisories. A complete 2,986-item read confirms no items in progress. The latest pm-changelog 2026.10.16 adds the two current fixes while preserving earlier release sections. Final-head hosted static and exact coverage remain required before merge."
+  "2026-10-17T17:58:36.310Z","harness:codex","PR #1492 (https://github.com/unbraind/pm-cli/pull/1492), source head 14535f09868ab376be038913761b25516729ca1d, passes every required check with CLEAN merge readiness. Hosted CI run 39054952065 succeeds; coverage job 117462070381 independently reports exact 100/100/100/100 with zero uncovered counts. SDK/static/compatibility, six packed first-run platform/runtime legs, Windows cohorts, Node 22 telemetry regression, security, CodeFactor, DeepScan and Codecov patch checks pass. The first inventory has no inline findings. CodeRabbit requires an explicit request because automatic reviews are disabled for repositories below 10 stars; request its full review on the final metadata head before merging."
 learnings[1]{created_at,author,text}:
   "2026-10-17T16:58:38.193Z","harness:codex","A repository boundary must be checked after local conventional/root-layout tracker candidates and before walking to the parent. Treat gitfiles as boundaries as well as directories, and keep missing-root recovery anchored to that repository. Explicit root selection remains the user's deliberate cross-repository policy."
 files[3]{path,scope,note}:
