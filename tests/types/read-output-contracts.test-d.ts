@@ -10,6 +10,8 @@ import {
   applyReadOutputDimensions,
   isReadOutputBudgetExceeded,
   type GetResult,
+  type Dependency,
+  type ListedItem,
   type ListResult,
   type PmReadOutputOptions,
   type PmReadOutputResult,
@@ -51,6 +53,19 @@ const result = applyReadOutputDimensions("list", options, {
 declare const getResult: GetResult;
 const projectedItemId: string = getResult.item.id;
 void projectedItemId;
+
+declare const dependency: Dependency;
+declare const listedItem: ListedItem;
+const readTimestamp: string | undefined = dependency.created_at;
+const listedTimestamp: string | undefined = listedItem.dependencies?.[0]?.created_at;
+const projectedTimestamp: string | undefined = getResult.item.dependencies?.[0]?.created_at;
+void [readTimestamp, listedTimestamp, projectedTimestamp];
+// @ts-expect-error supported legacy dependencies have no creation timestamp
+dependency.created_at.toLowerCase();
+// @ts-expect-error full SDK list reads preserve missing legacy timestamps
+listedItem.dependencies?.[0]?.created_at.toLowerCase();
+// @ts-expect-error get projections require timestamp narrowing as well
+getResult.item.dependencies?.[0]?.created_at.toLowerCase();
 
 // @ts-expect-error useful result fields are unsafe until the omission branch is narrowed
 const unsafeItems = result.items;

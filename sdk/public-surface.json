@@ -2429,6 +2429,15 @@
       ],
       "package_version": "2026.10.17",
       "reason": "Add the standard health projection discriminator for concise passing extension counts; explicit full evidence and authoritative verdicts remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:Dependency",
+        "signature ./sdk/core:Dependency",
+        "signature ./sdk/runtime:Dependency"
+      ],
+      "package_version": "2026.10.17",
+      "reason": "PR1490 review: Dependency.created_at is optional on supported legacy reads; consumers must narrow provenance before string operations. New create/update edges continue to record timestamps."
     }
   ],
   "entrypoints": {
@@ -6579,7 +6588,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at?: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -25749,7 +25758,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at?: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",
@@ -32877,7 +32886,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "Dependency",
-          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
+          "signature": "export interface Dependency { id: string; kind: DependencyKind; created_at?: string; author?: string; source_kind?: string; author_source?: \"asserted\" | \"detected\" | \"legacy\"; }"
         },
         {
           "classification": "supported",

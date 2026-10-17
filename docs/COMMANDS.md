@@ -224,12 +224,16 @@ The implementation records
 and [pm-gh1489](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1489.toon)
 are repository-only tracker files, excluded from the npm package.
 
-New dependency writes record `created_at`. Legacy rows without a timestamp remain
-readable: they sort before timestamped rows, with deterministic id/kind/source
+New dependency writes record `created_at`. Supplied values must be calendar-valid
+RFC 3339 date-times. SDK dependency reads expose this field as optional because
+legacy rows without a timestamp remain readable: they sort before timestamped
+rows, with deterministic id/kind/source
 tie-breakers and no invented provenance. An invalid supplied timestamp produces
 `item_document_invalid` with the item path and dependency field.
 `pm validate --check-storage-integrity` and `pm health --check-only --full` expose
-that malformed item ([pm-gh1482](../.agents/pm/issues/pm-gh1482.toon)).
+that malformed item. The implementation record
+[pm-gh1482](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1482.toon)
+is a repository-only tracker file, excluded from the npm package.
 
 ### Incremental "what changed since" filters
 

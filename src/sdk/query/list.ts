@@ -990,6 +990,7 @@ const LIST_SORT_FIELD_ALIASES: ReadonlyMap<string, ListSortField> = new Map<
   ["create", "created_at"],
 ]);
 
+/** Resolve friendly timestamp aliases before checking the canonical sortable field set. */
 function parseSortField(raw: string | undefined): ListSortField | undefined {
   if (raw === undefined) {
     return undefined;

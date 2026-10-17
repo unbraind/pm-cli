@@ -58,7 +58,7 @@ import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
-import { compareTimestampStrings, isTimestampLiteral } from "../shared/time.js";
+import { compareTimestampStrings, isRfc3339DateTime, isTimestampLiteral } from "../shared/time.js";
 import { coerceFiniteNumber } from "../shared/primitives.js";
 
 const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set([
@@ -753,6 +753,7 @@ function assertRuntimeUnknownItemMetadataFields(
   }
 }
 
+/** Reject invalid stored fields before normalization can hide their original diagnostics. */
 function assertValidItemMetadata(
   itemMetadata: unknown,
   runtimeContext?: RuntimeSchemaValidationContext,
@@ -790,7 +791,7 @@ function sortDependencies(
   return [...values]
     .map((value, index) => {
       assertItemMetadataCondition(
-        value.created_at === undefined || (typeof value.created_at === "string" && isTimestampLiteral(value.created_at)),
+        value.created_at === undefined || (typeof value.created_at === "string" && isRfc3339DateTime(value.created_at)),
         `dependencies.${index}.created_at requires a valid timestamp; restore the dependency timestamp from its source record`,
       );
       return {

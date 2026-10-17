@@ -11,6 +11,7 @@ import { SETTINGS_DEFAULTS } from "../../../../src/core/shared/constants.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
+/** Build legacy JSON/Markdown fixtures without normalizing away the fields under test. */
 function buildSource(
   overrides: Record<string, unknown> = {},
   body = "Body",
@@ -30,6 +31,7 @@ function buildSource(
   return `${JSON.stringify(itemMetadata, null, 2)}\n\n${body}\n`;
 }
 
+/** Retain complete built-in schema defaults when testing one runtime-schema override. */
 function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
   return {
     ...SETTINGS_DEFAULTS.schema,
@@ -37,6 +39,7 @@ function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/** Select the legacy fixture format explicitly so parser defaults cannot mask regressions. */
 function parseItemDocument(
   content: string,
   options: ItemDocumentFormatOptions = {},
@@ -56,7 +59,7 @@ describe("item-format metadata validation", () => {
     expect(parseItemDocument(serializeItemDocument(parsed, { format: "json_markdown" })).metadata.dependencies).toEqual(parsed.metadata.dependencies);
   });
 
-  it.each([null, 42, "invalid"])("refuses dependency timestamps %s before sorting", (created_at) => {
+  it.each([null, 42, "invalid", "Feb 22 2026", "2026-02-30T00:00:00Z"])("refuses dependency timestamps %s before sorting", (created_at) => {
     expect(() => parseItemDocument(buildSource({ dependencies: [
       { id: "pm-a", kind: "related", created_at },
       { id: "pm-b", kind: "related", created_at },
