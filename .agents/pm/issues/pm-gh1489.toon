@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: agent-ux,"area:sdk",github-intake
 created_at: "2026-10-17T10:45:26.373Z"
-updated_at: "2026-10-17T10:51:47.671Z"
+updated_at: "2026-10-17T11:10:28.938Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#81240a0dcc86a37a628664f9"
 author: "harness:codex"
@@ -25,15 +25,19 @@ actual_result: GH-1489 reports --all and --status all silently select full field
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1481,related,"2026-10-17T10:45:27.896Z","harness:codex","cli:update:dep",detected
   pm-gh1486,related,"2026-10-17T10:45:27.896Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-17T10:45:26.373Z","harness:codex","Duplicate check: latest all-status full corpus plus request-specific searches for 1489 and all projection, open and in-progress lists, and the complete GitHub issue/comments show no canonical item for this newly reported defect. Reuse the existing read-context parent and implement in PR 1490 with related items rather than create a separate PR."
   "2026-10-17T10:51:47.670Z","harness:codex","The independent real-CLI test fails before the fix specifically because all-status selection returns projection.mode full with fields null instead of the invoked list brief contract. Applying the SDK-declared default for the original command, rather than its status-derived family alias, fixes all/draft/canceled filters without changing raw SDK defaults. PM-linked verification passes 55/55 tests across real CLI reads and command registration: both all-status spellings select open plus closed work, explicit fields/compact/full remain authoritative, sort fields remain visible, and full strict reads restore historical descriptions. Initial fixture-setup failures are excluded from negative-control evidence."
-files[2]{path,scope}:
+  "2026-10-17T11:10:28.938Z","harness:codex","Hosted coverage shards exposed two continuation fixtures that used implicit full --all rows to force token truncation. The corrected brief default now fits those unchanged budgets. Updated the cursor fixtures to request --full explicitly and preserved all cursor, ordering, deletion, recovery, byte-budget and timeout assertions. Both PM-linked cursor suites pass, including the real packed SDK matrix under Node and native Bun. This is fixture intent repair, not removal of a failing production contract."
+files[4]{path,scope}:
   src/cli/register-list-query.ts,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+  tests/integration/read-output/cursor-recovery.integration.spec.ts,project
   tests/integration/read-output/read-context-contracts.integration.spec.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/cli/register-list-query.spec.ts,project,"harness:codex","2026-10-17T10:48:46.447Z",local_mutation,fix/sdk-read-context-contracts
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/cursor-recovery.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts,project,"harness:codex","2026-10-17T11:07:38.812Z",local_mutation,fix/sdk-read-context-contracts
+test_runs[2]:
   - run_id: test-local-mvc9z7v9-1tdbxy
     kind: test
     status: passed
@@ -45,6 +49,17 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/read-output/read-context-contracts.integration.spec.ts tests/unit/cli/register-list-query.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvcamstu-plw9vg
+    kind: test
+    status: passed
+    started_at: "2026-10-17T11:07:39.794Z"
+    finished_at: "2026-10-17T11:08:36.594Z"
+    recorded_at: "2026-10-17T11:08:36.594Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/cursor-recovery.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
 gate_evidence:

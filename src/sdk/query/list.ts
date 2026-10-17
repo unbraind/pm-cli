@@ -868,6 +868,7 @@ function parseFieldSelectors(raw: string | undefined): string[] | undefined {
   return [...new Set(selectors)];
 }
 
+/** Resolve one explicit projection and keep requested sort context visible in brief rows. */
 function parseProjectionConfig(
   options: ListRuntimeOptions,
   invokedCommand: ListCommandName = options.projectionCommand ?? "list",

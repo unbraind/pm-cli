@@ -43,6 +43,7 @@ export function summarizeRecordList(
   };
 }
 
+/** Retain extension identity and capabilities while withholding executable registry detail. */
 function summarizeExtensionRecord(value: unknown): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return {};
@@ -99,6 +100,7 @@ type HealthDetailSummarizer = (
   limit: number,
 ) => Record<string, unknown>;
 
+/** Preserve migration outcome counts without copying individual migration records. */
 function summarizeActivationMigrationStatus(
   value: unknown,
 ): Record<string, unknown> | null {
@@ -395,6 +397,7 @@ function applyBriefHealthProjection(result: HealthResult): HealthResult {
   };
 }
 
+/** Identify checks whose details explicitly record that no diagnostic ran. */
 function isSkippedHealthCheck(check: HealthCheck): boolean {
   return check.details.skipped === true;
 }

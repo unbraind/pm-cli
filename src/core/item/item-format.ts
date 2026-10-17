@@ -782,6 +782,7 @@ function assertValidItemMetadata(
   assertRuntimeUnknownItemMetadataFields(record, runtimeContext);
 }
 
+/** Validate supplied timestamps and order legacy rows without fabricating missing provenance. */
 function sortDependencies(
   values: Dependency[] | undefined,
 ): Dependency[] | undefined {
