@@ -1,0 +1,89 @@
+id: pm-bulk-option-validation
+title: Return typed refusals for malformed raw duration options
+description: item mutate admits raw options with numeric estimatedMinutes even though Update/CreateCommandOptions requires a string; parsing then escapes with unknown_error and e.trim is not a function. Validate values before invoking lifecycle handlers and return typed field-level recovery.
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:sdk",bulk-mutations
+created_at: "2026-10-16T04:10:54.273Z"
+updated_at: "2026-10-16T17:12:07.930Z"
+closed_at: "2026-10-16T17:12:07.269Z"
+completed_at: "2026-10-16T17:12:07.269Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Numeric values on declared string-only raw mutation options receive a typed usage refusal; The diagnostic identifies row and option plus an actionable correction; No item or history changes survive refusal; Corrected retry under the same compensated transaction id succeeds
+parent: pm-f05lsg
+risk: medium
+confidence: medium
+severity: medium
+resolution: "Shared SDK-owned raw duration validation rejects non-string estimatedMinutes with mutation_option_value_invalid, exit 2 and actionable row/option guidance. Parsed JSON/JSONL, direct SDK preview/commit, CLI and MCP share the guard; item documents retain numeric estimated_minutes. The generated emitting-command entry now names item mutate through the canonical lifecycle-module mapping, with regenerated contracts and a generator regression."
+expected_result: "Malformed raw duration values refuse before writes with typed recovery, and generated command metadata points to the executable item mutate command."
+actual_result: "94 linked SDK/CLI/MCP tests, eight generator tests and nine packed npx/bunx consumers pass. Catalog and contracts regenerate and verify; public SDK shape remains unchanged. The latest complete local run has one qualified MRTR wait failure and no global coverage artifact; isolated case passes, and final hosted coverage/review remain required."
+comments[6]{created_at,author,text}:
+  "2026-10-16T04:10:54.273Z","harness:codex","Duplicate check: complete live2971-item all-status corpus plus estimatedMinutes trim keyword search found no dedicated owner. Existing pm-f05lsg owns recovery closure and this child records the concrete bulk-options input boundary. Recorded during PR1479 closeout and left open unclaimed."
+  "2026-10-16T04:45:25.004Z","harness:codex","Sentry correlation confirmed on 2026-10-16: PM-CLI-3M has one unresolved TypeError e.trim is not a function at 04:05:53 UTC, matching the real malformed raw-options intake described here. Keep this concrete refusal-quality owner open and unclaimed. Do not resolve the Sentry fault by attributing it to the unrelated persisted Unicode validation."
+  "2026-10-16T12:32:23.019Z","harness:codex","Verified regressions on isolated unchanged head 7271f10c9: five filtered cases fail across four files, including actual CLI import commit with the aliased upsert key, custom metadata mapping, raw parser and direct-SDK value refusals, and corrupt journal classification. The corrected five-file linked command passes 86 tests. Canonical stored-key precedence and object-valued journal-status controls also pass. The SDK helper directory-cap check passes after moving it into lifecycle; the 120-file cap is unchanged."
+  "2026-10-16T12:55:23.928Z","harness:codex","Implemented the Sentry PM-CLI-3M raw duration boundary: one shared validator runs before parsed batches and direct SDK preview/commit journal work. SDK, CLI and MCP invalid estimates refuse with mutation_option_value_invalid and exit 2, naming row/operation/option and a quoted correction. Natural item documents retain numeric estimates. The regression proves no item/history/journal write on malformed types and a corrected string retry after a compensated grammar failure commits once and replays. Full linked source run on pm-gh1456 passes 10538 tests and exact 100/100/100/100 coverage. Packed npx/bunx nine-package smoke and all ten external package checks pass, with the one cache-only retry isolated from shared npm data. Sentry status and published-version verification remain separate; no alert was suppressed."
+  "2026-10-16T16:28:09.618Z","harness:codex",Full review found the generated emitting-command metadata infers a private module name for mutation_option_value_invalid. Add explicit source annotation and regenerate catalog/contracts; raw-value refusal behavior remains verified.
+  "2026-10-16T17:12:06.092Z","harness:codex","Mapped the validation module to its real built-in emitting command item mutate using the existing catalog generator mechanism, then regenerated catalog and full contracts. Eight generator tests and 94 linked SDK cases pass, preserving raw duration refusals and actionable command metadata. Source static assurance and nine packed npx/bunx consumers pass. Current full local execution has a qualified MRTR wait failure (10546 pass/three skip); the unchanged case passes alone, and final hosted global coverage remains required."
+files[9]:
+  - path: scripts/generate-error-code-catalog.mjs
+    scope: project
+    note: Canonical emitting command metadata for raw mutation option refusals
+  - path: src/sdk/generated/generated-error-code-catalog-part-2.ts
+    scope: project
+    note: Canonical emitting command metadata for raw mutation option refusals
+  - path: src/sdk/item-transaction.ts
+    scope: project
+  - path: src/sdk/lifecycle/mutation-option-validation.ts
+    scope: project
+  - path: src/sdk/structured-mutations.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+    note: Canonical emitting command metadata for raw mutation option refusals
+  - path: tests/integration/structured-mutation-io.integration.spec.ts
+    scope: project
+  - path: tests/unit/scripts/generate-error-code-catalog.spec.ts
+    scope: project
+    note: Canonical emitting command metadata for raw mutation option refusals
+  - path: tests/unit/sdk/structured-mutations.spec.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,project,900,"harness:codex","2026-10-16T12:10:02.212Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+  node scripts/run-tests.mjs test -- tests/unit/scripts/generate-error-code-catalog.spec.ts,project,300,"harness:codex","2026-10-16T16:33:28.689Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+test_runs[2]:
+  - run_id: test-local-mvay4lrh-cf0uqo
+    kind: test
+    status: passed
+    started_at: "2026-10-16T12:30:16.961Z"
+    finished_at: "2026-10-16T12:30:46.061Z"
+    recorded_at: "2026-10-16T12:30:46.061Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvb6tjs5-du4pnd
+    kind: test
+    status: passed
+    started_at: "2026-10-16T16:33:57.915Z"
+    finished_at: "2026-10-16T16:34:06.821Z"
+    recorded_at: "2026-10-16T16:34:06.821Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/generate-error-code-catalog.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: Publish the correct emitting command for malformed raw mutation options.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-bulk-option-validation
+  gate_id: test-coverage
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/structured-mutations.spec.ts tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/sdk/workspace-transaction.spec.ts tests/integration/structured-mutation-io.integration.spec.ts -t \"canonicalizes custom upsert|rejects non-string duration|rejects forged journal|refuses raw numeric|imports JSON Lines\""
+  local_checks[3]: node scripts/run-tests.mjs coverage,pnpm typecheck,"pnpm quality:docs-links"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

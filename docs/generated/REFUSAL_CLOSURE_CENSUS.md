@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 406
+- Catalog error codes: 419
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 387
-- Coverage fraction: 0.046798
+- Uncovered error codes: 400
+- Coverage fraction: 0.045346
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -36,6 +36,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `body_file_missing_path` | `body_file_missing_path` | uncovered | none | 0 |
 | `body_file_unreadable` | `body_file_unreadable` | uncovered | none | 0 |
 | `budget_exceeded` | `budget_exceeded` | uncovered | none | 0 |
+| `bulk_create_route` | `bulk_create_route` | uncovered | none | 0 |
 | `bulk_ids_input_empty` | `bulk_ids_input_empty` | executable | owned_state | 1 |
 | `bulk_ids_input_missing_path` | `bulk_ids_input_missing_path` | executable | owned_state | 1 |
 | `bulk_ids_input_unreadable` | `bulk_ids_input_unreadable` | executable | owned_state | 1 |
@@ -89,6 +90,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `extension_dependency_name_unsafe` | `extension_dependency_name_unsafe` | uncovered | none | 0 |
 | `extension_dependency_spec_invalid` | `extension_dependency_spec_invalid` | uncovered | none | 0 |
 | `extension_dependency_version_unsafe` | `extension_dependency_version_unsafe` | uncovered | none | 0 |
+| `extension_flag_value_invalid` | `extension_flag_value_invalid` | uncovered | none | 0 |
 | `extension_install_incomplete_source_scan` | `extension_install_incomplete_source_scan` | uncovered | none | 0 |
 | `extension_install_soft_failed` | `extension_install_soft_failed` | uncovered | none | 0 |
 | `extension_install_source_contains_destination` | `extension_install_source_contains_destination` | uncovered | none | 0 |
@@ -241,6 +243,8 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `module_import_failed` | `module_import_failed` | uncovered | none | 0 |
 | `multi_target_github_install_ambiguous` | `multi_target_github_install_ambiguous` | uncovered | none | 0 |
 | `mutation_author_required` | `mutation_author_required` | uncovered | none | 0 |
+| `mutation_document_unreadable` | `mutation_document_unreadable` | uncovered | none | 0 |
+| `mutation_option_value_invalid` | `mutation_option_value_invalid` | uncovered | none | 0 |
 | `mutation_secret_guard_blocked` | `mutation_secret_guard_blocked` | uncovered | none | 0 |
 | `no_matching_tests` | `no_matching_tests` | uncovered | none | 0 |
 | `no_projects_matched_filters` | `no_projects_matched_filters` | uncovered | none | 0 |
@@ -328,11 +332,15 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `terminal_state_conflict` | `terminal_state_conflict` | uncovered | none | 0 |
 | `test_measure_requires_execution` | `test_measure_requires_execution` | uncovered | none | 0 |
 | `test_measure_requires_run` | `test_measure_requires_run` | uncovered | none | 0 |
+| `text_unpaired_surrogate` | `text_unpaired_surrogate` | uncovered | none | 0 |
 | `tracked_runtime_cache_files` | `tracked_runtime_cache_files` | uncovered | none | 0 |
 | `tracker_not_initialized` | `tracker_not_initialized` | executable | owned_state | 1 |
 | `tracker_root_missing` | `tracker_root_missing` | executable | owned_state | 1 |
 | `tracker_root_not_directory` | `tracker_root_not_directory` | executable | owned_state | 1 |
 | `tracker_root_unreadable` | `tracker_root_unreadable` | executable | owned_state | 1 |
+| `transaction_create_compensated` | `transaction_create_compensated` | uncovered | none | 0 |
+| `transaction_journal_invalid` | `transaction_journal_invalid` | uncovered | none | 0 |
+| `transaction_plan_mismatch` | `transaction_plan_mismatch` | uncovered | none | 0 |
 | `transaction_preview_external_schema` | `transaction_preview_external_schema` | uncovered | none | 0 |
 | `transaction_preview_non_regular_file` | `transaction_preview_non_regular_file` | uncovered | none | 0 |
 | `transaction_preview_snapshot_changed` | `transaction_preview_snapshot_changed` | uncovered | none | 0 |
@@ -355,6 +363,11 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `unknown_subcommand` | `unknown_subcommand` | executable | grammar, owned_state | 14 |
 | `unsafe_init_recovery` | `unsafe_init_recovery` | uncovered | none | 0 |
 | `unsupported_update_option` | `unsupported_update_option` | uncovered | none | 0 |
+| `upsert_key_ambiguous` | `upsert_key_ambiguous` | uncovered | none | 0 |
+| `upsert_key_conflict` | `upsert_key_conflict` | uncovered | none | 0 |
+| `upsert_key_duplicate` | `upsert_key_duplicate` | uncovered | none | 0 |
+| `upsert_key_missing` | `upsert_key_missing` | uncovered | none | 0 |
+| `upsert_match_changed` | `upsert_match_changed` | uncovered | none | 0 |
 | `validate_command_references_stale_pm_ids` | `validate_command_references_stale_pm_ids` | uncovered | none | 0 |
 | `validate_files_missing_linked_paths` | `validate_files_missing_linked_paths` | uncovered | none | 0 |
 | `validate_files_orphaned_paths` | `validate_files_orphaned_paths` | uncovered | none | 0 |

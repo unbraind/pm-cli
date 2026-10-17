@@ -10,6 +10,7 @@ import { formatOutput } from "../../../src/core/output/output.js";
 
 const mocks = vi.hoisted(() => ({
   stdin: "" as string | undefined,
+  planItemMutationDocument: vi.fn(),
   commitItemCompletion: vi.fn(),
   commitItemMutations: vi.fn(),
   previewItemMutations: vi.fn(),
@@ -36,6 +37,12 @@ vi.mock("../../../src/sdk/item-transaction.js", async (importOriginal) => {
     commitItemMutations: mocks.commitItemMutations,
     previewItemMutations: mocks.previewItemMutations,
   };
+});
+
+vi.mock("../../../src/sdk/lifecycle/structured-mutation-plan.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../src/sdk/lifecycle/structured-mutation-plan.js")>();
+  mocks.planItemMutationDocument.mockImplementation(actual.planItemMutationDocument);
+  return { ...actual, planItemMutationDocument: mocks.planItemMutationDocument };
 });
 
 vi.mock("../../../src/cli/commands/lifecycle/create.js", () => ({
@@ -103,6 +110,81 @@ describe("structured mutation command registration", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it("refuses the pm create many spelling with the bulk route and keeps explicit titles", async () => {
+    const program = programWithGlobals().exitOverride();
+    registerMutationCommands(program);
+    await expect(program.parseAsync(["create", "many"], { from: "user" })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "bulk_create_route" }),
+    });
+    expect(mocks.runCreate).not.toHaveBeenCalled();
+    for (const args of [
+      ["create", "many", "Second"],
+      ["create", "many", "--type", "Task"],
+      ["create", "many", "--title", "Explicit"],
+    ]) {
+      const explicit = programWithGlobals();
+      registerMutationCommands(explicit);
+      await explicit.parseAsync(args, { from: "user" });
+    }
+    expect(mocks.runCreate).toHaveBeenCalledTimes(3);
+  });
+
+  it("refuses an explicitly selected stdin channel beside a file before reading either", async () => {
+    const command = programWithGlobals();
+    registerStructuredMutationCommands(command);
+    mocks.stdin = '{"title":"Different stdin document","type":"Task"}';
+    await expect(command.parseAsync([
+      "item", "mutate", "--from", "missing-conflicting-input.jsonl", "--stdin-json",
+    ], { from: "user" })).rejects.toMatchObject({
+      exitCode: 2, message: expect.stringContaining("cannot combine --from <path> with explicit --stdin-json"),
+    });
+    expect(mocks.planItemMutationDocument).not.toHaveBeenCalled();
+  });
+
+  it("reads mutation documents from --from paths and threads --upsert-key into the planner", async () => {
+    const { mkdtemp, writeFile, rm } = await import("node:fs/promises");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const dir = await mkdtemp(path.join(os.tmpdir(), "pm-mutate-from-"));
+    try {
+      const file = path.join(dir, "batch.jsonl");
+      await writeFile(file, '{"op":"update","id":"pm-a","options":{"title":"From file"}}\n', "utf8");
+      const command = programWithGlobals();
+      mocks.stdin = undefined;
+      await structuredMutationTestOnly.runItemMutateAction({ from: file, transactionId: "from-file" }, command);
+      expect(mocks.commitItemMutations).toHaveBeenLastCalledWith(
+        expect.objectContaining({ transactionId: "from-file", mutations: [expect.objectContaining({ id: "pm-a", op: "update" })] }),
+      );
+      const fileCommand = programWithGlobals();
+      registerStructuredMutationCommands(fileCommand);
+      await fileCommand.parseAsync(["item", "mutate", "--from", file], { from: "user" });
+      await expect(
+        structuredMutationTestOnly.runItemMutateAction({ from: path.join(dir, "missing.jsonl") }, command),
+      ).rejects.toMatchObject({ context: expect.objectContaining({ code: "mutation_document_unreadable" }) });
+      await expect(structuredMutationTestOnly.runItemMutateAction({ from: "-" }, command)).rejects.toThrow("non-empty JSON batch");
+      mocks.stdin = JSON.stringify([{ op: "update", id: "pm-a", options: { title: "A" } }]);
+      for (const source of [[], ["--from", "-"]]) {
+        const stdinCommand = programWithGlobals();
+        registerStructuredMutationCommands(stdinCommand);
+        await stdinCommand.parseAsync(["item", "mutate", "--stdin-json", ...source], { from: "user" });
+      }
+      mocks.planItemMutationDocument.mockResolvedValueOnce({
+        schema_version: 1,
+        mutations: [{ op: "update", id: "pm-a", options: { title: "A" } }],
+        references: {},
+        rows: [{ index: 0, id: "pm-a", op: "update", upserted: true }],
+        transaction_id: "planned",
+        transaction_id_source: "derived",
+        upsert_key: "external_id",
+      });
+      await structuredMutationTestOnly.runItemMutateAction({ upsertKey: "external_id", from: "-", dryRun: true }, command);
+      expect(mocks.planItemMutationDocument).toHaveBeenLastCalledWith(expect.objectContaining({ upsertKey: "external_id" }));
+      expect(mocks.previewItemMutations).toHaveBeenLastCalledWith(expect.objectContaining({ transactionId: "planned" }));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("routes whole-item stdin through create and update adapters", async () => {
@@ -552,9 +634,18 @@ describe("structured mutation command registration", () => {
     mocks.stdin = JSON.stringify([
       { op: "update", id: "pm-a", options: { title: "A" } },
     ]);
+    await structuredMutationTestOnly.runItemMutateAction({}, command);
+    expect(mocks.commitItemMutations).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        transactionId: expect.stringMatching(/^mutate-[0-9a-f]{24}$/u),
+      }),
+    );
     await expect(
-      structuredMutationTestOnly.runItemMutateAction({}, command),
-    ).rejects.toThrow("requires --transaction-id");
+      structuredMutationTestOnly.runItemMutateAction({ transactionId: "  " }, command),
+    ).rejects.toThrow("to be non-empty when provided");
+    await expect(
+      structuredMutationTestOnly.runItemMutateAction({ transactionId: 42 }, command),
+    ).rejects.toThrow("to be non-empty when provided");
     await structuredMutationTestOnly.runItemMutateAction(
       { transactionId: "batch" },
       command,

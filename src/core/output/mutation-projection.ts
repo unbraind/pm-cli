@@ -19,6 +19,7 @@
  * The helper is pure and side-effect free, reused by both the output layer and the
  * MCP server, and returns the original reference unchanged when nothing is compacted.
  */
+import { unicodeSafePrefix } from "../shared/text-normalization.js";
 
 /** Controls whether mutation output keeps full changed fields or compact counts. */
 export type ChangedFieldsMode = "full" | "compact";
@@ -74,7 +75,7 @@ function truncateCompactRecurrenceText(value: unknown): unknown {
   ) {
     return value;
   }
-  return `${value.slice(0, COMPACT_RECURRENCE_TEXT_LIMIT - 1)}…`;
+  return `${unicodeSafePrefix(value, COMPACT_RECURRENCE_TEXT_LIMIT - 1)}…`;
 }
 
 function projectCompactRecurrence(value: unknown): Record<string, unknown> | null {

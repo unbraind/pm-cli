@@ -3,6 +3,7 @@ import { PmCliError } from "../../../src/core/shared/errors.js";
 import { SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
 import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
 import {
+  deriveMutationTransactionId,
   itemDocumentToMutationOptions,
   parseAtomicMutationControls,
   parseItemMutationBatch,
@@ -11,6 +12,20 @@ import {
 } from "../../../src/sdk/structured-mutations.js";
 
 describe("structured mutation input", () => {
+  it("rejects non-string duration options with row-level typed recovery", () => {
+    for (const op of ["create", "update"] as const) {
+      for (const value of [45, null, false, {}, []]) {
+        expect(() => parseItemMutationBatch(JSON.stringify([{ op, id: "pm-duration", options: { estimatedMinutes: value } }]))).toThrowError(expect.objectContaining({
+          exitCode: 2,
+          message: `Mutation 1 ${op} option "estimatedMinutes" must be a string.`,
+          context: expect.objectContaining({ code: "mutation_option_value_invalid", required: expect.stringContaining('"45"') }),
+        }));
+      }
+      expect(parseItemMutationBatch(JSON.stringify([{ op, id: "pm-duration", options: { estimatedMinutes: "45" } }]))[0]).toMatchObject({ options: { estimatedMinutes: "45" } });
+    }
+    expect(resolveItemMutationDocument('{"title":"Numeric document","type":"Task","estimated_minutes":45}', { transactionId: "numeric-document", idPrefix: "pm-" }).mutations[0]).toMatchObject({ options: { estimatedMinutes: "45" } });
+  });
+
   it("normalizes shared atomic controls and rejects invalid transport values", () => {
     expect(parseAtomicMutationControls({})).toEqual({});
     expect(
@@ -594,5 +609,364 @@ describe("structured mutation input", () => {
     expect(() => itemDocumentToMutationOptions("[]", "create")).toThrow(
       "must be a JSON object",
     );
+  });
+});
+
+describe("bulk creation documents (pm-gh1456)", () => {
+  const options = { transactionId: "import-1", idPrefix: "pm-" };
+  const runtimeFields = resolveRuntimeFieldRegistry({
+    ...SETTINGS_DEFAULTS.schema,
+    fields: [{ key: "external_id", type: "string", commands: ["create", "update"] }],
+  }).definitions;
+
+  it("derives a stable transaction id from the exact document bytes", () => {
+    const first = deriveMutationTransactionId('[{"title":"A","type":"Task"}]');
+    expect(first).toMatch(/^mutate-[0-9a-f]{24}$/u);
+    expect(deriveMutationTransactionId('[{"title":"A","type":"Task"}]')).toBe(first);
+    expect(deriveMutationTransactionId('[{"title":"B","type":"Task"}]')).not.toBe(first);
+  });
+
+  it("accepts JSON Lines, single records, and op-less create documents with synthesized refs", () => {
+    const resolved = resolveItemMutationDocument(
+      [
+        '{"title":"First","type":"Task","tags":["import"]}',
+        "",
+        '{"ref":"second","title":"Second","type":"Feature","parent":"@row-1"}',
+        '{"op":"update","id":"@second","options":{"addTags":["linked"]}}',
+      ].join("\n"),
+      options,
+    );
+    expect(resolved.rows).toEqual([
+      { index: 0, ref: "row-1", id: expect.stringMatching(/^pm-[a-z0-9]{12}$/u), op: "create" },
+      { index: 1, ref: "second", id: expect.stringMatching(/^pm-[a-z0-9]{12}$/u), op: "create" },
+      { index: 2, id: resolved.references.second, op: "update" },
+    ]);
+    expect(resolved.mutations[0]).toMatchObject({
+      op: "create",
+      id: resolved.references["row-1"],
+      options: { title: "First", type: "Task", tags: '["import"]' },
+    });
+    expect(resolved.mutations[1]).toMatchObject({
+      op: "create",
+      options: { title: "Second", type: "Feature", parent: resolved.references["row-1"] },
+    });
+    const single = resolveItemMutationDocument('{"title":"Only","type":"Task"}', options);
+    expect(single.mutations).toHaveLength(1);
+    expect(single.rows[0]).toMatchObject({ index: 0, ref: "row-1", op: "create" });
+    const itemRow = resolveItemMutationDocument('[{"op":"create","ref":"doc","item":{"title":"Doc","type":"Task"}}]', options);
+    expect(itemRow.mutations[0]).toMatchObject({ op: "create", options: { title: "Doc", type: "Task" } });
+  });
+
+  it("routes declared schema fields through their option targets and admits them in options rows", () => {
+    const resolved = resolveItemMutationDocument(
+      '{"title":"Keyed","type":"Task","external_id":"ext-1"}',
+      { ...options, runtimeFields },
+    );
+    expect(resolved.mutations[0]).toMatchObject({ options: { externalId: "ext-1" } });
+    expect(
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"a","options":{"title":"Keyed","type":"Task","externalId":"ext-2"}}]',
+        { ...options, runtimeFields },
+      ).mutations[0],
+    ).toMatchObject({ options: { externalId: "ext-2" } });
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"create","ref":"a","options":{"title":"Keyed","type":"Task","externalId":"ext-2"}}]',
+        options,
+      ),
+    ).toThrow('does not recognize key "externalId"');
+    expect(() =>
+      resolveItemMutationDocument(
+        '[{"op":"close","id":"pm-a","reason":"done","options":{"externalId":"x"}}]',
+        { ...options, runtimeFields },
+      ),
+    ).toThrow('does not recognize key "externalId"');
+  });
+
+  it("reads an options-row upsert key through the declared option target when the metadata key differs", () => {
+    const aliased = resolveRuntimeFieldRegistry({
+      ...SETTINGS_DEFAULTS.schema,
+      fields: [{ key: "classification", metadata_key: "escape_class", type: "string", commands: ["create", "update"] }],
+    }).definitions;
+    const resolved = resolveItemMutationDocument(
+      '[{"op":"create","ref":"c","options":{"title":"Classified","type":"Task","classification":"production_defect"}},{"title":"Documented","type":"Task","escape_class":"review_caught_late"},{"op":"create","ref":"f","options":{"title":"Fielded","type":"Task","field":["escape_class=unclassified"]}}]',
+      { ...options, runtimeFields: aliased, upsert: { key: "escape_class", existing: [{ id: "pm-prod", value: "production_defect" }, { id: "pm-doc", value: "review_caught_late" }, { id: "pm-field", value: "unclassified" }] } },
+    );
+    expect(resolved.rows).toEqual([
+      { index: 0, ref: "c", id: "pm-prod", op: "update", upserted: true },
+      { index: 1, ref: "row-2", id: "pm-doc", op: "update", upserted: true },
+      { index: 2, ref: "f", id: "pm-field", op: "update", upserted: true },
+    ]);
+    expect(resolved.mutations[0]).toMatchObject({ match: { key: "escape_class", value: "production_defect" } });
+  });
+
+  it("refuses an explicit ref that collides with the alias a later row would be synthesized", () => {
+    expect(() =>
+      resolveItemMutationDocument('{"ref":"row-2","title":"Claims the alias","type":"Task"}\n{"title":"Needs row-2","type":"Task"}', options),
+    ).toThrow('Mutation 2 receives the synthesized ref "row-2", but another row declares that ref');
+    // Declaring an unused alias is fine; only a collision with a row that needs it refuses.
+    expect(resolveItemMutationDocument('{"ref":"row-9","title":"Free alias","type":"Task"}\n{"title":"Gets row-2","type":"Task"}', options).rows).toMatchObject([
+      { index: 0, ref: "row-9" },
+      { index: 1, ref: "row-2" },
+    ]);
+  });
+
+  it("reports malformed JSON Lines by line number and refuses mixed row shapes", () => {
+    expect(() => resolveItemMutationDocument('{not json}\n{"title":"ok","type":"Task"}', options)).toThrow("Mutation document line 1 must be one valid JSON object");
+    expect(() => resolveItemMutationDocument('[1]\n{"title":"ok","type":"Task"}', options)).toThrow("Mutation document line 1 must be a JSON object");
+    expect(() =>
+      resolveItemMutationDocument('{"title":"ok","type":"Task"}\n{not json', options),
+    ).toThrow("Mutation document line 2 must be one valid JSON object");
+    expect(() =>
+      resolveItemMutationDocument('{"title":"ok","type":"Task"}\n[1]', options),
+    ).toThrow("Mutation document line 2 must be a JSON object");
+    expect(() => resolveItemMutationDocument("{not json", options)).toThrow("must be valid JSON");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","item":{"title":"x"},"options":{"title":"y"}}]', options),
+    ).toThrow("either item or options, not both");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"update","id":"pm-a","item":{"title":"x"}}]', options),
+    ).toThrow("only valid for create operations");
+    expect(() =>
+      resolveItemMutationDocument('[{"item":{"title":"x","type":"Task"},"title":"stray"}]', options),
+    ).toThrow("must not mix item document keys");
+    expect(() =>
+      resolveItemMutationDocument('[{"item":"not-an-object"}]', options),
+    ).toThrow("item document must be an object");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","unknown":1}]', options),
+    ).toThrow('does not recognize key "unknown"');
+  });
+
+  it.each([
+    '{\n  "title": "Pretty",\n  "type": invalid\n}',
+    '[\n  {"title":"Pretty","type":"Task"},\n]',
+    '{"title":"Pretty",\n  "type": invalid\n}',
+    '{"title": invalid\n"type": invalid',
+  ])("retains the whole-document diagnostic for malformed formatted JSON: %s", (input) => {
+    expect(() => resolveItemMutationDocument(input, options)).toThrow("Mutation document must be valid JSON");
+  });
+
+  it.each([
+    { item: { id: "pm-wrapped", title: "Wrapped", type: "Task" } },
+    { op: "create", item: { id: "pm-wrapped", title: "Wrapped", type: "Task" } },
+    { id: "pm-wrapped", item: { id: "pm-ignored", title: "Wrapped", type: "Task" } },
+    { op: "create", id: "pm-wrapped", item: { id: "pm-ignored", title: "Wrapped", type: "Task" } },
+  ])("uses document ids while preserving an explicit row id: %j", (row) => {
+    const resolved = resolveItemMutationDocument(JSON.stringify([{ ...row, ref: "wrapped" }, { op: "update", id: "@wrapped", options: { description: "Follow-up" } }]), options);
+    expect(resolved.mutations.map((mutation) => mutation.id)).toEqual(["pm-wrapped", "pm-wrapped"]);
+    expect(resolved.references).toEqual({ wrapped: "pm-wrapped" });
+    expect(resolved.rows.map((receipt) => receipt.id)).toEqual(["pm-wrapped", "pm-wrapped"]);
+    expect(() => resolveItemMutationDocument(JSON.stringify([row, { id: "pm-wrapped", title: "Collision", type: "Task" }]), options)).toThrow("Duplicate resolved create id");
+  });
+
+  it.each([123, null])("refuses a non-string wrapped document id: %j", (id) => {
+    expect(() => resolveItemMutationDocument(JSON.stringify({ item: { id, title: "Invalid id", type: "Task" } }), options)).toThrow("item id must be a string");
+  });
+
+  it.each([false, true])("refuses parent cycles after keyed upsert, including two matches: %s", (bothMatched) => {
+    const rows = [
+      { op: "create", ref: "a", options: { title: "A", type: "Task", externalId: "key-a", parent: "@b" } },
+      { op: "create", ref: "b", options: { title: "B", type: "Task", externalId: "key-b", parent: "@a" } },
+    ];
+    const existing = [{ id: "pm-existing-a", value: "key-a" }];
+    if (bothMatched) existing.push({ id: "pm-existing-b", value: "key-b" });
+    expect(() => resolveItemMutationDocument(JSON.stringify(rows), {
+      ...options, runtimeFields, upsert: { key: "external_id", existing },
+    })).toThrow("Mutation reference cycle");
+  });
+
+  it("turns keyed create rows into updates of the one matching existing item", () => {
+    const upsert = {
+      key: "external_id",
+      existing: [
+        { id: "pm-existing", value: "ext-1" },
+        { id: "pm-other", value: "ext-9" },
+        { id: "pm-blank", value: null },
+      ],
+    };
+    const resolved = resolveItemMutationDocument(
+      [
+        '{"title":"Renamed","type":"Task","external_id":"ext-1","tags":["sync"]}',
+        '{"title":"Fresh","type":"Task","external_id":"ext-2"}',
+        '{"op":"create","ref":"opt","options":{"title":"Option row","type":"Task","field":["external_id=ext-9"]}}',
+        '{"op":"create","ref":"child","options":{"title":"Child of upsert","type":"Task","parent":"@opt","externalId":"ext-3"}}',
+      ].join("\n"),
+      { ...options, runtimeFields, upsert },
+    );
+    expect(resolved.rows).toEqual([
+      { index: 0, ref: "row-1", id: "pm-existing", op: "update", upserted: true },
+      { index: 1, ref: "row-2", id: expect.any(String), op: "create" },
+      { index: 2, ref: "opt", id: "pm-other", op: "update", upserted: true },
+      { index: 3, ref: "child", id: expect.any(String), op: "create" },
+    ]);
+    // A later row may still address the upserted record by its alias, which now names the matched item.
+    expect(resolved.mutations[3]).toMatchObject({ op: "create", options: { parent: "pm-other" } });
+    expect(resolved.mutations[0]).toMatchObject({
+      op: "update",
+      id: "pm-existing",
+      options: { title: "Renamed", externalId: "ext-1", tags: '["sync"]' },
+    });
+    expect(resolved.mutations[0]).not.toHaveProperty("options.documentAnnotationSnapshot");
+    // Rows that matched nothing carry the key for the lock-held re-check; matched rows carry the selection instead.
+    expect(resolved.mutations[0]).not.toHaveProperty("unique");
+    expect(resolved.mutations[0]).toMatchObject({ op: "update", match: { key: "external_id", value: "ext-1" } });
+    expect(resolved.mutations[2]).toMatchObject({ op: "update", match: { key: "external_id", value: "ext-9" } });
+    expect(resolved.mutations[1]).not.toHaveProperty("match");
+    expect(resolved.mutations[1]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-2" } });
+    expect(resolved.mutations[3]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-3" } });
+    expect(resolved.mutations[2]).toMatchObject({ op: "update", id: "pm-other", options: { title: "Option row" } });
+    expect(resolved.references).toMatchObject({ "row-1": "pm-existing", opt: "pm-other" });
+  });
+
+  it("accepts a unique guard only on create rows that carry a key and a value", () => {
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"update","id":"pm-a","options":{"title":"x"},"unique":{"key":"k","value":1}}]', options),
+    ).toThrow("unique is only valid for create operations");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":{"key":" ","value":1}}]', options),
+    ).toThrow("unique must be an object with a non-empty key and a value");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":"k"}]', options),
+    ).toThrow("unique must be an object");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":{"key":"k","value":null}}]', options),
+    ).toThrow("unique must be an object");
+    const explicit = resolveItemMutationDocument(
+      '[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"unique":{"key":" external_id ","value":"ext-1"}}]',
+      options,
+    );
+    expect(explicit.mutations[0]).toMatchObject({ unique: { key: "external_id", value: "ext-1" } });
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"a","options":{"title":"x","type":"Task"},"match":{"key":"k","value":1}}]', options),
+    ).toThrow("match is only valid for update operations");
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"update","id":"pm-a","options":{"title":"x"},"match":{"key":"k"}}]', options),
+    ).toThrow("match must be an object with a non-empty key and a value");
+    const matched = resolveItemMutationDocument('[{"op":"update","id":"pm-a","options":{"title":"x"},"match":{"key":"k","value":[1]}}]', options);
+    expect(matched.mutations[0]).toMatchObject({ op: "update", match: { key: "k", value: [1] } });
+  });
+
+  it("refuses missing, duplicate, and ambiguous upsert keys before any write", () => {
+    const base = { ...options, runtimeFields };
+    expect(() =>
+      resolveItemMutationDocument('{"title":"No key","type":"Task"}', {
+        ...base,
+        upsert: { key: "external_id", existing: [] },
+      }),
+    ).toThrow('missing the upsert key "external_id"');
+    expect(() =>
+      resolveItemMutationDocument(
+        '{"title":"A","type":"Task","external_id":"dup"}\n{"title":"B","type":"Task","external_id":"dup"}',
+        { ...base, upsert: { key: "external_id", existing: [] } },
+      ),
+    ).toThrow("share the upsert key value");
+    try {
+      resolveItemMutationDocument('{"title":"A","type":"Task","external_id":"twice"}', {
+        ...base,
+        upsert: {
+          key: "external_id",
+          existing: [
+            { id: "pm-one", value: "twice" },
+            { id: "pm-two", value: "twice" },
+          ],
+        },
+      });
+      throw new Error("Expected an ambiguous upsert key to be refused.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(PmCliError);
+      expect(error).toMatchObject({
+        exitCode: 4,
+        context: { code: "upsert_key_ambiguous" },
+        message: expect.stringContaining("matches 2 existing items: pm-one, pm-two"),
+      });
+    }
+    expect(() =>
+      resolveItemMutationDocument('{"title":"A","type":"Task"}', {
+        ...base,
+        upsert: { key: "  ", existing: [] },
+      }),
+    ).toThrow("Upsert key must be a non-empty field name");
+  });
+
+  it("covers non-Error line parse failures, explicit document ids, numeric upsert keys, and upsert without runtime fields", () => {
+    const parse = vi.spyOn(JSON, "parse");
+    parse.mockImplementationOnce(() => { throw "whole-document"; }).mockImplementationOnce(() => { throw "line-one"; });
+    expect(() => resolveItemMutationDocument('{"a":1}\n{"b":2}', options)).toThrow("line 1 must be one valid JSON object: Unknown failure");
+    parse.mockRestore();
+    const explicit = resolveItemMutationDocument('{"id":"pm-explicit","title":"Explicit","type":"Task"}', options);
+    expect(explicit.mutations[0]).toMatchObject({ op: "create", id: "pm-explicit" });
+    expect(explicit.rows[0]).toEqual({ index: 0, id: "pm-explicit", op: "create" });
+    const numeric = resolveItemMutationDocument(
+      '[{"op":"create","ref":"n","options":{"title":"Numeric","type":"Task","priority":2}}]',
+      { ...options, upsert: { key: "priority", existing: [{ id: "pm-prio", value: 2 }] } },
+    );
+    expect(numeric.rows).toEqual([{ index: 0, ref: "n", id: "pm-prio", op: "update", upserted: true }]);
+    // An explicit-id create row carries no alias, so a keyed match records nothing for later @ref rows.
+    const explicitUpsert = resolveItemMutationDocument(
+      '{"id":"pm-explicit","title":"Explicit","type":"Task","priority":2}',
+      { ...options, upsert: { key: "priority", existing: [{ id: "pm-prio", value: 2 }] } },
+    );
+    expect(explicitUpsert.rows).toEqual([{ index: 0, id: "pm-prio", op: "update", upserted: true }]);
+    expect(Object.keys(explicitUpsert.references)).toEqual([]);
+    // Object-valued keys match on content, not on key insertion order.
+    const objectKeyed = resolveItemMutationDocument(
+      '{"op":"create","ref":"o","options":{"title":"Object keyed","type":"Task","meta":{"b":[1,{"d":1,"c":2}],"a":2}}}',
+      { ...options, upsert: { key: "meta", existing: [{ id: "pm-object", value: { a: 2, b: [1, { c: 2, d: 1 }] } }] } },
+    );
+    expect(objectKeyed.rows).toEqual([{ index: 0, ref: "o", id: "pm-object", op: "update", upserted: true }]);
+    // Keys that collate equal (precomposed and decomposed e-acute) are still distinct, so insertion order never leaks into the match.
+    const collating = resolveItemMutationDocument(
+      '{"op":"create","ref":"c","options":{"title":"Collating","type":"Task","meta":{"e\u0301":2,"\u00e9":1}}}',
+      { ...options, upsert: { key: "meta", existing: [{ id: "pm-collate", value: { "\u00e9": 1, "e\u0301": 2 } }] } },
+    );
+    expect(collating.rows).toEqual([{ index: 0, ref: "c", id: "pm-collate", op: "update", upserted: true }]);
+    expect(numeric.mutations[0]).toMatchObject({ op: "update", options: { title: "Numeric", priority: 2 } });
+  });
+
+  it("matches upsert keys through camel-case option targets and refuses rows that carry no document or options", () => {
+    const resolved = resolveItemMutationDocument(
+      '[{"op":"create","ref":"camel","options":{"title":"Camel","type":"Task","externalId":"ext-camel"}}]',
+      { ...options, runtimeFields, upsert: { key: "external_id", existing: [{ id: "pm-camel", value: "ext-camel" }] } },
+    );
+    expect(resolved.rows).toEqual([{ index: 0, ref: "camel", id: "pm-camel", op: "update", upserted: true }]);
+    // Without a declared field the camel-case option spelling still resolves the key.
+    const undeclared = resolveItemMutationDocument(
+      '[{"op":"create","ref":"camel","options":{"title":"Camel","type":"Task","externalId":"ext-camel"}}]',
+      { ...options, upsert: { key: "external_id", existing: [{ id: "pm-camel", value: "ext-camel" }] } },
+    );
+    expect(undeclared.rows).toEqual([{ index: 0, ref: "camel", id: "pm-camel", op: "update", upserted: true }]);
+    expect(resolved.mutations[0]).toMatchObject({ options: { title: "Camel", externalId: "ext-camel" } });
+    const mixed = resolveItemMutationDocument(
+      '[{"op":"update","id":"pm-a","options":{"title":"Untouched"}},{"title":"Keyed","type":"Task","external_id":"ext-k"}]',
+      { ...options, runtimeFields, upsert: { key: "external_id", existing: [] } },
+    );
+    expect(mixed.rows).toEqual([
+      { index: 0, id: "pm-a", op: "update" },
+      { index: 1, ref: "row-2", id: expect.any(String), op: "create" },
+    ]);
+    expect(() =>
+      resolveItemMutationDocument('[{"op":"create","ref":"bare"}]', {
+        ...options,
+        upsert: { key: "external_id", existing: [] },
+      }),
+    ).toThrow("missing the upsert key");
+  });
+
+  it("never matches the ids this document itself would create, so a committed import replays as the same plan", () => {
+    const first = resolveItemMutationDocument('{"title":"Own","type":"Task","external_id":"own-1"}', { ...options, runtimeFields });
+    const ownId = first.rows[0]!.id;
+    const replay = resolveItemMutationDocument('{"title":"Own","type":"Task","external_id":"own-1"}', {
+      ...options,
+      runtimeFields,
+      upsert: { key: "external_id", existing: [{ id: ownId, value: "own-1" }] },
+    });
+    expect(replay.rows).toEqual([{ index: 0, ref: "row-1", id: ownId, op: "create" }]);
+    const explicit = resolveItemMutationDocument('[{"op":"create","id":"pm-fixed","options":{"title":"Fixed","type":"Task","externalId":"fixed-1"}}]', {
+      ...options,
+      runtimeFields,
+      upsert: { key: "external_id", existing: [{ id: "pm-fixed", value: "fixed-1" }, { id: "pm-other", value: "other" }] },
+    });
+    expect(explicit.rows).toEqual([{ index: 0, id: "pm-fixed", op: "create" }]);
   });
 });

@@ -481,6 +481,46 @@ function pickStringOption(...candidates: unknown[]): string | undefined {
   return undefined;
 }
 
+/**
+ * `pm create many` is the spelling agents reach for when they want bulk
+ * creation. It is not a command: the atomic bulk surface is `pm item mutate`
+ * (JSON array, JSON Lines, or envelope via stdin or `--from`). Refuse with the
+ * route instead of silently creating an item titled "many".
+ */
+function assertNotBulkCreateSpelling(
+  typeOrTitle: string | undefined,
+  secondTitle: string | undefined,
+  options: Record<string, unknown>,
+): void {
+  if (
+    typeOrTitle !== "many" ||
+    secondTitle !== undefined ||
+    options.title !== undefined ||
+    options.type !== undefined
+  ) {
+    return;
+  }
+  throw new PmCliError(
+    "pm create many is not a command; bulk creation is pm item mutate.",
+    EXIT_CODE.USAGE,
+    {
+      code: "bulk_create_route",
+      required:
+        "Pipe a JSON array, JSON Lines, or {schema_version, mutations} document to pm item mutate, or pass --from <path>.",
+      why: "pm item mutate commits every record in one workspace transaction with a replay-safe transaction id, so an interrupted or repeated import never duplicates items.",
+      nextSteps: [
+        "pm item mutate --from items.jsonl --dry-run --json",
+        "pm item mutate --from items.jsonl --upsert-key external_id --json",
+        "pm guide lifecycle",
+      ],
+      examples: [
+        "pm item mutate --from items.jsonl --json",
+        "printf '%s\\n' '{\"title\":\"First\",\"type\":\"Task\"}' '{\"title\":\"Second\",\"type\":\"Task\"}' | pm item mutate --json",
+      ],
+    },
+  );
+}
+
 function resolveCreatePositionals(
   typeOrTitle: string | undefined,
   secondTitle: string | undefined,
@@ -636,6 +676,7 @@ async function runCreateAction(
     );
     options = await readItemDocumentOptions(input ?? "", "create", options, globalOptions);
   }
+  assertNotBulkCreateSpelling(typeOrTitle, secondTitle, options);
   const positionals = resolveCreatePositionals(
     typeOrTitle,
     secondTitle,

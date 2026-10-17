@@ -17,12 +17,18 @@ import {
 } from "../core/item/parse.js";
 import { EXIT_CODE, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS, SETTINGS_FILENAME } from "../core/shared/constants.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import { listAllItemMetadataLight } from "../core/store/item-store.js";
+import { runWithItemMutationPrecondition } from "../core/store/item-mutation-precondition.js";
+import { isConfigurationOnlySettingsRead, readSettings } from "../core/store/settings.js";
 import { DEFAULT_RUNTIME_SCHEMA_FILE_PATHS, filePathForSchemaSection, loadRuntimeSchemaFromOptionalFiles, normalizeRuntimeSchemaSettings } from "../core/schema/runtime-schema.js";
 import { validateSettings } from "../core/store/settings-validator.js";
 import { resolveWorkspaceRoot } from "../core/store/paths.js";
 import { getSessionStatePath } from "../core/session/session-state.js";
 import { PmCliError } from "../core/shared/errors.js";
+import type { ItemDocument, ItemTypeDefinition, PmSettings } from "../types/index.js";
+import { stableUpsertValue, type ItemMutationUpsertCandidate } from "./structured-mutations.js";
 import { stableStringify } from "../core/shared/serialization.js";
+import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 import { readHistoryEntries } from "./history-read.js";
 import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
 import {
@@ -47,8 +53,8 @@ import {
 
 /**
  * One atomic item creation inside a bulk mutation batch. The explicit `id`
- * doubles as the idempotency key: recovery treats an existing item with this id
- * as the already-applied result, so ids must be stable and transaction-owned.
+ * doubles as the idempotency key: recovery adopts an existing item unless it
+ * remains closed after compensation. IDs must be stable and transaction-owned.
  */
 export interface BulkItemCreateMutation {
   /** Discriminates the creation operation. */
@@ -57,6 +63,189 @@ export interface BulkItemCreateMutation {
   id: string;
   /** Creation options forwarded to the public `create` runtime primitive. */
   options: PmClientFullMutationOptions;
+  /**
+   * Keyed-upsert guard re-checked under the writer lock. The planner resolves
+   * upsert matches before the lock, so a create row keeps the key it was
+   * planned against; the commit refuses with `upsert_key_conflict` when another
+   * writer created an item with the same key value after planning.
+   */
+  unique?: BulkItemUniqueKey;
+}
+
+/** Unique-key guard carried by a create row planned under keyed upsert. */
+export interface BulkItemUniqueKey {
+  /** Item field (core or declared custom metadata key) the upsert planner matched on. */
+  key: string;
+  /** The row's own value for that field, compared on canonical content. */
+  value: unknown;
+}
+
+/** Schema facts a transaction needs, hydrated the same way whether or not the host scoped settings reads to configuration only. */
+export interface TransactionSchemaContext {
+  /** Runtime schema with statuses, fields, and workflows merged from their files. */
+  schema: PmSettings["schema"];
+  /** Custom item types declared in the types file, when the settings read skipped hydration. */
+  typeDefinitionsFromFile: ItemTypeDefinition[];
+}
+
+/**
+ * Resolve the runtime schema for planning or guarding a transaction. A preview
+ * host may scope settings reads to inline configuration only (no schema
+ * hydration, no scaffolding), in which case declared custom fields and types
+ * live solely in their schema files; load them through the guarded reader so
+ * no symlink, special file, or out-of-root path is ever opened in place.
+ */
+export async function resolveTransactionSchema(
+  pmRoot: string,
+  settings: PmSettings,
+): Promise<TransactionSchemaContext> {
+  if (!isConfigurationOnlySettingsRead(pmRoot)) {
+    return { schema: normalizeRuntimeSchemaSettings(settings.schema), typeDefinitionsFromFile: [] };
+  }
+  const loaded = await loadGuardedRuntimeSchema(pmRoot, settings.schema);
+  return { schema: loaded.schema, typeDefinitionsFromFile: loaded.type_definitions_from_file ?? [] };
+}
+
+/** Collect every existing item that carries a value for the upsert key, covering core and declared custom keys across custom-type folders. */
+export async function listUpsertKeyCandidates(
+  pmRoot: string,
+  settings: PmSettings,
+  schemaContext: TransactionSchemaContext,
+  key: string,
+): Promise<ItemMutationUpsertCandidate[]> {
+  const typeRegistry = resolveItemTypeRegistry(
+    {
+      ...settings,
+      item_types: {
+        ...settings.item_types,
+        definitions: [
+          ...(settings.item_types?.definitions ?? []),
+          ...schemaContext.typeDefinitionsFromFile,
+        ],
+      },
+    },
+    getActiveExtensionRegistrations(),
+  );
+  const items = await listAllItemMetadataLight(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+    undefined,
+    schemaContext.schema,
+  );
+  return items.flatMap((item) => {
+    const value = (item as unknown as Record<string, unknown>)[key];
+    return value == null ? [] : [{ id: item.id, value }];
+  });
+}
+
+/** Per-transaction index of existing upsert-key values, scanned lazily under the writer lock. */
+interface UniqueKeyIndex {
+  /** Existing item ids per canonical key value. */
+  lookup(key: string): Promise<Map<string, string[]>>;
+  /** Advance cached scans from the created item's metadata without another project scan. */
+  recordCreate(item: Readonly<Record<string, unknown>>): Promise<void>;
+  /** Drop cached scans after a step may have changed existing key values. */
+  invalidate(): void;
+}
+
+/** Lazily scan each key once until a non-create step changes the transaction's current item state. */
+function createUniqueKeyIndex(
+  pmRoot: string,
+): UniqueKeyIndex {
+  const scans = new Map<string, Promise<Map<string, string[]>>>();
+  const scan = async (key: string): Promise<Map<string, string[]>> => {
+    const settings = await readSettings(pmRoot);
+    const schemaContext = await resolveTransactionSchema(pmRoot, settings);
+    const byValue = new Map<string, string[]>();
+    for (const candidate of await listUpsertKeyCandidates(pmRoot, settings, schemaContext, key)) {
+      const stable = stableUpsertValue(candidate.value);
+      byValue.set(stable, [...(byValue.get(stable) ?? []), candidate.id]);
+    }
+    return byValue;
+  };
+  return {
+    lookup(key) {
+      const pending = scans.get(key) ?? scan(key);
+      scans.set(key, pending);
+      return pending;
+    },
+    async recordCreate(item) {
+      for (const [key, pending] of scans) {
+        const value = item[key];
+        if (value == null) continue;
+        const byValue = await pending;
+        const stable = stableUpsertValue(value);
+        byValue.set(stable, [...(byValue.get(stable) ?? []), String(item.id)]);
+      }
+    },
+    invalidate() {
+      scans.clear();
+    },
+  };
+}
+
+/** Refuse a planned create whose upsert key now collides with an item another writer created after planning. */
+async function assertUniqueKeyFree(
+  index: UniqueKeyIndex,
+  unique: BulkItemUniqueKey,
+): Promise<void> {
+  const stable = stableUpsertValue(unique.value);
+  const existing = (await index.lookup(unique.key)).get(stable) ?? [];
+  if (existing.length === 0) return;
+  throw new PmCliError(
+    `Upsert key "${unique.key}" value ${JSON.stringify(stable)} now matches existing item ${existing.join(", ")}; the plan was resolved before it existed.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "upsert_key_conflict",
+      required: "Re-plan the document so the row updates the existing item instead of creating a duplicate.",
+      why: "Keyed upsert is resolved before the writer lock, so every remaining create is re-checked under the lock; concurrent imports therefore cannot create two items for one key value.",
+      nextSteps: [
+        "Re-run pm item mutate with the same document and --upsert-key; the re-plan turns the row into an update of the existing item.",
+        "Inspect the existing item first when its content should win over the document row.",
+      ],
+    },
+  );
+}
+
+/** Refuse a planned keyed-upsert update whose target no longer carries the key value it was selected by. */
+function assertUpsertMatchCurrent(
+  document: ItemDocument,
+  id: string,
+  match: BulkItemUniqueKey,
+): void {
+  const current = (document.metadata as Record<string, unknown>)[match.key];
+  const expected = stableUpsertValue(match.value);
+  // An absent key serializes to undefined, which never equals the expected string.
+  if (stableUpsertValue(current) === expected) return;
+  throw new PmCliError(
+    `Item ${id} no longer carries upsert key "${match.key}" value ${JSON.stringify(expected)}; the plan selected it before the key changed.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "upsert_match_changed",
+      required: "Re-plan the document so the row is resolved against the current key values.",
+      why: "Keyed upsert selects its target before the writer lock, so the update re-reads the key under the lock instead of updating a mismatched item blindly.",
+      nextSteps: [
+        "Re-run pm item mutate with the same document and --upsert-key; the re-plan creates or re-targets the row from the current key values.",
+      ],
+    },
+  );
+}
+
+/** Whether a create row's unique-key guard has the shape the commit path relies on. */
+function isValidUniqueKey(value: unknown): value is BulkItemUniqueKey {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  const candidate = value as { key?: unknown; value?: unknown };
+  return typeof candidate.key === "string" && candidate.key.trim().length > 0 && candidate.value !== undefined && candidate.value !== null;
+}
+
+/** Shared configuration for every step a bulk mutation batch builds. */
+interface BulkMutationStepConfig {
+  pmRoot: string;
+  author: string;
+  transactionId: string;
+  createCompensation: "close" | "delete";
+  uniqueIndex: UniqueKeyIndex;
 }
 
 /** One atomic item update inside a bulk mutation batch. */
@@ -67,6 +256,13 @@ export interface BulkItemUpdateMutation {
   id: string;
   /** Update options forwarded to the public `update` runtime primitive. */
   options: PmClientFullMutationOptions;
+  /**
+   * Keyed-upsert selection re-checked under the target item lock. The planner
+   * chose this target by key value before the lock; the commit checks the
+   * locked document and refuses with `upsert_match_changed` when the value was changed or
+   * removed after planning, so the update never lands on a mismatched item.
+   */
+  match?: BulkItemUniqueKey;
 }
 
 /** One atomic item closure inside a bulk mutation batch. */
@@ -111,7 +307,8 @@ export interface CommitItemMutationsOptions {
   /**
    * Compensation strategy for created items: `close` (default) preserves the
    * item and its history with an explanatory close reason, `delete` removes
-   * the item document (its history stream is retained by `pm delete`).
+   * the item document (its history stream is retained by `pm delete`). A retry
+   * refuses a still-closed compensated creation until explicitly reopened.
    */
   createCompensation?: "close" | "delete";
   /** Lock lifetime in seconds; size this above the longest expected attempt. */
@@ -295,12 +492,7 @@ async function compensateByRestore(
 
 /** Build the workspace-transaction step for one item creation. */
 function buildCreateStep(
-  config: {
-    pmRoot: string;
-    author: string;
-    transactionId: string;
-    createCompensation: "close" | "delete";
-  },
+  config: BulkMutationStepConfig,
   mutation: BulkItemCreateMutation,
   stepId: string,
 ): WorkspaceTransactionStep {
@@ -311,9 +503,35 @@ function buildCreateStep(
       if (snapshot === undefined) {
         return { state: "pending" };
       }
+      if (snapshot.closedAt !== undefined) {
+        const history = await readHistoryEntries(
+          path.join(config.pmRoot, "history", `${snapshot.id}.jsonl`),
+          snapshot.id,
+        );
+        const reason = `Compensated: interrupted bulk transaction ${config.transactionId}`;
+        const latestClose = history.filter((entry) => entry.op === "close").at(-1);
+        const compensated = latestClose?.patch.some((change) =>
+          change.op === "add" || change.op === "replace"
+            ? change.path === "/metadata/close_reason" && change.value === reason
+            : false) ?? false;
+        if (compensated) throw new PmCliError(
+          `Created item ${snapshot.id} remains closed by transaction compensation; explicitly reopen or reconcile it before retrying.`,
+          EXIT_CODE.CONFLICT,
+          {
+            code: "transaction_create_compensated",
+            item_id: snapshot.id,
+            required: "Review the compensated item and explicitly reopen it before retrying the same document.",
+            why: "This item's latest closure belongs to transaction compensation. Automatically reopening it could overwrite later lifecycle decisions.",
+            nextSteps: [`Run pm item reopen ${snapshot.id} "Retry compensated creation" after reviewing its history, then retry the transaction.`],
+          },
+        );
+      }
       return { state: "applied", result: { id: snapshot.id, op: "create" } };
     },
     async apply(): Promise<WorkspaceTransactionJsonValue> {
+      if (mutation.unique !== undefined) {
+        await assertUniqueKeyFree(config.uniqueIndex, mutation.unique);
+      }
       const created = await create(
         mergeTransactionMutationOptions(mutation.options, {
           author: config.author,
@@ -322,6 +540,7 @@ function buildCreateStep(
         { pmRoot: config.pmRoot },
       );
       const createdItem = created.item as Record<string, unknown>;
+      await config.uniqueIndex.recordCreate(createdItem);
       return { id: String(createdItem.id), op: "create" };
     },
     async compensate(): Promise<void> {
@@ -356,7 +575,7 @@ function buildCreateStep(
 
 /** Build the workspace-transaction step for one item update. */
 function buildUpdateStep(
-  config: { pmRoot: string; author: string; transactionId: string },
+  config: BulkMutationStepConfig,
   mutation: BulkItemUpdateMutation,
   stepId: string,
 ): WorkspaceTransactionStep {
@@ -382,7 +601,7 @@ function buildUpdateStep(
       return prepareRestoreCompensation(config.pmRoot, mutation);
     },
     async apply(): Promise<WorkspaceTransactionJsonValue> {
-      const updated = await update(
+      const applyUpdate = () => update(
         mutation.id,
         mergeTransactionMutationOptions(mutation.options, {
           author: config.author,
@@ -390,7 +609,17 @@ function buildUpdateStep(
         }),
         { pmRoot: config.pmRoot },
       );
+      const match = mutation.match;
+      const updated = match === undefined
+        ? await applyUpdate()
+        : await runWithItemMutationPrecondition({
+            pmRoot: config.pmRoot,
+            // Direct SDK callers may use an unprefixed item id; the locked store uses its canonical identity.
+            id: String(((await get(mutation.id, {}, { pmRoot: config.pmRoot })).item as Record<string, unknown>).id),
+            validate: (document) => assertUpsertMatchCurrent(document, mutation.id, match),
+          }, applyUpdate);
       const updatedItem = updated.item as Record<string, unknown>;
+      config.uniqueIndex.invalidate();
       return { id: String(updatedItem.id), op: "update" };
     },
     async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
@@ -401,7 +630,7 @@ function buildUpdateStep(
 
 /** Build the workspace-transaction step for one item closure. */
 function buildCloseStep(
-  config: { pmRoot: string; author: string; transactionId: string },
+  config: BulkMutationStepConfig,
   mutation: BulkItemCloseMutation,
   stepId: string,
 ): WorkspaceTransactionStep {
@@ -443,6 +672,7 @@ function buildCloseStep(
         { pmRoot: config.pmRoot },
       );
       const closedItem = closed.item as Record<string, unknown>;
+      config.uniqueIndex.invalidate();
       return { id: String(closedItem.id), op: "close" };
     },
     async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
@@ -453,7 +683,7 @@ function buildCloseStep(
 
 /** Build the workspace-transaction step for one claim release. */
 function buildReleaseStep(
-  config: { pmRoot: string; author: string; transactionId: string },
+  config: BulkMutationStepConfig,
   mutation: BulkItemReleaseMutation,
   stepId: string,
 ): WorkspaceTransactionStep {
@@ -495,6 +725,7 @@ function buildReleaseStep(
         { pmRoot: config.pmRoot },
       );
       const releasedItem = released.item as Record<string, unknown>;
+      config.uniqueIndex.invalidate();
       return { id: String(releasedItem.id), op: "release" };
     },
     async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
@@ -505,12 +736,7 @@ function buildReleaseStep(
 
 /** Convert one validated bulk mutation into its workspace-transaction step. */
 function buildStepForMutation(
-  config: {
-    pmRoot: string;
-    author: string;
-    transactionId: string;
-    createCompensation: "close" | "delete";
-  },
+  config: BulkMutationStepConfig,
   mutation: BulkItemMutation,
   index: number,
 ): WorkspaceTransactionStep {
@@ -554,6 +780,44 @@ function assertValidBulkMutation(
     throw new TypeError(
       `Bulk close mutation ${index + 1} requires a non-empty reason`,
     );
+  }
+  if (mutation.op === "create" && mutation.unique !== undefined && !isValidUniqueKey(mutation.unique)) {
+    throw new TypeError(
+      `Bulk create mutation ${index + 1} unique must be an object with a non-empty key and a value`,
+    );
+  }
+  if (mutation.op === "update" && mutation.match !== undefined && !isValidUniqueKey(mutation.match)) {
+    throw new TypeError(
+      `Bulk update mutation ${index + 1} match must be an object with a non-empty key and a value`,
+    );
+  }
+  assertMutationOptionValueTypes(mutation.options, mutation.op, index);
+}
+
+/** Validate the complete batch before journal work, including uniqueness guards supplied directly through the SDK. */
+function assertValidBulkMutations(mutations: readonly BulkItemMutation[]): void {
+  if (mutations.length === 0) throw new TypeError("Bulk item transaction requires at least one mutation");
+  const keys = new Map<string, Map<string, number>>();
+  for (const [index, mutation] of mutations.entries()) {
+    assertValidBulkMutation(mutation, index);
+    if (mutation.op !== "create" || mutation.unique === undefined) continue;
+    const { key, value } = mutation.unique;
+    const values = keys.get(key) ?? new Map<string, number>();
+    const stable = stableUpsertValue(value);
+    const previous = values.get(stable);
+    if (previous !== undefined) {
+      throw new PmCliError(
+        `Bulk create mutations ${previous + 1} and ${index + 1} share the upsert key value ${JSON.stringify(stable)} for "${key}".`,
+        EXIT_CODE.USAGE,
+        {
+          code: "upsert_key_duplicate",
+          required: "Each create must carry a distinct unique key value within one batch.",
+          why: "Direct SDK batches must preserve the same uniqueness invariant as planned document rows.",
+        },
+      );
+    }
+    values.set(stable, index);
+    keys.set(key, values);
   }
 }
 
@@ -688,6 +952,61 @@ async function readPreviewConfiguration(root: string, relative: string): Promise
   }
 }
 
+/**
+ * Copy the configured schema sections into a disposable configuration root
+ * through the guarded reader (no symlinks, no special files, nothing outside
+ * the tracker) and load them from there, so neither preview nor planning ever
+ * opens an unsafe schema path in place.
+ */
+async function stageGuardedSchemaSections(
+  root: string,
+  configurationRoot: string,
+  schemaSettings: Partial<PmSettings["schema"]> | undefined,
+  configuration?: Map<string, string | undefined>,
+): Promise<Awaited<ReturnType<typeof loadRuntimeSchemaFromOptionalFiles>>> {
+  const schema = normalizeRuntimeSchemaSettings(schemaSettings);
+  for (const [section, configuredPath] of Object.entries(schema.files)) {
+    const relative = path.relative(root, filePathForSchemaSection(root, configuredPath, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS[section as keyof typeof schema.files]));
+    if (relative === "" || !path.resolve(root, relative).startsWith(path.join(root, path.sep))) {
+      throw new PmCliError("Transaction preview requires schema files inside the selected tracker root; relocate the configured schema file before retrying.", EXIT_CODE.USAGE, { code: "transaction_preview_external_schema", field: `schema.files.${section}` });
+    }
+    schema.files[section as keyof typeof schema.files] = relative;
+    const contents = await readPreviewConfiguration(root, relative);
+    configuration?.set(relative, contents);
+    if (contents !== undefined) {
+      const target = path.join(configurationRoot, relative);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, contents);
+    }
+  }
+  return loadRuntimeSchemaFromOptionalFiles(configurationRoot, schema);
+}
+
+/**
+ * Load the runtime schema (statuses, fields, workflows, custom types) with the
+ * preview's guards instead of reading the configured files in place. Hosts
+ * that scope settings reads to inline configuration (dry-run planning) use
+ * this so declared fields stay visible without opening a symlink, FIFO, or
+ * out-of-root schema path; such inputs refuse with
+ * `transaction_preview_non_regular_file` or `transaction_preview_external_schema`.
+ */
+export async function loadGuardedRuntimeSchema(
+  pmRoot: string,
+  schemaSettings: Partial<PmSettings["schema"]> | undefined,
+): Promise<Awaited<ReturnType<typeof loadRuntimeSchemaFromOptionalFiles>>> {
+  await stat(pmRoot);
+  const root = await mkdtemp(path.join(tmpdir(), "pm-schema-plan-"));
+  try {
+    const resolvedRoot = await realpath(pmRoot);
+    return await stageGuardedSchemaSections(resolvedRoot, path.join(root, "configuration"), schemaSettings);
+  } catch (error) {
+    if (await isDisappearingPreviewPath(error)) throw previewSnapshotChangedError();
+    throw error;
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
 /** Resolve storage from captured configuration using pure contracts and disposable schema files. */
 async function resolvePreviewStorage(root: string, configurationRoot: string, registrations: ReturnType<typeof getActiveExtensionRegistrations>) {
   const configuration = new Map<string, string | undefined>();
@@ -698,24 +1017,10 @@ async function resolvePreviewStorage(root: string, configurationRoot: string, re
   catch { parsed = null; }
   const validated = validateSettings(parsed);
   const settings = validated.success ? validated.data : undefined;
-  const schema = normalizeRuntimeSchemaSettings(settings?.schema);
-  for (const [section, configuredPath] of Object.entries(schema.files)) {
-    const relative = path.relative(root, filePathForSchemaSection(root, configuredPath, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS[section as keyof typeof schema.files]));
-    if (relative === "" || !path.resolve(root, relative).startsWith(path.join(root, path.sep))) {
-      throw new PmCliError("Transaction preview requires schema files inside the selected tracker root; relocate the configured schema file before retrying.", EXIT_CODE.USAGE, { code: "transaction_preview_external_schema", field: `schema.files.${section}` });
-    }
-    schema.files[section as keyof typeof schema.files] = relative;
-    const contents = await readPreviewConfiguration(root, relative);
-    configuration.set(relative, contents);
-    if (contents !== undefined) {
-      const target = path.join(configurationRoot, relative);
-      await mkdir(path.dirname(target), { recursive: true });
-      await writeFile(target, contents);
-    }
-  }
+  const loaded = await stageGuardedSchemaSections(root, configurationRoot, settings?.schema, configuration);
+  const schema = loaded.schema;
   const sessionPath = path.relative(root, getSessionStatePath(root));
   configuration.set(sessionPath, await readPreviewConfiguration(root, sessionPath));
-  const loaded = await loadRuntimeSchemaFromOptionalFiles(configurationRoot, schema);
   const registry = resolveItemTypeRegistry({ ...SETTINGS_DEFAULTS, item_types: { definitions: [...(settings?.item_types?.definitions ?? []), ...(loaded.type_definitions_from_file ?? [])] } }, registrations);
   const ownedPaths = resolveWorkspaceRoot(root) === root ? [...PM_REQUIRED_SUBDIRS.filter(Boolean), SETTINGS_FILENAME, PM_CONTEXT_INTENTS_FILE, "transactions", ...registry.folders, ...configuration.keys()].map((entry) => path.normalize(entry)) : undefined;
   // Only the disposable copy is rewritten, so absolute in-root schema paths
@@ -764,8 +1069,7 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string, regis
 export async function previewItemMutations(options: Pick<CommitItemMutationsOptions, "pmRoot" | "transactionId" | "author" | "mutations">): Promise<ItemMutationPreviewValidation> {
   const identity = validateWorkspaceTransactionIdentity(options);
   const mutations = [...options.mutations];
-  if (mutations.length === 0) throw new TypeError("Bulk item transaction requires at least one mutation");
-  for (const [index, mutation] of mutations.entries()) assertValidBulkMutation(mutation, index);
+  assertValidBulkMutations(mutations);
   const registrations = getActiveExtensionRegistrations();
   const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
   const stagedRoot = path.join(root, "tracker");
@@ -774,7 +1078,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
     let validated = false;
     await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
-      const config = { ...identity, pmRoot: stagedRoot, createCompensation: "close" as const };
+      const config: BulkMutationStepConfig = { ...identity, pmRoot: stagedRoot, createCompensation: "close", uniqueIndex: createUniqueKeyIndex(stagedRoot) };
       const steps = mutations.map((mutation, index) => {
         const step = buildStepForMutation(config, mutation, index);
         return {
@@ -807,23 +1111,19 @@ export async function commitItemMutations(
   options: CommitItemMutationsOptions,
 ): Promise<CommitItemMutationsResult> {
   const mutations = [...options.mutations];
-  if (mutations.length === 0) {
-    throw new TypeError("Bulk item transaction requires at least one mutation");
-  }
-  for (const [index, mutation] of mutations.entries()) {
-    assertValidBulkMutation(mutation, index);
-  }
+  assertValidBulkMutations(mutations);
   const createCompensation = options.createCompensation ?? "close";
   if (!["close", "delete"].includes(createCompensation)) {
     throw new TypeError(
       "Bulk item transaction createCompensation must be close or delete",
     );
   }
-  const stepConfig = {
+  const stepConfig: BulkMutationStepConfig = {
     pmRoot: options.pmRoot,
     author: options.author,
     transactionId: options.transactionId,
     createCompensation,
+    uniqueIndex: createUniqueKeyIndex(options.pmRoot),
   };
   const committed = await commitWorkspaceTransaction({
     pmRoot: options.pmRoot,

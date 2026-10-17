@@ -620,14 +620,19 @@ row summaries. See tracker item [pm-awe3t6](../.agents/pm/issues/pm-awe3t6.toon)
 Tracked by [pm-o8z748](../.agents/pm/issues/pm-o8z748.toon) and
 [pm-cyn0y6](../.agents/pm/issues/pm-cyn0y6.toon).
 
-`pm item mutate` is the noun-first CLI adapter over the public SDK resolver and
-`commitItemMutations` primitive. Pipe either the legacy non-empty JSON array or
-a versioned `{ "schema_version": 1, "mutations": [...] }` document, provide one
-stable transaction id, and mix create/update/close/release operations in order.
-Create rows may declare a unique `ref` and omit `id`; exact `@ref` values work
-in target ids, `parent`, `blockedBy`, and dependency `id` fields. The resolver
-derives replay-stable ids before the writer lock and returns a `references`
-receipt:
+`pm item mutate` is the noun-first CLI adapter over the public SDK planner
+(`planItemMutationDocument`) and `commitItemMutations` primitive. Pipe either
+the legacy non-empty JSON array, a versioned
+`{ "schema_version": 1, "mutations": [...] }` document, or JSON Lines (one
+record per line), or read any of them from a file with `--from <path>`. Mix
+create/update/close/release operations in order. Create rows may declare a
+unique `ref` and omit `id`; exact `@ref` values work in target ids, `parent`,
+`blockedBy`, and dependency `id` fields. The resolver derives replay-stable ids
+before the writer lock and returns a `references` receipt plus an input-ordered
+`rows` receipt (`index`, `ref`, `id`, `op`, `upserted`). When `--transaction-id`
+is omitted the id is derived from the exact document bytes
+(`transaction_id_source: "derived"`), so identical bytes select the same
+journal. Replaying a committed import also requires an unchanged resolved plan:
 
 ```bash
 pm item mutate \
@@ -644,12 +649,82 @@ pm item mutate \
 JSON
 ```
 
+`--from <path>` selects a file and rejects an explicitly supplied `--stdin-json`.
+Default stdin input, explicit `--stdin-json` without a file, and `--from -`
+remain supported.
+
 Use `--dry-run` to validate and preview without acquiring a writer lock. Reuse
 the exact transaction id and deterministic batch after interruption: the SDK
 journal resumes pending steps and never duplicates a successfully applied
-step. `--create-compensation close|delete`, `--lock-ttl-seconds`, and
-`--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
+step. A different plan under a committed or resumable journal refuses with
+`transaction_plan_mismatch`; pass a new `--transaction-id` to commit that changed
+plan as its own transaction. A fully compensated attempt has nothing left to
+resume and may accept a new plan under the same transaction id. Formatting-only
+edits change a derived id; pass the original id explicitly to replay them when
+the resolved plan is unchanged. `--create-compensation close|delete`,
+`--lock-ttl-seconds`, and `--lock-wait-ms` expose the transaction safety controls. The equivalent MCP
 surface is `pm_mutate`.
+
+Raw mutation `options` use command option types: write `estimatedMinutes: "45"`.
+Item documents may instead use numeric `estimated_minutes: 45`. A non-string
+raw estimate refuses before journal or item writes with
+`mutation_option_value_invalid` (exit 2), identifying the row and option.
+Corrupt durable journals, including a wrong stored schema version or transaction
+identity, refuse with `transaction_journal_invalid`; preserve
+the journal and inspect or restore verified state before retrying. Changing the
+transaction id does not safely recover unknown previously applied work.
+
+#### Bulk creation (`pm create many` route)
+
+Tracked by [pm-gh1456](../.agents/pm/features/pm-gh1456.toon). `pm create many`
+is not a command; it refuses with `bulk_create_route` and points here. A record
+without `op` is a create document that uses the same field names as
+`pm create` flags or their JSON equivalents (`title`, `type`, `description`,
+`body`, `tags`, `parent`, `priority`, declared custom fields, ...); a create
+row may also carry that document under `item` instead of `options`. Records
+without `ref` or `id` receive `row-<n>` aliases so the receipt and `@row-<n>`
+references stay addressable. One process, one workspace transaction: every
+record is created or none.
+
+```bash
+cat > items.jsonl <<'JSONL'
+{"title":"Imported A","type":"Task","external_id":"ext-1","tags":["import"]}
+{"ref":"b","title":"Imported B","type":"Feature","external_id":"ext-2","parent":"@row-1"}
+JSONL
+pm item mutate --from items.jsonl --dry-run --json   # validate, derived transaction id
+pm item mutate --from items.jsonl --json             # commit; re-running replays (recovered: true)
+```
+
+`--upsert-key <field>` makes a re-run safe for changed data: a create record
+whose field value matches exactly one existing item (core field such as
+`title`, or a declared custom field such as `external_id`) becomes an update
+of that item and is reported with `upserted: true`. Matching and lock-held
+guards use the field's stored metadata key; core option names such as
+`acceptanceCriteria`, declared field keys and their SDK option targets
+(for example `externalId`) resolve to that
+same stored key. The record keeps its
+`ref` in the receipt, and later records may still address it as `@ref`, which
+then resolves to the matched item. A record missing the key, two records
+sharing a key value, or a key value matching several existing items refuses
+before any write (`upsert_key_missing`, `upsert_key_duplicate`,
+`upsert_key_ambiguous`). Matching happens before the writer lock, so every
+record that matched nothing carries its key into the commit, which re-checks
+it under the lock: when another writer created an item with that key value
+after planning, the transaction refuses with `upsert_key_conflict` before any
+write, and a re-run plans the record as an update of that item. A record that
+did match is committed as an update that re-reads the key under the lock and
+refuses with `upsert_match_changed` when the key was changed or removed after
+planning. Either refusal rolls the attempt back completely, and a rolled-back
+attempt leaves its derived transaction id reusable, so re-running the same
+document simply starts a fresh attempt from the current key values.
+
+```bash
+printf '%s\n' '{"title":"Imported A (renamed)","type":"Task","external_id":"ext-1"}' \
+  | pm item mutate --upsert-key external_id --json
+```
+
+Over MCP, `pm_mutate` accepts the same document rows as `{ref?, item: {...}}`
+entries, `upsertKey`, and an optional `transactionId`.
 
 `pm item complete` composes evidence, governed closure, and claim release into
 one compensating SDK transaction. It accepts the normal repeatable evidence

@@ -183,6 +183,16 @@ describe("generate error code catalog", () => {
     expect(withReopenCaller).toMatch(
       /code: "reopen_reason_required",[\s\S]*?emitting_commands: \["item reopen"\]/u,
     );
+    await writeFile(
+      path.join(root, "src", "sdk", "lifecycle", "mutation-option-validation.ts"),
+      'const invalid = { code: "mutation_option_value_invalid" };',
+      "utf8",
+    );
+    await main(root, []);
+    const withMutationCaller = await readGeneratedCatalog(root);
+    expect(withMutationCaller).toMatch(
+      /code: "mutation_option_value_invalid",[\s\S]*?emitting_commands: \["item mutate"\]/u,
+    );
     const stabilityLedger = JSON.parse(
       await readFile(
         path.join(root, "scripts", "error-code-stability.json"),

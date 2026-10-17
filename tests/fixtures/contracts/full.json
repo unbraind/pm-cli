@@ -5712,6 +5712,14 @@
           "flag": "--stdin-json"
         },
         {
+          "flag": "--from",
+          "value_name": "path"
+        },
+        {
+          "flag": "--upsert-key",
+          "value_name": "field"
+        },
+        {
           "flag": "--dry-run"
         },
         {
@@ -20307,6 +20315,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "bulk_create_route",
+      "class": "usage",
+      "code": "bulk_create_route",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Bulk create route condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-mutation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "bulk_ids_input_empty",
       "class": "usage",
       "code": "bulk_ids_input_empty",
@@ -21237,6 +21262,23 @@
         "sdk/extension/install-sources.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "extension_flag_value_invalid",
+      "class": "usage",
+      "code": "extension_flag_value_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Extension flag value invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/extension-command-options.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -23887,6 +23929,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "mutation_document_unreadable",
+      "class": "usage",
+      "code": "mutation_document_unreadable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Mutation document unreadable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/register-structured-mutation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "mutation_option_value_invalid",
+      "class": "usage",
+      "code": "mutation_option_value_invalid",
+      "emitting_commands": [
+        "item mutate"
+      ],
+      "exit_code": 2,
+      "meaning": "Mutation option value invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/mutation-option-validation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "mutation_secret_guard_blocked",
       "class": "conflict",
       "code": "mutation_secret_guard_blocked",
@@ -25382,6 +25458,23 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "text_unpaired_surrogate",
+      "class": "usage",
+      "code": "text_unpaired_surrogate",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Text unpaired surrogate condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/item/item-format.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_storage_tracked_runtime_cache_files"
       ],
@@ -25503,6 +25596,57 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/store/tracker-preflight.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "transaction_create_compensated",
+      "class": "conflict",
+      "code": "transaction_create_compensated",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction create compensated condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "transaction_journal_invalid",
+      "class": "conflict",
+      "code": "transaction_journal_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction journal invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "transaction_plan_mismatch",
+      "class": "conflict",
+      "code": "transaction_plan_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction plan mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-transaction.ts"
       ],
       "stability": "provisional"
     },
@@ -25932,6 +26076,92 @@
         "cli/error-guidance.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "upsert_key_ambiguous",
+      "class": "conflict",
+      "code": "upsert_key_ambiguous",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Upsert key ambiguous condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/structured-mutations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "upsert_key_conflict",
+      "class": "conflict",
+      "code": "upsert_key_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Upsert key conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "upsert_key_duplicate",
+      "class": "usage",
+      "code": "upsert_key_duplicate",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Upsert key duplicate condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts",
+        "sdk/structured-mutations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "upsert_key_missing",
+      "class": "usage",
+      "code": "upsert_key_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Upsert key missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/structured-mutations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "upsert_match_changed",
+      "class": "conflict",
+      "code": "upsert_match_changed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Upsert match changed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -37219,7 +37449,7 @@
       "required": []
     },
     {
-      "description": "Apply an ordered create/update/close/release batch atomically through the public pm SDK. Create rows may declare ref and omit id; @ref forward references resolve deterministically from the stable transactionId. Set dryRun=true to validate and preview without writes.",
+      "description": "Apply an ordered create/update/close/release batch atomically through the public pm SDK. Create rows may declare ref and omit id; @ref forward references resolve deterministically from the stable transactionId, which is derived from the batch when omitted. Bulk creation: rows shaped as {item:{title,type,...}} are create documents using pm create field names; upsertKey updates the existing item whose field matches instead of creating a duplicate. Set dryRun=true to validate and preview without writes.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -37250,7 +37480,7 @@
             "type": "number"
           },
           "mutations": {
-            "description": "Ordered rows shaped as {op:create|update|close|release,id?,ref?,options?,reason?}.",
+            "description": "Ordered rows shaped as {op:create|update|close|release,id?,ref?,options?,reason?} or create documents {ref?,item:{...}}.",
             "items": {
               "additionalProperties": false,
               "properties": {
@@ -37258,7 +37488,16 @@
                   "description": "pm item id, for example pm-abc1.",
                   "type": "string"
                 },
+                "item": {
+                  "description": "Create document using pm create field names (title, type, description, body, tags, parent, custom fields).",
+                  "type": "object"
+                },
+                "match": {
+                  "description": "Update-only guard {key,value} re-read under the writer lock; keyed upsert sets it on rows it converted into updates of a matched item.",
+                  "type": "object"
+                },
                 "op": {
+                  "description": "Operation; omitted rows carrying item are creates.",
                   "enum": [
                     "create",
                     "update",
@@ -37276,11 +37515,12 @@
                 "ref": {
                   "description": "Batch-local create alias; its deterministic id can be referenced as @alias by any row.",
                   "type": "string"
+                },
+                "unique": {
+                  "description": "Create-only guard {key,value} re-checked under the writer lock; keyed upsert sets it on rows that matched nothing at planning time.",
+                  "type": "object"
                 }
               },
-              "required": [
-                "op"
-              ],
               "type": "object"
             },
             "minItems": 1,
@@ -37295,20 +37535,22 @@
             "type": "boolean"
           },
           "transactionId": {
-            "description": "Stable idempotency key for this atomic mutation batch.",
+            "description": "Stable idempotency key for this atomic mutation batch; derived from the batch content when omitted.",
+            "type": "string"
+          },
+          "upsertKey": {
+            "description": "Item field whose value identifies an existing item to update instead of creating a duplicate.",
             "type": "string"
           }
         },
         "required": [
-          "transactionId",
           "mutations"
         ],
         "type": "object"
       },
       "name": "pm_mutate",
       "required": [
-        "mutations",
-        "transactionId"
+        "mutations"
       ]
     },
     {

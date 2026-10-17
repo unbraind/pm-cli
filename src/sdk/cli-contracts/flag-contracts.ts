@@ -1348,6 +1348,8 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
 export const ITEM_MUTATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--transaction-id", value_name: "value" },
   { flag: "--stdin-json" },
+  { flag: "--from", value_name: "path" },
+  { flag: "--upsert-key", value_name: "field" },
   { flag: "--dry-run" },
   { flag: "--create-compensation", value_name: "mode" },
   { flag: "--lock-ttl-seconds", value_name: "n" },

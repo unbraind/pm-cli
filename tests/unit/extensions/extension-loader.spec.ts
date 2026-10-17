@@ -6054,6 +6054,57 @@ describe("registerFlags default validation (pm-ltbr)", () => {
     expect(result.failed[0].error).toContain("default[1]");
     expect(result.failed[0].error).toContain("is not coercible to number");
   });
+
+  it("rejects an unknown value_validation policy", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limit", value_type: "number", value_validation: "maybe" as never }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain('value_validation must be "coerce" or "strict"');
+  });
+
+  it("rejects strict value_validation on a flag whose kind has nothing to validate", async () => {
+    for (const definition of [
+      { long: "--name", value_type: "string" as const, value_validation: "strict" as const },
+      { long: "--plain", value_validation: "strict" as const },
+    ]) {
+      const loadResult = inMemoryLoadResult(
+        {
+          activate(api: ExtensionApi) {
+            api.registerFlags("report", [definition]);
+          },
+        },
+        { name: "flags-ext", capabilities: ["schema"] },
+      );
+      const result = await activateExtensions(loadResult);
+      expect(result.failed).toHaveLength(1);
+      expect(result.failed[0].error).toContain('value_validation "strict" requires value_type "number" or "boolean"');
+    }
+  });
+
+  it("accepts strict value_validation on number and boolean flags and the explicit coerce policy on strings", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [
+            { long: "--limit", value_type: "number", value_validation: "strict" },
+            { long: "--enabled", type: "bool", value_validation: "strict" },
+            { long: "--name", value_type: "string", value_validation: "coerce" },
+          ]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.flags).toBe(3);
+  });
 });
 
 describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {

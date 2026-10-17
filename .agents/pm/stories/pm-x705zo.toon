@@ -2,12 +2,14 @@ id: pm-x705zo
 title: "As an MCP host or coding agent, I can discover pm capabilities and complete long-running context workflows through one current stateless protocol"
 description: "An MCP consumer can discover versions and capabilities, invoke pm tools and resources, satisfy requested input, follow progress or task state, and resume at application-level handles without hidden connection state."
 type: Story
-status: open
+status: closed
 priority: 1
 tags[6]: agent-story,"area:mcp",discoverability,host-story,long-running,stateless
 created_at: "2026-08-25T05:07:45.082Z"
-updated_at: "2026-09-08T13:24:23.375Z"
+updated_at: "2026-10-15T15:10:39.561Z"
 deadline: "2026-10-15T00:00:00.000Z"
+closed_at: "2026-10-15T15:10:38.862Z"
+completed_at: "2026-10-15T15:10:38.862Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "The journey is executable over real stdio and Streamable HTTP transports; No successful operation depends on initialize state, an MCP session header, SSE redelivery, or undocumented server memory; Every response is token-bounded, deterministic where required, and exposes recovery when information is omitted; Input requests, task updates, progress, subscriptions, cancellation, and ordinary completion preserve one consistent state model; The packed and published agent transcript passes for npm, npx, bunx, and MCP consumers"
@@ -18,10 +20,30 @@ why_now: "The existing MCP experience depends on an obsolete handshake and does 
 parent: pm-rs9vry
 risk: high
 confidence: high
+resolution: "Executed the story journey against the published npm artifact: stdio via npx and bunx (server/discover, tools/list with 14 tools, tools/call pm_context, resources/list, allocated removal error for ping, legacy initialize still answered by the bounded stdio adapter) and Streamable HTTP via pm-mcp-http (discover, tools/list, resources/list, tools/call with Mcp-Method/Mcp-Name headers; typed refusals for disallowed Origin, header/body mismatch, unsupported protocol version and legacy initialize). Remaining AC facets are covered by the merged conformance suites and the Release workflow's npm/npx/bunx verification; all 14 sibling children of pm-rs9vry are closed."
 expected_result: "An MCP host discovers pm, runs a long context workflow, resumes from an application-level handle, and never depends on hidden connection state, over real stdio and HTTP transports."
+actual_result: "Every request succeeded as an independent request with request-local version, client capabilities and client info; no initialize state, session header or server memory was needed; refusals were typed and actionable. Linked conformance tests pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-wo7x,discovered_from,"2026-08-25T05:07:45.082Z","harness:codex","cli:create:dep",detected
   pm-z3ez,implements,"2026-08-25T05:07:45.082Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-08-25T05:07:45.082Z","harness:codex","Duplicate check evidence: searched all statuses for MCP host story stateless discovery long-running tasks MRTR subscriptions and released-agent workflow. pm-wo7x covers drift-free narrow tools only; no existing story owns the 2026-07-28 end-to-end journey."
+  "2026-10-15T12:36:29.751Z","harness:claude-code","Journey verification against the PUBLISHED artifact @unbrained/pm-cli@2026.10.15 (2026-10-15, isolated sandbox tracker, no session state):\n\nstdio via npx (-p @unbrained/pm-cli@2026.10.15 pm-mcp) and via bunx (bun 1.4.3), one newline-delimited stream, no initialize: server/discover returned serverInfo version 2026.10.15, supportedVersions [\"2026-07-28\"], capabilities tools/resources/prompts/extensions, cacheScope; tools/list returned 14 tools with ttlMs 30000 and cacheScope private; tools/call pm_context against the sandbox returned resultType complete with structuredContent; resources/list returned 4 resources; ping returned the allocated -32601 \"MCP method not found: ping\" with data.removedIn 2026-07-28; a legacy initialize (2025-11-25) still answered on the bounded stdio adapter with serverInfo/capabilities. Each request carried its own request-local version, client capabilities and client info; nothing depended on a prior request.\n\nStreamable HTTP via npx pm-mcp-http (PM_MCP_HTTP_PORT, loopback, POST /mcp): server/discover, tools/list (14 tools, private, ttl 30000), resources/list (4) and tools/call pm_context (resultType complete, summary active 4 / total 4) all succeeded as independent requests without a session header. Refusals were typed and actionable: an Origin that is not allow-listed is refused; a body/header method mismatch returns -32020 naming the Mcp-Method header; tools/call without Mcp-Name names that header; MCP-Protocol-Version 2024-11-05 returns \"Unsupported protocol version\" with supported [\"2026-07-28\"] and the requested value; a legacy initialize over HTTP returns \"Missing required MCP request metadata\" listing the two required _meta keys.\n\nAutomated coverage of the remaining AC facets (input_required/MRTR, tasks, subscriptions, cancellation, deterministic token-bounded outputs) is the merged test suite: tests/integration/mcp-stateless-protocol.spec.ts (12 cases incl. real stdio process), tests/integration/mcp-streamable-http.spec.ts (20 cases), tests/integration/mcp-progressive-discovery.integration.spec.ts, tests/integration/mcp-handshake.spec.ts; all 14 sibling children of pm-rs9vry are closed. The packed/published agent transcript (npm, npx, bunx) is the Release workflow step \"Verify published package on npm, npx, and bunx\" (scripts/release/verify-installed-agent-session.mjs), green for v2026.10.15 (run 38675448313).\n"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-stateless-protocol.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,project,900,"harness:claude-code","2026-10-15T12:36:32.309Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+test_runs[1]:
+  - run_id: test-local-mv9odlzv-57ca5e
+    kind: test
+    status: passed
+    started_at: "2026-10-15T15:09:44.945Z"
+    finished_at: "2026-10-15T15:10:03.931Z"
+    recorded_at: "2026-10-15T15:10:03.931Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/mcp-stateless-protocol.spec.ts tests/integration/mcp-streamable-http.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-progressive-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MCP_2026_07_28.md,project,MCP 2026-07-28 transport and discovery contract
+close_reason: MCP host journey verified against the published 2026.10.15 artifact over stdio and Streamable HTTP
 body: "## End-to-end journey\n\n- Discover supported protocol versions, server identity, core capabilities, and extensions.\n- Send any request with explicit request-local version and client capability metadata.\n- List and call deterministic token-bounded pm tools, prompts, and resources.\n- Respond to input_required results and retry the original request with inputResponses.\n- Observe request progress and opted-in list or resource changes without connection-local state.\n- Run long operations through durable task handles and application-level pm cursors.\n- Receive actionable structured refusals for unsupported versions, missing capabilities, invalid schemas, authorization failures, and expired handles.\n- Verify the same journey against a packed and published installation."

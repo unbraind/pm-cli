@@ -8,9 +8,27 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { runAction } from "../../src/sdk/index.js";
+import { handleRequest } from "../../src/mcp/server.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("explicit complete read output", () => {
+  it("renders bounded Unicode through the real CLI and MCP read transports", async () => {
+    await withTempPmPath(async (context) => {
+      const title = `${"a".repeat(239)}😀${"z".repeat(5000)}`;
+      expect(context.runCli(["create", "--id", "pm-unicode-read", "--title", title, "--type", "Task", "--json"]).code).toBe(0);
+      for (const format of ["json", "toon"]) {
+        const cli = context.runCli(["list", "--output-format", format, "--output-budget", "1000"]);
+        expect(cli.code, cli.stderr).toBe(0);
+        expect(cli.stdout).toContain(`${"a".repeat(239)}…`);
+        expect(cli.stdout).not.toContain("�");
+        const mcp = await handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "pm_list", arguments: { path: context.pmPath, outputBudget: 1000, outputFormat: format } } });
+        expect(JSON.stringify(mcp)).toContain(`${"a".repeat(239)}…`);
+        expect(JSON.stringify(mcp)).not.toContain("\\ud83d");
+      }
+      expect(context.runCli(["get", "pm-unicode-read", "--json", "--full", "--output-budget", "unbounded"], { expectJson: true }).json).toMatchObject({ item: { title } });
+    });
+  });
+
   it("lets explicit full intent defeat only the implicit default ceiling", async () => {
     await withTempPmPath(async (context) => {
       const complete = context.runCli(

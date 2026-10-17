@@ -1179,6 +1179,12 @@
             "target_id": "pm-lwps",
             "text_contains": "Historical batch complete: added exactly three discovered_from relationships from pm-vi2v, pm-dw5s and pm-lwps to pm-xjf9 using its 2026-04-04T21:55:31.826Z comment. Source-citation sibling inventories are narrowly exempted from prose-edge inference because common discovery does not imply sibling dependence. All three remain closed with release v2026.5.1 and unchanged closure evidence. Broader terminal reconstruction and unresolved ambiguity remain open on this canonical programme.",
             "reason": "Exact historical citation paragraph from the 2026-09-28 batch, including its 2026-04-04 source-event coordinate; later batch comments are outside this exemption."
+          },
+          {
+            "holder_id": "pm-gh1478",
+            "target_id": "pm-cimph7",
+            "text_contains": "already-closed shell-completion Unicode boundary",
+            "reason": "The ownership paragraph explicitly rejects this completion issue as a duplicate. It asserts no dependency or delivery relationship; the actual read-output lineage remains linked."
           }
         ]
       },

@@ -1,0 +1,25 @@
+id: pm-jm7m3o
+title: Show failed required PR checks before waiting on pending optional reviewers
+description: "The review watcher waits for every check before returning its inventory. On PR #1479 head 65e05f248, Gates (static) failed at 15:56 UTC while Hound stayed pending without a target URL; the blocking watcher still had not returned at 16:27 UTC. Expose a failed required check promptly with exact-head inventory while retaining a separate blocking review-completion phase. Preserve required check provenance and provider limitations; do not synthesize approval or add manual polling. Chrome confirmed this repository remains active in Hound, whose dashboard exposes no individual job detail."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-16T17:08:17.492Z"
+updated_at: "2026-10-16T17:15:12.616Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: A failure plus pending optional-provider fixture returns the failed required context without waiting indefinitely; exact-head changes and missing required contexts remain fail-closed; a separate blocking review phase records pending/unavailable providers explicitly.
+definition_of_ready: Reproduce a failed required context alongside a pending optional provider and inspect the existing watch/inventory contracts before changing behavior.
+outcome: Failed required checks become actionable promptly without confusing a pending optional provider with approval or an otherwise clean merge result.
+parent: pm-obq2
+risk: medium
+confidence: high
+expected_result: A failed required context returns an actionable exact-head receipt even when an optional provider remains pending; full review completion and merge readiness remain independently verified.
+comments[1]{created_at,author,text}:
+  "2026-10-16T17:08:17.492Z","harness:codex","Duplicate check: searched all 12 pr-review-loop keyword hits, all 29 Hound hits, and the first 50 open review hits; retained the live approved-review discipline task as parent. No candidate found for this specific failure-visibility behavior. Intake only; implementation is not active."
+files[1]{path,scope}:
+  scripts/reviews/pr-review-loop.mjs,project
+docs[1]{path,scope}:
+  docs/PR_REVIEW_LOOP.md,project
+body: ""

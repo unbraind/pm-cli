@@ -2,21 +2,42 @@ id: pm-5f7ayv
 title: Align claim guidance with atomic ownership refusal
 description: "Current pm claim --help --explain says non-terminal takeover does not require --force, and Agent Guide repeats the older takeover policy. Current SDK runClaim correctly rejects a different claim principal without force or permits an explicit --if-available skip. Reconcile user and agent guidance with the shipped atomic semantics without weakening ownership."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,documentation,lifecycle
 created_at: "2026-10-15T04:39:17.189Z"
-updated_at: "2026-10-15T04:39:17.189Z"
+updated_at: "2026-10-15T18:12:25.297Z"
+closed_at: "2026-10-15T15:10:37.166Z"
+completed_at: "2026-10-15T15:10:37.166Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: Reproduce explained help and distinct-principal claim behavior; Search all public and generated claim ownership guidance; Preserve atomic test-and-set and non-destructive --if-available semantics; Validate documented examples without invoking an unauthorized real takeover
 parent: pm-dj98
 risk: low
 confidence: high
+resolution: "pm claim --help --explain tip and the Agent Guide Ownership Rules describe the atomic test-and-set: a held item refuses with already_claimed_by, --if-available skips without failing, --force is the coordinated takeover and the terminal-item/stale-lock override. No other public or generated guidance carried the stale wording."
 expected_result: "Help and agent documentation describe the current claim, skip and explicitly approved takeover contracts consistently."
+actual_result: "Sandbox reproduction: distinct principal refused with already_claimed_by (exit 4) and the three next steps, --if-available returned skipped:true, same-principal re-claim was a no-op, --force recorded claim_takeover; help explain prints the new tip."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8t5x,related,"2026-10-15T04:39:17.189Z","harness:codex","cli:create:dep",detected
   pm-gh1465,discovered_from,"2026-10-15T04:39:17.189Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-15T04:39:17.189Z","harness:codex","Duplicate check: strict complete2968-item all-status corpus including2688 closed items, fresh claim/takeover/help search plus open/in-progress lists. Full live closed ownership-guidance and atomic-claim lineage read; no open exact owner for stale explained-help guidance. Current explained help directly reproduces the old no-force sentence. Queued open/unclaimed; no change to already completed claim-safety behavior."
+  "2026-10-15T12:29:34.870Z","harness:claude-code","Implementation note (2026-10-15): the pm claim --help --explain tip claimed non-terminal takeover needs no --force; the SDK (runClaim) refuses a different claim principal with already_claimed_by unless --force, and --if-available skips without failing. The tip and the Agent Guide Ownership Rules now describe the atomic test-and-set, the --if-available skip, and --force as the coordinated takeover plus terminal-item/stale-lock override. No other public or generated guidance carried the stale wording (grep over docs, skills, packages, README).\n"
+  "2026-10-15T12:30:12.707Z","harness:claude-code","Reproduction (2026-10-15, sandbox tracker, built CLI): claim by principal alpha succeeded; a claim by principal beta refused with already_claimed_by (exit 4) and the three next steps (pm next, --if-available, --force only when coordinated); --if-available returned skipped:true with warning claim_skipped_held_by:alpha; re-claim by alpha was a no-op (changed_field_count 0); a --force takeover in the sandbox recorded claim_takeover:alpha->beta. pm claim --help --explain now prints the atomic test-and-set tip. No real-tracker takeover was invoked.\n"
+  "2026-10-15T15:46:13.649Z","harness:claude-code","Review follow-up (PR #1479, CodeRabbit): the stale-lock clause is now qualified by policy in both the help tip and the Agent Guide: --force is required to override a stale lock only when governance.force_required_for_stale_lock is enabled (the minimal and custom governance presets can disable it).\n"
+  "2026-10-15T18:12:25.297Z","harness:claude-code","Review follow-up (PR #1479, CodeRabbit): runClaim checks terminal status before heldByOther, so --if-available never bypasses the terminal refusal. The claim help tip and docs/AGENT_GUIDE.md now scope already_claimed_by and the --if-available skip to non-terminal items and state that terminal items still require --force."
+files[1]{path,scope,note}:
+  src/cli/help-content.ts,project,claim tip rewritten to the atomic refusal contract
+docs[1]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Ownership Rules
+close_reason: Claim guidance now states the shipped atomic ownership refusal
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-5f7ayv
+  gate_id: docs-skills
+  negative_control: node scripts/release/repository-assurance.mjs repository-docs-skills --trigger ci --json
+  local_checks[1]: "pnpm quality:static"
+  hosted_checks[2]: Gates (static),Docs and Skills
 body: ""

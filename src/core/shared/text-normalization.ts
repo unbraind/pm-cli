@@ -8,6 +8,16 @@ export function normalizeLowercaseWhitespace(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Return a UTF-16 prefix without splitting a valid surrogate pair at its boundary. */
+export function unicodeSafePrefix(value: string, end: number): string {
+  const prefix = value.slice(0, end);
+  const last = prefix.charCodeAt(prefix.length - 1);
+  const next = value.charCodeAt(prefix.length);
+  return last >= 0xD800 && last <= 0xDBFF && next >= 0xDC00 && next <= 0xDFFF
+    ? prefix.slice(0, -1)
+    : prefix;
+}
+
 /** Implements tokenize alpha numeric for the public runtime surface of this module. */
 export function tokenizeAlphaNumeric(value: string): string[] {
   return normalizeLowercaseWhitespace(value)

@@ -16,6 +16,7 @@ import {
 import { propagateContextUsageServingReceipt } from "./context-usage.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { unicodeSafePrefix } from "../core/shared/text-normalization.js";
 
 /** Read commands that ship built-in intent projections. */
 export type PmContextIntentCommand =
@@ -581,7 +582,7 @@ function compactContextIntentValue(value: unknown): unknown {
     );
   }
   return typeof value === "string" && value.length > 240
-    ? `${value.slice(0, 240)}…`
+    ? `${unicodeSafePrefix(value, 240)}…`
     : value;
 }
 

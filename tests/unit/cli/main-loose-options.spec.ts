@@ -281,4 +281,118 @@ describe("cli extension loose option parser", () => {
     // No operands at all.
     expect(collectLoosePositionalArgs(["--file", "path"])).toEqual([]);
   });
+
+  describe("strict scalar value validation (pm-extension-scalar-validation)", () => {
+    it("checks attached boolean list switch values before normalization without changing valid CSV or repeatable entries", () => {
+      for (const repeatable of [false, true]) {
+        const definition = { long: "--choices", short: "-c", value_type: "boolean", list: true, repeatable, value_validation: "strict" };
+        const coerceList = (args: string[]) => {
+          const parsed = parseLooseCommandOptions(args);
+          return coerceLooseCommandOptionsWithFlagDefinitions(parsed, [definition], parsed, "acme echo");
+        };
+        for (const args of [["--choices=maybe"], ["--choices=true", "-c=maybe"], ["--choices="]]) {
+          expect(() => coerceList(args)).toThrowError(expect.objectContaining({ exitCode: 2, context: expect.objectContaining({ code: "extension_flag_value_invalid" }) }));
+        }
+        expect(coerceList(["--choices=true", "-c=false", "--choices=1", "-c=0"])).toEqual({ choices: [true, false, true, false] });
+        expect(coerceList(["--choices", "artifact-A"])).toEqual({ choices: [true] });
+        if (repeatable) {
+          expect(() => coerceList(["--choices=true,false"])).toThrow('received "true,false"');
+        } else {
+          expect(coerceList(["--choices=true,false,1,0"])).toEqual({ choices: [true, false, true, false] });
+          expect(() => coerceList(["--choices=true,maybe"])).toThrow('received "maybe"');
+          expect(() => coerceList(["--choices=true,,false"])).toThrow('received ""');
+        }
+      }
+    });
+
+    const definitions = [
+      { long: "--limit", short: "-l", value_type: "number", value_validation: "strict" },
+      { long: "--enabled", type: "bool", value_validation: "strict" },
+      { long: "--verbose", value_type: "boolean", value_validation: "strict" },
+      { long: "--ratio", value_type: "number" },
+      { long: "--ids", value_type: "number", list: true, value_validation: "strict" },
+      { long: "--ports", value_type: "number", list: true, repeatable: true, value_validation: "strict" },
+    ];
+
+    function coerce(args: string[]): Record<string, unknown> {
+      const parsed = parseLooseCommandOptions(args);
+      return coerceLooseCommandOptionsWithFlagDefinitions(parsed, definitions, parsed, "acme echo");
+    }
+
+    it("keeps valid coercions, defaults, switch presence, and the legacy bool grammar", () => {
+      expect(coerce(["--limit", "5", "--enabled", "true", "--verbose", "--ratio", "abc", "--ids", "1,2"])).toEqual({
+        limit: 5,
+        enabled: true,
+        verbose: true,
+        ratio: "abc",
+        ids: [1, 2],
+      });
+      expect(coerce(["--enabled"])).toEqual({ enabled: true });
+      expect(coerce(["--no-verbose"])).toEqual({ verbose: false });
+      // A boolean switch followed by a positional keeps its presence semantics.
+      expect(coerce(["--verbose", "artifact-A"])).toEqual({ verbose: true });
+      expect(coerce(["--ids", "7"])).toEqual({ ids: [7] });
+      // A valid alias value still yields to the canonical spelling.
+      expect(coerce(["--limit", "5", "-l", "7"])).toEqual({ limit: 5 });
+      // An attached boolean literal on a switch is accepted; repeatable entries keep their order.
+      expect(coerce(["--verbose=false", "--ports", "8080", "--ports=9090"])).toEqual({ verbose: false, ports: [8080, 9090] });
+    });
+
+    it("refuses malformed number and boolean tokens before dispatch with a typed usage error", () => {
+      for (const [args, fragment] of [
+        [["--limit", "abc"], "Option '--limit' for extension command 'acme echo' expects a finite number; received \"abc\"."],
+        [["--limit"], "received no value"],
+        [["--enabled", "not-a-boolean"], "expects true, false, 1, or 0; received \"not-a-boolean\""],
+        [["--ids", "1,x"], "expects a finite number; received \"x\""],
+        // A malformed alias value is refused even though the canonical value would win the merge.
+        [["--limit", "5", "-l", "junk"], "expects a finite number; received \"junk\""],
+        // An attached non-boolean token on a switch is malformed, unlike a following positional.
+        [["--verbose=maybe"], "expects true, false, 1, or 0; received \"maybe\""],
+        // An explicitly empty list entry is refused before normalization drops it.
+        [["--ids="], "expects a finite number; received \"\""],
+        // An empty CSV segment is malformed under strict validation instead of being dropped.
+        [["--ids=1,,2"], "expects a finite number; received \"\""],
+        // A repeatable occurrence keeps its commas, so the whole token is the malformed value.
+        [["--ports=1,,2"], "expects a finite number; received \"1,,2\""],
+        [["--ports", "1", "--ports="], "expects a finite number; received \"\""],
+      ] as const) {
+        try {
+          coerce([...args]);
+          throw new Error("Expected a strict scalar refusal for " + args.join(" "));
+        } catch (error) {
+          expect(error).toBeInstanceOf(PmCliError);
+          expect(error).toMatchObject({
+            exitCode: EXIT_CODE.USAGE,
+            context: { code: "extension_flag_value_invalid" },
+            message: expect.stringContaining(fragment),
+          });
+        }
+      }
+      // Without strict validation the historical passthrough is unchanged.
+      const parsed = parseLooseCommandOptions(["--ratio", "abc", "--limit", "abc"]);
+      expect(coerceLooseCommandOptionsWithFlagDefinitions(parsed, [{ long: "--ratio", value_type: "number" }, { long: "--limit", value_type: "number", value_validation: "coerce" }])).toEqual({ ratio: "abc", limit: "abc" });
+      // A plain options object (no parse-time occurrences) still validates strict lists: scalar and pre-split numeric values pass, an empty entry refuses.
+      const idsDefinition = { long: "--ids", value_type: "number", list: true, value_validation: "strict" };
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ ids: "1,2" }, [idsDefinition])).toEqual({ ids: [1, 2] });
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ ids: [3, 4] }, [idsDefinition])).toEqual({ ids: [3, 4] });
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ ports: "8080" }, [{ long: "--ports", value_type: "number", list: true, repeatable: true, value_validation: "strict" }])).toEqual({ ports: [8080] });
+      expect(() => coerceLooseCommandOptionsWithFlagDefinitions({ ids: [3, ""] }, [idsDefinition])).toThrow('received ""');
+      // A plain options object carries no parse-time occurrences, so an attached-value check is impossible and the switch keeps presence semantics.
+      expect(coerceLooseCommandOptionsWithFlagDefinitions({ verbose: "maybe" }, [{ long: "--verbose", value_type: "boolean", value_validation: "strict" }])).toEqual({ verbose: true });
+      // Without a command path the message still names the flag.
+      const bare = parseLooseCommandOptions(["--limit", "abc"]);
+      expect(() => coerceLooseCommandOptionsWithFlagDefinitions(bare, definitions)).toThrow("Option '--limit' expects a finite number");
+    });
+
+    it("treats a legacy type:boolean switch as presence and never validates string kinds", () => {
+      const legacy = parseLooseCommandOptions(["--legacy-switch", "artifact-B"]);
+      expect(
+        coerceLooseCommandOptionsWithFlagDefinitions(legacy, [{ long: "--legacy-switch", type: "boolean", value_validation: "strict" }]),
+      ).toEqual({ legacySwitch: true });
+      const text = parseLooseCommandOptions(["--name", "anything"]);
+      expect(
+        coerceLooseCommandOptionsWithFlagDefinitions(text, [{ long: "--name", value_type: "string", value_validation: "strict" }]),
+      ).toEqual({ name: "anything" });
+    });
+  });
 });

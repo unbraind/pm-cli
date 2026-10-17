@@ -188,7 +188,7 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[], ex
       }
     }
     validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, [...coreFlagDefinitions, ...extensionFlagDefinitions], getCommandPath(command));
-    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions, getCommandPath(command));
     copyReadOutputInvocationProvenance(scoped, coerced);
     return coerced;
   }

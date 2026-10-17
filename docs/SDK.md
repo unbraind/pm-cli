@@ -483,6 +483,12 @@ not renderer-specific code, so package authors can reuse
 `resolvePmCommandOutputBudget`, and
 `estimatePmOutputTokens` in custom transports.
 
+Read-output, context-intent, recurrence and diagnostic string compaction retain
+Unicode-safe prefixes. A cutoff through a surrogate pair backs up one UTF-16
+code unit before adding its suffix. Rendering and token receipts use the actual
+retained text; unbounded reads and preserved-string exceptions are unchanged.
+Tracked by [pm-gh1478](../.agents/pm/issues/pm-gh1478.toon).
+
 ```ts
 import {
   definePmCommandOutputBudget,
@@ -1124,7 +1130,14 @@ bulk sync), `commitItemMutations` wraps the coordinator so callers describe
 the mutations instead of hand-writing a step array. The helper wires the
 crash-consistency contract for you: creates use their resolved stable `id` as
 the idempotency key (exists-by-id inspection) and are compensated by closing
-the item (or deleting it with `createCompensation: "delete"`); updates stamp a
+the item (or deleting it with `createCompensation: "delete"`). A retry refuses
+with `transaction_create_compensated` while a creation's latest closure belongs
+to compensation, even if its close prose was edited. Review its immutable history
+and explicitly reopen it before retrying; the SDK preserves later lifecycle
+decisions instead of silently reopening the item or reporting it committed.
+A later explicit user close or status update takes precedence over the earlier
+compensation close and is preserved when the transaction resumes.
+Updates stamp a
 durable history marker for applied-detection and are compensated by restoring
 the captured pre-mutation version; closes treat an already-terminal target as
 applied and are likewise compensated by version restore; releases restore the
@@ -1261,6 +1274,70 @@ await commitItemMutations({
   mutations: resolved.mutations,
 });
 ```
+
+For imports, use `planItemMutationDocument` (tracked by
+[pm-gh1456](../.agents/pm/features/pm-gh1456.toon)). It reads the workspace
+schema so declared custom fields route through their option targets, accepts
+JSON Lines and op-less create documents (records shaped like `pm create
+--stdin-json` input, optionally wrapped as `{ ref, item }`), synthesizes
+`row-<n>` aliases for records without `ref`/`id`, derives a stable
+`transaction_id` from the document bytes when none is supplied, and resolves
+`upsertKey` against existing items so matching create records become updates;
+core camelCase option names (such as `acceptanceCriteria`) and declared field
+keys or option targets resolve to the stored metadata key before candidate
+reads and lock-held guards.
+An explicitly supplied blank `upsertKey` is a usage error; omit it to select plain creation.
+Unrelated extension metadata keys retain their exact spelling, including camelCase.
+Item documents also accept known core camelCase option names, including inside
+`{ item }` wrappers. Exact stored metadata keys win when both spellings appear.
+Records that match nothing carry a `unique` guard that `commitItemMutations`
+re-checks under the writer lock and refuses with `upsert_key_conflict` when a
+concurrent writer created the key value after planning; matched records become
+updates carrying a `match` guard checked against the locked target document,
+after acquiring its item lock. It refuses with `upsert_match_changed` when the
+target's key changed in between, including changes made by ordinary item updates.
+Successful update, close and release steps invalidate cached unique-key scans
+inside a mixed batch, so subsequent creates see the current persisted values,
+including changes to earlier creates in that batch.
+Every create also advances cached scans from its returned metadata, including
+unguarded creates and records guarded on a different key, without a new project scan.
+The returned `rows` receipt maps every input record, in order, to its resolved
+`id` and `op`:
+
+```ts
+import {
+  commitItemMutations,
+  planItemMutationDocument,
+} from "@unbrained/pm-cli/sdk";
+
+const plan = await planItemMutationDocument({
+  pmRoot,
+  input: [
+    '{"title":"Imported A","type":"Task","external_id":"ext-1"}',
+    '{"ref":"b","title":"Imported B","type":"Feature","parent":"@row-1","external_id":"ext-2"}',
+  ].join("\n"),
+  upsertKey: "external_id",
+});
+const result = await commitItemMutations({
+  pmRoot,
+  author: "import-agent",
+  transactionId: plan.transaction_id,
+  mutations: plan.mutations,
+});
+console.log(plan.transaction_id_source, plan.rows, result.recovered);
+```
+
+After a successful commit, reuse its transaction id and unchanged resolved
+mutation plan to replay it (`recovered: true`). A formatting-only edit changes
+the derived id; pass the original id explicitly to replay an unchanged plan.
+The planner excludes items created by that transaction from upsert matching,
+retaining those create rows.
+If document edits, external matches, or schema context change the resolved
+plan under that committed id, the coordinator refuses with
+`transaction_plan_mismatch`; use a new transaction id for the changed import.
+Corrupt journal JSON, stored schema version/transaction identity, lifecycle state or metadata instead refuses with
+`transaction_journal_invalid`. Preserve and inspect or restore the journal;
+starting a new id can duplicate work whose durable state cannot be verified.
 
 `buildItemCompletionMutations` creates the ordered evidence/update, close, and
 release plan for inspection. `commitItemCompletion` executes that plan through
@@ -2246,6 +2323,20 @@ same list/default semantics as core flags:
   `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements. A default
   that would not cleanly coerce under the declared `value_type` (e.g.
   `value_type: "number", default: "abc"`) is rejected at registration.
+- `value_validation` (`"coerce"` | `"strict"`, tracked by
+  [pm-extension-scalar-validation](../.agents/pm/features/pm-extension-scalar-validation.toon))
+  decides what happens to a `number`/`boolean` token that does not coerce.
+  `coerce` is the compatible default: the raw token reaches the handler for its
+  own validation (`--limit abc` arrives as `"abc"`). `strict` refuses the
+  invocation before dispatch with `extension_flag_value_invalid` (exit 2),
+  naming the flag, the command, the expected grammar, and the received token;
+  list entries are checked one by one, including attached values on boolean
+  list switches. CSV boolean lists accept `true,false`; repeatable boolean
+  lists keep each occurrence as one value. Switch presence (`--verbose`,
+  `--no-verbose`), the legacy `bool` optional-value grammar (`--enabled` alone
+  is `true`), declared defaults, and string flags are unaffected. `strict` on a
+  `string` or untyped flag is rejected at registration because there is nothing
+  to validate.
 
 ```ts
 api.registerFlags("report", [
@@ -2256,7 +2347,7 @@ api.registerFlags("report", [
     list: true,
     default: "all",
   },
-  { long: "--limit", value_type: "number", default: 20 },
+  { long: "--limit", value_type: "number", default: 20, value_validation: "strict" },
 ]);
 ```
 

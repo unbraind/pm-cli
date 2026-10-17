@@ -9,6 +9,8 @@ import path from "node:path";
 import { acquireLock } from "../core/lock/lock.js";
 import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { nowIso } from "../core/shared/time.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 
 /** Durable state reported by a transaction step inspection. */
 export type WorkspaceTransactionStepState =
@@ -302,6 +304,42 @@ function hasValidJournalLifecycle(
   );
 }
 
+/** Refuse unreadable durable state without suggesting a new id that could duplicate work. */
+function invalidJournal(transactionId: string, detail: string): PmCliError {
+  return new PmCliError(
+    `Workspace transaction ${transactionId} journal is invalid (${detail})`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "transaction_journal_invalid",
+      required: "A valid durable journal is required before transaction recovery can continue.",
+      why: "Corrupt journal data cannot establish which steps applied or still require compensation.",
+      nextSteps: [
+        "Preserve the journal and inspect its integrity or restore a verified backup before retrying.",
+        "Do not switch to a new transaction id to bypass an unreadable journal; previously applied work may remain.",
+      ],
+    },
+  );
+}
+
+/** Refuse a different step plan while retaining the valid original journal. */
+function journalPlanMismatch(transactionId: string): PmCliError {
+  return new PmCliError(
+    `Workspace transaction ${transactionId} journal does not match the supplied plan`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "transaction_plan_mismatch",
+      required: "Replay the exact plan that started this transaction, or start a new transaction with a different id.",
+      why: "A journal records the plan it is resuming; applying a different plan under the same id could skip or duplicate steps.",
+      nextSteps: [
+        "Re-run with the original document to resume or replay it.",
+        "Pass --transaction-id <new-id> (or a new transactionId over MCP) to commit the changed plan as its own transaction.",
+        "Run pm ops gc --scope transactions --dry-run to inspect abandoned journals before pruning them.",
+      ],
+    },
+  );
+}
+
+/** Validate stored integrity independently of the caller's requested replay plan. */
 function parseJournal(
   raw: string,
   transactionId: string,
@@ -311,39 +349,31 @@ function parseJournal(
   try {
     parsed = JSON.parse(raw) as unknown;
   } catch {
-    throw new TypeError(
-      `Workspace transaction ${transactionId} journal is invalid JSON`,
-    );
+    throw invalidJournal(transactionId, "invalid JSON");
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-    throw new TypeError(
-      `Workspace transaction ${transactionId} journal is invalid`,
-    );
+    throw invalidJournal(transactionId, "expected an object");
   const journal = parsed as Partial<WorkspaceTransactionJournal>;
   const identityMatches =
     journal.schemaVersion === 1 && journal.transactionId === transactionId;
-  const stepsMatch =
-    Array.isArray(journal.stepIds) &&
-    journal.stepIds.length === stepIds.length &&
-    journal.stepIds.every((stepId, index) => stepId === stepIds[index]);
-  const lifecycleMatches = hasValidJournalLifecycle(journal, stepIds);
-  const metadataMatches = hasValidJournalMetadata(journal);
-  const statusMatches = [
-    "applying",
-    "compensating",
-    "compensated",
-    "committed",
-  ].includes(String(journal.status));
+  if (!identityMatches) throw invalidJournal(transactionId, "schema version or transaction id does not match the journal file");
+  const recordedStepIds = journal.stepIds;
   if (
-    !identityMatches ||
-    !stepsMatch ||
-    !lifecycleMatches ||
-    !metadataMatches ||
-    !statusMatches
-  )
-    throw new TypeError(
-      `Workspace transaction ${transactionId} journal does not match the supplied plan`,
-    );
+    !Array.isArray(recordedStepIds) ||
+    !hasUniqueKnownStepIds(recordedStepIds, recordedStepIds) ||
+    !hasValidJournalLifecycle(journal, recordedStepIds) ||
+    !hasValidJournalMetadata(journal) ||
+    typeof journal.status !== "string" ||
+    !["applying", "compensating", "compensated", "committed"].includes(journal.status)
+  ) throw invalidJournal(transactionId, "invalid lifecycle, metadata, status or step ids");
+  // A compensated attempt was rolled back step by step and holds nothing to
+  // resume, so a re-planned document may start a fresh attempt under the same
+  // id; every other status must replay the exact plan it recorded.
+  const stepsMatch =
+    journal.status === "compensated" ||
+    (recordedStepIds.length === stepIds.length &&
+      recordedStepIds.every((stepId, index) => stepId === stepIds[index]));
+  if (!stepsMatch) throw journalPlanMismatch(transactionId);
   return {
     ...(journal as WorkspaceTransactionJournal),
     results: createResultMap(journal.results),

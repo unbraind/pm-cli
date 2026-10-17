@@ -599,7 +599,7 @@
     },
     {
       "path": "src/cli/register-mutation.ts",
-      "expected_count": 13,
+      "expected_count": 14,
       "rule_ownership": "all_occurrences",
       "owner": "pm-185870",
       "disposition": "transport_validation",
@@ -647,11 +647,11 @@
     },
     {
       "path": "src/cli/register-structured-mutation.ts",
-      "expected_count": 4,
+      "expected_count": 6,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
-      "reason": "Structured stdin framing failures belong to the CLI transport before SDK dispatch."
+      "reason": "Structured stdin framing and the explicit file-versus-stdin choice are CLI transport validation before SDK dispatch; domain rules remain in the public SDK."
     },
     {
       "path": "src/cli/stats-analytics-json.ts",
@@ -671,7 +671,7 @@
     },
     {
       "path": "src/cli/extension-command-options.ts",
-      "expected_count": 3,
+      "expected_count": 4,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",

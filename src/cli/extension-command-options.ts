@@ -4,6 +4,9 @@
  * Provides CLI runtime support for Extension Command Options.
  */
 import {
+  describeFlagScalarValueFailure,
+  type FlagScalarValueFailure,
+  resolveExtensionFlagValueContract,
   resolveExtensionLongFlagName,
   EXIT_CODE,
   PmCliError,
@@ -33,6 +36,8 @@ export interface LooseCommandFlagDefinition {
   repeatable?: boolean;
   /** Value used when callers omit the option. */
   default?: unknown;
+  /** `strict` refuses malformed number/boolean tokens before dispatch; `coerce` (default) forwards them. */
+  value_validation?: string;
 }
 const UNSAFE_LOOSE_OPTION_KEYS = new Set([
   "__proto__",
@@ -74,6 +79,8 @@ interface ParsedLooseOptionToken {
   consumed: number;
   key: string;
   value: unknown;
+  /** True when the value was attached with `=`, as opposed to a following token. */
+  attached?: boolean;
 }
 
 function parseLooseOptionToken(
@@ -92,6 +99,7 @@ function parseLooseOptionToken(
         consumed: 1,
         key: token.slice(1, equalsIndex).trim(),
         value: token.slice(equalsIndex + 1),
+        attached: true,
       };
     }
     const key = token.slice(1).trim();
@@ -116,6 +124,7 @@ function parseLooseOptionToken(
       consumed: 1,
       key: token.slice(2, equalsIndex).trim(),
       value: token.slice(equalsIndex + 1),
+      attached: true,
     };
   }
 
@@ -394,7 +403,7 @@ function applyFlagDefault(
 /** Preserve parse-time value order for list flags whose long and short aliases are interleaved. */
 function readOrderedLooseListValues(
   occurrenceSource: Record<string, unknown>,
-  optionKeys: string[],
+  optionKeys: readonly string[],
   fallback: unknown,
 ): unknown {
   const occurrences = (occurrenceSource as LooseOptionsWithOccurrences)[
@@ -409,11 +418,180 @@ function readOrderedLooseListValues(
     .map((occurrence) => occurrence.value);
 }
 
+/** Whether a declared `boolean` flag is a value-less switch (as opposed to the legacy `bool` optional-value grammar), per the shared value contract. */
+function isBooleanSwitchDefinition(
+  definition: LooseCommandFlagDefinition,
+): boolean {
+  return (
+    resolveExtensionFlagValueContract(
+      definition as Parameters<typeof resolveExtensionFlagValueContract>[0],
+    ).value_arity === "none"
+  );
+}
+
+/** Throw the typed usage refusal for one malformed strict scalar token. */
+function refuseStrictScalarValue(
+  definition: LooseCommandFlagDefinition,
+  kind: Exclude<LooseOptionCoercionKind, "string">,
+  entry: unknown,
+  expected: string,
+  commandPath: string | undefined,
+): never {
+  // A definition with a resolvable canonical key always has a printable label.
+  const label = formatLooseOptionLabel(definition) as string;
+  const scope = commandPath ? ` for extension command '${commandPath}'` : "";
+  const received = entry === true ? "no value" : JSON.stringify(entry);
+  throw new PmCliError(
+    `Option '${label}'${scope} expects ${expected}; received ${received}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_flag_value_invalid",
+      required: `Pass ${label} ${kind === "number" ? "<number>" : "<true|false|1|0>"}.`,
+      why: `The flag declares value_type ${kind} with value_validation strict, so a malformed token is refused before the extension handler runs.`,
+      nextSteps: [
+        `Re-run with a valid ${kind} value for ${label}.`,
+        `Run pm ${commandPath ?? "<command>"} --help to review the declared flag contract.`,
+      ],
+    },
+  );
+}
+
+/** Whether the definition opts into strict refusal for a typed scalar. Registration refuses strict on string flags; untyped values never reach here. */
+function isStrictTypedDefinition(
+  definition: LooseCommandFlagDefinition,
+  kind: LooseOptionCoercionKind,
+): kind is Exclude<LooseOptionCoercionKind, "string"> {
+  return definition.value_validation === "strict" && kind !== "string";
+}
+
+/** Read the parse-time occurrences recorded on the loose options object, if any. */
+function readLooseOccurrences(
+  occurrenceSource: Record<string, unknown>,
+  optionKeys: readonly string[],
+): ParsedLooseOptionToken[] {
+  const occurrences = (occurrenceSource as LooseOptionsWithOccurrences)[
+    LOOSE_OPTION_OCCURRENCES
+  ];
+  if (!occurrences) {
+    return [];
+  }
+  const acceptedKeys = new Set(optionKeys);
+  return occurrences.filter((occurrence) => acceptedKeys.has(occurrence.key));
+}
+
+/**
+ * Refuse `--switch=<token>` when the attached token is not a boolean literal.
+ * A following positional token is not an attached value: the switch keeps its
+ * presence semantics and the token stays positional.
+ */
+function refuseMalformedAttachedSwitchValues(
+  definition: LooseCommandFlagDefinition,
+  optionKeys: readonly string[],
+  occurrenceSource: Record<string, unknown>,
+  commandPath: string | undefined,
+): void {
+  if (!isBooleanSwitchDefinition(definition)) {
+    return;
+  }
+  for (const occurrence of readLooseOccurrences(occurrenceSource, optionKeys)) {
+    if (occurrence.attached !== true) continue;
+    const values = definition.list === true && definition.repeatable !== true
+      ? flattenFlagListValue(occurrence.value)
+      : [occurrence.value];
+    for (const value of values) {
+      const failure = describeFlagScalarValueFailure(
+        coerceLooseOptionValue(value, "boolean"),
+        "boolean",
+      );
+      if (failure !== null) {
+        refuseStrictScalarValue(definition, "boolean", value, failure.expected, commandPath);
+      }
+    }
+  }
+}
+
+/** Refuse an explicitly empty list entry (`--ids=`, or the empty CSV segment in `--ids=1,,2`) before list normalization silently drops it. Repeatable flags keep commas inside one occurrence, so only CSV lists split. */
+function refuseEmptyStrictListEntries(
+  definition: LooseCommandFlagDefinition,
+  kind: Exclude<LooseOptionCoercionKind, "string">,
+  rawValue: unknown,
+  preserveOccurrenceCommas: boolean,
+  commandPath: string | undefined,
+): void {
+  const occurrences = Array.isArray(rawValue) ? rawValue.flat(Infinity) : [rawValue];
+  const entries = preserveOccurrenceCommas
+    ? occurrences
+    : occurrences.flatMap((entry) => (typeof entry === "string" ? entry.split(",") : [entry]));
+  for (const entry of entries) {
+    if (typeof entry === "string" && entry.trim().length === 0) {
+      const failure = describeFlagScalarValueFailure(entry, kind);
+      // An empty string never satisfies a number or boolean kind.
+      refuseStrictScalarValue(definition, kind, entry, (failure as FlagScalarValueFailure).expected, commandPath);
+    }
+  }
+}
+
+/**
+ * Refuse a strict-validated scalar whose coerced value is still malformed and
+ * return the value to store. A `boolean` switch keeps its canonical presence
+ * semantics: a following positional token that the loose parser read as its
+ * value is not a malformed boolean, so the switch resolves to `true`.
+ */
+function validateStrictScalarOptionValue(
+  definition: LooseCommandFlagDefinition,
+  value: unknown,
+  kind: LooseOptionCoercionKind,
+  commandPath: string | undefined,
+): unknown {
+  if (!isStrictTypedDefinition(definition, kind)) {
+    return value;
+  }
+  const isSwitch = kind === "boolean" && isBooleanSwitchDefinition(definition);
+  const normalizeEntry = (entry: unknown): unknown => {
+    const failure = describeFlagScalarValueFailure(entry, kind);
+    if (failure === null) return entry;
+    if (isSwitch && typeof entry === "string") return true;
+    return refuseStrictScalarValue(definition, kind, entry, failure.expected, commandPath);
+  };
+  return Array.isArray(value) ? value.map(normalizeEntry) : normalizeEntry(value);
+}
+
+/** Fold short/alias spellings into the canonical option key: scalars keep the canonical value, list flags concatenate every spelling's values. */
+function mergeAliasOptionKeys(
+  coerced: Record<string, unknown>,
+  canonical: string,
+  optionKeys: readonly string[],
+  isListFlag: boolean,
+): void {
+  for (const key of optionKeys) {
+    if (key === canonical || !Object.hasOwn(coerced, key)) {
+      continue;
+    }
+    if (Object.hasOwn(coerced, canonical)) {
+      if (isListFlag) {
+        const canonicalValue = coerced[canonical];
+        const aliasValue = coerced[key];
+        coerced[canonical] = [
+          ...(Array.isArray(canonicalValue)
+            ? canonicalValue
+            : [canonicalValue]),
+          ...(Array.isArray(aliasValue) ? aliasValue : [aliasValue]),
+        ].filter((value) => value != null);
+      }
+      delete coerced[key];
+      continue;
+    }
+    coerced[canonical] = coerced[key];
+    delete coerced[key];
+  }
+}
+
 /** Implements coerce loose command options with flag definitions for the public runtime surface of this module. */
 export function coerceLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
   occurrenceSource: Record<string, unknown> = options,
+  commandPath?: string,
 ): Record<string, unknown> {
   if (definitions.length === 0) {
     return options;
@@ -424,66 +602,106 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
   }
   for (const definition of definitions) {
     const canonical = resolveCanonicalLooseOptionKey(definition);
-    if (!canonical) {
-      continue;
+    if (canonical) {
+      coerceDefinedLooseOption(coerced, definition, canonical, occurrenceSource, commandPath);
     }
-    const isListFlag = definition.list === true;
-    const optionKeys = collectLooseOptionKeys(definition);
-    for (const key of optionKeys) {
-      if (key === canonical || !Object.hasOwn(coerced, key)) {
-        continue;
-      }
-      if (Object.hasOwn(coerced, canonical)) {
-        if (!isListFlag) {
-          delete coerced[key];
-          continue;
-        }
-        const canonicalValue = coerced[canonical];
-        const aliasValue = coerced[key];
-        coerced[canonical] = [
-          ...(Array.isArray(canonicalValue)
-            ? canonicalValue
-            : [canonicalValue]),
-          ...(Array.isArray(aliasValue) ? aliasValue : [aliasValue]),
-        ].filter((value) => value != null);
-        delete coerced[key];
-        continue;
-      }
-      coerced[canonical] = coerced[key];
-      delete coerced[key];
-    }
-    const kind = resolveLooseOptionCoercionKind(definition);
-    const preserveOccurrenceCommas = definition.repeatable === true;
-    if (!Object.hasOwn(coerced, canonical)) {
-      // Flag was omitted entirely: apply the declared default when present.
-      if (definition.default !== undefined) {
-        coerced[canonical] = applyFlagDefault(
-          definition.default,
-          kind,
-          isListFlag,
-          preserveOccurrenceCommas,
-        );
-      }
-      continue;
-    }
-    if (isListFlag) {
-      coerced[canonical] = normalizeAccumulatedFlagValue(
-        readOrderedLooseListValues(
-          occurrenceSource,
-          optionKeys,
-          coerced[canonical],
-        ),
-        kind,
-        preserveOccurrenceCommas,
-      );
-      continue;
-    }
-    if (!kind) {
-      continue;
-    }
-    coerced[canonical] = coerceLooseOptionValue(coerced[canonical], kind);
   }
   return coerced;
+}
+
+/** Fold, default, normalize, and strictly validate one declared flag in place under its canonical key. */
+function coerceDefinedLooseOption(
+  coerced: Record<string, unknown>,
+  definition: LooseCommandFlagDefinition,
+  canonical: string,
+  occurrenceSource: Record<string, unknown>,
+  commandPath: string | undefined,
+): void {
+  const isListFlag = definition.list === true;
+  const optionKeys = collectLooseOptionKeys(definition);
+  const kind = resolveLooseOptionCoercionKind(definition);
+  if (kind && !isListFlag) {
+    refuseMalformedScalarAliasValues(coerced, definition, canonical, optionKeys, kind, commandPath);
+  }
+  mergeAliasOptionKeys(coerced, canonical, optionKeys, isListFlag);
+  const preserveOccurrenceCommas = definition.repeatable === true;
+  if (!Object.hasOwn(coerced, canonical)) {
+    // Flag was omitted entirely: apply the declared default when present.
+    if (definition.default !== undefined) {
+      coerced[canonical] = applyFlagDefault(
+        definition.default,
+        kind,
+        isListFlag,
+        preserveOccurrenceCommas,
+      );
+    }
+    return;
+  }
+  if (kind === "boolean" && isStrictTypedDefinition(definition, kind)) {
+    refuseMalformedAttachedSwitchValues(definition, optionKeys, occurrenceSource, commandPath);
+  }
+  if (isListFlag) {
+    coerced[canonical] = coerceAccumulatedLooseOption(
+      definition,
+      optionKeys,
+      occurrenceSource,
+      coerced[canonical],
+      kind,
+      preserveOccurrenceCommas,
+      commandPath,
+    );
+    return;
+  }
+  if (!kind) {
+    return;
+  }
+  coerced[canonical] = validateStrictScalarOptionValue(
+    definition,
+    coerceLooseOptionValue(coerced[canonical], kind),
+    kind,
+    commandPath,
+  );
+}
+
+/** Alias folding keeps the canonical scalar and drops the alias value, so a malformed alias token must be refused before it is discarded. */
+function refuseMalformedScalarAliasValues(
+  coerced: Record<string, unknown>,
+  definition: LooseCommandFlagDefinition,
+  canonical: string,
+  optionKeys: readonly string[],
+  kind: LooseOptionCoercionKind,
+  commandPath: string | undefined,
+): void {
+  for (const key of optionKeys) {
+    if (key !== canonical && Object.hasOwn(coerced, key)) {
+      validateStrictScalarOptionValue(
+        definition,
+        coerceLooseOptionValue(coerced[key], kind),
+        kind,
+        commandPath,
+      );
+    }
+  }
+}
+
+/** Order, normalize, and strictly validate the accumulated values of a list or repeatable flag. */
+function coerceAccumulatedLooseOption(
+  definition: LooseCommandFlagDefinition,
+  optionKeys: readonly string[],
+  occurrenceSource: Record<string, unknown>,
+  current: unknown,
+  kind: LooseOptionCoercionKind | null,
+  preserveOccurrenceCommas: boolean,
+  commandPath: string | undefined,
+): unknown {
+  const ordered = readOrderedLooseListValues(occurrenceSource, optionKeys, current);
+  if (kind && isStrictTypedDefinition(definition, kind)) {
+    refuseEmptyStrictListEntries(definition, kind, ordered, preserveOccurrenceCommas, commandPath);
+  }
+  const normalized = normalizeAccumulatedFlagValue(ordered, kind, preserveOccurrenceCommas);
+  return kind
+    ? validateStrictScalarOptionValue(definition, normalized, kind, commandPath)
+    : normalized;
 }
 
 /** Implements parse loose command options for the public runtime surface of this module. */

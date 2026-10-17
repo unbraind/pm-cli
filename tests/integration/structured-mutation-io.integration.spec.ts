@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { handleRequest } from "../../src/mcp/server.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -8,6 +8,56 @@ function itemId(payload: unknown): string {
 }
 
 describe("structured SDK/CLI/MCP mutation IO", () => {
+  it("refuses a blank upsert flag instead of silently creating an item", async () => {
+    await withTempPmPath(async (context) => {
+      const refused = context.runCli(["item", "mutate", "--upsert-key", "  ", "--json"], { input: '{"id":"pm-blank-key","title":"Never created","type":"Task"}', expectJson: true });
+      expect(refused.code).toBe(2);
+      expect(refused.stderr).toContain("Upsert key must be a non-empty field name");
+      expect(context.runCli(["get", "pm-blank-key", "--json"]).code).toBe(3);
+      expect(context.runCli(["list", "--status", "all", "--json"], { expectJson: true }).json).toMatchObject({ count: 0 });
+    });
+  });
+
+  it("refuses raw numeric duration options before writes and permits a corrected compensated retry", async () => {
+    await withTempPmPath(async (context) => {
+      const { readFile } = await import("node:fs/promises");
+      const path = await import("node:path");
+      const { commitItemMutations } = await import("../../src/sdk/item-transaction.js");
+      const transactionId = "duration-options";
+      const earlier = { op: "create" as const, id: "pm-before-duration", options: { title: "Before duration", type: "Task" } };
+      const invalid = { op: "create" as const, id: "pm-duration", options: { title: "Duration", type: "Task", estimatedMinutes: 45 } };
+      await expect(commitItemMutations({ pmRoot: context.pmPath, transactionId, author: "test", mutations: [earlier, invalid] })).rejects.toMatchObject({ exitCode: 2, context: { code: "mutation_option_value_invalid" }, message: expect.stringContaining("Mutation 2") });
+      const flags = ["item", "mutate", "--transaction-id", transactionId, "--json"];
+      const refused = context.runCli(flags, { input: JSON.stringify([invalid]), expectJson: true });
+      expect(refused.code).toBe(2);
+      expect(refused.stderr).toContain("mutation_option_value_invalid");
+      await expect(handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "pm_mutate", arguments: { path: context.pmPath, transactionId, mutations: [invalid] } } })).rejects.toMatchObject({ exitCode: 2, context: { code: "mutation_option_value_invalid" } });
+      const journalPath = path.join(context.pmPath, "transactions", "sdk", `${transactionId}.json`);
+      await expect(readFile(journalPath)).rejects.toMatchObject({ code: "ENOENT" });
+      for (const id of [earlier.id, invalid.id]) {
+        expect(context.runCli(["get", id, "--json"]).code).toBe(3);
+        await expect(readFile(path.join(context.pmPath, "history", `${id}.jsonl`))).rejects.toMatchObject({ code: "ENOENT" });
+      }
+      const attempt = (estimatedMinutes: string) => context.runCli(flags, { input: JSON.stringify([{ ...invalid, options: { ...invalid.options, estimatedMinutes } }]), expectJson: true });
+      expect(attempt("-1").code).toBe(2);
+      expect(JSON.parse(await readFile(journalPath, "utf8"))).toMatchObject({ status: "compensated" });
+      expect(attempt("45").json).toMatchObject({ status: "committed", recovered: true });
+      expect(attempt("45").json).toMatchObject({ status: "committed", recovered: true });
+      expect(context.runCli(["get", invalid.id, "--json", "--full"], { expectJson: true }).json).toMatchObject({ item: { estimated_minutes: 45 } });
+    });
+  });
+
+  it("names the missing or malformed MCP mutations argument before planning", async () => {
+    await withTempPmPath(async (context) => {
+      for (const mutations of [undefined, null, "not an array", {}, []]) {
+        await expect(handleRequest({
+          jsonrpc: "2.0", id: 1, method: "tools/call",
+          params: { name: "pm_mutate", arguments: { path: context.pmPath, mutations } },
+        })).rejects.toMatchObject({ exitCode: 2, message: "pm_mutate requires a non-empty mutations array." });
+      }
+    });
+  });
+
   it("applies, previews, and resumes atomic CLI batches", async () => {
     await withTempPmPath(async (context) => {
       const mutations = [
@@ -572,6 +622,246 @@ describe("structured SDK/CLI/MCP mutation IO", () => {
           },
         }),
       ).rejects.toThrow("lockWaitMs must be a positive safe integer");
+    });
+  });
+});
+
+describe("bulk creation through item mutate (pm-gh1456)", () => {
+  it("imports JSON Lines from a file, replays idempotently, and upserts by a declared field", async () => {
+    await withTempPmPath(async (context) => {
+      const { writeFile } = await import("node:fs/promises");
+      const path = await import("node:path");
+      expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
+      const file = path.join(context.tempRoot, "items.jsonl");
+      await writeFile(
+        file,
+        [
+          '{"title":"Imported A","type":"Task","external_id":"ext-1","tags":["import"]}',
+          '{"ref":"b","title":"Imported B","type":"Feature","external_id":"ext-2","parent":"@row-1"}',
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const conflicting = context.runCli(["item", "mutate", "--from", file, "--stdin-json", "--dry-run", "--json"], {
+        input: '{"title":"Different stdin input","type":"Task"}', expectJson: true,
+      });
+      expect(conflicting.code, conflicting.stderr).toBe(2);
+      expect(conflicting.stderr).toContain("cannot combine --from <path> with explicit --stdin-json");
+      const dryRun = context.runCli(["item", "mutate", "--from", file, "--dry-run", "--json"], { expectJson: true });
+      expect(dryRun.code, dryRun.stderr).toBe(0);
+      expect(dryRun.json).toMatchObject({
+        dry_run: true,
+        transaction_id_source: "derived",
+        mutation_count: 2,
+        validation: { validated: true },
+        rows: [
+          { index: 0, ref: "row-1", op: "create" },
+          { index: 1, ref: "b", op: "create" },
+        ],
+      });
+      const committed = context.runCli(["item", "mutate", "--from", file, "--json"], { expectJson: true });
+      expect(committed.code).toBe(0);
+      const committedJson = committed.json as { transaction_id: string; rows: Array<{ id: string; ref?: string }> };
+      expect(committed.json).toMatchObject({ status: "committed", recovered: false, transaction_id_source: "derived" });
+      expect(committedJson.transaction_id).toBe((dryRun.json as { transaction_id: string }).transaction_id);
+      const [first, second] = committedJson.rows;
+      const secondItem = context.runCli(["get", second!.id, "--json"], { expectJson: true }).json as { item: { parent?: string; external_id?: string } };
+      expect(secondItem.item).toMatchObject({ parent: first!.id, external_id: "ext-2" });
+
+      const replay = context.runCli(["item", "mutate", "--from", file, "--json"], { expectJson: true });
+      expect(replay.json).toMatchObject({ status: "committed", recovered: true });
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 2 });
+
+      const upsertInput = '{"op":"create","options":{"title":"Imported A (renamed)","type":"Task","externalId":"ext-1"}}\n{"op":"create","options":{"title":"Imported C","type":"Task","externalId":"ext-3"}}';
+      const upsert = context.runCli(["item", "mutate", "--upsert-key", "externalId", "--json"], {
+        expectJson: true,
+        input: upsertInput,
+      });
+      expect(upsert.code).toBe(0);
+      expect(upsert.json).toMatchObject({
+        status: "committed",
+        upsert_key: "external_id",
+        rows: [
+          { index: 0, id: first!.id, op: "update", upserted: true },
+          { index: 1, ref: "row-2", op: "create" },
+        ],
+      });
+      const upsertReplay = context.runCli(["item", "mutate", "--upsert-key", "external_id", "--json"], {
+        expectJson: true,
+        input: upsertInput,
+      });
+      expect(upsertReplay.json).toMatchObject({ status: "committed", recovered: true });
+      const renamed = context.runCli(["get", first!.id, "--json"], { expectJson: true }).json as { item: { title: string } };
+      expect(renamed.item.title).toBe("Imported A (renamed)");
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 3 });
+
+      const missingKey = context.runCli(["item", "mutate", "--upsert-key", "external_id", "--json"], {
+        input: '{"title":"No key","type":"Task"}',
+      });
+      expect(missingKey.code).toBe(2);
+      expect(missingKey.stderr).toContain("upsert_key_missing");
+      const unreadable = context.runCli(["item", "mutate", "--from", path.join(context.tempRoot, "missing.jsonl"), "--json"]);
+      expect(unreadable.code).toBe(2);
+      expect(unreadable.stderr).toContain("mutation_document_unreadable");
+    });
+  });
+
+  it("re-checks keyed upsert under the writer lock so a concurrent writer cannot create a duplicate after planning", async () => {
+    await withTempPmPath(async (context) => {
+      const { planItemMutationDocument } = await import("../../src/sdk/lifecycle/structured-mutation-plan.js");
+      const { commitItemMutations, previewItemMutations } = await import("../../src/sdk/item-transaction.js");
+      const { WorkspaceTransactionInterruptedError } = await import("../../src/sdk/index.js");
+      expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
+      const input = '{"title":"Planned","type":"Task","external_id":"ext-race"}';
+      const plan = await planItemMutationDocument({ pmRoot: context.pmPath, input, upsertKey: "external_id" });
+      expect(plan.mutations[0]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-race" } });
+      // Another writer lands the same key between planning and commit.
+      const rival = context.runCli(["item", "mutate", "--json"], {
+        expectJson: true,
+        input: '{"title":"Rival","type":"Task","external_id":"ext-race"}',
+      });
+      expect(rival.code).toBe(0);
+      const rivalId = (rival.json as { rows: Array<{ id: string }> }).rows[0]!.id;
+      const commit = { pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "import-agent", mutations: plan.mutations };
+      await expect(previewItemMutations(commit)).rejects.toMatchObject({
+        context: { code: "upsert_key_conflict", transaction_operation: { index: 0, op: "create" } },
+      });
+      await expect(commitItemMutations(commit)).rejects.toMatchObject({ context: { code: "upsert_key_conflict" } });
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 1 });
+      // Re-planning resolves the row as an update of the rival item, carrying the key it was selected by.
+      const replanned = await planItemMutationDocument({ pmRoot: context.pmPath, input, upsertKey: "external_id" });
+      expect(replanned.rows).toEqual([{ index: 0, ref: "row-1", id: rivalId, op: "update", upserted: true }]);
+      expect(replanned.mutations[0]).toMatchObject({ op: "update", id: rivalId, match: { key: "external_id", value: "ext-race" } });
+      // The rival's key moves between planning and commit: the update re-reads it under the lock and refuses.
+      const moved = context.runCli(["item", "mutate", "--json"], {
+        expectJson: true,
+        input: `{"op":"update","id":"${rivalId}","options":{"externalId":"ext-moved"}}`,
+      });
+      expect(moved.code).toBe(0);
+      const replannedCommit = { pmRoot: context.pmPath, transactionId: replanned.transaction_id, author: "import-agent", mutations: replanned.mutations };
+      await expect(previewItemMutations(replannedCommit)).rejects.toMatchObject({
+        context: { code: "upsert_match_changed", transaction_operation: { index: 0, op: "update", id: rivalId } },
+      });
+      await expect(commitItemMutations(replannedCommit)).rejects.toMatchObject({ context: { code: "upsert_match_changed" } });
+      expect((context.runCli(["get", rivalId, "--json"], { expectJson: true }).json as { item: { title: string } }).item.title).toBe("Rival");
+      // With the key moved, the same document plans a guarded create again and commits under its derived id.
+      const afterMove = await planItemMutationDocument({ pmRoot: context.pmPath, input, upsertKey: "external_id" });
+      expect(afterMove.mutations[0]).toMatchObject({ op: "create", unique: { key: "external_id", value: "ext-race" } });
+      expect((await commitItemMutations({ pmRoot: context.pmPath, transactionId: afterMove.transaction_id, author: "import-agent", mutations: afterMove.mutations })).status).toBe("committed");
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 2 });
+      // A plan resumes and replays as itself: the items it already created are not collisions for its
+      // own guards when a resumed step scans again, and a second row reuses the first row's lock-held scan.
+      const fresh = await planItemMutationDocument({
+        pmRoot: context.pmPath,
+        input: '{"title":"Fresh","type":"Task","external_id":"ext-fresh"}\n{"title":"Fresh too","type":"Task","external_id":"ext-fresh-2"}',
+        upsertKey: "external_id",
+      });
+      const freshCommit = { pmRoot: context.pmPath, transactionId: fresh.transaction_id, author: "import-agent", mutations: fresh.mutations };
+      await expect(
+        commitItemMutations({
+          ...freshCommit,
+          onTransition(transition) {
+            if (transition.transition === "step_recorded") throw new WorkspaceTransactionInterruptedError("crash after the first create");
+          },
+        }),
+      ).rejects.toBeInstanceOf(WorkspaceTransactionInterruptedError);
+      expect((await commitItemMutations(freshCommit)).recovered).toBe(true);
+      expect((await commitItemMutations(freshCommit)).recovered).toBe(true);
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 4 });
+    });
+  });
+
+  it("routes pm create many to the bulk surface instead of creating an item titled many", async () => {
+    await withTempPmPath(async (context) => {
+      const refused = context.runCli(["create", "many", "--json"]);
+      expect(refused.code).toBe(2);
+      expect(refused.stderr).toContain("bulk_create_route");
+      expect(refused.stderr).toContain("pm item mutate --from");
+      expect(context.runCli(["list", "--json"], { expectJson: true }).json).toMatchObject({ count: 0 });
+      const explicit = context.runCli(["create", "--title", "many", "--type", "Task", "--json"], { expectJson: true });
+      expect(explicit.code).toBe(0);
+    });
+  });
+
+  it.each(["pm-item-lock-race", "item-lock-race"])("rejects a key moved by an ordinary writer immediately before the upsert acquires the item lock (%s)", async (requestId) => {
+    await withTempPmPath(async (context) => {
+      const { planItemMutationDocument } = await import("../../src/sdk/lifecycle/structured-mutation-plan.js");
+      const { commitItemMutations } = await import("../../src/sdk/item-transaction.js");
+      const locks = await import("../../src/core/lock/lock.js");
+      const originalAcquire = locks.acquireLock;
+      const id = "pm-item-lock-race";
+      expect(context.runCli(["create", "--id", id, "--title", "Original", "--type", "Task", "--description", "original-key", "--json"]).code).toBe(0);
+      const plan = await planItemMutationDocument({
+        pmRoot: context.pmPath,
+        input: '{"title":"Imported","type":"Task","description":"original-key"}',
+        upsertKey: "description",
+      });
+      let moved = false;
+      const lockBoundary = vi.spyOn(locks, "acquireLock").mockImplementation(async (...args) => {
+        if (args[0] === context.pmPath && args[1] === id && !moved) {
+          moved = true;
+          // A separate CLI process writes through the ordinary item lock while the importer has not acquired it.
+          expect(context.runCli(["update", id, "--description", "moved-key", "--json"]).code).toBe(0);
+        }
+        return originalAcquire(...args);
+      });
+      try {
+        await expect(commitItemMutations({ pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "import-agent", mutations: [{ ...plan.mutations[0]!, id: requestId }] })).rejects.toMatchObject({ context: { code: "upsert_match_changed" } });
+      } finally {
+        lockBoundary.mockRestore();
+      }
+      expect(moved).toBe(true);
+      expect(context.runCli(["get", id, "--json"], { expectJson: true }).json).toMatchObject({ item: { title: "Original", description: "moved-key" } });
+      expect(context.runCli(["history", id, "--verify", "--json"]).code).toBe(0);
+    });
+  });
+
+  it("accepts MCP document rows with forward references and keyed upsert without a transaction id", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["schema", "add-field", "external_id", "--type", "string", "--json"]).code).toBe(0);
+      const created = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "pm_mutate",
+          arguments: {
+            path: context.pmPath,
+            mutations: [
+              { ref: "m1", item: { title: "MCP doc", type: "Task", external_id: "mcp-1" } },
+              { op: "update", id: "@m1", options: { addTags: ["mcp"] } },
+            ],
+          },
+        },
+      });
+      if (created?.structuredContent === undefined) {
+        throw new Error("Created MCP mutation response content is required");
+      }
+      const createdResult = (created.structuredContent as { result: { status: string; transaction_id: string; transaction_id_source: string; rows: Array<{ id: string; op: string }> } }).result;
+      expect(createdResult).toMatchObject({ status: "committed", transaction_id_source: "derived", rows: [{ op: "create" }, { op: "update" }] });
+      expect(createdResult.transaction_id).toMatch(/^mutate-[0-9a-f]{24}$/u);
+
+      const upserted = await handleRequest({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "pm_mutate",
+          arguments: {
+            path: context.pmPath,
+            upsertKey: "external_id",
+            dryRun: true,
+            mutations: [{ item: { title: "MCP doc renamed", type: "Task", external_id: "mcp-1" } }],
+          },
+        },
+      });
+      expect(upserted?.structuredContent).toMatchObject({
+        result: {
+          dry_run: true,
+          upsert_key: "external_id",
+          rows: [{ index: 0, id: createdResult.rows[0]!.id, op: "update", upserted: true }],
+        },
+      });
     });
   });
 });

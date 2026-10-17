@@ -2006,12 +2006,89 @@ function serializeJsonMarkdownItemDocument(
 ): string {
   const normalizedMetadata = normalizeItemMetadata(document.metadata, options);
   const orderedMetadata = orderItemMetadata(normalizedMetadata);
-  const serializedMetadata = JSON.stringify(orderedMetadata, null, 2);
   const normalizedBody = normalizeBody(document.body ?? "");
+  // Persisted item text is refused in every format, not only before TOON encoding.
+  assertWellFormedItemText(
+    JSON.parse(JSON.stringify(orderedMetadata)) as Record<string, unknown>,
+  );
+  assertWellFormedItemText({ body: normalizedBody });
+  const serializedMetadata = JSON.stringify(orderedMetadata, null, 2);
   if (!normalizedBody) {
     return `${serializedMetadata}\n`;
   }
   return `${serializedMetadata}\n\n${normalizedBody}\n`;
+}
+
+/** A high surrogate without a following low surrogate, or a low surrogate without a preceding high one. */
+const LONE_SURROGATE_PATTERN = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u;
+
+/**
+ * Locate the first string in the payload, at any depth and including object
+ * keys, that is not well-formed UTF-16 (an unpaired surrogate), returning its
+ * dotted path and code-unit index. The payload is a JSON clone, so it is
+ * finite and acyclic.
+ */
+function findIllFormedItemText(
+  value: unknown,
+  path: string,
+): IllFormedItemText | null {
+  if (typeof value === "string") return illFormedText(value, path);
+  if (value === null || typeof value !== "object") return null;
+  if (Array.isArray(value)) {
+    return firstIllFormed(value.map((entry, position) => () => findIllFormedItemText(entry, `${path}[${position}]`)));
+  }
+  return firstIllFormed(
+    Object.entries(value).map(([key, entry]) => () => {
+      const childPath = path ? `${path}.${key}` : key;
+      return illFormedText(key, `${childPath} (key)`) ?? findIllFormedItemText(entry, childPath);
+    }),
+  );
+}
+
+/** One ill-formed string located inside the encodable payload. */
+interface IllFormedItemText {
+  path: string;
+  index: number;
+}
+
+/** Report the first lone surrogate in one string, or null when it is well-formed. */
+function illFormedText(text: string, path: string): IllFormedItemText | null {
+  const index = text.search(LONE_SURROGATE_PATTERN);
+  return index < 0 ? null : { path, index };
+}
+
+/** Run the probes in order and return the first hit. */
+function firstIllFormed(probes: ReadonlyArray<() => IllFormedItemText | null>): IllFormedItemText | null {
+  for (const probe of probes) {
+    const found = probe();
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+/**
+ * Refuse ill-formed persisted item text before an encoder throws an untyped
+ * TypeError. A lone surrogate usually comes from a JSON `\\ud83d` escape or
+ * from truncating a string between the two halves of an emoji (Sentry
+ * PM-CLI-3H). Naming the field and index keeps the refusal actionable.
+ */
+function assertWellFormedItemText(payload: Record<string, unknown>): void {
+  const found = findIllFormedItemText(payload, "");
+  if (found === null) return;
+  throw new PmCliError(
+    `Item field ${found.path} contains an unpaired surrogate code unit at index ${found.index}; persisted item text requires well-formed Unicode.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "text_unpaired_surrogate",
+      field: found.path,
+      required: "Provide well-formed UTF-16 text: keep emoji and other astral characters whole and avoid lone \\uD800-\\uDFFF JSON escapes.",
+      why: "Persisted item text must remain well-formed in every supported format; a lone surrogate can cause an unclassified encoder fault.",
+      nextSteps: [
+        `Repair the ${found.path} value (for example String.prototype.toWellFormed() or re-truncate on a character boundary) and retry.`,
+        "Run pm <command> --help --json to review the text fields the command accepts.",
+      ],
+    },
+  );
 }
 
 function serializeToonItemDocument(
@@ -2032,6 +2109,7 @@ function serializeToonItemDocument(
     string,
     unknown
   >;
+  assertWellFormedItemText(encodablePayload);
   const serialized = encodeToon(encodablePayload);
   let decoded: unknown;
   try {

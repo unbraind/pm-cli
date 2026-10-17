@@ -1,0 +1,19 @@
+id: pm-ekf2gu
+title: item mutate --dry-run does not surface per-row advisory duplicate-detection warnings
+description: "Bulk create rows run the full SDK create path, so governance.duplicate_detection_mode applies per row: strict refuses and advisory records a warning. The staged preview behind pm item mutate --dry-run returns validation metadata (validated, state, unresolved_commit_constraints) plus mutation_count, mutations, references, and rows, but none of those carry the per-row advisory warnings that create produced, so an agent importing a document under advisory mode cannot see which rows look like existing items before committing. Surface the advisory similarity warnings in the dry-run receipt, keyed by row index and ref, without changing the configured policy."
+type: Issue
+status: open
+priority: 3
+tags: []
+created_at: "2026-10-15T19:59:23.318Z"
+updated_at: "2026-10-16T00:57:35.837Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: Dry-run receipt lists each advisory similarity warning with the row index and ref; Strict mode still refuses the same rows and the configured policy is not changed; Receipt shape is covered by a unit test on the planner and an integration test on pm item mutate --dry-run
+parent: pm-doxj
+risk: low
+confidence: high
+expected_result: "pm item mutate --dry-run on a document whose create rows resemble existing items under duplicate_detection_mode advisory lists each advisory warning with the row index and ref in the receipt, and strict mode still refuses the same rows."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1456,discovered_from,"2026-10-15T19:59:23.318Z","harness:claude-code","cli:create:dep",detected
+body: ""

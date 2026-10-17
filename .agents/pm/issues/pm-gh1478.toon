@@ -1,0 +1,104 @@
+id: pm-gh1478
+title: Preserve surrogate pairs in bounded JSON and TOON output
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1478. Bounded output compaction preserves valid Unicode prefixes in JSON and TOON through a shared primitive, without changing budget accounting or unbounded output."
+type: Issue
+status: closed
+priority: 1
+tags[3]: agent-ux,"area:sdk",github-intake
+created_at: "2026-10-16T04:07:17.204Z"
+updated_at: "2026-10-16T21:53:04.748Z"
+closed_at: "2026-10-16T20:38:15.817Z"
+completed_at: "2026-10-16T20:38:15.817Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Both ordinary and context-intent compaction preserve astral pairs across the cutoff and nested values; JSON and TOON render without manufactured lone surrogates; input immutability, unbounded reads, preserved exceptions and exact budget receipts remain covered"
+parent: pm-5t33or
+risk: medium
+confidence: medium
+severity: high
+resolution: "Use a shared Unicode-safe prefix in ordinary read-output budgets, context-intent compaction, recurrence receipts and compact diagnostic actions. Preserve intact surrogate pairs, exact budget accounting, input immutability, unbounded behavior and existing malformed-input rejection."
+expected_result: "Valid astral characters at a truncation boundary never become lone surrogates or replacement characters in JSON or TOON, and every existing output ceiling remains enforced."
+actual_result: "111 focused SDK, CLI, MCP, recurrence and diagnostic cases pass. Four prior-owner controls fail at intended assertions while three positive controls pass. Types, lint, global source quality, unchanged SDK surface and docs links pass. Hosted global coverage, final full review, reviewed merge and published-artifact verification remain required; Sentry status is not claimed resolved before that handoff."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cxr0jb,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
+  pm-hb7ug8,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
+  pm-jsm9im,related,"2026-10-16T05:21:43.613Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-16T04:07:17.204Z","harness:codex","Duplicate check 2026-10-16: strict complete all-status corpus of 2971 items with zero omissions plus request-specific keyword searches and live open/in_progress reads. No item references GH-1478. Existing foundational owners retain their prior completed scope; this child records the distinct newly reported defect. Kept open and unclaimed while finishing PR 1479."
+  "2026-10-16T04:09:47.325Z","harness:codex","Live Sentry correlation 2026-10-16: PM-CLI-3H remains unresolved with124 events, latest2026-10-15T16:48:14Z from pm-cli@2026.10.14 Windows CI. Auto Release run38842025410 and GitHub issue1483 are blocked by this fault. This output-projection defect is distinct from pm-jsm9im, whose implemented refusal rejects already-malformed persisted item inputs. The release gate must retain this blocker until the actual compaction boundary is fixed and verified."
+  "2026-10-16T20:12:21.015Z","harness:codex","Release recovery scope: live scheduled Auto Release 38867421163 failed before publication at sentry-telemetry-gate with PM-CLI-3H and PM-CLI-3M. The raw duration fix is already part of PR1479; implementing the distinct Unicode output-compaction repair in the same PR to enable an October16 release after reviewed merge and live gate verification."
+  "2026-10-16T20:38:08.450Z","harness:codex","Source remediation for release recovery: ordinary read budgets, context-intent compaction, compact recurrence receipts and action-only diagnostics now share unicodeSafePrefix from the existing private text-normalization module. It backs up only when a boundary splits a valid surrogate pair and preserves already-malformed input for the encoder to reject. All 111 focused cases pass, including cutoff238/239/240, nested arrays/records, exact rendered token receipts, unchanged original input, unbounded reads and real CLI/MCP JSON/TOON output. Four regressions fail against prior716fb6a5a emitting implementations with the new utility available but unwired; three positive controls pass. Four-project typecheck, ESLint, actual global source-quality gate, unchanged SDK surface and docs links pass. Directory and docstring budgets remain unchanged; the test lives in the existing read-output cohort and the helper in the existing shared module. Full local coverage previously timed out at1200 seconds before this addition without a final artifact; exact-head hosted full coverage remains mandatory. Both Sentry faults remain unresolved until the reviewed source is merged and the resolutions can be bound to its commit."
+  "2026-10-16T20:55:12.580Z","harness:codex","Final delivery evidence: all nine packed npm/npx/Bun/bunx consumer workflows pass with the completed output-compaction code. The terminal defect gate passes350 governed defects with zero findings; tracker context, graph, record integrity and full storage/history validation pass. No items remain in progress. Canonical full-source coverage remains a hosted exact-head requirement; the recorded local1200-second timeout is retained."
+  "2026-10-16T21:53:04.747Z","harness:codex","Review wording correction: the generated Fixed entry must describe the delivered Unicode-safe behavior. Renamed this closed source item through PM, preserving its implementation closure and history; regenerate through pm-changelog rather than editing CHANGELOG.md."
+learnings[2]{created_at,author,text}:
+  "2026-10-16T20:38:09.721Z","harness:codex","UTF-16 slice offsets can bisect a valid astral pair. Bound output through one shared prefix primitive, back up rather than exceed the declared ceiling, and estimate the rendered result after adding its suffix. Preserve malformed input for established validation instead of silently substituting replacement characters."
+  "2026-10-16T20:59:27.846Z","harness:codex",Directory ceilings apply to tests as well as production. Put read-output regressions in their existing SDK cohort and shared text helpers in an existing private utility module; verify the actual source gate and canonical generated archive after moving files.
+files[9]{path,scope}:
+  src/core/output/mutation-projection.ts,project
+  src/core/shared/text-normalization.ts,project
+  src/sdk/cli-contracts/agent-output-contracts.ts,project
+  src/sdk/context-intent-contracts.ts,project
+  src/sdk/read-output-budget.ts,project
+  tests/integration/read-output-completeness.integration.spec.ts,project
+  tests/unit/core/output/mutation-projection.spec.ts,project
+  tests/unit/sdk/agent-output-contracts.spec.ts,project
+  tests/unit/sdk/read-output/unicode.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/unicode.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/core/output/mutation-projection.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts,project,300,"harness:codex","2026-10-16T20:35:19.749Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
+test_runs[4]:
+  - run_id: test-local-mvbevjit-hdior0
+    kind: test
+    status: passed
+    started_at: "2026-10-16T20:18:33.651Z"
+    finished_at: "2026-10-16T20:19:36.725Z"
+    recorded_at: "2026-10-16T20:19:36.725Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-unicode.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/core/output/mutation-projection.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvbf665z-0pnv92
+    kind: test
+    status: passed
+    started_at: "2026-10-16T20:26:26.181Z"
+    finished_at: "2026-10-16T20:27:52.631Z"
+    recorded_at: "2026-10-16T20:27:52.631Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-unicode.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/core/output/mutation-projection.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvbfgfky-u95xh5
+    kind: test
+    status: passed
+    started_at: "2026-10-16T20:34:52.194Z"
+    finished_at: "2026-10-16T20:35:51.394Z"
+    recorded_at: "2026-10-16T20:35:51.394Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-unicode.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/core/output/mutation-projection.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvbfh7iy-79g7hq
+    kind: test
+    status: passed
+    started_at: "2026-10-16T20:35:29.401Z"
+    finished_at: "2026-10-16T20:36:27.610Z"
+    recorded_at: "2026-10-16T20:36:27.610Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/unicode.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/core/output/mutation-projection.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: "Preserve valid Unicode across bounded read, recurrence and diagnostic output."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1478
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/unicode.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/core/output/mutation-projection.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/unicode.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/core/output/mutation-projection.spec.ts tests/unit/sdk/agent-output-contracts.spec.ts tests/integration/read-output-completeness.integration.spec.ts,pnpm typecheck,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),"Runtime smoke (ubuntu-latest, Node 24)"
+body: "## Problem\n\nPM's read-output compaction can turn valid Unicode text into an invalid UTF-16 string. Both compaction paths use `value.slice(0, 240)`. If a supplementary-plane character such as 😀 begins at UTF-16 index 239, truncation retains its high surrogate and drops its low surrogate.\n\nThe TOON encoder then correctly rejects the malformed value:\n\n```\nTypeError: Cannot encode string value containing an unpaired surrogate U+D83D at index 239\n```\n\nThe JSON path succeeds, but the returned string contains a dangling `\\ud83d`. Switching encoding therefore avoids the exception without preserving a valid Unicode prefix.\n\nThis is a PM-owned output-projection defect: the synthetic input is well-formed and encodes successfully before compaction. No malformed input is needed.\n\n## Verification and version scope\n\n- Independently reproduced through the installed public `@unbrained/pm-cli/sdk/core` entrypoint from **2026.10.13**, with Node **24.19.0** and its installed `@toon-format/toon@4.1.1`\n- Separately executed the two pure compaction helpers extracted from exact **2026.10.14** source (`2024387a346bb88e0590e07cb3262e03307b997b`) and exact **2026.10.15** source (`9de83bcd9f46c1966c4bdb20639f0b6067b4687b`), followed by the installed TOON 4.1.1 encoder. All four cases produce the same error from valid input\n- Both complete source files are byte-identical between those release commits and current main `8aeb18ce546c402abfac43dffdd65908c884a1b8`\n- The published 10.14/10.15 packages were **not independently installed or run** for this finding. This is not a claim of a new 10.15 regression\n\nSource:\n- [compactStrings, read-output-budget.ts:165–179](https://github.com/unbraind/pm-cli/blob/9de83bcd9f46c1966c4bdb20639f0b6067b4687b/src/sdk/read-output-budget.ts#L165-L179), blob `06c34ff6b8cdfcaec72061fd7f2bf20386606007`\n- [compactContextIntentValue, context-intent-contracts.ts:571–585](https://github.com/unbraind/pm-cli/blob/9de83bcd9f46c1966c4bdb20639f0b6067b4687b/src/sdk/context-intent-contracts.ts#L571-L585), blob `5e3a185678b60b4b7f6435be469c620f9cce2526`\n\n## Minimal public-SDK reproduction\n\nRun in an isolated consumer where the package is already installed; the example only constructs in-memory results.\n\n```js\nimport assert from \"node:assert/strict\";\nimport { applyReadOutputDimensions } from \"@unbrained/pm-cli/sdk/core\";\n\nconst title = \"a\".repeat(239) + \"😀\" + \"z\".repeat(5000);\nconst input = () => ({\n  items: [{ id: \"pm-synthetic-1\", title, status: \"open\" }],\n  count: 1,\n  total: 1,\n});\n\nassert.equal(title.isWellFormed(), true);\n\nassert.throws(\n  () => applyReadOutputDimensions(\n    \"list\",\n    { outputFormat: \"toon\", outputBudget: 1000 },\n    input(),\n  ),\n  {\n    name: \"TypeError\",\n    message: \"Cannot encode string value containing an unpaired surrogate U+D83D at index 239\",\n  },\n);\n\nconst json = applyReadOutputDimensions(\n  \"list\",\n  { outputFormat: \"json\", outputBudget: 1000 },\n  input(),\n);\nassert.equal(json.read_output.strings_compacted, true);\nassert.equal(json.items[0].title.isWellFormed(), false);\n\nconst unbounded = applyReadOutputDimensions(\n  \"list\",\n  { outputFormat: \"toon\", outputBudget: \"unbounded\" },\n  input(),\n);\nassert.equal(unbounded.items[0].title, title);\n```\n\nA separate installed-module check of `attachContextIntentReceipt(\"list\", { for: \"triage\", tokenBudget: 1000 }, input())` produces `recursive_budget_compaction` with the same invalid string; rendering that result as TOON throws too.\n\nControls: putting the emoji at index **238** or **240** does not split the pair in either exact-source helper. Uncompacted input and the unbounded public-SDK case preserve the full valid text.\n\n## Impact and expected behavior\n\nBounded reads containing ordinary valid emoji/other astral characters at this boundary can fail during output rendering or token estimation. JSON consumers instead receive a malformed truncated string. This evidence concerns emitted projections; it does not demonstrate persisted tracker corruption or data loss, and it does not attribute any particular production incident.\n\nBoth compaction paths should share a Unicode-safe bounded-prefix primitive. Keep the encoder's malformed-input rejection. Avoid manufacturing lone surrogates, substituting replacement characters, or weakening output-budget accounting.\n\nAcceptance coverage should include:\n- Both ordinary output-budget and context-intent compaction, including nested records/arrays\n- Valid astral characters immediately before, across, and after the cutoff, with no lone surrogate or replacement character in retained output\n- TOON and JSON parity, plus original-input immutability and unbounded-read preservation\n- The existing preserved-string exceptions and exact rendered-budget/receipt checks\n- CLI/SDK/MCP coverage of the shared boundary, while distinguishing source tests from installed-release acceptance\n\n## Ownership / duplicate check\n\nAll-status issue/PR searches for surrogate, unpaired, Unicode, emoji, 240, the error text, and the compaction helpers found no matching output-compaction defect. [PR #1279](https://github.com/unbraind/pm-cli/pull/1279) / [pm-cimph7](https://github.com/unbraind/pm-cli/blob/8aeb18ce546c402abfac43dffdd65908c884a1b8/.agents/pm/issues/pm-cimph7.toon) concern the already-closed shell-completion Unicode boundary, not these output helpers.\n\nThis belongs under the existing SDK read-output/context-intent lineage: [pm-5t33or](https://github.com/unbraind/pm-cli/blob/8aeb18ce546c402abfac43dffdd65908c884a1b8/.agents/pm/features/pm-5t33or.toon) (open output-budget feature), [pm-hb7ug8](https://github.com/unbraind/pm-cli/blob/8aeb18ce546c402abfac43dffdd65908c884a1b8/.agents/pm/features/pm-hb7ug8.toon) and [pm-cxr0jb](https://github.com/unbraind/pm-cli/blob/8aeb18ce546c402abfac43dffdd65908c884a1b8/.agents/pm/features/pm-cxr0jb.toon) (closed foundational features, delivered through #873). The closed cursor/history issues #1371/#1411/#1325 address different contracts."

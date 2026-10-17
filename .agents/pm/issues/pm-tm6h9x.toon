@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-09-28T01:01:13.807Z"
-updated_at: "2026-09-28T02:32:32.482Z"
+updated_at: "2026-10-15T19:03:50.880Z"
 closed_at: "2026-09-28T02:32:28.947Z"
 completed_at: "2026-09-28T02:32:28.947Z"
 author: "harness:codex"
@@ -24,10 +24,11 @@ expected_result: Both local and hosted exact coverage include the detached clean
 actual_result: "Linked 9-test MCP suite and local full 9384-test exact 100/100/100/100 coverage passed; PR #1332 Gates (coverage) succeeded at https://github.com/unbraind/pm-cli/actions/runs/36369408528/job/108763297565 on e3ad1955beba908a840748c4e96972a9f06ef8aa."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-rzs24j,discovered_from,"2026-09-28T01:03:09.800Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-28T01:01:13.807Z","harness:codex","Duplicate check: all-status searches for MCP task completion coverage and pending-map cleanup found the canonical shipped MCP tasks feature pm-rzs24j, but no item for this exact detached completion coverage race on PR #1332."
   "2026-09-28T01:30:14.727Z","harness:codex","Hosted PR #1332 coverage shards all passed tests, but the merged gate reported 99.99% statements/lines with only src/mcp/server.ts:1063 uncovered. The mocked successful task can expose durable completed status before detached cleanup finishes; the test now observes stable completion after the executor receives another event-loop turn. Linked 9-test suite and full local 9383-test exact 100/100/100/100 coverage passed. Hosted exact-head coverage remains pending; local full static stopped only at host-sensitive CLI transport-floor timing."
   "2026-09-28T02:32:22.194Z","harness:codex","Hosted exact-head evidence: PR #1332 commit e3ad1955beba908a840748c4e96972a9f06ef8aa passed Gates (coverage) at https://github.com/unbraind/pm-cli/actions/runs/36369408528/job/108763297565. This follows local linked MCP 9/9 and full 9384-test exact 100/100/100/100 coverage. Reopened to replace the earlier terminal evidence that accurately said hosted validation was pending at that time."
+  "2026-10-15T19:03:50.880Z","harness:claude-code","Workstation reproduction 2026-10-15 (PR #1479 verification): tests/integration/mcp-stateless-protocol.spec.ts 'negotiates durable asynchronous tool calls' polls tasks/get 100 times with a 10 ms gap, so the detached pm_validate --check-history-drift task must finish inside roughly one second of scheduler time. At host load average 6 (a foreground browser, not the test run) the task was still 'working' after the budget on both the committed head 262cb4ffe and the working tree (13.7 s and 17 s wall), while CI on the same commit passed. The poll budget is a load-sensitive constant, not a lifecycle defect; a bounded elapsed-time budget would make the spec report the same verdict on a loaded host."
 files[1]{path,scope,note}:
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,Await stable completed task state after detached success-path cleanup
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:

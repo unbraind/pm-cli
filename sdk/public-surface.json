@@ -2387,6 +2387,39 @@
       ],
       "package_version": "2026.10.15",
       "reason": "Version the additive handoff parameter and evidence dependency as strict schema4.22.0 and provider schema1.11.0; successful close follow_up migration remains explicit and failure recovery unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:FlagDefinition",
+        "signature ./sdk:parseItemMutationBatch",
+        "signature ./sdk:ResolvedItemMutationDocument",
+        "signature ./sdk:ResolveItemMutationDocumentOptions",
+        "signature ./sdk/authoring:FlagDefinition",
+        "signature ./sdk/runtime:FlagDefinition"
+      ],
+      "package_version": "2026.10.15",
+      "reason": "pm-gh1456 adds the required rows receipt to ResolvedItemMutationDocument (a caller that constructs that result type by hand must now supply rows; consumers reading it are unaffected), optional runtimeFields/upsert resolve options, and an optional parse-options argument on parseItemMutationBatch; pm-extension-scalar-validation adds the optional FlagDefinition.value_validation policy."
+    },
+    {
+      "changes": [
+        "signature ./sdk:describeFlagScalarValueFailure"
+      ],
+      "package_version": "2026.10.15",
+      "reason": "pm-extension-scalar-validation: describeFlagScalarValueFailure was introduced in this same change and its kind parameter is narrowed to number|boolean before first publication; no released consumer exists."
+    },
+    {
+      "changes": [
+        "signature ./sdk:BulkItemCreateMutation"
+      ],
+      "package_version": "2026.10.15",
+      "reason": "BulkItemCreateMutation gains the optional unique guard that keyed upsert sets on unmatched create rows; existing callers that omit it are unaffected"
+    },
+    {
+      "changes": [
+        "signature ./sdk:BulkItemUpdateMutation"
+      ],
+      "package_version": "2026.10.15",
+      "reason": "BulkItemUpdateMutation gains the optional match guard that keyed upsert sets on converted update rows; callers that omit it are unaffected"
     }
   ],
   "entrypoints": {
@@ -4377,7 +4410,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "BulkItemCreateMutation",
-          "signature": "export interface BulkItemCreateMutation { op: \"create\"; id: string; options: PmClientFullMutationOptions; }"
+          "signature": "export interface BulkItemCreateMutation { op: \"create\"; id: string; options: PmClientFullMutationOptions; unique?: BulkItemUniqueKey; }"
         },
         {
           "classification": "advanced_export",
@@ -4400,8 +4433,14 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "BulkItemUniqueKey",
+          "signature": "export interface BulkItemUniqueKey { key: string; value: unknown; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "BulkItemUpdateMutation",
-          "signature": "export interface BulkItemUpdateMutation { op: \"update\"; id: string; options: PmClientFullMutationOptions; }"
+          "signature": "export interface BulkItemUpdateMutation { op: \"update\"; id: string; options: PmClientFullMutationOptions; match?: BulkItemUniqueKey; }"
         },
         {
           "classification": "advanced_export",
@@ -6636,6 +6675,12 @@
           "signature": "(blueprint: ExtensionBlueprint) => ExtensionCapability[] | calls: (blueprint: ExtensionBlueprint) => ExtensionCapability[]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "deriveMutationTransactionId",
+          "signature": "(input: string) => string | calls: (input: string) => string"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "derivePmBulkMutationEffect",
@@ -6688,6 +6733,12 @@
           "kind": "function",
           "name": "describeExtensionBlueprint",
           "signature": "(blueprint: ExtensionBlueprint) => ExtensionActivationSummary | calls: (blueprint: ExtensionBlueprint) => ExtensionActivationSummary"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "describeFlagScalarValueFailure",
+          "signature": "(value: unknown, kind: Exclude<FlagValueKind, \"string\">) => FlagScalarValueFailure | null | calls: (value: unknown, kind: Exclude<FlagValueKind, \"string\">) => FlagScalarValueFailure | null"
         },
         {
           "classification": "advanced_export",
@@ -8325,7 +8376,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FlagDefinition",
-          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; }"
+          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; value_validation?: FlagValueValidation; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "FlagScalarValueFailure",
+          "signature": "export interface FlagScalarValueFailure { kind: Exclude<FlagValueKind, \"string\">; received: unknown; expected: string; }"
         },
         {
           "classification": "supported",
@@ -10242,6 +10299,18 @@
           "signature": "export interface ItemMutationPreviewValidation { validated: boolean; state: \"staged_snapshot\" | \"replayed_committed_plan\"; unresolved_commit_constraints: readonly string[]; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemMutationUpsertCandidate",
+          "signature": "export interface ItemMutationUpsertCandidate { id: string; value: unknown; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemMutationUpsertOptions",
+          "signature": "export interface ItemMutationUpsertOptions { key: string; existing: readonly ItemMutationUpsertCandidate[]; }"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "ItemScalarConflictResolution",
@@ -10806,6 +10875,12 @@
           "signature": "export interface ListTreeMetadata { tree_depth: number; tree_parent: string | null; tree_children: number; tree_title: string; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "listUpsertKeyCandidates",
+          "signature": "(pmRoot: string, settings: PmSettings, schemaContext: TransactionSchemaContext, key: string) => Promise<ItemMutationUpsertCandidate[]> | calls: (pmRoot: string, settings: PmSettings, schemaContext: TransactionSchemaContext, key: string) => Promise<ItemMutationUpsertCandidate[]>"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ListVerboseResult",
@@ -10846,6 +10921,12 @@
           "kind": "function",
           "name": "loadGraphAuditBaseline",
           "signature": "(pmRoot: string) => Promise<RelationshipAuditSnapshot | undefined> | calls: (pmRoot: string) => Promise<RelationshipAuditSnapshot | undefined>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "loadGuardedRuntimeSchema",
+          "signature": "(pmRoot: string, schemaSettings: Partial<PmSettings[\"schema\"]> | undefined) => Promise<Awaited<ReturnType<typeof loadRuntimeSchemaFromOptionalFiles>>> | calls: (pmRoot: string, schemaSettings: Partial<PmSettings[\"schema\"]> | undefined) => Promise<Awaited<ReturnType<typeof loadRuntimeSchemaFromOptionalFiles>>>"
         },
         {
           "classification": "advanced_export",
@@ -12003,7 +12084,13 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseItemMutationBatch",
-          "signature": "(input: string) => BulkItemMutation[] | calls: (input: string) => BulkItemMutation[]"
+          "signature": "(input: string, parseOptions?: ParseItemMutationBatchOptions) => BulkItemMutation[] | calls: (input: string, parseOptions?: ParseItemMutationBatchOptions) => BulkItemMutation[]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ParseItemMutationBatchOptions",
+          "signature": "export interface ParseItemMutationBatchOptions { runtimeFields?: readonly RuntimeFieldDefinitionResolved[]; }"
         },
         {
           "classification": "supported",
@@ -12385,9 +12472,27 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "function",
+          "name": "planItemMutationDocument",
+          "signature": "(options: PlanItemMutationDocumentOptions) => Promise<PlannedItemMutationDocument> | calls: (options: PlanItemMutationDocumentOptions) => Promise<PlannedItemMutationDocument>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PlanItemMutationDocumentOptions",
+          "signature": "export interface PlanItemMutationDocumentOptions { pmRoot: string; input: string; transactionId?: string; upsertKey?: string; settings?: PmSettings; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "PlanMutationReceipt",
           "signature": "export interface PlanMutationReceipt { kind: \"plan_mutation\"; action: PlanSubcommand; id: string; status: string; mode: PlanMode; steps_summary: PlanStepSummary; step?: Pick<NonNullable<PlanCommandResult[\"step\"]>, \"id\" | \"order\"> & { status: PlanStepStatus; }; materialized_count: number; skipped_count: number; warning_count: number; warnings: string[]; warnings_truncated: boolean; next_action: string; inspection_command: string; omission_receipt: { has_omissions: true; omitted_field_group_count: 1; omitted_field_groups: { name: \"plan_detail\"; restore_with: string; }[]; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PlannedItemMutationDocument",
+          "signature": "export interface PlannedItemMutationDocument extends ResolvedItemMutationDocument { transaction_id: string; transaction_id_source: \"explicit\" | \"derived\"; upsert_key?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -16857,7 +16962,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ResolvedItemMutationDocument",
-          "signature": "export interface ResolvedItemMutationDocument { schema_version: 1; mutations: BulkItemMutation[]; references: Record<string, string>; }"
+          "signature": "export interface ResolvedItemMutationDocument { schema_version: 1; mutations: BulkItemMutation[]; references: Record<string, string>; rows: ResolvedItemMutationRow[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ResolvedItemMutationRow",
+          "signature": "export interface ResolvedItemMutationRow { index: number; ref?: string; id: string; op: BulkItemMutation[\"op\"]; upserted?: true; }"
         },
         {
           "classification": "advanced_export",
@@ -17007,7 +17118,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ResolveItemMutationDocumentOptions",
-          "signature": "export interface ResolveItemMutationDocumentOptions { transactionId: string; idPrefix: string; }"
+          "signature": "export interface ResolveItemMutationDocumentOptions { transactionId: string; idPrefix: string; runtimeFields?: readonly RuntimeFieldDefinitionResolved[]; upsert?: ItemMutationUpsertOptions; }"
         },
         {
           "classification": "advanced_export",
@@ -17380,6 +17491,12 @@
           "kind": "function",
           "name": "resolveTerminalReason",
           "signature": "(input: TerminalReasonInput) => TerminalReasonResolution | calls: (input: TerminalReasonInput) => TerminalReasonResolution"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveTransactionSchema",
+          "signature": "(pmRoot: string, settings: PmSettings) => Promise<TransactionSchemaContext> | calls: (pmRoot: string, settings: PmSettings) => Promise<TransactionSchemaContext>"
         },
         {
           "classification": "advanced_export",
@@ -19472,6 +19589,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "stableUpsertValue",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "stableValueEquals",
           "signature": "(left: unknown, right: unknown) => boolean | calls: (left: unknown, right: unknown) => boolean"
         },
@@ -20284,6 +20407,12 @@
           "kind": "function",
           "name": "toReplayDocument",
           "signature": "(document: ItemDocument) => ReplayDocument | calls: (document: ItemDocument) => ReplayDocument"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TransactionSchemaContext",
+          "signature": "export interface TransactionSchemaContext { schema: PmSettings[\"schema\"]; typeDefinitionsFromFile: ItemTypeDefinition[]; }"
         },
         {
           "classification": "advanced_export",
@@ -22071,7 +22200,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FlagDefinition",
-          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; }"
+          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; value_validation?: FlagValueValidation; }"
         },
         {
           "classification": "supported",
@@ -32943,7 +33072,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FlagDefinition",
-          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; }"
+          "signature": "export interface FlagDefinition { long?: string; short?: string; value_name?: string; description?: string; required?: boolean; enabled?: boolean; visible?: boolean; value_type?: FlagValueType; type?: FlagValueType; list?: boolean; repeatable?: boolean; default?: string | number | boolean | Array<string | number | boolean>; value_validation?: FlagValueValidation; }"
         },
         {
           "classification": "supported",
@@ -35977,6 +36106,7 @@
     "body_file_missing_path",
     "body_file_unreadable",
     "budget_exceeded",
+    "bulk_create_route",
     "bulk_ids_input_empty",
     "bulk_ids_input_missing_path",
     "bulk_ids_input_unreadable",
@@ -36030,6 +36160,7 @@
     "extension_dependency_name_unsafe",
     "extension_dependency_spec_invalid",
     "extension_dependency_version_unsafe",
+    "extension_flag_value_invalid",
     "extension_install_incomplete_source_scan",
     "extension_install_soft_failed",
     "extension_install_source_contains_destination",
@@ -36182,6 +36313,8 @@
     "module_import_failed",
     "multi_target_github_install_ambiguous",
     "mutation_author_required",
+    "mutation_document_unreadable",
+    "mutation_option_value_invalid",
     "mutation_secret_guard_blocked",
     "no_matching_tests",
     "no_projects_matched_filters",
@@ -36269,11 +36402,15 @@
     "terminal_state_conflict",
     "test_measure_requires_execution",
     "test_measure_requires_run",
+    "text_unpaired_surrogate",
     "tracked_runtime_cache_files",
     "tracker_not_initialized",
     "tracker_root_missing",
     "tracker_root_not_directory",
     "tracker_root_unreadable",
+    "transaction_create_compensated",
+    "transaction_journal_invalid",
+    "transaction_plan_mismatch",
     "transaction_preview_external_schema",
     "transaction_preview_non_regular_file",
     "transaction_preview_snapshot_changed",
@@ -36296,6 +36433,11 @@
     "unknown_subcommand",
     "unsafe_init_recovery",
     "unsupported_update_option",
+    "upsert_key_ambiguous",
+    "upsert_key_conflict",
+    "upsert_key_duplicate",
+    "upsert_key_missing",
+    "upsert_match_changed",
     "validate_command_references_stale_pm_ids",
     "validate_files_missing_linked_paths",
     "validate_files_orphaned_paths",

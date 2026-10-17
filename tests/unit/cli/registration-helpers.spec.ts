@@ -36,6 +36,7 @@ import {
   resolveActivityStreamMode,
   clearResolvedGlobalOptions,
   setResolvedGlobalOptions,
+  syncCommanderActionOptions,
 } from "../../../src/cli/registration-helpers.js";
 import { setActiveExtensionServices } from "../../../src/core/extensions/index.js";
 import {
@@ -46,6 +47,32 @@ import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 
 describe("registration helpers", () => {
+  it("labels changed overrides as cli while retaining unchanged defaults", () => {
+    const command = new Command()
+      .option("--stdin-json [value]", "Read input", "-")
+      .option("--label <value>")
+      .option("--safe", "Default flag", false)
+      .parse([], { from: "user" });
+    command.setOptionValueWithSource("label", "environment value", "env");
+    syncCommanderActionOptions(command, { stdinJson: "{}", label: "override value", safe: false });
+    expect(command.getOptionValueSource("stdinJson")).toBe("cli");
+    expect(command.getOptionValueSource("label")).toBe("cli");
+    expect(command.getOptionValueSource("safe")).toBe("default");
+    expect(command.opts()).toMatchObject({ stdinJson: "{}", label: "override value", safe: false });
+  });
+
+  it("preserves option origins while synchronizing normalized parser values", () => {
+    const command = new Command()
+      .option("--stdin-json", "Read stdin", true)
+      .option("--label <value>")
+      .parse(["--label", "raw"], { from: "user" });
+    syncCommanderActionOptions(command, { stdinJson: true, label: "normalized", loose: "parsed" });
+    expect(command.getOptionValueSource("stdinJson")).toBe("default");
+    expect(command.opts()).toMatchObject({ stdinJson: true, label: "normalized", loose: "parsed" });
+    expect(command.getOptionValueSource("label")).toBe("cli");
+    expect(command.getOptionValueSource("loose")).toBe("cli");
+  });
+
   it("uses an active package command-result override when handled", async () => {
     setActiveExtensionServices({
       overrides: [
