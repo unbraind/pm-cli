@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:sdk",bulk-mutations,github-intake
 created_at: "2026-10-13T18:12:30.417Z"
-updated_at: "2026-10-16T22:27:57.570Z"
+updated_at: "2026-10-17T02:29:03.210Z"
 closed_at: "2026-10-16T22:27:55.332Z"
 completed_at: "2026-10-16T22:27:55.332Z"
 author: "harness:codex"
@@ -32,7 +32,7 @@ dependencies[13]{id,kind,created_at,author,source_kind,author_source}:
   pm-998juj,related,"2026-10-16T05:26:38.990Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-16T06:04:05.871Z","harness:codex","cli:update:dep",detected
   pm-jm7m3o,related,"2026-10-16T17:11:59.882Z","harness:codex","cli:update:dep",detected
-comments[55]:
+comments[56]:
   - created_at: "2026-10-13T18:12:30.417Z"
     author: "harness:codex"
     text: "{\"text\":\"Duplicate check: complete live all-status corpus2953 items with zero omissions/unreadable records plus request search/open/in-progress reads. Full live pm-xm7c and pm-y9hq are closed for shipped CLI/MCP and SDK atomic mutations; pm-xm7c history67 entries verifies current hash. No existing open JSONL/keyed-upsert owner was found. Current pm item mutate contract exposes required --transaction-id, --stdin-json and --dry-run; GH report incorrectly states no CLI bulk primitive. Remaining discoverability/JSONL/upsert request is additive.\"}"
@@ -200,6 +200,9 @@ comments[55]:
   - created_at: "2026-10-16T22:27:52.345Z"
     author: "harness:codex"
     text: "Hosted c1dfe27 static gate identified a stale generated REFUSAL_CLOSURE_CENSUS: the new transaction_create_compensated catalogue entry was missing from its census. Regenerated through contracts:agent-surfaces:update; the census now lists419 codes and400 explicitly uncovered rows, retaining19 executable codes against the unchanged18-code ratchet. Generated agent surfaces, error catalogue and full command contract checks pass. This is a generated-document synchronization fix; the production latest-close predicate remains unchanged from c1dfe27. The final linked SDK/CLI/MCP cohort passes108 cases, including routed-update and interrupted-terminal positive controls."
+  - created_at: "2026-10-17T02:29:03.210Z"
+    author: "harness:codex"
+    text: "Post-merge delivery evidence: PR1479 reviewed head8b50e05799fa8bc587598308a763057de753bb39 merged as94757af3016420bfda6b6fc1905be7814ee2ea1d with the same tree. The final hosted source gate and tagged Release38991739473 each passed exact100/100/100/100 coverage with zero uncovered counts; the tagged cohort passed10567 tests. Final CodeRabbit delta reported no actionable comments and all threads were resolved; unavailable Sourcery/Greptile providers remain explicit limitations. Public2026.10.17 is latest, and fresh anonymous Node/Bun SDK plus CLI, npx and bunx checks passed. This completes the previously pending hosted/publication handoff without changing the immutable implementation-close evidence or treating the earlier local1200-second timeout as a successful full local run. Release and consumer evidence: https://github.com/unbraind/pm-cli/actions/runs/38991739473 ."
 learnings[5]{created_at,author,text}:
   "2026-10-16T04:25:15.096Z","harness:codex",A workspace transaction lock serializes bulk transactions but does not fence ordinary item writers. Revalidate a planned match against the same document read under the target item lock; resolve shortened SDK ids to canonical identity before scoping a target-specific guard. Prove the race at the actual item-lock boundary with a separate ordinary writer and verify its history remains intact.
   "2026-10-16T07:31:18.265Z","harness:codex",Preserve Commander option origins when forwarding normalized SDK values. A default-true flag must remain a default; relabeling every value as CLI input breaks safe explicit-input conflict checks.

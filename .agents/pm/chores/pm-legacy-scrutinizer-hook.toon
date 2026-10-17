@@ -1,0 +1,28 @@
+id: pm-legacy-scrutinizer-hook
+title: Audit the residual webhook for intentionally retired Scrutinizer
+description: Record the legacy Scrutinizer repository webhook still reporting HTTP404 after the maintainer intentionally removed that analyzer. Determine the correct administrator cleanup without restoring obsolete analysis or changing active quality gates.
+type: Chore
+status: open
+priority: 3
+tags[2]: github-intake,release-closeout
+created_at: "2026-10-17T02:29:33.968Z"
+updated_at: "2026-10-17T02:29:33.968Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: Confirm the hook still belongs solely to retired Scrutinizer and preserve active DeepSource/DeepScan settings; obtain explicit authorization before destructive webhook removal; record sanitized before/after delivery state and confirm current required checks remain available.
+definition_of_ready: Live duplicate search and canonical lineage reviewed; reported evidence retained; implementation must first reproduce in isolated fixtures and keep existing gates.
+goal: project management = context management
+objective: Only intentionally active analyzer integrations receive deliveries; legacy retirement and any authorized webhook cleanup have explicit evidence.
+value: "Preserve reliable, economical project context and explicit evidence across repositories and tool integrations."
+why_now: New live GitHub report or integration observation arrived during verified2026.10.17 release closeout.
+parent: pm-doxj
+risk: low
+confidence: medium
+expected_result: Only intentionally active analyzer integrations receive deliveries; legacy retirement and any authorized webhook cleanup have explicit evidence.
+actual_result: Read-only audit found the residual Scrutinizer hook active with last-response404. Full live pm-3a68 closure confirms intentional removal because the legacy build image could not support modern Node. No webhook was removed or re-enabled.
+component: GitHub analyzer integration hygiene
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3a68,related,"2026-10-17T02:29:33.968Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-17T02:29:33.968Z","harness:codex","Duplicate-check evidence: Live keyword searchesScrutinizer and webhook plus open/in-progress inventories found only completed pm-3a68 for the intentionally removed analyzer and unrelated event-delivery work. This distinct residual integration cleanup links that original decision without reopening it."
+body: "Discovered during PR1479 final analyzer audit. Canonical pm-3a68 is completed and specifically records the maintainer removal decision; this is residual integration cleanup, not a request to reinstall Scrutinizer, weaken required analysis or buy a plan. Keep webhook endpoint/configuration and credentials out of public evidence."
