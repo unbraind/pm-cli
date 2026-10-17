@@ -6,9 +6,9 @@ status: closed
 priority: 2
 tags[4]: "area:history","area:locking",github-intake,performance
 created_at: "2026-10-16T13:01:36.615Z"
-updated_at: "2026-10-17T21:38:54.658Z"
-closed_at: "2026-10-17T21:34:56.869Z"
-completed_at: "2026-10-17T21:34:56.869Z"
+updated_at: "2026-10-17T23:06:09.623Z"
+closed_at: "2026-10-17T23:06:08.693Z"
+completed_at: "2026-10-17T23:06:08.693Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Reproduce with isolated traced and untraced cohorts and report writer lock wait separately from downstream detection; Choose and document a bounded snapshot/fair-lock/critical-section protocol from measured attribution; Preserve authoritative fallback, committed invalidation and late-fact visibility; Prove zero lost or duplicate events, zero history drift and the declared end-to-end latency budget under mixed SDK and CLI writers."
@@ -20,14 +20,14 @@ parent: pm-lvyd
 risk: high
 confidence: medium
 severity: medium
-resolution: "Read projection rows and size receipts in one SQLite transaction, close before asynchronous validation, and verify generation/invalidation state without writer locks. Transient reads use authority directly; optional writes never wait for native SQLite contention."
-expected_result: Preserve authoritative facts and invalidations while meeting the declared mixed-reader observation budget.
-actual_result: Final traced and untraced100-reader cohorts each delivered5000 unique observations with zero drift and maximum1188ms/1647ms below2000ms. Native negative controls reproduced5009ms and locked-database failure; all113 affected tests now pass. Linked history/workflow64 tests pass; final hosted coverage and admission remain mandatory. Existing timestamp-cursor and broader startup limits remain separately tracked.
+resolution: "Capture SQLite rows and size receipts coherently, close before asynchronous validation, and observe token-owned append progress. Preserve native contention markers until zero-wait recovery probes clear; authoritative writers bypass the projection lock through portable invalidation, while repair rejects changed snapshots and yields during construction."
+expected_result: Keep complete authoritative history while avoiding projection-induced writer queues and meeting the fixed-boundary mixed-reader budget without changing cursor contracts or quality thresholds.
+actual_result: "Complete final pnpm quality:static and all four typecheck projects pass. Linked history/workflow70 tests and focused history/SDK/lock/workflow388 tests pass; deterministic controls cover paused append, paused repair, returning native contention, settled damage and expired leases. Traced/untraced100-reader cohorts each deliver5000 unique observations with zero drift and maxima1154/1212ms below2000ms. Required observability gate passes; current-version backend243 starts/243 finishes with max2412ms ingestion. Full final-head hosted coverage/analyzer admission is required before merge; timestamp-cursor ordering remains separately tracked."
 component: history event index concurrency
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-a7207g,related,"2026-10-16T13:01:36.615Z","harness:codex","cli:create:dep",detected
   pm-10l1vm,related,"2026-10-17T21:04:31.498Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-16T13:01:36.615Z","harness:codex","Duplicate check: live open/in-progress reads and all-status keyword searches for queryHistoryEventIndex, history-index and writer starvation found the closed Windows invalidation owner and the broad concurrency throughput parent. Full live parent and prior-fix data distinguish this latency report from the completed portable invalidation regression. Reuse pm-lvyd as parent and preserve the closed fix; do not file a duplicate broad concurrency epic."
   "2026-10-17T19:35:29.184Z","harness:codex","Live intake: strict all-status corpus read 2986/2986 items with complete receipt, no omissions or unreadable files; no active claims, open PRs or GitHub security alerts. Preserving completed Windows invalidation lineage pm-a7207g. Investigation identifies exclusive read locks spanning filesystem validation and optional SDK rebuilds sharing writer locks. This delivery will prove a nonblocking snapshot protocol and bounded fallback with isolated real persistence and mixed SDK/CLI acceptance."
   "2026-10-17T19:40:56.035Z","harness:codex","Negative control: both new snapshot tests fail against the unchanged baseline: an index query refuses while the writer file lock is held, and a reader suspended inside stream stat blocks an authoritative append beyond 1500ms. Candidate snapshot queries and recency reads acquire no writer locks, close SQLite before filesystem validation, and retain stream-size plus invalidation checks. First focused run passes all 49 tests. The distinct optional-rebuild availability escape is tracked as pm-xj80p9 and claimed for this same delivery."
@@ -39,19 +39,25 @@ comments[11]{created_at,author,text}:
   "2026-10-17T21:04:01.304Z","harness:codex","First PR review found a second native contention boundary: incremental SQLite writes still set busy_timeout5000, so a cross-process read transaction may hold commit beyond the unchanged2000ms observation budget. Add native shared-reader and reserved-writer controls before reducing this optional-cache wait; preserve authoritative append and invalidation recovery. The initial full suite passed10614 tests and exact100/100/100/100 coverage. Hosted static found one missing typed relationship to the already documented causal-ordering boundary; record that real relationship without changing the graph ratchet."
   "2026-10-17T21:34:01.903Z","harness:codex","Final review remediation verified: native SQLite shared-reader and reserved-writer negative controls reproduced5009ms commit delay and database-is-locked failure before the change. Zero native busy retries plus typed contention fallback now pass shared-reader, reserved-writer and exclusive-writer cases, preserving both authoritative records and rebuild recovery. All113 affected tests pass; linked suites pass64/49/20 tests. Repeated final100-reader cohorts each deliver5000 observations with zero drift: max1647ms untraced and1188ms traced below2000ms. Final trace CLI preappend712ms/index-lock lowerbound345ms, SDK290ms/102ms. Packed npx and bunx smoke passes9 installed packages. Initial full suite passed10614 tests and exact100% counts; final-head hosted coverage and static admission remain required. Local qualified Node26 startup-budget failures are preserved under the existing performance owner; no gate was weakened."
   "2026-10-17T21:38:54.658Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1493 carries this fix, structured close evidence and generated changelog. First-head CodeRabbit posted one actionable SQLite wait finding, reproduced and fixed with native controls; required final-head CI and analyzer receipts are still the merge condition. Sourcery review quota, Cubic free-monthly cap and Greptile trial expiry prevented those optional reviews; no unavailable review is treated as approval."
+  "2026-10-17T22:27:13.902Z","harness:codex","Second full review on cae7d4b15 raises two related repair paths: normal appends publish no active marker, so intermediate larger stream sizes look like settled cache damage; post-COMMIT native contention removes the cache and can start a full repair holding the index lock. Reopen only this implementation owner for deterministic pause controls and a zero-wait authoritative fallback protocol; preserve initial-versus-publication invalidation-lock error semantics. Required hosted analyzer evidence for the prior head is now green, but the review findings prevent merge."
+  "2026-10-17T22:37:14.704Z","harness:codex","Confirmed controls on the reviewed head: paused indexed append requests repair; native commit/begin contention requests repair while the contender is still active; a suspended full repair blocks a later authoritative append past1500ms under PM_LOCK_WAIT_MS=30000. The scan control now pauses the actual default-namespace stat boundary and settles both operations; its original readFile hook did not intercept the namespace import and is not counted as regression proof. Reuse token-owned append lock metadata as the active marker, cap authoritative index-lock retries at zero and retain the existing portable fallback. The independent SQLite-less producer omission is tracked and actively implemented in pm-f7shxf."
+  "2026-10-17T22:48:13.501Z","harness:codex","Second-review validation: all388 focused history/SDK/lock/workflow tests pass. Diagnostic full-denominator coverage for this subset correctly fails global admission; current event-index statements/functions/branches have zero uncovered entries and the new lock-owner observer is covered. All four typecheck configurations pass. The untraced100-reader/10-writer cohort delivered all5000 unique observations with zero history drift; maximum1212ms below the unchanged2000ms budget. The first traced rerun stopped because a CLI process emitted an incomplete instrumentation receipt, not because a delivery assertion failed; attribution remains unproven until corrected. Full final-head hosted coverage and static admission remain required before merge."
+  "2026-10-17T23:02:31.218Z","harness:codex","Final corrected traced cohort delivered all5000 unique observations with zero drift and1154ms maximum versus2000ms; separate untraced cohort max1212ms. The operator tracer now captures stale-cleanup-gate attempts before file open, so zero-wait bypasses are reported rather than mistaken for absent attribution. Traced SDK/CLI lanes bypassed the projection lock3/11 times; successful acquisition lower-bound maxima19ms/1ms, timestamp-to-append maxima461ms/126ms, invocation maxima673ms/1025ms. These are distinct measurements, not universal starvation or advanced-cursor guarantees. Complete pnpm quality:static passed on the final implementation, including unchanged startup budgets and bounded mutation348/341/7-equivalent. Full final-head CI remains required."
+  "2026-10-17T23:05:48.789Z","harness:codex","Final live observability: required Sentry/telemetry gate passed (zero critical/high issues,2.62% finish error rate,zero missing error-code rows). Fresh pm-get span at23:02:40UTC lasted108.513ms. Serialized explicit flush drained1 entry to0 with no invalid rows or failures; stack healthy,broker0 messages/1 consumer. Backend partition for version2026.10.17 since19:32UTC has243 starts/243 finishes,zero unmatched primary sessions,max ingest2412ms. The all-version window contains two unmatched get starts from2026.7.23 automation and a970934ms validate delay from2026.8.21 automation; these are legacy producer observations, not evidence against or proof of the current build. Queue state is an observed instant, not a promise that later commands enqueue nothing."
 notes[1]{created_at,author,text}:
   "2026-10-17T20:05:44.172Z","harness:codex","Protocol choice: capture rows and size receipts in one synchronous SQLite read transaction, then close it before filesystem validation. Check stream sizes, pending/committed invalidations and projection file generation without acquiring writer locks. Concurrent generation changes and native SQLite BUSY/LOCKED conditions use authoritative fallback directly; only missing or damaged caches request one optional zero-retry rebuild. This keeps correctness authentication while removing both long validation critical sections and repair storms."
 learnings[1]{created_at,author,text}:
   "2026-10-17T20:05:46.566Z","harness:codex",Optimistic cache validation needs a distinct transient result. Treating every refused snapshot as cache damage can recreate writer contention through optional rebuilds even after ordinary reads release all writer locks.
-files[5]{path,scope}:
+files[6]{path,scope}:
   .github/workflows/ci.yml,project
   src/core/history/event-index.ts,project
+  src/core/lock/lock.ts,project
   tests/integration/ci-workflow-contract.spec.ts,project
   tests/unit/core/history/event-index-snapshots.spec.ts,project
   tests/unit/core/history/event-index.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-17T19:50:06.849Z",local_mutation,fix/history-index-reader-contention
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvctlmth-sf8n6x
     kind: test
     status: passed
@@ -74,19 +80,30 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvd0576t-c05glb
+    kind: test
+    status: passed
+    started_at: "2026-10-17T23:02:22.508Z"
+    finished_at: "2026-10-17T23:02:45.413Z"
+    recorded_at: "2026-10-17T23:02:45.413Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[2]:
   - path: CHANGELOG.md
     scope: project
     note: Latest pm-changelog package owns the generated combined-delivery record.
   - path: docs/SDK_CONTEXT_COORDINATION.md
     scope: project
-close_reason: Implemented nonblocking history snapshots and bounded native SQLite contention with authority-preserving recovery.
+close_reason: "Deliver nonblocking history snapshots, transient contention recovery and writer progress during full repairs."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   owner: pm-gh1485
   gate_id: test-coverage
-  negative_control: "node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t \"reads a settled snapshot|allows an append\""
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts
   local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
   hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
 body: "Source: [GitHub issue 1485](https://github.com/unbraind/pm-cli/issues/1485).\n\nThe report links the public pm-web capacity harness and unbraind/pm-web issue 211. It separates three untraced and three traced runs, pre-append delay, index-lock wait lower bound, downstream SDK classification, polling and SSE delivery. The proposed investigation must retain those distinctions and must not infer universal starvation from one perturbed run. This PR records intake only; implementation remains unclaimed."

@@ -332,6 +332,20 @@ function isStaleLock(info: LockInfo | null, ttlSeconds: number): boolean {
   return ageMs > ttlSeconds * 1000;
 }
 
+/** Observe a built-in lock's owner lease without acquiring it or changing storage. */
+export async function hasUnexpiredLockOwner(
+  pmRoot: string,
+  id: string,
+  ownerPrefix: string,
+): Promise<boolean> {
+  const { info } = await readLockInfo(getLockPath(pmRoot, id), false);
+  return (
+    info !== null &&
+    info.owner.startsWith(ownerPrefix) &&
+    !isStaleLock(info, info.ttl_seconds)
+  );
+}
+
 function lockOwnerSuffix(info: LockInfo | null): string {
   return info?.owner ? ` (owner ${info.owner})` : "";
 }

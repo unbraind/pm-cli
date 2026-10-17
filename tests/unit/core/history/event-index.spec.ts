@@ -796,7 +796,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("serializes appends through incremental size capture", async () => {
+  it("refuses an invalidated projection when concurrent appends race size capture", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -827,6 +827,7 @@ describe("history mutation event index", () => {
             String(args[0]) === historyPath
           ) {
             concurrentAppend = appendHistoryEntry(historyPath, third);
+            await concurrentAppend;
           }
           return stats;
         });
@@ -837,6 +838,10 @@ describe("history mutation event index", () => {
         statSpy.mockRestore();
       }
 
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+      expect(await rebuildHistoryEventIndex(context.pmPath)).toBe(true);
       const database = new DatabaseSync(
         path.join(context.pmPath, "runtime", INDEX_FILENAME),
       );
@@ -857,7 +862,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("serializes rebuild replacement with concurrent compliant appends", async () => {
+  it("refuses rebuild publication when a concurrent compliant append invalidates it", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -882,16 +887,21 @@ describe("history mutation event index", () => {
             String(args[0]) === historyPath
           ) {
             concurrentAppend = appendHistoryEntry(historyPath, second);
+            await concurrentAppend;
           }
           return stats;
         });
       try {
-        await rebuildHistoryEventIndex(context.pmPath);
+        expect(await rebuildHistoryEventIndex(context.pmPath)).toBe(false);
         await concurrentAppend;
       } finally {
         statSpy.mockRestore();
       }
 
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+      expect(await rebuildHistoryEventIndex(context.pmPath)).toBe(true);
       await expect(
         queryHistoryEventIndex(context.pmPath, {
           stream_ids: ["pm-rebuild-concurrent"],

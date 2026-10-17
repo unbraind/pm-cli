@@ -8,6 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
+import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import type { HistoryEntry } from "../../types/index.js";
 import { isFileMissingError } from "../fs/fs-utils.js";
@@ -15,6 +16,7 @@ import {
   acquireLock,
   captureProcessIdentity,
   isProcessIdentityAlive,
+  hasUnexpiredLockOwner,
 } from "../lock/lock.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
@@ -30,6 +32,7 @@ const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
 const EVENT_INDEX_VERSION = "5";
 const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
+const HISTORY_EVENT_INDEX_APPEND_OWNER_PREFIX = "history-event-index:append:";
 const HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS = 300;
 const HISTORY_EVENT_INDEX_LOCK_WAIT_MS = 30_000;
 const HISTORY_EVENT_INDEX_INVALIDATION_LOCK_ID =
@@ -244,17 +247,78 @@ async function invalidateHistoryEventIndex(pmRoot: string): Promise<void> {
   }
 }
 
+/** Preserve native contention as invalidation evidence while retaining the contended file. */
+async function recordHistoryEventIndexInvalidation(
+  pmRoot: string,
+  contended: boolean,
+): Promise<void> {
+  const directory = historyEventIndexInvalidationDirectory(pmRoot);
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(
+    path.join(
+      directory,
+      `${randomUUID()}${contended ? ".contended" : ""}.committed`,
+    ),
+    "committed\n",
+    { flag: "wx" },
+  );
+  if (!contended) await invalidateHistoryEventIndex(pmRoot);
+}
+
+/** Recognize retained native contention without treating settled damage as transient. */
+function hasContendedHistoryEventIndexInvalidation(
+  invalidations: HistoryEventIndexInvalidations,
+): boolean {
+  return invalidations.committed.some((name) =>
+    name.endsWith(".contended.committed"),
+  );
+}
+
+/** Make a zero-wait native recovery probe; ordinary snapshot reads remain read-only. */
+function hasNativeHistoryEventIndexContention(
+  pmRoot: string,
+  Database: DatabaseSyncConstructor,
+): boolean {
+  let database: DatabaseSync | undefined;
+  try {
+    database = new Database(eventIndexPath(pmRoot));
+    database.exec("PRAGMA busy_timeout = 0");
+    database.exec("BEGIN EXCLUSIVE");
+    return false;
+  } catch (error: unknown) {
+    return isHistoryIndexSqliteContention(error);
+  } finally {
+    database?.close();
+  }
+}
+
+/** A token-owned append lease is the progress marker until its projection work completes. */
+async function historyEventIndexAppendIsActive(
+  pmRoot: string,
+  invalidations: HistoryEventIndexInvalidations,
+): Promise<boolean> {
+  return (
+    invalidations.pending.length > 0 ||
+    (await hasUnexpiredLockOwner(
+      pmRoot,
+      HISTORY_EVENT_INDEX_LOCK_ID,
+      HISTORY_EVENT_INDEX_APPEND_OWNER_PREFIX,
+    ))
+  );
+}
+
 /** Serialize projection writers without requiring readers to join their lock queue. */
 async function withHistoryEventIndexLock<T>(
   pmRoot: string,
   operation: () => Promise<T>,
   waitMs = HISTORY_EVENT_INDEX_LOCK_WAIT_MS,
+  purpose: "append" | "rebuild" = "rebuild",
 ): Promise<T> {
   const release = await acquireLock(
     pmRoot,
     HISTORY_EVENT_INDEX_LOCK_ID,
     HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS,
-    `history-event-index:${process.pid}`,
+    `history-event-index:${purpose}:${process.pid}`,
     false,
     false,
     waitMs,
@@ -508,6 +572,11 @@ export async function rebuildHistoryEventIndex(
         throw error;
       }
       if (invalidations.pending.length > 0) return false;
+      if (
+        hasContendedHistoryEventIndexInvalidation(invalidations) &&
+        hasNativeHistoryEventIndexContention(pmRoot, Database)
+      )
+        return false;
       const targetPath = eventIndexPath(pmRoot);
       await fs.mkdir(path.dirname(targetPath), { recursive: true });
       const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
@@ -517,12 +586,7 @@ export async function rebuildHistoryEventIndex(
         createSchema(database);
         database.exec("BEGIN IMMEDIATE");
         const authoritative = await readAuthoritativeHistorySnapshot(pmRoot);
-        for (const event of authoritative.events) {
-          insertEvent(database, event);
-        }
-        for (const [streamId, byteSize] of authoritative.stream_byte_sizes) {
-          upsertStreamByteSize(database, streamId, byteSize);
-        }
+        await populateHistoryEventIndex(database, authoritative);
         database.exec("COMMIT");
         database.close();
         database = undefined;
@@ -537,23 +601,26 @@ export async function rebuildHistoryEventIndex(
             ) {
               return false;
             }
+            if (
+              hasContendedHistoryEventIndexInvalidation(current) &&
+              hasNativeHistoryEventIndexContention(pmRoot, Database)
+            )
+              return false;
             await fs.rm(targetPath, { force: true });
             await fs.rename(temporaryPath, targetPath);
-            await Promise.all(
-              invalidations.committed.map((name) =>
-                fs.rm(
-                  path.join(
-                    historyEventIndexInvalidationDirectory(pmRoot),
-                    name,
-                  ),
-                  { force: true },
-                ),
-              ),
-            );
             return true;
           },
           options.lockWaitMs,
         );
+        if (published)
+          await Promise.all(
+            invalidations.committed.map((name) =>
+              fs.rm(
+                path.join(historyEventIndexInvalidationDirectory(pmRoot), name),
+                { force: true },
+              ),
+            ),
+          );
         if (!published) await fs.rm(temporaryPath, { force: true });
         return published;
       } catch (error: unknown) {
@@ -564,6 +631,22 @@ export async function rebuildHistoryEventIndex(
     },
     options.lockWaitMs,
   );
+}
+
+/** Yield during full projection construction so optional repair cannot monopolize an SDK host. */
+async function populateHistoryEventIndex(
+  database: DatabaseSync,
+  snapshot: AuthoritativeHistorySnapshot,
+): Promise<void> {
+  let inserted = 0;
+  for (const event of snapshot.events) {
+    insertEvent(database, event);
+    if (++inserted % 500 === 0) await yieldToEventLoop();
+  }
+  for (const [streamId, byteSize] of snapshot.stream_byte_sizes) {
+    upsertStreamByteSize(database, streamId, byteSize);
+    if (++inserted % 500 === 0) await yieldToEventLoop();
+  }
 }
 
 function matchesSet(
@@ -683,74 +766,85 @@ export async function appendHistoryEntryWithEventIndex(
 ): Promise<void> {
   const pmRoot = path.dirname(path.dirname(historyPath));
   const Database = resolveDatabaseSync();
-  if (!Database) {
+  let authoritativeAppendCommitted = false;
+  const appendAuthoritative = async () => {
     await append();
+    authoritativeAppendCommitted = true;
+  };
+  if (!Database) {
+    await appendUnindexedHistory(pmRoot, appendAuthoritative);
     return;
   }
-  let authoritativeAppendCommitted = false;
   try {
-    await withHistoryEventIndexLock(pmRoot, async () => {
-      const targetPath = eventIndexPath(pmRoot);
-      try {
-        await fs.access(targetPath);
-      } catch {
-        await append();
-        return;
-      }
-      let database: DatabaseSync | undefined;
-      try {
-        database = new Database(targetPath);
-        const version = database
-          .prepare("SELECT value FROM metadata WHERE key = 'version'")
-          .get() as { value?: unknown } | undefined;
-        if (version?.value !== EVENT_INDEX_VERSION) {
-          throw new TypeError("Unsupported history event index version");
+    await withHistoryEventIndexLock(
+      pmRoot,
+      async () => {
+        const targetPath = eventIndexPath(pmRoot);
+        try {
+          await fs.access(targetPath);
+        } catch {
+          await appendAuthoritative();
+          return;
         }
-      } catch (error: unknown) {
-        database?.close();
-        if (isHistoryIndexSqliteContention(error)) throw error;
-        await fs.rm(targetPath, { force: true });
-        await append();
-        return;
-      }
-      try {
-        // The projection is optional: native readers must not delay authority
-        // at BEGIN or COMMIT after the filesystem writer lock was acquired.
-        database.exec("PRAGMA busy_timeout = 0");
-        database.exec("BEGIN IMMEDIATE");
-      } catch (error: unknown) {
-        database.close();
-        throw error;
-      }
-      let appended = false;
-      try {
-        await append();
-        appended = true;
-        authoritativeAppendCommitted = true;
-        const streamId = path.basename(historyPath, ".jsonl");
-        const offset = database
-          .prepare(
-            "SELECT COALESCE(MAX(stream_offset), -1) + 1 AS value FROM events WHERE stream_id = ?",
-          )
-          .get(streamId) as { value: number };
-        insertEvent(database, {
-          stream_id: streamId,
-          stream_offset: Number(offset.value),
-          entry,
-        });
-        upsertStreamByteSize(
-          database,
-          streamId,
-          (await fs.stat(historyPath)).size,
-        );
-        database.exec("COMMIT");
-        database.close();
-      } catch (error: unknown) {
-        database?.close();
-        if (!appended) throw error;
-        await invalidateHistoryEventIndex(pmRoot);
-      }
-    });
+        let database: DatabaseSync | undefined;
+        try {
+          database = new Database(targetPath);
+          const version = database
+            .prepare("SELECT value FROM metadata WHERE key = 'version'")
+            .get() as { value?: unknown } | undefined;
+          if (version?.value !== EVENT_INDEX_VERSION) {
+            throw new TypeError("Unsupported history event index version");
+          }
+        } catch (error: unknown) {
+          database?.close();
+          if (isHistoryIndexSqliteContention(error)) throw error;
+          await fs.rm(targetPath, { force: true });
+          await appendAuthoritative();
+          return;
+        }
+        try {
+          // The projection is optional: native readers must not delay authority
+          // at BEGIN or COMMIT after the filesystem writer lock was acquired.
+          database.exec("PRAGMA busy_timeout = 0");
+          database.exec("BEGIN IMMEDIATE");
+        } catch (error: unknown) {
+          database.close();
+          throw error;
+        }
+        let appended = false;
+        try {
+          await appendAuthoritative();
+          appended = true;
+          const streamId = path.basename(historyPath, ".jsonl");
+          const offset = database
+            .prepare(
+              "SELECT COALESCE(MAX(stream_offset), -1) + 1 AS value FROM events WHERE stream_id = ?",
+            )
+            .get(streamId) as { value: number };
+          insertEvent(database, {
+            stream_id: streamId,
+            stream_offset: Number(offset.value),
+            entry,
+          });
+          upsertStreamByteSize(
+            database,
+            streamId,
+            (await fs.stat(historyPath)).size,
+          );
+          database.exec("COMMIT");
+          database.close();
+        } catch (error: unknown) {
+          database?.close();
+          if (!appended) throw error;
+          await recordHistoryEventIndexInvalidation(
+            pmRoot,
+            isHistoryIndexSqliteContention(error),
+          );
+        }
+      },
+      0,
+      "append",
+    );
   } catch (error: unknown) {
     if (authoritativeAppendCommitted) {
       await invalidateHistoryEventIndex(pmRoot);
@@ -759,33 +853,60 @@ export async function appendHistoryEntryWithEventIndex(
     if (!isHistoryIndexWriteContention(error)) {
       throw error;
     }
-    let pendingMarkerPath: string | undefined;
-    try {
-      await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-        const marker = await beginHistoryEventIndexInvalidation(pmRoot);
-        pendingMarkerPath = marker.pendingPath;
-        try {
-          await append();
-          authoritativeAppendCommitted = true;
-        } catch (appendError: unknown) {
-          await fs.rm(marker.pendingPath, { force: true });
-          throw appendError;
-        }
-        await fs.rename(marker.pendingPath, marker.committedPath);
-        await invalidateHistoryEventIndex(pmRoot);
-      });
-    } catch (fallbackError: unknown) {
-      if (authoritativeAppendCommitted) {
-        await invalidateHistoryEventIndex(pmRoot);
-        try {
-          await fs.rm(pendingMarkerPath as string, { force: true });
-        } catch {
-          // The authoritative append is durable; marker cleanup is best effort.
-        }
-        return;
+    await appendUnindexedHistory(
+      pmRoot,
+      appendAuthoritative,
+      isHistoryIndexSqliteContention(error),
+    );
+  }
+}
+
+/** Publish every non-indexed producer, including SQLite-less runtimes, through one invalidation protocol. */
+async function appendUnindexedHistory(
+  pmRoot: string,
+  append: () => Promise<void>,
+  nativeContention = false,
+): Promise<void> {
+  let authoritativeAppendCommitted = false;
+  let pendingMarkerPath: string | undefined;
+  try {
+    await withHistoryEventIndexInvalidationLock(pmRoot, async () => {
+      const contended =
+        nativeContention ||
+        hasContendedHistoryEventIndexInvalidation(
+          await listHistoryEventIndexInvalidations(pmRoot),
+        );
+      const marker = await beginHistoryEventIndexInvalidation(pmRoot);
+      pendingMarkerPath = marker.pendingPath;
+      try {
+        await append();
+        authoritativeAppendCommitted = true;
+      } catch (appendError: unknown) {
+        await fs.rm(marker.pendingPath, { force: true });
+        throw appendError;
       }
-      throw fallbackError;
+      await fs.rename(
+        marker.pendingPath,
+        contended
+          ? marker.committedPath.replace(
+              /\.committed$/u,
+              ".contended.committed",
+            )
+          : marker.committedPath,
+      );
+      if (!contended) await invalidateHistoryEventIndex(pmRoot);
+    });
+  } catch (fallbackError: unknown) {
+    if (authoritativeAppendCommitted) {
+      await invalidateHistoryEventIndex(pmRoot);
+      try {
+        await fs.rm(pendingMarkerPath as string, { force: true });
+      } catch {
+        // The authoritative append is durable; marker cleanup is best effort.
+      }
+      return;
     }
+    throw fallbackError;
   }
 }
 
@@ -842,10 +963,16 @@ async function readHistoryEventIndexSnapshot<T>(
 ): Promise<T | null | typeof HISTORY_INDEX_CHANGED> {
   let database: DatabaseSync | undefined;
   try {
-    const before = await historyEventIndexSignature(pmRoot);
     const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
-    if (invalidations.pending.length > 0) return HISTORY_INDEX_CHANGED;
-    if (invalidations.committed.length > 0) return null;
+    if (await historyEventIndexAppendIsActive(pmRoot, invalidations))
+      return HISTORY_INDEX_CHANGED;
+    const before = await historyEventIndexSignature(pmRoot);
+    if (invalidations.committed.length > 0) {
+      return hasContendedHistoryEventIndexInvalidation(invalidations) &&
+        hasNativeHistoryEventIndexContention(pmRoot, Database)
+        ? HISTORY_INDEX_CHANGED
+        : null;
+    }
     database = new Database(eventIndexPath(pmRoot), { readOnly: true });
     database.exec("BEGIN");
     const version = database
@@ -872,7 +999,10 @@ async function readHistoryEventIndexSnapshot<T>(
       streamIds,
     );
     const current = await listHistoryEventIndexInvalidations(pmRoot);
-    if (current.pending.length > 0 || current.committed.length > 0)
+    if (
+      current.committed.length > 0 ||
+      (await historyEventIndexAppendIsActive(pmRoot, current))
+    )
       return HISTORY_INDEX_CHANGED;
     if (before !== (await historyEventIndexSignature(pmRoot)))
       return HISTORY_INDEX_CHANGED;

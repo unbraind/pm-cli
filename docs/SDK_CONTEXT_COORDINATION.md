@@ -45,10 +45,12 @@ Clock-independent ordering and late-commit recovery remain tracked by
 observation can retain a fixed lower boundary and deduplicate snapshots by
 `item_id` and `version` while work is being committed.
 
-Node runtimes use the rebuildable SQLite event projection. Runtimes such as Bun
-that do not expose `node:sqlite` transparently scan the authoritative history
+Runtimes exposing `node:sqlite` use the rebuildable SQLite event projection.
+Runtimes without it transparently scan the authoritative history
 streams with the same ordering, filters, pagination, and cursor contract; pages
 identify that path with `source: "authoritative_history"`.
+Writers without SQLite use the same pending and committed invalidation protocol,
+so a later Node writer cannot certify a cache that omitted their facts.
 
 Index readers take a synchronous SQLite read transaction containing both event
 rows and their stream-size receipts, then close the database before checking
@@ -61,10 +63,21 @@ using a newer size receipt.
 Incremental projection writes also use a zero SQLite busy timeout. Native
 reader or writer contention falls back to the authoritative append and
 invalidation protocol instead of spending a separate SQLite wait budget.
+An unexpired, token-owned append lease marks ordinary incremental work as
+active until its commit or invalidation completes. Native contention retains
+the cache file and a committed contention marker; a zero-wait native probe
+distinguishes an ongoing contender from settled damage before requesting repair.
+
+Authoritative writers make no retries for the projection writer lock, including
+when a full repair owns it. They publish an invalidation instead. A repair
+refuses publication if those markers changed during its scan. Full projection
+construction yields between batches, and marker cleanup occurs outside the
+short invalidation publication lock.
 
 Transient generation changes and SQLite contention use authoritative fallback
 directly. Missing, incompatible, or damaged projections receive one optional
-repair attempt without waiting for either projection lock. Repair failure or invalidation after rebuilding
+repair attempt without waiting for either projection lock. Repair failure or
+invalidation after rebuilding
 falls back to authoritative JSONL with the same filters and cursor format.
 Pages may change `source` between calls. A fallback still reports malformed or
 inaccessible authoritative history as an error. A successful repair may scan

@@ -1,0 +1,65 @@
+id: pm-f7shxf
+title: Invalidate shared history projections when writers lack SQLite
+description: A SQLite-less append followed by a Node indexed append can certify a projection with a current stream-size receipt while omitting the middle authoritative fact. The history stream retains all three entries. Every supported runtime must participate in the invalidation protocol so a later indexed writer cannot hide earlier facts.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-17T22:34:40.375Z"
+updated_at: "2026-10-17T23:06:11.479Z"
+closed_at: "2026-10-17T23:06:10.560Z"
+completed_at: "2026-10-17T23:06:10.560Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Reproduce two projected facts versus three authoritative facts before the fix; Preserve all three facts after a later indexed append; Exercise real Bun and Node against one isolated tracker; Keep cursor and return shapes compatible; Retain portable committed invalidation and full-source quality gates
+goal: project management = context management
+objective: Preserve complete shared-workspace mutation facts across SQLite and non-SQLite producers
+value: Bun and Node can safely share the same project context without silent event omissions
+why_now: The second review concurrency controls independently reproduced a missing middle event in a three-append mixed-backend sequence.
+parent: pm-lvyd
+risk: medium
+confidence: 95
+resolution: "Route every non-indexed authoritative append through the existing pending/committed invalidation protocol so later indexed writers cannot certify an incomplete projection. Preserve portable fallback, typed failures and existing event shapes."
+expected_result: "A SQLite-less middle append between two indexed appends remains visible as a complete fact, and optional repair restores all stream offsets without loss or duplication."
+actual_result: Negative control reproduced two cached facts versus three authoritative facts before the fix; the linked omitted-fact regression now passes. Real public-SDK Node26.9.0/Bun1.4.3 shared-tracker acceptance returns three unique full update facts exactly matching authoritative history and passes strict drift validation. Current Bun exposes SQLite; forced constructor unavailability separately validates the supported SQLite-less path. Full final static pipeline and four typechecks pass; final-head hosted full coverage remains required.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-b8hwfr,related,"2026-10-17T22:34:40.375Z","harness:codex","cli:create:dep",detected
+  pm-fqlocp,related,"2026-10-17T22:34:40.375Z","harness:codex","cli:create:dep",detected
+  pm-gh1485,discovered_from,"2026-10-17T22:34:40.375Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-17T22:34:40.375Z","harness:codex","Duplicate check: live keyword AND searches for Bun invalidation and Bun writer returned complete full payloads for20 and58 matches. Read the closed Bun fallback and Windows invalidation owners in full with immutable history. They delivered read caching and portable invalidation respectively; neither owns the proven mixed-backend producer omission. Reuse the concurrency parent and preserve those completed fixes."
+  "2026-10-17T22:37:15.805Z","harness:codex","Negative control: an actual no-SQLite append between two SQLite writes leaves three authoritative entries but the projection returns only create/update, omitting comment_add while certifying the full byte size. The completed Bun read-cache fix is preserved; this defect concerns producer participation in shared invalidation."
+  "2026-10-17T22:45:49.556Z","harness:codex","The forced unavailable-SQLite control failed before the fix: two cached facts versus three authoritative facts after a later indexed append. Every non-indexed producer now uses the existing pending/committed invalidation protocol. Current Bun1.4.3 exposes node:sqlite, so the real mixed-runtime check exercises native Node/Bun sharing; it is not evidence that current Bun lacks SQLite. The constructor-unavailable regression separately exercises that supported fallback. No cursor, event or page shape changes."
+  "2026-10-17T22:48:14.410Z","harness:codex","Real public-SDK acceptance passed on Node26.9.0 and Bun1.4.3 sharing one isolated tracker: warm Node projection, Bun middle update, then Node update without an intervening event read returned three unique update versions whose full entries exactly match all three authoritative facts. Current Bun exposes SQLite. Strict history-drift validation passed; the separate unavailable-SQLite negative control proves fallback producer invalidation. All owned acceptance storage was removed only after subprocess completion."
+notes[1]{created_at,author,text}:
+  "2026-10-17T23:06:07.615Z","harness:codex",All history producers share invalidation semantics even when their runtime has no SQLite implementation. A current stream-size receipt alone cannot certify completeness if another producer omitted index maintenance. The native-cache path remains optional and must refuse such a cache until a complete authoritative rebuild publishes it.
+files[2]{path,scope}:
+  src/core/history/event-index.ts,project
+  tests/unit/core/history/event-index-snapshots.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted,project,300,"harness:codex","2026-10-17T22:37:12.057Z",local_mutation,fix/history-index-reader-contention
+test_runs[1]:
+  - run_id: test-local-mvd06ay0-g1cz4o
+    kind: test
+    status: passed
+    started_at: "2026-10-17T23:03:17.366Z"
+    finished_at: "2026-10-17T23:03:36.936Z"
+    recorded_at: "2026-10-17T23:03:36.936Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK_CONTEXT_COORDINATION.md,project
+close_reason: Preserve all shared history facts across indexed and SQLite-less writers.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-f7shxf
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts,node scripts/run-tests.mjs coverage,pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+body: ""

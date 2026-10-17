@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-17T21:34:00.015Z"
+updated_at: "2026-10-17T23:02:32.104Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -19,7 +19,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[37]:
+comments[38]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -132,6 +132,9 @@ comments[37]:
   - created_at: "2026-10-17T21:34:00.014Z"
     author: "harness:codex"
     text: "Follow-up qualification evidence, without changing code or thresholds: one standalone full-entrypoint admission still rejects qualified Node26 (graph181ms>172ms and several wider entrypoints); a subsequent paired five-sample graph comparison built the unchanged main base9baac800 in an external tracker-isolated archive and alternated baseline/candidate imports. Base median161ms, candidate156ms, bare controls65ms/69ms. This does not reproduce a graph import regression in this patch and does not erase either failed admission cohort. CLI transport-floor admission also remains failed under its existing budgets; retain the broader qualification/startup work as open."
+  - created_at: "2026-10-17T23:02:32.103Z"
+    author: "harness:codex"
+    text: "The later complete pnpm quality:static run on the history revision passed all gates, including the unchanged SDK-entrypoint and CLI-transport-floor admissions. Preserve the earlier qualified Node26 failures and paired-main comparison as historical observations; this passing cohort does not establish that every host or runtime distribution meets its budgets. No qualification rule or threshold was relaxed."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project
