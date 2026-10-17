@@ -1,0 +1,56 @@
+id: pm-xj80p9
+title: Keep mutation-event subscriptions available when optional index rebuilds race or contend
+description: listMutationEvents treats the optional derived index as mandatory after a successful rebuild and lets rebuild lock contention escape. A concurrent writer or invalidation between rebuild and the next read can throw event_index_unavailable despite valid authoritative JSONL. Bound optional repair attempts and preserve the existing cursor and source contracts through authoritative fallback.
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-10-17T19:35:41.682Z"
+updated_at: "2026-10-17T20:42:32.789Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#35441255dc596953ba8ee27f"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Isolated public SDK and CLI regressions prove valid history remains readable when index repair is contended or invalidated after rebuild; Optional event-read rebuilds acquire locks without waiting and never retry in a loop; Pagination and subscriptions resume across derived and authoritative pages without lost or duplicate events; Real history corruption remains actionable rather than being swallowed; No public return type or cursor format changes
+goal: project management = context management
+objective: Keep committed mutation facts available when optional accelerators cannot provide a coherent snapshot
+value: Package authors and notification hosts can continue observing valid history without handling avoidable cache outages
+why_now: Mixed-reader contention work reproduced both a post-rebuild availability escape and an environment override that defeated fail-fast repair
+parent: pm-lvyd
+risk: medium
+confidence: 95
+expected_result: "Optional projection contention and repair races preserve SDK and CLI event availability and cursor shape through authoritative history, while unreadable authority remains an explicit error."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e200,related,"2026-10-17T19:35:41.682Z","harness:codex","cli:create:dep",detected
+  pm-gh1485,discovered_from,"2026-10-17T19:35:41.682Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-17T19:35:41.682Z","harness:codex","Duplicate check: complete 2986-item all-status corpus and fresh keyword mutation/events/rebuild/contention search found the shipped primitive pm-e200 and reader-versus-writer owner pm-gh1485. This distinct SDK availability escape is in resolveIndexedMutationEvents: a successful rebuild followed by a refused read throws event_index_unavailable instead of falling back to authoritative history. The completed event primitive remains shipped."
+  "2026-10-17T19:45:39.023Z","harness:codex","Second independent negative control: with PM_LOCK_WAIT_MS=30000, an optional rebuild configured with zero wait still blocked event availability beyond1500ms because the environment override won. Added maxWaitMs as an additive SDK lock retry ceiling, forwarded as max_wait_ms to extension overrides; optional event repairs cap retries at zero without changing foreground defaults. Authoritative corruption remains surfaced and index/source transitions keep existing cursor semantics."
+  "2026-10-17T19:55:39.351Z","harness:codex","Candidate acceptance now preserves valid SDK/CLI event pages across native writer lock contention, PM_LOCK_WAIT_MS=30000, failed cache repair, and post-rebuild refusal. Native SQLite BUSY is transient and does not trigger a rebuild. Existing event_index_unavailable remains stable for untyped authoritative I/O failure; typed malformed-history errors pass through. SDK surface generator recorded the additive maxWaitMs option with an explicit compatibility acknowledgement. Full coverage, linked tests and static gates are the remaining local delivery checks."
+files[7]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  sdk/public-surface.json,project
+  src/core/lock/lock.ts,project
+  src/sdk/mutation-events.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/sdk/history/mutation-event-fallback.spec.ts,project
+  tests/unit/sdk/mutation-events.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-events.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/core/lock,project,300,"harness:codex","2026-10-17T19:50:07.724Z",local_mutation,fix/history-index-reader-contention
+test_runs[1]:
+  - run_id: test-local-mvctm61w-jkjma9
+    kind: test
+    status: passed
+    started_at: "2026-10-17T19:59:35.907Z"
+    finished_at: "2026-10-17T19:59:59.780Z"
+    recorded_at: "2026-10-17T19:59:59.780Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-events.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/core/lock,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SDK_CONTEXT_COORDINATION.md,project
+  docs/SDK_STORAGE_LIFECYCLE.md,project
+escape_class: production_defect
+body: ""

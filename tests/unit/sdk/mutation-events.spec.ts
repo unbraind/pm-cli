@@ -168,9 +168,7 @@ describe("SDK mutation event stream", () => {
           .trim()
           .split("\n")
           .map((line) => JSON.parse(line) as Record<string, unknown>),
-      ).toMatchObject([
-        { item_id: firstId, cursor: expect.any(String) },
-      ]);
+      ).toMatchObject([{ item_id: firstId, cursor: expect.any(String) }]);
       await expect(
         handleRequest({
           id: 1,
@@ -370,7 +368,9 @@ describe("SDK mutation event stream", () => {
         "--provenance-summary",
       ]);
       expect(invalidFollow.code).toBe(EXIT_CODE.USAGE);
-      expect(invalidFollow.stderr).toContain("cannot be combined with --follow");
+      expect(invalidFollow.stderr).toContain(
+        "cannot be combined with --follow",
+      );
       await expect(
         handleRequest({
           id: 4,
@@ -730,7 +730,7 @@ describe("SDK mutation event stream", () => {
     );
   });
 
-  it("falls back to authoritative streams and reports repeatedly unreadable indexes", async () => {
+  it("falls back to authoritative streams even when a rebuilt index cannot be read", async () => {
     await withTempPmPath(async (context) => {
       let restore = eventIndexTestOnly.setDatabaseSync(null);
       await appendHistoryEntry(
@@ -774,9 +774,13 @@ describe("SDK mutation event stream", () => {
       );
       try {
         await expect(
-          listMutationEvents({ pmRoot: context.pmPath }),
-        ).rejects.toThrow(/could not be opened after rebuild/);
-        expect(constructions).toBe(3);
+          listMutationEvents({ pmRoot: context.pmPath, item: "pm-bun" }),
+        ).resolves.toMatchObject({
+          count: 1,
+          source: "authoritative_history",
+          events: [{ item_id: "pm-bun" }],
+        });
+        expect(constructions).toBeLessThanOrEqual(3);
       } finally {
         restore();
       }

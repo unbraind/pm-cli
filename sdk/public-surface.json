@@ -2438,6 +2438,14 @@
       ],
       "package_version": "2026.10.17",
       "reason": "PR1490 review: Dependency.created_at is optional on supported legacy reads; consumers must narrow provenance before string operations. New create/update edges continue to record timestamps."
+    },
+    {
+      "changes": [
+        "signature ./sdk:acquireLock",
+        "signature ./sdk/runtime:acquireLock"
+      ],
+      "package_version": "2026.10.17",
+      "reason": "Add optional maxWaitMs to cap lock retry budgets while preserving all existing arguments and default wait behavior"
     }
   ],
   "entrypoints": {
@@ -2592,7 +2600,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "acquireLock",
-          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>>"
         },
         {
           "classification": "supported",
@@ -32424,7 +32432,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "acquireLock",
-          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; }) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>>"
         },
         {
           "classification": "advanced_export",

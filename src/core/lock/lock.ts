@@ -224,7 +224,8 @@ async function createLockFile(
   token: string,
   createParentDirectories: boolean,
 ): Promise<void> {
-  if (createParentDirectories) await fs.mkdir(path.dirname(lockPath), { recursive: true });
+  if (createParentDirectories)
+    await fs.mkdir(path.dirname(lockPath), { recursive: true });
   // Publication of an empty file precedes its owner JSON. Fence both steps
   // against stale cleanup so no peer can reclaim a live initializing owner.
   const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
@@ -232,7 +233,9 @@ async function createLockFile(
     // A removed parent is absence, not another owner's initializing lock.
     // Preserve its native error instead of spending the contention budget.
     await fs.access(path.dirname(lockPath));
-    throw Object.assign(new Error("Lock initialization is contended"), { code: "EEXIST" });
+    throw Object.assign(new Error("Lock initialization is contended"), {
+      code: "EEXIST",
+    });
   }
   try {
     const handle = await fs.open(lockPath, "wx");
@@ -373,6 +376,14 @@ function resolveLockWaitMs(waitMs: number | undefined): number {
     return callerParsed;
   }
   return 0;
+}
+
+/** Apply a caller's retry ceiling after resolving the ordinary environment policy. */
+function cappedLockWaitMs(
+  waitMs: number | undefined,
+  maxWaitMs: number | undefined,
+): number {
+  return Math.min(resolveLockWaitMs(waitMs), maxWaitMs ?? Infinity);
 }
 
 function sleepWithJitter(baseDelayMs: number): Promise<void> {
@@ -736,7 +747,9 @@ export const _testOnly = {
  * Acquire a token-owned tracker lock with bounded contention waiting and
  * explicit stale-owner policy. Background consumers may disable creation of
  * parent directories so acquiring or retrying a lock cannot revive removed
- * storage. Extension overrides retain responsibility for their own lifecycle.
+ * storage. An explicit maxWaitMs caps contention retries even when the process
+ * environment requests a longer wait. Extension overrides receive that ceiling
+ * and retain responsibility for their own lifecycle.
  */
 export async function acquireLock(
   pmRoot: string,
@@ -746,8 +759,14 @@ export async function acquireLock(
   force = false,
   forceRequiredForStaleLock = true,
   waitMs?: number,
-  options: { createParentDirectories?: boolean } = {},
+  options: {
+    /** Allow lock acquisition to initialize missing lock directories. */
+    createParentDirectories?: boolean;
+    /** Ceiling on the effective retry budget, including PM_LOCK_WAIT_MS. */
+    maxWaitMs?: number;
+  } = {},
 ): Promise<() => Promise<void>> {
+  const maxWaitMs = parseNonNegativeIntegerWaitMs(options.maxWaitMs);
   const lockOverride = await runActiveServiceOverride("lock_acquire", {
     pm_root: pmRoot,
     id,
@@ -755,6 +774,7 @@ export async function acquireLock(
     owner,
     force,
     force_required_for_stale_lock: forceRequiredForStaleLock,
+    ...(maxWaitMs === undefined ? {} : { max_wait_ms: maxWaitMs }),
   });
   if (lockOverride.handled) {
     const release = resolveLockOverrideRelease(lockOverride.result);
@@ -771,7 +791,7 @@ export async function acquireLock(
   }
 
   const lockPath = getLockPath(pmRoot, id);
-  const waitBudgetMs = resolveLockWaitMs(waitMs);
+  const waitBudgetMs = cappedLockWaitMs(waitMs, maxWaitMs);
   const startedAtMs = Date.now();
   let staleRemovals = 0;
   let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
@@ -779,7 +799,14 @@ export async function acquireLock(
 
   for (;;) {
     try {
-      await createLockFile(lockPath, id, owner, ttlSeconds, token, options.createParentDirectories !== false);
+      await createLockFile(
+        lockPath,
+        id,
+        owner,
+        ttlSeconds,
+        token,
+        options.createParentDirectories !== false,
+      );
       return async () => {
         await releaseOwnedLock(lockPath, id, owner, token);
         await runActiveServiceOverride("lock_release", {

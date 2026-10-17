@@ -21,7 +21,10 @@ import { PmCliError } from "../shared/errors.js";
 import { isMillisecondPrecisionRfc3339DateTime } from "../shared/time.js";
 import { readHistoryEntries } from "./read.js";
 import { classifyHistoryEvent } from "./event-classification.js";
-import { loadDatabaseSync, loadStableDatabaseSync } from "../store/sqlite-runtime.js";
+import {
+  loadDatabaseSync,
+  loadStableDatabaseSync,
+} from "../store/sqlite-runtime.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
 const EVENT_INDEX_VERSION = "5";
@@ -35,7 +38,7 @@ const HISTORY_EVENT_INDEX_INVALIDATION_DIRECTORY =
   "history-event-index-invalidations";
 const HISTORY_EVENT_INDEX_INVALIDATION_MAX_UNVERIFIED_AGE_MS =
   HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS * 2 * 1_000;
-const HISTORY_INDEX_LOCK_CONTENDED = Symbol("history-index-lock-contended");
+const HISTORY_INDEX_CHANGED = Symbol("history-index-changed");
 type DatabaseSyncConstructor = typeof DatabaseSync;
 
 interface AuthoritativeHistoryStreamCache {
@@ -184,6 +187,7 @@ async function recoverAbandonedHistoryEventIndexInvalidations(
 async function withHistoryEventIndexInvalidationLock<T>(
   pmRoot: string,
   operation: () => Promise<T>,
+  waitMs = HISTORY_EVENT_INDEX_LOCK_WAIT_MS,
 ): Promise<T> {
   const release = await acquireLock(
     pmRoot,
@@ -192,7 +196,8 @@ async function withHistoryEventIndexInvalidationLock<T>(
     `history-event-index-invalidation:${process.pid}`,
     false,
     false,
-    HISTORY_EVENT_INDEX_LOCK_WAIT_MS,
+    waitMs,
+    waitMs === 0 ? { maxWaitMs: 0 } : undefined,
   );
   try {
     return await operation();
@@ -241,6 +246,7 @@ async function invalidateHistoryEventIndex(pmRoot: string): Promise<void> {
 async function withHistoryEventIndexLock<T>(
   pmRoot: string,
   operation: () => Promise<T>,
+  waitMs = HISTORY_EVENT_INDEX_LOCK_WAIT_MS,
 ): Promise<T> {
   const release = await acquireLock(
     pmRoot,
@@ -249,7 +255,8 @@ async function withHistoryEventIndexLock<T>(
     `history-event-index:${process.pid}`,
     false,
     false,
-    HISTORY_EVENT_INDEX_LOCK_WAIT_MS,
+    waitMs,
+    waitMs === 0 ? { maxWaitMs: 0 } : undefined,
   );
   try {
     return await operation();
@@ -478,72 +485,83 @@ function upsertStreamByteSize(
 /** Rebuild the complete optional event projection from authoritative streams. */
 export async function rebuildHistoryEventIndex(
   pmRoot: string,
+  options: { lockWaitMs?: number } = {},
 ): Promise<boolean> {
   const Database = resolveDatabaseSync();
   if (!Database) return false;
-  return withHistoryEventIndexLock(pmRoot, async () => {
-    let invalidations: HistoryEventIndexInvalidations;
-    try {
-      invalidations = await withHistoryEventIndexInvalidationLock(pmRoot, () =>
-        recoverAbandonedHistoryEventIndexInvalidations(pmRoot),
-      );
-    } catch (error: unknown) {
-      if (error instanceof PmCliError && error.code === "lock_conflict") {
-        return false;
+  return withHistoryEventIndexLock(
+    pmRoot,
+    async () => {
+      let invalidations: HistoryEventIndexInvalidations;
+      try {
+        invalidations = await withHistoryEventIndexInvalidationLock(
+          pmRoot,
+          () => recoverAbandonedHistoryEventIndexInvalidations(pmRoot),
+          options.lockWaitMs,
+        );
+      } catch (error: unknown) {
+        if (error instanceof PmCliError && error.code === "lock_conflict") {
+          return false;
+        }
+        throw error;
       }
-      throw error;
-    }
-    if (invalidations.pending.length > 0) return false;
-    const targetPath = eventIndexPath(pmRoot);
-    await fs.mkdir(path.dirname(targetPath), { recursive: true });
-    const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
-    let database: DatabaseSync | undefined;
-    try {
-      database = new Database(temporaryPath);
-      createSchema(database);
-      database.exec("BEGIN IMMEDIATE");
-      const authoritative = await readAuthoritativeHistorySnapshot(pmRoot);
-      for (const event of authoritative.events) {
-        insertEvent(database, event);
-      }
-      for (const [streamId, byteSize] of authoritative.stream_byte_sizes) {
-        upsertStreamByteSize(database, streamId, byteSize);
-      }
-      database.exec("COMMIT");
-      database.close();
-      database = undefined;
-      const published = await withHistoryEventIndexInvalidationLock(
-        pmRoot,
-        async () => {
-          const current =
-            await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
-          if (
-            current.pending.length > 0 ||
-            !sameInvalidationNames(invalidations.committed, current.committed)
-          ) {
-            return false;
-          }
-          await fs.rm(targetPath, { force: true });
-          await fs.rename(temporaryPath, targetPath);
-          await Promise.all(
-            invalidations.committed.map((name) =>
-              fs.rm(
-                path.join(historyEventIndexInvalidationDirectory(pmRoot), name),
-                { force: true },
+      if (invalidations.pending.length > 0) return false;
+      const targetPath = eventIndexPath(pmRoot);
+      await fs.mkdir(path.dirname(targetPath), { recursive: true });
+      const temporaryPath = `${targetPath}.${randomUUID()}.tmp`;
+      let database: DatabaseSync | undefined;
+      try {
+        database = new Database(temporaryPath);
+        createSchema(database);
+        database.exec("BEGIN IMMEDIATE");
+        const authoritative = await readAuthoritativeHistorySnapshot(pmRoot);
+        for (const event of authoritative.events) {
+          insertEvent(database, event);
+        }
+        for (const [streamId, byteSize] of authoritative.stream_byte_sizes) {
+          upsertStreamByteSize(database, streamId, byteSize);
+        }
+        database.exec("COMMIT");
+        database.close();
+        database = undefined;
+        const published = await withHistoryEventIndexInvalidationLock(
+          pmRoot,
+          async () => {
+            const current =
+              await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
+            if (
+              current.pending.length > 0 ||
+              !sameInvalidationNames(invalidations.committed, current.committed)
+            ) {
+              return false;
+            }
+            await fs.rm(targetPath, { force: true });
+            await fs.rename(temporaryPath, targetPath);
+            await Promise.all(
+              invalidations.committed.map((name) =>
+                fs.rm(
+                  path.join(
+                    historyEventIndexInvalidationDirectory(pmRoot),
+                    name,
+                  ),
+                  { force: true },
+                ),
               ),
-            ),
-          );
-          return true;
-        },
-      );
-      if (!published) await fs.rm(temporaryPath, { force: true });
-      return published;
-    } catch (error: unknown) {
-      database?.close();
-      await fs.rm(temporaryPath, { force: true });
-      throw error;
-    }
-  });
+            );
+            return true;
+          },
+          options.lockWaitMs,
+        );
+        if (!published) await fs.rm(temporaryPath, { force: true });
+        return published;
+      } catch (error: unknown) {
+        database?.close();
+        await fs.rm(temporaryPath, { force: true });
+        throw error;
+      }
+    },
+    options.lockWaitMs,
+  );
 }
 
 function matchesSet(
@@ -806,40 +824,120 @@ function appendHarnessPredicate(
   parameters.push(...harnesses);
 }
 
-/** Open a supported projection only while its caller holds both index locks. */
-async function openSettledHistoryEventIndex(
+/** Read rows and size receipts synchronously in one SQLite transaction, then close
+ * before any asynchronous filesystem validation. Readers never acquire either
+ * writer lock. Any concurrent projection change or invalidation refuses the
+ * snapshot so callers can use authoritative history instead of waiting.
+ */
+async function readHistoryEventIndexSnapshot<T>(
   pmRoot: string,
   Database: DatabaseSyncConstructor,
-): Promise<DatabaseSync | undefined> {
-  const invalidations =
-    await recoverAbandonedHistoryEventIndexInvalidations(pmRoot);
-  if (
-    invalidations.pending.length > 0 ||
-    invalidations.committed.length > 0
-  ) {
-    return undefined;
-  }
-  const database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+  requestedStreamIds: readonly string[] | undefined,
+  read: (database: DatabaseSync) => T | null,
+): Promise<T | null | typeof HISTORY_INDEX_CHANGED> {
+  let database: DatabaseSync | undefined;
   try {
+    const before = await historyEventIndexSignature(pmRoot);
+    const invalidations = await listHistoryEventIndexInvalidations(pmRoot);
+    if (invalidations.pending.length > 0) return HISTORY_INDEX_CHANGED;
+    if (invalidations.committed.length > 0) return null;
+    database = new Database(eventIndexPath(pmRoot), { readOnly: true });
+    database.exec("BEGIN");
     const version = database
       .prepare("SELECT value FROM metadata WHERE key = 'version'")
       .get() as { value?: unknown } | undefined;
-    if (version?.value === EVENT_INDEX_VERSION) return database;
+    if (version?.value !== EVENT_INDEX_VERSION) return null;
+    const result = read(database);
+    if (result === null) return null;
+    const storedSizes = readHistoryEventIndexStreamSizes(
+      database,
+      requestedStreamIds,
+    );
+    const completed = database;
+    database = undefined;
+    completed.close();
+    const streamIds = await historyIndexValidationStreamIds(
+      [...storedSizes.keys()],
+      pmRoot,
+      requestedStreamIds,
+    );
+    const sizesMatch = await historyIndexMatchesStreamSizes(
+      storedSizes,
+      pmRoot,
+      streamIds,
+    );
+    const current = await listHistoryEventIndexInvalidations(pmRoot);
+    if (current.pending.length > 0 || current.committed.length > 0)
+      return HISTORY_INDEX_CHANGED;
+    if (before !== (await historyEventIndexSignature(pmRoot)))
+      return HISTORY_INDEX_CHANGED;
+    return sizesMatch ? result : null;
   } catch (error: unknown) {
-    database.close();
-    throw error;
+    return isHistoryIndexSqliteContention(error) ? HISTORY_INDEX_CHANGED : null;
+  } finally {
+    database?.close();
   }
-  database.close();
-  return undefined;
 }
 
-/** Query the optional event projection without scanning history streams. */
-export async function queryHistoryEventIndex(
+/** SQLite busy/locked reads are transient writer activity, not cache damage. */
+function isHistoryIndexSqliteContention(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "errcode" in error &&
+    [5, 6].includes(error.errcode as number)
+  );
+}
+
+/** Capture size receipts in the same synchronous transaction as the requested rows. */
+function readHistoryEventIndexStreamSizes(
+  database: DatabaseSync,
+  requestedStreamIds: readonly string[] | undefined,
+): Map<string, number> {
+  const storedSizes = new Map<string, number>();
+  const ids =
+    requestedStreamIds && requestedStreamIds.length > 0
+      ? [...new Set(requestedStreamIds)]
+      : undefined;
+  if (ids === undefined) {
+    for (const row of database
+      .prepare("SELECT stream_id, byte_size FROM streams")
+      .all()) {
+      storedSizes.set(String(row.stream_id), Number(row.byte_size));
+    }
+  } else {
+    for (let start = 0; start < ids.length; start += 500) {
+      const chunk = ids.slice(start, start + 500);
+      for (const row of database
+        .prepare(
+          `SELECT stream_id, byte_size FROM streams WHERE stream_id IN (${chunk.map(() => "?").join(", ")})`,
+        )
+        .all(...chunk)) {
+        storedSizes.set(String(row.stream_id), Number(row.byte_size));
+      }
+    }
+  }
+  return storedSizes;
+}
+
+/** Bind optimistic validation to the same physical projection and write generation. */
+async function historyEventIndexSignature(pmRoot: string): Promise<string> {
+  const stats = await fs.stat(eventIndexPath(pmRoot), { bigint: true });
+  return [stats.dev, stats.ino, stats.size, stats.mtimeNs, stats.ctimeNs].join(
+    ":",
+  );
+}
+
+/** Distinguish repairable cache absence/damage from transient concurrent writes. */
+export async function readHistoryEventIndexPage(
   pmRoot: string,
   query: HistoryEventIndexQuery,
-): Promise<HistoryEventIndexQueryResult | null> {
+): Promise<{
+  result: HistoryEventIndexQueryResult | null;
+  repair_needed: boolean;
+}> {
   const Database = resolveDatabaseSync();
-  if (!Database) return null;
+  if (!Database) return { result: null, repair_needed: false };
   const clauses: string[] = [];
   const parameters: SQLInputValue[] = [];
   if (
@@ -885,51 +983,40 @@ export async function queryHistoryEventIndex(
   }
   appendSetPredicate(clauses, parameters, "stream_id", query.stream_ids);
   const where = clauses.length === 0 ? "" : ` WHERE ${clauses.join(" AND ")}`;
-  let database: DatabaseSync | undefined;
-  try {
-    return await withHistoryEventIndexLock(pmRoot, async () => {
-      return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-        database = await openSettledHistoryEventIndex(pmRoot, Database);
-        if (!database) return null;
-        const validationStreamIds = await historyIndexValidationStreamIds(
-          database,
-          pmRoot,
-          query.stream_ids,
-        );
-        if (
-          !(await historyIndexMatchesStreamSizes(
-            database,
-            pmRoot,
-            validationStreamIds,
-          ))
-        ) {
-          database.close();
-          database = undefined;
-          return null;
-        }
-        const rows = database
-          .prepare(
-            `SELECT stream_id, stream_offset, entry_json
-             FROM events${where}
-             ORDER BY ts, stream_id, stream_offset
-             LIMIT ?`,
-          )
-          .all(...parameters, Math.max(0, Math.floor(query.limit)) + 1);
-        const events = rows.slice(0, query.limit).map(parseIndexedHistoryEvent);
-        database.close();
-        database = undefined;
-        return events.includes(null)
-          ? null
-          : {
-              events: events as IndexedHistoryEvent[],
-              has_more: rows.length > query.limit,
-            };
-      });
-    });
-  } catch {
-    database?.close();
-    return null;
-  }
+  const attempt = await readHistoryEventIndexSnapshot(
+    pmRoot,
+    Database,
+    query.stream_ids,
+    (database) => {
+      const rows = database
+        .prepare(
+          `SELECT stream_id, stream_offset, entry_json
+         FROM events${where}
+         ORDER BY ts, stream_id, stream_offset
+         LIMIT ?`,
+        )
+        .all(...parameters, Math.max(0, Math.floor(query.limit)) + 1);
+      const events = rows.slice(0, query.limit).map(parseIndexedHistoryEvent);
+      return events.includes(null)
+        ? null
+        : {
+            events: events as IndexedHistoryEvent[],
+            has_more: rows.length > query.limit,
+          };
+    },
+  );
+  return {
+    result: attempt === HISTORY_INDEX_CHANGED ? null : attempt,
+    repair_needed: attempt === null,
+  };
+}
+
+/** Query the optional event projection without scanning history streams. */
+export async function queryHistoryEventIndex(
+  pmRoot: string,
+  query: HistoryEventIndexQuery,
+): Promise<HistoryEventIndexQueryResult | null> {
+  return (await readHistoryEventIndexPage(pmRoot, query)).result;
 }
 
 function collectLatestSubstantiveEvents(
@@ -972,21 +1059,12 @@ async function readHistoryStreamByteSize(
 }
 
 async function historyIndexMatchesStreamSizes(
-  database: DatabaseSync,
+  storedSizes: ReadonlyMap<string, number>,
   pmRoot: string,
   streamIds: readonly string[],
 ): Promise<boolean> {
   for (let start = 0; start < streamIds.length; start += 500) {
     const chunk = streamIds.slice(start, start + 500);
-    const storedSizes = new Map(
-      database
-        .prepare(
-          `SELECT stream_id, byte_size FROM streams
-           WHERE stream_id IN (${chunk.map(() => "?").join(", ")})`,
-        )
-        .all(...chunk)
-        .map((row) => [String(row.stream_id), Number(row.byte_size)]),
-    );
     const currentSizes = await Promise.all(
       chunk.map((streamId) => readHistoryStreamByteSize(pmRoot, streamId)),
     );
@@ -1002,7 +1080,7 @@ async function historyIndexMatchesStreamSizes(
 }
 
 async function historyIndexValidationStreamIds(
-  database: DatabaseSync,
+  indexed: readonly string[],
   pmRoot: string,
   requestedStreamIds: readonly string[] | undefined,
 ): Promise<string[]> {
@@ -1013,10 +1091,6 @@ async function historyIndexValidationStreamIds(
       ),
     ];
   }
-  const indexed = database
-    .prepare("SELECT stream_id FROM streams")
-    .all()
-    .map((row) => String(row.stream_id));
   const authoritative = await fs
     .readdir(path.join(pmRoot, "history"), { withFileTypes: true })
     .then((entries) =>
@@ -1031,70 +1105,47 @@ async function historyIndexValidationStreamIds(
   return [...new Set([...indexed, ...authoritative])];
 }
 
-/** Read current per-stream substantive events under both projection locks, or signal contention and fallback safely. */
+/** Select recency rows from the same nonblocking snapshot used by event pages. */
 async function readIndexedLatestSubstantiveEvents(
   Database: DatabaseSyncConstructor | null,
   pmRoot: string,
   streamIds: readonly string[],
   requested: ReadonlySet<string>,
 ): Promise<
-  | Record<string, IndexedHistoryEvent>
-  | typeof HISTORY_INDEX_LOCK_CONTENDED
-  | null
+  Record<string, IndexedHistoryEvent> | null | typeof HISTORY_INDEX_CHANGED
 > {
   if (!Database) return null;
-  let database: DatabaseSync | undefined;
-  try {
-    return await withHistoryEventIndexLock(pmRoot, async () => {
-      return withHistoryEventIndexInvalidationLock(pmRoot, async () => {
-        database = await openSettledHistoryEventIndex(pmRoot, Database);
-        if (!database) return null;
-        if (
-          !(await historyIndexMatchesStreamSizes(database, pmRoot, streamIds))
-        ) {
-          database.close();
-          database = undefined;
-          return null;
-        }
-        const indexed: IndexedHistoryEvent[] = [];
-        for (let start = 0; start < streamIds.length; start += 500) {
-          const chunk = streamIds.slice(start, start + 500);
-          const rows = database
-            .prepare(
-              `SELECT stream_id, stream_offset, entry_json
-               FROM (
-                 SELECT stream_id, stream_offset, entry_json,
-                        ROW_NUMBER() OVER (
-                          PARTITION BY stream_id
-                          ORDER BY ts DESC, stream_offset DESC
-                        ) AS recency_rank
-                 FROM events
-                 WHERE event_class = 'substantive'
-                   AND stream_id IN (${chunk.map(() => "?").join(", ")})
-               )
-               WHERE recency_rank = 1`,
-            )
-            .all(...chunk);
-          const parsed = rows.map(parseIndexedHistoryEvent);
-          if (parsed.includes(null)) {
-            database.close();
-            database = undefined;
-            return null;
-          }
-          indexed.push(...(parsed as IndexedHistoryEvent[]));
-        }
-        database.close();
-        database = undefined;
-        return collectLatestSubstantiveEvents(indexed, requested);
-      });
-    });
-  } catch (error) {
-    database?.close();
-    if (error instanceof PmCliError && error.code === "lock_conflict") {
-      return HISTORY_INDEX_LOCK_CONTENDED;
-    }
-    return null;
-  }
+  return readHistoryEventIndexSnapshot(
+    pmRoot,
+    Database,
+    streamIds,
+    (database) => {
+      const indexed: IndexedHistoryEvent[] = [];
+      for (let start = 0; start < streamIds.length; start += 500) {
+        const chunk = streamIds.slice(start, start + 500);
+        const rows = database
+          .prepare(
+            `SELECT stream_id, stream_offset, entry_json
+           FROM (
+             SELECT stream_id, stream_offset, entry_json,
+                    ROW_NUMBER() OVER (
+                      PARTITION BY stream_id
+                      ORDER BY ts DESC, stream_offset DESC
+                    ) AS recency_rank
+             FROM events
+             WHERE event_class = 'substantive'
+               AND stream_id IN (${chunk.map(() => "?").join(", ")})
+           )
+           WHERE recency_rank = 1`,
+          )
+          .all(...chunk);
+        const parsed = rows.map(parseIndexedHistoryEvent);
+        if (parsed.includes(null)) return null;
+        indexed.push(...(parsed as IndexedHistoryEvent[]));
+      }
+      return collectLatestSubstantiveEvents(indexed, requested);
+    },
+  );
 }
 
 /**
@@ -1122,19 +1173,19 @@ export async function readLatestSubstantiveHistoryEvents(
     uniqueIds,
     requested,
   );
-  if (indexed !== null && indexed !== HISTORY_INDEX_LOCK_CONTENDED) {
+  if (indexed !== null && indexed !== HISTORY_INDEX_CHANGED) {
     return indexed;
   }
-  if (Database && indexed !== HISTORY_INDEX_LOCK_CONTENDED) {
+  if (Database && indexed !== HISTORY_INDEX_CHANGED) {
     try {
-      if (await rebuildHistoryEventIndex(pmRoot)) {
+      if (await rebuildHistoryEventIndex(pmRoot, { lockWaitMs: 0 })) {
         const rebuilt = await readIndexedLatestSubstantiveEvents(
           Database,
           pmRoot,
           uniqueIds,
           requested,
         );
-        if (rebuilt !== null && rebuilt !== HISTORY_INDEX_LOCK_CONTENDED) {
+        if (rebuilt !== null && rebuilt !== HISTORY_INDEX_CHANGED) {
           return rebuilt;
         }
       }

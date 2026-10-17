@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-17T12:56:32.241Z"
+updated_at: "2026-10-17T19:57:12.943Z"
 reminders[1]{at,text}:
   "2026-10-18T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[230]:
+comments[231]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -777,6 +777,9 @@ comments[230]:
   - created_at: "2026-10-17T12:06:10.785Z"
     author: "harness:codex"
     text: "Post-change observability acceptance: Sentry span list returns the real successful command spans pm context at 2026-10-17T11:44:59+00:00 (1127.1 ms); pm health at 2026-10-17T11:39:55+00:00 (1454.8 ms). The documented one-command tracing opt-in was used without changing persistent consent or configuration. Required Sentry/telemetry issue/reliability checks pass. Configured inline event flush drained the physical client queue from one to zero, and an independent broker read confirms zero messages, ready entries and unacknowledged deliveries. The next standing release-health reminder remains 2026-10-18T06:00:00Z."
+  - created_at: "2026-10-17T19:57:12.942Z"
+    author: "harness:codex"
+    text: "Live delivery verification on2026-10-17: exactly one v2026.10.17 tag exists; native scheduled run39012559040 succeeded and selected the same-day target. The installed timer is active for the next eligible day and both observed dispatcher checks retained the existing immutable tag without sending another cut. The shared public verifier passes npm metadata, npx and bunx CLI dispatch, package-default bins, stdio/HTTP MCP discovery, Skills/Apps and missing-bin negative controls on their first attempts. Latest pm-changelog is2026.10.16 and deep package diagnosis is healthy. Historical reliability, manual-ordinal compatibility and future daily publication remain separate acceptance; no duplicate automatic or manual follow-up release was triggered."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

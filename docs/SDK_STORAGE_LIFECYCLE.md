@@ -1,6 +1,7 @@
 # SDK Storage Lifecycle
 
-Tracked by [pm-p5u6](../.agents/pm/chores/pm-p5u6.toon).
+Tracked by [pm-p5u6](../.agents/pm/chores/pm-p5u6.toon) and
+[pm-xj80p9](../.agents/pm/issues/pm-xj80p9.toon).
 
 Detached telemetry reads existing settings without scaffolding schemas/identity.
 Locks, queue/state rewrites and event/OTLP completion preserve owner-removed
@@ -10,7 +11,16 @@ storage. Delivery stays best effort/nonblocking; foreground defaults create pare
 import { acquireLock, writeFileAtomic } from "@unbrained/pm-cli/sdk";
 
 const policy = { createParentDirectories: false };
-const release = await acquireLock(root, "job", 60, "worker", false, true, 5000, policy);
+const release = await acquireLock(
+  root,
+  "job",
+  60,
+  "worker",
+  false,
+  true,
+  5000,
+  policy,
+);
 try {
   await writeFileAtomic(resultPath, serializedResult, policy);
 } finally {
@@ -21,6 +31,14 @@ try {
 Owners initialize lock/result parents; absence fails without recreation. The
 policy cannot pin identity or prevent symlink/replacement races. Extension lock
 overrides own their lifecycle.
+
+For optional background work, pass `maxWaitMs: 0` in the final `acquireLock`
+options object. The built-in lock then makes no contention retries, even when
+`PM_LOCK_WAIT_MS` requests a longer wait. A positive `maxWaitMs` caps the normal
+environment-or-caller retry budget without increasing it. Filesystem calls and
+extension execution still take their ordinary execution time; the cap is not a
+wall-clock timeout. Extension lock overrides receive `max_wait_ms` and remain
+responsible for observing it.
 
 Async scripts use `registerTempOperation`: signal children, check after
 uncancellable SDK work, `finish` after finally disposal. Interrupts close admission

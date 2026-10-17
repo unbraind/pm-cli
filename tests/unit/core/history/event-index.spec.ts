@@ -643,7 +643,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("falls back to authoritative recency after one contended index attempt", async () => {
+  it("reads recency without acquiring the contended writer lock", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -685,7 +685,7 @@ describe("history mutation event index", () => {
               entry: { op: "create" },
             },
           });
-          expect(lockAttempts).toBe(1);
+          expect(lockAttempts).toBe(0);
         });
       } finally {
         openSpy.mockRestore();
@@ -906,7 +906,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("serializes indexed validation and reads before concurrent compliant appends", async () => {
+  it("returns a coherent snapshot or refuses when validation races a compliant append", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -946,9 +946,11 @@ describe("history mutation event index", () => {
         statSpy.mockRestore();
       }
 
-      expect(beforeAppend).toMatchObject({
-        events: [{ stream_offset: 0, entry: { op: "create" } }],
-      });
+      if (beforeAppend !== null) {
+        expect(beforeAppend).toMatchObject({
+          events: [{ stream_offset: 0, entry: { op: "create" } }],
+        });
+      }
       await expect(
         queryHistoryEventIndex(context.pmPath, {
           stream_ids: ["pm-read-concurrent"],
@@ -1025,11 +1027,9 @@ describe("history mutation event index", () => {
         historyPath,
         `${JSON.stringify(historyEntry("2026-07-24T09:00:00.000Z", "agent", "create"))}\n`,
       );
-      let opens = 0;
       class ReopenFailureDatabase {
         constructor(...args: ConstructorParameters<typeof DatabaseSync>) {
-          opens += 1;
-          if (opens === 3) throw new Error("reopen failed");
+          if (args[1]?.readOnly === true) throw new Error("reopen failed");
           return new DatabaseSync(...args);
         }
       }

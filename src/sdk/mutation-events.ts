@@ -8,7 +8,7 @@ import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import { createHash } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import {
-  queryHistoryEventIndex,
+  readHistoryEventIndexPage,
   queryHistoryEventStreams,
   rebuildHistoryEventIndex,
   type IndexedHistoryEvent,
@@ -16,7 +16,8 @@ import {
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { stableStringify } from "../core/shared/serialization.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { toErrorMessage } from "../core/shared/primitives.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry } from "../types/index.js";
 import {
@@ -270,24 +271,34 @@ function resolveMutationEventStart(
 
 async function resolveIndexedMutationEvents(
   pmRoot: string,
-  query: NonNullable<Parameters<typeof queryHistoryEventIndex>[1]>,
+  query: NonNullable<Parameters<typeof readHistoryEventIndexPage>[1]>,
 ) {
-  let indexed = await queryHistoryEventIndex(pmRoot, query);
+  const attempt = await readHistoryEventIndexPage(pmRoot, query);
+  let indexed = attempt.result;
+  if (indexed === null && attempt.repair_needed) {
+    try {
+      if (await rebuildHistoryEventIndex(pmRoot, { lockWaitMs: 0 })) {
+        indexed = (await readHistoryEventIndexPage(pmRoot, query)).result;
+      }
+    } catch {
+      // Projection repair is optional. Authoritative reads below still expose
+      // malformed or inaccessible history rather than hiding storage failures.
+    }
+  }
   if (indexed === null) {
-    if (!(await rebuildHistoryEventIndex(pmRoot))) {
+    try {
       return {
         ...(await queryHistoryEventStreams(pmRoot, query)),
         source: "authoritative_history" as const,
       };
+    } catch (error: unknown) {
+      if (error instanceof PmCliError) throw error;
+      throw new PmCliError(
+        "Mutation events are unavailable because authoritative history could not be read.",
+        EXIT_CODE.GENERIC_FAILURE,
+        { code: "event_index_unavailable", why: toErrorMessage(error) },
+      );
     }
-    indexed = await queryHistoryEventIndex(pmRoot, query);
-  }
-  if (indexed === null) {
-    throw new PmCliError(
-      "Mutation event index could not be opened after rebuild.",
-      EXIT_CODE.GENERIC_FAILURE,
-      { code: "event_index_unavailable" },
-    );
   }
   return { ...indexed, source: "derived_index" as const };
 }

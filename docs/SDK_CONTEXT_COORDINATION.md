@@ -1,6 +1,6 @@
 # SDK context coordination primitives
 
-Trackers: [pm-e200](../.agents/pm/features/pm-e200.toon), [pm-ez1dfg](../.agents/pm/tasks/pm-ez1dfg.toon), [pm-4ri6](../.agents/pm/features/pm-4ri6.toon), and [pm-hcrmye](../.agents/pm/issues/pm-hcrmye.toon).
+Trackers: [pm-e200](../.agents/pm/features/pm-e200.toon), [pm-ez1dfg](../.agents/pm/tasks/pm-ez1dfg.toon), [pm-4ri6](../.agents/pm/features/pm-4ri6.toon), [pm-hcrmye](../.agents/pm/issues/pm-hcrmye.toon), [pm-gh1485](../.agents/pm/issues/pm-gh1485.toon), and [pm-xj80p9](../.agents/pm/issues/pm-xj80p9.toon).
 
 `pm` treats project management as context management. These primitives let an
 agent learn what changed, avoid creating redundant work, and keep that work
@@ -38,10 +38,33 @@ idempotently or deduplicate replays. `--cursor-mode row` preserves the previous
 shape with one `cursor` per event and no trailer for consumers that checkpoint
 every row. Already issued version-1 cursors remain accepted by `--since`.
 
+Version-1 cursor ordering uses recorded timestamps, stream ids, and offsets.
+A fact committed later with an older timestamp falls before an advanced cursor.
+Clock-independent ordering and late-commit recovery remain tracked by
+[pm-10l1vm](../.agents/pm/issues/pm-10l1vm.toon). Hosts needing complete concurrent
+observation can retain a fixed lower boundary and deduplicate snapshots by
+`item_id` and `version` while work is being committed.
+
 Node runtimes use the rebuildable SQLite event projection. Runtimes such as Bun
 that do not expose `node:sqlite` transparently scan the authoritative history
 streams with the same ordering, filters, pagination, and cursor contract; pages
 identify that path with `source: "authoritative_history"`.
+
+Index readers take a synchronous SQLite read transaction containing both event
+rows and their stream-size receipts, then close the database before checking
+authoritative files. They acquire neither history-index writer lock. File
+identity and write timestamps, authoritative stream sizes, and pending or
+committed invalidations must still match before a snapshot is returned. A
+concurrent change refuses the optional snapshot; it cannot certify older rows
+using a newer size receipt.
+
+Transient generation changes and SQLite contention use authoritative fallback
+directly. Missing, incompatible, or damaged projections receive one optional
+repair attempt without waiting for either projection lock. Repair failure or invalidation after rebuilding
+falls back to authoritative JSONL with the same filters and cursor format.
+Pages may change `source` between calls. A fallback still reports malformed or
+inaccessible authoritative history as an error. A successful repair may scan
+the workspace; this protocol bounds lock waiting, not total execution time.
 
 `--full` also includes the complete authoritative history entry.
 `--type`, `--author`, and `--item` accept repeatable or comma-separated values.
@@ -109,10 +132,7 @@ Package authors can query the same scorer used by create/copy and the bundled
 governance audit:
 
 ```ts
-import {
-  findSimilarItems,
-  scoreItemSimilarity,
-} from "@unbrained/pm-cli/sdk";
+import { findSimilarItems, scoreItemSimilarity } from "@unbrained/pm-cli/sdk";
 
 const score = scoreItemSimilarity("Fix OAuth refresh", "Fix oauth refresh");
 const matches = await findSimilarItems(
@@ -154,6 +174,20 @@ The documented config spelling is kebab-case. Underscore spellings remain
 accepted aliases for existing automation.
 
 ## Scale contract
+
+The mixed-reader acceptance used 100 fixed-boundary snapshot observers,
+five SDK writer lanes, and five CLI writer lanes, with five updates per lane.
+Both separate traced and untraced cohorts passed 5,000 unique observations,
+duplicate-free pages, strict history integrity, and a 2,000 ms first-observation
+ceiling. These are bounded host measurements recorded in
+[pm-gh1485](../.agents/pm/issues/pm-gh1485.toon).
+
+The native regression suspends filesystem validation and requires an
+authoritative writer to finish before that reader resumes. Run it with:
+
+```bash
+node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts
+```
 
 Event catch-up reads from a persistent ordered projection and follows only new
 rows. Similarity governance is zero-cost when off and index-bounded when

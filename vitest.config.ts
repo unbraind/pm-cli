@@ -72,6 +72,7 @@ const allSourceCoverageThresholds = {
 const sequentialPerformanceSpecs = [
   "tests/integration/scratch-lifecycle.integration.spec.ts",
   "tests/unit/scripts/point-read-costs.spec.ts",
+  "tests/unit/scripts/release/absence-tolerance-gate.spec.ts",
 ];
 
 export default defineConfig({
@@ -81,7 +82,9 @@ export default defineConfig({
     alias: [
       {
         find: /^@unbrained\/pm-cli\/sdk\/governance$/,
-        replacement: fileURLToPath(new URL("./src/sdk/governance.ts", import.meta.url)),
+        replacement: fileURLToPath(
+          new URL("./src/sdk/governance.ts", import.meta.url),
+        ),
       },
       // The docs/examples reference scripts import the published package by its
       // bare specifier (`@unbrained/pm-cli/sdk`). Under test that resolves only
