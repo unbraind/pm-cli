@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-16T22:09:52.045Z"
+updated_at: "2026-10-17T02:35:06.591Z"
 reminders[1]{at,text}:
   "2026-10-17T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
@@ -15,8 +15,8 @@ acceptance_criteria: "After each merge to main, the next daily release tags vYYY
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "After each merge to main the next daily release tags a new date version and advances npm latest, and any discrepancy is triaged the same day."
-actual_result: "2026-10-16 late release handoff: public npm/GitHub latest remains2026.10.15. Scheduled38867421163 failed before publication on Sentry PM-CLI-3H and3M. Both source mechanisms are now fixed in PR1479 under pm-gh1478 and pm-bulk-option-validation; final reviewed merge, commit-bound Sentry resolution, guarded recovery and published2026.10.16 verification remain pending. The next standing health reminder remains2026-10-17 at06:00 UTC."
+expected_result: "Every eligible UTC day publishes once through reviewed producer and tag-driven acceptance; verify actual public registry, consumers and observability while preserving historical failures."
+actual_result: "Verified public2026.10.17 at02:22UTC: producer38989409879 and Release38991739473 succeeded; npm exact/latest17, all nine cross-platform npm/Bun acceptance jobs and independent installed public SDK/CLI/npx/bunx checks pass. Two real actions have paired telemetry and current Sentry spans. Historical October16 miss and rolling reliability failures remain documented. Standing next health occurrence2026-10-17T06:00Z remains scheduled. New reports1486/1487 are open intake, not release fixes."
 dependencies[13]:
   - id: pm-7n5a
     kind: related
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[224]:
+comments[228]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -759,6 +759,18 @@ comments[224]:
   - created_at: "2026-10-16T22:09:52.045Z"
     author: "harness:codex"
     text: "Release delivery observation at 22:10 UTC October16: npm publication is still pending; Vienna has crossed midnight. Today scheduled run38867421163 stopped before tag on the two source-fixed Sentry faults. Reviewed PR1479 remains the delivery path. All 25 completed required GitHub checks on 81e are green, but DeepScan has stayed Analyzing without a target URL since20:59:38 UTC. Chrome confirms the provider concurrency queue; an existing-project branch analysis was requested without changing policy, permissions or paid features. The final local SDK review correction passes107 cases, and the generated changelog now describes the Unicode repair. Renewed incremental bot review remains necessary in the next included allowance. Do not count queued/skipped providers as approval, backdate a release, waive the Sentry gate or create duplicate automatic cuts."
+  - created_at: "2026-10-17T02:28:59.593Z"
+    author: "harness:codex"
+    text: "Verified publication on 2026-10-17: PR1479 final reviewed head 8b50e05799fa8bc587598308a763057de753bb39 merged as94757af3016420bfda6b6fc1905be7814ee2ea1d with identical Git trees. CodeRabbit completed the last delta with no actionable findings and all review threads resolved; final42 checks comprised38 pass and4 expected skips. Sourcery weekly budget and Greptile expired trial remained unavailable, not approvals. DeepScan required exact-head status eventually succeeded after its external queue delay. Merge CI38988576234 and release-version CI38991739248 succeeded. Auto Release38989409879 prepared and sealed the producer binding, pushed immutable v2026.10.17 atb062b79891fc7cdf40c124fd615422432e3c3da6 and successfully awaited tag-driven Release38991739473. That Release completed successfully, including nine Linux/macOS/Windows npm/Bun/npm-global registry acceptance jobs and advertisement. Public GitHub release published at02:22:01Z: https://github.com/unbraind/pm-cli/releases/tag/v2026.10.17 . Anonymous npm exact-version metadata and latest both resolve2026.10.17. Registry integrity sha512-uVByzpR7SXheHr2oYdsYl4rNj60nLtaqMLHHEroKeJRjWWQJodB6GuUkwTsHn7KaXn/VfAVHrh1Zt3aMsuYuxA==, actual Sentry-injected unpacked artifact43049632 bytes/6425files. This final public artifact measurement is separate from pre-injection first-party/runtime budget receipts."
+  - created_at: "2026-10-17T02:29:00.365Z"
+    author: "harness:codex"
+    text: "Consumer and observability evidence: a fresh anonymous public-registry install of2026.10.17 passed Node and Bun public SDK/CLI Unicode cutoff238/239/240, nested JSON/TOON, exact rendered receipts, unchanged unbounded/persisted input, and typed raw-duration refusal before journal creation; isolated npx and bunx report2026.10.17. The independent verifier initially used compact JSON for a renderer-bound estimate; correcting the oracle to pretty JSON plus its trailing newline made the published contract pass. At02:25:30.414Z..02:25:32.342Z two real published Node/Bun pm get actions reached the production telemetry backend as exactly one start and finish per session, zero failures, maximum455ms ingestion delay. Fresh Sentry span data identifies pm-cli@2026.10.17, pm.command/pm get, actual23.688ms and37.443ms durations, with trace IDs840992e56f6d424784d199b6d23cbbfc and5a4e84d015d24709bf7d4afe61a3865c. Trace/span views return their timing/operation tree, but warn that full span-detail enrichment could not be fetched; do not claim complete attribute enrichment or captured-error symbolication. The release Sentry threshold passed, and the fresh24h unresolved-issue query returned zero groups. Local flush drained its one queued entry with zero invalid rows; a later physical read saw two newly queued rows from subsequent actions, so this is successful delivery evidence, not permanent queue emptiness. Production stack health passed with current sync/regeneration and no regeneration error; the service still reports2026.10.15 while this client is17. No service-version upgrade is claimed."
+  - created_at: "2026-10-17T02:29:01.350Z"
+    author: "harness:codex"
+    text: "Daily incident and guard evidence: October16 scheduled38867421163 stopped before tagging on Sentry PM-CLI-3H and3M. Their mechanisms were fixed in PR1479, then only those issues were resolved in fixing commit94757af3016420bfda6b6fc1905be7814ee2ea1d after merge. DeepScan delayed the reviewed merge until October17 UTC, so no October16 release was published; the missed day remains historical evidence. Closing bot blocker1483 once triggered guarded retry38988592078, which succeeded by skipping because its issue belonged to the previous UTC day. A separate normal operator dispatch38989409879 then produced today17 release. No tag was moved, no second automatic target or ordinal was created, and no paid features or health/review thresholds were changed. Future current-day schedules must select the existing17 result rather than publish a duplicate. The standing health reminder stays open for its next2026-10-17T06:00Z occurrence. GitHub security refresh:0 open Dependabot, code-scanning and secret-scanning alerts. Two newly arrived issues1486/1487 are intake work, not claimed fixed by this release."
+  - created_at: "2026-10-17T02:35:06.591Z"
+    author: "harness:codex"
+    text: "Reviewed post-release closeout validation: current build and latest pm-changelog2026.10.16 generation/check pass; CHANGELOG.md is unchanged after tag refresh. Tracker-context, graph-composition and record-integrity assurance gates pass. The graph gate caught one missing related link to completed summary-mode ownerpm-nbht; recording that genuine relationship through PM restored the unchanged bound. Terminal defect evidence passes350 governed defects with zero findings; docs links and tracked-secret scan pass, and pnpm audit reports no known vulnerabilities. Full validation verifies2981 histories with zero drift;170 pre-existing legacy closure-field warnings remain advisory, not newly repaired. Strict complete active-item inventory has total0. New intake1486/1487 and the retired-hook cleanup stay open and unclaimed. These merge-dependent/publication results will land through a normal main-based reviewed metadata PR, preserving source delivery and release provenance."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent
@@ -794,9 +806,10 @@ notes[11]:
   - created_at: "2026-10-14T17:17:20.656Z"
     author: "harness:codex"
     text: "Next eligible daily publication must keep source/packed and published-installed claims distinct. For pm-gh1466/pm-gh1467, rerun scripts/release/extension-flag-acceptance.mjs verifyInstalledExtensionFlags against the integrity-verified new public package on Node and Bun, retaining its40 required case identities and exact registry artifact identity. Current public2026.10.14 is the independently reproduced failing baseline, not the fixed candidate. Do not overwrite it or create a second automatic release today. Existing published release38510184254 and later same-day guard38531806166 already passed; historical reliability and Sentry trace freshness retain their separate owners."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-07-26T13:11:41.088Z","harness:codex","Credential fallback must follow the gate's access obligation, not only its strictness mode: a configured but stale environment token is stronger evidence that Sentry access is expected, so best-effort should try the authenticated CLI before failing the release while tokenless best-effort may remain optional."
   "2026-07-26T15:52:22.655Z","harness:codex","A hidden npm package version can return 404 to both anonymous and authenticated metadata reads while the immutable publish endpoint still knows the version exists. Same-tag recovery must use the access mutation as the existence-sensitive operation, permit publish only on a definitive package-not-found response, and fail closed for every credential or registry error."
+  "2026-10-17T02:29:02.321Z","harness:codex","A successful Auto Release can be an intentional guarded skip. Prove release availability with its immutable tag, exact producer/publisher runs, anonymous npm version and dist-tag, GitHub release and installed consumers; preserve the original missed-day and first-attempt reliability evidence."
 files[20]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,record project pm-changelog 2026.6.27 managed package metadata
   .github/workflows/auto-release.yml,project,close stale blocked-release issue after successful scheduled publish

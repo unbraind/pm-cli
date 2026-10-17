@@ -1,0 +1,36 @@
+id: pm-gh1486
+title: "GH-1486: Keep passing health diagnostics concise by default"
+description: Triage excessive default health output with installed extensions and the non-monotonic brief projection reported in GH-1486 on2026.10.15. Preserve explicit full evidence and the shipped compact check-only/summary contract.
+type: Issue
+status: open
+priority: 2
+tags[2]: github-intake,release-closeout
+created_at: "2026-10-17T02:29:25.793Z"
+updated_at: "2026-10-17T02:33:12.228Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Reproduce on isolated empty and representative trackers with real extension registration; compare default, brief, summary and explicit full output bytes with identical verdicts; passing checks avoid registry dumps while full evidence remains available; nested evidence stays structured in JSON/TOON; add an independent extension-growth negative control without raising output budgets."
+definition_of_ready: Live duplicate search and canonical lineage reviewed; reported evidence retained; implementation must first reproduce in isolated fixtures and keep existing gates.
+goal: project management = context management
+objective: Passing default health diagnostics summarize counts/verdicts; requested extension evidence stays structured and brief is never larger than default for a check.
+value: "Preserve reliable, economical project context and explicit evidence across repositories and tool integrations."
+why_now: New live GitHub report or integration observation arrived during verified2026.10.17 release closeout.
+parent: pm-5t33or
+risk: low
+confidence: medium
+severity: medium
+expected_result: Passing default health diagnostics summarize counts/verdicts; requested extension evidence stays structured and brief is never larger than default for a check.
+actual_result: "Intake only: reporter measured23476 default bytes,7841 brief and636 summary on an empty tracker with one global extension; extensions comprised12590 bytes. No reproduction or new fix is claimed."
+component: health output projection
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-du93sr,related,"2026-10-17T02:29:25.793Z","harness:codex","cli:create:dep",detected
+  pm-nbht,related,"2026-10-17T02:33:11.891Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-17T02:29:25.793Z","harness:codex","Duplicate-check evidence: Live search1486 and health output plus open/in-progress inventories found no owner for this new report. Read completed pm-nbht and pm-du93sr and the open budget parentpm-5t33or; retain their shipped contracts and link the new default/brief intake as distinct residual scope."
+files[2]{path,scope,note}:
+  src/cli/commands/governance/health.ts,project,Existing CLI health adapter; intake linkage only
+  src/sdk/governance/health.ts,project,Existing SDK health projection owner to inspect during reproduction
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/health-check-only-contract.spec.ts tests/integration/health-diagnostic-guidance.integration.spec.ts,project,240,"harness:codex","2026-10-17T02:30:02.945Z",local_mutation,docs/release-2026-10-17-evidence,Existing sandbox-safe health contract controls; new report reproduction remains future work
+escape_class: production_defect
+body: "Source: https://github.com/unbraind/pm-cli/issues/1486\n\nThe existing pm-nbht delivered summary mode, and pm-du93sr delivered compact check-only guidance; their completed closures are preserved. This new report concerns the default/brief surfaces and extension registry expansion, including a history_drift brief projection larger than default. Reproduce before choosing an additive verbose-detail flag or changing default projection. Keep SDK semantics authoritative and CLI/MCP output behavior aligned."

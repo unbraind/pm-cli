@@ -1,0 +1,34 @@
+id: pm-gh1487
+title: "GH-1487: Respect nested Git repository boundaries during tracker discovery"
+description: Investigate implicit tracker discovery crossing the nearest Git repository boundary and silently mutating an enclosing repository tracker when the nested repository has no tracker. Preserve explicit tracker overrides and intentional workspace policies.
+type: Issue
+status: open
+priority: 1
+tags[2]: github-intake,release-closeout
+created_at: "2026-10-17T02:29:28.964Z"
+updated_at: "2026-10-17T02:30:04.962Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: "Reproduce in disposable outer/inner Git repositories and verify outer bytes/history remain unchanged on refused inner mutations; cover .git directories and files, worktrees, submodules and ordinary subdirectories; preserve explicit --pm-path and PM_PATH plus documented deliberate cross-root policy; expose actionable boundary and initialization recovery through SDK, CLI and MCP."
+definition_of_ready: Live duplicate search and canonical lineage reviewed; reported evidence retained; implementation must first reproduce in isolated fixtures and keep existing gates.
+goal: project management = context management
+objective: "Implicit discovery stops at the nearest Git root, including .git files for worktrees/submodules, with clear initialization recovery; deliberate tracker overrides remain supported."
+value: "Preserve reliable, economical project context and explicit evidence across repositories and tool integrations."
+why_now: New live GitHub report or integration observation arrived during verified2026.10.17 release closeout.
+parent: pm-doxj
+risk: high
+confidence: medium
+severity: high
+expected_result: "Implicit discovery stops at the nearest Git root, including .git files for worktrees/submodules, with clear initialization recovery; deliberate tracker overrides remain supported."
+actual_result: "Intake only: GH-1487 reports config mutations and create resolving to the outer repository on2026.10.15. The reporter restored its setting. No local reproduction or remediation is claimed."
+component: workspace tracker discovery
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-69nl,related,"2026-10-17T02:29:56.756Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-17T02:29:28.964Z","harness:codex","Duplicate-check evidence: Live request-specific searches1487, nested git tracker discovery and enclosing plus open/in-progress inventories found no canonical owner for this cross-repository mutation report. Existing pm-69nl concerns post-init root discovery and is a separate completed behavior; no completed fix is relabeled as outstanding."
+files[1]{path,scope,note}:
+  src/core/store/paths.ts,project,Existing tracker root discovery primitive to inspect
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/store-paths.spec.ts tests/integration/init-path-guard.integration.spec.ts,project,240,"harness:codex","2026-10-17T02:30:04.922Z",local_mutation,docs/release-2026-10-17-evidence,Existing isolated discovery controls; reported nested repository regression remains to reproduce
+escape_class: production_defect
+body: "Source: https://github.com/unbraind/pm-cli/issues/1487\n\nReported safety failure: an agent ran config set before init in a separate nested repository and changed the enclosing tracker; append-only outer history retained that mistake after restoration. Do not test against the real tracker or repair historical entries destructively. Investigate the SDK discovery primitive and all mutation/read adapters, then document compatibility for users intentionally sharing a parent tracker."
