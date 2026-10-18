@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-18T03:04:47.853Z"
-updated_at: "2026-10-18T03:55:47.084Z"
+updated_at: "2026-10-18T04:11:14.928Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#80dfe3240063521ac108004a"
 author: "harness:codex"
@@ -16,8 +16,9 @@ parent: pm-5oj5
 risk: low
 confidence: high
 expected_result: The eligible Sentry 10 patch preserves consent and privacy controls and exact runtime closure while supported installed Node/Bun/npx/bunx consumers and live observability checks pass.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-iceees,blocked_by,"2026-10-18T03:35:07.607Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-18T04:11:14.220Z","harness:codex",supported-patch-versus-major-migration,detected
 comments[7]{created_at,author,text}:
   "2026-10-18T03:04:47.853Z","harness:codex","Duplicate check: strict all-status census read 2991/2991 records without omissions or unreadable rows; fresh exact keyword 10.76.2 search across all statuses returned zero. The separate Sentry 11 owner was read with full live metadata and verified history and is not this compatible patch. Registry publication is 2026-10-08T16:34:54.148Z; official GitHub release is 2026-10-08T16:56:07Z. Both exceed seven days."
   "2026-10-18T03:05:20.494Z","harness:codex","Eligible compatible patch selected after complete public-registry census. Other latest-compatible patches remain below seven days: gpt-tokenizer 4.0.3 (Oct15); marked 18.1.1 and typescript-eslint 8.71.2 (Oct12); ESLint 10.13.0 (Oct16); Unicorn 78 (Oct12). CodSpeed 6 is also below cooldown. TypeScript 7 / Vitest 5 / npm-package-arg 14 retain their canonical migration owners; Sentry 11 remains separate under pm-t3jxjj. First run portable-artifact admission because the prior major migration failed that independent boundary. No cooldown exclusion or gate threshold changes are permitted."

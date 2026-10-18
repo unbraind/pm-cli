@@ -6,7 +6,7 @@ status: in_progress
 priority: 3
 tags: []
 created_at: "2026-10-12T14:28:16.814Z"
-updated_at: "2026-10-18T03:54:38.755Z"
+updated_at: "2026-10-18T04:11:12.574Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#80dfe3240063521ac108004a"
 author: "harness:codex"
@@ -16,8 +16,9 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: The eligible scanner pin is adopted with verified-secret scanning and fail-on-scan-error behavior preserved.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-98f0ec,related,"2026-10-12T14:28:16.814Z","harness:codex","cli:create:dep",detected
+  pm-rnpmtp,related,"2026-10-18T04:11:12.043Z","harness:codex",shared-reviewed-security-tooling-delivery,detected
 comments[3]{created_at,author,text}:
   "2026-10-12T14:28:16.814Z","harness:codex","Duplicate check: complete all-status census plus fresh exact-version search and open/in_progress inventories found the eligible-only refresh record but no open scanner adoption owner. Preserve its eligible updates as completed work and isolate this below-cooldown version as a linked open follow-up. This item is not claimed or started."
   "2026-10-18T02:53:17.570Z","harness:codex","Start combined eligible-tooling delivery with pm-rnpmtp. Official tag v3.98.0 resolves to immutable commit 0186870afd2c4a90def791d80260923ba583d076; official release publication 2026-10-05T17:39:02Z exceeds the unchanged seven-day adoption policy. Scope is scanner pin and its existing workflow contract, with native security validation."

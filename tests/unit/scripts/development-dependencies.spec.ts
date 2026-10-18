@@ -24,7 +24,7 @@ function launcherShells(format: string): string[] {
 
 /** CMD expands caller expressions once; the generated program must preserve its own percent paths. */
 function launcherInvocation(format: string, file: string, args: string[]): string[] {
-  if (format === "cmd") return ["/d", "/s", "/c", 'probe.cmd "space value" %PM_LAUNCHER_SENTINEL% quoted-value'];
+  if (format === "cmd") return ["/d", "/s", "/c", 'probe.cmd "space value" "%PM_LAUNCHER_SENTINEL%" quoted-value'];
   if (format === "ps1") return ["-NoProfile", "-File", file, ...args];
   return [file, ...args];
 }
