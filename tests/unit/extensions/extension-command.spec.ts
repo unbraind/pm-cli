@@ -1167,7 +1167,7 @@ describe("extension command runtime", () => {
           code: "local_source_not_found_bare_name",
           nextSteps: expect.arrayContaining([expect.stringContaining("widget")]),
           recovery: expect.objectContaining({
-            next_best_command: "pm install npm:pm-surely-not-a-local-dir",
+            next_best_command: "pm package install npm:pm-surely-not-a-local-dir",
           }),
         }),
       });
@@ -1799,7 +1799,7 @@ describe("extension command runtime", () => {
       expect(_testOnlyInstallSources.npmPackageNameFromSpec("   ")).toBe("");
       expect(isNpmNotFoundError("npm ERR! code E404 404 Not Found")).toBe(true);
       expect(isNpmPackNotFoundError("resource was NOT FOUND")).toBe(true);
-      expect(buildNpmNotFoundRecovery("pm-helper-package").context.recovery?.next_best_command).toBe("pm install --project github.com/unbraind/pm-helper-package");
+      expect(buildNpmNotFoundRecovery("pm-helper-package").context.recovery?.next_best_command).toBe("pm package install --project github.com/unbraind/pm-helper-package");
       expect(() => parseExtensionInstallSource("owner/.git", { forceGithub: true })).toThrow(/GitHub/);
 
       await expect(
@@ -4935,11 +4935,11 @@ describe("extension command runtime", () => {
         recovery: {
           attempted_command: "pm install --project npm:pm-definitely-missing-for-fallback-test-zzzzzz",
           normalized_args: ["install", "--project", "npm:pm-definitely-missing-for-fallback-test-zzzzzz"],
-          next_best_command: "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+          next_best_command: "pm package install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
           fallback_candidates: [
             {
               source: "github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
-              command: "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+              command: "pm package install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
               reason: "canonical first-party GitHub repository fallback for unpublished pm packages",
             },
           ],

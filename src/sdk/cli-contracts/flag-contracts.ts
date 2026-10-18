@@ -1877,8 +1877,10 @@ export function toUniqueFlagContracts(
   return unique;
 }
 
+/** Merge inherited controls and eligible core encoding aliases while preserving declared domain formats. */
 function withSubcommandGlobalFlags(
   contracts: CliFlagContract[],
+  allowOutputFormatAlias = false,
 ): CliFlagContract[] {
   const byCanonicalFlag = new Map<string, CliFlagContract>();
   for (const contract of [...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]) {
@@ -1908,6 +1910,15 @@ function withSubcommandGlobalFlags(
             ...(mergedAliases.length > 0 ? { aliases: mergedAliases } : {}),
           },
     );
+  }
+  // Core commands without a domain-specific format accept the compatibility
+  // spelling through bootstrap normalization. Extensions keep their own flags.
+  if (allowOutputFormatAlias && contracts.length > 0 && !byCanonicalFlag.has("--format")) {
+    const encoding = byCanonicalFlag.get("--output-format")!;
+    byCanonicalFlag.set("--output-format", {
+      ...encoding,
+      aliases: [...(encoding.aliases ?? []), "--format"],
+    });
   }
   return withFlagAliasMetadata([...byCanonicalFlag.values()]);
 }
@@ -2171,14 +2182,15 @@ export function resolveSubcommandFlagContractsForCommand(
       (rootCommand === "package" || rootCommand === "packages") &&
       lifecycleSubcommand === "upgrade"
     ) {
-      return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS);
+      return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS, true);
     }
     return withSubcommandGlobalFlags(
       resolveExtensionLifecycleFlagContracts(rootCommand, lifecycleSubcommand),
+      hasSubcommandFlagContractsForCommand(normalized),
     );
   }
   const contracts = SUBCOMMAND_FLAG_CONTRACTS_BY_COMMAND.get(normalized) ?? [];
-  return withSubcommandGlobalFlags(contracts);
+  return withSubcommandGlobalFlags(contracts, hasSubcommandFlagContractsForCommand(normalized));
 }
 
 /** Renders a space-separated, de-duplicated list of every flag spelling (short, canonical, and aliases) for shell-completion candidate generation, optionally appending the shared subcommand-global flags. */

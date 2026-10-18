@@ -219,17 +219,17 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   extension: {
     why: "Compatibility command for package-backed runtime extension lifecycle operations across project or global scope.",
     examples: [
-      "pm install ./my-package --project",
-      "pm install '*' --project",
+      "pm package install ./my-package --project",
+      "pm package install '*' --project",
       "pm package doctor --project --detail summary",
       "pm package manage --global",
       "pm package activate sample-ext --project",
       "pm package deactivate sample-ext --project",
       "pm package uninstall sample-ext --global",
-      "pm extension explore --project",
-      "pm extension manage --global",
-      "pm extension describe sample-ext --project",
-      "pm extension doctor --detail deep",
+      "pm package explore --project",
+      "pm package manage --global",
+      "pm package describe sample-ext --project",
+      "pm package doctor --detail deep",
     ],
     tips: [
       "Prefer pm install and pm package in new user-facing automation.",
@@ -246,13 +246,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   package: {
     why: "Installs, explores, manages, diagnoses, adopts, activates, deactivates, and refreshes package-backed pm runtime extensions.",
     examples: [
-      "pm install npm:@scope/pm-package --project",
+      "pm package install npm:@scope/pm-package --project",
       "pm package install ./my-package --project",
       "pm package doctor --project --detail deep",
       "pm package manage --project --runtime-probe",
       "pm package describe --project",
       "pm package activate sample-ext --project",
-      "pm upgrade --packages-only --dry-run",
+      "pm package upgrade --packages-only --dry-run",
     ],
     tips: [
       "Prefer package vocabulary for user-facing workflows; extension vocabulary remains available for compatibility.",
@@ -270,7 +270,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm package init ./my-sync-package --capability importers",
       "pm package init ./my-domain-package --capability schema",
       "pm package init ./my-output-package --capability renderers",
-      "pm install ./my-sync-package --project",
+      "pm package install ./my-sync-package --project",
       "pm package doctor --project --detail summary",
     ],
     tips: [
@@ -287,7 +287,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Installs pm packages from local paths, npm sources, GitHub sources, bundled aliases, or wildcard/all aliases.",
     examples: [
       "pm package install ./my-package --project",
-      "pm install npm:pm-changelog --project",
+      "pm package install npm:pm-changelog --project",
       "pm package install --github org/repo/packages/my-pm-package --ref main",
     ],
     tips: [
@@ -323,14 +323,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "extension init": {
     why: "Generates an installable starter runtime extension with manifest and entrypoint files.",
     examples: [
-      "pm extension init ./my-extension",
-      "pm extension init ./my-hook-extension --capability hooks",
-      "pm extension init ./my-search-extension --capability search",
-      "pm extension init ./my-sync-extension --capability importers",
-      "pm extension init ./my-domain-extension --capability schema",
-      "pm extension init ./my-output-extension --capability renderers",
-      "pm extension --install --project ./my-sync-extension",
-      "pm extension --doctor --project --detail summary",
+      "pm package init ./my-extension",
+      "pm package init ./my-hook-extension --capability hooks",
+      "pm package init ./my-search-extension --capability search",
+      "pm package init ./my-sync-extension --capability importers",
+      "pm package init ./my-domain-extension --capability schema",
+      "pm package init ./my-output-extension --capability renderers",
+      "pm package --install --project ./my-sync-extension",
+      "pm package --doctor --project --detail summary",
     ],
     tips: [
       "Use --capability hooks when the extension should react to command lifecycle events.",
@@ -344,9 +344,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "extension install": {
     why: "Installs a compatibility runtime extension from local, npm, GitHub, bundled alias, or wildcard sources.",
     examples: [
-      "pm extension install ./my-extension --project",
-      "pm extension --install --project ./my-extension",
-      "pm extension doctor --project --detail summary",
+      "pm package install ./my-extension --project",
+      "pm package --install --project ./my-extension",
+      "pm package doctor --project --detail summary",
     ],
     tips: [
       "Prefer pm install or pm package install for new package-first automation.",
@@ -355,9 +355,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "extension doctor": {
     why: "Diagnoses compatibility extension activation, policy, collision, and managed-state health for project or global extension scopes.",
     examples: [
-      "pm extension doctor --project --detail summary",
-      "pm extension doctor --project --detail deep --trace",
-      "pm extension doctor --project --isolated --detail deep --trace",
+      "pm package doctor --project --detail summary",
+      "pm package doctor --project --detail deep --trace",
+      "pm package doctor --project --isolated --detail deep --trace",
     ],
     tips: [
       "Use --isolated (alias --ignore-global) for hermetic project smoke tests that must ignore globally installed extension registrations.",
@@ -368,18 +368,18 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "extension catalog": {
     why: "Compatibility view of bundled package catalog metadata.",
     examples: [
-      "pm extension catalog --project",
-      "pm extension catalog --project --fields alias,installed,install_command",
+      "pm package catalog --project",
+      "pm package catalog --project --fields alias,installed,install_command",
     ],
     tips: ["Prefer pm package catalog in new user-facing workflows."],
   },
   install: {
     why: "Installs a pm package into project scope by default, using local, npm, GitHub, or bundled alias sources.",
     examples: [
-      "pm install '*' --project",
-      "pm install ./packages/pm-todos --project",
-      "pm install npm:@scope/pm-package --global",
-      "pm install --github org/repo/packages/my-pm-package --ref main",
+      "pm package install '*' --project",
+      "pm package install ./packages/pm-todos --project",
+      "pm package install npm:@scope/pm-package --global",
+      "pm package install --github org/repo/packages/my-pm-package --ref main",
     ],
     tips: [
       "Installed packages are recorded in managed state and can be inspected with pm package manage.",
@@ -388,11 +388,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   upgrade: {
     why: "Updates the global pm CLI/SDK and refreshes managed pm packages from recorded install sources.",
     examples: [
-      "pm upgrade --dry-run",
-      "pm upgrade --packages-only --project",
-      "pm upgrade todos --dry-run",
-      "pm upgrade --cli-only --repair",
-      "pm upgrade --tag next --dry-run",
+      "pm package upgrade --dry-run",
+      "pm package upgrade --packages-only --project",
+      "pm package upgrade todos --dry-run",
+      "pm package upgrade --cli-only --repair",
+      "pm package upgrade --tag next --dry-run",
     ],
     tips: [
       "Omit target to include the CLI/SDK plus all managed packages in the selected scope.",
@@ -500,33 +500,33 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "list-all": {
     why: "Lists all item states (including terminal states) when you need full visibility.",
     examples: [
-      "pm list-all --limit 50",
-      "pm list-all --type Issue --include-body",
+      "pm list --all --limit 50",
+      "pm list --all --type Issue --include-body",
     ],
   },
   "list-open": {
     why: "Shows work that is ready to claim and start.",
-    examples: ["pm list-open --priority 0 --limit 10"],
+    examples: ["pm list --status open --priority 0 --limit 10"],
   },
   "list-in-progress": {
     why: "Tracks active execution and owner progress.",
-    examples: ["pm list-in-progress --priority 0 --limit 20"],
+    examples: ["pm list --status in_progress --priority 0 --limit 20"],
   },
   "list-blocked": {
     why: "Surfaces blocked work that needs intervention.",
-    examples: ["pm list-blocked --limit 20"],
+    examples: ["pm list --blocked --limit 20"],
   },
   "list-closed": {
     why: "Reviews completed work and closure outcomes.",
-    examples: ["pm list-closed --limit 20 --type Task"],
+    examples: ["pm list --status closed --limit 20 --type Task"],
   },
   "list-canceled": {
     why: "Audits intentionally discontinued work.",
-    examples: ["pm list-canceled --limit 20"],
+    examples: ["pm list --status canceled --limit 20"],
   },
   "list-draft": {
     why: "Finds incompletely defined items that need refinement before execution.",
-    examples: ["pm list-draft --limit 20"],
+    examples: ["pm list --status draft --limit 20"],
   },
   aggregate: {
     why: "Runs grouped aggregation queries for governance checks such as decomposition by parent/type or triage by status/priority.",
@@ -542,7 +542,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   guide: {
     why: "Routes local progressive-disclosure documentation so agents can fetch only the context they need.",
     examples: [
-      "pm install guide-shell --project",
+      "pm package install guide-shell --project",
       "pm guide",
       "pm guide quickstart",
       "pm guide commands --depth standard",
@@ -771,8 +771,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Links test commands/paths and optionally executes them for one item.",
     examples: [
       'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,timeout_seconds=2400"',
-      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
-      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,pm_context_mode=auto"',
+      'pm test pm-a1b2 --add "command=pm list --all --type Task --limit 200,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
+      'pm test pm-a1b2 --add "command=pm list --all --type Task --limit 200,pm_context_mode=auto"',
       "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe --pm-context tracker --fail-on-context-mismatch --fail-on-skipped",
       "pm test pm-a1b2 --run --timeout 2400 --pm-context auto",
       "pm test pm-a1b2 --run --background --timeout 2400 --progress",
@@ -860,18 +860,18 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   "start-task": {
     why: "Lifecycle alias that claims an item and sets status to in_progress.",
-    examples: ['pm start-task pm-a1b2 --message "Start implementation"'],
+    examples: ['pm claim --start pm-a1b2 --message "Start implementation"'],
   },
   "pause-task": {
     why: "Lifecycle alias that sets status to open and releases active assignment.",
     examples: [
-      'pm pause-task pm-a1b2 --message "Pause for dependency unblock"',
+      'pm release --pause pm-a1b2 --message "Pause for dependency unblock"',
     ],
   },
   "close-task": {
     why: "Lifecycle alias that closes with reason text and clears assignment metadata.",
     examples: [
-      'pm close-task pm-a1b2 "All acceptance criteria met" --message "Close and handoff"',
+      'pm close --release-assignment pm-a1b2 "All acceptance criteria met" --message "Close and handoff"',
     ],
   },
   meet: {
@@ -949,8 +949,8 @@ export const ROOT_HELP_BUNDLE: HelpBundle = {
   why: "Provides deterministic project management workflows for humans and coding agents.",
   examples: [
     "pm init",
-    "pm install guide-shell --project",
-    "pm list-open --limit 10",
+    "pm package install guide-shell --project",
+    "pm list --status open --limit 10",
     'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --create-mode progressive',
   ],
   tips: [

@@ -149,7 +149,7 @@ import {
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
 import { PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
-import { HISTORY_ATTEST_FLAG_CONTRACTS, PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
+import { HISTORY_ATTEST_FLAG_CONTRACTS, PM_POSITIONAL_ACTION_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "./flag-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
   GOVERNANCE_CREATE_MODE_DEFAULT_VALUES,
@@ -1807,10 +1807,15 @@ function resolveActionAvailability(
   /* c8 ignore stop */
 }
 
+/** Expose core flags with the encoding alias accepted by the shared SDK parser. */
 function resolveCoreCommandFlags(command: string): CliFlagContract[] {
-  return (
+  const flags = (
     CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.get(command) ?? GLOBAL_FLAG_CONTRACTS
   );
+  const encoding = resolveSubcommandFlagContractsForCommand(command).find(
+    (contract) => contract.flag === "--output-format" && contract.aliases?.includes("--format"),
+  );
+  return encoding ? [...flags, encoding] : flags;
 }
 
 /** Recognize core flag contracts while keeping package-owned operations outside the core provider surface. */
@@ -2470,26 +2475,27 @@ function buildCommandNamespaceError(
   );
 }
 
+/** Explain an unavailable package command with canonical installation and discovery retries. */
 function buildPackageOwnedCommandError(
   command: string,
   packageHint: string,
 ): PmCliError {
   return new PmCliError(
-    `Unknown command: "${command}". Command "${command}" is provided by the optional "${packageHint}" package. Run "pm install ${packageHint} --project" and retry.`,
+    `Unknown command: "${command}". Command "${command}" is provided by the optional "${packageHint}" package. Run "pm package install ${packageHint} --project" and retry.`,
     EXIT_CODE.USAGE,
     {
       code: "unknown_command",
       required: `Install the optional "${packageHint}" package, or choose a command from pm contracts --flags-only --json.`,
       why: "Command contracts include core commands plus commands registered by active packages and extensions.",
       examples: [
-        `pm install ${packageHint} --project`,
+        `pm package install ${packageHint} --project`,
         `pm contracts --command ${command} --flags-only --json`,
       ],
       nextSteps: [
-        `Install the optional package first: pm install ${packageHint} --project`,
+        `Install the optional package first: pm package install ${packageHint} --project`,
       ],
       recovery: {
-        suggested_retry: `pm install ${packageHint} --project`,
+        suggested_retry: `pm package install ${packageHint} --project`,
       },
     },
   );

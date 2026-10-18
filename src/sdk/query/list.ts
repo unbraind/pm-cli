@@ -962,9 +962,9 @@ function validateListProjectionFields(
       {
         code: "unknown_field_projection",
         examples: [
-          "pm list-open --fields id,title,status,type,updated_at",
+          "pm list --status open --fields id,title,status",
           "pm list --fields id,title,parent,priority --limit 10",
-          "pm list-all --fields id,title,body --limit 5",
+          "pm list --all --fields id,title,body --limit 5",
         ],
         recovery: {
           allowed_values: allowedValues,

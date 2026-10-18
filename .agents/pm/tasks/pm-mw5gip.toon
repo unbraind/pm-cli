@@ -1,0 +1,55 @@
+id: pm-mw5gip
+title: Keep recovery and help examples on canonical list commands
+description: "Deliver GH-1494 canonical list examples in SDK projection errors, plan recovery, and help source, with alias-registry-based guards and unchanged recovery budgets."
+type: Task
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:cli",fix
+created_at: "2026-10-18T08:41:08.209Z"
+updated_at: "2026-10-18T10:01:51.386Z"
+closed_at: "2026-10-18T09:57:49.602Z"
+completed_at: "2026-10-18T09:57:49.602Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: List projection and plan recovery examples use canonical list commands; Help source examples use canonical commands; Alias-registry-based regression guards reject deprecated invocations in the exercised error and help surfaces
+goal: project management = context management
+objective: Keep recovery guidance immediately executable without deprecation round trips
+value: Agents recover with fewer failed calls and less context overhead
+why_now: GH-1494 confirms deprecated list examples remain in current SDK diagnostic source
+parent: pm-wg07
+risk: low
+confidence: high
+resolution: "Help source, list projection errors, and plan recovery use canonical list commands. Concise examples fit the existing diagnostic budget; every core help narrative and real bounded refusals are guarded against deprecated aliases."
+expected_result: "Agents recover with canonical commands and usable examples, preserving aliases for compatibility and avoiding extra deprecation round trips."
+actual_result: "Both linked verifications passed; 10662 full-source tests passed with exact 100/100/100/100 coverage; SDK/CLI contracts, static gates, package acceptance, and registry-derived help/error regressions passed. Broader pm-wg07 scope remains open."
+comments[4]{created_at,author,text}:
+  "2026-10-18T08:41:08.209Z","harness:codex","Focused implementation child of existing public-surface consistency programme for GH-1494, not a second defect owner. Complete strict all-status intake plus parent full metadata/history and existing closed children show no matching delivery task. The programme remains open for website/plugin/count/terminology acceptance; this child closes only canonical examples with executable diagnostic proof."
+  "2026-10-18T08:54:39.969Z","harness:codex","Verification: canonical list/plan diagnostics plus every core help narrative pass the deprecated-alias registry guard. List examples were shortened while preserving their intent so the canonical spelling fits the existing 2000-token recovery budget instead of losing its examples to degradation. Typecheck, SDK compatibility (zero classified public changes), complete command grammar, and flag-invocation parity passed. Full coverage is still running; it caught the new encoding alias on internal worker discovery, which will be corrected before final verification."
+  "2026-10-18T09:51:27.667Z","harness:codex","Completed implementation proof: all core help narratives are checked against the deprecated-alias registry; real list projection and plan recovery examples are canonical and remain within the existing diagnostic ceiling. Shared candidate full-source run passed 10662 tests and exact 100/100/100/100 coverage. Both linked item verification commands passed, and all 12 changed source/docs/test artifacts matched the isolated coverage checkout byte for byte. Changelog generation remains owned by latest pm-changelog; broader public-surface programme pm-wg07 remains open for its other acceptance criteria."
+  "2026-10-18T09:57:46.177Z","harness:codex","Final local static, graph, record-integrity, bounded mutation, serial startup/transport, full-source exact coverage, and packed consumer gates passed. Canonical error examples retain the existing output budget, and all core help examples are guarded by the SDK alias registry. Implementation is complete for this focused child; the broad parent retains its unrelated consistency acceptance criteria."
+learnings[1]{created_at,author,text}:
+  "2026-10-18T09:16:46.141Z","harness:codex","Canonical command spellings can push a diagnostic over its existing token ceiling. Preserve concise, executable examples and test the real bounded refusal, rather than only searching source strings or raising the budget."
+files[5]{path,scope}:
+  src/cli/help-content.ts,project
+  src/cli/register-mutation.ts,project
+  src/sdk/query/list.ts,project
+  tests/integration/cli/format-compatibility.integration.spec.ts,project
+  tests/unit/cli/help-content.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/integration/cli/format-compatibility.integration.spec.ts,project,240,"harness:codex","2026-10-18T08:43:02.141Z",local_mutation,fix/uniform-format-and-canonical-guidance
+test_runs[1]:
+  - run_id: test-local-mvdm25qz-ghn669
+    kind: test
+    status: passed
+    started_at: "2026-10-18T09:15:46.805Z"
+    finished_at: "2026-10-18T09:16:15.131Z"
+    recorded_at: "2026-10-18T09:16:15.131Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/help-content.spec.ts tests/integration/cli/format-compatibility.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned generation records the delivered canonical guidance task
+close_reason: Implemented GH-1494 canonical list guidance and verified the complete candidate for reviewed delivery.
+body: ""

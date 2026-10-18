@@ -336,6 +336,20 @@ pm get <id> --full --json
 pm contracts --json
 ```
 
+`--output-format json|toon` selects encoding on both reads and mutations.
+Item collection and lifecycle commands accept `--format json|toon` as a
+compatibility alias, before or after the command:
+
+```bash
+pm comments <id> --format json
+pm --format json create Task "Follow up" --create-mode progressive
+```
+
+Command-specific formats retain their meaning, including `list --format csv`,
+`deps --format graph`, and `config set item-format --format toon`. Use
+`--output-format` to select the envelope encoding alongside those options.
+Package commands retain their declared flag vocabulary.
+
 `pm calendar` (provided by the optional `calendar` package — `pm install calendar --project`) defaults to markdown because date-centric summaries are easier to scan in that format.
 
 ## Validation Policies

@@ -2346,6 +2346,14 @@
         },
         {
           "flag": "--stream"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2426,6 +2434,14 @@
         {
           "flag": "--release",
           "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2452,6 +2468,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2501,6 +2525,14 @@
         {
           "flag": "--enforcement",
           "value_name": "level"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2519,6 +2551,14 @@
         {
           "flag": "--owner",
           "value_name": "item-id"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2541,6 +2581,14 @@
         {
           "flag": "--owner",
           "value_name": "item-id"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2551,6 +2599,14 @@
         {
           "flag": "--definition",
           "value_name": "json"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2574,6 +2630,14 @@
         {
           "flag": "--owner",
           "value_name": "item-id"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2592,6 +2656,14 @@
         {
           "flag": "--message",
           "value_name": "value"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2610,6 +2682,14 @@
         {
           "flag": "--message",
           "value_name": "value"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2624,6 +2704,14 @@
         {
           "flag": "--message",
           "value_name": "value"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2634,6 +2722,14 @@
         {
           "flag": "--definition",
           "value_name": "json"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2651,6 +2747,14 @@
         {
           "flag": "--tree",
           "value_name": "value"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2670,6 +2774,14 @@
         {
           "flag": "--limit",
           "value_name": "number"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2747,6 +2859,14 @@
             "--explain_ranking"
           ],
           "flag": "--explain-ranking"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2813,6 +2933,14 @@
         {
           "flag": "--force",
           "value_type": "boolean"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -2835,6 +2963,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3013,6 +3149,14 @@
         },
         {
           "flag": "--no-checkpoint"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3191,6 +3335,14 @@
         },
         {
           "flag": "--no-checkpoint"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3240,6 +3392,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3413,6 +3573,14 @@
         },
         {
           "flag": "--clear"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3522,6 +3690,14 @@
         },
         {
           "flag": "--full"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3548,6 +3724,14 @@
         {
           "flag": "--allow-duplicate",
           "value_type": "boolean"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3871,6 +4055,14 @@
         {
           "flag": "--allow-duplicate",
           "value_type": "boolean"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -3998,6 +4190,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4082,6 +4282,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4106,6 +4314,14 @@
         },
         {
           "flag": "--limit"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4184,6 +4400,14 @@
         {
           "flag": "--interval-ms",
           "value_type": "number"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4199,6 +4423,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4223,6 +4455,14 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4238,6 +4478,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4257,6 +4505,14 @@
         {
           "flag": "--fields",
           "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4272,6 +4528,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4293,6 +4557,14 @@
         },
         {
           "flag": "--output"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4329,6 +4601,14 @@
         },
         {
           "flag": "--fail-on-warn"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4344,6 +4624,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4362,6 +4650,14 @@
         },
         {
           "flag": "--capability"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4389,6 +4685,14 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4414,6 +4718,14 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4432,6 +4744,14 @@
         },
         {
           "flag": "--dry-run"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4450,6 +4770,14 @@
         },
         {
           "flag": "--watch"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4465,6 +4793,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4535,6 +4871,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4548,6 +4892,14 @@
         },
         {
           "flag": "--clear"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4560,6 +4912,14 @@
         },
         {
           "flag": "--scope"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4661,6 +5021,14 @@
         },
         {
           "flag": "--full"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4715,6 +5083,14 @@
         },
         {
           "flag": "--full"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4810,6 +5186,14 @@
         },
         {
           "flag": "--reason"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4867,6 +5251,14 @@
         },
         {
           "flag": "--stream"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4888,6 +5280,14 @@
           "flag": "--hash-algorithm",
           "value_name": "name",
           "value_type": "string"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4931,6 +5331,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -4988,6 +5396,14 @@
         {
           "flag": "--interval-ms",
           "value_type": "number"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5019,6 +5435,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5051,6 +5475,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5070,6 +5502,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5091,6 +5531,14 @@
           "flag": "--hash-algorithm",
           "value_name": "name",
           "value_type": "string"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5126,6 +5574,14 @@
         },
         {
           "flag": "--reason"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5169,6 +5625,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5200,6 +5664,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5232,6 +5704,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5278,6 +5758,14 @@
         },
         {
           "flag": "--verbose"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5309,6 +5797,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5358,6 +5854,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5445,6 +5949,14 @@
         {
           "flag": "--author",
           "value_name": "value"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5471,6 +5983,14 @@
         {
           "flag": "--allow-duplicate",
           "value_type": "boolean"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5555,6 +6075,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5579,6 +6107,14 @@
         },
         {
           "flag": "--limit"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5649,6 +6185,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5697,6 +6241,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5737,6 +6289,14 @@
         {
           "flag": "--author",
           "value_name": "value"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5797,6 +6357,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5829,6 +6397,14 @@
         {
           "flag": "--author",
           "value_name": "value"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -5950,6 +6526,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6003,6 +6587,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6271,6 +6863,14 @@
         },
         {
           "flag": "--prefer"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6407,6 +7007,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6445,6 +7053,14 @@
         },
         {
           "flag": "--scope"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6499,6 +7115,14 @@
         },
         {
           "flag": "--full"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6532,6 +7156,14 @@
         },
         {
           "flag": "--analytics"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6541,6 +7173,14 @@
       "flags": [
         {
           "flag": "--limit"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6607,6 +7247,14 @@
         },
         {
           "flag": "--auto-pm-context"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6692,6 +7340,14 @@
         },
         {
           "flag": "--full"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6807,6 +7463,14 @@
         },
         {
           "flag": "--declarative"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6822,6 +7486,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6846,6 +7518,14 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6861,6 +7541,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6880,6 +7568,14 @@
         {
           "flag": "--fields",
           "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6895,6 +7591,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6916,6 +7620,14 @@
         },
         {
           "flag": "--output"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6952,6 +7664,14 @@
         },
         {
           "flag": "--fail-on-warn"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6967,6 +7687,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -6988,6 +7716,14 @@
         },
         {
           "flag": "--declarative"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7015,6 +7751,14 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7040,6 +7784,14 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7058,6 +7810,14 @@
         },
         {
           "flag": "--dry-run"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7076,6 +7836,14 @@
         },
         {
           "flag": "--watch"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7091,6 +7859,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7124,6 +7900,14 @@
         },
         {
           "flag": "--package-name"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7239,6 +8023,14 @@
         },
         {
           "flag": "--declarative"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7254,6 +8046,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7278,6 +8078,14 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7293,6 +8101,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7312,6 +8128,14 @@
         {
           "flag": "--fields",
           "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7327,6 +8151,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7348,6 +8180,14 @@
         },
         {
           "flag": "--output"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7384,6 +8224,14 @@
         },
         {
           "flag": "--fail-on-warn"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7399,6 +8247,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7420,6 +8276,14 @@
         },
         {
           "flag": "--declarative"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7447,6 +8311,14 @@
         },
         {
           "flag": "--ref"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7472,6 +8344,14 @@
         },
         {
           "flag": "--fix-managed-state"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7490,6 +8370,14 @@
         },
         {
           "flag": "--dry-run"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7508,6 +8396,14 @@
         },
         {
           "flag": "--watch"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7523,6 +8419,14 @@
         },
         {
           "flag": "--global"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7556,6 +8460,14 @@
         },
         {
           "flag": "--package-name"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -7969,6 +8881,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8035,6 +8955,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8101,6 +9029,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8167,6 +9103,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8233,6 +9177,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8528,6 +9480,14 @@
             "--why_now"
           ],
           "flag": "--why-now"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8594,6 +9554,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8660,6 +9628,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8726,6 +9702,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8792,6 +9776,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8858,6 +9850,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8870,6 +9870,14 @@
         },
         {
           "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8936,6 +9944,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -8949,6 +9965,14 @@
         {
           "flag": "--fields",
           "list": true
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9015,6 +10039,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9081,6 +10113,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9147,6 +10187,14 @@
         },
         {
           "flag": "--test"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9162,6 +10210,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9192,6 +10248,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9211,6 +10275,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9299,6 +10371,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9535,6 +10615,14 @@
         },
         {
           "flag": "--analytics"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9544,6 +10632,14 @@
       "flags": [
         {
           "flag": "--limit"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9665,6 +10761,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -9731,6 +10835,14 @@
         },
         {
           "flag": "--auto-pm-context"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -10076,6 +11188,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -10543,6 +11663,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11010,6 +12138,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11095,6 +12231,14 @@
         },
         {
           "flag": "--full"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11113,6 +12257,14 @@
         },
         {
           "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11214,6 +12366,14 @@
         },
         {
           "flag": "--verbose"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11241,6 +12401,14 @@
         },
         {
           "flag": "--prefer"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11261,6 +12429,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11349,6 +12525,14 @@
         },
         {
           "flag": "--force"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11367,6 +12551,14 @@
         },
         {
           "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"
@@ -11405,6 +12597,14 @@
         },
         {
           "flag": "--message"
+        },
+        {
+          "aliases": [
+            "--format"
+          ],
+          "flag": "--output-format",
+          "reservation_scope": "inherited",
+          "value_name": "toon|json"
         }
       ],
       "provider": "core"

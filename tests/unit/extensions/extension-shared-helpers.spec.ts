@@ -137,14 +137,14 @@ describe("extension shared validation helpers", () => {
       ).rejects.toMatchObject({
         code: "github_source_entry_unbuilt",
         message: expect.stringContaining(
-          'Try "pm install npm:@example/pm-source-extension"',
+          'Try "pm package install npm:@example/pm-source-extension"',
         ),
         context: {
           why: expect.stringContaining(
             "never executes untrusted package build scripts",
           ),
           recovery: {
-            next_best_command: "pm install npm:@example/pm-source-extension",
+            next_best_command: "pm package install npm:@example/pm-source-extension",
           },
         },
       });
@@ -182,7 +182,7 @@ describe("extension shared validation helpers", () => {
           "Build the source locally and install that directory",
         ),
         context: {
-          examples: [`pm install ${tempRoot}`],
+          examples: [`pm package install ${tempRoot}`],
           recovery: {
             attempted_command: `pm install ${tempRoot}`,
           },

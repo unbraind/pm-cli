@@ -459,6 +459,7 @@ async function runMultiTargetExtensionInstalls(
   return { rows, warnings, failureExitCode };
 }
 
+/** Dispatch package targets while refusing ambiguous multi-target GitHub installation. */
 async function executeExtensionInstallCommand(
   targets: string[] | undefined,
   options: Record<string, unknown>,
@@ -504,8 +505,8 @@ async function executeExtensionInstallCommand(
         required:
           "Use exactly one positional target with --gh/--github, or omit --gh/--github when installing multiple targets.",
         examples: [
-          "pm install --gh owner/repo",
-          "pm install npm:pm-guide-shell pm-todos",
+          "pm package install --gh owner/repo",
+          "pm package install npm:pm-guide-shell pm-todos",
         ],
       },
     );

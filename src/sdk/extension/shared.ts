@@ -144,11 +144,11 @@ async function missingExtensionEntryError(
     context.source_root,
   );
   const npmCommand = packageMetadata.package_name
-    ? `pm install npm:${packageMetadata.package_name}`
+    ? `pm package install npm:${packageMetadata.package_name}`
     : undefined;
   const source = context.source_input ?? context.source_root;
   return new PmCliError(
-    `Extension entry "${manifest.entry}" is absent from GitHub source "${source}". pm install copies GitHub repositories without running package scripts${packageMetadata.has_build_script ? ", and this package declares a build or publish script" : ""}. ${npmCommand ? `Try "${npmCommand}" if the package is published, or install a locally built directory.` : "Build the source locally and install that directory, or use its published npm: package."}`,
+    `Extension entry "${manifest.entry}" is absent from GitHub source "${source}". pm package install copies GitHub repositories without running package scripts${packageMetadata.has_build_script ? ", and this package declares a build or publish script" : ""}. ${npmCommand ? `Try "${npmCommand}" if the package is published, or install a locally built directory.` : "Build the source locally and install that directory, or use its published npm: package."}`,
     EXIT_CODE.USAGE,
     {
       code: "github_source_entry_unbuilt",
@@ -156,8 +156,8 @@ async function missingExtensionEntryError(
         "Use a GitHub tree with committed runtime output, a published npm artifact, or a locally built source directory.",
       why: "GitHub installation is a source copy and never executes untrusted package build scripts.",
       examples: npmCommand
-        ? [npmCommand, `pm install ${context.source_root}`]
-        : [`pm install ${context.source_root}`],
+        ? [npmCommand, `pm package install ${context.source_root}`]
+        : [`pm package install ${context.source_root}`],
       nextSteps: npmCommand
         ? [
             `Retry with ${npmCommand}.`,
@@ -165,7 +165,7 @@ async function missingExtensionEntryError(
           ]
         : [
             "Build the repository locally, then install its directory.",
-            "If it is published, retry with pm install npm:<package-name>.",
+            "If it is published, retry with pm package install npm:<package-name>.",
           ],
       recovery: {
         attempted_command: `pm install ${source}`,
