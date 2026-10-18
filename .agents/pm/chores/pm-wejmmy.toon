@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-18T03:04:47.853Z"
-updated_at: "2026-10-18T03:08:01.664Z"
+updated_at: "2026-10-18T03:55:47.084Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#80dfe3240063521ac108004a"
 author: "harness:codex"
@@ -14,14 +14,39 @@ estimated_minutes: 90
 acceptance_criteria: Verify exact registry age and Node engines; retain portable package inventory and privacy contracts; pass focused Sentry tests and full source coverage plus installed Node/Bun/npx/bunx consumers; verify live Sentry and telemetry separately before merge
 parent: pm-5oj5
 risk: low
-comments[3]{created_at,author,text}:
+confidence: high
+expected_result: The eligible Sentry 10 patch preserves consent and privacy controls and exact runtime closure while supported installed Node/Bun/npx/bunx consumers and live observability checks pass.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-iceees,blocked_by,"2026-10-18T03:35:07.607Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
   "2026-10-18T03:04:47.853Z","harness:codex","Duplicate check: strict all-status census read 2991/2991 records without omissions or unreadable rows; fresh exact keyword 10.76.2 search across all statuses returned zero. The separate Sentry 11 owner was read with full live metadata and verified history and is not this compatible patch. Registry publication is 2026-10-08T16:34:54.148Z; official GitHub release is 2026-10-08T16:56:07Z. Both exceed seven days."
   "2026-10-18T03:05:20.494Z","harness:codex","Eligible compatible patch selected after complete public-registry census. Other latest-compatible patches remain below seven days: gpt-tokenizer 4.0.3 (Oct15); marked 18.1.1 and typescript-eslint 8.71.2 (Oct12); ESLint 10.13.0 (Oct16); Unicorn 78 (Oct12). CodSpeed 6 is also below cooldown. TypeScript 7 / Vitest 5 / npm-package-arg 14 retain their canonical migration owners; Sentry 11 remains separate under pm-t3jxjj. First run portable-artifact admission because the prior major migration failed that independent boundary. No cooldown exclusion or gate threshold changes are permitted."
   "2026-10-18T03:08:01.663Z","harness:codex","178 focused tests pass across the supported Sentry 10.76.2 transport, consent/privacy/classification controls, real command tracing, package bundle admission and launcher/workflow policy. First artifact probe correctly refused a stale generated runtime ledger after the declared dependency changed; regenerate that exact locked graph through runtime-lock.mjs apply and re-run independent packed admission. This is expected dependency-maintenance work rather than a weakened artifact gate or a new source defect."
-files[3]{path,scope}:
+  "2026-10-18T03:18:35.810Z","harness:codex","Packed publication gate now passes after canonical runtime-ledger generation: 42 exact runtime packages; application distribution 19152531 bytes within the unchanged 20000000-byte ceiling; complete physical runtime 23390484 bytes / 4745 files. Required live Sentry/telemetry gate remains separate. Explicit one-command tracing produced a fresh successful pm-get span at 2026-10-18T03:10:23Z lasting 91.37ms after the patch; the client flush drained one event to a zero-entry physical queue. Backend session correlation is still being checked independently."
+  "2026-10-18T03:21:44.603Z","harness:codex","Independent backend proof for the fixed 2026-10-18T02:48:00Z to03:10:30Z workspace cohort: correlate command-finish records through the session identities selected by command-start workspace hashes. All59 starts have59 finishes and per-session grouping finds zero unpaired sessions. Maximum measured ingest delay is4536ms. A payload-only workspace filter on finish events is invalid because the workspace selector is carried by the start envelope; the global mixed-workspace census is a separate population. Broker depth was0 ready/0 unacknowledged/0 total at the independent queue read. These are bounded observations rather than a claim about every future action or historical reliability."
+  "2026-10-18T03:39:19.421Z","harness:codex","First hosted head correctly rejects the unqualified patch: the packed installation gate finds the optional-peer subtree omitted by npm (owned by pm-iceees); the existing package-manifest contract still pins10.76.0 and must move together with the newly tested declaration release. Tracker-context admission also identified missing confidence and expected-result fields on this new chore; both now carry concrete values through PM. Local whole-source run retains its failed verdict:10635 tests passed; the stale version assertion and one12.95s governance read measurement against unchanged10s failed under loaded/swap-heavy host conditions. Do not call this aggregate coverage admission or change the timing budget."
+  "2026-10-18T03:53:55.635Z","harness:codex","Actual new packed consumer smoke passes npm and Bun runtimes plus bare npx/bunx and9 package workflows, public SDK/evaluator and typed consumer/recovery paths. The archive-completeness fix retains every tested optional-peer descendant without adding development dependencies or changing root public dependencies. Full source/package/example typechecks pass. This is candidate installed-consumer proof; daily public publication still waits for reviewed main and immutable producer recovery."
+files[4]{path,scope}:
   package.json,project
   pnpm-lock.yaml,project
   runtime-dependencies.json,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/packages/package-manifest.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,project,300,"harness:codex","2026-10-18T03:05:19.351Z",local_mutation,chore/renew-pnpm-security-tooling
+  node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,project,300,"harness:codex","2026-10-18T03:41:08.703Z",local_mutation,chore/renew-pnpm-security-tooling
+test_runs[1]:
+  - run_id: test-local-mvdam1ab-2hlcuv
+    kind: test
+    status: passed
+    started_at: "2026-10-18T03:55:10.506Z"
+    finished_at: "2026-10-18T03:55:47.075Z"
+    recorded_at: "2026-10-18T03:55:47.075Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/integration/telemetry/sentry-command-tracing.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
 body: ""

@@ -24,7 +24,7 @@ function launcherShells(format: string): string[] {
 
 /** CMD expands caller expressions once; the generated program must preserve its own percent paths. */
 function launcherInvocation(format: string, file: string, args: string[]): string[] {
-  if (format === "cmd") return ["/d", "/s", "/c", '"probe.cmd" "space value" %PM_LAUNCHER_SENTINEL% quoted-value'];
+  if (format === "cmd") return ["/d", "/s", "/c", 'probe.cmd "space value" %PM_LAUNCHER_SENTINEL% quoted-value'];
   if (format === "ps1") return ["-NoProfile", "-File", file, ...args];
   return [file, ...args];
 }
@@ -138,7 +138,7 @@ describe("development dependency bundle admission", () => {
         await writeFile(file, program);
         for (const shell of launcherShells(format)) {
           const invocation = launcherInvocation(format, file, args);
-          const output = execFileSync(shell, invocation, { cwd: bin, env, encoding: "utf8", timeout: 20_000 });
+          const output = execFileSync(shell, invocation, { cwd: bin, env, encoding: "utf8", timeout: 20_000, windowsVerbatimArguments: format === "cmd" });
           expect(JSON.parse(output)).toEqual({ value: "resolved through NODE_PATH", args: format === "cmd" ? ["space value", "must not expand", "quoted-value"] : args });
           if (format === "sh-win32" || format === "cmd") {
             const broken = format === "cmd" ? program.replaceAll("%%", "%") : program.replace(
@@ -146,7 +146,7 @@ describe("development dependency bundle admission", () => {
               `new_node_path='${parameters["@NODE_PATH_POSIX@"]}'`,
             );
             await writeFile(file, broken);
-            const result = spawnSync(shell, invocation, { cwd: bin, env, encoding: "utf8", timeout: 20_000 });
+            const result = spawnSync(shell, invocation, { cwd: bin, env, encoding: "utf8", timeout: 20_000, windowsVerbatimArguments: format === "cmd" });
             expect(result.status).not.toBe(0);
             expect(result.stderr).toContain("Cannot find module 'pm-launcher-sentinel'");
             await writeFile(file, program);

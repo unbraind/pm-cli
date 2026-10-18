@@ -304,7 +304,14 @@ The release workflow publishes this staged tarball with provenance; CI and
 packed smoke tests use the same staging command. Application distribution and
 bundled runtime have separate committed size and file-count limits, so runtime
 payload cannot hide application growth. The ledger ships with the tarball for
-installed-version verification. npm 12 ignores published shrinkwraps; shipping
+installed-version verification. [pm-iceees](../.agents/pm/issues/pm-iceees.toon)
+keeps selected optional-peer subtrees complete: npm deliberately skips peer edges
+when gathering bundled files, so staged runtime manifests record the exact tested
+peer bindings as ordinary or optional dependency entries. Package code, source
+and installed manifests, peer declarations, and the root public dependency
+inventory remain intact. A real archive regression resolves the peer's descendant
+from an extracted package and the installed-runtime verifier still refuses any
+missing locked package. npm 12 ignores published shrinkwraps; shipping
 a shrinkwrap alone therefore cannot enforce this contract. SDK consumers
 supply the bounded optional Node types peer themselves.
 

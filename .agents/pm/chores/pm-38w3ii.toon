@@ -6,7 +6,7 @@ status: in_progress
 priority: 3
 tags: []
 created_at: "2026-10-12T14:28:16.814Z"
-updated_at: "2026-10-18T02:57:11.769Z"
+updated_at: "2026-10-18T03:54:38.755Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#80dfe3240063521ac108004a"
 author: "harness:codex"
@@ -18,12 +18,38 @@ confidence: high
 expected_result: The eligible scanner pin is adopted with verified-secret scanning and fail-on-scan-error behavior preserved.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-98f0ec,related,"2026-10-12T14:28:16.814Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-12T14:28:16.814Z","harness:codex","Duplicate check: complete all-status census plus fresh exact-version search and open/in_progress inventories found the eligible-only refresh record but no open scanner adoption owner. Preserve its eligible updates as completed work and isolate this below-cooldown version as a linked open follow-up. This item is not claimed or started."
   "2026-10-18T02:53:17.570Z","harness:codex","Start combined eligible-tooling delivery with pm-rnpmtp. Official tag v3.98.0 resolves to immutable commit 0186870afd2c4a90def791d80260923ba583d076; official release publication 2026-10-05T17:39:02Z exceeds the unchanged seven-day adoption policy. Scope is scanner pin and its existing workflow contract, with native security validation."
+  "2026-10-18T03:18:33.609Z","harness:codex","The linked workflow invocation at 03:09:49Z timed out at the unchanged 300-second ceiling while waiting behind the full coverage runner build lease. No test assertion result was produced by that invocation. The independent focused workflow run already passed all 21 tests; rerun the linked command after the exclusive validation lease is free. Retain the timeout receipt as a scheduling failure and do not increase the test ceiling."
 files[2]{path,scope}:
   .github/workflows/security.yml,project
   tests/integration/ci-workflow-contract.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-18T02:57:11.401Z",local_mutation,chore/renew-pnpm-security-tooling
+test_runs[2]:
+  - run_id: test-local-mvd95d9t-kfquoe
+    kind: test
+    status: failed
+    started_at: "2026-10-18T03:09:49.217Z"
+    finished_at: "2026-10-18T03:14:49.840Z"
+    recorded_at: "2026-10-18T03:14:49.840Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvdakkka-v2t75j
+    kind: test
+    status: passed
+    started_at: "2026-10-18T03:54:24.462Z"
+    finished_at: "2026-10-18T03:54:38.746Z"
+    recorded_at: "2026-10-18T03:54:38.746Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
 body: "Proposal: https://github.com/unbraind/pm-cli/pull/1449. Official release: https://github.com/trufflesecurity/trufflehog/releases/tag/v3.98.0. Proposed immutable action commit: 0186870afd2c4a90def791d80260923ba583d076. Current 3.97.9 has no reported vulnerability and verified scanning remains enabled. No ignore rule or cooldown exception is introduced."
