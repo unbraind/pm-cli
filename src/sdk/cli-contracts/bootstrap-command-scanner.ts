@@ -14,6 +14,7 @@ export const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
   "--output-limit",
   "--output-budget",
   "--output-format",
+  "--format",
   "--output-session",
   "--output-cursor",
 ]);

@@ -1284,7 +1284,12 @@ describe("contracts command runtime", () => {
         expect.objectContaining({
           command,
           provider: "core",
-          flags,
+          flags: flags.length === 0 ? [] : [...flags, {
+            flag: "--output-format",
+            aliases: ["--format"],
+            reservation_scope: "inherited",
+            value_name: "toon|json",
+          }],
         }),
       ]);
     }
@@ -1958,6 +1963,7 @@ describe("contracts command runtime", () => {
       { flag: "--gh" },
       { flag: "--github" },
       { flag: "--ref" },
+      { flag: "--output-format", aliases: ["--format"], reservation_scope: "inherited", value_name: "toon|json" },
     ]);
     expect(
       installFlags.command_flags?.[0]?.flags.some(

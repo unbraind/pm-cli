@@ -500,33 +500,33 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "list-all": {
     why: "Lists all item states (including terminal states) when you need full visibility.",
     examples: [
-      "pm list-all --limit 50",
-      "pm list-all --type Issue --include-body",
+      "pm list --all --limit 50",
+      "pm list --all --type Issue --include-body",
     ],
   },
   "list-open": {
     why: "Shows work that is ready to claim and start.",
-    examples: ["pm list-open --priority 0 --limit 10"],
+    examples: ["pm list --status open --priority 0 --limit 10"],
   },
   "list-in-progress": {
     why: "Tracks active execution and owner progress.",
-    examples: ["pm list-in-progress --priority 0 --limit 20"],
+    examples: ["pm list --status in_progress --priority 0 --limit 20"],
   },
   "list-blocked": {
     why: "Surfaces blocked work that needs intervention.",
-    examples: ["pm list-blocked --limit 20"],
+    examples: ["pm list --blocked --limit 20"],
   },
   "list-closed": {
     why: "Reviews completed work and closure outcomes.",
-    examples: ["pm list-closed --limit 20 --type Task"],
+    examples: ["pm list --status closed --limit 20 --type Task"],
   },
   "list-canceled": {
     why: "Audits intentionally discontinued work.",
-    examples: ["pm list-canceled --limit 20"],
+    examples: ["pm list --status canceled --limit 20"],
   },
   "list-draft": {
     why: "Finds incompletely defined items that need refinement before execution.",
-    examples: ["pm list-draft --limit 20"],
+    examples: ["pm list --status draft --limit 20"],
   },
   aggregate: {
     why: "Runs grouped aggregation queries for governance checks such as decomposition by parent/type or triage by status/priority.",
@@ -771,8 +771,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Links test commands/paths and optionally executes them for one item.",
     examples: [
       'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,timeout_seconds=2400"',
-      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
-      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,pm_context_mode=auto"',
+      'pm test pm-a1b2 --add "command=pm list --all --type Task --limit 200,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
+      'pm test pm-a1b2 --add "command=pm list --all --type Task --limit 200,pm_context_mode=auto"',
       "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe --pm-context tracker --fail-on-context-mismatch --fail-on-skipped",
       "pm test pm-a1b2 --run --timeout 2400 --pm-context auto",
       "pm test pm-a1b2 --run --background --timeout 2400 --progress",
@@ -950,7 +950,7 @@ export const ROOT_HELP_BUNDLE: HelpBundle = {
   examples: [
     "pm init",
     "pm install guide-shell --project",
-    "pm list-open --limit 10",
+    "pm list --status open --limit 10",
     'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --create-mode progressive',
   ],
   tips: [

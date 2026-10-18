@@ -1,0 +1,81 @@
+id: pm-frbf0j
+title: Accept encoding format aliases on core item collections and mutations
+description: "Deliver the remaining GH-1480 format alias on item collection and lifecycle paths using SDK-owned contracts, preserving native formats, package flag ownership, and refusal write safety."
+type: Task
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:cli",fix
+created_at: "2026-10-18T08:41:03.221Z"
+updated_at: "2026-10-18T10:01:50.633Z"
+closed_at: "2026-10-18T09:57:47.442Z"
+completed_at: "2026-10-18T09:57:47.442Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Core collection reads and mutations accept --format json and toon before or after the command; Existing command-local formats and contributed command vocabularies remain intact; Invalid encoding and read-shaping mutation controls refuse without writes; SDK contracts and sandboxed regressions prove the compatibility grammar
+goal: project management = context management
+objective: Remove cross-command encoding traps without duplicating renderer logic
+value: Agents can reuse one learned encoding spelling across reading context and recording work
+why_now: GH-1480 records repeated failed reads and first mutation attempts on the current release
+parent: pm-srns
+risk: low
+confidence: high
+resolution: "SDK-owned conditional --format json|toon aliases now cover core item collections and lifecycle writes, prefix/suffix/inline invocation, runtime discovery, domain-format preservation, and empty internal contracts."
+expected_result: "Item reads and writes reuse the format spelling without rejected round trips or persistence on invalid requests, while existing command-specific formats and package command vocabulary remain valid."
+actual_result: "10662 tests passed; exact full-source 100/100/100/100 coverage; both linked tests passed; static, startup/transport, graph/history, mutation, package-first and packed npx/bunx gates passed. Latest pm-changelog 2026.10.17 installed and checked. Closure is carried in the reviewed branch."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1rta7z,related,"2026-10-18T09:55:39.155Z","harness:codex","evidence:delivery-context",detected
+  pm-do5b,related,"2026-10-18T09:55:39.155Z","harness:codex","evidence:delivery-context",detected
+  pm-fokyhh,related,"2026-10-18T09:55:39.155Z","harness:codex","evidence:delivery-context",detected
+  pm-ksr40d,related,"2026-10-18T09:55:39.155Z","harness:codex","evidence:delivery-context",detected
+  pm-t3jxjj,related,"2026-10-18T09:55:39.155Z","harness:codex","evidence:delivery-context",detected
+  pm-wg07,related,"2026-10-18T09:55:39.155Z","harness:codex","evidence:delivery-context",detected
+comments[7]{created_at,author,text}:
+  "2026-10-18T08:41:03.221Z","harness:codex","Focused implementation child of the existing uniform-output programme for GH-1480, not a second defect owner. Duplicate check: complete strict 2993-item all-status corpus, parent full metadata and raw history, previous canonical-encoding child pm-1rta7z, request-specific search, and live open/in-progress lists. Previous child delivered --output-format, this child delivers the remaining --format compatibility spelling."
+  "2026-10-18T08:43:02.948Z","harness:codex","Focused initial acceptance: 22 sandbox tests passed across both encoding spellings, prefix/suffix and inline forms, collection/mutation lifecycles, namespace routing, domain formats, and byte-identical refusal preservation. Complete parent raw histories read with limit 10000: pm-srns 93 events and pm-wg07 44 events, no omissions. Runtime discovery now also exposes the conditional alias, with package commands retaining their own vocabulary. Full gates pending."
+  "2026-10-18T08:48:53.004Z","harness:codex","Live operational baseline: published 2026.10.18 verifier passed registry/GitHub Release and npx/bunx CLI plus MCP stateless/Skills/Apps journeys. Required 14-day Sentry gate reports 0 unresolved issues, 0 critical/high; telemetry error rate 2.59%, 0 missing failure codes, current-minute data; physical queue empty at inspection. All three GitHub open-security inventories are empty and all 25 open issues have PM links. Dependency current=wanted: newer compatible releases are younger than 7 days (marked 18.1.1 Oct12 12:29Z, typescript-eslint 8.71.2 Oct12 17:10Z, gpt-tokenizer 4.0.3 Oct15 01:15Z, eslint 10.13 Oct16 14:24Z; Unicorn78 Oct12 19:03Z). Existing major-upgrade owners pm-t3jxjj/pm-fokyhh/pm-do5b/pm-ksr40d were refreshed live. No cooldown exception is justified."
+  "2026-10-18T09:00:38.847Z","harness:codex","Validation coordination: the initial full-source coverage consumer holds the checkout build lease. Parallel package dogfood reached its linked-test deadline while waiting for that lease, so it is not compatibility failure evidence and will be rerun serially. Full coverage also revealed a genuine internal-worker contract regression from exposing an encoding alias on an empty flag table; retain the failure and correct it before closeout. Do not weaken worker visibility, test timeouts, coverage denominator, or lease safety."
+  "2026-10-18T09:23:10.795Z","harness:codex","PM-linked verification passed (18121 ms) with local_source_ref trust; the guidance child linked verification also passed (28169 ms). Isolated corrected reruns passed 82 tests, including the 117-refusal gate negative control, graph-replication scope, governance latency, workspace contract rows, internal worker namespace behavior, and npm-backed packed continuation. The local Homebrew npm module root is exposed via NODE_PATH for that existing fixture requirement, without repository toolchain changes. Full-source capped-worker coverage and final static gate are still pending, so no closure or full-coverage claim yet."
+  "2026-10-18T09:51:26.826Z","harness:codex","Full corrected-source verification passed in an isolated checkout with byte-identical changed source/docs/tests: 826 test files passed, one platform file skipped; 10662 tests passed, three platform tests skipped, 10665 total. Exact full-source coverage: statements 69359/69359, branches 53294/53294, functions 14281/14281, lines 65834/65834 (100/100/100/100, zero uncovered). NODE_PATH exposed the existing Homebrew npm module and --maxWorkers=2 retained all cases and thresholds. Package-first dogfood and npx/bunx packed smoke passed for all nine bundled packages. Latest pm-changelog 2026.10.17 baseline check and deep package doctor passed; strict PM resolution/history validation passed. The prior 82-test count refers only to the final four-file isolated rerun; worker and packed-continuation behavior were also proven in the preceding targeted run. Static content/contract/assurance prefix passed; import timing is being rerun serially after coverage completed."
+  "2026-10-18T09:57:45.001Z","harness:codex","Final local gates are green with unchanged source and ceilings: the full static prefix passed security/dependency, runtime lock, docstrings, dead exports, ESLint/duplication, workflow permissions/cooldown, generated contracts/docs, package boundary/parity, replication, grammar, flag invocation/lexicon, refusal closure, agent-task tokens, tracker context, registry and public SDK surface. Serial SDK import benchmark passed all 10 entrypoints; unchanged CLI transport rerun passed all six operations after a single 2 ms miss; graph composition and record integrity passed after six existing prose citations were bound to typed related context; bounded mutation gate passed. Full-source exact 100/100/100/100 and packed npm/npx/Bun/bunx proof remain applicable. Fresh Sentry pm.command span detail was verified for an opt-in real get action; telemetry flush succeeded and required issue/error-code gate passed. All scope is ready for reviewed delivery."
+learnings[1]{created_at,author,text}:
+  "2026-10-18T09:16:44.944Z","harness:codex","Compatibility encoding aliases must remain conditional on command ownership: preserve domain-specific --format meanings, package command vocabularies, and intentionally empty internal worker contracts. Advertise accepted aliases through SDK runtime contracts and prove transport writes/refusals in isolated fixtures."
+files[8]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Latest upstream pm-changelog installation via package lifecycle CLI
+  - path: src/sdk/cli-contracts/bootstrap-command-scanner.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/runtime-contracts.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/integration/cli/format-compatibility.integration.spec.ts
+    scope: project
+  - path: tests/unit/commands/workspace/contracts-command.spec.ts
+    scope: project
+  - path: tests/unit/sdk/cli-contracts/output-format-alias.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/format-compatibility.integration.spec.ts tests/unit/sdk/cli-contracts/output-format-alias.spec.ts,project,240,"harness:codex","2026-10-18T08:43:01.436Z",local_mutation,fix/uniform-format-and-canonical-guidance
+test_runs[1]:
+  - run_id: test-local-mvdm1j8n-65zjoj
+    kind: test
+    status: passed
+    started_at: "2026-10-18T09:15:27.690Z"
+    finished_at: "2026-10-18T09:15:45.959Z"
+    recorded_at: "2026-10-18T09:15:45.959Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli/format-compatibility.integration.spec.ts tests/unit/sdk/cli-contracts/output-format-alias.spec.ts,schema,schema,source,local_source_ref
+docs[2]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Package-owned generation records the delivered compatibility task
+  - path: docs/CONFIGURATION.md
+    scope: project
+close_reason: Implemented GH-1480 compatibility grammar and verified the complete candidate for reviewed delivery.
+body: ""

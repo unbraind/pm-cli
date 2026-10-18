@@ -960,7 +960,7 @@ function assertKnownPlanSubcommand(
   }
   const examples =
     normalized === "list" || normalized === "ls"
-      ? ["pm list --type Plan", "pm list-all --type Plan"]
+      ? ["pm list --type Plan", "pm list --all --type Plan"]
       : undefined;
   throw createUnknownSubcommandError({
     command_path: "plan",

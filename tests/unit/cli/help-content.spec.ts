@@ -1,4 +1,5 @@
 import { PM_COMMAND_ALIAS_CONTRACTS } from "../../../src/sdk/cli-contracts/command-aliases.js";
+import { PM_CORE_COMMAND_NAMES } from "../../../src/sdk/cli-contracts/enum-contracts.js";
 import { Command } from "commander";
 import { describe, expect, it } from "vitest";
 
@@ -28,7 +29,7 @@ describe("help-content.firstExampleOrEmpty", () => {
 describe("help-content rendering helpers", () => {
   it("never teaches deprecated invocations and labels every deprecated alias", () => {
     const deprecated = PM_COMMAND_ALIAS_CONTRACTS.filter((entry) => entry.lifecycle === "deprecated");
-    for (const command of ["", "test", ...deprecated.map((entry) => entry.alias)]) {
+    for (const command of ["", ...PM_CORE_COMMAND_NAMES, ...deprecated.map((entry) => entry.alias)]) {
       const narrative = resolveHelpNarrative(command, "detailed");
       for (const entry of deprecated) {
         expect(narrative.examples.some((example) => example.includes(`pm ${entry.alias} `))).toBe(false);

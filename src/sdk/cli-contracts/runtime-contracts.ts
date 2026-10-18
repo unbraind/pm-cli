@@ -149,7 +149,7 @@ import {
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
 import { PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
-import { HISTORY_ATTEST_FLAG_CONTRACTS, PM_POSITIONAL_ACTION_FLAG_CONTRACTS } from "./flag-contracts.js";
+import { HISTORY_ATTEST_FLAG_CONTRACTS, PM_POSITIONAL_ACTION_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "./flag-contracts.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
   GOVERNANCE_CREATE_MODE_DEFAULT_VALUES,
@@ -1808,9 +1808,13 @@ function resolveActionAvailability(
 }
 
 function resolveCoreCommandFlags(command: string): CliFlagContract[] {
-  return (
+  const flags = (
     CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.get(command) ?? GLOBAL_FLAG_CONTRACTS
   );
+  const encoding = resolveSubcommandFlagContractsForCommand(command).find(
+    (contract) => contract.flag === "--output-format" && contract.aliases?.includes("--format"),
+  );
+  return encoding ? [...flags, encoding] : flags;
 }
 
 /** Recognize core flag contracts while keeping package-owned operations outside the core provider surface. */

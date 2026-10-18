@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Keep recovery and help examples on canonical list commands ([pm-mw5gip](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mw5gip.toon))
+- Accept encoding format aliases on core item collections and mutations ([pm-frbf0j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-frbf0j.toon))
+
 ## 2026.10.18 - 2026-10-18
 
 ### Fixed
