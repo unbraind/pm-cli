@@ -13,7 +13,9 @@ const mocks = vi.hoisted(() => ({
   runValidate: vi.fn(),
   runHealth: vi.fn(),
   findGitWorkspaceRoot: vi.fn(),
+  stage: vi.fn(),
 }));
+vi.mock("../../../src/sdk/merge/stage.js", () => ({ stageLosslessMergeReconciliation: mocks.stage, resolveMergeSettlementGlobal: async (global: unknown) => global }));
 
 vi.mock("../../../src/sdk/history-repair.js", () => ({
   runHistoryRepair: mocks.runHistoryRepair,
@@ -30,10 +32,10 @@ vi.mock("../../../src/sdk/merge/install.js", () => ({
 }));
 vi.mock("../../../src/sdk/merge/receipts.js", async (importOriginal) => ({
   ...(await importOriginal()),
-  inspectMergeReceiptEvidence: async (...args: unknown[]) => ({
-    receipts: await mocks.listMergeReceipts(...args),
-    invalid_evidence_count: mocks.invalidReceiptEvidenceCount(),
-  }),
+  inspectMergeReceiptEvidence: async (...args: unknown[]) => {
+    const receipts = await mocks.listMergeReceipts(...args);
+    return { receipts, durable_receipt_ids: receipts.map((receipt: { id: string }) => receipt.id), invalid_evidence_count: mocks.invalidReceiptEvidenceCount() };
+  },
   markMergeReceiptReconciled: mocks.markMergeReceiptReconciled,
   summarizeMergeReceipt: (receipt: { id: string; item_id: string }) => ({
     receipt_id: receipt.id,
@@ -46,7 +48,12 @@ import { runMergeReconcile } from "../../../src/sdk/merge/reconcile.js";
 const globalOptions = { author: "global-author" } as GlobalOptions;
 
 describe("merge reconciliation SDK", () => {
+  it("refuses force with automatic staging before scanning or writing", async () => {
+    await expect(runMergeReconcile({ stage: true, force: true }, globalOptions)).rejects.toMatchObject({ context: { code: "merge_settlement_review_required" } });
+    expect(mocks.runHistoryRepairAll).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
+    mocks.stage.mockReset();
     mocks.runHistoryRepairAll.mockReset();
     mocks.runValidate.mockReset();
     mocks.runHealth.mockReset().mockResolvedValue({
@@ -65,6 +72,15 @@ describe("merge reconciliation SDK", () => {
     mocks.markMergeReceiptReconciled.mockReset();
     mocks.runHistoryRepair.mockReset();
     mocks.findGitWorkspaceRoot.mockReset().mockResolvedValue("/workspace");
+  });
+
+  it.each([true, false])("delegates guarded staging after a non-mutating preview (dry run: %s)", async (dryRun) => {
+    mocks.runHistoryRepairAll.mockResolvedValue({ streams: [], totals: { repaired: 0, skipped_clean: 0, failed: 0 } });
+    mocks.runValidate.mockResolvedValue({ checks: [{ name: "history_drift", status: "ok" }], generated_at: "2026-10-18T00:00:00.000Z" });
+    mocks.stage.mockImplementation(async ({ preview, dryRun: previewOnly, apply }) => previewOnly ? preview : apply());
+    expect((await runMergeReconcile({ stage: true, dryRun }, globalOptions)).ok).toBe(true);
+    expect(mocks.stage).toHaveBeenCalledWith(expect.objectContaining({ dryRun, global: globalOptions }));
+    expect(mocks.runHistoryRepairAll.mock.calls.map(([options]) => options.dryRun)).toEqual(dryRun ? [true] : [true, false]);
   });
 
   it("previews with default attribution and fails closed on validation warnings", async () => {

@@ -57,6 +57,7 @@ import {
 } from "./history/maintenance.js";
 import { isOriginalGitStateRestored } from "./merge/receipt-operation.js";
 import {
+  assertPortableMergeReceiptReferences,
   inspectMergeReceiptEvidence,
   summarizeMergeReceipt,
   type MergeDecisionReceipt,
@@ -613,6 +614,7 @@ async function resolveHistoryRepairMergeEvidence(params: {
         receipt.item_id === params.subjectId &&
         requestedReceiptIds.has(receipt.id),
     ) ?? [];
+  assertPortableMergeReceiptReferences(requestedReceiptIds, authoritativeReceiptEvidence, params.options.dryRun === true);
   const mergeReceiptProof = params.options.mergeReceiptProof
     ? await verifyMergeReceiptProof({
         proof: {

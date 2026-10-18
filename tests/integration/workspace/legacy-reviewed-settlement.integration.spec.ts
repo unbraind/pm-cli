@@ -1,4 +1,5 @@
 /** @module tests/integration/workspace/legacy-reviewed-settlement */
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -13,6 +14,7 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 describe("legacy reviewed receipt migration", () => {
   it.each(capture.samples)("requires authenticated migration for captured receipt $receipt.id", async (sample) => {
     await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
       await runCreate({ id: sample.receipt.item_id, title: "Legacy receipt", type: "Task", createMode: "progressive" }, { path: context.pmPath });
       const historyPath = path.join(context.pmPath, "history", `${sample.receipt.item_id}.jsonl`);
       const genesis = JSON.parse((await readFile(historyPath, "utf8")).trim()) as HistoryEntry;
@@ -27,6 +29,7 @@ describe("legacy reviewed receipt migration", () => {
       const receiptPath = path.join(directory, `${sample.receipt.id}.json`);
       const receiptBytes = `${JSON.stringify(sample.receipt)}\n`;
       await writeFile(receiptPath, receiptBytes);
+      execFileSync("git", ["add", ".agents/pm/merge-receipts"], { cwd: context.tempRoot });
       const scan = () => inspectMergeReceiptEvidence(context.tempRoot, { pmRoot: context.pmPath });
       expect(verifyHistoryChainWithVersion([audit]).ok).toBe(true);
       const inspected = await scan();

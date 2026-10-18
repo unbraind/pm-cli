@@ -38,7 +38,7 @@ describe("duplicate item identity boundaries", () => {
     }
   });
 
-  it.each(["item", "history"] as const)("leaves %s driver side files untouched when identity cannot be proven", async (artifact) => {
+  it.each(["item", "history"] as const)("preserves both %s snapshots visibly when identity cannot be proven", async (artifact) => {
     await withTempPmPath(async ({ tempRoot, pmPath }) => {
       const content = artifact === "item" ? document
         : '{"op":"create","ts":"2026-09-11T00:00:00Z","author":"a","patch":[]}\n';
@@ -59,7 +59,11 @@ describe("duplicate item identity boundaries", () => {
       } finally {
         process.chdir(previousCwd);
       }
-      expect(await readFile(oursPath, "utf8")).toBe(content);
+      const conflicted = await readFile(oursPath, "utf8");
+      expect(conflicted).toContain("<<<<<<< pm ours");
+      expect(conflicted).toContain(content);
+      expect(conflicted).toContain(content.replace("Independent", "Other"));
+      expect(conflicted).toContain(">>>>>>> pm theirs");
     });
   });
 
@@ -75,6 +79,19 @@ describe("duplicate item identity boundaries", () => {
     expect(() => mergeHistoryStreams(first + second, first, first)).toThrow(/duplicate.*identity/i);
     expect(() => mergeHistoryStreams(first.replace('"create"', '"update"'), first, first))
       .toThrow(expect.objectContaining({ context: { code: "item_identity_conflict" } }));
+  });
+
+  it("preserves the preferred input when malformed history fails independently of item identity", async () => {
+    await withTempPmPath(async ({ tempRoot, pmPath }) => {
+      const basePath = path.join(tempRoot, "base");
+      const oursPath = path.join(tempRoot, "ours");
+      const theirsPath = path.join(tempRoot, "theirs");
+      const malformed = "not a history record\n";
+      await Promise.all([writeFile(basePath, "null\n"), writeFile(oursPath, malformed), writeFile(theirsPath, "null\n")]);
+      await expect(runMergeDriver({ artifact: "history", basePath, oursPath, theirsPath }, { path: pmPath }))
+        .rejects.toThrow(/invalid JSON/);
+      expect(await readFile(oursPath, "utf8")).toBe(malformed);
+    });
   });
 
   it("reports multiple creates in a single physical item history", async () => {

@@ -164,6 +164,7 @@ describe("history-only replay across real maintenance boundaries", () => {
       git("add", itemRelative, historyRelative);
       git("commit", "--quiet", "-m", "Clarify context");
       git("merge", "--no-edit", "priority-change");
+      git("add", ".agents/pm/merge-receipts");
       const reconciliation = context.runCli(["merge", "reconcile", "--json"], {
         cwd: context.tempRoot,
         expectJson: true,

@@ -226,6 +226,7 @@ describe("merge receipt health classification", () => {
         decisions: [],
       });
       expect(availableReceipt).not.toBeNull();
+      execFileSync("git", ["add", ".agents/pm/merge-receipts"], { cwd: context.tempRoot });
       const historyPath = path.join(
         context.tempRoot,
         ".agents",
@@ -488,6 +489,8 @@ describe("merge receipt health classification", () => {
           pmRoot: path.join(context.tempRoot, ".agents", "pm"),
         }),
       ).toMatchObject([{ id: receipt?.id, state: "pending" }]);
+
+      execFileSync("git", ["add", durablePath], { cwd: context.tempRoot });
 
       expect(
         context.runCli(["merge", "reconcile", "--json"], {
@@ -1281,6 +1284,7 @@ describe("merge receipt health classification", () => {
         lossless_merge_receipt_count: 1,
       });
 
+      execFileSync("git", ["add", losslessDurablePath], { cwd: context.tempRoot });
       await rewriteItemTitle({
         root: context.tempRoot,
         id: "pm-merge-lossless",
@@ -1761,6 +1765,7 @@ describe("merge receipt health classification", () => {
         })}\n`,
         "utf8",
       );
+      execFileSync("git", ["add", normalizedAliasReceiptPath], { cwd: context.tempRoot });
       const normalizedAliasReconcile = context.runCli(
         ["merge", "reconcile", "--json"],
         { cwd: context.tempRoot, expectJson: true },
@@ -1838,6 +1843,7 @@ describe("merge receipt health classification", () => {
       });
       expect(disjointTitleReceipt).not.toBeNull();
       expect(disjointDescriptionReceipt).not.toBeNull();
+      execFileSync("git", ["add", path.join(durableDirectory, `${disjointTitleReceipt!.id}.json`), path.join(durableDirectory, `${disjointDescriptionReceipt!.id}.json`)], { cwd: context.tempRoot });
       const disjointHealth = context.runCli(
         ["health", "--check-only", "--full", "--json"],
         { cwd: context.tempRoot, expectJson: true },

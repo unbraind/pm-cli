@@ -958,8 +958,11 @@ describe("static-quality-gate", () => {
         // imports a path that resolves OUTSIDE the incoming map → exercises the
         // `incoming.has(resolved)` false branch (line 188) without crediting it.
         "/repo/src/cli/main.ts":
-          'import "../used.ts";\nexport * from "../barrel/index.ts";\nimport "../../external/out.ts";',
+          'import "../used.ts";\nexport * from "../barrel/index.ts";\nimport "../../external/out.ts";\nfunction loadOptional() { return import("../lazy-used.js"); }\nfunction computed(name) { return import("../" + name + ".js"); }\n// import("../comment-only.js")',
         "/repo/src/used.ts": "export const used = 1;",
+        "/repo/src/lazy-used.ts": "export const lazy = 1;",
+        "/repo/src/computed-only.ts": "export const computed = 1;",
+        "/repo/src/comment-only.ts": "export const comment = 1;",
         // Two orphans so the final sort comparator (line 227) is exercised.
         "/repo/src/zeta-orphan.ts": "export const z = 1;",
         "/repo/src/alpha-orphan.ts": "export const a = 1;",
@@ -987,6 +990,9 @@ describe("static-quality-gate", () => {
       const paths = orphans.map((o) => o.path);
       expect(paths).toContain("src/zeta-orphan.ts");
       expect(paths).toContain("src/alpha-orphan.ts");
+      expect(paths).toContain("src/computed-only.ts");
+      expect(paths).toContain("src/comment-only.ts");
+      expect(paths).not.toContain("src/lazy-used.ts");
       // Sorted ascending by path.
       expect(paths.indexOf("src/alpha-orphan.ts")).toBeLessThan(
         paths.indexOf("src/zeta-orphan.ts"),

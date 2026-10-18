@@ -31,7 +31,7 @@
   },
   "scripts/release/static-quality-gate.mts": {
     "sonarjs/cognitive-complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "scripts/smoke-claude-plugin.mjs": {

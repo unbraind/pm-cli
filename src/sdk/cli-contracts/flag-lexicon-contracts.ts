@@ -261,7 +261,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   // 24 -> 27 on 2026-09-04: --message, --force, and --include-reconciled were
   // already registered at runtime for reconcile and report; declaring them
   // makes the contract truthful rather than growing the surface.
-  merge: 27,
+  // pm-gh1475: explicit hook installation and guarded reconciliation staging.
+  merge: 29,
   // pm-mj42og: definition, policy id, and audit message for declarative workflows.
   schema: 43,
   profile: 22,

@@ -8,6 +8,32 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "merge_settlement_review_required",
+    meaning: "Merge settlement review required condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/reconcile.ts", "sdk/merge/stage.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_settlement_review_required",
+    aliases: [],
+  },
+  {
+    code: "missing_allowed_values",
+    meaning: "Missing allowed values condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/agent/refusal-closure.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "missing_allowed_values",
+    aliases: [],
+  },
+  {
     code: "missing_budget",
     meaning: "Missing budget condition.",
     stability: "provisional",

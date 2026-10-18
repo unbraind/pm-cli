@@ -286,6 +286,28 @@ receipt file that the older writer never created. Incomplete, contradictory, or
 modern summaries still fail closed. `runMergeReceiptReport` remains the
 compatible valid-only report.
 
+## Portable receipt proof
+
+Reconciliation refuses `merge_receipt_not_portable` before any audit write when
+an active clone-local receipt lacks a validated tracked counterpart. `--force`
+does not bypass this boundary, including for direct SDK history-repair calls.
+An earlier aborted operation can leave an unreferenced local receipt whose field
+hashes happen to match a later merge; those hashes do not make its evidence
+portable. Review and preserve unrelated stale receipts outside the active store,
+or restore the original valid durable sidecar. Never copy private local receipt
+values into tracked evidence as a substitute.
+
+`inspectMergeReceiptEvidence().durable_receipt_ids` identifies validated durable
+counterparts whose immutable provenance matches the stored blob referenced by the Git index;
+clone-local replacement refs cannot substitute different evidence.
+Untracked files and mismatched staged versions cannot authorize an audit write.
+`unstaged_durable_receipt_ids` reports valid disk candidates for a read-only
+preview; clone-local-only evidence remains refused even in preview. Current readers
+return both arrays; their optional interface properties preserve structural compatibility,
+and a missing property provides no evidence. Health resolves committed history
+references against these durable identities, so a local copy cannot hide evidence
+that a fresh clone will lack. Receipt summaries remain privacy-safe.
+
 ## Historical receipt reader compatibility
 
 Tracked by [pm-2xtv84](../.agents/pm/issues/pm-2xtv84.toon) and
@@ -388,8 +410,13 @@ pm config project set ids_token_length 8
 
 The SDK item merge refuses an empty common ancestor with
 `item_identity_conflict`, even for equal item content: document equality alone
-cannot prove a common creation. It leaves the driver output untouched instead
-of combining two identities through scalar preference. The history merge also
+cannot prove a common creation. The pure merge primitive leaves inputs unchanged.
+The Git driver preserves both original snapshots in visible conflict markers
+and names the item in its refusal, tracked by
+[pm-gh1491](../.agents/pm/issues/pm-gh1491.toon). Staging these files does not
+clear the conflict-marker health and storage failures. A copied creation or
+history prefix alone never authorizes fusion of two independently introduced
+identities. The history merge also
 refuses different create events across its inputs, multiple creates in either
 input, or creations on both sides when the ancestor lacks a create event even
 when their bytes match, before fast-forwarding or reanchoring. A common ancestor
@@ -432,6 +459,54 @@ N-branch conflict fixture compares competing writes to the same scalar set.
 Arbitrary histories, ordered executable test definitions with receiving-clone
 trust, and relationship-event ordering retain their separate conformance contracts.
 
+## Settle a lossless merge in one commit
+
+Tracked by [pm-gh1475](../.agents/pm/issues/pm-gh1475.toon).
+Pause Git before it creates the merge commit, then stage the audited settlement:
+
+```bash
+git merge --no-commit --no-ff <branch>
+pm merge reconcile --stage
+git diff --cached
+git commit
+```
+
+`--stage` first previews reconciliation. It refuses discarded-value decisions,
+untrusted or unrelated repairs, invalid storage, missing durable evidence,
+unresolved Git paths, alternate Git indices, and unstaged edits to the reconciliation paths. It never
+accepts `--force`. Only the verified history streams and receipt sidecars are
+added to the index; unrelated staged changes retain their existing state.
+Validated new sidecars enter the index before any audit history is written.
+If apply fails, their new index entries are reverted while their files and
+unrelated staged work remain available for review. Staged receipt deletions
+remain operator decisions and are refused.
+`--stage --dry-run` checks this boundary without applying or staging anything.
+The result's `staged_paths` lists the repository-relative artifacts added.
+Tracker aliases resolve before preview, so proof verification, repair and staging
+use the same physical tracker root.
+
+Repositories can explicitly opt into a merge-aware `pre-commit` hook:
+
+```bash
+pm merge install --pre-commit-hook --dry-run
+pm merge install --pre-commit-hook
+git merge --no-commit --no-ff <branch>
+git commit
+```
+
+The hook runs guarded settlement only when `MERGE_HEAD` exists; ordinary commits
+are unchanged. Installation honors Git's hooks directory, including
+`core.hooksPath`, and preserves any hook without the pm ownership header. For
+an existing hook, integrate `pm merge reconcile --stage` into the reviewed merge
+path yourself. The installation result reports `settlement_hook.path`; removing
+that owned hook restores the manual workflow. Hooks are clone-local and must be
+installed explicitly in each clone. No hook is installed by default.
+
+The explicit `--no-commit --no-ff` step is required. Git's automatic merge commit
+can capture its tree before a `pre-merge-commit` hook stages new audit artifacts;
+that hook cannot provide this single-commit guarantee. Rebase and already
+committed merges continue to use the explicit reconciliation gate below.
+
 ## Required post-merge gate
 
 Reconciliation resolves receipt discovery and settlement from the requested
@@ -443,12 +518,20 @@ After every branch merge that touches `.agents/pm`, run:
 
 ```bash
 pm merge reconcile --dry-run --json
+# When the preview lists unstaged sidecars, review and stage those files first.
 pm merge reconcile --message "Reconcile merged tracker histories" --json
 # Required only to accept a receipt that lacks qualifying exact hash proof:
 pm merge reconcile --force --message "Accept reviewed merge decisions" --json
 ```
 
 The preview reports every drifted stream and pending receipt without mutation.
+`unstaged_durable_receipt_ids` identifies valid filesystem sidecars awaiting
+matching immutable evidence in the Git index. The preview can inspect those
+sidecars, but ordinary apply refuses to cite them until they are staged. For the
+default tracker their paths are `.agents/pm/merge-receipts/<receipt-id>.json`;
+use `git add -- <reviewed sidecar paths>` followed by `git diff --cached`. Use
+`--stage` for the guarded lossless workflow above. After ordinary apply, stage
+the updated history and receipt lifecycle files together before committing.
 It applies the same exact-snapshot proof requirement as apply: stale or
 unprovable receipts appear as failed streams in both modes, tracked by
 [pm-ao0bu9](../.agents/pm/issues/pm-ao0bu9.toon).
@@ -514,9 +597,9 @@ The apply pass uses the audited history rewrite boundary to append a
 event includes privacy-safe receipt provenance; a clean receipt-bearing stream
 gets a no-op merge event so the merge remains addressable even when replay
 already matches. The command immediately validates history drift plus storage
-integrity and exits nonzero when an invariant remains red. Default Git hooks
-remain unchanged: repositories that want automatic enforcement must opt in by
-invoking this command from their own post-merge hook.
+integrity and exits nonzero when an invariant remains red. Default Git hooks remain unchanged. The explicit merge-aware pre-commit option
+above includes settlement before committing; a repository-owned post-merge hook
+can still enforce reconciliation after an already-created merge commit.
 
 The default validation surface includes `storage_integrity`. It fails on unreadable item documents, history conflict markers, malformed history tails, live items whose latest history operation is `delete` (a delete/modify resurrection candidate), and unparseable settings/schema files. This prevents the ordinary tolerant read path from turning corruption into a green gate.
 

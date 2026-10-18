@@ -704,6 +704,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       required: ["subcommand"],
       optional: [
         "dryRun",
+        "preCommitHook",
+        "stage",
         "author",
         "message",
         "force",

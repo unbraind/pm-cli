@@ -1,0 +1,96 @@
+id: pm-f38ovr
+title: Recognize literal dynamic imports in module-usage evidence
+description: The orphan-module check inspects only top-level import/export declarations while the SDK boundary parser already resolves literal dynamic imports. Optional lazy merge helpers are falsely rejected as orphan modules. Reuse the existing AST parser without allowances or eager imports.
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:ci","area:sdk",performance,regression
+created_at: "2026-10-18T15:15:30.124Z"
+updated_at: "2026-10-18T16:52:22.870Z"
+closed_at: "2026-10-18T16:52:22.004Z"
+completed_at: "2026-10-18T16:52:22.004Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Prove a nested literal dynamic import fails before the fix; Reuse the existing parser in a recursive AST traversal; Retain unused and computed-only orphan controls without allowance or threshold growth; Pass static-quality regressions and the complete repository static gate
+goal: project management = context management
+objective: Keep optional SDK capabilities lazy while module-usage evidence remains trustworthy
+value: Recursive improvement can add optimized primitives without dummy eager imports or weakened release gates
+why_now: The merge settlement delivery exposed two false orphan findings when optional helpers were made lazy to preserve SDK import budgets
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Reused the existing module-specifier AST parser in a recursive module-usage walk. Nested literal lazy imports now count as usage while computed-only, comment-only and unused targets remain orphan findings. Removed one obsolete ESLint suppression and lowered both source and registered provider ceilings to104."
+expected_result: "Support lazy optional SDK primitives without dummy eager imports, module allowances, threshold growth or inconsistent import parsing."
+actual_result: "The extended orphan fixture failed before the fix; all68 static-quality cases, all25 release-automation cases and the gate-registry inventory now pass. The full static pipeline passed; real scans report zero orphans and no changed-file complexity violation. Both original and candidate import-cost checks pass without budget growth, and all linked tests were rerun."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1475,discovered_from,"2026-10-18T15:15:30.124Z","harness:codex","cli:create:dep",detected
+  pm-9x6e,related,"2026-10-18T15:43:26.128Z","harness:codex","cli:update:dep",detected
+  pm-bu8lkr,related,"2026-10-18T15:43:26.128Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-18T15:15:30.124Z","harness:codex","Duplicate check: complete strict all-status corpus plus fresh searches and open/in-progress lists found no exact owner. Closed pm-9x6e retains its completed hard SDK boundary. Open pm-bu8lkr owns runtime barrel loading rather than this module-usage false positive. Discovered during pm-gh1475 and grouped with its delivery."
+  "2026-10-18T15:22:41.262Z","harness:codex","Negative control failed exactly as expected before implementation: nested literal lazy-used.ts was incorrectly in the orphan list. The corrected recursive walk reuses importModuleSpecifier and now passes all68 static-quality cases; computed-only and comment-only modules remain orphans. The real source scan reports zero orphan modules and zero changed-file CodeFactor complexity violations at the unchanged16 limit."
+  "2026-10-18T15:30:18.702Z","harness:codex",The recursive parser refactor eliminates one grandfathered cognitive-complexity suppression. eslint --prune-suppressions removed that obsolete count and the hard MAX_ESLINT_SUPPRESSIONS ceiling was lowered from105 to104. No waiver or threshold increase was introduced.
+  "2026-10-18T16:24:49.269Z","harness:codex","Full-suite evidence: 10689 tests passed, 3 skipped, and one release-automation contract failed because gate-registry.json still supplied suppression ceiling105 after the parser refactor lowered the source ceiling to104. Corrected the provider argument to104 through the tracked source file; all25 release-automation tests and the gate-registry inventory now pass. No threshold was increased. The canonical full coverage rerun follows the sequential packaged smoke."
+  "2026-10-18T16:52:21.121Z","harness:codex","Verification: the complete suite passed10690 tests with3 platform skips. Its exact coverage report identified only the driver passthrough and tracker-at-Git-root hook cases; both are now covered by real filesystem tests, and the231-test focused run reports exact100/100/100/100 for driver.ts and install.ts. The two new helper modules also passed exact100/100/100/100. All linked PM tests were rerun successfully. The complete static pipeline, all TypeScript projects, release-version policy, tracked-secret scan, registry inventory and sequential npm/npx/Bun packed smoke passed. Final hosted full-population coverage and native-platform checks remain mandatory before merge; this closure records implemented, locally verified work for the reviewed delivery, not a new registry publication."
+learnings[1]{created_at,author,text}:
+  "2026-10-18T15:22:42.110Z","harness:codex",Keep module-usage and SDK boundary analysis on the same AST specifier parser so literal lazy imports remain supported without eager-import workarounds or module allowances.
+files[4]{path,scope,note}:
+  eslint-suppressions.json,project,ESLint-owned prune removes the obsolete cognitive-complexity suppression
+  scripts/release/gate-registry.json,project,Align the assurance provider argument with the lowered 104 suppression ceiling
+  scripts/release/static-quality-gate.mts,project,Reuse literal module-specifier parsing for recursive usage edges
+  tests/unit/scripts/release/static-quality-gate.spec.ts,project,Nested literal import positive control with computed and comment-only negative controls
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-18T15:22:40.399Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-merge-settlement-safety
+    note: SDK boundary and module-usage syntax consistency
+  - command: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts
+    scope: project
+    timeout_seconds: 240
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-18T16:50:32.770Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-merge-settlement-safety
+test_runs[2]:
+  - run_id: test-local-mvdz5ouj-luanft
+    kind: test
+    status: passed
+    started_at: "2026-10-18T15:22:43.921Z"
+    finished_at: "2026-10-18T15:22:54.859Z"
+    recorded_at: "2026-10-18T15:22:54.859Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mve2b5tb-jpy6gh
+    kind: test
+    status: passed
+    started_at: "2026-10-18T16:50:33.907Z"
+    finished_at: "2026-10-18T16:51:08.975Z"
+    recorded_at: "2026-10-18T16:51:08.975Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Generated release entry through the latest pm-changelog package after verified closure
+  docs/TESTING.md,project,Literal module-usage semantics and unchanged strict budgets
+close_reason: Implemented and verified for the combined reviewed merge-safety delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-f38ovr
+  gate_id: literal-dynamic-module-usage
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts -t checkOrphanSourceModules. Executed before the parser fix with the extended fixture: lazy-used.ts is falsely orphaned. Candidate passes while computed-only.ts and comment-only.ts remain orphans."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/static-quality-gate.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Windows regression (Node 24)
+body: ""

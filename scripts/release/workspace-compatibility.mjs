@@ -127,6 +127,7 @@ export async function main() {
         // Upgrade the fence through the current SDK before current validation;
         // preserve every data, hash, restore and native merge assertion below.
         cli(current, ["merge", "install"]);
+        git("add", ".agents/pm/merge-receipts");
         const reconciled = cli(current, ["merge", "reconcile"]);
         assert.equal(reconciled.ok, true, "Merged history must reconcile without force");
         assertWorkspaceCompatibilityItem(cli(reader, ["get", id, "--full"]).item, { ...expected, description: "Peer description", priority: 1 });

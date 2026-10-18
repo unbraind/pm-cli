@@ -23,6 +23,8 @@ import {
 } from "../../core/fs/fs-utils.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import type { HistoryEntry } from "../../types/index.js";
 import {
   encodeItemScalarDecisionValue,
@@ -152,6 +154,10 @@ export interface MergeReceiptEvidenceReport {
 export interface MergeReceiptEvidenceScan {
   /** Valid receipts that passed bounded-file, schema, and identity validation. */
   receipts: MergeDecisionReceipt[];
+  /** Valid counterparts with matching immutable provenance in the active Git index; absent evidence never authorizes a tracked history reference. */
+  durable_receipt_ids?: string[];
+  /** Valid filesystem sidecars not represented by matching indexed evidence; usable only for a read-only preview before guarded staging. */
+  unstaged_durable_receipt_ids?: string[];
   /** Number of JSON receipt candidates that could not be validated safely. */
   invalid_evidence_count: number;
   /** Bounded privacy-safe identities and reason codes for rejected evidence. */
@@ -685,6 +691,22 @@ async function inspectReceiptCandidate(
   };
 }
 
+/** Authenticate indexed bytes rather than treating an untracked or stale sidecar as portable proof. */
+async function indexedDurableReceiptIds(cwd: string, trackerRoot: string, receipts: readonly MergeDecisionReceipt[]): Promise<string[]> {
+  if (receipts.length === 0) return [];
+  const { readIndexedReceiptBlobs } = await import("./indexed-receipt-blobs.js");
+  const blobs = await readIndexedReceiptBlobs(cwd, durableReceiptDirectory(trackerRoot), receipts.map((receipt) => receiptFileName(receipt.id)), RECEIPT_FILE_MAX_BYTES);
+  return receipts.flatMap((receipt) => {
+    try {
+      const indexed: unknown = normalizeLegacyReceipt(JSON.parse(blobs.get(receiptFileName(receipt.id)) ?? "") as unknown);
+      if (receiptValidationError(indexed, "durable") !== null) return [];
+      const stored = indexed as MergeDecisionReceipt;
+      const fingerprints = receiptProvenanceFingerprints(receipt);
+      return stored.id === receipt.id && receiptProvenanceFingerprints(stored).some((fingerprint) => fingerprints.includes(fingerprint)) ? [receipt.id] : [];
+    } catch { return []; }
+  });
+}
+
 /** Inspect valid receipts and count invalid evidence without returning untrusted file contents. */
 export async function inspectMergeReceiptEvidence(
   cwd: string,
@@ -748,7 +770,11 @@ export async function inspectMergeReceiptEvidence(
     );
   }
   await retainAuditedDurableSettlements(receipts, durable.receipts, trackerRoot);
+  const validDurable = durable.receipts.filter((receipt) => receipts.has(receipt.id));
+  const indexedIds = new Set(await indexedDurableReceiptIds(cwd, trackerRoot, validDurable));
   return {
+    durable_receipt_ids: [...indexedIds],
+    unstaged_durable_receipt_ids: validDurable.filter((receipt) => !indexedIds.has(receipt.id)).map((receipt) => receipt.id),
     receipts: [...receipts.values()]
       .filter(
         (receipt) =>
@@ -786,6 +812,19 @@ export async function listMergeReceipts(
   } = {},
 ): Promise<MergeDecisionReceipt[]> {
   return (await inspectMergeReceiptEvidence(cwd, options)).receipts;
+}
+
+/** Refuse audit references unless every requested identity has validated portable evidence. */
+export function assertPortableMergeReceiptReferences(receiptIds: Iterable<string>, evidence: Pick<MergeReceiptEvidenceScan, "durable_receipt_ids" | "unstaged_durable_receipt_ids"> | undefined, preview: boolean): void {
+  const portable = new Set([...(evidence?.durable_receipt_ids ?? []), ...(preview ? evidence?.unstaged_durable_receipt_ids ?? [] : [])]);
+  const nonportable = [...receiptIds].filter((id) => !portable.has(id));
+  if (nonportable.length === 0) return;
+  throw new PmCliError(`Merge reconciliation refused ${nonportable.length} receipt(s) without validated tracked evidence; no audit history was written.`, EXIT_CODE.CONFLICT, {
+    code: "merge_receipt_not_portable",
+    required: "Every receipt cited by tracked history must have matching validated evidence in the Git index before any audit write.",
+    recovery: { suggested_retry: "pm merge report --include-reconciled" },
+    nextSteps: ["Stage valid project sidecars after reviewing git diff, or use pm merge reconcile --stage for guarded lossless settlement. Restore missing original counterparts or preserve unrelated stale receipts outside the active store. Never copy private clone-local values into tracked evidence. Then rerun pm merge reconcile --dry-run."],
+  });
 }
 
 /** Split merge provenance into receipts with discarded values and receipts whose composition was lossless. */

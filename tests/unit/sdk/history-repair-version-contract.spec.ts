@@ -272,30 +272,14 @@ describe("history repair hash epoch contract", () => {
         evidence_source: "durable",
       };
 
-      await expect(runHistoryRepair(
-        id,
-        { dryRun: true, mergeReceiptProof: { gitWorkspaceRoot: context.tempRoot, receipts: [forgedReceipt] } },
-        { path: context.pmPath },
-      )).rejects.toThrow("no_item_receipts");
-      await expect(
-        runHistoryRepair(
-          id,
-          {
-            mergeReceiptProof: {
-              gitWorkspaceRoot: context.tempRoot,
-              receipts: [forgedReceipt],
-            },
-          },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject({
-        context: {
-          code: "merge_reconcile_receipt_evidence_untrusted",
-          required: expect.stringContaining(
-            "authoritative clone-local or durable receipt evidence",
-          ),
-        },
-      });
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const before = await readFile(historyPath, "utf8");
+      for (const options of [{ dryRun: true }, {}, { force: true }]) {
+        await expect(runHistoryRepair(id, {
+          ...options, mergeReceiptProof: { gitWorkspaceRoot: context.tempRoot, receipts: [forgedReceipt] },
+        }, { path: context.pmPath })).rejects.toMatchObject({ context: { code: "merge_receipt_not_portable" } });
+        expect(await readFile(historyPath, "utf8")).toBe(before);
+      }
     });
   });
 });

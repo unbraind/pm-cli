@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- GH-1475: settle authenticated lossless merges within one reviewed delivery ([pm-gh1475](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1475.toon))
+- GH-1491: Preserve both add/add snapshots on ambiguous creation ancestry ([pm-gh1491](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1491.toon))
+- Recognize literal dynamic imports in module-usage evidence ([pm-f38ovr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f38ovr.toon))
 - Keep recovery and help examples on canonical list commands ([pm-mw5gip](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mw5gip.toon))
 - Accept encoding format aliases on core item collections and mutations ([pm-frbf0j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-frbf0j.toon))
 

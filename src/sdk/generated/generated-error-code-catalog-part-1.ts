@@ -2718,6 +2718,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "merge_receipt_not_portable",
+    meaning: "Merge receipt not portable condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/receipts.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_receipt_not_portable",
+    aliases: [],
+  },
+  {
     code: "merge_receipts_pending",
     meaning: "Merge receipts pending condition.",
     stability: "provisional",
@@ -2757,16 +2770,16 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
-    code: "missing_allowed_values",
-    meaning: "Missing allowed values condition.",
+    code: "merge_settlement_hook_conflict",
+    meaning: "Merge settlement hook conflict condition.",
     stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
+    exit_code: 4,
+    class: "conflict",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/agent/refusal-closure.ts"],
+    sources: ["sdk/merge/settlement-hook.ts"],
     emitting_commands: ["*"],
-    canonical_code: "missing_allowed_values",
+    canonical_code: "merge_settlement_hook_conflict",
     aliases: [],
   },
 ];

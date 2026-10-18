@@ -794,7 +794,7 @@ async function buildIntegrityCheck(
     },
   );
   const availableMergeReceiptIds = new Set(
-    mergeReceiptEvidence.receipts.map((receipt) => receipt.id),
+    mergeReceiptEvidence.durable_receipt_ids,
   );
   const historyReceiptClassification = classifyHistoryMergeReceiptReferences(
     historyScan.mergeReceiptReferences,

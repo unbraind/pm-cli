@@ -1095,6 +1095,19 @@ When more than one history stream is drifted, the `history_drift` remediation co
 
 `pm health` also runs a read-only `locks` check alongside the storage check: it classifies every file in `locks/` with the exact policy `pm gc --scope locks` acts on and reports `active_lock_count`, `stale_lock_count`, `unreadable_lock_count`, and `unparseable_lock_count` (counts appear in all projection modes; nothing is ever removed). It warns with `locks_stale_count:<n>` when stale locks exist (fix: `pm gc --scope locks`) and `locks_unreadable:<n>` when lock files cannot be read (inspect first: `pm gc --scope locks --dry-run`).
 
+## Single-commit merge settlement
+
+Tracked by [pm-gh1475](../.agents/pm/issues/pm-gh1475.toon).
+Use `git merge --no-commit --no-ff <branch>`, then
+`pm merge reconcile --stage` and `git commit` to include authenticated lossless
+audit history in the original merge commit. `--stage --dry-run` previews without
+writing. Automatic staging refuses competing values, forced acceptance,
+non-history validation failures, unstaged edits to reconciliation artifacts,
+and unresolved index entries. `pm merge install --pre-commit-hook` explicitly
+installs a merge-aware hook for that paused-merge workflow and preserves existing
+unowned hooks. Default installation remains hook-free. See
+[Merge safety](MERGE_SAFETY.md#settle-a-lossless-merge-in-one-commit).
+
 ## History and Recovery
 
 After a branch merge that touched tracker history, preview and apply the

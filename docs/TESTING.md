@@ -97,6 +97,13 @@ so PR-local CodeFactor maintainability annotations fail locally before commit or
 push. Existing legacy high-complexity test fixtures are tracked separately and
 must not be used as precedent for new changed production/script code.
 
+Module-usage checks share the SDK boundary's literal-specifier parser and walk
+nested AST nodes, including lazy `import("./module.js")` references. Unused
+modules, comment-only references, and computed paths do not gain incoming
+references. The regression is tracked by
+[pm-f38ovr](../.agents/pm/issues/pm-f38ovr.toon); no module allowance or threshold
+increase is required to keep optional SDK capabilities lazy.
+
 The same required static gate validates an explicit seven-day Dependabot
 cooldown for every updater and requires both npm and GitHub Actions entries.
 Missing values, semver overrides outside 7–90 days, invalid YAML, removed
