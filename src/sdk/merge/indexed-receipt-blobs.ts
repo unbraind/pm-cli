@@ -72,6 +72,8 @@ function decodeBlobs(output: Buffer, entries: BlobEntry[], blobs: Map<string, st
 /** Resolve physical roots, list the index once, and batch only requested bounded blobs. */
 export async function readIndexedReceiptBlobs(cwd: string, directory: string, fileNames: string[], maximumBytes: number): Promise<Map<string, string>> {
   const env = gitWorkspaceEnvironment();
+  // Replacement refs are clone-local; authenticate the stored object bytes.
+  env.GIT_NO_REPLACE_OBJECTS = "1";
   if (process.env.GIT_INDEX_FILE !== undefined) env.GIT_INDEX_FILE = path.resolve(process.env.GIT_INDEX_FILE);
   const options: GitOptions = { cwd, env, windowsHide: true, timeout: 10_000, maxBuffer: maximumBytes + 256 };
   try {

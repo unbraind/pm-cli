@@ -130,6 +130,37 @@ describe("clone-local merge decision receipts", () => {
     expect(await inspectMergeReceiptEvidence(nested, { pmRoot: tracker })).toMatchObject({ durable_receipt_ids: [], unstaged_durable_receipt_ids: [receipt.id] });
   });
 
+  it("authenticates the stored index blob rather than clone-local Git replacement bytes", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-receipt-replacement-"));
+    workspaces.push(root);
+    const git = (...args: string[]) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    git("init", "-q");
+    const tracker = path.join(root, ".agents", "pm");
+    await mkdir(path.join(tracker, "tasks"), { recursive: true });
+    await writeFile(path.join(tracker, "settings.json"), "{}\n");
+    const receipt = (await writeMergeReceipt({ cwd: root, itemPath: ".agents/pm/tasks/pm-replacement.toon", preferred: "ours", fieldsFromTheirs: [], unionFields: [], decisions: [] }))!;
+    const relative = `.agents/pm/merge-receipts/${receipt.id}.json`;
+    git("add", relative);
+    const indexed = git("rev-parse", `:0:${relative}`);
+    const local = path.join(git("rev-parse", "--path-format=absolute", "--git-path", "pm-merge-receipts"), `${receipt.id}.json`);
+    for (const file of [path.join(root, relative), local]) {
+      const data = JSON.parse(await readFile(file, "utf8"));
+      await writeFile(file, `${JSON.stringify({ ...data, created_at: "2026-01-01T00:00:00.000Z" })}\n`);
+    }
+    const replacement = git("hash-object", "-w", relative);
+    git("replace", indexed, replacement);
+    vi.stubEnv("GIT_NO_REPLACE_OBJECTS", undefined);
+    try {
+      const scan = await inspectMergeReceiptEvidence(root);
+      expect(scan.invalid_evidence_count).toBe(0);
+      expect(scan.durable_receipt_ids).not.toContain(receipt.id);
+      expect(scan.unstaged_durable_receipt_ids).toContain(receipt.id);
+      expect(git("replace", "-l")).toContain(indexed);
+      git("add", relative);
+      expect((await inspectMergeReceiptEvidence(root)).durable_receipt_ids).toContain(receipt.id);
+    } finally { vi.unstubAllEnvs(); }
+  });
+
   it("preserves recoverable values locally and exposes privacy-safe summaries", async () => {
     const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
     workspaces.push(workspace);

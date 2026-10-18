@@ -38,7 +38,7 @@ describe("indexed receipt blob batches", () => {
     vi.stubEnv("GIT_INDEX_FILE", "/selected/index");
     expect(await read()).toEqual(new Map([["one.json", body]]));
     expect(mocks.inputs).toEqual([`${id}\n`, `${id}\n`]);
-    expect(mocks.git).toHaveBeenCalledWith("git", ["ls-files", "--stage", "-z", "--", `:(literal)${directory}/`], expect.objectContaining({ env: expect.objectContaining({ GIT_INDEX_FILE: path.resolve("/selected/index") }) }));
+    expect(mocks.git).toHaveBeenCalledWith("git", ["ls-files", "--stage", "-z", "--", `:(literal)${directory}/`], expect.objectContaining({ env: expect.objectContaining({ GIT_INDEX_FILE: path.resolve("/selected/index"), GIT_NO_REPLACE_OBJECTS: "1" }) }));
   });
 
   it.each(["missing workspace", "missing directory", "outside workspace", "empty index"])("provides no authority for %s", async (condition) => {

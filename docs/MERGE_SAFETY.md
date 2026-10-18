@@ -298,7 +298,8 @@ or restore the original valid durable sidecar. Never copy private local receipt
 values into tracked evidence as a substitute.
 
 `inspectMergeReceiptEvidence().durable_receipt_ids` identifies validated durable
-counterparts whose immutable provenance also matches the Git index bytes.
+counterparts whose immutable provenance matches the stored blob referenced by the Git index;
+clone-local replacement refs cannot substitute different evidence.
 Untracked files and mismatched staged versions cannot authorize an audit write.
 `unstaged_durable_receipt_ids` reports valid disk candidates for a read-only
 preview; clone-local-only evidence remains refused even in preview. Current readers
