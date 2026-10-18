@@ -734,7 +734,7 @@ jobs:
           $root = Join-Path $env:RUNNER_TEMP 'pm-cygwin'
           $cache = Join-Path $env:RUNNER_TEMP 'pm-cygwin-cache'
           $expected = '6acea47c59781c9e7f544a18d53935d59df6e44d5d52ac95ee165671b8e388820455eebf30ccc7d254b00c3d0eb694269a0f8dc84b17944c1f355dac9c5aafcc'
-          Invoke-WebRequest -Uri 'https://cygwin.com/setup-x86_64.exe' -OutFile $installer
+          Invoke-WebRequest -Uri 'https://cygwin.com/setup/setup-2.937.x86_64.exe' -OutFile $installer
           if ((Get-FileHash -Path $installer -Algorithm SHA512).Hash.ToLowerInvariant() -ne $expected) {
             throw 'Cygwin installer checksum mismatch'
           }

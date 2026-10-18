@@ -2,24 +2,26 @@ id: pm-wejmmy
 title: Refresh compatible Sentry 10.76.2 observability patch
 description: Adopt the newest seven-day-eligible Sentry 10 patch from the currently supported line. Official 10.76.2 release includes internal exception attachment exclusion and token-usage normalization. Preserve consent and privacy filtering plus existing SDK error classification and native packaged transport behavior. Keep the independent Sentry 11 migration with its existing owner pm-t3jxjj.
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-18T03:04:47.853Z"
-updated_at: "2026-10-18T04:11:14.928Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#80dfe3240063521ac108004a"
+updated_at: "2026-10-18T04:35:33.939Z"
+closed_at: "2026-10-18T04:35:33.050Z"
+completed_at: "2026-10-18T04:35:33.050Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Verify exact registry age and Node engines; retain portable package inventory and privacy contracts; pass focused Sentry tests and full source coverage plus installed Node/Bun/npx/bunx consumers; verify live Sentry and telemetry separately before merge
 parent: pm-5oj5
 risk: low
 confidence: high
-expected_result: The eligible Sentry 10 patch preserves consent and privacy controls and exact runtime closure while supported installed Node/Bun/npx/bunx consumers and live observability checks pass.
+resolution: "Adopt Sentry10.76.2 on the supported major, renew the exact production lock/ledger and packed pin, and retain consent/privacy and typed-error contracts."
+expected_result: Supported runtime and public SDK consumers retain portability and useful current observability while the separate major migration remains queued.
+actual_result: "Focused Sentry/privacy/tracing and linked packed-consumer tests passed; full-source coverage and all installed Node/Bun consumer jobs passed in CI39096420681. Live required Sentry/telemetry gate passes with zero recent unresolved issues,2.61% finish errors below6%, zero missing error codes; actual fresh command span and bounded59/59 paired delivery were independently verified."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-iceees,blocked_by,"2026-10-18T03:35:07.607Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-18T04:11:14.220Z","harness:codex",supported-patch-versus-major-migration,detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-18T03:04:47.853Z","harness:codex","Duplicate check: strict all-status census read 2991/2991 records without omissions or unreadable rows; fresh exact keyword 10.76.2 search across all statuses returned zero. The separate Sentry 11 owner was read with full live metadata and verified history and is not this compatible patch. Registry publication is 2026-10-08T16:34:54.148Z; official GitHub release is 2026-10-08T16:56:07Z. Both exceed seven days."
   "2026-10-18T03:05:20.494Z","harness:codex","Eligible compatible patch selected after complete public-registry census. Other latest-compatible patches remain below seven days: gpt-tokenizer 4.0.3 (Oct15); marked 18.1.1 and typescript-eslint 8.71.2 (Oct12); ESLint 10.13.0 (Oct16); Unicorn 78 (Oct12). CodSpeed 6 is also below cooldown. TypeScript 7 / Vitest 5 / npm-package-arg 14 retain their canonical migration owners; Sentry 11 remains separate under pm-t3jxjj. First run portable-artifact admission because the prior major migration failed that independent boundary. No cooldown exclusion or gate threshold changes are permitted."
   "2026-10-18T03:08:01.663Z","harness:codex","178 focused tests pass across the supported Sentry 10.76.2 transport, consent/privacy/classification controls, real command tracing, package bundle admission and launcher/workflow policy. First artifact probe correctly refused a stale generated runtime ledger after the declared dependency changed; regenerate that exact locked graph through runtime-lock.mjs apply and re-run independent packed admission. This is expected dependency-maintenance work rather than a weakened artifact gate or a new source defect."
@@ -27,6 +29,7 @@ comments[7]{created_at,author,text}:
   "2026-10-18T03:21:44.603Z","harness:codex","Independent backend proof for the fixed 2026-10-18T02:48:00Z to03:10:30Z workspace cohort: correlate command-finish records through the session identities selected by command-start workspace hashes. All59 starts have59 finishes and per-session grouping finds zero unpaired sessions. Maximum measured ingest delay is4536ms. A payload-only workspace filter on finish events is invalid because the workspace selector is carried by the start envelope; the global mixed-workspace census is a separate population. Broker depth was0 ready/0 unacknowledged/0 total at the independent queue read. These are bounded observations rather than a claim about every future action or historical reliability."
   "2026-10-18T03:39:19.421Z","harness:codex","First hosted head correctly rejects the unqualified patch: the packed installation gate finds the optional-peer subtree omitted by npm (owned by pm-iceees); the existing package-manifest contract still pins10.76.0 and must move together with the newly tested declaration release. Tracker-context admission also identified missing confidence and expected-result fields on this new chore; both now carry concrete values through PM. Local whole-source run retains its failed verdict:10635 tests passed; the stale version assertion and one12.95s governance read measurement against unchanged10s failed under loaded/swap-heavy host conditions. Do not call this aggregate coverage admission or change the timing budget."
   "2026-10-18T03:53:55.635Z","harness:codex","Actual new packed consumer smoke passes npm and Bun runtimes plus bare npx/bunx and9 package workflows, public SDK/evaluator and typed consumer/recovery paths. The archive-completeness fix retains every tested optional-peer descendant without adding development dependencies or changing root public dependencies. Full source/package/example typechecks pass. This is candidate installed-consumer proof; daily public publication still waits for reviewed main and immutable producer recovery."
+  "2026-10-18T04:19:14.677Z","harness:codex","Fresh 2026-10-18 premerge Sentry/telemetry gate passes with required telemetry: zero unresolved recent Sentry issues, finish error rate2.61% below6%, zero failure rows missing error codes. This complements the actual fresh command span and bounded 59/59 workspace delivery proof; it does not assert captured-error symbolication or historical nightly/release reliability. Runtime archive acceptance passes under npm/npx and Bun/bunx with the corrected producer."
 files[4]{path,scope}:
   package.json,project
   pnpm-lock.yaml,project
@@ -50,4 +53,5 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/packages/package-manifest.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   CHANGELOG.md,project
+close_reason: Implemented and verified for reviewed delivery in PR1495.
 body: ""

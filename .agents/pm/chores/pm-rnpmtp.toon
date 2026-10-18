@@ -2,13 +2,13 @@ id: pm-rnpmtp
 title: Renew pinned pnpm Windows shell-launcher compatibility after dependency cooldown
 description: "PR 1375 review identifies the locked pnpm 11.10.0 shell launcher using POSIX NODE_PATH when selecting Windows node.exe. The repository .txt templates only compare actual installed output and do not generate launchers. Upstream pnpm 11.28.1 also fixes Windows CMD percent-path handling and Cygwin target paths: https://github.com/pnpm/pnpm/releases/tag/v11.28.1. npm reports publication 2026-09-28T07:33:45.016Z, so that version first satisfies the unchanged seven-day cooldown on 2026-10-05T07:33:45.016Z; 11.28.2 is published later the same day. Evaluate a then-eligible supported version with real mixed-runtime fixtures instead of changing comparison templates independently of the installed generator. The verification edge to pm-q1ke preserves the completed pinned-installer bootstrap invariants when this future renewal is undertaken."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[4]: compatibility,pnpm,tooling,windows
 created_at: "2026-10-03T03:44:58.496Z"
-updated_at: "2026-10-18T04:14:40.349Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#80dfe3240063521ac108004a"
+updated_at: "2026-10-18T04:38:50.014Z"
+closed_at: "2026-10-18T04:35:38.649Z"
+completed_at: "2026-10-18T04:35:38.649Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Retain the seven-day dependency cooldown; align packageManager and every CI/release/example pnpm pin; inspect actual published generator types/source and renew complete templates from real installation; run Windows Git Bash/Cygwin node.exe and POSIX Node dependency-resolution controls; verify quoted/percent paths, exact inventory, complete source coverage and all existing mandatory gates"
@@ -19,14 +19,15 @@ why_now: Native review found a distinct upstream mixed-runtime compatibility con
 parent: pm-qwoy
 risk: medium
 confidence: high
-expected_result: A supported cooldown-eligible pnpm generator preserves module and target paths across Windows and POSIX runtimes without weakening installed-artifact admission
-actual_result: "Upstream release and registry dates are verified. Locked-template admission is strengthened in the current delivery; mixed-runtime generator renewal is queued and unclaimed, with no adoption or full interoperability claim."
+resolution: "Renew every pnpm pin to11.28.5, derive complete host-specific audited launchers from the actual installation, and exercise native external-dependency and argument controls."
+expected_result: "Windows Git Bash/Cygwin native Node and CMD/PowerShell launchers resolve dependencies and preserve supported arguments/percent paths without changing source-integrity, cooldown or quality budgets."
+actual_result: "All three linked checks pass at existing deadlines. CI39096420681 passes native Git Bash/Cygwin/CMD/PowerShell regressions, all installed platform consumers and100/100/100/100 coverage. Archived setup2.937 is byte-identical by independently verified SHA512; workflow contract and documented renewal preserve signatures. Serialized local SDK import, CLI transport, graph/history and mutation gates pass. CodSpeed neutral report retains its changed-runtime warning and unchanged-code pagination measurement; no acknowledgement or threshold relaxation."
 component: toolchain/generated-command-shims
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-mudv,implements,"2026-10-03T03:44:58.496Z","harness:codex","cli:create:dep",detected
   pm-q1ke,verifies,"2026-10-03T03:44:58.496Z","harness:codex","cli:create:dep",detected
   pm-r61juc,discovered_from,"2026-10-03T03:44:58.496Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-10-03T03:44:58.496Z","harness:codex","Duplicate check: complete all-status keyword NODE_PATH returns exactly four records (current CodSpeed owner, completed snapshot owner, completed MCP Apps refresh, and completed plugin-runtime owner); exact 11.28.1 returns zero without omissions. Full current pnpm bootstrap and terminal foundation metadata were read, and bootstrap history verifies. These historical completed fixes remain completed. Existing open/in-progress lists and canonical orientation were refreshed before creation. This queued intake records an upstream installer boundary rather than treating comparison templates as executable repository launchers."
   "2026-10-18T02:53:16.568Z","harness:codex","Start combined dependency-tooling renewal with pm-38w3ii. Strict all-status intake read 2991/2991 items with zero omissions, unreadable rows or active claims; canonical full metadata/history for both deferred owners was verified. Public registry selects supported pnpm 11.28.5 (2026-10-06T05:23:58.800Z), older than seven days; inspect real published generator and installed launchers before renewing comparison templates. Retain all audited CodSpeed bundle bytes, source maps, native payload, security gates and supported runtimes."
   "2026-10-18T02:57:50.433Z","harness:codex","Published pnpm 11.28.5 requires Node >=22.13, compatible with the documented >=22.18.0 floor. Its package changelog confirms Windows NODE_PATH, Cygwin target routing and CMD percent escaping repairs. Actual bundled generator source now emits distinct POSIX and Windows-installed shell programs; renew complete comparison data from that source and require only the host-appropriate program. A normal frozen install retained old launchers, so clean relinking is required to qualify the new generator; no old-launcher fallback will be accepted."
@@ -36,6 +37,8 @@ comments[9]{created_at,author,text}:
   "2026-10-18T03:41:11.025Z","harness:codex","Local static chain passes dependencies, complete bundle inventory, lint/duplication, workflow permissions/cooldown, generated contracts/skills, SDK contracts, grammar, token/recovery/PM and surface gates, then refuses the aggregate SDK import median567ms against the unchanged500ms ceiling. Its controls are45/38ms, so this is a preserved qualified product-budget failure and not a passing static verdict. The first-head hosted static failure was separately missing PM metadata; revised-head hosted static and a fresh full local run remain required after source fixes."
   "2026-10-18T04:12:42.076Z","harness:codex","Revised-head CI39095400572 correctly caught an unquoted CMD caller expression: the launcher resolved its external sentinel, but the harness split the expanded three-word value into three arguments. Quote the expression while retaining the expected single argument and the deliberate broken-launcher refusal. Git Bash/Cygwin/PowerShell and the complete bundle audit passed; do not weaken these controls. Local static validation also caught two newly prose-named item pairs; both are now truthful typed related edges through PM. The unchanged graph ceiling passes again, and the SDK import-cost gate now passes under the unchanged budget."
   "2026-10-18T04:14:40.349Z","harness:codex","Exact source CI39095400572 passed all four coverage shards and the unchanged aggregate gate: 100/100/100/100, zero uncovered counts. Corrected local launcher file passes 6 Linux controls; final artifact gate passes with 19,153,083 first-party bytes and 23,402,553 runtime bytes/4,755 runtime files. A local transport-floor run overlapped artifact rebuilding and failed qualified product budgets (get399>362ms, context459>433ms, create411>398ms; control50ms within106ms). This failed verdict is retained; a fresh serialized measurement will decide admission without changing thresholds. Chrome confirms CodSpeed revised head9575d9c still reports decodeQueryCursor242.1→339.8us with different-runtime warning (native build identical, peer-context path changed); source/benchmark blobs unchanged, no regression acknowledgement or threshold change."
+  "2026-10-18T04:33:06.906Z","harness:codex","Accepted CodeRabbit inline4305703988: pin the archived Cygwin setup2.937 URL. Official archive lists2026-02-28T20:22 and its sha512.sum matches the exact existing6acea47c…c5aafcc digest; independently downloaded archived bytes match too. Therefore native cohort39096420681 uses the same verified executable bytes. Add the versioned URL to the existing workflow contract and document controlled renewal without weakening default package signatures. That source head passed all hosted CI jobs, including Git Bash/Cygwin/CMD/PowerShell and100/100/100/100 coverage; only required external codecov/patch was absent in the settled receipt."
+  "2026-10-18T04:38:50.013Z","harness:codex",Final package-owned generation and --check pass with the latest registry pm-changelog2026.10.16 and four new changelog entries. Deep package doctor returns ok with zero activation failures and all4 active project extensions loaded; it retains an explicit partial-update-health warning because the npm changelog source has no recorded update check. Independently verified npm latest and installed extension are both2026.10.16; do not describe that warning as a clean doctor result. Full live history validation checks2993 items with zero drift; the same170 historical resolution-field warnings remain.
 notes[1]{created_at,author,text}:
   "2026-10-03T03:46:55.503Z","harness:codex","Boundary: these .txt files are validation references, while the installed pnpm/@zkochan generator writes the executable launchers. Preserve complete program admission and unchanged cooldown; do not edit reference bytes to invent new generated output. The official pnpm release documents related CMD percent-path and Cygwin target fixes, but resolution of the specific POSIX NODE_PATH plus Windows node.exe combination must be demonstrated with actual installed runtime controls before adopting a candidate."
 files[17]{path,scope}:
@@ -60,7 +63,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,project,300,"harness:codex","2026-10-18T02:57:12.974Z",local_mutation,chore/renew-pnpm-security-tooling
   "pnpm quality:dependencies",project,300,"harness:codex","2026-10-18T03:02:12.424Z",local_mutation,chore/renew-pnpm-security-tooling
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-18T03:02:13.794Z",local_mutation,chore/renew-pnpm-security-tooling
-test_runs[1]:
+test_runs[3]:
   - run_id: test-local-mvdal89v-6khsla
     kind: test
     status: passed
@@ -74,10 +77,37 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,schema,schema,source,local_source_ref
       "pnpm quality:dependencies",schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvdblbo3-xkm27w
+    kind: test
+    status: passed
+    started_at: "2026-10-18T04:22:36.356Z"
+    finished_at: "2026-10-18T04:23:13.491Z"
+    recorded_at: "2026-10-18T04:23:13.491Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:dependencies",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvdc007g-f9g8ir
+    kind: test
+    status: passed
+    started_at: "2026-10-18T04:33:53.697Z"
+    finished_at: "2026-10-18T04:34:38.475Z"
+    recorded_at: "2026-10-18T04:34:38.475Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,schema,schema,source,local_source_ref
+      "pnpm quality:dependencies",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
 docs[5]{path,scope}:
   CHANGELOG.md,project
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
   docs/examples/ci/github-actions-pm-extension-gate.yml,project
   docs/examples/ci/gitlab-ci-pm-extension-gate.yml,project
   docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile,project
+close_reason: Implemented and verified for reviewed delivery in PR1495.
 body: ""

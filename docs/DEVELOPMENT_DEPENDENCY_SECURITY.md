@@ -116,8 +116,13 @@ accepted. Windows shells pass Windows `NODE_PATH` values to native Node, and
 Cygwin targets use Windows paths. CMD and PowerShell programs retain their
 complete comparisons. Template changes require renewed real installation and
 dependency-resolution evidence on POSIX, Git Bash and Cygwin, plus CMD and
-PowerShell. The Windows script cohort verifies a pinned Cygwin installer before
-execution. Literal percent paths are exercised in disposable launcher fixtures;
+PowerShell. The Windows script cohort downloads the archived Cygwin setup 2.937
+installer and verifies its pinned SHA-512 before execution. To renew it, select
+an eligible version from the official [setup archive](https://cygwin.com/setup/),
+verify the executable against the archive's `sha512.sum`, and update the
+versioned URL, pinned digest and workflow contract together. Preserve setup's
+default package-signature verification and repeat native launcher acceptance.
+Literal percent paths are exercised in disposable launcher fixtures;
 the audited CodSpeed installation still refuses shell interpolation paths.
 The CMD suffix follows the installed `PATHEXT` spelling, including `.CMD`;
 format lookup folds its case while validating the complete program. All three

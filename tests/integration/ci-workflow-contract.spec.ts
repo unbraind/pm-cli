@@ -613,6 +613,7 @@ describe("GitHub workflow contract", () => {
       "name: Verify nested linked-test dependency junctions",
       "name: Install verified Cygwin for native launcher acceptance",
       "$expected = '6acea47c59781c9e7f544a18d53935d59df6e44d5d52ac95ee165671b8e388820455eebf30ccc7d254b00c3d0eb694269a0f8dc84b17944c1f355dac9c5aafcc'",
+      "https://cygwin.com/setup/setup-2.937.x86_64.exe",
       "Get-FileHash -Path $installer -Algorithm SHA512",
       "Cygwin installer checksum mismatch",
       "PM_TEST_CYGWIN_BASH=$bash",

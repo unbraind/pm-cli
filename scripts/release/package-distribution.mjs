@@ -62,13 +62,16 @@ function resolveRuntimeLocation(parent, name, packages) {
 /** Materialize tested peer bindings in the staged manifest so npm walks their complete runtime subtrees. */
 function materializeRuntimePeerBindings(target, metadata, expected) {
   const declared = { ...metadata.dependencies, ...metadata.optionalDependencies };
+  let changed = false;
   for (const field of ["dependencies", "optionalDependencies"]) {
     const peers = Object.entries(expected[field] ?? {}).filter(([name]) => Object.hasOwn(expected.peerDependencies ?? {}, name) && !Object.hasOwn(declared, name));
     if (peers.length) {
       metadata[field] = { ...metadata[field], ...Object.fromEntries(peers) };
-      writeFileSync(path.join(target, "package.json"), `${JSON.stringify(metadata, null, 2)}\n`);
+      changed = true;
     }
   }
+  if (changed)
+    writeFileSync(path.join(target, "package.json"), `${JSON.stringify(metadata, null, 2)}\n`);
 }
 
 /** Copy exactly the installed production closure and reject version or dependency drift. */
