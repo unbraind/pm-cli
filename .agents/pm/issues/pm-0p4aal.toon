@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-17T23:47:36.828Z"
-updated_at: "2026-10-18T00:29:59.692Z"
-closed_at: "2026-10-18T00:29:57.856Z"
-completed_at: "2026-10-18T00:29:57.856Z"
+updated_at: "2026-10-18T01:25:33.433Z"
+closed_at: "2026-10-18T01:25:32.474Z"
+completed_at: "2026-10-18T01:25:32.474Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: "Reproduce missing unconditional aggregate admission before the change; Require successful shard result before report merging; Exercise success, failure, skipped and canceled matrix outcomes; Preserve every shard, exact full coverage thresholds, existing permissions and free hosted features"
@@ -19,23 +19,26 @@ why_now: "The current SDK delivery produced a real failed shard and skipped aggr
 parent: pm-u9d0
 risk: low
 confidence: 100
-resolution: "Run Gates (coverage) with always() after coverage-shards and explicitly reject failure, canceled, skipped or missing matrix results before checkout or merging. Gate artifact upload and Codecov verification on successful admission, preserving threshold-failure diagnostics and exact global coverage."
-expected_result: A failed or incomplete shard matrix cannot satisfy the protected coverage context through an automatic job skip.
-actual_result: Live run39077888907 reproduced a failed shard and skipped required aggregate; official GitHub documentation confirms that skip can satisfy protection. The new contract failed before the change; all21 workflow tests and its linked real-shell outcome control now pass. Only success is accepted across five tested inputs. Permissions remain read-only by default; no threshold or paid feature changed. Final-head hosted CI remains required.
+resolution: "Always run the required coverage aggregate, explicitly reject unsuccessful shard outcomes, and require successful admission before report merging or pinned Codecov verification. Align both workflow contract suites, retaining checksum verification, immutable references, exact-head uploads, failure diagnostics and quiet logs."
+expected_result: "Failed, canceled, skipped or missing shards fail the required coverage context; successful shards retain verified exact-head reports and threshold-failure diagnostics."
+actual_result: "Run39084972483 demonstrated the required aggregate correctly failing instead of being skipped. Its one stale Codecov condition assertion is corrected. All24 tests across both contract suites pass, plus the linked five-input admission control. Repository docstring quality passes after documenting four workflow helpers. Final revised-head hosted coverage remains mandatory; no thresholds, permissions, paid features or production runtime changed in this revision."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2qqcgl,related,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
   pm-gh1485,discovered_from,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
   pm-ul9rye,related,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
   pm-zpwfzy,related,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-17T23:47:36.828Z","harness:codex","Duplicate check: complete all-status full keyword-AND reads returned126 coverage-shard and389 coverage-skipped records with zero payload omissions. Read the completed exact-count authority, nightly job-budget and PR-readiness owners with full metadata/history. They shipped integer-count enforcement, bounded nightly execution and watch receipts respectively; this new defect is the required CI aggregate producer being skipped. Reuse the current CI capability parent and preserve those completed deliveries. GitHub documentation explicitly identifies failed-dependency skips as potentially nonblocking and recommends always() with needs for required aggregate jobs: https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks"
   "2026-10-17T23:57:55.613Z","harness:codex","The new contract failed on the original missing job-level always() condition. The corrected workflow runs the required aggregate after shard completion and first executes a real shell guard over success/failure/cancelled/skipped/empty results; only success passes. Failed admission skips checkout and merging; artifact upload and Codecov verification are explicitly gated on admission. Threshold-failure diagnostics remain available after successful admission. All21 workflow contracts pass in the230-test corrected cohort, and workflow permissions remain unchanged/read-only by default."
-files[2]{path,scope}:
+  "2026-10-18T01:24:52.712Z","harness:codex","Final-head run39084972483 proves the aggregate now fails on an unsuccessful shard instead of being skipped. Its sole failing test is the existing pinned Codecov bootstrap contract, which still expects the old unconditional !cancelled() verifier. Updated that coupled expectation to require successful shard admission while retaining checksum verification, immutable pins, exact-head uploads and quiet logs. Added concise documentation to four workflow assertion helpers in response to the reviewer documentation-coverage warning. The reviewer requested splitting other scopes, but this delivery retains the connected SDK, consumer qualification, CI and eligible dependency work explicitly requested together in one PR. CodeRabbit reported no new actionable code comments for 9fc5031; optional review providers remain unavailable, and required DeepScan remains pending. Only this coverage-contract item is reopened and claimed for these edits."
+files[3]{path,scope}:
   .github/workflows/ci.yml,project
   tests/integration/ci-workflow-contract.spec.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  tests/integration/release/codecov-verified-upload.integration.spec.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"coverage shard admission\"",project,"harness:codex","2026-10-17T23:48:01.484Z",local_mutation,fix/history-index-reader-contention
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts,project,"harness:codex","2026-10-18T01:24:37.686Z",local_mutation,fix/history-index-reader-contention
+test_runs[2]:
   - run_id: test-local-mvd2x2r7-at4x51
     kind: test
     status: passed
@@ -47,10 +50,22 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"coverage shard admission\"",schema,schema,source,local_source_ref
+  - run_id: test-local-mvd58nb0-nx6h7t
+    kind: test
+    status: passed
+    started_at: "2026-10-18T01:24:53.902Z"
+    finished_at: "2026-10-18T01:25:24.347Z"
+    recorded_at: "2026-10-18T01:25:24.347Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"coverage shard admission\"",schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release/codecov-verified-upload.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/TESTING.md,project
-close_reason: Make the required coverage aggregate fail on unsuccessful shard admission.
+close_reason: Complete fail-closed coverage admission and its coupled Codecov verification contract.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

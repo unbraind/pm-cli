@@ -51,10 +51,12 @@ const PINNED_ACTIONS = {
   uploadArtifact: new RegExp(`uses: actions/upload-artifact@${SHA_PATTERN}`),
 };
 
+/** Normalize checkout newlines so workflow contracts behave the same on Windows. */
 function normalizeWorkflow(content: string): string {
   return content.replaceAll("\r\n", "\n");
 }
 
+/** Check the shared literal and pattern requirements for each workflow. */
 function expectContainsAll(
   content: string,
   requiredSnippets: Array<string | RegExp>,
@@ -68,6 +70,7 @@ function expectContainsAll(
   }
 }
 
+/** Reject obsolete or forbidden workflow fragments with a focused assertion. */
 function expectContainsNone(content: string, blockedSnippets: string[]): void {
   for (const snippet of blockedSnippets) {
     expect(content).not.toContain(snippet);
@@ -89,6 +92,7 @@ function expectPinnedCodecovUploads(content: string): void {
     expect(step.uses).toMatch(/^codecov\/codecov-action@[0-9a-f]{40}$/);
 }
 
+/** Keep matching steps in another job from satisfying a job-specific contract. */
 function extractWorkflowJob(content: string, jobName: string): string {
   const match = content.match(
     new RegExp(

@@ -27,7 +27,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
     const bootstrapIndex = steps.findIndex((step) => step.name === "Verify pinned Codecov CLI");
     expect(bootstrapIndex).toBeGreaterThanOrEqual(0);
     const bootstrap = steps[bootstrapIndex];
-    expect(bootstrap).toMatchObject({ id: "codecov_cli", shell: "bash", if: "${{ !cancelled() }}" });
+    expect(bootstrap).toMatchObject({ id: "codecov_cli", shell: "bash", if: "${{ !cancelled() && steps.shard_admission.outcome == 'success' }}" });
     expect(bootstrap["continue-on-error"]).toBeUndefined();
     expect(bootstrap.run).toContain(assetUrl);
     expect(bootstrap.run).toContain(assetDigest);
