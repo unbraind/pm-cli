@@ -70,6 +70,7 @@ describe("legacy receipt reader", () => {
         pm_item_scalar_missing: true,
       });
       expect(await readFile(file, "utf8")).toBe(historicalBytes);
+      execFileSync("git", ["add", ".agents/pm/merge-receipts"], { cwd: context.tempRoot });
       const settled = await runMergeReconcile({}, { path: context.pmPath });
       expect(settled.receipts.reconciled).toBe(1);
       expect(

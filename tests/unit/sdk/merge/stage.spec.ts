@@ -2,12 +2,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MergeReconcileResult } from "../../../../src/sdk/merge/reconcile.js";
 
-const mocks = vi.hoisted(() => ({ git: vi.fn(), workspace: vi.fn() }));
+const mocks = vi.hoisted(() => ({ git: vi.fn(), workspace: vi.fn(), realpath: vi.fn() }));
 vi.mock("node:child_process", async (original) => ({
   ...(await original()),
   execFile: Object.assign(vi.fn(), { [Symbol.for("nodejs.util.promisify.custom")]: mocks.git }),
 }));
 vi.mock("../../../../src/sdk/merge/install.js", () => ({ findGitWorkspaceRoot: mocks.workspace }));
+vi.mock("node:fs/promises", async (original) => ({ ...(await original()), realpath: mocks.realpath }));
 import { stageLosslessMergeReconciliation } from "../../../../src/sdk/merge/stage.js";
 
 /** Valid receipt-backed preview at the staging adapter boundary. */
@@ -25,6 +26,7 @@ describe("lossless reconciliation staging", () => {
   beforeEach(() => {
     mocks.git.mockReset().mockImplementation(async (_command, args) => ({ stdout: args.includes("--cached") && args[0] === "ls-files" ? ".agents/pm/merge-receipts/receipt.json\0" : "" }));
     mocks.workspace.mockReset().mockResolvedValue("/workspace");
+    mocks.realpath.mockReset().mockImplementation(async (target) => target);
   });
   const invoke = (value = preview(), dryRun = false, apply = vi.fn().mockResolvedValue({ ...value, ok: true, dry_run: false })) => ({
     apply,
@@ -44,6 +46,16 @@ describe("lossless reconciliation staging", () => {
     const value = preview(); value.repair.streams = []; value.receipts.summaries = [];
     expect((await invoke(value).run()).staged_paths).toEqual([]);
     expect(mocks.git.mock.calls.every((call) => call[1][0] === "ls-files")).toBe(true);
+  });
+
+  it("uses the physical tracker path for aliases and refuses an unresolved root", async () => {
+    mocks.realpath.mockResolvedValue("/workspace/.agents/pm");
+    const value = preview();
+    const apply = vi.fn().mockResolvedValue({ ...value, ok: true });
+    expect((await stageLosslessMergeReconciliation({ preview: value, dryRun: false, global: { path: "/alias/pm" }, apply })).staged_paths).toEqual([".agents/pm/history/pm-task.jsonl", ".agents/pm/merge-receipts/receipt.json"]);
+    expect(mocks.workspace).toHaveBeenCalledWith("/workspace/.agents/pm");
+    mocks.realpath.mockRejectedValue(new Error("missing tracker"));
+    await expect(invoke().run()).rejects.toThrow("the tracker root cannot be resolved");
   });
 
   it("includes receipt-only audit histories even when bulk repair reports no changed stream", async () => {

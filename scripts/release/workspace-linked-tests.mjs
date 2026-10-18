@@ -104,6 +104,7 @@ export async function verifyLinkedTestWorkspaces({ root, current, releases, run,
     git("add", ".agents");
     git("commit", "-m", "Write main priority");
     git("merge", "peer", "--no-edit");
+    git("add", ".agents/pm/merge-receipts");
     assert.equal(cli(current, ["merge", "reconcile"]).ok, true);
     const merged = cli(current, ["get", id, "--full"]).item;
     assert.deepEqual(merged.tests, edited.tests);

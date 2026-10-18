@@ -228,6 +228,9 @@ inspection result reports counterparts with matching immutable provenance in
 the active Git index. `unstaged_durable_receipt_ids` separates valid filesystem
 sidecars that a read-only preview may inspect. Guarded staging prepares new
 sidecars before auditing and restores their new index entries if apply fails.
+Inspection lists indexed candidates once and reads bounded object batches.
+Guarded settlement resolves tracker aliases before preview, proof verification
+and apply, so every phase uses the same physical tracker root.
 Ordinary apply requires indexed proof first. Missing portable proof
 refuses an audit write even with `force`; local receipts alone cannot authorize
 committed history references. See [Merge safety](MERGE_SAFETY.md#settle-a-lossless-merge-in-one-commit)

@@ -1101,8 +1101,9 @@ Tracked by [pm-gh1475](../.agents/pm/issues/pm-gh1475.toon).
 Use `git merge --no-commit --no-ff <branch>`, then
 `pm merge reconcile --stage` and `git commit` to include authenticated lossless
 audit history in the original merge commit. `--stage --dry-run` previews without
-writing. Automatic staging refuses competing values, forced acceptance, unrelated
-drift and dirty or unresolved paths. `pm merge install --pre-commit-hook` explicitly
+writing. Automatic staging refuses competing values, forced acceptance,
+non-history validation failures, unstaged edits to reconciliation artifacts,
+and unresolved index entries. `pm merge install --pre-commit-hook` explicitly
 installs a merge-aware hook for that paused-merge workflow and preserves existing
 unowned hooks. Default installation remains hook-free. See
 [Merge safety](MERGE_SAFETY.md#settle-a-lossless-merge-in-one-commit).

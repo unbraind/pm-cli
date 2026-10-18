@@ -9,7 +9,7 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import type { Stats } from "node:fs";
-import { readdir, realpath, stat } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { readHistoryEntries } from "../../core/history/read.js";
@@ -36,9 +36,6 @@ import {
 } from "./three-way.js";
 import type { MergeReceiptOperation } from "./receipt-operation.js";
 import { readBoundedRegularFile } from "./receipt-file-boundary.js";
-import { mapWithFixedConcurrency } from "../extension/concurrency.js";
-import { isPathOutsideRoot } from "../workspace.js";
-import { gitWorkspaceEnvironment } from "./worktree-config.js";
 
 import { DURABLE_VALUE_POLICY, durableValueEvidence, isSafeReceiptId, isMergeDecisionReceipt, isPrehashedValue, normalizeLegacyReceipt, receiptCollectionValidationPath, receiptValidationError } from "./receipt-schema.js";
 export { isSafeReceiptId } from "./receipt-schema.js";
@@ -697,29 +694,17 @@ async function inspectReceiptCandidate(
 /** Authenticate indexed bytes rather than treating an untracked or stale sidecar as portable proof. */
 async function indexedDurableReceiptIds(cwd: string, trackerRoot: string, receipts: readonly MergeDecisionReceipt[]): Promise<string[]> {
   if (receipts.length === 0) return [];
-  const env = gitWorkspaceEnvironment();
-  if (process.env.GIT_INDEX_FILE !== undefined) env.GIT_INDEX_FILE = path.resolve(process.env.GIT_INDEX_FILE);
-  const gitOptions = { cwd, env, encoding: "utf8" as const, windowsHide: true, timeout: 10_000, maxBuffer: RECEIPT_FILE_MAX_BYTES };
-  let relativeDirectory: string;
-  let workspaceRoot: string;
-  try {
-    const root = (await execFileAsync("git", ["rev-parse", "--show-toplevel"], gitOptions)).stdout.trim();
-    const [physicalRoot, physicalDirectory] = await Promise.all([realpath(root), realpath(durableReceiptDirectory(trackerRoot))]);
-    workspaceRoot = physicalRoot;
-    relativeDirectory = path.relative(physicalRoot, physicalDirectory).replaceAll("\\", "/");
-  } catch { return []; }
-  if (isPathOutsideRoot(relativeDirectory)) return [];
-  const ids = await mapWithFixedConcurrency([...receipts], 4, async (receipt) => {
+  const { readIndexedReceiptBlobs } = await import("./indexed-receipt-blobs.js");
+  const blobs = await readIndexedReceiptBlobs(cwd, durableReceiptDirectory(trackerRoot), receipts.map((receipt) => receiptFileName(receipt.id)), RECEIPT_FILE_MAX_BYTES);
+  return receipts.flatMap((receipt) => {
     try {
-      const indexedRaw = (await execFileAsync("git", ["show", `:0:${relativeDirectory}/${receiptFileName(receipt.id)}`], { ...gitOptions, cwd: workspaceRoot })).stdout;
-      const indexed: unknown = normalizeLegacyReceipt(JSON.parse(indexedRaw) as unknown);
-      if (receiptValidationError(indexed, "durable") !== null) return undefined;
+      const indexed: unknown = normalizeLegacyReceipt(JSON.parse(blobs.get(receiptFileName(receipt.id)) ?? "") as unknown);
+      if (receiptValidationError(indexed, "durable") !== null) return [];
       const stored = indexed as MergeDecisionReceipt;
       const fingerprints = receiptProvenanceFingerprints(receipt);
-      return stored.id === receipt.id && receiptProvenanceFingerprints(stored).some((fingerprint) => fingerprints.includes(fingerprint)) ? receipt.id : undefined;
-    } catch { return undefined; }
+      return stored.id === receipt.id && receiptProvenanceFingerprints(stored).some((fingerprint) => fingerprints.includes(fingerprint)) ? [receipt.id] : [];
+    } catch { return []; }
   });
-  return ids.filter((id): id is string => id !== undefined);
 }
 
 /** Inspect valid receipts and count invalid evidence without returning untrusted file contents. */

@@ -162,6 +162,7 @@ export async function runPackedFirstRun(packageRoot) {
     await git(["add", ".agents/pm"]);
     await git(["commit", "-qm", "Record peer evidence"]);
     await git(["merge", "--no-edit", "main"]);
+    await git(["add", ".agents/pm/merge-receipts"]);
     await pm(["merge", "reconcile"]);
     await pm(["history", itemId, "--verify", "--strict-exit"]);
     const merged = await pm(["get", itemId, "--full"]);

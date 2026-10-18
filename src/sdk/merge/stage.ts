@@ -1,5 +1,6 @@
 /** Guarded staging of authenticated, lossless reconciliation artifacts before a merge commit. */
 import { execFile } from "node:child_process";
+import { realpath } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -80,6 +81,12 @@ function assertLosslessPreview(preview: MergeReconcileResult): void {
   }
 }
 
+/** Bind preview, proof verification and staging to one physical tracker location. */
+export async function resolveMergeSettlementGlobal(global: GlobalOptions): Promise<GlobalOptions & { path: string }> {
+  try { return { ...global, path: await realpath(resolvePmRoot(process.cwd(), global.path)) }; }
+  catch { throw stagingRefusal("the tracker root cannot be resolved"); }
+}
+
 /** Stage only the verified history and receipt paths, preserving all unrelated index entries. */
 export async function stageLosslessMergeReconciliation(params: {
   preview: MergeReconcileResult;
@@ -89,7 +96,7 @@ export async function stageLosslessMergeReconciliation(params: {
 }): Promise<MergeReconcileResult> {
   const { preview } = params;
   assertLosslessPreview(preview);
-  const pmRoot = resolvePmRoot(process.cwd(), params.global.path);
+  const { path: pmRoot } = await resolveMergeSettlementGlobal(params.global);
   const workspaceRoot = await findGitWorkspaceRoot(pmRoot);
   if (workspaceRoot === null) throw stagingRefusal("a Git workspace is required");
   const git = (args: string[]) => execFileAsync("git", args, { cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000 });

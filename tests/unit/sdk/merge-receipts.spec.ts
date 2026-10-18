@@ -83,6 +83,27 @@ describe("clone-local merge decision receipts", () => {
     );
   });
 
+  it("reads many indexed receipts with one listing and bounded object batches", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-receipt-batches-"));
+    workspaces.push(root);
+    execFileSync("git", ["init", "-q"], { cwd: root });
+    const tracker = path.join(root, ".agents", "pm");
+    await mkdir(path.join(tracker, "tasks"), { recursive: true });
+    await writeFile(path.join(tracker, "settings.json"), "{}\n");
+    const receipts = await Promise.all(Array.from({ length: 32 }, (_, index) => writeMergeReceipt({ cwd: root, itemPath: `.agents/pm/tasks/pm-batch-${index}.toon`, preferred: "ours", fieldsFromTheirs: [], unionFields: [], decisions: [] })));
+    execFileSync("git", ["add", ".agents/pm/merge-receipts"], { cwd: root });
+    const trace = path.join(root, ".git", "receipt-reader.trace");
+    vi.stubEnv("GIT_TRACE2_EVENT", trace);
+    try {
+      expect(new Set((await inspectMergeReceiptEvidence(root)).durable_receipt_ids)).toEqual(new Set(receipts.map((receipt) => receipt!.id)));
+    } finally { vi.unstubAllEnvs(); }
+    const starts = (await readFile(trace, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as { event: string; argv?: string[] }).filter((event) => event.event === "start");
+    expect(starts.filter((event) => event.argv?.[1] === "show")).toHaveLength(0);
+    expect(starts.filter((event) => event.argv?.[1] === "ls-files")).toHaveLength(1);
+    expect(starts.filter((event) => event.argv?.[1] === "cat-file" && event.argv[2] === "--batch-check")).toHaveLength(1);
+    expect(starts.filter((event) => event.argv?.[1] === "cat-file" && event.argv[2] === "--batch")).toHaveLength(1);
+  });
+
   it("requires indexed evidence in the selected repository instead of a filesystem copy", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-indexed-receipts-"));
     const detached = await mkdtemp(path.join(os.tmpdir(), "pm-detached-receipts-"));

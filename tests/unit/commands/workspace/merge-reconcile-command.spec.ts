@@ -266,6 +266,8 @@ describe("merge reconcile command", () => {
       });
       expect(receipt).not.toBeNull();
 
+      execFileSync("git", ["add", ".agents/pm/merge-receipts"], { cwd: context.tempRoot });
+
       const preview = context.runCli(
         ["merge", "reconcile", "--dry-run", "--json"],
         { expectJson: true, cwd: context.tempRoot },
@@ -377,6 +379,7 @@ describe("merge reconcile command", () => {
         }),
       ).not.toBeNull();
 
+      execFileSync("git", ["add", ".agents/pm/merge-receipts"], { cwd: context.tempRoot });
       const applied = context.runCli(["merge", "reconcile", "--json"], {
         expectJson: true,
         cwd: context.tempRoot,

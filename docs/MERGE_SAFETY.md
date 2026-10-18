@@ -301,9 +301,9 @@ values into tracked evidence as a substitute.
 counterparts whose immutable provenance also matches the Git index bytes.
 Untracked files and mismatched staged versions cannot authorize an audit write.
 `unstaged_durable_receipt_ids` reports valid disk candidates for a read-only
-preview; clone-local-only evidence remains refused even in preview. Current readers always
-return it; the optional interface property preserves structural compatibility,
-and absence provides no portability authority. Health resolves committed history
+preview; clone-local-only evidence remains refused even in preview. Current readers
+return both arrays; their optional interface properties preserve structural compatibility,
+and a missing property provides no evidence. Health resolves committed history
 references against these durable identities, so a local copy cannot hide evidence
 that a fresh clone will lack. Receipt summaries remain privacy-safe.
 
@@ -481,6 +481,8 @@ unrelated staged work remain available for review. Staged receipt deletions
 remain operator decisions and are refused.
 `--stage --dry-run` checks this boundary without applying or staging anything.
 The result's `staged_paths` lists the repository-relative artifacts added.
+Tracker aliases resolve before preview, so proof verification, repair and staging
+use the same physical tracker root.
 
 Repositories can explicitly opt into a merge-aware `pre-commit` hook:
 

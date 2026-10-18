@@ -363,11 +363,12 @@ async function runStagedMergeReconcile(options: MergeReconcileOptions, global: G
     });
   }
   const unstagedOptions = { ...options, stage: false };
-  const preview = await runMergeReconcile({ ...unstagedOptions, dryRun: true }, global);
-  const { stageLosslessMergeReconciliation } = await import("./stage.js");
+  const { stageLosslessMergeReconciliation, resolveMergeSettlementGlobal } = await import("./stage.js");
+  const settledGlobal = await resolveMergeSettlementGlobal(global);
+  const preview = await runMergeReconcile({ ...unstagedOptions, dryRun: true }, settledGlobal);
   return stageLosslessMergeReconciliation({
-    preview, dryRun: options.dryRun === true, global,
-    apply: () => runMergeReconcile({ ...unstagedOptions, dryRun: false }, global),
+    preview, dryRun: options.dryRun === true, global: settledGlobal,
+    apply: () => runMergeReconcile({ ...unstagedOptions, dryRun: false }, settledGlobal),
   });
 }
 

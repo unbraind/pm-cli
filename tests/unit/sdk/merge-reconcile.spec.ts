@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   findGitWorkspaceRoot: vi.fn(),
   stage: vi.fn(),
 }));
-vi.mock("../../../src/sdk/merge/stage.js", () => ({ stageLosslessMergeReconciliation: mocks.stage }));
+vi.mock("../../../src/sdk/merge/stage.js", () => ({ stageLosslessMergeReconciliation: mocks.stage, resolveMergeSettlementGlobal: async (global: unknown) => global }));
 
 vi.mock("../../../src/sdk/history-repair.js", () => ({
   runHistoryRepair: mocks.runHistoryRepair,

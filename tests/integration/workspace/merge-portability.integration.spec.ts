@@ -1,7 +1,7 @@
 /** Real Git regressions for visible identity refusals and portable reconciliation evidence. */
 import { execFileSync, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { access, readFile, rm, writeFile } from "node:fs/promises";
+import { access, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runHealth } from "../../../src/sdk/governance/health.js";
@@ -143,7 +143,9 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
 
       git("add", relative);
       expect((await inspectMergeReceiptEvidence(context.tempRoot)).durable_receipt_ids).toContain(receipt.id);
-      expect((await runMergeReconcile({}, { path: context.pmPath })).ok).toBe(true);
+      const alias = path.join(context.tempRoot, ".git", "tracker-alias");
+      await symlink(context.pmPath, alias, "junction");
+      expect((await runMergeReconcile({ stage: true }, { path: alias })).ok).toBe(true);
       expect(git("diff", "--cached", "--name-only")).toContain("preserve.txt");
     });
   });
