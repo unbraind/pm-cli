@@ -9,7 +9,7 @@ pipeline {
     stage("Install") {
       steps {
         sh "corepack enable"
-        sh "corepack prepare pnpm@11.10.0 --activate"
+        sh "corepack prepare pnpm@11.28.5 --activate"
         sh "pnpm install --frozen-lockfile"
       }
     }

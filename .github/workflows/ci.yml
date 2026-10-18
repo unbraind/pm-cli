@@ -57,7 +57,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -164,7 +164,7 @@ jobs:
         if: matrix.os == 'windows-latest' && matrix.node == 24
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
       - name: Install Windows packed acceptance dependencies
         if: matrix.os == 'windows-latest' && matrix.node == 24
         run: pnpm install --frozen-lockfile
@@ -220,7 +220,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
 
       - name: Verify registry command on native macOS Bash
         if: matrix.os == 'macos-latest'
@@ -263,7 +263,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Download dist artifact
@@ -305,7 +305,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -482,7 +482,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -560,7 +560,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -676,7 +676,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
-          version: 11.10.0
+          version: 11.28.5
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -726,6 +726,25 @@ jobs:
       # directory now runs so a fresh Windows-only script regression fails this
       # required per-PR check rather than only the nightly.
       # pm-bj7rq0: bound each subprocess-heavy cohort without serializing all Windows keepers.
+      - name: Install verified Cygwin for native launcher acceptance
+        if: matrix.cohort == 'scripts'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'setup-x86_64.exe'
+          $root = Join-Path $env:RUNNER_TEMP 'pm-cygwin'
+          $cache = Join-Path $env:RUNNER_TEMP 'pm-cygwin-cache'
+          $expected = '6acea47c59781c9e7f544a18d53935d59df6e44d5d52ac95ee165671b8e388820455eebf30ccc7d254b00c3d0eb694269a0f8dc84b17944c1f355dac9c5aafcc'
+          Invoke-WebRequest -Uri 'https://cygwin.com/setup-x86_64.exe' -OutFile $installer
+          if ((Get-FileHash -Path $installer -Algorithm SHA512).Hash.ToLowerInvariant() -ne $expected) {
+            throw 'Cygwin installer checksum mismatch'
+          }
+          $arguments = @('-q', '-B', '-d', '-n', '-N', '--no-write-registry', '-R', $root, '-l', $cache, '-s', 'https://mirrors.kernel.org/sourceware/cygwin/', '-P', 'bash,coreutils,sed')
+          $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Cygwin setup failed: $($process.ExitCode)" }
+          $bash = Join-Path $root 'bin/bash.exe'
+          if (!(Test-Path $bash)) { throw 'Cygwin Bash is missing' }
+          Add-Content -Path $env:GITHUB_ENV -Value "PM_TEST_CYGWIN_BASH=$bash" -Encoding utf8
+
       - name: Run Windows script regression tests
         if: matrix.cohort == 'scripts'
         env:

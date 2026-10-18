@@ -20,7 +20,7 @@ describe("executable recovery guidance", () => {
       await writeFile(
         path.join(projectRoot, "package.json"),
         JSON.stringify({
-          packageManager: "pnpm@11.10.0",
+          packageManager: "pnpm@11.28.5",
           scripts: { test: "vitest run" },
         }),
         "utf8",

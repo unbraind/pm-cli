@@ -37,7 +37,7 @@ const PUBLISH_OR_RELEASE_PATTERNS = [
   "npx changeset publish",
 ];
 const SHA_PATTERN = "[0-9a-f]{40}";
-const PINNED_PNPM_VERSION = "version: 11.10.0";
+const PINNED_PNPM_VERSION = "version: 11.28.5";
 const PINNED_BUN_VERSION = "bun-version: 1.4.0";
 const PINNED_ACTIONS = {
   checkout: new RegExp(`uses: actions/checkout@${SHA_PATTERN}`),
@@ -611,6 +611,11 @@ describe("GitHub workflow contract", () => {
       "name: Verify copied plugin first-install command transport",
       "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",
       "name: Verify nested linked-test dependency junctions",
+      "name: Install verified Cygwin for native launcher acceptance",
+      "$expected = '6acea47c59781c9e7f544a18d53935d59df6e44d5d52ac95ee165671b8e388820455eebf30ccc7d254b00c3d0eb694269a0f8dc84b17944c1f355dac9c5aafcc'",
+      "Get-FileHash -Path $installer -Algorithm SHA512",
+      "Cygwin installer checksum mismatch",
+      "PM_TEST_CYGWIN_BASH=$bash",
       "run: node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts",
       "name: Run Windows history durability and recovery regressions",
       "run: node scripts/run-tests.mjs test -- tests/integration/history-durability.integration.spec.ts tests/integration/history-maintenance-replay.integration.spec.ts",
@@ -1481,6 +1486,7 @@ describe("GitHub workflow contract", () => {
       "trivyignores: .trivyignore",
       "skip-dirs: node_modules,dist,coverage,.pnpm-store",
       "extra_args: --results=verified --fail-on-scan-errors --exclude-paths=.trufflehog-exclude-paths.txt",
+      "uses: trufflesecurity/trufflehog@0186870afd2c4a90def791d80260923ba583d076 # v3.98.0",
       "shellcheck --version",
       "shellcheck --severity=style",
       "$moduleVersion = '1.24.0'",
