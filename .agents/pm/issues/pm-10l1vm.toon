@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: concurrency,history,merge,multi-agent,provenance,scale,storage
 created_at: "2026-07-26T10:46:07.190Z"
-updated_at: "2026-09-08T13:32:10.180Z"
+updated_at: "2026-10-17T19:47:02.804Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "Every recorded entry carries an ordering identity that is independent of any host clock and is unique to the writer that produced it; The recorded data is sufficient to distinguish concurrent entries from causally ordered entries after an arbitrary merge, without consulting git or any external system; Replay, point-in-time reads, and restore resolve to the same item state regardless of the wall-clock skew present when the entries were written; A property suite generates skewed-clock, multi-branch interleavings and asserts that reconstructed order matches recorded causality, with the skew magnitude as an explicit parameter; The addition states its format_version implications and preserves the plain-text, git-diffable storage property; Existing streams remain verifiable, and legacy entries without ordering identity are handled by a declared rule rather than by assumption"
@@ -31,4 +31,6 @@ dependencies[10]{id,kind,created_at}:
   pm-w7ccmv,verifies,"2026-07-26T10:46:07.190Z"
   pm-wlqxg3,related,"2026-07-26T10:46:07.190Z"
   pm-9j2r3b,discovered_from,"2026-07-26T10:51:58.407Z"
+comments[1]{created_at,author,text}:
+  "2026-10-17T19:47:02.804Z","harness:codex","New bounded workload observation while implementing pm-gh1485: 100 advancing version-1 mutation-event cursor readers with 10 mixed SDK/CLI writer lanes did not all observe all50 updates before the15-second post-writer deadline. Version-1 event cursors order by recorded timestamp/stream/offset, so a later committed event with an earlier timestamp is outside an advanced query. Baseline comparison and a dedicated causal-order regression are not claimed here. Preserve this canonical ordering owner; the contention benchmark will explicitly measure fixed-boundary snapshot readers, matching the original index-reader workload, and will not present that as proof of late-commit-safe advancing subscriptions."
 body: ""

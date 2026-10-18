@@ -146,8 +146,14 @@ const winners = attempts.filter(({ status }) => status === "fulfilled");
 const losers = attempts.filter(({ status }) => status === "rejected");
 assert.equal(winners.length, 1);
 assert.equal(losers.length, 1);
-const conflict = losers[0].reason;
-assert(isItemAlreadyExistsError(conflict));
+let conflict = losers[0].reason;
+if (conflict?.code === "lock_conflict") {
+  assert(!coreConflictGuard(conflict), "Lock contention is distinct from an existing-item conflict");
+  const [retry] = await Promise.allSettled([client.create({ id: conflictId, title: "Settled duplicate intent", type: "Task", createMode: "progressive" })]);
+  assert.equal(retry.status, "rejected", "A settled duplicate must preserve the winning item");
+  conflict = retry.reason;
+}
+assert(isItemAlreadyExistsError(conflict), `Unexpected packed create rejection: ${JSON.stringify({ name: conflict?.name, code: conflict?.code, message: conflict?.message, context: conflict?.context })}`);
 assert(coreConflictGuard(conflict), "Separate public entrypoints recognize the same structural conflict");
 assert.equal((await client.get(conflict.context.id)).item.title, winners[0].value.item.title);
 console.log(JSON.stringify({ publicExport: "@unbrained/pm-cli/sdk", results, conflicts: { oneWinner: true, coreGuard: true } }));

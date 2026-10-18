@@ -542,9 +542,16 @@ jobs:
   coverage:
     name: Gates (coverage)
     needs: coverage-shards
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      - name: Require every coverage shard
+        id: shard_admission
+        env:
+          SHARD_RESULT: ${{ needs.coverage-shards.result }}
+        run: test "$SHARD_RESULT" = success
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -583,7 +590,7 @@ jobs:
           node scripts/release/coverage-threshold-gate.mjs
 
       - name: Upload coverage artifact
-        if: always()
+        if: always() && steps.shard_admission.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-node24-ubuntu-latest
@@ -591,10 +598,10 @@ jobs:
           if-no-files-found: ignore
 
       # pm-2x67z9: authenticate the immutable official asset before execution;
-      # both uploads require this verifier to succeed, including after test failure.
+      # keep reports after coverage-threshold failure when every shard succeeded.
       - name: Verify pinned Codecov CLI
         id: codecov_cli
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.shard_admission.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -729,7 +736,7 @@ jobs:
         if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+        run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts
 
       # pm-q91qyd: interception cannot prove the native npm.cmd execution boundary.
       - name: Verify native release-ledger npm and Git providers

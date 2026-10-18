@@ -51,10 +51,12 @@ const PINNED_ACTIONS = {
   uploadArtifact: new RegExp(`uses: actions/upload-artifact@${SHA_PATTERN}`),
 };
 
+/** Normalize checkout newlines so workflow contracts behave the same on Windows. */
 function normalizeWorkflow(content: string): string {
   return content.replaceAll("\r\n", "\n");
 }
 
+/** Check the shared literal and pattern requirements for each workflow. */
 function expectContainsAll(
   content: string,
   requiredSnippets: Array<string | RegExp>,
@@ -68,6 +70,7 @@ function expectContainsAll(
   }
 }
 
+/** Reject obsolete or forbidden workflow fragments with a focused assertion. */
 function expectContainsNone(content: string, blockedSnippets: string[]): void {
   for (const snippet of blockedSnippets) {
     expect(content).not.toContain(snippet);
@@ -89,6 +92,7 @@ function expectPinnedCodecovUploads(content: string): void {
     expect(step.uses).toMatch(/^codecov\/codecov-action@[0-9a-f]{40}$/);
 }
 
+/** Keep matching steps in another job from satisfying a job-specific contract. */
 function extractWorkflowJob(content: string, jobName: string): string {
   const match = content.match(
     new RegExp(
@@ -270,6 +274,30 @@ describe("GitHub workflow contract", () => {
       if (result === "success") expect(execute).not.toThrow();
       else expect(execute).toThrow();
     }
+  });
+
+  it("enforces coverage shard admission before required report merging", async () => {
+    const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
+    const shards = workflow.jobs["coverage-shards"];
+    const aggregate = workflow.jobs.coverage;
+    expect(aggregate.name).toBe("Gates (coverage)");
+    expect(aggregate.needs).toBe("coverage-shards");
+    expect(aggregate.if).toBe("always()");
+    expect(aggregate["continue-on-error"]).toBeUndefined();
+    expect(shards["continue-on-error"]).toBeUndefined();
+    const admission = aggregate.steps[0];
+    expect(admission.id).toBe("shard_admission");
+    expect(admission.env.SHARD_RESULT).toBe("${{ needs.coverage-shards.result }}");
+    const bash = process.platform === "win32" ? path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Git", "bin", "bash.exe") : "bash";
+    for (const result of ["success", "failure", "cancelled", "skipped", ""]) {
+      const execute = () => execFileSync(bash, ["-c", admission.run], { env: { ...process.env, SHARD_RESULT: result }, stdio: "pipe" });
+      if (result === "success") expect(execute).not.toThrow();
+      else expect(execute).toThrow();
+    }
+    const artifact = aggregate.steps.find((step: { name?: string }) => step.name === "Upload coverage artifact");
+    const verifier = aggregate.steps.find((step: { id?: string }) => step.id === "codecov_cli");
+    expect(artifact.if).toContain("steps.shard_admission.outcome == 'success'");
+    expect(verifier.if).toContain("steps.shard_admission.outcome == 'success'");
   });
 
   it("requires native preview regressions to consume the validated build", async () => {
@@ -578,7 +606,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       'PM_RUN_TESTS_SKIP_BUILD: "1"',
-      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
+      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
       "name: Verify copied plugin first-install command transport",
       "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",

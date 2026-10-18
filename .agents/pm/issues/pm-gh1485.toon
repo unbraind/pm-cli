@@ -2,11 +2,13 @@ id: pm-gh1485
 title: "GH-1485: Bound history-index reader contention before authoritative appends"
 description: "Evaluate and bound writer delay from exclusive history-event-index readers while preserving authoritative history, invalidation, fallback and late-fact visibility. The reported mixed reader/writer workload retained correctness but breached its 2000ms real-time delivery SLO in one traced run."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:history","area:locking",github-intake,performance
 created_at: "2026-10-16T13:01:36.615Z"
-updated_at: "2026-10-16T13:01:36.615Z"
+updated_at: "2026-10-18T00:49:28.626Z"
+closed_at: "2026-10-18T00:49:27.470Z"
+completed_at: "2026-10-18T00:49:27.470Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Reproduce with isolated traced and untraced cohorts and report writer lock wait separately from downstream detection; Choose and document a bounded snapshot/fair-lock/critical-section protocol from measured attribution; Preserve authoritative fallback, committed invalidation and late-fact visibility; Prove zero lost or duplicate events, zero history drift and the declared end-to-end latency budget under mixed SDK and CLI writers."
@@ -18,16 +20,123 @@ parent: pm-lvyd
 risk: high
 confidence: medium
 severity: medium
-expected_result: "History-index reads preserve committed-fact correctness while writer delay and end-to-end delivery remain within an explicit, reproducible collaboration budget."
-actual_result: "Intake only: GH-1485 reports one breached traced run among three, 50 updates and 5000 receipts delivered exactly once, on a shared four-CPU host. The attribution includes scheduling/open/retry overhead and has not been reproduced here. No fix or performance acceptance is claimed."
+resolution: "Read rows and size receipts coherently, close SQLite before asynchronous validation, and observe append-owner progress without taking writer locks. Preserve native contention evidence, fail fast for active projection contention and use portable invalidation. Bound repeated failed repairs with a shared five-second cooldown and recover after quiet intervals; retain stale-owner semantics and compatible cursors."
+expected_result: Keep complete facts and bounded fixed-boundary delivery without projection writer queues or repeated full repair on every read.
+actual_result: "Linked82 history/workflow and67 schema tests pass;467 focused tests exercise every history-index statement/function/branch. All four typechecks and41 final integration tests pass. Traced/untraced100-reader cohorts preserve5000 observations at1085/877ms below2000ms, with full index recovery after5500ms quiet. SDK import-cost checks and static prefix pass; qualified local CLI floor failures remain recorded with a paired-main comparison, while graph/record/mutation tail passes. Required live observability passes. Final-head complete hosted static/coverage/analyzers must pass before merge; no budget was relaxed."
 component: history event index concurrency
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-a7207g,related,"2026-10-16T13:01:36.615Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-10l1vm,related,"2026-10-17T21:04:31.498Z","harness:codex","cli:update:dep",detected
+  pm-bj7rq0,related,"2026-10-18T00:49:22.261Z","harness:codex","cli:update:dep",detected
+comments[21]{created_at,author,text}:
   "2026-10-16T13:01:36.615Z","harness:codex","Duplicate check: live open/in-progress reads and all-status keyword searches for queryHistoryEventIndex, history-index and writer starvation found the closed Windows invalidation owner and the broad concurrency throughput parent. Full live parent and prior-fix data distinguish this latency report from the completed portable invalidation regression. Reuse pm-lvyd as parent and preserve the closed fix; do not file a duplicate broad concurrency epic."
-files[2]{path,scope}:
+  "2026-10-17T19:35:29.184Z","harness:codex","Live intake: strict all-status corpus read 2986/2986 items with complete receipt, no omissions or unreadable files; no active claims, open PRs or GitHub security alerts. Preserving completed Windows invalidation lineage pm-a7207g. Investigation identifies exclusive read locks spanning filesystem validation and optional SDK rebuilds sharing writer locks. This delivery will prove a nonblocking snapshot protocol and bounded fallback with isolated real persistence and mixed SDK/CLI acceptance."
+  "2026-10-17T19:40:56.035Z","harness:codex","Negative control: both new snapshot tests fail against the unchanged baseline: an index query refuses while the writer file lock is held, and a reader suspended inside stream stat blocks an authoritative append beyond 1500ms. Candidate snapshot queries and recency reads acquire no writer locks, close SQLite before filesystem validation, and retain stream-size plus invalidation checks. First focused run passes all 49 tests. The distinct optional-rebuild availability escape is tracked as pm-xj80p9 and claimed for this same delivery."
+  "2026-10-17T19:52:42.567Z","harness:codex","Mixed-load negative control on the first candidate: untraced fixed-boundary reads delivered5000/5000 receipts with zero drift and max1991ms, but traced execution still breached the unchanged2000ms budget (max3270ms; CLI pre-append2629ms; measured index-lock wait lower bound2220ms). Attribution isolated a second reader boundary: transient snapshot refusals caused eager optional rebuilds that reacquired the writer lock. Keep the item active; distinguish repairable cache damage from concurrent generation changes so transient reads fall straight back to authority instead of rebuilding."
+  "2026-10-17T19:55:38.350Z","harness:codex","Final mixed-load acceptance after transient-versus-repairable classification: separate untraced and traced cohorts each deliver50 updates across100 readers (5000 unique observations), duplicate-free pages and strict storage/history validation with zero drift. Untraced max first observation906ms; traced1238ms, below unchanged2000ms. Traced CLI max timestamp-to-append492ms and index-lock wait lower bound334ms; SDK355ms and278ms respectively. Earlier candidate trace breached3270ms/2220ms and remains recorded as the measured negative control. Snapshot workload uses a fixed lower boundary; advancing version-1 late-commit ordering remains explicitly open in pm-10l1vm."
+  "2026-10-17T19:57:14.643Z","harness:codex","GitHub intake receipt:24 open issues all have corresponding PM-item link comments; zero open PRs and zero open Dependabot, code-scanning and secret-scanning alerts. pnpm audit reports no known vulnerabilities. Outdated candidates published within seven days remain under the repository cooldown; older TypeScript7 and npm-package-arg14 adoption remain under their existing compatibility owners. Published-package checks and local candidate gates are recorded separately."
+  "2026-10-17T20:30:34.107Z","harness:codex","Focused all-source coverage diagnosis retained the full denominator and identified four uncovered history-index refusal branches. Added real empty-recency, committed-invalidation recovery and permission-denial preservation controls; strengthened the existing reopen-failure fixture to select read-only opens instead of an obsolete constructor count. All41 history-index tests now pass. The focused diagnostic is not reported as full coverage; the canonical full-source run remains required."
+  "2026-10-17T20:42:35.019Z","harness:codex","Delivery scope: the two stress cohorts are operator diagnostics archived outside the repository alongside their JSON receipts. Their measured5000-observation results remain evidence, not a permanent benchmark API or an all-host latency guarantee. The committed regression suspends filesystem validation and proves a writer finishes before the reader resumes; CI runs it on native Windows too. No coverage denominator or threshold is excluded or reduced."
+  "2026-10-17T21:04:01.304Z","harness:codex","First PR review found a second native contention boundary: incremental SQLite writes still set busy_timeout5000, so a cross-process read transaction may hold commit beyond the unchanged2000ms observation budget. Add native shared-reader and reserved-writer controls before reducing this optional-cache wait; preserve authoritative append and invalidation recovery. The initial full suite passed10614 tests and exact100/100/100/100 coverage. Hosted static found one missing typed relationship to the already documented causal-ordering boundary; record that real relationship without changing the graph ratchet."
+  "2026-10-17T21:34:01.903Z","harness:codex","Final review remediation verified: native SQLite shared-reader and reserved-writer negative controls reproduced5009ms commit delay and database-is-locked failure before the change. Zero native busy retries plus typed contention fallback now pass shared-reader, reserved-writer and exclusive-writer cases, preserving both authoritative records and rebuild recovery. All113 affected tests pass; linked suites pass64/49/20 tests. Repeated final100-reader cohorts each deliver5000 observations with zero drift: max1647ms untraced and1188ms traced below2000ms. Final trace CLI preappend712ms/index-lock lowerbound345ms, SDK290ms/102ms. Packed npx and bunx smoke passes9 installed packages. Initial full suite passed10614 tests and exact100% counts; final-head hosted coverage and static admission remain required. Local qualified Node26 startup-budget failures are preserved under the existing performance owner; no gate was weakened."
+  "2026-10-17T21:38:54.658Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1493 carries this fix, structured close evidence and generated changelog. First-head CodeRabbit posted one actionable SQLite wait finding, reproduced and fixed with native controls; required final-head CI and analyzer receipts are still the merge condition. Sourcery review quota, Cubic free-monthly cap and Greptile trial expiry prevented those optional reviews; no unavailable review is treated as approval."
+  "2026-10-17T22:27:13.902Z","harness:codex","Second full review on cae7d4b15 raises two related repair paths: normal appends publish no active marker, so intermediate larger stream sizes look like settled cache damage; post-COMMIT native contention removes the cache and can start a full repair holding the index lock. Reopen only this implementation owner for deterministic pause controls and a zero-wait authoritative fallback protocol; preserve initial-versus-publication invalidation-lock error semantics. Required hosted analyzer evidence for the prior head is now green, but the review findings prevent merge."
+  "2026-10-17T22:37:14.704Z","harness:codex","Confirmed controls on the reviewed head: paused indexed append requests repair; native commit/begin contention requests repair while the contender is still active; a suspended full repair blocks a later authoritative append past1500ms under PM_LOCK_WAIT_MS=30000. The scan control now pauses the actual default-namespace stat boundary and settles both operations; its original readFile hook did not intercept the namespace import and is not counted as regression proof. Reuse token-owned append lock metadata as the active marker, cap authoritative index-lock retries at zero and retain the existing portable fallback. The independent SQLite-less producer omission is tracked and actively implemented in pm-f7shxf."
+  "2026-10-17T22:48:13.501Z","harness:codex","Second-review validation: all388 focused history/SDK/lock/workflow tests pass. Diagnostic full-denominator coverage for this subset correctly fails global admission; current event-index statements/functions/branches have zero uncovered entries and the new lock-owner observer is covered. All four typecheck configurations pass. The untraced100-reader/10-writer cohort delivered all5000 unique observations with zero history drift; maximum1212ms below the unchanged2000ms budget. The first traced rerun stopped because a CLI process emitted an incomplete instrumentation receipt, not because a delivery assertion failed; attribution remains unproven until corrected. Full final-head hosted coverage and static admission remain required before merge."
+  "2026-10-17T23:02:31.218Z","harness:codex","Final corrected traced cohort delivered all5000 unique observations with zero drift and1154ms maximum versus2000ms; separate untraced cohort max1212ms. The operator tracer now captures stale-cleanup-gate attempts before file open, so zero-wait bypasses are reported rather than mistaken for absent attribution. Traced SDK/CLI lanes bypassed the projection lock3/11 times; successful acquisition lower-bound maxima19ms/1ms, timestamp-to-append maxima461ms/126ms, invocation maxima673ms/1025ms. These are distinct measurements, not universal starvation or advanced-cursor guarantees. Complete pnpm quality:static passed on the final implementation, including unchanged startup budgets and bounded mutation348/341/7-equivalent. Full final-head CI remains required."
+  "2026-10-17T23:05:48.789Z","harness:codex","Final live observability: required Sentry/telemetry gate passed (zero critical/high issues,2.62% finish error rate,zero missing error-code rows). Fresh pm-get span at23:02:40UTC lasted108.513ms. Serialized explicit flush drained1 entry to0 with no invalid rows or failures; stack healthy,broker0 messages/1 consumer. Backend partition for version2026.10.17 since19:32UTC has243 starts/243 finishes,zero unmatched primary sessions,max ingest2412ms. The all-version window contains two unmatched get starts from2026.7.23 automation and a970934ms validate delay from2026.8.21 automation; these are legacy producer observations, not evidence against or proof of the current build. Queue state is an observed instant, not a promise that later commands enqueue nothing."
+  "2026-10-17T23:30:01.249Z","harness:codex","Third review: confirmed that repeated refused repairs can rescan continuously under writers, while fact delivery remains correct. Add a durable per-tracker short cooldown after refused full publication, keep explicit repair available, and prove eventual automatic recovery after the busy interval. CI shard3 also found five old assertions for the internal owner string; actual owner now includes append purpose. Correct those expected labels while preserving all schema-author assertions. Correct stale intake-only body wording through pm. Required DeepScan remains pending and no merge is authorized until current checks pass."
+  "2026-10-17T23:33:01.735Z","harness:codex","Third-review red control reproduced immediate repair_needed:true again after a refused full scan. The fix uses the offered cooldown alternative: a shared runtime receipt defers automatic page and recency repairs for five seconds after refusal or failure. Explicit rebuild remains available; malformed/future receipts cannot suppress repair; unwritable receipts cannot mask authoritative errors. The paused-repair test now proves fallback during cooldown and automatic index recovery after expiry during a quiet interval. All188 focused tests pass, including all67 schema tests with corrected append-purpose owner expectations. This bounds repair frequency; it does not promise index availability during continuous writes."
+  "2026-10-17T23:53:59.438Z","harness:codex","The full local coverage command exited3:10623 passed,2 failed,3 existing skips; no coverage report was produced, so it is not coverage admission. Failures were MCP open-stdin response timeout and the packed continuation fixture unable to resolve npm/package.json in this Homebrew Node environment. The fixture explicitly requires npm through NODE_PATH; the installed npm module is present outside normal module resolution. Rerun isolated failures with that existing module exposed, preserve deadlines, and require full final-head hosted coverage. No timeout cause or product fix is inferred from the aggregate failure alone."
+  "2026-10-17T23:57:54.023Z","harness:codex","Corrected validation with the installed npm module exposed through NODE_PATH passes230 tests in9 files, including both failures from the full run, all67 schema tests and21 workflow contracts. No deadline changed; the earlier aggregate failure still has no coverage verdict. Final separate100-reader cohorts deliver all5000 observations with zero drift at1710ms untraced and979ms traced against2000ms. The traced cohort starts its quiet interval on authoritative_history and returns derived_index after5500ms with all50 unique facts, proving recovery after the busy interval; untraced stays indexed. API maxima remain separate (SDK4304/1637ms andCLI3015/2634ms untraced/traced). Traced acquisition lower bounds29/4ms and timestamp-to-append386/354ms are user-space attribution, not kernel scheduling or whole-API guarantees."
+  "2026-10-18T00:49:23.779Z","harness:codex","Final verification includes linked82 history/workflow tests and67 schema tests, linked49 SDK/lock tests,467 focused source tests, four typechecks, docs and secret checks. Current generation6 traced/untraced cohorts each deliver5000 unique observations with zero drift at1085/877ms; the traced cohort returns to the index after5500ms quiet with all50 facts. Public Node/Bun mixed-runtime acceptance and the final41 integration tests pass. Static composition passes through all10 SDK cost admissions; qualified local CLI budgets still fail and are preserved with the paired unchanged-main comparison under the related startup owner. Remaining graph, record-integrity and bounded mutation gates pass (348 total,341 killed,7 equivalent). Required observability passes: zero critical/high,2.62% finish-error rate,zero missing codes; explicit read sampling verifies a fresh65.045ms pm-get span at00:33:02UTC. Full final-head hosted static, coverage and analyzer admission remain mandatory before merge."
+notes[1]{created_at,author,text}:
+  "2026-10-17T20:05:44.172Z","harness:codex","Protocol choice: capture rows and size receipts in one synchronous SQLite read transaction, then close it before filesystem validation. Check stream sizes, pending/committed invalidations and projection file generation without acquiring writer locks. Concurrent generation changes and native SQLite BUSY/LOCKED conditions use authoritative fallback directly; only missing or damaged caches request one optional zero-retry rebuild. This keeps correctness authentication while removing both long validation critical sections and repair storms."
+learnings[1]{created_at,author,text}:
+  "2026-10-17T20:05:46.566Z","harness:codex",Optimistic cache validation needs a distinct transient result. Treating every refused snapshot as cache damage can recreate writer contention through optional rebuilds even after ordinary reads release all writer locks.
+files[7]{path,scope}:
+  .github/workflows/ci.yml,project
   src/core/history/event-index.ts,project
+  src/core/lock/lock.ts,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/unit/commands/workspace/schema-command.spec.ts,project
+  tests/unit/core/history/event-index-snapshots.spec.ts,project
   tests/unit/core/history/event-index.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts,project,300,"harness:codex","2026-10-16T13:01:36.615Z",local_mutation,feat/bulk-create-scalar-validation-claim-guidance
-body: "Source: [GitHub issue 1485](https://github.com/unbraind/pm-cli/issues/1485).\n\nThe report links the public pm-web capacity harness and unbraind/pm-web issue 211. It separates three untraced and three traced runs, pre-append delay, index-lock wait lower bound, downstream SDK classification, polling and SSE delivery. The proposed investigation must retain those distinctions and must not infer universal starvation from one perturbed run. This PR records intake only; implementation remains unclaimed."
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-17T19:50:06.849Z"
+      source_kind: local_mutation
+      source_ref: fix/history-index-reader-contention
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/schema-command.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-17T23:33:00.604Z"
+      source_kind: local_mutation
+      source_ref: fix/history-index-reader-contention
+test_runs[4]:
+  - run_id: test-local-mvctlmth-sf8n6x
+    kind: test
+    status: passed
+    started_at: "2026-10-17T19:59:15.026Z"
+    finished_at: "2026-10-17T19:59:34.853Z"
+    recorded_at: "2026-10-17T19:59:34.853Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvcvzds2-huel1t
+    kind: test
+    status: passed
+    started_at: "2026-10-17T21:06:00.449Z"
+    finished_at: "2026-10-17T21:06:15.554Z"
+    recorded_at: "2026-10-17T21:06:15.554Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvd0576t-c05glb
+    kind: test
+    status: passed
+    started_at: "2026-10-17T23:02:22.508Z"
+    finished_at: "2026-10-17T23:02:45.413Z"
+    recorded_at: "2026-10-17T23:02:45.413Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvd2tcfd-sc4frd
+    kind: test
+    status: passed
+    started_at: "2026-10-18T00:16:43.092Z"
+    finished_at: "2026-10-18T00:17:31.177Z"
+    recorded_at: "2026-10-18T00:17:31.177Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/schema-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Latest pm-changelog package owns the generated combined-delivery record.
+  - path: docs/SDK_CONTEXT_COORDINATION.md
+    scope: project
+close_reason: "Complete nonblocking snapshots, bounded automatic repair and authoritative writer progress."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1485
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/integration/ci-workflow-contract.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+body: "Source: [GitHub issue 1485](https://github.com/unbraind/pm-cli/issues/1485).\n\nThe report links the public pm-web capacity harness and unbraind/pm-web issue211. It separates traced and untraced runs, pre-append delay, index-lock wait lower bounds, downstream SDK classification, polling and SSE delivery. Preserve these distinctions and do not infer universal starvation from a perturbed run.\n\nImplementation and validation are recorded in the resolution, immutable close events and subsequent review history. The delivery replaces reader writer-lock sections with validated snapshots, preserves authoritative writer progress and bounds automatic repair retries after busy periods. Current ownership and lifecycle state are authoritative in the status and claim fields; the original intake-only scope no longer describes this delivery."

@@ -1,0 +1,52 @@
+id: pm-58zon0
+title: Qualify real-baseline checks and packed concurrent-create acceptance across runtimes
+description: "The full history-index delivery run found a parallel-load timeout in the real repository absence baseline and a Homebrew npm module-discovery gap. After exposing npm through NODE_PATH, packed Bun continuation acceptance reaches a race-sensitive duplicate-create guard assertion. Preserve the completed typed conflict contract and all existing budgets while diagnosing and repairing the actual harness or runtime cause."
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-17T20:25:56.841Z"
+updated_at: "2026-10-17T21:38:56.544Z"
+closed_at: "2026-10-17T21:35:05.660Z"
+completed_at: "2026-10-17T21:35:05.660Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Keep the existing test timeouts and full-source coverage denominator; Preserve real npm packing and execute the installed public SDK under both Node and Bun; Capture and classify the actual concurrent-create rejection without accepting unrelated errors; Preserve exactly one winning item and both public duplicate-conflict guards; Classify the real-baseline test under isolated load and preserve its original assertions
+goal: project management = context management
+objective: Make the full quality and packed SDK acceptance evidence reproducible on supported Node and Bun runtimes
+value: "Release gates distinguish environment qualification, legal lock contention and genuine SDK contract failures"
+why_now: The connected snapshot and event fallback delivery passed its new regressions but full-suite acceptance cannot yet complete
+parent: pm-u9d0
+risk: low
+confidence: 95
+resolution: "Distinguish legal initial lock contention from a settled duplicate, preserve one winner and both public duplicate guards, and place the unchanged real-baseline absence scan in the existing sequential lane."
+expected_result: "Keep real npm-packed Node/Bun consumers, original deadlines and the full-source coverage denominator while proving completed duplicate semantics."
+actual_result: "20 linked acceptance tests pass on real packed Node and Bun consumers with one winner and both public guards. Full suite passed10614 tests and exact100% coverage before the subsequent native contention review fix; final-head hosted coverage remains required. No timeout, denominator or startup budget was weakened; remaining qualified Node26 startup admission observations are recorded under the existing owner."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bj7rq0,related,"2026-10-17T20:25:56.841Z","harness:codex","cli:create:dep",detected
+  pm-gh1400,related,"2026-10-17T20:25:56.841Z","harness:codex","cli:create:dep",detected
+  pm-gh1485,discovered_from,"2026-10-17T20:25:56.841Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-17T20:25:56.841Z","harness:codex","Duplicate check: complete all-status intake plus fresh packed/continuation/collision and absence/tolerance/baseline searches found the completed public conflict owner pm-gh1400 and open broad runner-qualification owner pm-bj7rq0. Their full live records were read. This task owns the newly observed delivery acceptance failures and preserves the shipped feature contracts; no parent is reopened or falsely closed."
+  "2026-10-17T20:26:29.070Z","harness:codex","Isolation receipt: exposing the existing global npm module through NODE_PATH fixes npm/package.json discovery; the unchanged absence-tolerance baseline passes in the isolated rerun. Real packed Node acceptance passes, while Bun reaches a concurrent-create rejection that the existing fixture does not yet identify. A minimal separate Bun create race returns the expected typed duplicate conflict, so a production defect is not assumed. Preserve all timeouts and diagnose the complete packed fixture before choosing a change."
+  "2026-10-17T20:30:31.993Z","harness:codex","Recovery verified: the packed Bun failure was the documented lock_conflict exit, after a bounded 5025ms wait, while one competing create succeeded. The fixture now proves that lock contention is not an existing-item conflict, waits for both original attempts to settle, and performs one completed duplicate attempt whose error must pass both public guards. It still requires exactly one winner and rereads that winning item unchanged. Real npm tarball consumers pass on Node and Bun; the unchanged absence baseline passes in the sequential lane. All61 focused tests pass with original timeouts. NODE_PATH exposes the already-installed npm module for this host only; no dependency or persistent configuration was changed."
+  "2026-10-17T21:38:56.544Z","harness:codex","Combined SDK consumer qualification delivery: https://github.com/unbraind/pm-cli/pull/1493. This harness work was necessary to retain real packed Node/Bun acceptance and the full-source quality run for the related event primitives. Broader qualified Node26 startup-admission failures remain with the existing performance owner; no budget or deadline was relaxed."
+files[2]{path,scope}:
+  tests/fixtures/read-output/packed-continuation-consumer.mjs,project
+  vitest.config.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/scripts/release/absence-tolerance-gate.spec.ts,project,300,"harness:codex","2026-10-17T20:30:31.032Z",local_mutation,fix/history-index-reader-contention
+test_runs[1]:
+  - run_id: test-local-mvcw0ral-ixrwda
+    kind: test
+    status: passed
+    started_at: "2026-10-17T21:06:35.762Z"
+    finished_at: "2026-10-17T21:07:19.725Z"
+    recorded_at: "2026-10-17T21:07:19.725Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/scripts/release/absence-tolerance-gate.spec.ts,schema,schema,source,local_source_ref
+close_reason: Qualified packed concurrent-create acceptance and isolated the real-baseline release scan without relaxing assertions.
+body: ""

@@ -1,6 +1,8 @@
 # SDK context coordination primitives
 
-Trackers: [pm-e200](../.agents/pm/features/pm-e200.toon), [pm-ez1dfg](../.agents/pm/tasks/pm-ez1dfg.toon), [pm-4ri6](../.agents/pm/features/pm-4ri6.toon), and [pm-hcrmye](../.agents/pm/issues/pm-hcrmye.toon).
+Trackers: [pm-e200](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e200.toon), [pm-ez1dfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ez1dfg.toon), [pm-4ri6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4ri6.toon), [pm-hcrmye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hcrmye.toon), [pm-gh1485](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1485.toon), and [pm-xj80p9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xj80p9.toon).
+
+Tracker records live in the repository and are excluded from the npm package.
 
 `pm` treats project management as context management. These primitives let an
 agent learn what changed, avoid creating redundant work, and keep that work
@@ -38,10 +40,61 @@ idempotently or deduplicate replays. `--cursor-mode row` preserves the previous
 shape with one `cursor` per event and no trailer for consumers that checkpoint
 every row. Already issued version-1 cursors remain accepted by `--since`.
 
-Node runtimes use the rebuildable SQLite event projection. Runtimes such as Bun
-that do not expose `node:sqlite` transparently scan the authoritative history
+Version-1 cursor ordering uses recorded timestamps, stream ids, and offsets.
+A fact committed later with an older timestamp falls before an advanced cursor.
+Clock-independent ordering and late-commit recovery remain tracked by
+[pm-10l1vm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-10l1vm.toon). Hosts needing complete concurrent
+observation can retain a fixed lower boundary and deduplicate snapshots by
+`item_id` and `version` while work is being committed.
+
+Runtimes exposing `node:sqlite` use the rebuildable SQLite event projection.
+Runtimes without it transparently scan the authoritative history
 streams with the same ordering, filters, pagination, and cursor contract; pages
 identify that path with `source: "authoritative_history"`.
+Writers without SQLite use the same pending and committed invalidation protocol,
+so a later Node writer cannot certify a cache that omitted their facts.
+Incremental writes also verify the previous size receipt before advancing it,
+so merged history cannot be hidden by a later append. Upgraded runtimes rebuild
+legacy projections that could contain omitted facts with apparently current
+receipts; authoritative history does not require a format migration.
+
+Index readers take a synchronous SQLite read transaction containing both event
+rows and their stream-size receipts, then close the database before checking
+authoritative files. They acquire neither history-index writer lock. File
+identity and write timestamps, authoritative stream sizes, and pending or
+committed invalidations must still match before a snapshot is returned. A
+concurrent change refuses the optional snapshot; it cannot certify older rows
+using a newer size receipt.
+
+Incremental projection writes also use a zero SQLite busy timeout. Native
+reader or writer contention falls back to the authoritative append and
+invalidation protocol instead of spending a separate SQLite wait budget.
+An unexpired, token-owned append lease marks ordinary incremental work as
+active until its commit or invalidation completes. Native contention retains
+the cache file and a committed contention marker; a zero-wait native probe
+distinguishes an ongoing contender from settled damage before requesting repair.
+
+Authoritative writers fail fast when an active owner holds the projection writer
+lock, including when a full repair owns it. They publish an invalidation instead.
+Stale-owner recovery follows the built-in lock policy. A repair
+refuses publication if those markers changed during its scan. Full projection
+construction yields between batches, and marker cleanup occurs outside the
+short invalidation publication lock.
+After a refused full publication or failed repair, a best effort per-tracker runtime receipt
+defers automatic repair for five seconds. Busy periods therefore do not restart
+a complete SQLite build on every read. Pages and recency reads continue using
+authoritative history; after the cooldown, a later read can repair during a
+quiet interval. This backoff bounds repair frequency, not index availability
+during continuous writes.
+
+Transient generation changes and SQLite contention use authoritative fallback
+directly. Missing, incompatible, or damaged projections receive one optional
+repair attempt without waiting for either projection lock. Repair failure or
+invalidation after rebuilding
+falls back to authoritative JSONL with the same filters and cursor format.
+Pages may change `source` between calls. A fallback still reports malformed or
+inaccessible authoritative history as an error. A successful repair may scan
+the workspace; this protocol bounds lock waiting, not total execution time.
 
 `--full` also includes the complete authoritative history entry.
 `--type`, `--author`, and `--item` accept repeatable or comma-separated values.
@@ -109,10 +162,7 @@ Package authors can query the same scorer used by create/copy and the bundled
 governance audit:
 
 ```ts
-import {
-  findSimilarItems,
-  scoreItemSimilarity,
-} from "@unbrained/pm-cli/sdk";
+import { findSimilarItems, scoreItemSimilarity } from "@unbrained/pm-cli/sdk";
 
 const score = scoreItemSimilarity("Fix OAuth refresh", "Fix oauth refresh");
 const matches = await findSimilarItems(
@@ -154,6 +204,20 @@ The documented config spelling is kebab-case. Underscore spellings remain
 accepted aliases for existing automation.
 
 ## Scale contract
+
+The mixed-reader acceptance used 100 fixed-boundary snapshot observers,
+five SDK writer lanes, and five CLI writer lanes, with five updates per lane.
+Both separate traced and untraced cohorts passed 5,000 unique observations,
+duplicate-free pages, strict history integrity, and a 2,000 ms first-observation
+ceiling. These are bounded host measurements recorded in
+[pm-gh1485](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1485.toon).
+
+The native regression suspends filesystem validation and requires an
+authoritative writer to finish before that reader resumes. Run it with:
+
+```bash
+node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts
+```
 
 Event catch-up reads from a persistent ordered projection and follows only new
 rows. Similarity governance is zero-cost when off and index-bounded when

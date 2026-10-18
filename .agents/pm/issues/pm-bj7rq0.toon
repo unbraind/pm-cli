@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-17T18:41:46.279Z"
+updated_at: "2026-10-18T00:46:24.914Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -19,7 +19,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[35]:
+comments[40]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -126,6 +126,21 @@ comments[35]:
   - created_at: "2026-10-17T18:41:46.279Z"
     author: "harness:codex"
     text: "Revised PR #1492 local static run passes every stage through SDK public-surface and ten entrypoint import-cost checks, then the unchanged qualified transport floor refuses claim: best 628ms versus 415ms; get/next/create pass this run. Node26 Linux control medians49/71ms remain within106ms runner qualification. Earlier source-head hosted static passed; final revised-head hosted static remains mandatory. No budget or runner qualification was weakened; causality is unproven. Metadata-only head098942 also has a CodSpeed cursor-decode comparison warning across different runtime environments; cursor source and benchmark were unchanged, so retain that comparison as qualified evidence rather than a demonstrated source regression."
+  - created_at: "2026-10-17T21:24:53.429Z"
+    author: "harness:codex"
+    text: "Fresh read-only validation observation: the qualified Node26.9.0 SDK import-cost gate rejects ./sdk/graph at median232ms against172ms; before/after control medians52ms/49ms remain within106ms. This is a product-admission failure, not an unqualified-runner result. No budget, denominator, or control policy was changed, and no startup optimization is claimed. The reviewed hosted Node24 admission remains required on the final head. Keep this observation separate from prior transport-floor reports."
+  - created_at: "2026-10-17T21:34:00.014Z"
+    author: "harness:codex"
+    text: "Follow-up qualification evidence, without changing code or thresholds: one standalone full-entrypoint admission still rejects qualified Node26 (graph181ms>172ms and several wider entrypoints); a subsequent paired five-sample graph comparison built the unchanged main base9baac800 in an external tracker-isolated archive and alternated baseline/candidate imports. Base median161ms, candidate156ms, bare controls65ms/69ms. This does not reproduce a graph import regression in this patch and does not erase either failed admission cohort. CLI transport-floor admission also remains failed under its existing budgets; retain the broader qualification/startup work as open."
+  - created_at: "2026-10-17T23:02:32.103Z"
+    author: "harness:codex"
+    text: "The later complete pnpm quality:static run on the history revision passed all gates, including the unchanged SDK-entrypoint and CLI-transport-floor admissions. Preserve the earlier qualified Node26 failures and paired-main comparison as historical observations; this passing cohort does not establish that every host or runtime distribution meets its budgets. No qualification rule or threshold was relaxed."
+  - created_at: "2026-10-18T00:41:11.225Z"
+    author: "harness:codex"
+    text: "Final generation6 composition passes every static prefix through public SDK parity and all10 SDK import-cost admissions, then the qualified Node26 CLI floor rejects get364>362ms, next446>440ms andcreate401>398ms. Adjacent bare controls48/49ms are within106ms, so this is a valid product-admission failure, not unqualified runner data. No threshold was changed. Compare unchanged live main on the same host before claiming a patch regression or attributing the result to host load; final-head hosted static admission remains mandatory."
+  - created_at: "2026-10-18T00:46:24.913Z"
+    author: "harness:codex"
+    text: "Paired live-main-source comparison: baseline9baac800230539ee2eacc979fd00daaa68d53ec2 and candidate both fail the unchanged qualified Node26 CLI admission. Baseline minima get360,next439,create411ms; candidate get364,next452,create390ms. Baseline rejects create, candidate rejects get/next; controls remain qualified at46/49ms under106ms. This proves admission is not uniformly green on unchanged main, but does not isolate the cause of individual differences or establish absence of a patch regression. Baseline used an external source archive without tracker data and shared installed dependencies; all owned baseline storage was removed only after both measurements finished. Do not relabel these failures as unqualified or relax budgets. Require the final source head to pass complete hosted static admission."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

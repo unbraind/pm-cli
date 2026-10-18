@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- Fail the required coverage aggregate when any shard fails or is skipped ([pm-0p4aal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0p4aal.toon))
+- Invalidate shared history projections when writers lack SQLite ([pm-f7shxf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f7shxf.toon))
+- GH-1485: Bound history-index reader contention before authoritative appends ([pm-gh1485](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1485.toon))
+- Keep mutation-event subscriptions available when optional index rebuilds race or contend ([pm-xj80p9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xj80p9.toon))
 - GH-1487: Respect nested Git repository boundaries during tracker discovery ([pm-gh1487](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1487.toon))
 - GH-1484: Infer native Node test telemetry and bound intentional test flush lifetime ([pm-gh1484](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1484.toon))
 - GH-1486: Keep passing health diagnostics concise by default ([pm-gh1486](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1486.toon))
@@ -13,6 +17,8 @@
 
 ### Other
 
+- Refresh seven-day-eligible Greptile 3.6.2 review tooling ([pm-8jhc84](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8jhc84.toon))
+- Qualify real-baseline checks and packed concurrent-create acceptance across runtimes ([pm-58zon0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-58zon0.toon))
 - Refresh eligible October 17 dependencies with SDK codec compatibility proof ([pm-ul0ow4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ul0ow4.toon))
 
 ## 2026.10.17 - 2026-10-17
