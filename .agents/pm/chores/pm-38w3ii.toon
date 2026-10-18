@@ -6,31 +6,33 @@ status: closed
 priority: 3
 tags: []
 created_at: "2026-10-12T14:28:16.814Z"
-updated_at: "2026-10-18T04:35:36.800Z"
-closed_at: "2026-10-18T04:35:35.979Z"
-completed_at: "2026-10-18T04:35:35.979Z"
+updated_at: "2026-10-18T05:27:11.036Z"
+closed_at: "2026-10-18T05:27:10.188Z"
+completed_at: "2026-10-18T05:27:10.188Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Recheck exact official tag/commit and seven-day eligibility; update only the immutable scanner pin and relevant workflow contract; native actionlint, permissions, secret scanning and hosted security checks pass; record source and checks through PM before close."
 parent: pm-u9d0
 risk: low
 confidence: high
-resolution: Adopt the official immutable TruffleHog3.98.0 commit after the unchanged seven-day release-age boundary.
-expected_result: "Workflow secret scanning uses the eligible official immutable release while retaining verification policy, permissions and hosted scanning."
-actual_result: "Official tag/commit and publication age verified; workflow contract linked tests pass at original deadlines after final review changes. Native actionlint, TruffleHog, Trivy, CodeQL and permissions checks pass; live Dependabot/code/secret scanning alert inventories are zero."
+resolution: Pin the eligible TruffleHog3.98.0 action commit and its explicit3.98.0 scanner input; guard both values on every parsed workflow step and document composite-action selectors.
+expected_result: "The workflow executes the intended release instead of the composite action default latest, with unchanged verification, permissions and release-age policy."
+actual_result: "The contract failed before the input fix and the full linked suite passes after it. The exact official container reports3.98.0 with pull digest0f32a1d73e552eaf528a4ac0800a26d32169d159bcd77303c833eb9dcdcb848b. Native actionlint, permissions and cooldown checks pass. The final reviewed head must pass hosted secret scanning and all required checks before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-98f0ec,related,"2026-10-12T14:28:16.814Z","harness:codex","cli:create:dep",detected
   pm-rnpmtp,related,"2026-10-18T04:11:12.043Z","harness:codex",shared-reviewed-security-tooling-delivery,detected
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-12T14:28:16.814Z","harness:codex","Duplicate check: complete all-status census plus fresh exact-version search and open/in_progress inventories found the eligible-only refresh record but no open scanner adoption owner. Preserve its eligible updates as completed work and isolate this below-cooldown version as a linked open follow-up. This item is not claimed or started."
   "2026-10-18T02:53:17.570Z","harness:codex","Start combined eligible-tooling delivery with pm-rnpmtp. Official tag v3.98.0 resolves to immutable commit 0186870afd2c4a90def791d80260923ba583d076; official release publication 2026-10-05T17:39:02Z exceeds the unchanged seven-day adoption policy. Scope is scanner pin and its existing workflow contract, with native security validation."
   "2026-10-18T03:18:33.609Z","harness:codex","The linked workflow invocation at 03:09:49Z timed out at the unchanged 300-second ceiling while waiting behind the full coverage runner build lease. No test assertion result was produced by that invocation. The independent focused workflow run already passed all 21 tests; rerun the linked command after the exclusive validation lease is free. Retain the timeout receipt as a scheduling failure and do not increase the test ceiling."
+  "2026-10-18T05:23:22.842Z","harness:codex","Final full CodeRabbit review4305849756 disproves the assumption behind the earlier closure: the pinned upstream composite action defaults inputs.version to latest and executes IMAGE:VERSION. Upstream action.yml at the exact pinned commit was read live and confirms it. Reopen this unmerged canonical scope, claim only this item, bind scanner version3.98.0 explicitly, and retain an actual failing workflow-contract run before the fix. Earlier closure remains historical evidence; it is not proof that the executable version was pinned."
+  "2026-10-18T05:27:08.125Z","harness:codex","Executed negative control: the new parsed workflow contract failed against the prior unversioned input with expected undefined to be3.98.0. After setting with.version explicitly, the full linked workflow suite passes at its original deadline. The contract iterates every actual TruffleHog step and binds both its action SHA and scanner input. Independently executed the official ghcr.io/trufflesecurity/trufflehog:3.98.0 container: output trufflehog3.98.0; pull digest sha256:0f32a1d73e552eaf528a4ac0800a26d32169d159bcd77303c833eb9dcdcb848b. Native actionlint, read-only permissions and unchanged cooldown checks pass. New hosted scanner execution remains required before merge."
 files[2]{path,scope}:
   .github/workflows/security.yml,project
   tests/integration/ci-workflow-contract.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-18T02:57:11.401Z",local_mutation,chore/renew-pnpm-security-tooling
-test_runs[3]:
+test_runs[5]:
   - run_id: test-local-mvd95d9t-kfquoe
     kind: test
     status: failed
@@ -64,7 +66,30 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+  - run_id: test-local-mvddsj56-etgdua
+    kind: test
+    status: passed
+    started_at: "2026-10-18T05:24:36.055Z"
+    finished_at: "2026-10-18T05:24:49.002Z"
+    recorded_at: "2026-10-18T05:24:49.002Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvddtolf-znvc23
+    kind: test
+    status: passed
+    started_at: "2026-10-18T05:25:28.839Z"
+    finished_at: "2026-10-18T05:25:42.722Z"
+    recorded_at: "2026-10-18T05:25:42.722Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
   CHANGELOG.md,project
-close_reason: Implemented and verified for reviewed delivery in PR1495.
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Bind the executed scanner version as well as the action ref for reviewed delivery in PR1495.
 body: "Proposal: https://github.com/unbraind/pm-cli/pull/1449. Official release: https://github.com/trufflesecurity/trufflehog/releases/tag/v3.98.0. Proposed immutable action commit: 0186870afd2c4a90def791d80260923ba583d076. Current 3.97.9 has no reported vulnerability and verified scanning remains enabled. No ignore rule or cooldown exception is introduced."

@@ -18,8 +18,8 @@
 
 ### Other
 
-- Renew pinned pnpm Windows shell-launcher compatibility after dependency cooldown ([pm-rnpmtp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-rnpmtp.toon))
 - Adopt immutable TruffleHog 3.98.0 after the release-age boundary ([pm-38w3ii](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-38w3ii.toon))
+- Renew pinned pnpm Windows shell-launcher compatibility after dependency cooldown ([pm-rnpmtp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-rnpmtp.toon))
 - Refresh compatible Sentry 10.76.2 observability patch ([pm-wejmmy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wejmmy.toon))
 - Refresh seven-day-eligible Greptile 3.6.2 review tooling ([pm-8jhc84](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8jhc84.toon))
 - Qualify real-baseline checks and packed concurrent-create acceptance across runtimes ([pm-58zon0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-58zon0.toon))

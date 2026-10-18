@@ -20,6 +20,13 @@ nightly quality and release paths enforce it. The registry-owned local
 preflight also requires the static gate and permits no skip. Trivy separately
 includes development dependencies in its required repository scan.
 
+Composite action refs and their executed tool versions need separate review.
+[pm-38w3ii](../.agents/pm/chores/pm-38w3ii.toon) pins TruffleHog's action
+commit and explicitly selects scanner version `3.98.0`; the action otherwise
+defaults to the `latest` image. The workflow contract checks both values on
+every TruffleHog step. Recheck the action's executable selectors when renewing
+its commit pin.
+
 ## Indexed source-map offsets
 
 [pm-dba47](../.agents/pm/issues/pm-dba47.toon) tracks Dependabot alert 47 and

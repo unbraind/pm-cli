@@ -1505,13 +1505,18 @@ describe("GitHub workflow contract", () => {
       parse(securityWorkflow) as {
         jobs: Record<
           string,
-          { steps: Array<{ name?: string; env?: Record<string, unknown> }> }
+          { steps: Array<{ name?: string; uses?: string; env?: Record<string, unknown>; with?: Record<string, unknown> }> }
         >;
       }
     ).jobs;
-    const trivyStep = Object.values(securityJobs)
-      .flatMap(({ steps }) => steps)
-      .find(({ name }) => name === "Trivy repository scan");
+    const securitySteps = Object.values(securityJobs).flatMap(({ steps }) => steps);
+    const scanners = securitySteps.filter(({ uses }) => uses?.startsWith("trufflesecurity/trufflehog@"));
+    expect(scanners.length).toBeGreaterThan(0);
+    for (const scanner of scanners) {
+      expect(scanner.uses).toBe("trufflesecurity/trufflehog@0186870afd2c4a90def791d80260923ba583d076");
+      expect(scanner.with?.version).toBe("3.98.0");
+    }
+    const trivyStep = securitySteps.find(({ name }) => name === "Trivy repository scan");
     expect(trivyStep?.env).toEqual({ TRIVY_INCLUDE_DEV_DEPS: "true" });
     expect(truffleHogExclusions).toEqual([
       "tests/unit/health-command\\.spec\\.ts",

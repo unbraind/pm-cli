@@ -80,6 +80,7 @@ jobs:
       - name: TruffleHog scan
         uses: trufflesecurity/trufflehog@0186870afd2c4a90def791d80260923ba583d076 # v3.98.0
         with:
+          version: "3.98.0"
           extra_args: --results=verified --fail-on-scan-errors --exclude-paths=.trufflehog-exclude-paths.txt
 
   shellcheck:
