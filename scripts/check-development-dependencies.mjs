@@ -24,6 +24,7 @@ const SHIM_TARGETS = new Map([
 ]);
 const SHIM_FORMATS = new Map([["", "sh"], [".cmd", "cmd"], [".ps1", "ps1"]]);
 const REQUIRED_SHIM_FORMATS = new Map([[":", [""]], [";", [...SHIM_FORMATS.keys()]]]);
+const SHELL_TEMPLATES = new Map([[":", "sh"], [";", "sh-win32"]]);
 
 /** Compare each known shim's complete program with a reviewed template and audited dependency paths. */
 async function verifyGeneratedShim(coreRoot, file) {
@@ -39,7 +40,8 @@ async function verifyGeneratedShim(coreRoot, file) {
   const relative = path.relative(path.join(coreRoot, "node_modules/.bin"), target);
   const nodePaths = [path.join(dependencyRoot, "node_modules"), path.dirname(dependencyRoot), path.join(path.dirname(path.dirname(path.dirname(dependencyRoot))), "node_modules")];
   assert.ok([coreRoot, dependencyRoot, target, relative, ...nodePaths].every((value) => !/[$`"%!\r\n]/u.test(value)), "CodSpeed shim paths contain shell interpolation syntax");
-  const template = await readFile(new URL(`../config/codspeed-shims/${format}.txt`, import.meta.url), "utf8");
+  const templateFormat = format === "sh" ? SHELL_TEMPLATES.get(path.delimiter) : format;
+  const template = await readFile(new URL(`../config/codspeed-shims/${templateFormat}.txt`, import.meta.url), "utf8");
   const content = await readFile(path.join(coreRoot, file), "utf8");
   assert.ok(["/mnt", "/proc/cygdrive"].some((mount) => {
     const parameters = {

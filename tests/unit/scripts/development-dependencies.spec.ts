@@ -1,3 +1,4 @@
+import { execFileSync, spawnSync } from "node:child_process";
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, unlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -12,6 +13,28 @@ const policy = JSON.parse(await readFile("config/dependency-bundle-integrity.jso
   version: string;
   sha256: Record<string, string>;
 };
+
+/** Run the native Windows shells rather than substituting POSIX path semantics. */
+function launcherShells(format: string): string[] {
+  if (format === "cmd") return [process.env.ComSpec!];
+  if (format === "ps1") return ["pwsh"];
+  if (process.platform !== "win32") return ["/bin/sh"];
+  return [path.join(process.env.ProgramFiles!, "Git", "bin", "bash.exe"), ...process.env.PM_TEST_CYGWIN_BASH ? [process.env.PM_TEST_CYGWIN_BASH] : []];
+}
+
+/** CMD expands caller expressions once; the generated program must preserve its own percent paths. */
+function launcherInvocation(format: string, file: string, args: string[]): string[] {
+  if (format === "cmd") return ["/d", "/s", "/c", 'probe.cmd "space value" "%PM_LAUNCHER_SENTINEL%" quoted-value'];
+  if (format === "ps1") return ["-NoProfile", "-File", file, ...args];
+  return [file, ...args];
+}
+
+/** Render only installation-dependent literals in the reviewed complete launcher program. */
+async function renderLauncher(format: string, parameters: Record<string, string>): Promise<string> {
+  let program = await readFile(`config/codspeed-shims/${format}.txt`, "utf8");
+  for (const [key, value] of Object.entries(parameters)) program = program.replaceAll(key, format === "cmd" ? value.replaceAll("%", "%%") : value);
+  return format === "cmd" ? program.replaceAll("\n", "\r\n") : program;
+}
 
 describe("development dependency bundle admission", () => {
   it("admits the actual installed patch and its preserved native payload", async () => {
@@ -80,11 +103,55 @@ describe("development dependency bundle admission", () => {
     }
   });
 
-  it("refuses installation roots containing shell interpolation syntax", async () => {
-    const root = await mkdtemp(path.join(path.dirname(coreRoot), "pm-$-"));
+  it.each(["$", "%"])("refuses installation roots containing %s interpolation syntax", async (marker) => {
+    const root = await mkdtemp(path.join(path.dirname(coreRoot), `pm-${marker}-`));
     try {
       await cp(coreRoot, root, { recursive: true });
       await expect(verifyDevelopmentBundles(root, policy)).rejects.toThrow("CodSpeed shim paths contain shell interpolation syntax");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each(process.platform === "win32" ? ["sh-win32", "cmd", "ps1"] : ["sh"])("runs %s with external dependencies and literal arguments", async (format) => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm launcher %PM_LAUNCHER_SENTINEL% quoted-"));
+    try {
+      const bin = path.join(root, "bin");
+      const dependencies = path.join(root, "dependencies");
+      const sentinel = path.join(dependencies, "pm-launcher-sentinel");
+      await mkdir(bin);
+      await mkdir(sentinel, { recursive: true });
+      await writeFile(path.join(sentinel, "index.js"), 'module.exports = "resolved through NODE_PATH";');
+      const target = path.join(root, "probe.cjs");
+      await writeFile(target, 'console.log(JSON.stringify({value:require("pm-launcher-sentinel"),args:process.argv.slice(2)}));');
+      const parameters = {
+        "@TARGET_ABSOLUTE_POSIX@": target.replaceAll("\\", "/"),
+        "@TARGET_RELATIVE_POSIX@": "../probe.cjs",
+        "@TARGET_RELATIVE_WINDOWS@": "..\\probe.cjs",
+        "@NODE_PATH_WINDOWS@": dependencies.replaceAll("/", "\\"),
+        "@NODE_PATH_POSIX@": dependencies.replaceAll("\\", "/").replace(/^([A-Za-z]):/u, (_, drive: string) => `/mnt/${drive.toLowerCase()}`),
+      };
+      const args = ["space value", "%PM_LAUNCHER_SENTINEL%", "quoted\"value"];
+      const env = { ...process.env, NODE_PATH: "", PM_LAUNCHER_SENTINEL: "must not expand" };
+        const program = await renderLauncher(format, parameters);
+        const file = path.join(bin, `probe.${format === "sh-win32" ? "sh" : format}`);
+        await writeFile(file, program);
+        for (const shell of launcherShells(format)) {
+          const invocation = launcherInvocation(format, file, args);
+          const output = execFileSync(shell, invocation, { cwd: bin, env, encoding: "utf8", timeout: 20_000, windowsVerbatimArguments: format === "cmd" });
+          expect(JSON.parse(output)).toEqual({ value: "resolved through NODE_PATH", args: format === "cmd" ? ["space value", "must not expand", "quoted-value"] : args });
+          if (format === "sh-win32" || format === "cmd") {
+            const broken = format === "cmd" ? program.replaceAll("%%", "%") : program.replace(
+              `new_node_path='${parameters["@NODE_PATH_WINDOWS@"]}'`,
+              `new_node_path='${parameters["@NODE_PATH_POSIX@"]}'`,
+            );
+            await writeFile(file, broken);
+            const result = spawnSync(shell, invocation, { cwd: bin, env, encoding: "utf8", timeout: 20_000, windowsVerbatimArguments: format === "cmd" });
+            expect(result.status).not.toBe(0);
+            expect(result.stderr).toContain("Cannot find module 'pm-launcher-sentinel'");
+            await writeFile(file, program);
+          }
+        }
     } finally {
       await rm(root, { recursive: true, force: true });
     }

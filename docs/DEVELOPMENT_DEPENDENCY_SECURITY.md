@@ -20,6 +20,13 @@ nightly quality and release paths enforce it. The registry-owned local
 preflight also requires the static gate and permits no skip. Trivy separately
 includes development dependencies in its required repository scan.
 
+Composite action refs and their executed tool versions need separate review.
+[pm-38w3ii](../.agents/pm/chores/pm-38w3ii.toon) pins TruffleHog's action
+commit and explicitly selects scanner version `3.98.0`; the action otherwise
+defaults to the `latest` image. The workflow contract checks both values on
+every TruffleHog step. Recheck the action's executable selectors when renewing
+its commit pin.
+
 ## Indexed source-map offsets
 
 [pm-dba47](../.agents/pm/issues/pm-dba47.toon) tracks Dependabot alert 47 and
@@ -109,9 +116,21 @@ program matches the reviewed [shim templates](../config/codspeed-shims/), with
 targets and module paths derived from the audited installed dependency. Arbitrary
 names, nested payloads, links, altered programs and forged target markers fail;
 these shims are outside the twelve package-owned hashes but are independently
-validated. The shell template records pnpm 11.10.0's installed output; the CMD
-and PowerShell templates come from `@zkochan/cmd-shim` 9.0.7. Template changes
-require renewed real installation evidence on both POSIX and native Windows.
+validated. [pm-rnpmtp](../.agents/pm/chores/pm-rnpmtp.toon) renews the installer
+to pnpm 11.28.5 and its bundled `bins/cmd-shim` generator. Separate complete shell
+templates describe POSIX and Windows installations; only the host's template is
+accepted. Windows shells pass Windows `NODE_PATH` values to native Node, and
+Cygwin targets use Windows paths. CMD and PowerShell programs retain their
+complete comparisons. Template changes require renewed real installation and
+dependency-resolution evidence on POSIX, Git Bash and Cygwin, plus CMD and
+PowerShell. The Windows script cohort downloads the archived Cygwin setup 2.937
+installer and verifies its pinned SHA-512 before execution. To renew it, select
+an eligible version from the official [setup archive](https://cygwin.com/setup/),
+verify the executable against the archive's `sha512.sum`, and update the
+versioned URL, pinned digest and workflow contract together. Preserve setup's
+default package-signature verification and repeat native launcher acceptance.
+Literal percent paths are exercised in disposable launcher fixtures;
+the audited CodSpeed installation still refuses shell interpolation paths.
 The CMD suffix follows the installed `PATHEXT` spelling, including `.CMD`;
 format lookup folds its case while validating the complete program. All three
 shell launchers are required, together with the CMD and PowerShell sets on

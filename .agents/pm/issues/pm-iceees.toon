@@ -1,0 +1,85 @@
+id: pm-iceees
+title: Retain tested optional-peer closures in the published runtime bundle
+description: PR1495 installed Node22/24 consumers on Linux/macOS/Windows and the npm smoke all refuse the packed Sentry10.76.2 closure because has-flag is absent. pnpm11.28.5 records supports-color as an optional peer of debug; the producer stages every locked package but npm packlist intentionally skips peer edges and omits that peer subtree. Qualify and publish the complete tested closure with source manifests preserved. This is a newly exposed packaging boundary and not a claim of historical user-facing loss.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-18T03:32:31.483Z"
+updated_at: "2026-10-18T04:35:31.400Z"
+closed_at: "2026-10-18T04:35:30.617Z"
+completed_at: "2026-10-18T04:35:30.617Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: A real npm archive fixture reproduces the missing optional-peer subtree before the fix; publication projects exact tested peer bindings without source mutation; installed runtime and Node/Bun/npx/bunx smokes and unchanged artifact/security/coverage gates pass.
+parent: pm-998juj
+risk: medium
+confidence: high
+resolution: Project missing tested peer bindings into staged runtime manifests and write each changed manifest once; preserve installed/source bytes and strict closure verification.
+expected_result: Every package selected by the tested runtime ledger survives the real npm archive and installed Node/Bun consumers; missing peer leaves fail closed.
+actual_result: "Real tarball fixtures reproduce the original omission and now resolve peer/leaf chains with source manifests preserved; deliberate leaf removal refuses. Linked archive/runtime-lock checks pass after review refactor. Six hosted Node22.18/24 Linux/macOS/Windows first-run jobs, npm/npx/Bun/bunx smokes and exact100/100/100/100 coverage passed in CI39096420681; final review/closure commit remains subject to unchanged required checks."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1417,related,"2026-10-18T03:35:03.557Z","harness:codex","cli:update:dep",detected
+  pm-wejmmy,related,"2026-10-18T03:35:03.557Z","harness:codex","cli:update:dep",detected
+comments[9]{created_at,author,text}:
+  "2026-10-18T03:32:31.483Z","harness:codex","Duplicate check: strict full all-status census and fresh optional-peer searches identify the open publication-footprint parent pm-998juj but no bounded optional-peer archive-completeness owner. Full live parent metadata/history and completed foundation pm-gh1417 metadata/history were read. Keep the parent open for its separate real captured-error symbolication criterion and preserve completed foundation work. This child owns the concrete first-head CI failure."
+  "2026-10-18T03:35:09.188Z","harness:codex",Independent isolated real-npm reproduction confirms both the selected optional peer and its leaf are absent from the original archive although all three packages are physically staged. npm-packlist intentionally skips peer edges. A temporary candidate that materializes the exact ledger peer bindings as ordinary/optional edges in staged package manifests retains the complete peer subtree; checkout source remains byte-identical during both controls. Keep the published root dependency declaration and all source/installed package manifests unchanged. The current installed verification is correct to refuse the original incomplete archive; do not weaken or skip it.
+  "2026-10-18T03:43:01.851Z","harness:codex",The new real-tarball regression passes for the complete selected peer and leaf plus an installed require() returning17. The existing npm12 receipt test then caught an overbroad staged-manifest formatting write for packages with no peer binding. Preserve that byte-identity assertion unchanged; restrict projection to selected peer names that lack an ordinary/optional runtime declaration and write only manifests that need a binding. Extend the same peer fixture to retain an existing dependency range with a redundant peer declaration. This keeps the bounded fix from rewriting unrelated runtime metadata.
+  "2026-10-18T03:45:13.973Z","harness:codex","All73 focused tests pass after limiting the projection to missing declared runtime edges. The real extracted archive resolves first->peer->leaf and returns17; removing only the leaf makes installed verification refuse. Existing npm12 exact runtime-manifest byte retention passes unchanged, and the redundant peer fixture retains its ordinary dependency range. An independent original-producer control and candidate archive already proved the omitted peer/leaf mechanism without mutating checkout source. Canonical packed npm/npx and Bun/bunx consumer acceptance is the next boundary; no artifact ceiling, dependency declaration, file inventory or verification requirement was relaxed."
+  "2026-10-18T03:48:56.609Z","harness:codex","Real packed smoke still refuses the selected leaf after the reduced fixture passes. The cause is now reproduced precisely: debug4.4.3 physical package declares only peerDependenciesMeta.supports-color, while the authoritative tested pnpm lock additionally declares peerDependencies.supports-color and binds supports-color7.2.0 as an optional edge. Infer selected peer bindings from the tested ledger rather than the incomplete upstream tarball declaration. Add the missing-declaration variant to the same real archive fixture and preserve its original peer metadata, ordinary dependency range and byte-preservation checks. This is additional boundary evidence; the candidate remains unqualified until actual installed smokes pass."
+  "2026-10-18T03:49:45.781Z","harness:codex","The tracked registry-only archive case fails before the authority correction with ENOENT for the selected peer package; the case with a complete tarball declaration passes. Switch only peer-name classification to expected.peerDependencies from the tested ledger. Preserve all source peer declarations, existing normal ranges, selected optionality and byte identity for untouched staged manifests. The same tracked command is rerun without changing assertions or verifier requirements. This closes the reduced-fixture gap exposed by the actual installed smoke."
+  "2026-10-18T03:53:54.391Z","harness:codex","Canonical packed publication and installed npm/npx plus Bun/bunx smoke now pass all9 package workflows on the complete physical closure. The corrected tracked archive matrix passes both declaration variants with the original assertions: complete leaf resolution, missing-leaf refusal, unchanged upstream peer metadata, preserved ordinary ranges and source/untouched-runtime bytes. Remaining delivery admission is final-head full coverage/static/analyzers and native hosted consumers; maintain ownership only for that active review/fix loop."
+  "2026-10-18T03:56:55.502Z","harness:codex","All final linked scopes now pass at their original deadlines: peer/runtime-lock checks; scanner workflow contracts; pnpm bundle/audit/recovery/workflow checks; Sentry transport/tracing and package-manifest qualification. The previous 300-second queued invocation remains historical evidence and its identical linked workflow rerun is now green. Full npm/npx and Bun/bunx9-package smoke plus source/package/example typechecks and native actionlint pass. Push the immutable source revision for complete hosted native, exact-coverage, static and reviewer admission before terminal closeout."
+  "2026-10-18T04:33:07.707Z","harness:codex","Accepted CodeRabbit inline4305703996: collect dependency and optional-dependency peer bindings before a single conditional staged-manifest write. Preserve unchanged manifests byte-for-byte, all source manifests and existing dependency ranges. This removes duplicate serialization without changing the locked closure or verifier contract; rerun the real archive/negative-control suite before closure."
+files[2]{path,scope}:
+  scripts/release/package-distribution.mjs,project
+  tests/unit/scripts/package-distribution.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/runtime-lock.spec.ts,project,300,"harness:codex","2026-10-18T03:35:02.221Z",local_mutation,chore/renew-pnpm-security-tooling
+test_runs[3]:
+  - run_id: test-local-mvda96n2-j9pjm8
+    kind: test
+    status: passed
+    started_at: "2026-10-18T03:45:12.563Z"
+    finished_at: "2026-10-18T03:45:47.486Z"
+    recorded_at: "2026-10-18T03:45:47.486Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/runtime-lock.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvdak8c9-03pmsq
+    kind: test
+    status: passed
+    started_at: "2026-10-18T03:53:52.462Z"
+    finished_at: "2026-10-18T03:54:22.905Z"
+    recorded_at: "2026-10-18T03:54:22.905Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/runtime-lock.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvdbz0i3-shqug5
+    kind: test
+    status: passed
+    started_at: "2026-10-18T04:33:08.581Z"
+    finished_at: "2026-10-18T04:33:52.202Z"
+    recorded_at: "2026-10-18T04:33:52.202Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/runtime-lock.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/RELEASING.md,project
+close_reason: Implemented and verified for reviewed delivery in PR1495.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: package-consumer
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts -t \"retains the complete optional-peer\""
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/runtime-lock.spec.ts,"pnpm quality:package-artifact","pnpm smoke:npx"
+  hosted_checks[2]: "CI / Packed first run: all six Linux/macOS/Windows Node22.18.0 and Node24 jobs passed https://github.com/unbraind/pm-cli/actions/runs/39095400572","CI / Gates (smokes) and Gates (coverage) passed https://github.com/unbraind/pm-cli/actions/runs/39095400572"
+  owner: unbraind
+body: ""

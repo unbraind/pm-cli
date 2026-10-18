@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 /** Create physical conflicting-version packages and a dependency cycle for publication tests. */
-async function createBundleFixture() {
+async function createBundleFixture(optionalPeer = false) {
   const root = await mkdtemp(path.join(tmpdir(), "pm-bundle-fixture-"));
   roots.push(root);
   const manifest = {
@@ -67,6 +67,17 @@ async function createBundleFixture() {
       dependencies: { first: "1.0.0" },
     },
   };
+  if (optionalPeer) {
+    Object.assign(packages["node_modules/first"], {
+      peerDependencies: { peer: "^1.0.0", shared: "^1.0.0" },
+      peerDependenciesMeta: { peer: { optional: true } },
+      optionalDependencies: { peer: "1.0.0" },
+    });
+    Object.assign(packages, {
+      "node_modules/peer": { version: "1.0.0", dependencies: { leaf: "1.0.0" }, optional: true },
+      "node_modules/leaf": { version: "1.0.0", optional: true },
+    });
+  }
   const ledger = { name: manifest.name, version: manifest.version, packages };
   const metadata = {
     extension: {
@@ -92,10 +103,14 @@ async function createBundleFixture() {
       location.lastIndexOf("node_modules/") + "node_modules/".length,
     );
     await mkdir(directory, { recursive: true });
-    await writeFile(
-      path.join(directory, "package.json"),
-      JSON.stringify({ name, ...entry, main: "index.js" }),
-    );
+    const installed = { name, ...entry, main: "index.js" };
+    // A pnpm snapshot binds the optional peer, while its upstream manifest declares only the peer.
+    if (optionalPeer && name === "first") {
+      Reflect.deleteProperty(installed, "optionalDependencies");
+      Reflect.set(installed, "dependencies", { shared: "^1.0.0" });
+    }
+    Reflect.deleteProperty(installed, "optional");
+    await writeFile(path.join(directory, "package.json"), JSON.stringify(installed));
     await writeFile(path.join(directory, "index.js"), "module.exports = 1;\n");
     await writeFile(path.join(directory, "index.js.map"), "private source map");
   }
@@ -108,6 +123,34 @@ async function createBundleFixture() {
   await writeFile(path.join(dev, "private.txt"), "development-only");
   return { root, manifest, packages, ledger, metadata };
 }
+
+it.each([true, false])("retains the complete optional-peer subtree without changing source manifests (tarball peer declaration=%s)", async (tarballPeer) => {
+  const { root } = await createBundleFixture(true);
+  const source = path.join(root, "node_modules/first/package.json");
+  if (!tarballPeer) {
+    const metadata = JSON.parse(await readFile(source, "utf8"));
+    delete metadata.peerDependencies;
+    await writeFile(source, JSON.stringify(metadata));
+  }
+  const before = await readFile(source, "utf8");
+  await writeFile(path.join(root, "index.js"), 'module.exports = require("first");');
+  await writeFile(path.join(root, "node_modules/first/index.js"), 'module.exports = require("peer");');
+  await writeFile(path.join(root, "node_modules/peer/index.js"), 'module.exports = require("leaf");');
+  await writeFile(path.join(root, "node_modules/leaf/index.js"), 'module.exports = 17;');
+  const destination = await harness.createTempRoot("pm-peer-tarball-");
+  const artifact = await packDistribution(root, { destination });
+  const extracted = await harness.createTempRoot("pm-peer-extracted-");
+  await extractTar({ file: path.join(destination, artifact.filename), cwd: extracted });
+  const installed = path.join(extracted, "package");
+  expect(verifyRuntimeInstallation(installed)).toMatchObject({ ok: true, runtime_packages: 6 });
+  expect(execFileSync(process.execPath, ["-p", 'require("./")'], { cwd: installed, encoding: "utf8" }).trim()).toBe("17");
+  const published = JSON.parse(await readFile(path.join(installed, "node_modules/first/package.json"), "utf8"));
+  expect(published).toMatchObject({ dependencies: { shared: "^1.0.0" }, peerDependenciesMeta: { peer: { optional: true } }, optionalDependencies: { peer: "1.0.0" } });
+  expect(published.peerDependencies).toEqual(JSON.parse(before).peerDependencies);
+  expect(await readFile(source, "utf8")).toBe(before);
+  await rm(path.join(installed, "node_modules/leaf"), { recursive: true });
+  expect(() => verifyRuntimeInstallation(installed)).toThrow("ENOENT");
+}, 60_000);
 
 it("packs exact physical runtime packages without development dependencies or maps and refuses installed drift", async () => {
   const { root, packages, ledger } = await createBundleFixture();

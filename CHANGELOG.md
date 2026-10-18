@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Retain tested optional-peer closures in the published runtime bundle ([pm-iceees](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iceees.toon))
 - Fail the required coverage aggregate when any shard fails or is skipped ([pm-0p4aal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0p4aal.toon))
 - Invalidate shared history projections when writers lack SQLite ([pm-f7shxf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f7shxf.toon))
 - GH-1485: Bound history-index reader contention before authoritative appends ([pm-gh1485](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1485.toon))
@@ -17,6 +18,9 @@
 
 ### Other
 
+- Adopt immutable TruffleHog 3.98.0 after the release-age boundary ([pm-38w3ii](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-38w3ii.toon))
+- Renew pinned pnpm Windows shell-launcher compatibility after dependency cooldown ([pm-rnpmtp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-rnpmtp.toon))
+- Refresh compatible Sentry 10.76.2 observability patch ([pm-wejmmy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wejmmy.toon))
 - Refresh seven-day-eligible Greptile 3.6.2 review tooling ([pm-8jhc84](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8jhc84.toon))
 - Qualify real-baseline checks and packed concurrent-create acceptance across runtimes ([pm-58zon0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-58zon0.toon))
 - Refresh eligible October 17 dependencies with SDK codec compatibility proof ([pm-ul0ow4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ul0ow4.toon))
