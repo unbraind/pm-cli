@@ -272,6 +272,30 @@ describe("GitHub workflow contract", () => {
     }
   });
 
+  it("enforces coverage shard admission before required report merging", async () => {
+    const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
+    const shards = workflow.jobs["coverage-shards"];
+    const aggregate = workflow.jobs.coverage;
+    expect(aggregate.name).toBe("Gates (coverage)");
+    expect(aggregate.needs).toBe("coverage-shards");
+    expect(aggregate.if).toBe("always()");
+    expect(aggregate["continue-on-error"]).toBeUndefined();
+    expect(shards["continue-on-error"]).toBeUndefined();
+    const admission = aggregate.steps[0];
+    expect(admission.id).toBe("shard_admission");
+    expect(admission.env.SHARD_RESULT).toBe("${{ needs.coverage-shards.result }}");
+    const bash = process.platform === "win32" ? path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Git", "bin", "bash.exe") : "bash";
+    for (const result of ["success", "failure", "cancelled", "skipped", ""]) {
+      const execute = () => execFileSync(bash, ["-c", admission.run], { env: { ...process.env, SHARD_RESULT: result }, stdio: "pipe" });
+      if (result === "success") expect(execute).not.toThrow();
+      else expect(execute).toThrow();
+    }
+    const artifact = aggregate.steps.find((step: { name?: string }) => step.name === "Upload coverage artifact");
+    const verifier = aggregate.steps.find((step: { id?: string }) => step.id === "codecov_cli");
+    expect(artifact.if).toContain("steps.shard_admission.outcome == 'success'");
+    expect(verifier.if).toContain("steps.shard_admission.outcome == 'success'");
+  });
+
   it("requires native preview regressions to consume the validated build", async () => {
     const ciWorkflow = normalizeWorkflow(
       await readFile(

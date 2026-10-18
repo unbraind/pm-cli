@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-17T19:35:41.682Z"
-updated_at: "2026-10-17T21:38:55.610Z"
-closed_at: "2026-10-17T21:35:01.612Z"
-completed_at: "2026-10-17T21:35:01.612Z"
+updated_at: "2026-10-18T00:29:52.869Z"
+closed_at: "2026-10-18T00:29:51.985Z"
+completed_at: "2026-10-18T00:29:51.985Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Isolated public SDK and CLI regressions prove valid history remains readable when index repair is contended or invalidated after rebuild; Optional event-read rebuilds acquire locks without waiting and never retry in a loop; Pagination and subscriptions resume across derived and authoritative pages without lost or duplicate events; Real history corruption remains actionable rather than being swallowed; No public return type or cursor format changes
@@ -19,9 +19,9 @@ why_now: Mixed-reader contention work reproduced both a post-rebuild availabilit
 parent: pm-lvyd
 risk: medium
 confidence: 95
-resolution: Add an optional lock retry ceiling that survives environment overrides; use one zero-retry optional repair attempt and authoritative JSONL fallback with compatible filters and cursors. Preserve typed corruption errors and the stable unavailable error for unreadable authority.
-expected_result: SDK and CLI pages and subscriptions continue when the accelerator is unavailable while authority failures remain actionable.
-actual_result: "49 linked SDK/lock tests and all113 affected tests pass, including PM_LOCK_WAIT_MS=30000 cursor continuation across SDK and CLI. Packed npx/bunx smoke accepts9 packages. Required observability gate passes with no critical/high Sentry issues,2.61% telemetry error rate and zero missing codes;314 starts/finishes pair with zero unmatched sessions in the recorded work window."
+resolution: Preserve authority-backed event pages when optional repair races or contends; cap built-in lock retries across environment overrides. Show complete background lock options and clarify that confirmed stale ownership may require creation retries while active contention fails fast.
+expected_result: "Keep compatible event filters/cursors and authoritative error semantics, with accurate lock-lifecycle guidance for package authors."
+actual_result: The linked SDK/lock cohort passes49 tests. All four typecheck projects pass and docs/secret gates pass. Current history coverage diagnostics pass467 tests with every event-index statement/function/branch exercised. Final-head full CI and hosted analysis remain required; optional provider quotas are not approvals.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-e200,related,"2026-10-17T19:35:41.682Z","harness:codex","cli:create:dep",detected
   pm-gh1485,discovered_from,"2026-10-17T19:35:41.682Z","harness:codex","cli:create:dep",detected
@@ -42,7 +42,7 @@ files[7]{path,scope}:
   tests/unit/sdk/mutation-events.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-events.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/core/lock,project,300,"harness:codex","2026-10-17T19:50:07.724Z",local_mutation,fix/history-index-reader-contention
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvctm61w-jkjma9
     kind: test
     status: passed
@@ -65,10 +65,21 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-events.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/core/lock,schema,schema,source,local_source_ref
+  - run_id: test-local-mvd2w8rj-khwo44
+    kind: test
+    status: passed
+    started_at: "2026-10-18T00:19:27.705Z"
+    finished_at: "2026-10-18T00:19:46.399Z"
+    recorded_at: "2026-10-18T00:19:46.399Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-events.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/core/lock,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/SDK_CONTEXT_COORDINATION.md,project
   docs/SDK_STORAGE_LIFECYCLE.md,project
-close_reason: Preserved event-consumer availability across optional projection repair races and contention.
+close_reason: Complete SDK fallback delivery and clarify active-contention versus stale-owner lock behavior.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

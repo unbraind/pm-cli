@@ -542,9 +542,16 @@ jobs:
   coverage:
     name: Gates (coverage)
     needs: coverage-shards
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      - name: Require every coverage shard
+        id: shard_admission
+        env:
+          SHARD_RESULT: ${{ needs.coverage-shards.result }}
+        run: test "$SHARD_RESULT" = success
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -583,7 +590,7 @@ jobs:
           node scripts/release/coverage-threshold-gate.mjs
 
       - name: Upload coverage artifact
-        if: always()
+        if: always() && steps.shard_admission.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-node24-ubuntu-latest
@@ -591,10 +598,10 @@ jobs:
           if-no-files-found: ignore
 
       # pm-2x67z9: authenticate the immutable official asset before execution;
-      # both uploads require this verifier to succeed, including after test failure.
+      # keep reports after coverage-threshold failure when every shard succeeded.
       - name: Verify pinned Codecov CLI
         id: codecov_cli
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.shard_admission.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail

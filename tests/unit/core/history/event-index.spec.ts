@@ -817,6 +817,7 @@ describe("history mutation event index", () => {
       await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
       await rebuildHistoryEventIndex(context.pmPath);
       const originalStat = fs.stat.bind(fs);
+      const initialSize = (await originalStat(historyPath)).size;
       let concurrentAppend: Promise<void> | undefined;
       const statSpy = vi
         .spyOn(fs, "stat")
@@ -824,7 +825,8 @@ describe("history mutation event index", () => {
           const stats = await originalStat(...args);
           if (
             concurrentAppend === undefined &&
-            String(args[0]) === historyPath
+            String(args[0]) === historyPath &&
+            stats.size > initialSize
           ) {
             concurrentAppend = appendHistoryEntry(historyPath, third);
             await concurrentAppend;
@@ -862,7 +864,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("refuses rebuild publication when a concurrent compliant append invalidates it", async () => {
+  it("refuses stale publication even if its optional retry receipt cannot be persisted", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -876,6 +878,16 @@ describe("history mutation event index", () => {
         "update",
       );
       await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
+      const originalWrite = fs.writeFile.bind(fs);
+      const writeSpy = vi
+        .spyOn(fs, "writeFile")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]).endsWith("history-event-index-repair-deferred"))
+            throw Object.assign(new Error("retry receipt denied"), {
+              code: "EACCES",
+            });
+          return originalWrite(...args);
+        });
       const originalStat = fs.stat.bind(fs);
       let concurrentAppend: Promise<void> | undefined;
       const statSpy = vi
@@ -896,6 +908,7 @@ describe("history mutation event index", () => {
         await concurrentAppend;
       } finally {
         statSpy.mockRestore();
+        writeSpy.mockRestore();
       }
 
       await expect(
@@ -1247,7 +1260,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("invalidates corrupt and incompatible projections instead of serving stale rows", async () => {
+  it("marks corrupt and incompatible projections untrusted until complete repair", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -1268,14 +1281,46 @@ describe("history mutation event index", () => {
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
       await appendHistoryEntry(historyPath, entry);
-      await expect(fs.access(indexPath)).rejects.toThrow();
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+      expect(
+        (
+          await fs.readdir(
+            path.join(
+              context.pmPath,
+              "runtime",
+              "history-event-index-invalidations",
+            ),
+          )
+        ).some((name) => name.endsWith(".committed")),
+      ).toBe(true);
 
       await fs.writeFile(indexPath, "not sqlite");
       await expect(
         queryHistoryEventIndex(context.pmPath, { limit: 10 }),
       ).resolves.toBeNull();
       await appendHistoryEntry(historyPath, entry);
-      await expect(fs.access(indexPath)).rejects.toThrow();
+      await expect(
+        queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+      ).resolves.toBeNull();
+      expect(
+        (
+          await fs.readdir(
+            path.join(
+              context.pmPath,
+              "runtime",
+              "history-event-index-invalidations",
+            ),
+          )
+        ).some((name) => name.endsWith(".committed")),
+      ).toBe(true);
+      expect(await rebuildHistoryEventIndex(context.pmPath)).toBe(true);
+      expect(
+        (await queryHistoryEventIndex(context.pmPath, { limit: 10 }))?.events,
+      ).toEqual(
+        (await queryHistoryEventStreams(context.pmPath, { limit: 10 })).events,
+      );
     });
   });
 
@@ -1305,11 +1350,14 @@ describe("history mutation event index", () => {
       await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
       await rebuildHistoryEventIndex(context.pmPath);
       const originalStat = fs.stat.bind(fs);
+      const initialSize = (await originalStat(historyPath)).size;
       const statSpy = vi
         .spyOn(fs, "stat")
         .mockImplementation(async (...args) => {
-          if (String(args[0]) === historyPath) throw new Error("stat failed");
-          return originalStat(...args);
+          const stats = await originalStat(...args);
+          if (String(args[0]) === historyPath && stats.size > initialSize)
+            throw new Error("stat failed");
+          return stats;
         });
       try {
         await expect(
@@ -1432,11 +1480,14 @@ describe("history mutation event index", () => {
       await fs.writeFile(historyPath, `${JSON.stringify(first)}\n`);
       await rebuildHistoryEventIndex(context.pmPath);
       const originalStat = fs.stat.bind(fs);
+      const initialSize = (await originalStat(historyPath)).size;
       const statSpy = vi
         .spyOn(fs, "stat")
         .mockImplementation(async (...args) => {
-          if (String(args[0]) === historyPath) throw new Error("stat failed");
-          return originalStat(...args);
+          const stats = await originalStat(...args);
+          if (String(args[0]) === historyPath && stats.size > initialSize)
+            throw new Error("stat failed");
+          return stats;
         });
       const originalRm = fs.rm.bind(fs);
       const rmSpy = vi.spyOn(fs, "rm").mockImplementation(async (...args) => {

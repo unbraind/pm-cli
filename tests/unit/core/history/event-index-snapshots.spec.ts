@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnly,
+  appendHistoryEntryWithEventIndex,
   queryHistoryEventIndex,
   queryHistoryEventStreams,
   readLatestSubstantiveHistoryEvents,
@@ -34,6 +35,101 @@ afterEach(() => {
 });
 
 describe("history index read snapshots", () => {
+  it("indexes a first append when its authoritative stream does not exist yet", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const historyPath = path.join(pmPath, "history", "pm-first.jsonl");
+      await rebuildHistoryEventIndex(pmPath);
+      await appendHistoryEntryWithEventIndex(historyPath, first, () =>
+        fs.appendFile(historyPath, `${JSON.stringify(first)}\n`),
+      );
+      expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toMatchObject(
+        {
+          events: [{ stream_id: "pm-first", stream_offset: 0, entry: first }],
+        },
+      );
+    });
+  });
+
+  it("rolls back projection work and preserves an authoritative callback failure", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
+      await appendHistoryEntry(historyPath, first);
+      await rebuildHistoryEventIndex(pmPath);
+      const before = await fs.readFile(historyPath, "utf8");
+      const denied = Object.assign(new Error("append denied"), {
+        code: "EACCES",
+      });
+      await expect(
+        appendHistoryEntryWithEventIndex(historyPath, second, async () => {
+          throw denied;
+        }),
+      ).rejects.toBe(denied);
+      expect(await fs.readFile(historyPath, "utf8")).toBe(before);
+      expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toMatchObject(
+        {
+          events: [{ entry: first }],
+        },
+      );
+    });
+  });
+
+  it("preserves authority when optional incremental-base stat verification fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
+      await appendHistoryEntry(historyPath, first);
+      await rebuildHistoryEventIndex(pmPath);
+      const originalStat = fs.stat.bind(fs);
+      let denied = false;
+      const statSpy = vi
+        .spyOn(fs, "stat")
+        .mockImplementation(async (...args) => {
+          if (String(args[0]) === historyPath && !denied) {
+            denied = true;
+            throw Object.assign(new Error("cache base stat denied"), {
+              code: "EACCES",
+            });
+          }
+          return originalStat(...args);
+        });
+      try {
+        await expect(
+          appendHistoryEntry(historyPath, second),
+        ).resolves.toBeUndefined();
+      } finally {
+        statSpy.mockRestore();
+      }
+      expect(denied).toBe(true);
+      expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toBeNull();
+      expect(
+        await queryHistoryEventStreams(pmPath, { limit: 10 }),
+      ).toMatchObject({
+        events: [{ entry: first }, { entry: second }],
+      });
+    });
+  });
+
+  it.each(["invalid timestamp", "future timestamp"])(
+    "does not let a %s suppress repair of a missing projection",
+    async (receipt) => {
+      const { readHistoryEventIndexPage } =
+        await import("../../../../src/core/history/event-index.js");
+      await withTempPmPath(async ({ pmPath }) => {
+        const runtime = path.join(pmPath, "runtime");
+        await fs.mkdir(runtime, { recursive: true });
+        await fs.writeFile(
+          path.join(runtime, "history-event-index-repair-deferred"),
+          receipt === "invalid timestamp"
+            ? "unfinished"
+            : `${Date.now() + 60_000}`,
+        );
+        expect(await readHistoryEventIndexPage(pmPath, { limit: 10 })).toEqual({
+          result: null,
+          repair_needed: true,
+        });
+      });
+    },
+  );
+
   it("rebuilds a multi-stream workspace with complete facts and size receipts", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const ids = Array.from(
@@ -107,42 +203,57 @@ describe("history index read snapshots", () => {
     });
   });
 
-  it("classifies a paused indexed append as active rather than requesting repair", async () => {
-    const { readHistoryEventIndexPage } =
-      await import("../../../../src/core/history/event-index.js");
-    await withTempPmPath(async ({ pmPath }) => {
-      const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
-      await appendHistoryEntry(historyPath, first);
-      await rebuildHistoryEventIndex(pmPath);
-      const entered = Promise.withResolvers<void>();
-      const resume = Promise.withResolvers<void>();
-      const originalStat = fs.stat.bind(fs);
-      let paused = false;
-      vi.spyOn(fs, "stat").mockImplementation(async (...args) => {
-        const result = await originalStat(...args);
-        if (String(args[0]) === historyPath && !paused) {
-          paused = true;
-          entered.resolve();
-          await resume.promise;
-        }
-        return result;
-      });
-      const writing = appendHistoryEntry(historyPath, second);
-      await entered.promise;
-      try {
-        expect(await readHistoryEventIndexPage(pmPath, { limit: 10 })).toEqual({
-          result: null,
-          repair_needed: false,
+  it.each(["before", "after"])(
+    "classifies an indexed append paused %s its file write as active",
+    async (phase) => {
+      const { readHistoryEventIndexPage } =
+        await import("../../../../src/core/history/event-index.js");
+      await withTempPmPath(async ({ pmPath }) => {
+        const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
+        await appendHistoryEntry(historyPath, first);
+        await rebuildHistoryEventIndex(pmPath);
+        const entered = Promise.withResolvers<void>();
+        const resume = Promise.withResolvers<void>();
+        const originalStat = fs.stat.bind(fs);
+        const initialSize = (await originalStat(historyPath)).size;
+        let paused = false;
+        vi.spyOn(fs, "stat").mockImplementation(async (...args) => {
+          const result = await originalStat(...args);
+          if (
+            String(args[0]) === historyPath &&
+            !paused &&
+            (phase === "before"
+              ? result.size === initialSize
+              : result.size > initialSize)
+          ) {
+            paused = true;
+            entered.resolve();
+            await resume.promise;
+          }
+          return result;
         });
-      } finally {
-        resume.resolve();
-        await writing;
-      }
-      expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toMatchObject(
-        { events: [{ entry: first }, { entry: second }] },
-      );
-    });
-  });
+        const writing = appendHistoryEntry(historyPath, second);
+        await entered.promise;
+        try {
+          expect(
+            (await queryHistoryEventStreams(pmPath, { limit: 10 })).events,
+          ).toHaveLength(phase === "before" ? 1 : 2);
+          expect(
+            await readHistoryEventIndexPage(pmPath, { limit: 10 }),
+          ).toEqual({
+            result: null,
+            repair_needed: false,
+          });
+        } finally {
+          resume.resolve();
+          await writing;
+        }
+        expect(
+          await queryHistoryEventIndex(pmPath, { limit: 10 }),
+        ).toMatchObject({ events: [{ entry: first }, { entry: second }] });
+      });
+    },
+  );
 
   it("allows authoritative progress while a full repair scan is suspended", async () => {
     await withTempPmPath(async ({ pmPath }) => {
@@ -197,51 +308,124 @@ describe("history index read snapshots", () => {
         else process.env.PM_LOCK_WAIT_MS = previousWait;
       }
       expect(await rebuilding).toBe(false);
-      expect(await rebuildHistoryEventIndex(pmPath)).toBe(true);
+      const { readHistoryEventIndexPage } =
+        await import("../../../../src/core/history/event-index.js");
+      expect(await readHistoryEventIndexPage(pmPath, { limit: 10 })).toEqual({
+        result: null,
+        repair_needed: false,
+      });
+      expect(
+        await readLatestSubstantiveHistoryEvents(pmPath, ["pm-snapshot"]),
+      ).toMatchObject({ "pm-snapshot": { entry: third } });
+      expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toBeNull();
+      const clock = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 6000);
+      try {
+        expect(await readHistoryEventIndexPage(pmPath, { limit: 10 })).toEqual({
+          result: null,
+          repair_needed: true,
+        });
+        await readLatestSubstantiveHistoryEvents(pmPath, ["pm-snapshot"]);
+      } finally {
+        clock.mockRestore();
+      }
       expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toMatchObject(
         { events: [{ entry: first }, { entry: second }, { entry: third }] },
       );
     });
   });
 
-  it("never certifies an omitted non-SQLite append after a later indexed write", async () => {
+  it("recovers a size-certified incomplete legacy projection on upgrade", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
       await appendHistoryEntry(historyPath, first);
-      await rebuildHistoryEventIndex(pmPath);
-      const restoreNoSqlite = _testOnly.setDatabaseSync(null);
-      try {
-        await appendHistoryEntry(historyPath, second);
-      } finally {
-        restoreNoSqlite();
-      }
+      await appendHistoryEntry(historyPath, second);
       await appendHistoryEntry(historyPath, third);
-      const projection = await queryHistoryEventIndex(pmPath, { limit: 10 });
-      const authority = await queryHistoryEventStreams(pmPath, { limit: 10 });
-      expect(projection?.events ?? authority.events).toMatchObject([
-        { entry: first },
-        { entry: second },
-        { entry: third },
-      ]);
-      expect(await rebuildHistoryEventIndex(pmPath)).toBe(true);
+      await rebuildHistoryEventIndex(pmPath);
+      const legacy = new DatabaseSync(
+        path.join(pmPath, "runtime", "history-event-index.sqlite"),
+      );
+      legacy.exec("UPDATE metadata SET value = '5' WHERE key = 'version'");
+      legacy.exec(
+        "DELETE FROM events WHERE stream_id = 'pm-snapshot' AND stream_offset = 1",
+      );
+      legacy.close();
+      expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toBeNull();
+      await readLatestSubstantiveHistoryEvents(pmPath, ["pm-snapshot"]);
       expect(await queryHistoryEventIndex(pmPath, { limit: 10 })).toMatchObject(
-        { events: [{ entry: first }, { entry: second }, { entry: third }] },
+        {
+          events: [{ entry: first }, { entry: second }, { entry: third }],
+        },
       );
     });
   });
 
-  it.each(["reader", "writer", "exclusive writer"] as const)(
-    "preserves authoritative append without waiting for a native SQLite %s",
-    async (mode) => {
+  it.each(["SQLite-less writer", "merged stream"])(
+    "never certifies an omitted append from a %s",
+    async (producer) => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
+        await appendHistoryEntry(historyPath, first);
+        await rebuildHistoryEventIndex(pmPath);
+        if (producer === "merged stream") {
+          await fs.appendFile(historyPath, `${JSON.stringify(second)}\n`);
+        } else {
+          const restoreNoSqlite = _testOnly.setDatabaseSync(null);
+          try {
+            await appendHistoryEntry(historyPath, second);
+          } finally {
+            restoreNoSqlite();
+          }
+        }
+        await appendHistoryEntry(historyPath, third);
+        const projection = await queryHistoryEventIndex(pmPath, { limit: 10 });
+        const authority = await queryHistoryEventStreams(pmPath, { limit: 10 });
+        expect(projection?.events ?? authority.events).toMatchObject([
+          { entry: first },
+          { entry: second },
+          { entry: third },
+        ]);
+        expect(await rebuildHistoryEventIndex(pmPath)).toBe(true);
+        expect(
+          await queryHistoryEventIndex(pmPath, { limit: 10 }),
+        ).toMatchObject({
+          events: [{ entry: first }, { entry: second }, { entry: third }],
+        });
+      });
+    },
+  );
+
+  it.each([
+    ["reader", "current"],
+    ["writer", "current"],
+    ["exclusive writer", "current"],
+    ["reader", "legacy"],
+    ["writer", "legacy"],
+    ["exclusive writer", "legacy"],
+  ] as const)(
+    "preserves authoritative append with a native SQLite %s on a %s projection",
+    async (mode, generation) => {
       const { readHistoryEventIndexPage } =
         await import("../../../../src/core/history/event-index.js");
       await withTempPmPath(async ({ pmPath }) => {
         const historyPath = path.join(pmPath, "history", "pm-snapshot.jsonl");
         await appendHistoryEntry(historyPath, first);
         await rebuildHistoryEventIndex(pmPath);
-        const contender = new DatabaseSync(
-          path.join(pmPath, "runtime", "history-event-index.sqlite"),
+        const indexPath = path.join(
+          pmPath,
+          "runtime",
+          "history-event-index.sqlite",
         );
+        if (generation === "legacy") {
+          const legacy = new DatabaseSync(indexPath);
+          try {
+            legacy.exec(
+              "UPDATE metadata SET value = '5' WHERE key = 'version'",
+            );
+          } finally {
+            legacy.close();
+          }
+        }
+        const contender = new DatabaseSync(indexPath);
         contender.exec(
           {
             reader: "BEGIN",

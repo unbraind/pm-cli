@@ -1,6 +1,8 @@
 # SDK context coordination primitives
 
-Trackers: [pm-e200](../.agents/pm/features/pm-e200.toon), [pm-ez1dfg](../.agents/pm/tasks/pm-ez1dfg.toon), [pm-4ri6](../.agents/pm/features/pm-4ri6.toon), [pm-hcrmye](../.agents/pm/issues/pm-hcrmye.toon), [pm-gh1485](../.agents/pm/issues/pm-gh1485.toon), and [pm-xj80p9](../.agents/pm/issues/pm-xj80p9.toon).
+Trackers: [pm-e200](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e200.toon), [pm-ez1dfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ez1dfg.toon), [pm-4ri6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4ri6.toon), [pm-hcrmye](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hcrmye.toon), [pm-gh1485](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1485.toon), and [pm-xj80p9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xj80p9.toon).
+
+Tracker records live in the repository and are excluded from the npm package.
 
 `pm` treats project management as context management. These primitives let an
 agent learn what changed, avoid creating redundant work, and keep that work
@@ -41,7 +43,7 @@ every row. Already issued version-1 cursors remain accepted by `--since`.
 Version-1 cursor ordering uses recorded timestamps, stream ids, and offsets.
 A fact committed later with an older timestamp falls before an advanced cursor.
 Clock-independent ordering and late-commit recovery remain tracked by
-[pm-10l1vm](../.agents/pm/issues/pm-10l1vm.toon). Hosts needing complete concurrent
+[pm-10l1vm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-10l1vm.toon). Hosts needing complete concurrent
 observation can retain a fixed lower boundary and deduplicate snapshots by
 `item_id` and `version` while work is being committed.
 
@@ -51,6 +53,10 @@ streams with the same ordering, filters, pagination, and cursor contract; pages
 identify that path with `source: "authoritative_history"`.
 Writers without SQLite use the same pending and committed invalidation protocol,
 so a later Node writer cannot certify a cache that omitted their facts.
+Incremental writes also verify the previous size receipt before advancing it,
+so merged history cannot be hidden by a later append. Upgraded runtimes rebuild
+legacy projections that could contain omitted facts with apparently current
+receipts; authoritative history does not require a format migration.
 
 Index readers take a synchronous SQLite read transaction containing both event
 rows and their stream-size receipts, then close the database before checking
@@ -68,11 +74,18 @@ active until its commit or invalidation completes. Native contention retains
 the cache file and a committed contention marker; a zero-wait native probe
 distinguishes an ongoing contender from settled damage before requesting repair.
 
-Authoritative writers make no retries for the projection writer lock, including
-when a full repair owns it. They publish an invalidation instead. A repair
+Authoritative writers fail fast when an active owner holds the projection writer
+lock, including when a full repair owns it. They publish an invalidation instead.
+Stale-owner recovery follows the built-in lock policy. A repair
 refuses publication if those markers changed during its scan. Full projection
 construction yields between batches, and marker cleanup occurs outside the
 short invalidation publication lock.
+After a refused full publication or failed repair, a best effort per-tracker runtime receipt
+defers automatic repair for five seconds. Busy periods therefore do not restart
+a complete SQLite build on every read. Pages and recency reads continue using
+authoritative history; after the cooldown, a later read can repair during a
+quiet interval. This backoff bounds repair frequency, not index availability
+during continuous writes.
 
 Transient generation changes and SQLite contention use authoritative fallback
 directly. Missing, incompatible, or damaged projections receive one optional
@@ -197,7 +210,7 @@ five SDK writer lanes, and five CLI writer lanes, with five updates per lane.
 Both separate traced and untraced cohorts passed 5,000 unique observations,
 duplicate-free pages, strict history integrity, and a 2,000 ms first-observation
 ceiling. These are bounded host measurements recorded in
-[pm-gh1485](../.agents/pm/issues/pm-gh1485.toon).
+[pm-gh1485](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1485.toon).
 
 The native regression suspends filesystem validation and requires an
 authoritative writer to finish before that reader resumes. Run it with:

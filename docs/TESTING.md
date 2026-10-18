@@ -209,6 +209,14 @@ Use focused runs while iterating, then run coverage before closure when risk or 
 
 ## CI Retry and Timeout Diagnostics
 
+The required `Gates (coverage)` job runs after the coverage matrix settles and
+explicitly requires every shard to succeed. Failed, canceled, skipped, or missing
+shard outcomes fail that required context before checkout or report merging.
+Shard artifacts retain failure diagnostics. After successful shard admission,
+coverage-threshold failures still retain merged reports and Codecov uploads.
+This enforcement is tracked by [pm-0p4aal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0p4aal.toon).
+Tracker records live in the repository and are excluded from the npm package.
+
 Platform regressions from [pm-hrhfgi](../.agents/pm/issues/pm-hrhfgi.toon) and
 [pm-zk67yf](../.agents/pm/issues/pm-zk67yf.toon) have portable negative controls.
 Complete source scans process at most 32 item files per batch; the descriptor

@@ -1,0 +1,62 @@
+id: pm-0p4aal
+title: Fail the required coverage aggregate when any shard fails or is skipped
+description: "CI run39077888907 reported Coverage shard3/4 FAILURE and the required Gates (coverage) SKIPPED. The protected check set requires the aggregate but not individual shards. A default dependent-job skip can therefore satisfy the required coverage context without a successful test run. Run the aggregate unconditionally after dependencies settle and explicitly require a successful shard matrix before checkout, report merge or upload."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-17T23:47:36.828Z"
+updated_at: "2026-10-18T00:29:59.692Z"
+closed_at: "2026-10-18T00:29:57.856Z"
+completed_at: "2026-10-18T00:29:57.856Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "Reproduce missing unconditional aggregate admission before the change; Require successful shard result before report merging; Exercise success, failure, skipped and canceled matrix outcomes; Preserve every shard, exact full coverage thresholds, existing permissions and free hosted features"
+goal: project management = context management
+objective: Keep required verification receipts truthful across sharded execution
+value: A failed or absent test cohort cannot be mistaken for completed coverage admission
+why_now: "The current SDK delivery produced a real failed shard and skipped aggregate, exposing the existing hosted enforcement gap."
+parent: pm-u9d0
+risk: low
+confidence: 100
+resolution: "Run Gates (coverage) with always() after coverage-shards and explicitly reject failure, canceled, skipped or missing matrix results before checkout or merging. Gate artifact upload and Codecov verification on successful admission, preserving threshold-failure diagnostics and exact global coverage."
+expected_result: A failed or incomplete shard matrix cannot satisfy the protected coverage context through an automatic job skip.
+actual_result: Live run39077888907 reproduced a failed shard and skipped required aggregate; official GitHub documentation confirms that skip can satisfy protection. The new contract failed before the change; all21 workflow tests and its linked real-shell outcome control now pass. Only success is accepted across five tested inputs. Permissions remain read-only by default; no threshold or paid feature changed. Final-head hosted CI remains required.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2qqcgl,related,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
+  pm-gh1485,discovered_from,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
+  pm-ul9rye,related,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
+  pm-zpwfzy,related,"2026-10-17T23:47:36.828Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-17T23:47:36.828Z","harness:codex","Duplicate check: complete all-status full keyword-AND reads returned126 coverage-shard and389 coverage-skipped records with zero payload omissions. Read the completed exact-count authority, nightly job-budget and PR-readiness owners with full metadata/history. They shipped integer-count enforcement, bounded nightly execution and watch receipts respectively; this new defect is the required CI aggregate producer being skipped. Reuse the current CI capability parent and preserve those completed deliveries. GitHub documentation explicitly identifies failed-dependency skips as potentially nonblocking and recommends always() with needs for required aggregate jobs: https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks"
+  "2026-10-17T23:57:55.613Z","harness:codex","The new contract failed on the original missing job-level always() condition. The corrected workflow runs the required aggregate after shard completion and first executes a real shell guard over success/failure/cancelled/skipped/empty results; only success passes. Failed admission skips checkout and merging; artifact upload and Codecov verification are explicitly gated on admission. Threshold-failure diagnostics remain available after successful admission. All21 workflow contracts pass in the230-test corrected cohort, and workflow permissions remain unchanged/read-only by default."
+files[2]{path,scope}:
+  .github/workflows/ci.yml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"coverage shard admission\"",project,"harness:codex","2026-10-17T23:48:01.484Z",local_mutation,fix/history-index-reader-contention
+test_runs[1]:
+  - run_id: test-local-mvd2x2r7-at4x51
+    kind: test
+    status: passed
+    started_at: "2026-10-18T00:20:12.382Z"
+    finished_at: "2026-10-18T00:20:25.267Z"
+    recorded_at: "2026-10-18T00:20:25.267Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"coverage shard admission\"",schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+close_reason: Make the required coverage aggregate fail on unsuccessful shard admission.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-0p4aal
+  gate_id: test-coverage
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"coverage shard admission\""
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,node scripts/check-workflow-permissions.mjs,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),actionlint,Gates (static)
+body: ""

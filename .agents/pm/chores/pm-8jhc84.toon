@@ -1,0 +1,53 @@
+id: pm-8jhc84
+title: Refresh seven-day-eligible Greptile 3.6.2 review tooling
+description: "Greptile3.6.2 was published2026-10-10T23:48:52.479Z and became eligible under the existing seven-day cooldown during the current delivery verification. Refresh the compatible dev-tool release, retain runtime/package locks and verify its local entrypoint without purchasing or claiming an unavailable hosted review."
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-17T23:50:37.892Z"
+updated_at: "2026-10-18T00:30:02.219Z"
+closed_at: "2026-10-18T00:30:01.064Z"
+completed_at: "2026-10-18T00:30:01.064Z"
+author: "harness:codex"
+estimated_minutes: 15
+acceptance_criteria: Verify registry publication age; Update only compatible Greptile tooling and necessary lock data; Run the real installed version entrypoint; Preserve runtime lock and dependency cooldown; Record hosted review unavailability separately from installation
+goal: project management = context management
+objective: Keep eligible compatible developer tooling current without bypassing dependency policy
+value: The requested dependency audit does not leave a newly eligible compatible refresh unhandled
+why_now: The minimum release age elapsed while waiting for the current delivery checks.
+parent: pm-u9d0
+risk: low
+confidence: 95
+resolution: "Update Greptile3.6.1 to3.6.2 and the matching lock entry, preserving runtime dependencies, Node support and dependency cooldown."
+expected_result: The compatible installed review tool reports3.6.2 and dependency gates remain clean without enabling a paid service.
+actual_result: "Publication timestamp2026-10-10T23:48:52.479Z passed seven days before the23:54 update. Both linked checks pass: installed version3.6.2 and dependency audit/native-bundle validation with no known vulnerabilities. Node>=22 engine remains compatible. Hosted Greptile trial expiration is recorded separately and is not review approval."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-obmgi3,related,"2026-10-17T23:50:37.892Z","harness:codex","cli:create:dep",detected
+  pm-ul0ow4,discovered_from,"2026-10-17T23:50:37.892Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-17T23:50:37.892Z","harness:codex","Duplicate check: complete all-status full keyword-AND search for greptile3.6.2 returned exactly two records with no omissions: the CI capability and completed October17 dependency cohort. Full live data/history confirms that cohort shipped TOON/Node-types/jscpd/knip and explicitly deferred Greptile until seven days; it remains completed. The earlier Greptile3.4.1 owner is also completed. Use this distinct version-specific follow-up under the same CI capability; do not reopen either completed delivery or duplicate an existing active owner."
+  "2026-10-17T23:57:56.706Z","harness:codex","Greptile3.6.2 became seven-day eligible at2026-10-17T23:48:52.479Z; update at23:54 changed one dev package from3.6.1 to3.6.2 plus its lock entry. The real installed version command reports3.6.2. Dependency audit finds no known vulnerabilities and the preserved development native-bundle checks pass. Node>=22 engine fits the supported floor; no paid review, new authentication or service access was enabled. Hosted Greptile trial expiration remains separate from successful local package installation."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm exec greptile --version,project,"harness:codex","2026-10-17T23:54:03.619Z",local_mutation,fix/history-index-reader-contention
+  "pnpm quality:dependencies",project,"harness:codex","2026-10-17T23:54:04.333Z",local_mutation,fix/history-index-reader-contention
+test_runs[1]:
+  - run_id: test-local-mvd2x8dw-7146u9
+    kind: test
+    status: passed
+    started_at: "2026-10-18T00:20:26.196Z"
+    finished_at: "2026-10-18T00:20:32.563Z"
+    recorded_at: "2026-10-18T00:20:32.563Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm exec greptile --version,schema,schema,source,local_source_ref
+      "pnpm quality:dependencies",schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Refresh compatible Greptile tooling after its seven-day release-age threshold.
+body: ""

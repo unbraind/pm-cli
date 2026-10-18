@@ -362,7 +362,7 @@ describe("schema add-type command", () => {
         expect(lockOwners).toEqual([
           "schema-default-author",
           "schema-default-author",
-          `history-event-index:${process.pid}`,
+          `history-event-index:append:${process.pid}`,
         ]);
       } finally {
         if (previousAuthor === undefined) {
@@ -410,7 +410,7 @@ describe("schema add-type command", () => {
       expect(lockOwners).toEqual([
         "unknown",
         "unknown",
-        `history-event-index:${process.pid}`,
+        `history-event-index:append:${process.pid}`,
       ]);
     });
   });
@@ -1005,10 +1005,10 @@ describe("schema remove-type command", () => {
       expect(lockOwners).toEqual([
         "schema-add-agent",
         "schema-add-agent",
-        `history-event-index:${process.pid}`,
+        `history-event-index:append:${process.pid}`,
         "schema-remove-agent",
         "schema-remove-agent",
-        `history-event-index:${process.pid}`,
+        `history-event-index:append:${process.pid}`,
       ]);
       expect(hookOps).toContain("schema:remove-type:types.json");
     });
@@ -1462,7 +1462,7 @@ describe("schema add-status / remove-status commands", () => {
       expect(lockOwners).toEqual([
         "unknown",
         "unknown",
-        `history-event-index:${process.pid}`,
+        `history-event-index:append:${process.pid}`,
       ]);
     });
   });
@@ -1941,10 +1941,10 @@ describe("schema add-status / remove-status commands", () => {
       expect(lockOwners).toEqual([
         "test-author",
         "test-author",
-        `history-event-index:${process.pid}`,
+        `history-event-index:append:${process.pid}`,
         "schema-remove-agent",
         "schema-remove-agent",
-        `history-event-index:${process.pid}`,
+        `history-event-index:append:${process.pid}`,
       ]);
       expect(hookOps).toContain("schema:remove-status:statuses.json");
     });

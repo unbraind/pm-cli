@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-17T22:34:40.375Z"
-updated_at: "2026-10-17T23:06:11.479Z"
-closed_at: "2026-10-17T23:06:10.560Z"
-completed_at: "2026-10-17T23:06:10.560Z"
+updated_at: "2026-10-18T00:49:30.481Z"
+closed_at: "2026-10-18T00:49:29.537Z"
+completed_at: "2026-10-18T00:49:29.537Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Reproduce two projected facts versus three authoritative facts before the fix; Preserve all three facts after a later indexed append; Exercise real Bun and Node against one isolated tracker; Keep cursor and return shapes compatible; Retain portable committed invalidation and full-source quality gates
@@ -19,26 +19,43 @@ why_now: The second review concurrency controls independently reproduced a missi
 parent: pm-lvyd
 risk: medium
 confidence: 95
-resolution: "Route every non-indexed authoritative append through the existing pending/committed invalidation protocol so later indexed writers cannot certify an incomplete projection. Preserve portable fallback, typed failures and existing event shapes."
-expected_result: "A SQLite-less middle append between two indexed appends remains visible as a complete fact, and optional repair restores all stream offsets without loss or duplication."
-actual_result: Negative control reproduced two cached facts versus three authoritative facts before the fix; the linked omitted-fact regression now passes. Real public-SDK Node26.9.0/Bun1.4.3 shared-tracker acceptance returns three unique full update facts exactly matching authoritative history and passes strict drift validation. Current Bun exposes SQLite; forced constructor unavailability separately validates the supported SQLite-less path. Full final static pipeline and four typechecks pass; final-head hosted full coverage remains required.
+resolution: "Route SQLite-less producers through invalidation, verify an incremental writer has a current authoritative base before advancing its receipt, and move the optional projection to generation6 so legacy size-certified omissions rebuild. Mark incompatible or stale caches untrusted without requiring unlink before authority progresses, including native legacy-reader contention."
+expected_result: "Preserve every authoritative fact across indexed/SQLite-less writers and completed history merges, recover legacy incomplete caches, and retain portable nonblocking contention behavior."
+actual_result: "Original and upgrade controls reproduce missing middle facts and legacy false certification before correction. All467 focused source tests pass with complete event-index coverage in diagnostics; linked omitted and legacy cohorts pass2/4 tests. Six current/legacy native contention cases preserve authority and safe recovery, including failures reproduced before retention. Real Node26.9/Bun1.4.3 public SDK consumers return three unique full facts matching authority and pass strict validation. Final-head full hosted coverage/static/analyzer admission remains mandatory; current local qualified CLI startup failures are recorded separately."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-b8hwfr,related,"2026-10-17T22:34:40.375Z","harness:codex","cli:create:dep",detected
   pm-fqlocp,related,"2026-10-17T22:34:40.375Z","harness:codex","cli:create:dep",detected
   pm-gh1485,discovered_from,"2026-10-17T22:34:40.375Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-17T22:34:40.375Z","harness:codex","Duplicate check: live keyword AND searches for Bun invalidation and Bun writer returned complete full payloads for20 and58 matches. Read the closed Bun fallback and Windows invalidation owners in full with immutable history. They delivered read caching and portable invalidation respectively; neither owns the proven mixed-backend producer omission. Reuse the concurrency parent and preserve those completed fixes."
   "2026-10-17T22:37:15.805Z","harness:codex","Negative control: an actual no-SQLite append between two SQLite writes leaves three authoritative entries but the projection returns only create/update, omitting comment_add while certifying the full byte size. The completed Bun read-cache fix is preserved; this defect concerns producer participation in shared invalidation."
   "2026-10-17T22:45:49.556Z","harness:codex","The forced unavailable-SQLite control failed before the fix: two cached facts versus three authoritative facts after a later indexed append. Every non-indexed producer now uses the existing pending/committed invalidation protocol. Current Bun1.4.3 exposes node:sqlite, so the real mixed-runtime check exercises native Node/Bun sharing; it is not evidence that current Bun lacks SQLite. The constructor-unavailable regression separately exercises that supported fallback. No cursor, event or page shape changes."
   "2026-10-17T22:48:14.410Z","harness:codex","Real public-SDK acceptance passed on Node26.9.0 and Bun1.4.3 sharing one isolated tracker: warm Node projection, Bun middle update, then Node update without an intervening event read returned three unique update versions whose full entries exactly match all three authoritative facts. Current Bun exposes SQLite. Strict history-drift validation passed; the separate unavailable-SQLite negative control proves fallback producer invalidation. All owned acceptance storage was removed only after subprocess completion."
+  "2026-10-18T00:07:08.064Z","harness:codex","Upgrade investigation before the final push: the earlier fix prevents new SQLite-less producers from omitting invalidation. Verify separately whether an already incomplete legacy cache with a current size receipt is rejected on upgrade, and whether an incremental writer certifies facts after authoritative history was merged outside cache maintenance. Add deterministic on-disk controls before claiming those variants fixed; retain the completed producer-protocol evidence in prior immutable close events."
+  "2026-10-18T00:12:39.447Z","harness:codex","Both upgrade controls failed before the fix: a legacy version5 projection retained two facts with a valid full-size receipt, and a completed merged-stream append was hidden by a later indexed append. Generation6 forces legacy cache rebuild; incremental maintenance now checks its prior stream-size receipt before advancing it. All193 affected tests pass after adjusting pause/error controls to continue targeting the post-append boundary. Also verify native contention during generation upgrade: a legacy cache may remain open on Windows, so invalidation evidence must not depend on unlinking it before authoritative progress."
+  "2026-10-18T00:16:44.617Z","harness:codex","All467 focused history/SDK/schema/workflow tests pass after the upgrade and merged-base controls. Diagnostic coverage has zero uncovered statements/functions/branches in event-index.ts; its unchanged full-source global threshold correctly rejects a subset run, so this is not overall coverage admission. Native legacy-reader/reserved-writer controls reproduced premature repair before the retention fix. All six current/legacy native contention cases now preserve authoritative progress and retain invalidation evidence without requiring cache unlink, followed by complete repair. New-stream and failed-authority callback controls preserve zero-byte bases, rollback and exact original errors. Generation6 heals already incomplete legacy caches without changing item schemas or event cursors."
 notes[1]{created_at,author,text}:
   "2026-10-17T23:06:07.615Z","harness:codex",All history producers share invalidation semantics even when their runtime has no SQLite implementation. A current stream-size receipt alone cannot certify completeness if another producer omitted index maintenance. The native-cache path remains optional and must refuse such a cache until a complete authoritative rebuild publishes it.
 files[2]{path,scope}:
   src/core/history/event-index.ts,project
   tests/unit/core/history/event-index-snapshots.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted,project,300,"harness:codex","2026-10-17T22:37:12.057Z",local_mutation,fix/history-index-reader-contention
-test_runs[1]:
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-17T22:37:12.057Z"
+      source_kind: local_mutation
+      source_ref: fix/history-index-reader-contention
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t legacy
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-18T00:15:29.452Z"
+      source_kind: local_mutation
+      source_ref: fix/history-index-reader-contention
+test_runs[2]:
   - run_id: test-local-mvd06ay0-g1cz4o
     kind: test
     status: passed
@@ -50,16 +67,28 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted,schema,schema,source,local_source_ref
+  - run_id: test-local-mvd2ws4j-gf96wg
+    kind: test
+    status: passed
+    started_at: "2026-10-18T00:19:47.202Z"
+    finished_at: "2026-10-18T00:20:11.491Z"
+    recorded_at: "2026-10-18T00:20:11.491Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t legacy,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/SDK_CONTEXT_COORDINATION.md,project
-close_reason: Preserve all shared history facts across indexed and SQLite-less writers.
+close_reason: "Recover complete history context across producers, merges and legacy projections."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   owner: pm-f7shxf
   gate_id: test-coverage
-  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t omitted
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts -t \"omitted|legacy\""
   local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/history/event-index-snapshots.spec.ts,node scripts/run-tests.mjs coverage,pnpm typecheck
   hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
 body: ""

@@ -29,10 +29,11 @@ import {
 } from "../store/sqlite-runtime.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
-const EVENT_INDEX_VERSION = "5";
+const EVENT_INDEX_VERSION = "6";
 const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
 const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
 const HISTORY_EVENT_INDEX_APPEND_OWNER_PREFIX = "history-event-index:append:";
+const HISTORY_EVENT_INDEX_REPAIR_COOLDOWN_MS = 5_000;
 const HISTORY_EVENT_INDEX_LOCK_TTL_SECONDS = 300;
 const HISTORY_EVENT_INDEX_LOCK_WAIT_MS = 30_000;
 const HISTORY_EVENT_INDEX_INVALIDATION_LOCK_ID =
@@ -118,6 +119,33 @@ export type LatestSubstantiveHistoryEvents = Readonly<
 
 function eventIndexPath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", EVENT_INDEX_FILENAME);
+}
+
+/** Share automatic-repair backoff across independent CLI and SDK readers. */
+function refusedHistoryRepairPath(pmRoot: string): string {
+  return path.join(pmRoot, "runtime", "history-event-index-repair-deferred");
+}
+
+/** A refused full publication must not restart a complete build on every read. */
+async function hasRecentRefusedHistoryRepair(pmRoot: string): Promise<boolean> {
+  try {
+    const deferredAt = Number(
+      await fs.readFile(refusedHistoryRepairPath(pmRoot), "utf8"),
+    );
+    const age = Date.now() - deferredAt;
+    return age >= 0 && age < HISTORY_EVENT_INDEX_REPAIR_COOLDOWN_MS;
+  } catch {
+    return false;
+  }
+}
+
+/** Backoff is optional derived state and cannot mask repair errors or revive removed storage. */
+async function deferAutomaticHistoryRepair(pmRoot: string): Promise<void> {
+  try {
+    await fs.writeFile(refusedHistoryRepairPath(pmRoot), `${Date.now()}\n`);
+  } catch {
+    // A failed receipt only loses backoff; authority and invalidations are unchanged.
+  }
 }
 
 interface HistoryEventIndexInvalidations {
@@ -247,22 +275,22 @@ async function invalidateHistoryEventIndex(pmRoot: string): Promise<void> {
   }
 }
 
-/** Preserve native contention as invalidation evidence while retaining the contended file. */
+/** Persist invalidation while optionally retaining a potentially contended cache file. */
 async function recordHistoryEventIndexInvalidation(
   pmRoot: string,
-  contended: boolean,
+  retainCache: boolean,
 ): Promise<void> {
   const directory = historyEventIndexInvalidationDirectory(pmRoot);
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(
     path.join(
       directory,
-      `${randomUUID()}${contended ? ".contended" : ""}.committed`,
+      `${randomUUID()}${retainCache ? ".contended" : ""}.committed`,
     ),
     "committed\n",
     { flag: "wx" },
   );
-  if (!contended) await invalidateHistoryEventIndex(pmRoot);
+  if (!retainCache) await invalidateHistoryEventIndex(pmRoot);
 }
 
 /** Recognize retained native contention without treating settled damage as transient. */
@@ -621,9 +649,13 @@ export async function rebuildHistoryEventIndex(
               ),
             ),
           );
-        if (!published) await fs.rm(temporaryPath, { force: true });
+        if (!published) {
+          await deferAutomaticHistoryRepair(pmRoot);
+          await fs.rm(temporaryPath, { force: true });
+        }
         return published;
       } catch (error: unknown) {
+        await deferAutomaticHistoryRepair(pmRoot);
         database?.close();
         await fs.rm(temporaryPath, { force: true });
         throw error;
@@ -754,6 +786,25 @@ export async function queryHistoryEventStreams(
   };
 }
 
+/** Certify the incremental base before a later append can overwrite its size receipt. */
+async function historyEventIndexHasAppendBase(
+  database: DatabaseSync,
+  historyPath: string,
+): Promise<boolean> {
+  const stored = database
+    .prepare("SELECT byte_size FROM streams WHERE stream_id = ?")
+    .get(path.basename(historyPath, ".jsonl")) as
+    | { byte_size: number }
+    | undefined;
+  let actualSize = 0;
+  try {
+    actualSize = (await fs.stat(historyPath)).size;
+  } catch (error: unknown) {
+    if (!isFileMissingError(error)) throw error;
+  }
+  return Number(stored?.byte_size ?? 0) === actualSize;
+}
+
 /**
  * Serialize an authoritative append with its optional SQLite projection.
  * The database write lock spans the file append and size capture, so compliant
@@ -795,10 +846,13 @@ export async function appendHistoryEntryWithEventIndex(
           if (version?.value !== EVENT_INDEX_VERSION) {
             throw new TypeError("Unsupported history event index version");
           }
+          if (!(await historyEventIndexHasAppendBase(database, historyPath))) {
+            throw new TypeError("Stale history event index append base");
+          }
         } catch (error: unknown) {
           database?.close();
           if (isHistoryIndexSqliteContention(error)) throw error;
-          await fs.rm(targetPath, { force: true });
+          await recordHistoryEventIndexInvalidation(pmRoot, true);
           await appendAuthoritative();
           return;
         }
@@ -1150,7 +1204,8 @@ export async function readHistoryEventIndexPage(
   );
   return {
     result: attempt === HISTORY_INDEX_CHANGED ? null : attempt,
-    repair_needed: attempt === null,
+    repair_needed:
+      attempt === null && !(await hasRecentRefusedHistoryRepair(pmRoot)),
   };
 }
 
@@ -1322,7 +1377,11 @@ export async function readLatestSubstantiveHistoryEvents(
   if (indexed !== null && indexed !== HISTORY_INDEX_CHANGED) {
     return indexed;
   }
-  if (Database && indexed !== HISTORY_INDEX_CHANGED) {
+  if (
+    Database &&
+    indexed !== HISTORY_INDEX_CHANGED &&
+    !(await hasRecentRefusedHistoryRepair(pmRoot))
+  ) {
     try {
       if (await rebuildHistoryEventIndex(pmRoot, { lockWaitMs: 0 })) {
         const rebuilt = await readIndexedLatestSubstantiveEvents(

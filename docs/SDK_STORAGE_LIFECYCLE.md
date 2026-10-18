@@ -1,7 +1,9 @@
 # SDK Storage Lifecycle
 
-Tracked by [pm-p5u6](../.agents/pm/chores/pm-p5u6.toon) and
-[pm-xj80p9](../.agents/pm/issues/pm-xj80p9.toon).
+Tracked by [pm-p5u6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5u6.toon) and
+[pm-xj80p9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xj80p9.toon).
+
+Tracker records live in the repository and are excluded from the npm package.
 
 Detached telemetry reads existing settings without scaffolding schemas/identity.
 Locks, queue/state rewrites and event/OTLP completion preserve owner-removed
@@ -11,6 +13,7 @@ storage. Delivery stays best effort/nonblocking; foreground defaults create pare
 import { acquireLock, writeFileAtomic } from "@unbrained/pm-cli/sdk";
 
 const policy = { createParentDirectories: false };
+const lockOptions = { ...policy, maxWaitMs: 0 };
 const release = await acquireLock(
   root,
   "job",
@@ -19,7 +22,7 @@ const release = await acquireLock(
   false,
   true,
   5000,
-  policy,
+  lockOptions,
 );
 try {
   await writeFileAtomic(resultPath, serializedResult, policy);
@@ -33,8 +36,9 @@ policy cannot pin identity or prevent symlink/replacement races. Extension lock
 overrides own their lifecycle.
 
 For optional background work, pass `maxWaitMs: 0` in the final `acquireLock`
-options object. The built-in lock then makes no contention retries, even when
-`PM_LOCK_WAIT_MS` requests a longer wait. A positive `maxWaitMs` caps the normal
+options object. The built-in lock then fails fast for active contention, even
+when `PM_LOCK_WAIT_MS` requests a longer wait. Stale-lock handling may still
+retry creation after removing a confirmed stale owner. A positive `maxWaitMs` caps the normal
 environment-or-caller retry budget without increasing it. Filesystem calls and
 extension execution still take their ordinary execution time; the cap is not a
 wall-clock timeout. Extension lock overrides receive `max_wait_ms` and remain
