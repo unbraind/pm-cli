@@ -157,6 +157,53 @@ function restoreCandidate(value: JsonValue): JsonValue {
 }
 
 describe("lossless SDK table cells", () => {
+  it("retains reserved JSON row keys through native and lean host projection", () => {
+    const rows: Record<string, JsonValue>[] = JSON.parse('[{"id":"one","__proto__":{"value":1,"empty":[]},"constructor":[]},{"id":"two","__proto__":{"value":2,"nil":null},"constructor":{}}]');
+    const before = structuredClone(rows);
+    const source = { items: rows };
+    expect(restoreTables(decode(formatBuiltInOutput(source, "toon")))).toEqual(source);
+    expect(JSON.parse(formatOutput(source, { json: true, lean: true }))).toEqual({
+      items: JSON.parse('[{"id":"one","__proto__":{"value":1}},{"id":"two","__proto__":{"value":2}}]'),
+    });
+    expect(rows).toEqual(before);
+  });
+
+  it("preserves context null cells and nested empty row values without inventing absent fields", () => {
+    const high_level = Array.from({ length: 12 }, (_, index) => ({
+      id: `pm-${index}`,
+      title: `Context ${index}`,
+      assignee: null,
+      parent: index % 2 === 0 ? "pm-parent" : null,
+      deadline: null,
+      order: null,
+    }));
+    const source = {
+      high_level,
+      low_level: [
+        { id: "one", cell: null, nested: { empty: [], nil: null }, tags: [] },
+        { id: "two", nested: { empty: {} }, tags: [] },
+        {},
+      ],
+    };
+    const text = formatBuiltInOutput(source, "toon");
+    expect(restoreTables(decode(text))).toEqual(source);
+    expect(text).toContain(
+      "high_level[12]{id,title,assignee,parent,deadline,order}",
+    );
+    expect(text).not.toContain("high_level_encoding");
+    expect(JSON.parse(formatBuiltInOutput(source, "json"))).toEqual(source);
+    expect(
+      JSON.parse(formatOutput(source, { json: true, lean: true })),
+    ).toEqual({
+      high_level: high_level.map(({ id, title, parent }) => ({
+        id,
+        title,
+        ...(parent === null ? {} : { parent }),
+      })),
+      low_level: [{ id: "one" }, { id: "two" }],
+    });
+  });
+
   it("restores mixed columns, sparse keys, nulls, empty values, and strings resembling JSON", () => {
     const rows = [
       {

@@ -101,6 +101,16 @@ receipts without that evidence retain their existing envelope.
 
 JSON object field order is not an API. Consume fields by name. Read envelopes keep the stable pagination vocabulary `items`, `count`, `total`, `has_more`, and, when another page exists, `next_cursor`. The `filters` object echoes the effective query scope. Plain `pm list` and `pm search` are all-status reads and disclose `filters.status: "all"`; lifecycle-specific commands such as `pm list-open` remain explicit shortcuts.
 
+Default brief-list TOON presentation omits default projection, sorting, timestamp,
+and redundant zero-count metadata. A `details: "--full"` pointer replaces only
+the standard full-item omission receipt. Unchecked source status, pagination,
+non-default sorting, warnings, and additional diagnostics remain visible.
+Use JSON for the complete typed envelope. TOON object rows preserve explicit
+nulls and empty values, including nested cells. Only genuinely missing keys
+appear in a table's `absent` metadata.
+Successful health checks retain their compact presentation by omitting an empty
+diagnostic `details` object. Material diagnostics and failing checks remain visible.
+
 Projection flags intentionally change row shape. Use `--fields` when a script requires an exact subset, `--brief` or `--compact` only when the documented sparse shape is sufficient, and `--full` when linked metadata is required. Check `row_contract` on generic read surfaces that expose one; do not infer omitted fields as empty values.
 
 For long-lived clients, generate or inspect the runtime contract instead of hard-coding recalled flags:
