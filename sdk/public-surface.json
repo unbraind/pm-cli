@@ -2464,6 +2464,16 @@
       ],
       "package_version": "2026.10.18",
       "reason": "Add optional merge settlement options and portable receipt evidence while preserving exported names and default hook-free behavior."
+    },
+    {
+      "changes": [
+        "signature ./sdk:MergeReceiptEvidenceScan",
+        "signature ./sdk:MergeReconcileResult",
+        "signature ./sdk/merge:MergeReceiptEvidenceScan",
+        "signature ./sdk/merge:MergeReconcileResult"
+      ],
+      "package_version": "2026.10.18",
+      "reason": "Require indexed immutable receipt proof and expose unstaged candidates for read-only preview while preserving exported names and guarded staging."
     }
   ],
   "entrypoints": {
@@ -11234,7 +11244,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; durable_receipt_ids?: string[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; durable_receipt_ids?: string[]; unstaged_durable_receipt_ids?: string[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "supported",
@@ -11270,7 +11280,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileResult",
-          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; staged_paths?: string[]; }"
+          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; unstaged_durable_receipt_ids?: string[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; staged_paths?: string[]; }"
         },
         {
           "classification": "supported",
@@ -30404,7 +30414,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; durable_receipt_ids?: string[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; durable_receipt_ids?: string[]; unstaged_durable_receipt_ids?: string[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "supported",
@@ -30434,7 +30444,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileResult",
-          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; staged_paths?: string[]; }"
+          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; unstaged_durable_receipt_ids?: string[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; staged_paths?: string[]; }"
         },
         {
           "classification": "supported",

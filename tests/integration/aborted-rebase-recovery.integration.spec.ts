@@ -82,6 +82,8 @@ describe("aborted Git operation receipt recovery", () => {
       );
       expect(active.receipts).toHaveProperty("abandoned", 0);
       git(kind, "--abort");
+      // Abandonment audits also cite durable proof; retain it in the index first.
+      git("add", ".agents/pm/merge-receipts");
       expect(
         await readFile(
           path.join(context.pmPath, "tasks", `${id}.toon`),

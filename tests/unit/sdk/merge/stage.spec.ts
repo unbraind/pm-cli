@@ -15,7 +15,7 @@ function preview(): MergeReconcileResult {
   return {
     ok: false, dry_run: true,
     repair: { streams: [{ id: "pm-task", outcome: "repaired", merge_receipt_proof: { trusted: true, reason: "trusted_merge_driver_hash_evidence", receipt_ids: ["receipt"] } }], totals: { failed: 0 } },
-    receipts: { summaries: [{ receipt_id: "receipt", conflict_fields: [] }], missing_history_references_after: 0 },
+    receipts: { summaries: [{ receipt_id: "receipt", item_id: "pm-task", conflict_fields: [] }], missing_history_references_after: 0 },
     validation: { checks: [{ name: "history_drift", status: "warn" }, { name: "storage_integrity", status: "ok" }] },
   } as MergeReconcileResult;
 }
@@ -23,7 +23,7 @@ function preview(): MergeReconcileResult {
 describe("lossless reconciliation staging", () => {
   afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
-    mocks.git.mockReset().mockResolvedValue({ stdout: "" });
+    mocks.git.mockReset().mockImplementation(async (_command, args) => ({ stdout: args.includes("--cached") && args[0] === "ls-files" ? ".agents/pm/merge-receipts/receipt.json\0" : "" }));
     mocks.workspace.mockReset().mockResolvedValue("/workspace");
   });
   const invoke = (value = preview(), dryRun = false, apply = vi.fn().mockResolvedValue({ ...value, ok: true, dry_run: false })) => ({
@@ -44,6 +44,11 @@ describe("lossless reconciliation staging", () => {
     const value = preview(); value.repair.streams = []; value.receipts.summaries = [];
     expect((await invoke(value).run()).staged_paths).toEqual([]);
     expect(mocks.git.mock.calls.every((call) => call[1][0] === "ls-files")).toBe(true);
+  });
+
+  it("includes receipt-only audit histories even when bulk repair reports no changed stream", async () => {
+    const value = preview(); value.repair.streams = []; value.receipts.abandoned = 1;
+    expect((await invoke(value).run()).staged_paths).toEqual([".agents/pm/history/pm-task.jsonl", ".agents/pm/merge-receipts/receipt.json"]);
   });
 
   it.each([true, false])("accepts the normal hook index and refuses an alternate index (normal: %s)", async (normal) => {
@@ -88,5 +93,21 @@ describe("lossless reconciliation staging", () => {
     const request = invoke(value, false, vi.fn().mockResolvedValue(changed));
     await expect(request.run()).rejects.toMatchObject({ context: { code: "merge_settlement_review_required" } });
     expect(mocks.git.mock.calls.some((call) => call[1][0] === "add")).toBe(false);
+  });
+
+  it("prepares a new receipt before applying and restores only that new index entry on failure", async () => {
+    mocks.git.mockResolvedValue({ stdout: "" });
+    const failed = invoke(preview(), false, vi.fn().mockRejectedValue(new Error("audit failed")));
+    await expect(failed.run()).rejects.toThrow("audit failed");
+    expect(mocks.git).toHaveBeenLastCalledWith("git", ["reset", "--quiet", "--", ":(literal).agents/pm/merge-receipts/receipt.json"], expect.any(Object));
+    const success = invoke();
+    expect((await success.run()).ok).toBe(true);
+  });
+
+  it("preserves an intentional staged receipt deletion", async () => {
+    mocks.git.mockResolvedValue({ stdout: "" }).mockImplementation(async (_command, args) => ({ stdout: args.includes("--diff-filter=D") ? "deleted\0" : "" }));
+    const request = invoke();
+    await expect(request.run()).rejects.toMatchObject({ context: { code: "merge_settlement_review_required" } });
+    expect(request.apply).not.toHaveBeenCalled();
   });
 });

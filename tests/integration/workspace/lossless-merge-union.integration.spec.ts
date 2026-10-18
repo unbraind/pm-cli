@@ -85,7 +85,7 @@ describe("lossless Git collection union", () => {
         git("switch", "-q", "prior");
         edit("created_at=2026-10-06T00:00:00.000Z,text=Earlier prior comment");
         git("merge", "--no-edit", "other");
-        expect((await runMergeReconcile({}, { path: context.pmPath })).ok).toBe(true);
+        expect((await runMergeReconcile({ stage: true }, { path: context.pmPath })).ok).toBe(true);
         git("add", ".agents"); git("commit", "-qm", "Settle prior union");
         git("switch", "-q", "other"); git("merge", "--ff-only", "prior");
       }
@@ -105,7 +105,7 @@ describe("lossless Git collection union", () => {
       const pending = await inspectMergeReceiptEvidence(context.tempRoot);
       expect(pending.invalid_evidence_count).toBe(0);
       expect(pending.receipts).toHaveLength(1);
-      const settled = await runMergeReconcile({}, { path: context.pmPath });
+      const settled = await runMergeReconcile({ stage: true }, { path: context.pmPath });
       expect(settled.ok, JSON.stringify(settled)).toBe(true);
       const raw = await readFile(historyPath, "utf8");
       const entries = raw.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);

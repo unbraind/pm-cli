@@ -298,7 +298,10 @@ or restore the original valid durable sidecar. Never copy private local receipt
 values into tracked evidence as a substitute.
 
 `inspectMergeReceiptEvidence().durable_receipt_ids` identifies validated durable
-counterparts after local/durable provenance comparison. Current readers always
+counterparts whose immutable provenance also matches the Git index bytes.
+Untracked files and mismatched staged versions cannot authorize an audit write.
+`unstaged_durable_receipt_ids` reports valid disk candidates for a read-only
+preview; clone-local-only evidence remains refused even in preview. Current readers always
 return it; the optional interface property preserves structural compatibility,
 and absence provides no portability authority. Health resolves committed history
 references against these durable identities, so a local copy cannot hide evidence
@@ -472,6 +475,10 @@ untrusted or unrelated repairs, invalid storage, missing durable evidence,
 unresolved Git paths, alternate Git indices, and unstaged edits to the reconciliation paths. It never
 accepts `--force`. Only the verified history streams and receipt sidecars are
 added to the index; unrelated staged changes retain their existing state.
+Validated new sidecars enter the index before any audit history is written.
+If apply fails, their new index entries are reverted while their files and
+unrelated staged work remain available for review. Staged receipt deletions
+remain operator decisions and are refused.
 `--stage --dry-run` checks this boundary without applying or staging anything.
 The result's `staged_paths` lists the repository-relative artifacts added.
 
@@ -508,12 +515,20 @@ After every branch merge that touches `.agents/pm`, run:
 
 ```bash
 pm merge reconcile --dry-run --json
+# When the preview lists unstaged sidecars, review and stage those files first.
 pm merge reconcile --message "Reconcile merged tracker histories" --json
 # Required only to accept a receipt that lacks qualifying exact hash proof:
 pm merge reconcile --force --message "Accept reviewed merge decisions" --json
 ```
 
 The preview reports every drifted stream and pending receipt without mutation.
+`unstaged_durable_receipt_ids` identifies valid filesystem sidecars awaiting
+matching immutable evidence in the Git index. The preview can inspect those
+sidecars, but ordinary apply refuses to cite them until they are staged. For the
+default tracker their paths are `.agents/pm/merge-receipts/<receipt-id>.json`;
+use `git add -- <reviewed sidecar paths>` followed by `git diff --cached`. Use
+`--stage` for the guarded lossless workflow above. After ordinary apply, stage
+the updated history and receipt lifecycle files together before committing.
 It applies the same exact-snapshot proof requirement as apply: stale or
 unprovable receipts appear as failed streams in both modes, tracked by
 [pm-ao0bu9](../.agents/pm/issues/pm-ao0bu9.toon).

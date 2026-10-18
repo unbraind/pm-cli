@@ -224,7 +224,11 @@ paths. `staged_paths` reports exactly which relative paths were added to the ind
 
 The single-commit journey pauses Git with `git merge --no-commit --no-ff` before
 reconciliation or an opted-in pre-commit hook runs. `durable_receipt_ids` on the
-inspection result reports validated tracked counterparts. Missing portable proof
+inspection result reports counterparts with matching immutable provenance in
+the active Git index. `unstaged_durable_receipt_ids` separates valid filesystem
+sidecars that a read-only preview may inspect. Guarded staging prepares new
+sidecars before auditing and restores their new index entries if apply fails.
+Ordinary apply requires indexed proof first. Missing portable proof
 refuses an audit write even with `force`; local receipts alone cannot authorize
 committed history references. See [Merge safety](MERGE_SAFETY.md#settle-a-lossless-merge-in-one-commit)
 for the complete operator workflow and recovery boundaries.

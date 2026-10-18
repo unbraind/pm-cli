@@ -72,6 +72,8 @@ export interface MergeReconcileResult {
     /** Receipts proven to restore their original Git state; these do not represent applied merges. */
     abandoned: number;
     summaries: MergeDecisionReceiptSummary[];
+    /** Valid sidecars awaiting matching Git index evidence; a preview never authorizes audit writes. */
+    unstaged_durable_receipt_ids?: string[];
     /** Missing durable references discovered before this reconciliation. */
     missing_history_references_before: number;
     /** Pre-durable references eligible for explicit audited disposition. */
@@ -421,7 +423,7 @@ async function reconcileMergeHistory(options: MergeReconcileOptions, global: Glo
       },
     );
   }
-  assertPortableMergeReceiptReferences(receiptEvidence.receipts.map((receipt) => receipt.id), receiptEvidence.durable_receipt_ids);
+  assertPortableMergeReceiptReferences(receiptEvidence.receipts.map((receipt) => receipt.id), receiptEvidence, dryRun);
   const recordedLegacyDispositionCount = await recordLegacyReceiptDispositions({
     candidates: legacyDispositionCandidates,
     options,
@@ -564,6 +566,7 @@ async function reconcileMergeHistory(options: MergeReconcileOptions, global: Glo
       reconciled: reconciledReceiptCount,
       abandoned: abandonedReceiptIds.length,
       summaries: pendingReceipts.map(summarizeMergeReceipt),
+      unstaged_durable_receipt_ids: receiptEvidence.unstaged_durable_receipt_ids,
       missing_history_references_before: missingBefore.count,
       legacy_disposition_eligible: legacyDispositionCandidates.length,
       legacy_disposition_recorded: recordedLegacyDispositionCount,

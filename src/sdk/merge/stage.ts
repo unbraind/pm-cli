@@ -12,6 +12,7 @@ import { isPathOutsideRoot } from "../workspace.js";
 import type { MergeReconcileResult } from "./reconcile.js";
 
 const execFileAsync = promisify(execFile);
+type GitRunner = (args: string[]) => Promise<{ stdout: string }>;
 
 /** Refuse staging without changing the index; operators retain the explicit review path. */
 function stagingRefusal(reason: string): PmCliError {
@@ -23,11 +24,50 @@ function stagingRefusal(reason: string): PmCliError {
 }
 
 /** Do not stage the ordinary workspace index on behalf of a commit using another index. */
-async function assertNormalGitIndex(git: (args: string[]) => Promise<{ stdout: string }>): Promise<void> {
+async function assertNormalGitIndex(git: GitRunner): Promise<void> {
   const indexOverride = process.env.GIT_INDEX_FILE;
   if (indexOverride === undefined) return;
   const indexPath = (await git(["rev-parse", "--path-format=absolute", "--git-path", "index"])).stdout.trim();
   if (path.resolve(indexOverride) !== path.resolve(indexPath)) throw stagingRefusal("an alternate Git index requires explicit manual settlement");
+}
+
+/** Prepare only new receipt entries; an intentional indexed deletion remains operator policy. */
+async function newReceiptPaths(git: GitRunner, receiptPaths: string[]): Promise<string[]> {
+  if (receiptPaths.length === 0) return [];
+  const pathspecs = receiptPaths.map((target) => `:(literal)${target}`);
+  const indexed = new Set((await git(["ls-files", "--cached", "-z", "--", ...pathspecs])).stdout.split("\0"));
+  const missing = receiptPaths.filter((target) => !indexed.has(target)).map((target) => `:(literal)${target}`);
+  if (missing.length > 0 && (await git(["diff", "--cached", "--name-only", "--diff-filter=D", "-z", "--", ...missing])).stdout.length > 0) {
+    throw stagingRefusal("a receipt has a staged deletion that requires explicit review");
+  }
+  return missing;
+}
+
+/** Make new sidecars portable before auditing, reverting only their new index entries if settlement fails. */
+async function applyAndStage(params: {
+  git: GitRunner; preview: MergeReconcileResult; paths: string[]; newReceiptPathspecs: string[];
+  apply: () => Promise<MergeReconcileResult>;
+}): Promise<MergeReconcileResult> {
+  const { git, preview, paths, newReceiptPathspecs } = params;
+  let preparedReceipts = false;
+  try {
+    if (newReceiptPathspecs.length > 0) {
+      await git(["add", "--", ...newReceiptPathspecs]);
+      preparedReceipts = true;
+    }
+    const result = await params.apply();
+    if (!result.ok || JSON.stringify(result.receipts.summaries) !== JSON.stringify(preview.receipts.summaries) ||
+      result.repair.streams.some((stream) => !preview.repair.streams.some((prior) => prior.id === stream.id))) {
+      throw stagingRefusal("reconciliation changed or did not finish; inspect the audit artifacts before staging");
+    }
+    if (paths.length > 0) await git(["add", "--", ...paths.map((target) => `:(literal)${target}`)]);
+    return { ...result, staged_paths: paths, guidance: ["Lossless reconciliation artifacts are staged for the merge commit. Review git diff --cached before committing."] };
+  } catch (error: unknown) {
+    // Only these originally untracked entries were prepared by this call.
+    // A path-scoped reset preserves their files and every unrelated index entry.
+    if (preparedReceipts) await git(["reset", "--quiet", "--", ...newReceiptPathspecs]);
+    throw error;
+  }
 }
 
 /** Accept only complete, receipt-backed previews without discarded values or unrelated repairs. */
@@ -57,13 +97,14 @@ export async function stageLosslessMergeReconciliation(params: {
   const unmerged = await git(["ls-files", "--unmerged", "-z"]);
   if (unmerged.stdout.length > 0) throw stagingRefusal("Git still has unresolved paths");
   const paths = [...new Set([
-    ...preview.repair.streams.map((stream) => path.join(pmRoot, "history", `${stream.id}.jsonl`)),
+    ...[...new Set([...preview.repair.streams.map((stream) => stream.id), ...preview.receipts.summaries.map((receipt) => receipt.item_id)])].map((id) => path.join(pmRoot, "history", `${id}.jsonl`)),
     ...preview.receipts.summaries.map((receipt) => path.join(pmRoot, "merge-receipts", `${receipt.receipt_id}.json`)),
   ])].map((target) => path.relative(workspaceRoot, target).replaceAll("\\", "/"));
   if (paths.some(isPathOutsideRoot)) {
     throw stagingRefusal("reconciliation artifacts must belong to this Git workspace");
   }
   const pathspecs = paths.map((target) => `:(literal)${target}`);
+  const receiptPaths = preview.receipts.summaries.map((receipt) => path.relative(workspaceRoot, path.join(pmRoot, "merge-receipts", `${receipt.receipt_id}.json`)).replaceAll("\\", "/"));
   if (pathspecs.length > 0) {
     try {
       await git(["diff", "--quiet", "--", ...pathspecs]);
@@ -71,12 +112,7 @@ export async function stageLosslessMergeReconciliation(params: {
       throw stagingRefusal("reconciliation paths have unstaged edits or Git cannot verify their index state");
     }
   }
+  const newReceiptPathspecs = await newReceiptPaths(git, receiptPaths);
   if (params.dryRun) return { ...preview, staged_paths: [] };
-  const result = await params.apply();
-  if (!result.ok || JSON.stringify(result.receipts.summaries) !== JSON.stringify(preview.receipts.summaries) ||
-    result.repair.streams.some((stream) => !preview.repair.streams.some((prior) => prior.id === stream.id))) {
-    throw stagingRefusal("reconciliation changed or did not finish; inspect the audit artifacts before staging");
-  }
-  if (pathspecs.length > 0) await git(["add", "--", ...pathspecs]);
-  return { ...result, staged_paths: paths, guidance: ["Lossless reconciliation artifacts are staged for the merge commit. Review git diff --cached before committing."] };
+  return applyAndStage({ ...params, git, paths, newReceiptPathspecs });
 }

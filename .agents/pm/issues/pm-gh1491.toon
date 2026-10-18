@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[3]: "area:merge",data-integrity,github-intake
 created_at: "2026-10-17T12:32:22.626Z"
-updated_at: "2026-10-18T16:52:19.475Z"
-closed_at: "2026-10-18T16:52:18.628Z"
-completed_at: "2026-10-18T16:52:18.628Z"
+updated_at: "2026-10-18T18:44:13.936Z"
+closed_at: "2026-10-18T18:44:12.714Z"
+completed_at: "2026-10-18T18:44:12.714Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Add an isolated real-Git shared-prefix add/add regression distinct from independent identity collisions; Preserve both streams through authenticated settlement or recoverable actionable refusal; Keep the existing ambiguous-creation refusal and history-hash invariants; Make conflict status and health/reconciliation guidance explicit for operator resolution
@@ -20,18 +20,20 @@ why_now: A fresh published-version report identifies a potentially destructive o
 parent: pm-dj98
 risk: high
 confidence: 75
-resolution: Retained the creation-ancestry identity refusal while preserving both original item/history snapshots in visible conflict markers. Identity-ambiguous add/add artifacts cannot look like a clean preferred-side resolution; unrelated parse failures preserve the input and original error.
-expected_result: "Keep both add/add sources recoverable without treating copied creation bytes as proof of shared identity, and reject staged unresolved markers through health/storage validation."
-actual_result: "The corrected isolated cherry-pick reproduction fails on original main and passes on the candidate. Both source snapshots are retained, Git remains conflicted, health rejects staged markers, and malformed non-identity history errors preserve the preferred input. All linked tests and exact driver coverage pass; native-platform acceptance is wired into required hosted checks."
+resolution: "The Git driver preserves both full source snapshots inside explicit conflict markers when creation ancestry is ambiguous, retaining existing identity authentication. Real-Git tests exercise both newline checkout policies without weakening record or hash comparisons."
+expected_result: "Ambiguous add/add identity refuses automatic fusion while retaining both complete branch snapshots in visible conflict artifacts, and staged unresolved markers remain unhealthy on every supported checkout policy."
+actual_result: "The final shared58-test linked journey passed, including the8-case LF/CRLF real-Git matrix. Original-main negative controls fail at the intended marker-preservation boundary. Final native Windows and macOS hosted checks remain mandatory before merge."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1475,related,"2026-10-17T12:32:22.626Z","harness:codex","cli:create:dep",detected
   pm-qx95lz,related,"2026-10-17T12:32:22.626Z","harness:codex","cli:create:dep",detected
   pm-wc1r,related,"2026-10-17T12:32:22.626Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-17T12:32:22.626Z","harness:codex","Live duplicate check: keyword add/add search returned eight historical items; full metadata/history reads of the completed identity guard and history-driver foundation plus open settlement UX establish distinct boundaries. The closed identity fix intentionally rejects empty-ancestor identical creates and remains completed. This new report covers shared-prefix add/add conflict artifacts and safe operator resolution; keep it open and unclaimed for isolated reproduction, with no implementation claimed in PR 1490."
   "2026-10-18T13:57:24.913Z","harness:codex","Implementation scope: reproduce the shared-prefix cherry-pick add/add boundary in an isolated real Git repository. Retain the completed pm-qx95lz ancestry guard: copied create bytes are not independent identity authentication. On refusal, preserve both input snapshots visibly so staging a marker-free preferred side cannot appear lossless. Group with pm-gh1475 settlement safety."
   "2026-10-18T14:11:14.740Z","harness:codex","Isolated real-Git reproduction uses distinct planning-commit identities after cherry-pick so the merge base truly lacks the item. Both item and history drivers retain the completed identity-ancestry refusal, preserve both exact source snapshots within visible conflict markers, and keep health failing after the conflicted files are staged. Pure merge semantics still reject identical independent creates."
   "2026-10-18T16:52:17.786Z","harness:codex","Verification: the complete suite passed10690 tests with3 platform skips. Its exact coverage report identified only the driver passthrough and tracker-at-Git-root hook cases; both are now covered by real filesystem tests, and the231-test focused run reports exact100/100/100/100 for driver.ts and install.ts. The two new helper modules also passed exact100/100/100/100. All linked PM tests were rerun successfully. The complete static pipeline, all TypeScript projects, release-version policy, tracked-secret scan, registry inventory and sequential npm/npx/Bun packed smoke passed. Final hosted full-population coverage and native-platform checks remain mandatory before merge; this closure records implemented, locally verified work for the reviewed delivery, not a new registry publication."
+  "2026-10-18T17:59:57.088Z","harness:codex","Windows CI and CodeRabbit identified LF/CRLF assumptions in the snapshot assertions. Tests now run both checkout policies on every host, normalize only line endings for complete-text comparisons, retain every JSON record/hash, and verify the clone actually uses the requested newline policy. The existing ancestry guard remains intentional: copied create bytes alone do not authorize identity fusion, and the planned acceptance permits a recoverable visible refusal. All linked test sets passed the checkout correction before index-proof review hardening."
+  "2026-10-18T18:44:11.521Z","harness:codex","Review verification: the shared58-test linked journey passed on the final revision. All8 real-Git scenarios run both LF and CRLF policies; complete-text assertions normalize only line endings, verify the clone checkout policy, and preserve full records and hashes. Both ambiguous add/add snapshots remain visible and staged markers keep health failing. The completed independent-creation ancestry guard remains intact; no copied-prefix identity fusion was introduced."
 files[4]{path,scope,note}:
   .github/workflows/ci.yml,project,Exercise visible add/add refusal artifacts on native macOS and Windows
   src/sdk/merge/driver.ts,project,Reviewed merge safety implementation and regression evidence
@@ -39,7 +41,7 @@ files[4]{path,scope,note}:
   tests/unit/sdk/merge/item-identity.spec.ts,project,Reviewed merge safety implementation and regression evidence
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
   node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/merge-reconcile.spec.ts,project,600,"harness:codex","2026-10-18T14:12:32.647Z",local_mutation,fix/sdk-merge-settlement-safety,Isolated Git preservation and portable lossless settlement
-test_runs[2]:
+test_runs[4]:
   - run_id: test-local-mvdyibd5-306247
     kind: test
     status: passed
@@ -62,10 +64,32 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/merge-reconcile.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mve3k41l-b3449v
+    kind: test
+    status: passed
+    started_at: "2026-10-18T17:25:16.075Z"
+    finished_at: "2026-10-18T17:26:06.200Z"
+    recorded_at: "2026-10-18T17:26:06.200Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/merge-reconcile.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mve6bk4x-nk60wf
+    kind: test
+    status: passed
+    started_at: "2026-10-18T18:42:38.248Z"
+    finished_at: "2026-10-18T18:43:26.000Z"
+    recorded_at: "2026-10-18T18:43:26.000Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/merge-reconcile.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Generated release entry through the latest pm-changelog package after verified closure
   docs/MERGE_SAFETY.md,project,Visible identity refusal preserves both branch snapshots
-close_reason: Implemented and verified for the combined reviewed merge-safety delivery.
+close_reason: Implemented visible recoverable add/add refusal with portable LF/CRLF regression evidence.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

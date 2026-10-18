@@ -83,6 +83,32 @@ describe("clone-local merge decision receipts", () => {
     );
   });
 
+  it("requires indexed evidence in the selected repository instead of a filesystem copy", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-indexed-receipts-"));
+    const detached = await mkdtemp(path.join(os.tmpdir(), "pm-detached-receipts-"));
+    workspaces.push(root, detached);
+    execFileSync("git", ["init", "-q"], { cwd: root });
+    const tracker = path.join(root, ".agents", "pm");
+    await mkdir(path.join(tracker, "tasks"), { recursive: true });
+    await writeFile(path.join(tracker, "settings.json"), "{}\n");
+    const receipt = (await writeMergeReceipt({ cwd: root, itemPath: ".agents/pm/tasks/pm-indexed.toon", preferred: "ours", fieldsFromTheirs: [], unionFields: [], decisions: [] }))!;
+    const relative = `.agents/pm/merge-receipts/${receipt.id}.json`;
+    execFileSync("git", ["add", relative], { cwd: root });
+    const index = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-path", "index"], { cwd: root, encoding: "utf8" }).trim();
+    vi.stubEnv("GIT_INDEX_FILE", index);
+    try {
+      expect((await inspectMergeReceiptEvidence(root)).durable_receipt_ids).toEqual([receipt.id]);
+    } finally { vi.unstubAllEnvs(); }
+
+    await mkdir(path.join(detached, "merge-receipts"));
+    await writeFile(path.join(detached, "merge-receipts", `${receipt.id}.json`), await readFile(path.join(root, relative)));
+    expect(await inspectMergeReceiptEvidence(detached, { pmRoot: detached })).toMatchObject({ durable_receipt_ids: [], unstaged_durable_receipt_ids: [receipt.id] });
+
+    const nested = path.join(root, "nested");
+    await mkdir(nested); execFileSync("git", ["init", "-q"], { cwd: nested });
+    expect(await inspectMergeReceiptEvidence(nested, { pmRoot: tracker })).toMatchObject({ durable_receipt_ids: [], unstaged_durable_receipt_ids: [receipt.id] });
+  });
+
   it("preserves recoverable values locally and exposes privacy-safe summaries", async () => {
     const workspace = await mkdtemp(path.join(os.tmpdir(), "pm-receipts-"));
     workspaces.push(workspace);
@@ -295,6 +321,7 @@ describe("clone-local merge decision receipts", () => {
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
       durable_receipt_ids: [],
+      unstaged_durable_receipt_ids: [],
       invalid_evidence_count: 0,
       invalid_evidence: [],
       invalid_evidence_truncated: false,
@@ -567,6 +594,7 @@ describe("clone-local merge decision receipts", () => {
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
       durable_receipt_ids: [],
+      unstaged_durable_receipt_ids: [],
       invalid_evidence_count: 6,
       invalid_evidence: invalidEvidence,
       invalid_evidence_truncated: false,
@@ -684,6 +712,7 @@ describe("clone-local merge decision receipts", () => {
     ).resolves.toEqual({
       receipts: [],
       durable_receipt_ids: [],
+      unstaged_durable_receipt_ids: [],
       invalid_evidence_count: 1,
       invalid_evidence: [
         {
@@ -1108,6 +1137,7 @@ describe("clone-local merge decision receipts", () => {
     ).resolves.toEqual({
       receipts: [],
       durable_receipt_ids: [],
+      unstaged_durable_receipt_ids: [],
       invalid_evidence_count: 1,
       invalid_evidence: [
         {
@@ -1144,6 +1174,7 @@ describe("clone-local merge decision receipts", () => {
       await expect(inspectMergeReceiptEvidence(workspace, { pmRoot })).resolves.toMatchObject({
         receipts: [],
         durable_receipt_ids: [],
+      unstaged_durable_receipt_ids: [],
         invalid_evidence_count: 1,
         invalid_evidence: [{ reason: "copy_provenance_mismatch", receipt_id: receipt!.id }],
       });

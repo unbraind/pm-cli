@@ -9,7 +9,7 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import type { Stats } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+import { readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { readHistoryEntries } from "../../core/history/read.js";
@@ -36,6 +36,9 @@ import {
 } from "./three-way.js";
 import type { MergeReceiptOperation } from "./receipt-operation.js";
 import { readBoundedRegularFile } from "./receipt-file-boundary.js";
+import { mapWithFixedConcurrency } from "../extension/concurrency.js";
+import { isPathOutsideRoot } from "../workspace.js";
+import { gitWorkspaceEnvironment } from "./worktree-config.js";
 
 import { DURABLE_VALUE_POLICY, durableValueEvidence, isSafeReceiptId, isMergeDecisionReceipt, isPrehashedValue, normalizeLegacyReceipt, receiptCollectionValidationPath, receiptValidationError } from "./receipt-schema.js";
 export { isSafeReceiptId } from "./receipt-schema.js";
@@ -154,8 +157,10 @@ export interface MergeReceiptEvidenceReport {
 export interface MergeReceiptEvidenceScan {
   /** Valid receipts that passed bounded-file, schema, and identity validation. */
   receipts: MergeDecisionReceipt[];
-  /** Valid tracked counterparts, excluding divergent copies; always emitted by current readers, optional for structural compatibility. Missing evidence never authorizes a tracked history reference. */
+  /** Valid counterparts with matching immutable provenance in the active Git index; absent evidence never authorizes a tracked history reference. */
   durable_receipt_ids?: string[];
+  /** Valid filesystem sidecars not represented by matching indexed evidence; usable only for a read-only preview before guarded staging. */
+  unstaged_durable_receipt_ids?: string[];
   /** Number of JSON receipt candidates that could not be validated safely. */
   invalid_evidence_count: number;
   /** Bounded privacy-safe identities and reason codes for rejected evidence. */
@@ -689,6 +694,34 @@ async function inspectReceiptCandidate(
   };
 }
 
+/** Authenticate indexed bytes rather than treating an untracked or stale sidecar as portable proof. */
+async function indexedDurableReceiptIds(cwd: string, trackerRoot: string, receipts: readonly MergeDecisionReceipt[]): Promise<string[]> {
+  if (receipts.length === 0) return [];
+  const env = gitWorkspaceEnvironment();
+  if (process.env.GIT_INDEX_FILE !== undefined) env.GIT_INDEX_FILE = path.resolve(process.env.GIT_INDEX_FILE);
+  const gitOptions = { cwd, env, encoding: "utf8" as const, windowsHide: true, timeout: 10_000, maxBuffer: RECEIPT_FILE_MAX_BYTES };
+  let relativeDirectory: string;
+  let workspaceRoot: string;
+  try {
+    const root = (await execFileAsync("git", ["rev-parse", "--show-toplevel"], gitOptions)).stdout.trim();
+    const [physicalRoot, physicalDirectory] = await Promise.all([realpath(root), realpath(durableReceiptDirectory(trackerRoot))]);
+    workspaceRoot = physicalRoot;
+    relativeDirectory = path.relative(physicalRoot, physicalDirectory).replaceAll("\\", "/");
+  } catch { return []; }
+  if (isPathOutsideRoot(relativeDirectory)) return [];
+  const ids = await mapWithFixedConcurrency([...receipts], 4, async (receipt) => {
+    try {
+      const indexedRaw = (await execFileAsync("git", ["show", `:0:${relativeDirectory}/${receiptFileName(receipt.id)}`], { ...gitOptions, cwd: workspaceRoot })).stdout;
+      const indexed: unknown = normalizeLegacyReceipt(JSON.parse(indexedRaw) as unknown);
+      if (receiptValidationError(indexed, "durable") !== null) return undefined;
+      const stored = indexed as MergeDecisionReceipt;
+      const fingerprints = receiptProvenanceFingerprints(receipt);
+      return stored.id === receipt.id && receiptProvenanceFingerprints(stored).some((fingerprint) => fingerprints.includes(fingerprint)) ? receipt.id : undefined;
+    } catch { return undefined; }
+  });
+  return ids.filter((id): id is string => id !== undefined);
+}
+
 /** Inspect valid receipts and count invalid evidence without returning untrusted file contents. */
 export async function inspectMergeReceiptEvidence(
   cwd: string,
@@ -752,8 +785,11 @@ export async function inspectMergeReceiptEvidence(
     );
   }
   await retainAuditedDurableSettlements(receipts, durable.receipts, trackerRoot);
+  const validDurable = durable.receipts.filter((receipt) => receipts.has(receipt.id));
+  const indexedIds = new Set(await indexedDurableReceiptIds(cwd, trackerRoot, validDurable));
   return {
-    durable_receipt_ids: durable.receipts.filter((receipt) => receipts.has(receipt.id)).map((receipt) => receipt.id),
+    durable_receipt_ids: [...indexedIds],
+    unstaged_durable_receipt_ids: validDurable.filter((receipt) => !indexedIds.has(receipt.id)).map((receipt) => receipt.id),
     receipts: [...receipts.values()]
       .filter(
         (receipt) =>
@@ -794,15 +830,15 @@ export async function listMergeReceipts(
 }
 
 /** Refuse audit references unless every requested identity has validated portable evidence. */
-export function assertPortableMergeReceiptReferences(receiptIds: Iterable<string>, durableReceiptIds: readonly string[] | undefined): void {
-  const portable = new Set(durableReceiptIds);
+export function assertPortableMergeReceiptReferences(receiptIds: Iterable<string>, evidence: Pick<MergeReceiptEvidenceScan, "durable_receipt_ids" | "unstaged_durable_receipt_ids"> | undefined, preview: boolean): void {
+  const portable = new Set([...(evidence?.durable_receipt_ids ?? []), ...(preview ? evidence?.unstaged_durable_receipt_ids ?? [] : [])]);
   const nonportable = [...receiptIds].filter((id) => !portable.has(id));
   if (nonportable.length === 0) return;
   throw new PmCliError(`Merge reconciliation refused ${nonportable.length} receipt(s) without validated tracked evidence; no audit history was written.`, EXIT_CODE.CONFLICT, {
     code: "merge_receipt_not_portable",
-    required: "Every receipt cited by tracked history must have a validated tracked counterpart with matching immutable provenance.",
+    required: "Every receipt cited by tracked history must have matching validated evidence in the Git index before any audit write.",
     recovery: { suggested_retry: "pm merge report --include-reconciled" },
-    nextSteps: ["Inspect the clone-local receipts and restore their original valid tracked counterparts, or preserve unrelated stale receipts outside the active receipt store after reviewing their origin. Never copy private clone-local values into tracked evidence. Then rerun pm merge reconcile --dry-run."],
+    nextSteps: ["Stage valid project sidecars after reviewing git diff, or use pm merge reconcile --stage for guarded lossless settlement. Restore missing original counterparts or preserve unrelated stale receipts outside the active store. Never copy private clone-local values into tracked evidence. Then rerun pm merge reconcile --dry-run."],
   });
 }
 

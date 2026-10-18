@@ -614,7 +614,7 @@ async function resolveHistoryRepairMergeEvidence(params: {
         receipt.item_id === params.subjectId &&
         requestedReceiptIds.has(receipt.id),
     ) ?? [];
-  assertPortableMergeReceiptReferences(requestedReceiptIds, authoritativeReceiptEvidence?.durable_receipt_ids);
+  assertPortableMergeReceiptReferences(requestedReceiptIds, authoritativeReceiptEvidence, params.options.dryRun === true);
   const mergeReceiptProof = params.options.mergeReceiptProof
     ? await verifyMergeReceiptProof({
         proof: {

@@ -33,6 +33,7 @@ describe("merge recovery parity", () => {
         mergedFieldHashes: { comments: hashItemScalarDecisionValue([]) },
         decisions: [],
       });
+      execFileSync("git", ["add", ".agents/pm/merge-receipts"], { cwd: context.tempRoot });
       expect(
         context.runCli(["comments", id, "A later legitimate observation"]).code,
       ).toBe(0);
@@ -102,6 +103,7 @@ describe("merge recovery parity", () => {
         };
       }
       await writeFile(durablePath, JSON.stringify(durable));
+      execFileSync("git", ["add", durablePath], { cwd: context.tempRoot });
       expect(
         (await inspectMergeReceiptEvidence(context.tempRoot))
           .invalid_evidence_count,
