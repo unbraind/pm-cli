@@ -1807,6 +1807,7 @@ function resolveActionAvailability(
   /* c8 ignore stop */
 }
 
+/** Expose core flags with the encoding alias accepted by the shared SDK parser. */
 function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   const flags = (
     CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.get(command) ?? GLOBAL_FLAG_CONTRACTS
@@ -2474,26 +2475,27 @@ function buildCommandNamespaceError(
   );
 }
 
+/** Explain an unavailable package command with canonical installation and discovery retries. */
 function buildPackageOwnedCommandError(
   command: string,
   packageHint: string,
 ): PmCliError {
   return new PmCliError(
-    `Unknown command: "${command}". Command "${command}" is provided by the optional "${packageHint}" package. Run "pm install ${packageHint} --project" and retry.`,
+    `Unknown command: "${command}". Command "${command}" is provided by the optional "${packageHint}" package. Run "pm package install ${packageHint} --project" and retry.`,
     EXIT_CODE.USAGE,
     {
       code: "unknown_command",
       required: `Install the optional "${packageHint}" package, or choose a command from pm contracts --flags-only --json.`,
       why: "Command contracts include core commands plus commands registered by active packages and extensions.",
       examples: [
-        `pm install ${packageHint} --project`,
+        `pm package install ${packageHint} --project`,
         `pm contracts --command ${command} --flags-only --json`,
       ],
       nextSteps: [
-        `Install the optional package first: pm install ${packageHint} --project`,
+        `Install the optional package first: pm package install ${packageHint} --project`,
       ],
       recovery: {
-        suggested_retry: `pm install ${packageHint} --project`,
+        suggested_retry: `pm package install ${packageHint} --project`,
       },
     },
   );

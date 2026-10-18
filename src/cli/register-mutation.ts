@@ -937,6 +937,7 @@ function normalizePlanAliases(
   return normalized;
 }
 
+/** Refuse unknown plan actions before dispatch and show canonical collection recovery examples. */
 function assertKnownPlanSubcommand(
   normalized: string,
   allowed: readonly string[],

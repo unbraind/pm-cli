@@ -4846,7 +4846,7 @@ describe("setup command actions", () => {
       exitCode: EXIT_CODE.USAGE,
       context: expect.objectContaining({
         code: "multi_target_github_install_ambiguous",
-        examples: expect.arrayContaining(["pm install --gh owner/repo"]),
+        examples: expect.arrayContaining(["pm package install --gh owner/repo"]),
       }),
     });
     await expect(
@@ -4855,7 +4855,7 @@ describe("setup command actions", () => {
       exitCode: EXIT_CODE.USAGE,
       context: expect.objectContaining({
         code: "multi_target_github_install_ambiguous",
-        examples: expect.arrayContaining(["pm install --gh owner/repo"]),
+        examples: expect.arrayContaining(["pm package install --gh owner/repo"]),
       }),
     });
     expect(vi.mocked(runExtension)).not.toHaveBeenCalled();

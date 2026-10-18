@@ -1877,6 +1877,7 @@ export function toUniqueFlagContracts(
   return unique;
 }
 
+/** Merge inherited controls and eligible core encoding aliases while preserving declared domain formats. */
 function withSubcommandGlobalFlags(
   contracts: CliFlagContract[],
   allowOutputFormatAlias = false,

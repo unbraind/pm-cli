@@ -463,7 +463,7 @@ export function buildNpmNotFoundRecovery(spec: string): {
     ? `github.com/unbraind/${repoName}`
     : undefined;
   const nextBestCommand = githubSource
-    ? `pm install --project ${githubSource}`
+    ? `pm package install --project ${githubSource}`
     : undefined;
   return {
     message: isFirstPartyPackage
@@ -1325,6 +1325,7 @@ function looksLikeBarePackageName(input: string): boolean {
   return !trimmed.includes("/") && !trimmed.includes("\\");
 }
 
+/** Recover missing bare sources through explicit npm syntax and best-effort bundled catalog hints. */
 async function buildLocalSourceNotFoundError(
   source: LocalInstallSource,
 ): Promise<PmCliError> {
@@ -1351,7 +1352,7 @@ async function buildLocalSourceNotFoundError(
     // Alias discovery is best-effort; the npm: hint alone still unblocks agents.
   }
   const nextSteps = [
-    `Retry with pm install npm:${input} if the package is published to npm.`,
+    `Retry with pm package install npm:${input} if the package is published to npm.`,
     `Or inspect bundled packages with pm package catalog --project --json before installing by alias. Known aliases (blank means none found): ${bundledAliases.join(", ")}`,
   ];
   return new PmCliError(
@@ -1362,14 +1363,14 @@ async function buildLocalSourceNotFoundError(
       required: `Use "npm:${input}" for npm registry packages, a bundled catalog alias, or an existing local directory path.`,
       why: "Bare names resolve as local paths only after bundled aliases, so unmatched names need an explicit npm: source.",
       examples: [
-        `pm install npm:${input}`,
+        `pm package install npm:${input}`,
         "pm package catalog --project --json",
       ],
       nextSteps,
       recovery: {
         attempted_command: `pm install ${input}`,
         normalized_args: ["install", input],
-        next_best_command: `pm install npm:${input}`,
+        next_best_command: `pm package install npm:${input}`,
       },
     },
   );
