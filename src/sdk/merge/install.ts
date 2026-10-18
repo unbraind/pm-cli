@@ -191,6 +191,8 @@ const MERGE_DRIVER_DEFINITIONS = [
 export interface MergeInstallOptions {
   /** Preview the `.gitattributes` and `git config` changes without writing anything. */
   dryRun?: boolean;
+  /** Explicitly install an owned merge-aware pre-commit hook for authenticated lossless settlement. */
+  preCommitHook?: boolean;
 }
 
 /** Installation or preview evidence identifying the selected workspace, fence coverage, and exact Git driver commands. */
@@ -213,6 +215,8 @@ export interface MergeInstallResult {
   };
   /** Local `git config` merge-driver definitions applied (or previewed). */
   git_config: Array<{ key: string; value: string }>;
+  /** Explicitly requested clone-local hook; omitted by the default hook-free installation. */
+  settlement_hook?: { path: string; changed: boolean };
   /** Guidance for completing the multi-branch workflow setup. */
   guidance: string[];
   /** ISO 8601 timestamp recording when generated occurred. */
@@ -893,6 +897,7 @@ export async function runMergeInstall(
     pmRoot,
     workspaceRoot,
     dryRun: options.dryRun === true,
+    preCommitHook: options.preCommitHook === true,
   });
 }
 
@@ -936,6 +941,7 @@ export async function installMergeFence(options: {
   pmRoot: string;
   workspaceRoot: string;
   dryRun?: boolean;
+  preCommitHook?: boolean;
 }): Promise<MergeInstallResult> {
   const pmRoot = path.resolve(options.pmRoot);
   const workspaceRoot = path.resolve(options.workspaceRoot);
@@ -983,6 +989,12 @@ export async function installMergeFence(options: {
   );
   const gitConfigEntries: Array<{ key: string; value: string }> = [];
   const cliCommand = await resolveMergeDriverCliCommand();
+  const settlementHook = options.preCommitHook === true
+    ? await import("./settlement-hook.js").then(async (hooks) => ({
+        plan: await hooks.prepareMergeSettlementHook(canonicalWorkspaceRoot, `${cliCommand} --pm-path ${quoteMergeDriverArgument(trackerRelativeRoot || ".")}`),
+        write: hooks.writeMergeSettlementHook,
+      }))
+    : undefined;
   for (const definition of MERGE_DRIVER_DEFINITIONS) {
     gitConfigEntries.push({
       key: `merge.${definition.key}.name`,
@@ -1021,6 +1033,7 @@ export async function installMergeFence(options: {
     patterns,
     dryRun,
   );
+  if (settlementHook !== undefined && !dryRun) await settlementHook.write(settlementHook.plan);
 
   return {
     ok: true,
@@ -1034,6 +1047,7 @@ export async function installMergeFence(options: {
       schema_scope: "project",
     },
     git_config: gitConfigEntries,
+    ...(settlementHook === undefined ? {} : { settlement_hook: { path: settlementHook.plan.path, changed: settlementHook.plan.changed } }),
     guidance: [
       "Commit .gitattributes so every branch and collaborator shares the merge mapping.",
       'git config is per-clone: each collaborator (and each fresh worktree/clone) runs "pm merge install" once.',

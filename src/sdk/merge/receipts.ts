@@ -23,6 +23,8 @@ import {
 } from "../../core/fs/fs-utils.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import type { HistoryEntry } from "../../types/index.js";
 import {
   encodeItemScalarDecisionValue,
@@ -152,6 +154,8 @@ export interface MergeReceiptEvidenceReport {
 export interface MergeReceiptEvidenceScan {
   /** Valid receipts that passed bounded-file, schema, and identity validation. */
   receipts: MergeDecisionReceipt[];
+  /** Valid tracked counterparts, excluding divergent copies; always emitted by current readers, optional for structural compatibility. Missing evidence never authorizes a tracked history reference. */
+  durable_receipt_ids?: string[];
   /** Number of JSON receipt candidates that could not be validated safely. */
   invalid_evidence_count: number;
   /** Bounded privacy-safe identities and reason codes for rejected evidence. */
@@ -749,6 +753,7 @@ export async function inspectMergeReceiptEvidence(
   }
   await retainAuditedDurableSettlements(receipts, durable.receipts, trackerRoot);
   return {
+    durable_receipt_ids: durable.receipts.filter((receipt) => receipts.has(receipt.id)).map((receipt) => receipt.id),
     receipts: [...receipts.values()]
       .filter(
         (receipt) =>
@@ -786,6 +791,19 @@ export async function listMergeReceipts(
   } = {},
 ): Promise<MergeDecisionReceipt[]> {
   return (await inspectMergeReceiptEvidence(cwd, options)).receipts;
+}
+
+/** Refuse audit references unless every requested identity has validated portable evidence. */
+export function assertPortableMergeReceiptReferences(receiptIds: Iterable<string>, durableReceiptIds: readonly string[] | undefined): void {
+  const portable = new Set(durableReceiptIds);
+  const nonportable = [...receiptIds].filter((id) => !portable.has(id));
+  if (nonportable.length === 0) return;
+  throw new PmCliError(`Merge reconciliation refused ${nonportable.length} receipt(s) without validated tracked evidence; no audit history was written.`, EXIT_CODE.CONFLICT, {
+    code: "merge_receipt_not_portable",
+    required: "Every receipt cited by tracked history must have a validated tracked counterpart with matching immutable provenance.",
+    recovery: { suggested_retry: "pm merge report --include-reconciled" },
+    nextSteps: ["Inspect the clone-local receipts and restore their original valid tracked counterparts, or preserve unrelated stale receipts outside the active receipt store after reviewing their origin. Never copy private clone-local values into tracked evidence. Then rerun pm merge reconcile --dry-run."],
+  });
 }
 
 /** Split merge provenance into receipts with discarded values and receipts whose composition was lossless. */

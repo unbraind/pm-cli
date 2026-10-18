@@ -1050,6 +1050,7 @@ async function runMergeReconcileSubcommand(
     {
       dryRun: options.dryRun === true,
       force: options.force === true,
+      stage: options.stage === true,
       message:
         typeof options.message === "string" ? options.message : undefined,
       author: globalOptions.author,
@@ -1123,7 +1124,7 @@ async function runMergeAction(
         );
       }
       const result = await runMergeInstall(
-        { dryRun: options.dryRun === true },
+        { dryRun: options.dryRun === true, preCommitHook: options.preCommitHook === true },
         globalOptions,
       );
       printResult(result, globalOptions);
@@ -2432,42 +2433,44 @@ export function registerMutationCommands(
     .command("merge")
     .argument(
       "<subcommand>",
-      `Merge subcommand: ${MERGE_SUBCOMMAND_VALUES.join(", ")}`,
+      `${MERGE_SUBCOMMAND_VALUES.join(" | ")}`,
     )
     .argument(
       "[artifact]",
-      `driver only: artifact class to merge (${MERGE_DRIVER_ARTIFACT_VALUES.join(", ")})`,
+      `driver: ${MERGE_DRIVER_ARTIFACT_VALUES.join(" | ")}`,
     )
-    .argument("[base]", "driver only: common-ancestor file path (git %O)")
-    .argument("[ours]", "driver only: current-branch file path (git %A)")
-    .argument("[theirs]", "driver only: other-branch file path (git %B)")
-    .option("--dry-run", "install/reconcile: preview changes without writing")
+    .argument("[base]", "driver: ancestor file (%O)")
+    .argument("[ours]", "driver: current file (%A)")
+    .argument("[theirs]", "driver: incoming file (%B)")
+    .option("--dry-run", "install/reconcile: preview")
+    .option("--pre-commit-hook", "install: opt into merge settlement hook")
+    .option("--stage", "reconcile: stage lossless audit evidence")
     .option(
       "--message <text>",
-      "reconcile only: audit message recorded on repaired history streams",
+      "reconcile: audit message",
     )
     .option(
       "--force",
-      "reconcile only: permit the underlying audited history ownership override",
+      "reconcile: accept reviewed decisions",
     )
     .option(
       "--include-reconciled",
-      "report only: include clone-local receipts already recorded in history",
+      "report: include settled receipts",
     )
     .option(
       "--output <path>",
-      "driver only: write the merged content to this path instead of the ours path",
+      "driver: alternate output",
     )
     .option(
       "--item-path <path>",
-      "driver only: original repository-relative path supplied by git as %P",
+      "driver: repository-relative path (%P)",
     )
     .option(
       "--prefer <side>",
-      "driver only: side that wins unresolvable conflicts (ours|theirs; default ours)",
+      "driver: ours|theirs (default ours)",
     )
     .description(
-      "Install merge drivers, reconcile or report post-merge history, or run a field-aware driver.",
+      "Manage tracker merges.",
     )
     .action(runMergeAction);
 

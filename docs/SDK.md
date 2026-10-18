@@ -210,6 +210,25 @@ follow the migration guidance for changed unions or error codes. The shared
 [primitive inventory](SDK_PRIMITIVE_INVENTORY.md) records CLI/MCP ownership:
 presentation modules import the SDK and have zero private-core edges.
 
+### Portable merge settlement
+
+Tracked by [pm-gh1475](../.agents/pm/issues/pm-gh1475.toon) and
+[pm-gh1491](../.agents/pm/issues/pm-gh1491.toon). Import `runMergeInstall`,
+`runMergeReconcile`, and `inspectMergeReceiptEvidence` from
+`@unbrained/pm-cli/sdk/merge`. `runMergeInstall({ preCommitHook: true }, global)`
+explicitly installs the merge-aware pre-commit hook; the default installs no hook.
+`runMergeReconcile({ stage: true }, global)` previews first and stages only
+verified lossless history and receipt artifacts. It refuses forced acceptance,
+competing values, unrelated drift, dirty reconciliation paths and unresolved Git
+paths. `staged_paths` reports exactly which relative paths were added to the index.
+
+The single-commit journey pauses Git with `git merge --no-commit --no-ff` before
+reconciliation or an opted-in pre-commit hook runs. `durable_receipt_ids` on the
+inspection result reports validated tracked counterparts. Missing portable proof
+refuses an audit write even with `force`; local receipts alone cannot authorize
+committed history references. See [Merge safety](MERGE_SAFETY.md#settle-a-lossless-merge-in-one-commit)
+for the complete operator workflow and recovery boundaries.
+
 ### Build an entire custom project tool
 
 The [SDK-only custom-tool exemplar](examples/sdk-custom-tool/README.md)

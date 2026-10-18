@@ -764,22 +764,17 @@ export function checkOrphanSourceModules(files) {
       ts.ScriptTarget.Latest,
       true,
     );
-    for (const statement of sourceFile.statements) {
-      if (
-        (ts.isImportDeclaration(statement) ||
-          ts.isExportDeclaration(statement)) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)
-      ) {
-        const resolved = resolveRelativeImport(
-          absolutePath,
-          statement.moduleSpecifier.text,
-        );
+    const visit = (node) => {
+      const specifier = importModuleSpecifier(node);
+      if (specifier !== null) {
+        const resolved = resolveRelativeImport(absolutePath, specifier);
         if (resolved && incoming.has(resolved)) {
           incoming.set(resolved, incoming.get(resolved) + 1);
         }
       }
-    }
+      ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
   }
 
   const entryAllowList = new Set([
@@ -1479,7 +1474,7 @@ export function checkCodeFactorComplexity(
 // gate and its pre-existing violations are grandfathered in the same change
 // (as with sonarjs/cognitive-complexity <= 16, re-baselined 104 -> 180; the
 // burn-down of that slice is tracked on the pm-92if epic).
-export const MAX_ESLINT_SUPPRESSIONS = 105;
+export const MAX_ESLINT_SUPPRESSIONS = 104;
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);

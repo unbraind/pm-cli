@@ -30,6 +30,7 @@ import {
 } from "../history-repair.js";
 import { findGitWorkspaceRoot } from "./install.js";
 import {
+  assertPortableMergeReceiptReferences,
   inspectMergeReceiptEvidence,
   markMergeReceiptReconciled,
   summarizeMergeReceipt,
@@ -48,6 +49,8 @@ export interface MergeReconcileOptions {
   message?: string;
   /** Permit ownership overrides already supported by history repair. */
   force?: boolean;
+  /** Stage only authenticated lossless audit artifacts, refusing force, conflicts and unrelated drift. */
+  stage?: boolean;
 }
 
 /** Structured post-merge reconciliation and verification result. */
@@ -84,6 +87,8 @@ export interface MergeReconcileResult {
   guidance: string[];
   /** ISO timestamp copied from the validation pass. */
   generated_at: string;
+  /** Repository-relative artifacts staged by an explicit stage request; dry runs return an empty list. */
+  staged_paths?: string[];
 }
 
 interface MissingReceiptHistoryCoordinate {
@@ -347,6 +352,23 @@ function receiptReviewGuidance(pendingCount: number, complete: boolean): string 
   return 'If receipt proof is unavailable or competing values were discarded, first review receipts.summaries and repair.streams and re-apply intended values. Only with explicit authority to accept that review, run pm merge reconcile --force --message "<reviewed receipt disposition and rationale>". This appends an audit event; it does not restore missing evidence or discarded values.';
 }
 
+/** Preview once, then delegate guarded staging without allowing forced acceptance. */
+async function runStagedMergeReconcile(options: MergeReconcileOptions, global: GlobalOptions): Promise<MergeReconcileResult> {
+  if (options.force === true) {
+    throw new PmCliError("Automatic staging cannot accept forced reconciliation.", EXIT_CODE.CONFLICT, {
+      code: "merge_settlement_review_required",
+      recovery: { suggested_retry: "pm merge reconcile --dry-run" },
+    });
+  }
+  const unstagedOptions = { ...options, stage: false };
+  const preview = await runMergeReconcile({ ...unstagedOptions, dryRun: true }, global);
+  const { stageLosslessMergeReconciliation } = await import("./stage.js");
+  return stageLosslessMergeReconciliation({
+    preview, dryRun: options.dryRun === true, global,
+    apply: () => runMergeReconcile({ ...unstagedOptions, dryRun: false }, global),
+  });
+}
+
 /**
  * Preview or apply post-merge history reconciliation and immediately validate
  * the two merge-critical invariants. The default remains explicit and safe:
@@ -357,6 +379,12 @@ export async function runMergeReconcile(
   options: MergeReconcileOptions,
   global: GlobalOptions,
 ): Promise<MergeReconcileResult> {
+  if (options.stage === true) return runStagedMergeReconcile(options, global);
+  return reconcileMergeHistory(options, global);
+}
+
+/** Apply the explicit receipt and history workflow independently of optional index staging. */
+async function reconcileMergeHistory(options: MergeReconcileOptions, global: GlobalOptions): Promise<MergeReconcileResult> {
   const dryRun = options.dryRun === true;
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const preflightHealth = await runHealth(global, {
@@ -393,6 +421,7 @@ export async function runMergeReconcile(
       },
     );
   }
+  assertPortableMergeReceiptReferences(receiptEvidence.receipts.map((receipt) => receipt.id), receiptEvidence.durable_receipt_ids);
   const recordedLegacyDispositionCount = await recordLegacyReceiptDispositions({
     candidates: legacyDispositionCandidates,
     options,

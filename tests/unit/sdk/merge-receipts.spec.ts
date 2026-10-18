@@ -294,6 +294,7 @@ describe("clone-local merge decision receipts", () => {
     expect(await listMergeReceipts(workspace)).toEqual([]);
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
+      durable_receipt_ids: [],
       invalid_evidence_count: 0,
       invalid_evidence: [],
       invalid_evidence_truncated: false,
@@ -565,6 +566,7 @@ describe("clone-local merge decision receipts", () => {
     ];
     expect(await inspectMergeReceiptEvidence(workspace)).toEqual({
       receipts: [],
+      durable_receipt_ids: [],
       invalid_evidence_count: 6,
       invalid_evidence: invalidEvidence,
       invalid_evidence_truncated: false,
@@ -681,6 +683,7 @@ describe("clone-local merge decision receipts", () => {
       }),
     ).resolves.toEqual({
       receipts: [],
+      durable_receipt_ids: [],
       invalid_evidence_count: 1,
       invalid_evidence: [
         {
@@ -1104,6 +1107,7 @@ describe("clone-local merge decision receipts", () => {
       inspectMergeReceiptEvidence(workspace, { pmRoot }),
     ).resolves.toEqual({
       receipts: [],
+      durable_receipt_ids: [],
       invalid_evidence_count: 1,
       invalid_evidence: [
         {
@@ -1139,6 +1143,7 @@ describe("clone-local merge decision receipts", () => {
       await writeFile(durablePath, durableBytes, "utf8");
       await expect(inspectMergeReceiptEvidence(workspace, { pmRoot })).resolves.toMatchObject({
         receipts: [],
+        durable_receipt_ids: [],
         invalid_evidence_count: 1,
         invalid_evidence: [{ reason: "copy_provenance_mismatch", receipt_id: receipt!.id }],
       });

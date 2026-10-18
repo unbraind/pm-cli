@@ -126,10 +126,10 @@ describe("runtime extended action adapters", () => {
 
   it("dispatches every merge subcommand and rejects unknown or incomplete input", async () => {
     await runRuntimeMergeAction(
-      context("merge", {}, { subcommand: "install", dryRun: true }),
+      context("merge", {}, { subcommand: "install", dryRun: true, preCommitHook: true }),
     );
     expect(mocks.runMergeInstall).toHaveBeenCalledWith(
-      { dryRun: true },
+      { dryRun: true, preCommitHook: true },
       expect.any(Object),
     );
 
@@ -142,6 +142,7 @@ describe("runtime extended action adapters", () => {
           author: "agent",
           message: "repair",
           force: true,
+          stage: true,
         },
       ),
     );
@@ -151,6 +152,7 @@ describe("runtime extended action adapters", () => {
         author: "agent",
         message: "repair",
         force: true,
+        stage: true,
       },
       expect.any(Object),
     );

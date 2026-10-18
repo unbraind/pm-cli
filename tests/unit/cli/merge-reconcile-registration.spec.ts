@@ -53,6 +53,7 @@ describe("merge reconcile registration", () => {
       {
         dryRun: true,
         force: true,
+        stage: false,
         message: "verify merge",
         author: "merge-agent",
       },

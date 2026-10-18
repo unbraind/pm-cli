@@ -4,9 +4,9 @@
  * File-level git merge driver runner for tracker artifacts. Git invokes the
  * driver with the base (%O), ours (%A), and theirs (%B) temporary files; the
  * driver writes the merged content back to the ours path and reports whether
- * unresolvable conflicts remain. Conflicted artifacts are still written as
- * parseable documents (resolved toward the preferred side) so a conflicted
- * merge never corrupts tracker storage the way raw conflict markers do.
+ * unresolvable conflicts remain. Field conflicts retain parseable resolutions;
+ * unproven item identities instead retain both original snapshots in explicit
+ * conflict markers, which health and validation reject until reviewed.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -181,6 +181,26 @@ function itemFormatForPath(
   return settings?.item_format ?? "toon";
 }
 
+/** Keep both original snapshots visible when ancestry cannot authorize identity fusion. */
+async function preserveIdentityRefusal<T>(merge: () => T, sides: {
+  baseRaw: string; oursRaw: string; theirsRaw: string; outputPath: string; itemPath: string;
+}): Promise<T> {
+  try {
+    return merge();
+  } catch (error: unknown) {
+    if (error instanceof PmCliError && error.context?.code === "item_identity_conflict") {
+      const line = (raw: string) => raw.endsWith("\n") ? raw : `${raw}\n`;
+      await writeFile(sides.outputPath, `<<<<<<< pm ours\n${line(sides.oursRaw)}||||||| pm base\n${line(sides.baseRaw)}=======\n${line(sides.theirsRaw)}>>>>>>> pm theirs\n`, "utf8");
+      throw new PmCliError(`Unresolved identity for ${sides.itemPath}: both snapshots remain in conflict markers. ${error.message}`, error.exitCode, {
+        ...error.context,
+        recovery: { suggested_retry: "git status --short" },
+        nextSteps: ["Preserve both source snapshots and establish item identity before resolving. Do not stage conflict markers as a completed merge; pm health and storage validation reject them."],
+      });
+    }
+    throw error;
+  }
+}
+
 /**
  * Execute one git merge-driver invocation for a tracker artifact. Reads the
  * three per-side versions, applies the artifact's field-aware merge semantics,
@@ -205,8 +225,9 @@ export async function runMergeDriver(
   let receiptInput: Parameters<typeof writeMergeReceipt>[0] | undefined;
   const conflicts: string[] = [];
   const result: Partial<MergeDriverResult> = {};
+  const refusalSides = { baseRaw, oursRaw, theirsRaw, outputPath, itemPath: options.itemPath ?? outputPath };
   if (artifact === "history") {
-    const historyMerge = mergeHistoryStreams(baseRaw, oursRaw, theirsRaw);
+    const historyMerge = await preserveIdentityRefusal(() => mergeHistoryStreams(baseRaw, oursRaw, theirsRaw), refusalSides);
     merged = historyMerge.merged;
     result.history = {
       strategy: historyMerge.strategy,
@@ -240,13 +261,13 @@ export async function runMergeDriver(
     const extensionFieldNames = collectRegisteredItemFieldNames(
       getActiveExtensionRegistrations(),
     );
-    const itemMerge = mergeItemDocuments(baseRaw, oursRaw, theirsRaw, {
+    const itemMerge = await preserveIdentityRefusal(() => mergeItemDocuments(baseRaw, oursRaw, theirsRaw, {
       format: itemFormat,
       schema: settings?.schema,
       extensionFieldNames,
       preferred,
       conflictResolution: "latest_document_update",
-    });
+    }), refusalSides);
     merged = itemMerge.merged;
     conflicts.push(...itemMerge.conflict_fields);
     result.item = {

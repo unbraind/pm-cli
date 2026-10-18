@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 419
+- Catalog error codes: 422
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 400
-- Coverage fraction: 0.045346
+- Uncovered error codes: 403
+- Coverage fraction: 0.045024
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -221,9 +221,12 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `merge_git_config_unwritable` | `merge_git_config_unwritable` | uncovered | none | 0 |
 | `merge_receipt_evidence_invalid` | `merge_receipt_evidence_invalid` | uncovered | none | 0 |
 | `merge_receipt_history_reference_missing` | `merge_receipt_history_reference_missing` | uncovered | none | 0 |
+| `merge_receipt_not_portable` | `merge_receipt_not_portable` | uncovered | none | 0 |
 | `merge_receipts_pending` | `merge_receipts_pending` | uncovered | none | 0 |
 | `merge_reconcile_receipt_evidence_untrusted` | `merge_reconcile_receipt_evidence_untrusted` | uncovered | none | 0 |
 | `merge_root_not_found` | `merge_root_not_found` | uncovered | none | 0 |
+| `merge_settlement_hook_conflict` | `merge_settlement_hook_conflict` | uncovered | none | 0 |
+| `merge_settlement_review_required` | `merge_settlement_review_required` | uncovered | none | 0 |
 | `missing_allowed_values` | `missing_allowed_values` | uncovered | none | 0 |
 | `missing_budget` | `missing_budget` | uncovered | none | 0 |
 | `missing_cli_flag` | `missing_cli_flag` | uncovered | none | 0 |

@@ -2446,6 +2446,24 @@
       ],
       "package_version": "2026.10.17",
       "reason": "Add optional maxWaitMs to cap lock retry budgets while preserving all existing arguments and default wait behavior"
+    },
+    {
+      "changes": [
+        "signature ./sdk:installMergeFence",
+        "signature ./sdk:MergeInstallOptions",
+        "signature ./sdk:MergeInstallResult",
+        "signature ./sdk:MergeReceiptEvidenceScan",
+        "signature ./sdk:MergeReconcileOptions",
+        "signature ./sdk:MergeReconcileResult",
+        "signature ./sdk/merge:installMergeFence",
+        "signature ./sdk/merge:MergeInstallOptions",
+        "signature ./sdk/merge:MergeInstallResult",
+        "signature ./sdk/merge:MergeReceiptEvidenceScan",
+        "signature ./sdk/merge:MergeReconcileOptions",
+        "signature ./sdk/merge:MergeReconcileResult"
+      ],
+      "package_version": "2026.10.18",
+      "reason": "Add optional merge settlement options and portable receipt evidence while preserving exported names and default hook-free behavior."
     }
   ],
   "entrypoints": {
@@ -9938,7 +9956,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "installMergeFence",
-          "signature": "(options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; }) => Promise<MergeInstallResult> | calls: (options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; }) => Promise<MergeInstallResult>"
+          "signature": "(options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; preCommitHook?: boolean; }) => Promise<MergeInstallResult> | calls: (options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; preCommitHook?: boolean; }) => Promise<MergeInstallResult>"
         },
         {
           "classification": "advanced_export",
@@ -11174,13 +11192,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallOptions",
-          "signature": "export interface MergeInstallOptions { dryRun?: boolean; }"
+          "signature": "export interface MergeInstallOptions { dryRun?: boolean; preCommitHook?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallResult",
-          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; pm_root?: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; pm_root?: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; settlement_hook?: { path: string; changed: boolean; }; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -11216,7 +11234,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; durable_receipt_ids?: string[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "supported",
@@ -11246,13 +11264,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileOptions",
-          "signature": "export interface MergeReconcileOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface MergeReconcileOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; stage?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileResult",
-          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; staged_paths?: string[]; }"
         },
         {
           "classification": "supported",
@@ -30212,7 +30230,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "installMergeFence",
-          "signature": "(options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; }) => Promise<MergeInstallResult> | calls: (options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; }) => Promise<MergeInstallResult>"
+          "signature": "(options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; preCommitHook?: boolean; }) => Promise<MergeInstallResult> | calls: (options: { pmRoot: string; workspaceRoot: string; dryRun?: boolean; preCommitHook?: boolean; }) => Promise<MergeInstallResult>"
         },
         {
           "classification": "supported",
@@ -30350,13 +30368,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallOptions",
-          "signature": "export interface MergeInstallOptions { dryRun?: boolean; }"
+          "signature": "export interface MergeInstallOptions { dryRun?: boolean; preCommitHook?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeInstallResult",
-          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; pm_root?: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeInstallResult { ok: boolean; dry_run: boolean; workspace_root: string; pm_root?: string; gitattributes: { path: string; changed: boolean; patterns: string[]; schema_scope: \"project\"; }; git_config: Array<{ key: string; value: string; }>; settlement_hook?: { path: string; changed: boolean; }; guidance: string[]; generated_at: string; }"
         },
         {
           "classification": "supported",
@@ -30386,7 +30404,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReceiptEvidenceScan",
-          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
+          "signature": "export interface MergeReceiptEvidenceScan { receipts: MergeDecisionReceipt[]; durable_receipt_ids?: string[]; invalid_evidence_count: number; invalid_evidence: MergeReceiptInvalidEvidence[]; invalid_evidence_truncated: boolean; clone_local_evidence_resolved?: boolean; }"
         },
         {
           "classification": "supported",
@@ -30410,13 +30428,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileOptions",
-          "signature": "export interface MergeReconcileOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface MergeReconcileOptions { dryRun?: boolean; author?: string; message?: string; force?: boolean; stage?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "MergeReconcileResult",
-          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; }"
+          "signature": "export interface MergeReconcileResult { ok: boolean; dry_run: boolean; repair: HistoryRepairAllResult; receipts: { pending_before: number; reconciled: number; abandoned: number; summaries: MergeDecisionReceiptSummary[]; missing_history_references_before: number; legacy_disposition_eligible: number; legacy_disposition_recorded: number; missing_history_references_after: number; }; validation: ValidateResult; guidance: string[]; generated_at: string; staged_paths?: string[]; }"
         },
         {
           "classification": "supported",
@@ -36317,9 +36335,12 @@
     "merge_git_config_unwritable",
     "merge_receipt_evidence_invalid",
     "merge_receipt_history_reference_missing",
+    "merge_receipt_not_portable",
     "merge_receipts_pending",
     "merge_reconcile_receipt_evidence_untrusted",
     "merge_root_not_found",
+    "merge_settlement_hook_conflict",
+    "merge_settlement_review_required",
     "missing_allowed_values",
     "missing_budget",
     "missing_cli_flag",

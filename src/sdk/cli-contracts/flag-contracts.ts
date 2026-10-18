@@ -414,6 +414,8 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
 /** Public contract for merge flag contracts, shared by SDK and presentation-layer consumers. */
 export const MERGE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dry-run" },
+  { flag: "--pre-commit-hook", value_type: "boolean" },
+  { flag: "--stage", value_type: "boolean" },
   { flag: "--message" },
   { flag: "--force" },
   { flag: "--include-reconciled" },

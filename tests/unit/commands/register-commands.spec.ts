@@ -1546,7 +1546,7 @@ describe("operation command actions", () => {
   it("maps merge installer and driver actions including conflicts and usage errors", async () => {
     await runCli("merge", "install", "--dry-run");
     expect(vi.mocked(runMergeInstall)).toHaveBeenCalledWith(
-      { dryRun: true },
+      { dryRun: true, preCommitHook: false },
       expect.anything(),
     );
 

@@ -6847,6 +6847,14 @@
           "flag": "--dry-run"
         },
         {
+          "flag": "--pre-commit-hook",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--stage",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--message"
         },
         {
@@ -12383,6 +12391,14 @@
       "flags": [
         {
           "flag": "--dry-run"
+        },
+        {
+          "flag": "--pre-commit-hook",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--stage",
+          "value_type": "boolean"
         },
         {
           "flag": "--message"
@@ -24742,6 +24758,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_receipt_not_portable",
+      "class": "conflict",
+      "code": "merge_receipt_not_portable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge receipt not portable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/receipts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_receipts_pending",
       "class": "generic_failure",
       "code": "merge_receipts_pending",
@@ -24790,6 +24823,41 @@
         "sdk/merge/install.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_settlement_hook_conflict",
+      "class": "conflict",
+      "code": "merge_settlement_hook_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge settlement hook conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/settlement-hook.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "merge_settlement_review_required",
+      "class": "conflict",
+      "code": "merge_settlement_review_required",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Merge settlement review required condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/reconcile.ts",
+        "sdk/merge/stage.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -54800,6 +54868,10 @@
             ],
             "type": "string"
           },
+          "preCommitHook": {
+            "description": "Pre Commit Hook.",
+            "type": "boolean"
+          },
           "prefer": {
             "description": "Prefer.",
             "enum": [
@@ -54814,6 +54886,10 @@
           },
           "quiet": {
             "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "stage": {
+            "description": "Stage.",
             "type": "boolean"
           },
           "subcommand": {

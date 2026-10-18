@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-18T03:25:13.996Z"
+updated_at: "2026-10-18T17:02:01.634Z"
 reminders[1]{at,text}:
   "2026-10-18T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
@@ -84,7 +84,7 @@ dependencies[13]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[232]:
+comments[234]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -783,6 +783,12 @@ comments[232]:
   - created_at: "2026-10-18T03:25:13.996Z"
     author: "harness:codex"
     text: "Daily release checkpoint2026-10-18: automatic morning run39091195357 refused producer-binding/push after main advanced during its sealed preparation; no current-day remote tag exists. Bot issue1496 is retained under the existing release provenance lineage. Delay the single guarded same-day issue-close retry until the current reviewed dependency delivery lands so it can prepare one new candidate from final main without another branch-advance race. Verify exact GitHub/npm publication and installed npm/Bun/npx/bunx consumers independently afterward; keep the reminder open."
+  - created_at: "2026-10-18T14:19:41.022Z"
+    author: "harness:codex"
+    text: "Live release verification 2026-10-18: verify-published-release.mjs --version 2026.10.18 --npm-attempts 1 --executor-attempts 1 passed against public npm and GitHub artifacts. npm latest is 2026.10.18; npx and bunx CLI/default-bin, stateless MCP stdio and HTTP, Skills/Apps journeys, all declared bins and missing-command negative controls passed. Exactly one current-day tag exists; the later native schedule accepted the immutable published result without creating another release. Main Release Reliability run39121571685 remains red for scheduled_failure_rate and dispatch_window, with native_schedule3/19 and morning_dispatcher7/13 historical first-attempt failures; this is separate from successful recovery/publication and is not erased. Sentry has zero unresolved issues and the required telemetry gate passed at2.56 percent finish error rate with zero missing error-code rows. Security API inventories report zero open Dependabot/code-scanning/secret-scanning alerts and all23 open GitHub issues already have canonical PM-link comments. Dependency census leaves nine latest releases below seven-day age, npm-package-arg14 constrained by its Node22.22.2 minimum versus our22.18.0 baseline under pm-ksr40d, and TypeScript7 under pm-do5b. Vitest/CodSpeed and Sentry major migrations remain in their existing pm-fokyhh and pm-t3jxjj lineages, open and unclaimed."
+  - created_at: "2026-10-18T17:02:01.633Z"
+    author: "harness:codex"
+    text: "Delivery closeout audit: current health passes, with zero unreadable/conflicted item/history files, invalid receipt evidence, pending receipts, missing durable history references, or history drift. Existing warnings comprise seven terminal legacy hierarchy divergences and170 historical closed items missing old expected/actual fields; no historical outcome was invented. The three merge/gate items are closed and released, with zero in-progress items. Latest pm-changelog2026.10.17 generated exactly three new Unreleased entries and its configured check passes. Four real CLI probes have four matched start/finish pairs in the telemetry store; logical and physical client event queues and broker ready/unacknowledged counts were zero after flush. Explicit per-invocation Sentry trace probes now appear as three recent pm.command spans with command names and durations; outcome statistics confirm three accepted/indexed spans and zero rate-limited/invalid spans. The required live Sentry/telemetry gate passes, with no unresolved Sentry issues. Today's verified publication and historical Release Reliability failures remain separate claims as recorded earlier."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

@@ -129,7 +129,7 @@ export function runRuntimeMergeAction(
   const input = mergedInput(context);
   const subcommand = requiredString(input, "subcommand");
   if (subcommand === "install") {
-    return runMergeInstall({ dryRun: input.dryRun === true }, context.global);
+    return runMergeInstall({ dryRun: input.dryRun === true, preCommitHook: input.preCommitHook === true }, context.global);
   }
   if (subcommand === "reconcile") {
     return runMergeReconcile(
@@ -138,6 +138,7 @@ export function runRuntimeMergeAction(
         author: readRuntimeString(input, "author"),
         message: readRuntimeString(input, "message"),
         force: input.force === true,
+        stage: input.stage === true,
       },
       context.global,
     );

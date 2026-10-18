@@ -2,11 +2,13 @@ id: pm-gh1475
 title: "GH-1475: settle authenticated lossless merges within one reviewed delivery"
 description: Published 2026.10.14 losslessly merges disjoint scalar edits and union collections but leaves a pending receipt and gate-failing health until explicit reconcile plus a second commit. Evaluate a complete audited settlement path that preserves existing evidence authentication and genuine conflicting-value review requirements.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-14T22:04:28.563Z"
-updated_at: "2026-10-14T22:20:15.089Z"
+updated_at: "2026-10-18T16:54:47.558Z"
+closed_at: "2026-10-18T16:52:15.122Z"
+completed_at: "2026-10-18T16:52:15.122Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Reproduce the submitted fresh Git merge on the immutable published artifact and candidate; preserve both branch values and history; validate authenticated no-discard settlement and fresh-clone receipt portability; prove same-field conflicts, lossy decisions, malformed or unsealed legacy evidence remain review-required; retain SDK/CLI parity and non-surprising opt-in hook behavior; do not weaken health or verification merely to suppress a pending state."
@@ -14,10 +16,95 @@ parent: pm-dj98
 risk: high
 confidence: medium
 severity: medium
-expected_result: A reviewed lossless settlement path reduces ordinary multi-agent merge friction while retaining complete authenticated audit evidence; conflicting or discarded values and invalid or unsealed receipts still require review. Reproduction and implementation remain future work.
+resolution: "Added SDK-backed guarded staging and explicit merge-aware pre-commit hook installation for a paused no-commit/no-ff merge. Required validated portable receipt counterparts before any audit reference, including forced history repair; health no longer accepts clone-local evidence as durable proof. CLI/MCP contracts, narrow SDK docs and native macOS/Windows checks use the same primitives."
+expected_result: "Retain both branches and authenticated audit evidence in one reviewed merge commit; refuse nonportable, lossy, untrusted, dirty or alternate-index automatic staging while preserving default hook-free installation."
+actual_result: "Real-Git tests preserve lossless values and audited history in the original merge commit, with clean index and fresh-clone health/history parity. Dry-run/apply/force refuse stale local-only evidence before writing history. The immutable published2026.10.18 artifact reproduced the unsafe history reference and fresh-clone failure. All linked tests and231-test driver/install coverage pass; hosted checks will gate merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-baksix,related,"2026-10-14T22:04:28.563Z","harness:codex","cli:create:dep",detected
   pm-mfkv92,related,"2026-10-14T22:04:28.563Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-14T22:04:28.563Z","harness:codex","Duplicate check: strict complete 2967-item all-status corpus plus fresh merge/reconcile and issue-number searches and open/in-progress lists found no open exact owner. Full live metadata and history for the completed pending-health and reconcile owners retain their shipped contracts; this request changes the merge delivery UX and is separate new work. GitHub source: https://github.com/unbraind/pm-cli/issues/1475. Queued open and unclaimed; no source implementation claimed."
+  "2026-10-18T13:57:23.022Z","harness:codex","Implementation scope: opt-in pre-merge-commit settlement using the existing public reconciliation SDK, portable receipt proof for GH-1497, and fresh-clone verification. Preserve fail-closed review for genuine discarded values, malformed evidence, and legacy unsealed proof. Baseline: complete strict 2995-item corpus including 2718 closed items, zero omissions/unreadable records and zero in-progress items; GitHub has zero open PRs and zero open security alerts. Related GH-1491 will share this delivery."
+  "2026-10-18T14:11:09.969Z","harness:codex","Regression evidence: isolated Git tests now cover a valid current receipt alongside a stale clone-local receipt without operation proof, and refuse dry-run/apply/force before any audit write. Health resolves committed history references only through validated portable sidecars. The single-commit workflow uses an explicitly requested merge-aware pre-commit hook with git merge --no-commit --no-ff followed by git commit; Git pre-merge-commit staging was experimentally excluded because Git had already captured the automatic merge tree. Focused safety tests pass, including fresh-clone history parity. Full coverage is running."
+  "2026-10-18T14:38:51.516Z","harness:codex","Negative-control proof: the corrected real-Git add/add and clone-local-only receipt tests were copied into an isolated detached worktree at original main96f3302b5903760ef26e6e447af742a0edba44b9. Both fail for their intended observable boundaries: marker-free preferred-side output and acceptance of nonportable receipt proof. The hook feature test was excluded from that historical run. The worktree was removed after preserving private logs. Candidate focused tests had passed the corresponding fixed behavior; full static and exact-coverage verification remains in progress."
+  "2026-10-18T15:30:19.344Z","harness:codex","Default startup now loads the optional hook and staging helpers only when requested. Both the original96f3302 baseline and the revised candidate pass the same SDK entrypoint import-cost gate without budget changes. All linked merge tests passed; source/CLI transport, canonical full coverage and the final static pipeline remain under verification."
+  "2026-10-18T16:29:08.531Z","harness:codex","Immutable published-artifact negative control: installed exact registry @unbrained/pm-cli@2026.10.18 into a private external consumer and used its absolute CLI and Git drivers in a synthetic isolated tracker. A valid current merge receipt plus a stale clone-local receipt without operation evidence was accepted by forced reconciliation, which changed history; after committing and making a fresh --no-local clone, health reported merge_receipt_history_reference_missing. The candidate real-Git regression rejects dry-run/apply/force before any history write. Public evidence contains only the behavior and exact version; generated fixture data and host paths remain private."
+  "2026-10-18T16:52:14.347Z","harness:codex","Verification: the complete suite passed10690 tests with3 platform skips. Its exact coverage report identified only the driver passthrough and tracker-at-Git-root hook cases; both are now covered by real filesystem tests, and the231-test focused run reports exact100/100/100/100 for driver.ts and install.ts. The two new helper modules also passed exact100/100/100/100. All linked PM tests were rerun successfully. The complete static pipeline, all TypeScript projects, release-version policy, tracked-secret scan, registry inventory and sequential npm/npx/Bun packed smoke passed. Final hosted full-population coverage and native-platform checks remain mandatory before merge; this closure records implemented, locally verified work for the reviewed delivery, not a new registry publication."
+learnings[1]{created_at,author,text}:
+  "2026-10-18T15:22:43.142Z","harness:codex",Git may capture its automatic merge tree before pre-merge-commit staging. To include audited settlement in one merge commit use an explicit no-commit/no-ff merge and guarded stage or an explicitly installed merge-aware pre-commit hook.
+files[30]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,CLI-generated activation timestamp from installing the latest pm-changelog for reviewed release notes
+  .github/workflows/ci.yml,project,Run the new real-Git portable settlement and optional hook journeys on native macOS and Windows
+  sdk/public-surface.json,project,Portable merge settlement and generated SDK transport contracts
+  src/cli/register-mutation.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/cli-contracts/flag-contracts.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/cli-contracts/tool-schema.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/governance/health.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/history-repair.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/merge/driver.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/merge/install.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/merge/receipts.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/merge/reconcile.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/merge/settlement-hook.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/merge/stage.ts,project,Portable merge settlement and generated SDK transport contracts
+  src/sdk/runtime-extended-actions.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/fixtures/contracts/full.json,project,Portable merge settlement and generated SDK transport contracts
+  tests/integration/workspace/merge-portability.integration.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/cli/merge-reconcile-registration.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/commands/register-commands.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/sdk/history-repair-version-contract.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/sdk/merge-receipts.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/sdk/merge-reconcile.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/sdk/merge/item-identity.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/sdk/merge/settlement-hook.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/sdk/merge/stage.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+  tests/unit/sdk/runtime-extended-actions.spec.ts,project,Portable merge settlement and generated SDK transport contracts
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/merge-reconcile.spec.ts,project,600,"harness:codex","2026-10-18T14:12:15.303Z",local_mutation,fix/sdk-merge-settlement-safety,Isolated Git preservation and portable lossless settlement
+  node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/workspace/lossless-merge-union.integration.spec.ts,project,900,"harness:codex","2026-10-18T14:41:04.287Z",local_mutation,fix/sdk-merge-settlement-safety,Existing recurrence-selected operation restoration and receipt settlement acceptance
+test_runs[2]:
+  - run_id: test-local-mvdyhtbr-12yez6
+    kind: test
+    status: passed
+    started_at: "2026-10-18T15:03:09.380Z"
+    finished_at: "2026-10-18T15:04:20.919Z"
+    recorded_at: "2026-10-18T15:04:20.919Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/merge-reconcile.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/workspace/lossless-merge-union.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mve29rtf-tvg6da
+    kind: test
+    status: passed
+    started_at: "2026-10-18T16:48:42.904Z"
+    finished_at: "2026-10-18T16:50:04.179Z"
+    recorded_at: "2026-10-18T16:50:04.179Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/merge/item-identity.spec.ts tests/unit/sdk/merge-reconcile.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts tests/integration/workspace/lossless-merge-union.integration.spec.ts,schema,schema,source,local_source_ref
+docs[6]{path,scope,note}:
+  CHANGELOG.md,project,Generated release entry through the latest pm-changelog package after verified closure
+  docs/COMMANDS.md,project,Reviewed operator and public SDK merge settlement contract
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project,Reviewed operator and public SDK merge settlement contract
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project,Reviewed operator and public SDK merge settlement contract
+  docs/MERGE_SAFETY.md,project,Reviewed operator and public SDK merge settlement contract
+  docs/SDK.md,project,Reviewed operator and public SDK merge settlement contract
+close_reason: Implemented and verified for the combined reviewed merge-safety delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1475
+  gate_id: portable-lossless-merge-settlement
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts -t \"refuses clone-local-only receipts\". Executed with the regression fixture copied into original main96f3302b5903760ef26e6e447af742a0edba44b9: the control fails because local-only proof is accepted; candidate dry-run/apply/force refuse before audit writes."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Windows regression (Node 24)
 body: ""

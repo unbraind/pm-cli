@@ -84,6 +84,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   itemPath: { type: "string" },
   prefer: { type: "string", enum: ["ours", "theirs"] },
   includeReconciled: { type: "boolean" },
+  preCommitHook: { type: "boolean" },
+  stage: { type: "boolean" },
   lockTtlSeconds: { type: "number" },
   lockWaitMs: { type: "number" },
   capability: { type: "string", minLength: 1 },
