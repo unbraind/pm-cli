@@ -1,0 +1,22 @@
+id: pm-gakjx2
+title: Reconcile DeepScan's auxiliary ESLint failure with the canonical lint contract
+description: "Chrome inspection of DeepScan's main analysis at54a583c shows native gradeGood and0 issues, but the independent auxiliary ESLint pane reports ESLint8.15.0: No files matching the pattern dot were found. The repository's current ESLint10 gate passes locally and remains required in hosted static. Investigate the provider capability and intended source population, then correct supported integration settings or explicitly document the bounded auxiliary coverage gap without disabling or weakening required repository lint or native DeepScan."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-19T13:25:37.256Z"
+updated_at: "2026-10-19T13:37:06.598Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Capture exact provider error and analyzed source identities and compare with the real repository lint contract; Verify a supported integration against representative TypeScript and JavaScript negative controls before claiming equivalent coverage; Preserve required ESLint10 native DeepScan and CodeFactor gates without error suppression synthetic statuses or reduced source membership; Document any provider-version limitation separately from zero native findings and keep remediation auditable
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: "Hosted analyzer evidence distinguishes native DeepScan from its auxiliary ESLint execution, and the intended source coverage is either genuinely verified or explicitly bounded while required ESLint10 remains enforced."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-39cqqx,discovered_from,"2026-10-19T13:25:37.256Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-19T13:25:37.256Z","harness:codex","Duplicate check: strict full all-status3001-item intake, fresh DeepScan ESLint and auxiliary ESLint no files searches, live open/in-progress lists, and full pm-39cqqx metadata. The completed immutable-tree analyzer gate owns provenance rather than this legacy auxiliary-engine error. No exact open owner was found. Source is the visible DeepScan dashboard for main54a583c at2026-10-19. Intake only, open and unclaimed, with no provider setting changed."
+  "2026-10-19T13:37:06.597Z","harness:codex","Captured public dashboard: https://deepscan.io/dashboard/#view=project&tid=30234&pid=32092&bid=1043829 . Main54a583c is nativeGood with0 findings and1678 analyzed files. The expanded auxiliary banner reports ESLint8.15.0 and No files matching the pattern dot were found. This observation is distinct from the completed immutable-tree provenance gate and from the required repository ESLint10 check; no provider configuration or security control was changed."
+body: ""

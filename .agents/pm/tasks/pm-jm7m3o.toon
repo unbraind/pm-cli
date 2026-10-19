@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: bug,ci,review
 created_at: "2026-10-16T17:08:17.492Z"
-updated_at: "2026-10-19T13:15:15.112Z"
+updated_at: "2026-10-19T13:32:08.134Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
 author: "harness:codex"
@@ -18,12 +18,16 @@ parent: pm-obq2
 risk: medium
 confidence: high
 expected_result: A failed required context returns an actionable exact-head receipt even when an optional provider remains pending; full review completion and merge readiness remain independently verified.
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-16T17:08:17.492Z","harness:codex","Duplicate check: searched all 12 pr-review-loop keyword hits, all 29 Hound hits, and the first 50 open review hits; retained the live approved-review discipline task as parent. No candidate found for this specific failure-visibility behavior. Intake only; implementation is not active."
   "2026-10-19T12:20:30.842Z","harness:codex","Implementation evidence: the pre-fix sandbox run fails the required-failure/pending-Hound control and the native fail-fast command contract. Added default checks phase using the gh-native fail-fast watch, separate reviews phase retaining the complete blocking wait, and final pending/unavailable check signals. Missing classic/ruleset requirements and exact-head/base checks remain fail-closed. No polling or public status comments are introduced."
   "2026-10-19T12:27:05.304Z","harness:codex","Live delivery audit: all21 currently open GitHub issues already carry a canonical PM-link comment. GitHub Dependabot code-scanning and secret-scanning open-alert inventories are empty; pnpm audit reports no known vulnerabilities. pm-changelog installed/latest is2026.10.19-1 with no open upstream issues. Published2026.10.19 passes the maintained npm/npx/bunx CLI and stdio/HTTP MCP verifier, including every shipped bin. Today's later native schedule verifies the existing published tag instead of creating a second release. Historical reliability and held dependency migrations remain separate claims."
   "2026-10-19T13:09:27.506Z","harness:codex","User-requested tool hygiene completed: removed the dangling agent-browser installed-skill entry found during the host inventory. The skill was not used. Hosted provider data will use gh and, where unavailable there, Chrome computer use."
   "2026-10-19T13:15:15.112Z","harness:codex","Final local verification: linked watcher tests pass on the final helper split, four TypeScript projects and secret scan pass, and isolated SDK import admission passes all10 entrypoints unchanged after retaining the earlier failed local receipts. The current full static command stopped at that earlier admission failure; exact final hosted static/coverage and native validation remain required before closure."
+  "2026-10-19T13:32:07.417Z","harness:codex","First hosted head fe5743d fails static only at graph-composition prose-edge-gaps-ceiling: observed1234 versus unchanged1233. Chrome job-log inspection confirms the exact finding while gh run logs remain unavailable until workflow completion. The retained benchmark comment named this watcher item without a typed relationship. Added the real related edge from pm-bj7rq0 to this item through pm; local graph assurance now passes all9 assertions, record-integrity passes and bounded SDK mutation passes348 mutants with341 killed and7 reviewed equivalents. No quality ceiling or source denominator changed."
+learnings[2]{created_at,author,text}:
+  "2026-10-19T13:21:38.514Z","harness:codex","Failure visibility and review completion need separate wait phases. Use native fail-fast for repair feedback, retain a full-review wait, and preserve pending/unavailable provider evidence plus exact-head required-context enforcement."
+  "2026-10-19T13:32:08.133Z","harness:codex","Evidence prose creates relationship obligations: when recording another item's involvement, add the real typed edge in the same delivery. Repair the missing relationship rather than widening a graph-quality ceiling."
 files[2]{path,scope}:
   scripts/reviews/pr-review-loop.mjs,project
   tests/unit/scripts/reviews/pr-review-loop.spec.ts,project

@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: bug,ci,testing
 created_at: "2026-10-19T12:18:24.778Z"
-updated_at: "2026-10-19T13:01:38.482Z"
+updated_at: "2026-10-19T13:37:04.683Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
 author: "harness:codex"
@@ -20,11 +20,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,discovered_from,"2026-10-19T12:18:24.778Z","harness:codex","cli:create:dep",detected
   pm-bj7rq0,related,"2026-10-19T12:18:24.778Z","harness:codex","cli:create:dep",detected
   pm-zlv8jl,related,"2026-10-19T12:18:24.778Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-19T12:18:24.778Z","harness:codex","Duplicate check: strict complete3001-item all-status corpus and nightly merge serial allocation search plus full source/alert review found no active bounded owner for the full-suite allocation gap. pm-bj7rq0 retains broader runtime causation and pm-zlv8jl systemic stability work. Historical closed merge repairs remain completed. This task owns allocation only and preserves the original failed attempts."
   "2026-10-19T12:20:31.708Z","harness:codex",Captured run39232112166 at1545d63d has three30000ms Windows shard1 timeouts in merge-portability/lossless-merge-union. New config-boundary test fails before allocation change. Move the complete four-file native merge group to the existing serial project shared by coverage full tests and nightly shards. Preserve original cases assertions retries deadlines and workflow job bounds. This is allocation remediation; historical cause and rate are not rewritten.
   "2026-10-19T12:30:56.542Z","harness:codex","Operational proof remains separated: the published2026.10.19 npm/Bun installed-agent verifier passes13 steps per manager and public npx/bunx covers all CLI/MCP bins. Latest historical Release Reliability run39236010429 is still failed after the Windows nightly; this allocation change does not erase original observations or certify historical punctuality. Current Sentry issue inventory is empty, the required observability gate passes, broker ready/unacknowledged counts are zero and all six Prometheus targets are up. The broad active15-minute telemetry window has four unmatched groups while commands are still running, so it is not claimed as complete per-action pairing."
   "2026-10-19T13:00:00.754Z","harness:codex","First complete local source run:10781 tests passed with three platform skips, but composed-continuation failed because this Homebrew Node26 runtime cannot resolve its separately installed npm package. Exact coverage had no generated report and therefore also failed; neither is reported green. The fixture explicitly supports NODE_PATH, and the installed npm package is available through npm root -g. No production/test assertion or timeout change is needed for that host prerequisite. All five serial Git merge files passed in the broad run."
+  "2026-10-19T13:37:04.683Z","harness:codex","Hosted source proof for fe5743d: all six complete Nightly test legs pass on Ubuntu22/24/25 macOS24 and Windows24 shards1/2 in run39258686606. Both formerly failing Windows shards are green with the unchanged assertions and30-second per-test limit. The independent Nightly quality job fails on the same first-head prose-edge gap as PR static; it is not counted as a green workflow. PR39258608289 also passes all four coverage shards and its exact integer gate reports100/100/100/100 with zero uncovered counts. The governance relationship fix is now local and will be reviewed on the next head."
+learnings[1]{created_at,author,text}:
+  "2026-10-19T13:21:39.349Z","harness:codex","A serial allocation in a bounded PR job does not change full-suite scheduling. Keep Git-heavy keepers in a shared project partition and assert both exclusion from parallel contracts and single inclusion after them, preserving deadlines and coverage membership."
 files[2]{path,scope}:
   tests/integration/vitest-retry-policy.integration.spec.ts,project
   vitest.config.ts,project

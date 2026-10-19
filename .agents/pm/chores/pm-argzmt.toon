@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[2]: dependencies,update
 created_at: "2026-10-19T12:28:43.556Z"
-updated_at: "2026-10-19T13:12:50.866Z"
+updated_at: "2026-10-19T13:37:05.372Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
 author: "harness:codex"
@@ -23,11 +23,14 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-ksr40d,related,"2026-10-19T12:50:14.934Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-19T12:50:14.934Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-19T13:12:50.166Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-19T12:28:43.556Z","harness:codex","Duplicate check: strict complete3001-item corpus and dependency refresh cooldown search find only completed refreshes for prior versions, including pm-0uxmwf. Its live full metadata confirms marked18.1.0 is already shipped. No open owner exists for18.1.1. Latest candidates were checked against registry timestamps engines and peers. TypeScript7 conflicts with typescript-eslint<6.1 and npm-package-arg14 exceeds the promised Node22.18 floor; preserve their existing owners."
   "2026-10-19T12:44:05.060Z","harness:codex","Registry maturity proof: marked18.1.1 was published2026-10-12T12:29:51.405Z and is now older than seven complete days. Preparing the exact compatible tooling update while the earlier source suite finishes. No runtime dependency floor or supply-chain aging policy is changed. The only known compatible latest candidates not admitted now remain within their cooldown; npm-package-arg14 and TypeScript7 retain their existing engine/peer constraints."
   "2026-10-19T13:01:39.692Z","harness:codex","Final prepared install changes only marked18.1.0 to18.1.1 and its integrity/snapshot rows in pnpm-lock.yaml. The frozen lockfile install passes. The final focused sandbox run passes56 tests, including38 Markdown/docs gate tests,15 watcher tests,2 retry/config tests and the real packed Node/Bun composed-continuation acceptance after the documented npm NODE_PATH prerequisite is supplied. No local full-coverage pass is claimed from the earlier failed run; exact final coverage will be proven by required hosted shards."
   "2026-10-19T13:09:14.144Z","harness:codex",Latest pm-changelog2026.10.19-1 installs and its configured check reports CHANGELOG.md unchanged for the currently closed population. Keep the CLI-owned managed-extension updated_at receipt in the reviewed delivery and link that generated metadata here; no .agents/pm data is edited directly.
+  "2026-10-19T13:37:05.372Z","harness:codex","Hosted fe5743d acceptance passes exact100/100/100/100 coverage and every npm/Node22.18/24 installed-first-run OS combination, including both Windows Node versions. All source/platform test legs pass. The sole CI failure is the identified graph-evidence relationship on the first tracker snapshot; after the pm-only relation correction, local graph and record assurance plus bounded mutation pass. Keep the full hosted static rerun and review of the revised metadata head as required delivery work."
+learnings[1]{created_at,author,text}:
+  "2026-10-19T13:21:40.254Z","harness:codex","Choose dependency updates from exact publication timestamps within the supported major, then check engine and peer compatibility. A latest tag alone neither proves seven-day eligibility nor authorizes a runtime-floor or compiler migration."
 files[3]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   package.json,project
