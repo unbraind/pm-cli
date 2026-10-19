@@ -1102,6 +1102,30 @@ describe("runDeps", () => {
     });
   });
 
+  it.each(["context", "tree", "graph"] as const)("honors explicit TOON over a configured JSON fallback for %s budgets and recovery", async (format) => {
+    await withTempPmPath(async (context) => {
+      const leaf = createTask(context, "Encoding leaf");
+      const root = createTask(context, "Encoding root", [`id=${leaf},kind=related`]);
+      const global = { path: context.pmPath, json: false, defaultOutputFormat: "json" as const };
+      const options = { format, maxDepth: 0, tokenBudget: 3000 };
+      const result = await runDeps(root, options, global);
+      const rendered = formatOutput(result, { ...global, command: "deps", commandOptions: options });
+      const tokens = Math.ceil(Buffer.byteLength(rendered) / 4);
+      const reported = format === "context" ? result.context?.meta.usedTokens : result.truncation?.estimated_tokens;
+      expect(reported).toBe(tokens);
+      const tight = await runDeps(root, { ...options, tokenBudget: tokens + 16 }, global);
+      expect(Math.ceil(Buffer.byteLength(formatOutput(tight, { ...global, command: "deps", commandOptions: { ...options, tokenBudget: tokens + 16 } })) / 4)).toBeLessThanOrEqual(tokens + 16);
+      if (format !== "context") return;
+      const refusal = await runDeps(root, { ...options, tokenBudget: 1 }, global).catch((error: unknown) => error);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      const retry = refusal.context.recovery!.suggested_retry_args!;
+      expect(retry[retry.indexOf("--output-format") + 1]).toBe("toon");
+      const executed = context.runCli(retry);
+      expect(executed.code).toBe(0);
+      expect(executed.stdout).toMatch(/format: "?context"?/u);
+    });
+  });
+
   it("preserves host invocation provenance in discovery and accounting bytes without swallowing cursor errors", async () => {
     await withTempPmPath(async (context) => {
       const root = createTask(context, "host-rendered-context");

@@ -1555,7 +1555,10 @@ export async function runDeps(
 
   const outputFormat =
     global.outputFormat ??
-    (global.json === true ? "json" : (global.defaultOutputFormat ?? "toon"));
+    (global.json === true ||
+    (global.json === undefined && global.defaultOutputFormat === "json")
+      ? "json"
+      : "toon");
   if (format === "context") {
     const canonicalId = index.get(id.trim().toLowerCase())!.id;
     const rootEvidence = summaryOnly

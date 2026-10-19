@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: bug,cli,observability,sdk
 created_at: "2026-10-19T16:07:50.190Z"
-updated_at: "2026-10-19T18:09:06.111Z"
+updated_at: "2026-10-19T18:32:48.765Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
 author: "harness:codex"
@@ -20,7 +20,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-ju83,discovered_from,"2026-10-19T16:07:50.190Z","harness:codex","cli:create:dep",detected
   pm-5t33or,related,"2026-10-19T16:37:59.636Z","harness:codex","cli:update:dep",detected
   pm-t2t709,discovered_from,"2026-10-19T16:37:59.636Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-10-19T16:07:50.190Z","harness:codex","Duplicate check: full live open/in-progress lists and specific budget/Sentry searches plus complete all-status corpus contain no exact active owner. Full live pm-ju83 metadata/history confirms the broad graph platform is completed; the open recovery-closure feature is the parent. New report PM-CLI-3N contains4 handled CLI events with exit1 on the published release, separate from this branch's publisher work. Evidence is sanitized to exclude host paths identities and payloads. The literal budget-floor producer and existing regression are located before implementation."
   "2026-10-19T16:15:08.946Z","harness:codex","The repaired negative control is semantic: two regressions fail and25 existing tests pass. Direct SDK command callers receive a raw TypeError instead of an expected usage error, and MCP lets the same budget-floor exception escape. The initial malformed test edit is not counted as defect evidence. The command-layer fix converts only the existing controlled budget-floor signal, uses public expected-error and command-rendering helpers, preserves cause and compact executable recovery, and leaves low-level kernel TypeErrors and unrelated fatal errors unchanged."
   "2026-10-19T16:16:00.751Z","harness:codex","SDK and real CLI recovery acceptance now pass. The MCP test initially invoked the internal dispatcher, which deliberately propagates errors to the transport; corrected the test to drive the actual JSON-RPC line processor and inspect its emitted tool-error envelope. No MCP production behavior is changed. The original command-layer negative control remains valid; the earlier direct-dispatch MCP expectation is not claimed as transport evidence."
@@ -33,6 +33,9 @@ comments[12]{created_at,author,text}:
   "2026-10-19T18:01:37.973Z","harness:codex","Review remediation: preserve the tracker and original context selection/output policy in a verified numeric retry; keep tree-summary inspection separate. A bounded real-packer search reports requested tokens, verified feasible tokens, and an exact minimum only after exhaustive lower-budget proof. Larger or independently constrained queries explicitly disclose an unproved/unavailable minimum. The empty-reference loop now starts at the actual row count. Three accepted head-f67 review findings remain pending committed verification; no scope split because this delivery follows the requested related BIG PR."
   "2026-10-19T18:05:12.693Z","harness:codex","Local recovery acceptance now passes 225 cases across five focused files, including real canonical context retries under all JSON policies, an exact minimum with a failing immediately-smaller budget, output-constraint unavailability, MCP metadata, foreign-workspace routing and bounded empty-reference retries. Four TypeScript projects and strict repository ESLint pass. The generated SDK surface flags optional interface additions as signature changes; the maintained updater records the explicit non-breaking optional-field rationale, with compile-time producer/consumer checks."
   "2026-10-19T18:07:40.388Z","harness:codex","The aligned final tests reject archived f67 source in both controls: numeric recovery metadata is absent, and empty-reference builds grow from 1008 to 3008 as edgeLimit grows from 1000 to 3000. Corrected source passes all 228 cases in six focused files. Scoped V8 coverage for deps, budget search and public error helpers is exact 100/100/100/100: 453 statements, 336 branches, 80 functions, 425 lines. This scoped diagnostic is not substituted for the required whole-project gate. Contract/catalog checks, docstrings and duplicate lint pass."
+  "2026-10-19T18:27:07.545Z","harness:codex","Exact-head a235 review inventory is CLEAN with no unresolved inline threads, but a new top-level actionable report identifies an encoding-precedence gap: explicit json:false with configured default JSON is measured as JSON even though formatOutput selects TOON. It belongs to this same rendered-byte owner. Reproduce across context/tree/graph before changing the shared selection condition; retain expected-refusal and retry-policy controls. CodSpeed also reports a small fingerprint regression with cross-runtime and uninstrumented-syscall qualifications; assess that separately under the existing performance owner."
+  "2026-10-19T18:32:32.306Z","harness:codex","Explicit TOON/default-JSON precedence is reproduced at a235 in all three dependency formats: context reports414 versusactual278, tree262 versus182, graph277 versus179 tokens in the synthetic controls. One shared condition now matches the final renderer and preserves TOON in numeric retries. 296 linked tests pass; scoped recovery/error coverage remains exact100/100/100/100 across453 statements337 branches80 functions425 lines. Head-a235 required PR checks are green/CLEAN, but its full Native run39300409994 has separate macOS1/Windows2 failures under investigation; neither is labeled accepted."
+  "2026-10-19T18:32:48.765Z","harness:codex","Evidence correction for the preceding synthetic TOON control: the captured context comparison is396 reported versus277 actual tokens, not414 versus278. Tree262/182 and graph277/179 were transcribed correctly. The raw failing-before receipt remains /tmp/pm-toon-override-negative-control.log; subsequent acceptance uses measured equality rather than hardcoded token totals."
 notes[1]{created_at,author,text}:
   "2026-10-19T16:54:35.791Z","harness:codex","External report https://github.com/unbraind/pm-cli/issues/1513 corroborates the published-release runtime refusal and rendered ceiling defect. Original Sentry issue https://unbrained.sentry.io/issues/154689801/ remains preserved for next-release resolution after hosted acceptance. All changed producer contracts use the public SDK expected-error and safe command-rendering helpers; low-level graph semantics and user thresholds remain intact."
 files[20]:
@@ -82,7 +85,7 @@ files[20]:
     scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/lifecycle/item-conflict-guard.spec.ts,project,300,"harness:codex","2026-10-19T18:07:39.694Z",local_mutation,fix/review-failure-visibility-native-test-allocation
-test_runs[8]:
+test_runs[9]:
   - run_id: test-local-mvfgih3m-ycw202
     kind: test
     status: passed
@@ -166,6 +169,17 @@ test_runs[8]:
     started_at: "2026-10-19T18:07:40.618Z"
     finished_at: "2026-10-19T18:08:10.284Z"
     recorded_at: "2026-10-19T18:08:10.284Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/sdk/lifecycle/item-conflict-guard.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvflcet7-jgdchn
+    kind: test
+    status: passed
+    started_at: "2026-10-19T18:31:06.959Z"
+    finished_at: "2026-10-19T18:31:46.171Z"
+    recorded_at: "2026-10-19T18:31:46.171Z"
     passed: 1
     failed: 0
     skipped: 0

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-19T16:39:06.620Z"
+updated_at: "2026-10-19T18:30:28.936Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -21,7 +21,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
-comments[48]:
+comments[51]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -167,6 +167,15 @@ comments[48]:
   - created_at: "2026-10-19T16:39:06.620Z"
     author: "harness:codex"
     text: "Final local static run after the SDK refusal and status-publisher fixes passes dependency audit, ESLint, duplicate checks, generated catalogs/contracts, repository assurance, package/SDK parity, grammar, refusal closure, token-task gates, tracker quality, registry and all10 SDK import admissions. It fails the qualified CLI transport-floor admission: get best365ms exceeds362ms; controls remain within106ms (maximum control median50ms), Node26.9.0. This is product admission failure evidence with unknown cause, not runner noise or a full static pass. No threshold changes or blind repeat; hosted exact-head static acceptance remains required."
+  - created_at: "2026-10-19T18:24:31.938Z"
+    author: "harness:codex"
+    text: "Source a235a7e6 local static qualification retained: sdk/authoring median-of-five 176ms exceeds 164ms; controls qualify at max64ms <=106ms. Other reported entrypoints pass; pipeline stops before the later CLI floor and mutation gates. This new-source result is not a local static pass and is not attributed to host load without a causal control. Earlier qualified get 365ms>362ms evidence remains. No thresholds, iterations, retries or qualification rules changed; hosted exact-head evidence is separate."
+  - created_at: "2026-10-19T18:27:50.359Z"
+    author: "harness:codex"
+    text: "CodSpeed head a235 advisory reports aggregate -0.76%, with createQueryFingerprint -2.84% and encodeQueryCursor +1.36%; the provider explicitly flags different runtime environments and uninstrumented syscalls on the fingerprint benchmark. Both src/sdk/pagination.ts and benchmarks/pagination.bench.ts have byte-identical Git blob IDs at base54a583c and head a235. This comparison is retained as qualified advisory evidence, not a causal source-regression attribution or a cold-start acceptance result. No CodSpeed acknowledgement is used to hide the report."
+  - created_at: "2026-10-19T18:30:28.936Z"
+    author: "harness:codex"
+    text: "Chrome directly verifies CodSpeed comparison a235a7e versus 54a583c: one fingerprint regression, one cursor improvement, nine unchanged benchmarks, with both different-runtime and syscall-instrumentation warnings visibly present. The immutable unchanged source/benchmark blobs and provider qualifications remain the basis for retaining this as advisory evidence; no UI acknowledgement or benchmark-policy change was made."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

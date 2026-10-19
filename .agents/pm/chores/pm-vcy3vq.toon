@@ -2,26 +2,29 @@ id: pm-vcy3vq
 title: Refresh newly matured TypeScript-ESLint 8.71.2 quality tooling
 description: "Adopt the compatible TypeScript-ESLint patch after its full seven-day registry maturity boundary at2026-10-19T17:10:00.963Z. Preserve ESLint10 TypeScript6 Node22.18 support, lockfile integrity, strict lint and exact coverage. This is separate from the completed8.71.0 refresh and the incompatible TypeScript7 migration."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[2]: dependencies,quality
 created_at: "2026-10-19T17:13:49.435Z"
-updated_at: "2026-10-19T18:05:11.913Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
+updated_at: "2026-10-19T18:31:16.156Z"
+closed_at: "2026-10-19T18:31:14.213Z"
+completed_at: "2026-10-19T18:31:14.213Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "Verify all changed package publication ages, peer ranges and engine floor; retain the manifest range policy and frozen install; pass full ESLint and four-project typecheck; audit and exact-head hosted checks stay clean."
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: The mature8.71.2 quality toolchain installs without peer engine or age overrides and passes unchanged lint typecheck and delivery gates.
+resolution: Refreshed typescript-eslint and its coordinated packages to8.71.2 without overrides or compatibility-floor changes.
+expected_result: Adopt the compatible seven-day-mature patch with a reproducible lockfile and unchanged strict quality checks.
+actual_result: "All eleven package identities/integrities/engines/peers qualify; frozen install, linked four-project typecheck and ESLint pass, no vulnerabilities, required head-a235 CI is green."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-l8dzdv,discovered_from,"2026-10-19T17:13:49.435Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-19T17:13:49.435Z","harness:codex","Duplicate check: explicit unbounded complete open/in-progress inventories correct the orientation lists whose default output budget omitted rows. Request-specific all-status search and earlier strict full corpus find no exact active8.71.2 owner. Full live predecessor metadata/comments and35-entry history confirm completed8.71.0 scope, which remains closed. Registry age is beyond seven days and peers accept ESLint10/current TypeScript6. No ownership or age override."
   "2026-10-19T17:43:58.409Z","harness:codex","All11 added package versions are8.71.2 with matching registry/lockfile integrity; minimum verified publication age exceeds7.003 days. Every engine range accepts Node22.18, and installed ESLint10/TypeScript6 satisfy all declared peers. Frozen install, linked four-project typecheck, full strict ESLint, zero-vulnerability audit and development-bundle source/native validation pass without overrides."
   "2026-10-19T18:05:11.913Z","harness:codex","The current patch remains limited to TypeScript-ESLint 8.71.2 after its seven-day admission. After the SDK recovery changes, all four typecheck projects and repository ESLint now also pass on the installed patch. Frozen lockfile, integrity/engine/peer checks and zero-advisory audit receipts are retained; final hosted acceptance remains pending."
+  "2026-10-19T18:31:12.199Z","harness:codex","Accepted on exact head a235a7e6: PR required checks all pass with GitHub CLEAN, including typecheck/static/package consumers and security. All eleven TypeScript-ESLint packages are 8.71.2, registry age meets seven days, lock integrity/engines/peers align, frozen install and linked four-project typecheck/strict ESLint pass, zero advisories. Local qualified SDK import latency is separately retained under pm-bj7rq0 and is not relabeled as a local static pass."
 files[2]{path,scope}:
   package.json,project
   pnpm-lock.yaml,project
@@ -43,4 +46,5 @@ test_runs[1]:
       "pnpm lint:eslint",schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Package-owned generated dependency entry
+close_reason: Mature TypeScript-ESLint patch accepted through exact-head CI.
 body: ""

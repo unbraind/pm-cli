@@ -2,23 +2,25 @@ id: pm-5p48kf
 title: Preserve expected check publishers in PR readiness receipts
 description: "CodeRabbit review4315208376 on PR1508 verifies a name-only presence gap: a same-name check from an unexpected publisher disappears from missingContexts even though GitHub CLEAN enforcement still blocks merge. Retain classic and ruleset publisher requirements, prove bound publisher identity from exact-head GitHub check-run metadata, and keep mismatched or unavailable publisher evidence missing without inferring approval."
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[3]: bug,ci,review
 created_at: "2026-10-19T14:58:38.472Z"
-updated_at: "2026-10-19T17:43:56.657Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
+updated_at: "2026-10-19T18:31:10.799Z"
+closed_at: "2026-10-19T18:31:08.983Z"
+completed_at: "2026-10-19T18:31:08.983Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Verify classic and ruleset bindings with wrong absent and wrong-head check-run publishers; distinguish status-only contexts with publisherUnverifiable and independent GitHub CLEAN; require app evidence when same-name check runs coexist; preserve unbound behavior complete inventory and exact coverage.
 parent: pm-obq2
 risk: medium
 confidence: high
-expected_result: Publisher-bound check-run contexts require matching exact-head app evidence; status-only bound contexts disclose unavailable app identity and rely on GitHub CLEAN. Required contexts pending checks and independent merge policy remain enforced.
+resolution: Preserved classic/ruleset publisher bindings; verify exact-head check-run apps; disclose status-only unavailable app identity while requiring GitHub CLEAN.
+expected_result: Check-run contexts need matching publisher evidence; status-only contexts disclose their limitation and retain independent merge policy.
+actual_result: "17 focused regressions and exact helper coverage pass; exact-head required checks pass, GitHub CLEAN, zero unresolved inline findings; corrected acceptance metadata is committed."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,discovered_from,"2026-10-19T14:58:38.472Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-19T14:58:38.472Z","harness:codex","Duplicate check: complete live203 open and current in-progress lists plus required check publisher search and the full all-status corpus identify no exact active owner. Fresh full predecessor data confirms pm-jm7m3o is completed failure-visibility work and remains closed. This leaf owns the newly accepted review finding at https://github.com/unbraind/pm-cli/pull/1508#discussion_r4315208376 rather than reopening shipped work."
   "2026-10-19T15:04:46.967Z","harness:codex","Accepted CodeRabbit finding has a failing-before control:15 existing watcher tests pass while a wrong-publisher receipt is incorrectly successful. Classic requiredStatusChecks app IDs and ruleset integration_id bindings now survive into requiredChecks. Paginated exact-head check-run metadata proves bound presence; wrong missing and wrong-head apps remain missing, and unbound contexts retain legacy behavior. Focused acceptance separately exercises both policy sources and matching evidence on the second API page. GitHub CLEAN remains independently required for verdict and merge enforcement."
   "2026-10-19T15:07:47.147Z","harness:codex","Final local acceptance:17 watcher tests pass, with focused ESLint and all four TypeScript projects. A live exact-head GitHub negative read on d434018 retains all26 required records including classic Actions Codecov and CodeFactor app identities, correctly keeps only the genuinely absent codecov/patch context missing, and returns failed rather than approving the existing registry-failed head. No GitHub policy merge state or publisher setting was changed."
@@ -27,6 +29,7 @@ comments[8]{created_at,author,text}:
   "2026-10-19T15:56:20.791Z","harness:codex",Final-source observability verification is exercising real get/list/contracts reads and this append-only evidence mutation with per-process sampling only. Exact telemetry pairing physical queue state fresh Sentry spans and the required reliability gate will be checked before delivery closure. No persistent telemetry configuration changes are made.
   "2026-10-19T16:17:21.007Z","harness:codex","The complete head775838d review inventory contains a new actionable CodeRabbit finding4315936681: a bound required context may be delivered as a commit status, while publisher evidence currently queries only check runs. This is a real fail-closed liveness bug in the same active publisher leaf, not a reason to weaken publisher checks. Add a discriminated commit-status path whose unavailable publisher identity is explicit and whose acceptance still depends on GitHub CLEAN; preserve exact-head app matching for check runs and regression-test both status and conflicting-name cases."
   "2026-10-19T16:20:49.181Z","harness:codex","Both classic and ruleset semantic negative controls reject the old watcher despite a successful publisher-bound commit status and GitHub CLEAN:2 failures15 passes. The fix discloses status-only bindings as publisherUnverifiable with source commit_status and delegates their publisher enforcement to GitHub CLEAN. A same-name check run still requires exact-head app evidence, including when a status also exists. All17 tests pass and helper-only coverage is100/100/100/100 across237 statements187 branches54 functions206 lines. This is scoped helper evidence, not a substitute for global coverage."
+  "2026-10-19T18:31:07.201Z","harness:codex","Exact-head a235a7e6 review watcher completed successfully: all required contexts present, no failed or pending checks, GitHub CLEAN and zero unresolved inline threads. Check-run publisher identity remains enforced; commit-status-only identity is explicitly unverifiable and CLEAN stays independent. The metadata review correction is committed; 17 focused regressions and helper scoped100 coverage are retained. Optional providers remain quota/trial/silence limitations, not approvals. Native full-matrix completion and the additional TOON finding belong to the separate context owner."
 learnings[1]{created_at,author,text}:
   "2026-10-19T15:04:48.551Z","harness:codex",A check name proves presence only for an unbound requirement. Preserve publisher bindings from each effective policy and prove the expected app on the exact head; keep GitHub merge verdict enforcement separate.
 files[2]{path,scope}:
@@ -82,6 +85,7 @@ test_runs[4]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/PR_REVIEW_LOOP.md,project
+close_reason: Publisher-aware review readiness accepted on PR1508 head a235a7e6.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

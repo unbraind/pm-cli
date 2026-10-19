@@ -10,6 +10,7 @@
 
 - GH-1500: Preserve null, empty and reserved JSON row facts through host rendering ([pm-4euctr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4euctr.toon))
 - GH-1501: Compact default brief-list TOON envelopes without hiding source completeness ([pm-6pycus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pycus.toon))
+- Preserve expected check publishers in PR readiness receipts ([pm-5p48kf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5p48kf.toon))
 - Bound complete macOS nightly validation with two shards ([pm-qrirz8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qrirz8.toon))
 - Run Git-heavy merge regression files after parallel contract workers ([pm-89297t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89297t.toon))
 - Show failed required PR checks before waiting on pending optional reviewers ([pm-jm7m3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jm7m3o.toon))
@@ -21,6 +22,7 @@
 
 ### Other
 
+- Refresh newly matured TypeScript-ESLint 8.71.2 quality tooling ([pm-vcy3vq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vcy3vq.toon))
 - Run the command-example corpus scan after parallel coverage workers ([pm-a3c6g4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a3c6g4.toon))
 - Transaction preview refusal should identify a safe relative offending path ([pm-fa9olc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fa9olc.toon))
 
