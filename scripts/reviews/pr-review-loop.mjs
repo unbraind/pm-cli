@@ -258,7 +258,7 @@ function incompleteCheckSignals(checks, requiredContexts) {
 /** Combine effective publisher bindings, dropping redundant unbound requirements for the same name. */
 function requiredCheckRequirements(pullRequest, rules) {
   const records = [
-    ...(pullRequest.requiredChecks ?? []),
+    ...pullRequest.requiredChecks,
     ...pullRequest.requiredContexts.map((context) => ({ context, integrationId: null })),
     ...rules.filter((rule) => rule.type === "required_status_checks")
       .flatMap((rule) => rule.parameters.required_status_checks.map((check) => ({

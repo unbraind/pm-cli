@@ -329,7 +329,9 @@ describe("PR review loop helper", () => {
         } } } });
         if (args[1]?.includes("rules/branches")) return JSON.stringify([source === "ruleset"
           ? [{ type: "required_status_checks", parameters: { required_status_checks: [{ context, integration_id: scenario.binding }] } }] : []]);
-        if (args[1]?.includes("/check-runs?")) return JSON.stringify([{ check_runs: [] }, { check_runs: [
+        if (args[1]?.includes("/check-runs?")) return JSON.stringify([{ check_runs: [
+          { name: "unrelated-check", head_sha: "abc123", app: { id: 7 } },
+        ] }, { check_runs: [
           { name: context, head_sha: scenario.head, app: scenario.app === null ? null : { id: scenario.app } },
         ] }]);
         return JSON.stringify({ headRefOid: "abc123", baseRefName: "main", mergeStateStatus: "CLEAN",

@@ -10,6 +10,7 @@
 
 - GH-1500: Preserve null, empty and reserved JSON row facts through host rendering ([pm-4euctr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4euctr.toon))
 - GH-1501: Compact default brief-list TOON envelopes without hiding source completeness ([pm-6pycus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pycus.toon))
+- Bound complete macOS nightly validation with two shards ([pm-qrirz8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qrirz8.toon))
 - Run Git-heavy merge regression files after parallel contract workers ([pm-89297t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89297t.toon))
 - Show failed required PR checks before waiting on pending optional reviewers ([pm-jm7m3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jm7m3o.toon))
 - item mutate --dry-run does not surface per-row advisory duplicate-detection warnings ([pm-ekf2gu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ekf2gu.toon))
