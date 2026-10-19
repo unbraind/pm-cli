@@ -15,7 +15,7 @@ import {
   resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
 import { describeUnknownError } from "../sdk/error-runtime.js";
-import { planItemMutationDocument } from "../sdk/lifecycle/structured-mutation-plan.js";
+import { planItemMutationDocument, previewItemMutationDocument } from "../sdk/lifecycle/structured-mutation-plan.js";
 import {
   buildItemCompletionMutations,
   commitItemCompletion,
@@ -138,16 +138,16 @@ async function runItemMutateAction(
     settings.author_default,
   );
   if (options.dryRun === true) {
-    const validation = await previewItemMutations({ pmRoot, transactionId, author, mutations });
+    const preview = await previewItemMutationDocument({ pmRoot, author, plan });
     printResult(
       {
         ...receipt,
         dry_run: true,
-        validation,
+        validation: preview.validation,
         mutation_count: mutations.length,
         mutations,
         references,
-        rows,
+        rows: preview.rows,
       },
       globalOptions,
     );

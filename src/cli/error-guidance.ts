@@ -28,6 +28,8 @@ interface GuidanceMessage {
   policyViolationCount?: number;
   itemId?: string;
   transactionOperation?: PmCliErrorContext["transaction_operation"];
+  /** Bounded tracker-relative preview refusal coordinate. */
+  previewStorage?: PmCliErrorContext["preview_storage"];
   tombstone?: PmCliErrorContext["tombstone"];
   code: string;
   type: string;
@@ -69,6 +71,8 @@ export interface PmRefusalEnvelope {
 export interface JsonErrorEnvelope {
   /** Ordered mutation that failed semantic preview validation. */
   transaction_operation?: PmCliErrorContext["transaction_operation"];
+  /** Bounded tracker-relative preview refusal coordinate. */
+  preview_storage?: PmCliErrorContext["preview_storage"];
   /** Exact item identity attached to a storage diagnostic. */
   item_id?: string;
   /** Verified retained deletion and its recoverable version. */
@@ -127,6 +131,8 @@ export function projectLeanErrorEnvelope(
 export interface ErrorClassification {
   /** Ordered mutation that failed semantic preview validation. */
   transaction_operation?: PmCliErrorContext["transaction_operation"];
+  /** Bounded tracker-relative preview refusal coordinate. */
+  preview_storage?: PmCliErrorContext["preview_storage"];
   /** Exact item identity attached to a storage diagnostic. */
   item_id?: string;
   /** Verified retained deletion and its recoverable version. */
@@ -633,6 +639,7 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
 function attachStructuredGuidanceDetails<
   Payload extends JsonErrorEnvelope | ErrorClassification,
 >(payload: Payload, message: GuidanceMessage): Payload {
+  if (message.previewStorage !== undefined) payload.preview_storage = message.previewStorage;
   if (message.transactionOperation !== undefined) {
     payload.transaction_operation = message.transactionOperation;
   }
@@ -974,6 +981,7 @@ function applyPmCliErrorContext(
     unmatchedSelectors: context.unmatched_selectors,
     itemId: context.item_id,
     transactionOperation: context.transaction_operation,
+    previewStorage: context.preview_storage,
     tombstone: context.tombstone,
     availableDependencies: context.available_dependencies,
     recovery,

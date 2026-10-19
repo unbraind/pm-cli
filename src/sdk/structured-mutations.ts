@@ -147,6 +147,8 @@ export interface ResolvedItemMutationRow {
   op: BulkItemMutation["op"];
   /** Whether keyed upsert turned a create row into an update of an existing item. */
   upserted?: true;
+  /** Lifecycle warnings for this row when returned by a staged document preview. */
+  warnings?: readonly string[];
 }
 
 /** Fully validated mutation document ready for preview or commit. */

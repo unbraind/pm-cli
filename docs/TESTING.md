@@ -49,6 +49,13 @@ claims to the same canonical gate IDs. Hosted-only environment isolation and
 tracker-integrity steps remain explicit entries with reasons rather than
 silently disappearing from local parity.
 
+The full-source command-example scan runs after parallel contract files in the
+existing serial cohort. It keeps the same source corpus, assertions and
+30-second deadline, so concurrent contract workers do not consume its
+policy-check budget. This allocation is tracked by
+[pm-a3c6g4](../.agents/pm/tasks/pm-a3c6g4.toon); broader runner qualification
+remains with [pm-bj7rq0](../.agents/pm/issues/pm-bj7rq0.toon).
+
 `node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, disables
 external Sentry delivery for the build, test workers, and their nested CLI
 children, then cleans the roots up. Instrumentation tests can still exercise

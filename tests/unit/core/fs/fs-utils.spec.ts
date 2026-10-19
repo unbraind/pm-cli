@@ -10,11 +10,38 @@ import {
   pathExists,
   readFileIfExists,
   removeFileIfExists,
+  transactionPreviewNonRegularFileError,
   writeFileAtomic,
 } from "../../../../src/core/fs/fs-utils.js";
 import { withTempDir } from "../../../helpers/temp.js";
 
 describe("core/fs/fs-utils", () => {
+  it.each([
+    { entry: undefined, area: "tracker_storage" },
+    { entry: "", area: "tracker_storage" },
+    { entry: "/private/tracker/schema/fields.json", area: "tracker_storage" },
+    { entry: "C:\\private\\fields.json", area: "tracker_storage" },
+    { entry: "../outside", area: "tracker_storage" },
+    { entry: "schema/../outside", area: "tracker_storage" },
+    { entry: "schema/unsafe\nname", area: "schema" },
+    { entry: `schema/${"x".repeat(170)}`, area: "schema" },
+    { entry: "schema//fields.json", area: "schema" },
+    { entry: "schema/./fields.json", area: "schema" },
+    { entry: "settings.json", area: "settings", relative: "settings.json" },
+    { entry: path.join("runtime", "session.json"), area: "runtime", relative: "runtime/session.json" },
+    { entry: "history/pm-test.jsonl", area: "history", relative: "history/pm-test.jsonl" },
+    { entry: "transactions/sdk/preview.json", area: "transactions", relative: "transactions/sdk/preview.json" },
+    { entry: "schema/fields.json", area: "schema", relative: "schema/fields.json" },
+    { entry: "constructor/entry", area: "tracker_storage", relative: "constructor/entry" },
+  ])("bounds preview refusal diagnostics for $entry", ({ entry, area, relative }) => {
+    const error = transactionPreviewNonRegularFileError(entry);
+    expect(error).toMatchObject({ code: "transaction_preview_non_regular_file", exitCode: 2, context: { preview_storage: { storage_area: area, entry_redacted: relative === undefined } } });
+    if (relative === undefined) expect(error.context.preview_storage).not.toHaveProperty("relative_entry");
+    else expect(error.context.preview_storage?.relative_entry).toBe(relative);
+    if (entry && relative === undefined) expect([error.message, JSON.stringify(error), ...(error.context.nextSteps ?? [])].join("\n")).not.toContain(entry);
+    expect(error.context.nextSteps).toEqual(expect.arrayContaining([expect.stringContaining("do not follow link targets")]));
+  });
+
   it("creates directories and resolves path existence", async () => {
     await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
       const nestedDir = path.join(tempDir, "a", "b", "c");

@@ -78,18 +78,26 @@ export async function readRegularFile(targetPath: string, rejectionError: Error)
 }
 
 /**
- * Refuse unsafe preview storage without exposing filesystem paths. Entry and
+ * Refuse unsafe preview storage with bounded tracker-relative diagnostics. Entry and
  * opened-descriptor checks share this usage error so SDK callers can repair
  * tracker configuration rather than treating a preserved safety boundary as
  * an unexpected runtime fault. Native filesystem failures retain their codes.
  */
-export function transactionPreviewNonRegularFileError(): PmCliError {
-  return new PmCliError("Transaction preview requires regular files and directories.", EXIT_CODE.USAGE, {
+export function transactionPreviewNonRegularFileError(relativePath?: string): PmCliError {
+  const relative = relativePath?.replaceAll(path.sep, "/");
+  const contained = relative !== undefined && !path.posix.isAbsolute(relative) && !path.win32.isAbsolute(relative) && !relative.split("/").includes("..");
+  const first = contained ? relative.split("/")[0] : undefined;
+  const areas: Readonly<Record<string, string>> = { "settings.json": "settings", runtime: "runtime", schema: "schema", history: "history", transactions: "transactions" };
+  const area = first === undefined ? "tracker_storage" : (Object.hasOwn(areas, first) ? areas[first]! : "tracker_storage");
+  const safe = contained && relative.length > 0 && relative.length <= 160 && relative.split("/").every((part) => part !== "." && /^[a-zA-Z0-9_.-]+$/u.test(part));
+  const location = safe ? relative : `${area} (entry name redacted)`;
+  return new PmCliError(`Transaction preview requires regular files and directories. Inspect ${location} relative to the selected tracker root.`, EXIT_CODE.USAGE, {
     code: "transaction_preview_non_regular_file",
+    preview_storage: { storage_area: area, ...(safe ? { relative_entry: relative } : {}), entry_redacted: !safe },
     required: "regular files and directories within the configured tracker storage",
     why: "Preview does not follow linked entries or read special files.",
     nextSteps: [
-      "Inspect the configured tracker storage, settings, schema and session entries for links, directories used as files, or special files.",
+      `Inspect ${location} within the selected tracker for links, directories used as files, or special files; do not follow link targets.`,
       "Restore the intended regular files and directories, then retry the original dry-run command.",
     ],
   });

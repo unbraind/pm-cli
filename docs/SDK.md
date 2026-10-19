@@ -1382,6 +1382,22 @@ handlers remain disabled. Package-backed `--template` create input cannot be
 semantically previewed through its package handler; expand it into explicit core
 mutation options before preview.
 
+Actionable previews are tracked by [pm-ekf2gu](../.agents/pm/issues/pm-ekf2gu.toon)
+and [pm-fa9olc](../.agents/pm/tasks/pm-fa9olc.toon).
+`previewItemMutations` returns `warnings` grouped by zero-based operation
+`index`, canonical `id`, and `op`. These are the original create lifecycle
+warnings, including advisory `likely_duplicates` and duplicate-recovery tokens.
+Earlier staged creates participate in later duplicate checks. Strict policy
+still refuses duplicates; preview never changes the configured policy.
+
+For a document resolved with `planItemMutationDocument`, call
+`previewItemMutationDocument({ pmRoot, author, plan })` from the aggregate SDK.
+It returns `{ validation, rows }`; affected rows retain their source `index`
+and `ref` and gain `warnings`. Rows without warnings omit that property. The
+input plan stays unchanged. Both `pm item mutate --dry-run` and MCP `pm_mutate`
+use this same projection. A `replayed_committed_plan` has no newly evaluated
+warnings; an empty warning list in that state does not certify current policy.
+
 Staging excludes derived `search` and `locks` content and unrelated runtime state,
 retaining registered item folders, explicitly configured schema files, and
 `runtime/session.json` for core focus and inherited-parent semantics. Root-layout
@@ -1394,6 +1410,17 @@ schema paths inside that resolved boundary are
 remapped only in the staged settings. Schema files configured outside the
 tracker fail with `transaction_preview_external_schema`; relocate them inside
 the selected tracker root before retrying.
+
+`transaction_preview_non_regular_file` includes `preview_storage` in SDK error
+context and the CLI JSON error envelope. It reports a fixed `storage_area`,
+`entry_redacted`, and, when safe, `relative_entry` using `/` separators relative
+to the selected tracker root. Coordinates are limited to 160 ASCII characters
+from letters, digits, `.`, `_`, `-`, and separators. Absolute paths, traversal,
+control characters and overlong or otherwise unsafe names are withheld; the
+storage category remains available. Diagnostics never include link targets.
+Inspect that entry without following links, restore the intended regular file
+or directory, and retry the dry run. Native filesystem errors retain their
+existing diagnostics.
 
 Preview requires trusted, stable directory entries and ancestors. Where Node
 exposes `O_NOFOLLOW` and `O_NONBLOCK`, descriptor opens request those POSIX guards.

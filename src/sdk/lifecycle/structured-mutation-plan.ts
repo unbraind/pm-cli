@@ -7,7 +7,7 @@
  * ready for `previewItemMutations` or `commitItemMutations`.
  */
 import { resolveRuntimeFieldRegistry, runtimeFieldOptionTarget } from "../../core/schema/runtime-schema.js";
-import { listUpsertKeyCandidates, resolveTransactionSchema } from "../item-transaction.js";
+import { listUpsertKeyCandidates, previewItemMutations, resolveTransactionSchema, type ItemMutationPreviewValidation } from "../item-transaction.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveCoreUpsertMetadataKey } from "./core-item-fields.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -17,6 +17,7 @@ import {
   deriveMutationTransactionId,
   resolveItemMutationDocument,
   type ResolvedItemMutationDocument,
+  type ResolvedItemMutationRow,
 } from "../structured-mutations.js";
 
 /** Inputs for planning one mutation document against a workspace. */
@@ -31,6 +32,28 @@ export interface PlanItemMutationDocumentOptions {
   upsertKey?: string;
   /** Already-read settings, to avoid a second settings read on hot paths. */
   settings?: PmSettings;
+}
+
+/** Preview a resolved document and join lifecycle warnings to its source row indexes and aliases. */
+export async function previewItemMutationDocument(options: {
+  /** Tracker whose state and policy the disposable preview validates. */
+  pmRoot: string;
+  /** Actor used only within the disposable staged tracker. */
+  author: string;
+  /** SDK-resolved document with its transaction identity and ordered rows. */
+  plan: PlannedItemMutationDocument;
+}): Promise<{ validation: ItemMutationPreviewValidation; rows: ResolvedItemMutationRow[] }> {
+  const { plan } = options;
+  const validation = await previewItemMutations({ pmRoot: options.pmRoot, author: options.author, transactionId: plan.transaction_id, mutations: plan.mutations });
+  const warnings = new Map(validation.warnings.map((entry) => [entry.index, entry.warnings]));
+  const rows = plan.rows.map((row) => {
+    const projected = { ...row };
+    delete projected.warnings;
+    const messages = warnings.get(row.index);
+    if (messages !== undefined) projected.warnings = messages;
+    return projected;
+  });
+  return { validation, rows };
 }
 
 /** Resolved plan plus the transaction identity the caller must reuse to resume. */

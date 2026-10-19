@@ -323,14 +323,21 @@ describe("semantic preview snapshot consistency", () => {
     });
   });
 
-  it.skipIf(process.platform === "win32").each(["file", "directory", "cycle"])("rejects a %s symlink before staging external or cyclic contents", async (kind) => {
+  it.skipIf(process.platform === "win32").each(["file", "directory", "cycle", "unsafe-name", "long-name", "backslash-name"])("rejects a %s symlink before staging external or cyclic contents", async (kind) => {
     await withTempPmPath(async (context) => {
       const outside = path.join(path.dirname(context.pmPath), "outside");
       await mkdir(outside);
       await writeFile(path.join(outside, "secret.txt"), "outside tracker");
       const target = kind === "cycle" ? context.pmPath : kind === "file" ? path.join(outside, "secret.txt") : outside;
-      await symlink(target, path.join(context.pmPath, "linked-entry"));
-      await expect(previewItemMutations({ pmRoot: context.pmPath, transactionId: "linked-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-linked", options: { title: "Linked preview", type: "Task" } }] })).rejects.toMatchObject({ exitCode: 2, code: "transaction_preview_non_regular_file", context: { nextSteps: expect.any(Array) } });
+      const redacted = kind.endsWith("name");
+      const entry = kind === "unsafe-name" ? "unsafe\nentry" : kind === "long-name" ? "x".repeat(170) : kind === "backslash-name" ? "schema\\misleading" : "linked-entry";
+      await symlink(target, path.join(context.pmPath, entry));
+      const refusal = await previewItemMutations({ pmRoot: context.pmPath, transactionId: "linked-preview", author: "snapshot-agent", mutations: [{ op: "create", id: "pm-linked", options: { title: "Linked preview", type: "Task" } }] }).catch((error: unknown) => error);
+      expect(refusal).toMatchObject({ exitCode: 2, code: "transaction_preview_non_regular_file", context: { preview_storage: { storage_area: "tracker_storage", ...(redacted ? {} : { relative_entry: "linked-entry" }), entry_redacted: redacted }, nextSteps: expect.any(Array) } });
+      const rendered = JSON.stringify(refusal);
+      expect(rendered).not.toContain(context.pmPath);
+      expect(rendered).not.toContain(outside);
+      if (redacted) expect(rendered).not.toContain(entry);
     });
   });
 

@@ -75,7 +75,7 @@ describe("structured mutation command registration", () => {
     vi.clearAllMocks();
     vi.stubEnv("PM_AUTHOR", "");
     mocks.stdin = "";
-    mocks.previewItemMutations.mockResolvedValue({ validated: true });
+    mocks.previewItemMutations.mockResolvedValue({ validated: true, warnings: [] });
     mocks.runCreate.mockResolvedValue({ item: { id: "pm-created" } });
     mocks.runReopen.mockResolvedValue({
       item: { id: "pm-reopened", status: "open" },

@@ -67,9 +67,10 @@ const allSourceCoverageThresholds = {
   statements: 100,
 };
 
-// Keep real corpus/latency keepers out of competing contract workers without
-// changing their corpus, assertions, or deadlines (pm-bj7rq0).
+// Keep whole-source policy scans and real corpus/latency keepers out of
+// competing contract workers without changing their corpus, assertions, or deadlines (pm-bj7rq0).
 const sequentialPerformanceSpecs = [
+  "tests/unit/cli/canonical-example-guard.spec.ts",
   "tests/integration/scratch-lifecycle.integration.spec.ts",
   "tests/unit/scripts/point-read-costs.spec.ts",
   "tests/unit/scripts/release/absence-tolerance-gate.spec.ts",
@@ -119,8 +120,8 @@ export default defineConfig({
       // separately prove that production configuration defaults to core.
       PM_MCP_PROFILE: "full",
     },
-    // Wall-clock admission runs after every parallel contract file, retaining
-    // its original latency ceiling without charging unrelated worker load.
+    // Whole-source policy scans and wall-clock admission run after every parallel
+    // contract file, retaining the original ceilings without competing worker load.
     projects: [
       {
         extends: true,

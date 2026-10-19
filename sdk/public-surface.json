@@ -2474,6 +2474,15 @@
       ],
       "package_version": "2026.10.18",
       "reason": "Require indexed immutable receipt proof and expose unstaged candidates for read-only preview while preserving exported names and guarded staging."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ItemMutationPreviewValidation",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:ResolvedItemMutationRow"
+      ],
+      "package_version": "2026.10.19",
+      "reason": "Add staged create-warning receipts and row projections plus optional preview-storage error context. Existing mutation inputs and runtime policies remain compatible; custom TypeScript preview-result producers must supply the new warnings collection."
     }
   ],
   "entrypoints": {
@@ -10350,7 +10359,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ItemMutationPreviewValidation",
-          "signature": "export interface ItemMutationPreviewValidation { validated: boolean; state: \"staged_snapshot\" | \"replayed_committed_plan\"; unresolved_commit_constraints: readonly string[]; }"
+          "signature": "export interface ItemMutationPreviewValidation { validated: boolean; state: \"staged_snapshot\" | \"replayed_committed_plan\"; unresolved_commit_constraints: readonly string[]; warnings: { index: number; id: string; op: \"create\"; warnings: readonly string[]; }[]; }"
         },
         {
           "classification": "advanced_export",
@@ -13470,7 +13479,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -14851,6 +14860,12 @@
           "kind": "function",
           "name": "preserveMutationStdinTokenLiterals",
           "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "previewItemMutationDocument",
+          "signature": "(options: { pmRoot: string; author: string; plan: PlannedItemMutationDocument; }) => Promise<{ validation: ItemMutationPreviewValidation; rows: ResolvedItemMutationRow[]; }> | calls: (options: { pmRoot: string; author: string; plan: PlannedItemMutationDocument; }) => Promise<{ validation: ItemMutationPreviewValidation; rows: ResolvedItemMutationRow[]; }>"
         },
         {
           "classification": "advanced_export",
@@ -17028,7 +17043,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ResolvedItemMutationRow",
-          "signature": "export interface ResolvedItemMutationRow { index: number; ref?: string; id: string; op: BulkItemMutation[\"op\"]; upserted?: true; }"
+          "signature": "export interface ResolvedItemMutationRow { index: number; ref?: string; id: string; op: BulkItemMutation[\"op\"]; upserted?: true; warnings?: readonly string[]; }"
         },
         {
           "classification": "advanced_export",

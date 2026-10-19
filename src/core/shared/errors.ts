@@ -66,6 +66,15 @@ export interface PmCliErrorContext {
     /** Resolved target identity. */
     id: string;
   };
+  /** Bounded storage coordinate for a refused preview entry; never an absolute path or link target. */
+  preview_storage?: {
+    /** Fixed storage category, available even when the entry name must be hidden. */
+    storage_area: string;
+    /** Safe tracker-relative path with portable slash separators, when available. */
+    relative_entry?: string;
+    /** Whether the coordinate was withheld because it was unsafe, absent, or overlong. */
+    entry_redacted: boolean;
+  };
   /** Verified retained deletion and the latest recoverable durable address. */
   tombstone?: {
     /** The retained stream proves the item is currently deleted. */

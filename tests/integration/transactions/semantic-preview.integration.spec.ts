@@ -34,6 +34,35 @@ async function durableSnapshot(root: string): Promise<Record<string, string>> {
 }
 
 describe("semantic transaction previews (GH-1370)", () => {
+  it.each(["advisory", "strict", "off"])("shares row warnings and immutable source state across CLI/MCP under %s policy", async (mode) => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["create", "Task", "Canonical preview duplicate", "--id", "canonical", "--json"]).code).toBe(0);
+      expect(context.runCli(["config", "project", "set", "governance.duplicate_detection_mode", mode, "--json"]).code).toBe(0);
+      const mutations = [
+        { ref: "original", title: "Canonical preview duplicate", type: "Task" },
+        { ref: "later", title: "Canonical preview duplicate", type: "Task" },
+      ];
+      const before = await durableSnapshot(context.pmPath);
+      const cli = context.runCli(["item", "mutate", "--transaction-id", "row-warning-preview", "--dry-run", "--json"], { input: JSON.stringify(mutations), expectJson: true });
+      const mcp = handleRequest({ jsonrpc: "2.0", id: "row-warnings", method: "tools/call", params: { name: "pm_mutate", arguments: { path: context.pmPath, transactionId: "row-warning-preview", dryRun: true, mutations } } });
+      if (mode === "strict") {
+        expect(cli.code).toBe(4);
+        await expect(mcp).rejects.toMatchObject({ exitCode: 4, context: { transaction_operation: { index: 0 } } });
+      } else {
+        expect(cli.code).toBe(0);
+        const response = await mcp;
+        if (!response?.structuredContent) throw new Error("MCP preview response must contain structured content.");
+        const receipt = response.structuredContent as { result: { rows: unknown[]; validation: unknown } };
+        expect(cli.json).toMatchObject({ rows: receipt.result.rows, validation: receipt.result.validation });
+        for (const [index, ref] of ["original", "later"].entries()) {
+          expect(receipt.result.rows[index]).toMatchObject({ index, ref, ...(mode === "advisory" ? { warnings: expect.arrayContaining([expect.stringContaining("likely_duplicates:pm-canonical")]) } : {}) });
+          if (mode === "off") expect(receipt.result.rows[index]).not.toHaveProperty("warnings");
+        }
+      }
+      expect(await durableSnapshot(context.pmPath)).toEqual(before);
+    });
+  });
+
   for (const command of ["mutate", "complete"]) {
     it.each(["missing-inside", "missing-outside"])(`keeps ${command} CLI schema bootstrap inside staging: %s`, async (mode) => {
       await withTempPmPath(async (context) => {
@@ -66,7 +95,12 @@ describe("semantic transaction previews (GH-1370)", () => {
   }
 
   for (const command of ["mutate", "complete"]) {
-    it.skipIf(process.platform === "win32").each(["linked-parent", "pipe", "settings-link", "settings-pipe"])(`refuses unsafe ${command} CLI schema inputs before bootstrap access: %s`, async (kind) => {
+    it.skipIf(process.platform === "win32").each([
+      { kind: "linked-parent", entry: "linked-schema" },
+      { kind: "pipe", entry: "schema/unsafe-statuses.json" },
+      { kind: "settings-link", entry: "settings.json" },
+      { kind: "settings-pipe", entry: "settings.json" },
+    ])(`refuses unsafe ${command} CLI schema inputs before bootstrap access: $kind`, async ({ kind, entry }) => {
       await withTempPmPath(async (context) => {
         expect(context.runCli(["create", "task", "Unsafe schema target", "--id", "unsafe", "--json"]).code).toBe(0);
         const settingsPath = path.join(context.pmPath, "settings.json");
@@ -103,7 +137,7 @@ describe("semantic transaction previews (GH-1370)", () => {
           const result = spawnSync(process.execPath, [path.resolve("dist/cli.js"), ...args], { env: context.env, encoding: "utf8", timeout: 10_000, input: command === "mutate" ? JSON.stringify([{ op: "update", id: "pm-unsafe", options: { title: "Staged title" } }]) : undefined });
           expect(result.error).toBeUndefined();
           expect(result.status).toBe(2);
-          expect(JSON.parse(result.stderr)).toMatchObject({ code: "transaction_preview_non_regular_file", next_steps: expect.arrayContaining([expect.stringContaining("retry the original dry-run")]) });
+          expect(JSON.parse(result.stderr)).toMatchObject({ code: "transaction_preview_non_regular_file", preview_storage: { relative_entry: entry, entry_redacted: false }, next_steps: expect.arrayContaining([expect.stringContaining("retry the original dry-run")]) });
           expect(result.stderr).not.toContain(context.pmPath);
           if (kind === "settings-pipe") expect((await lstat(settingsPath)).isFIFO()).toBe(true);
           else expect(await readFile(settingsPath, "utf8")).toBe(beforeSettings);
