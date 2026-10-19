@@ -785,11 +785,12 @@ jobs:
 
       # pm-gh1405 / pm-gh1390: verify both Git object formats and durable
       # receipt settlement across real worktrees on the native Windows runner.
+      # pm-bj7rq0: isolate Git/process-heavy files without changing their deadlines.
       - name: Verify merge receipt recovery and settlement on Windows
         if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts
+        run: node scripts/run-tests.mjs test -- --maxWorkers=1 tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts
 
       - name: Verify nested linked-test dependency junctions
         if: matrix.cohort == 'native'

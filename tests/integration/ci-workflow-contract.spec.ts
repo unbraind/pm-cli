@@ -261,6 +261,14 @@ describe("GitHub workflow contract", () => {
     const scripted = cohorts.steps.filter((step: { run?: string }) => step.run?.includes("node scripts/run-tests.mjs"));
     expect(scripted.filter((step: { if?: string }) => step.if === "matrix.cohort == 'scripts'")).toHaveLength(1);
     expect(scripted.every((step: { if?: string }) => ["matrix.cohort == 'scripts'", "matrix.cohort == 'native'"].includes(step.if ?? ""))).toBe(true);
+    const receiptStep = scripted.find((step: { name?: string }) => step.name === "Verify merge receipt recovery and settlement on Windows");
+    expect(receiptStep?.run).toMatch(/--maxWorkers=1(?:\s|$)/);
+    expect(receiptStep?.run.match(/tests\/\S+\.spec\.ts/g)).toEqual([
+      "tests/integration/receipt-operation-boundaries.integration.spec.ts",
+      "tests/integration/workspace/merge-receipt-settlement.integration.spec.ts",
+      "tests/integration/workspace/merge-portability.integration.spec.ts",
+      "tests/unit/sdk/merge/settlement-hook.spec.ts",
+    ]);
     const aggregate = workflow.jobs["windows-regression"];
     expect(aggregate.name).toBe("Windows regression (Node 24)");
     expect(aggregate.needs).toBe("windows-regression-cohorts");
