@@ -1,0 +1,58 @@
+id: pm-89297t
+title: Run Git-heavy merge regression files after parallel contract workers
+description: "Full failed-log census of Windows nightly run39232112166 at1545d63d shows six30000ms timeouts across both shards: aborted-rebase-recovery(2), lossless-merge-union(1), merge-portability(2), and merge-receipt-settlement(1). PR CI already caps the related native receipt cohort, but complete suites still schedule these files with parallel contract workers. Move all five related Git-heavy files into the existing serial project without changing test membership assertions deadlines retries or shard coverage."
+type: Task
+status: in_progress
+priority: 1
+tags[3]: bug,ci,testing
+created_at: "2026-10-19T12:18:24.778Z"
+updated_at: "2026-10-19T13:01:38.482Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Each of the five native Git receipt recovery and collection-union spec files is excluded from parallel contracts and included in the existing serial phase; The same partition applies to full tests coverage and nightly sharding with no missing or duplicated membership; All assertions retries test deadlines and workflow job limits remain unchanged; A config-boundary regression detects reintroduction into parallel workers and focused real Git integration tests pass
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: "Complete suites run every Git-heavy merge regression once in the existing serial phase after parallel contracts, preserving all behavioral and coverage gates."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-10-19T12:18:24.778Z","harness:codex","cli:create:dep",detected
+  pm-bj7rq0,related,"2026-10-19T12:18:24.778Z","harness:codex","cli:create:dep",detected
+  pm-zlv8jl,related,"2026-10-19T12:18:24.778Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-19T12:18:24.778Z","harness:codex","Duplicate check: strict complete3001-item all-status corpus and nightly merge serial allocation search plus full source/alert review found no active bounded owner for the full-suite allocation gap. pm-bj7rq0 retains broader runtime causation and pm-zlv8jl systemic stability work. Historical closed merge repairs remain completed. This task owns allocation only and preserves the original failed attempts."
+  "2026-10-19T12:20:31.708Z","harness:codex",Captured run39232112166 at1545d63d has three30000ms Windows shard1 timeouts in merge-portability/lossless-merge-union. New config-boundary test fails before allocation change. Move the complete four-file native merge group to the existing serial project shared by coverage full tests and nightly shards. Preserve original cases assertions retries deadlines and workflow job bounds. This is allocation remediation; historical cause and rate are not rewritten.
+  "2026-10-19T12:30:56.542Z","harness:codex","Operational proof remains separated: the published2026.10.19 npm/Bun installed-agent verifier passes13 steps per manager and public npx/bunx covers all CLI/MCP bins. Latest historical Release Reliability run39236010429 is still failed after the Windows nightly; this allocation change does not erase original observations or certify historical punctuality. Current Sentry issue inventory is empty, the required observability gate passes, broker ready/unacknowledged counts are zero and all six Prometheus targets are up. The broad active15-minute telemetry window has four unmatched groups while commands are still running, so it is not claimed as complete per-action pairing."
+  "2026-10-19T13:00:00.754Z","harness:codex","First complete local source run:10781 tests passed with three platform skips, but composed-continuation failed because this Homebrew Node26 runtime cannot resolve its separately installed npm package. Exact coverage had no generated report and therefore also failed; neither is reported green. The fixture explicitly supports NODE_PATH, and the installed npm package is available through npm root -g. No production/test assertion or timeout change is needed for that host prerequisite. All five serial Git merge files passed in the broad run."
+files[2]{path,scope}:
+  tests/integration/vitest-retry-policy.integration.spec.ts,project
+  vitest.config.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts tests/integration/workspace/lossless-merge-union.integration.spec.ts,project,600,"harness:codex","2026-10-19T12:19:37.717Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+  node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,project,240,"harness:codex","2026-10-19T12:22:07.689Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvf88ql1-k5m4mz
+    kind: test
+    status: passed
+    started_at: "2026-10-19T12:23:10.681Z"
+    finished_at: "2026-10-19T12:24:59.797Z"
+    recorded_at: "2026-10-19T12:24:59.797Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts tests/integration/workspace/lossless-merge-union.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/aborted-rebase-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts,node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/integration/workspace/lossless-merge-union.integration.spec.ts tests/integration/aborted-rebase-recovery.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),Nightly Validation
+  owner: pm-u9d0
+body: ""

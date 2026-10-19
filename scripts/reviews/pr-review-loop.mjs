@@ -21,7 +21,7 @@ export function usage(message, dependencies = {}) {
   if (message) writeError(message);
   writeError(`Usage:
   node scripts/reviews/pr-review-loop.mjs inventory [--pr <number>] [--repo <owner/name>]
-  node scripts/reviews/pr-review-loop.mjs watch [--pr <number>] [--repo <owner/name>] [--interval <seconds>]
+  node scripts/reviews/pr-review-loop.mjs watch [--pr <number>] [--repo <owner/name>] [--interval <seconds>] [--phase checks|reviews]
   node scripts/reviews/pr-review-loop.mjs react --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...>
   node scripts/reviews/pr-review-loop.mjs comment --body <text> [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs acknowledge --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--revision <sha256>] [--pr <number>] [--repo <owner/name>]
@@ -235,11 +235,69 @@ export function addReaction(nodeId, reaction, executeGh = runGh) {
   ]);
 }
 
-/** Wait once per head, then verify required context presence and GitHub merge state before certifying success. */
-export function watchChecksAndInventory(target, interval, executeGh = runGh) {
+/** Retain pending and unavailable check signals without interpreting them as review approval. */
+function incompleteCheckSignals(checks, requiredContexts) {
+  const pendingChecks = [];
+  const unavailableChecks = [];
+  for (const check of checks) {
+    const state = check.conclusion || check.state || check.status;
+    const name = check.name ?? check.context;
+    const signal = { name, state, required: requiredContexts.includes(name), url: check.detailsUrl ?? check.targetUrl ?? null };
+    if (["PENDING", "EXPECTED", "QUEUED", "IN_PROGRESS", "REQUESTED", "WAITING", "PENDING_DEPLOYMENT"].includes(state)) {
+      pendingChecks.push(signal);
+    } else if (["NEUTRAL", "SKIPPED", "CANCELLED", "TIMED_OUT", "STALE", "ACTION_REQUIRED", "STARTUP_FAILURE", "ERROR"].includes(state)) {
+      unavailableChecks.push(signal);
+    }
+  }
+  return { pendingChecks, unavailableChecks };
+}
+
+/** Read effective requirements and the final rollup without replacing GitHub publisher enforcement. */
+function readCheckReadiness(target, pullRequest, executeGh) {
+  const rules = JSON.parse(executeGh([
+    "api", `repos/${target.repo}/rules/branches/${encodeURIComponent(pullRequest.baseRefName)}`,
+    "--paginate", "--slurp",
+  ])).flat();
+  const requiredContexts = [...new Set([
+    ...pullRequest.requiredContexts,
+    ...rules.filter((rule) => rule.type === "required_status_checks")
+      .flatMap((rule) => rule.parameters.required_status_checks.map((check) => check.context)),
+  ])];
+  const readiness = JSON.parse(executeGh([
+    "pr", "view", String(target.pr), "--repo", target.repo,
+    "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
+  ]));
+  // Names prove presence only; publisher and state enforcement remains GitHub's CLEAN gate.
+  const emittedContexts = new Set((readiness.statusCheckRollup ?? []).map((check) => check.name ?? check.context));
+  const missingContexts = requiredContexts.filter((context) => !emittedContexts.has(context));
+  const mergeReadiness = {
+    headRefOid: readiness.headRefOid,
+    baseRefName: readiness.baseRefName,
+    mergeStateStatus: readiness.mergeStateStatus,
+    requiredContexts,
+    missingContexts,
+  };
+  return { mergeReadiness, ...incompleteCheckSignals(readiness.statusCheckRollup ?? [], requiredContexts) };
+}
+
+/** Validate the wait phase and construct one native GitHub CLI watch invocation. */
+function checkWatchArguments(target, interval, phase) {
   if (!Number.isInteger(interval) || interval < 10) {
     usage("watch requires --interval to be an integer of at least 10 seconds.");
   }
+  if (phase !== "checks" && phase !== "reviews") {
+    usage("watch requires --phase checks or reviews.");
+  }
+  return [
+    "pr", "checks", String(target.pr), "--repo", target.repo,
+    "--watch", "--interval", String(interval),
+    ...(phase === "checks" ? ["--fail-fast"] : []),
+  ];
+}
+
+/** Wait once per head, returning failures promptly in the checks phase or waiting for every reviewer in the reviews phase. */
+export function watchChecksAndInventory(target, interval, executeGh = runGh, phase = "checks") {
+  const watchArgs = checkWatchArguments(target, interval, phase);
   const attempts = [];
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const watched = JSON.parse(executeGh([
@@ -249,10 +307,7 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
     let outcome = "incomplete";
     let checkOutput;
     try {
-      checkOutput = executeGh([
-        "pr", "checks", String(target.pr), "--repo", target.repo,
-        "--watch", "--interval", String(interval),
-      ]);
+      checkOutput = executeGh(watchArgs);
     } catch (error) {
       outcome = "failed";
       checkOutput = String(error?.stdout ?? error).trim();
@@ -274,37 +329,17 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
       receipt.superseded = true;
       continue;
     }
-    const rules = JSON.parse(executeGh([
-      "api", `repos/${target.repo}/rules/branches/${encodeURIComponent(pullRequest.baseRefName)}`,
-      "--paginate", "--slurp",
-    ])).flat();
-    const requiredContexts = [...new Set([
-      ...pullRequest.requiredContexts,
-      ...rules.filter((rule) => rule.type === "required_status_checks")
-        .flatMap((rule) => rule.parameters.required_status_checks.map((check) => check.context)),
-    ])];
-    const readiness = JSON.parse(executeGh([
-      "pr", "view", String(target.pr), "--repo", target.repo,
-      "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
-    ]));
+    const signals = readCheckReadiness(target, pullRequest, executeGh);
+    const readiness = signals.mergeReadiness;
     if (readiness.headRefOid !== watchedHeadRefOid || readiness.baseRefName !== watched.baseRefName) {
       receipt.superseded = true;
       continue;
     }
-    // Names prove presence only; publisher and state enforcement remains GitHub's CLEAN gate.
-    const emittedContexts = new Set((readiness.statusCheckRollup ?? []).map((check) => check.name ?? check.context));
-    const missingContexts = requiredContexts.filter((context) => !emittedContexts.has(context));
-    receipt.mergeReadiness = {
-      headRefOid: readiness.headRefOid,
-      baseRefName: readiness.baseRefName,
-      mergeStateStatus: readiness.mergeStateStatus,
-      requiredContexts,
-      missingContexts,
-    };
-    if (outcome !== "failed" && missingContexts.length === 0 && readiness.mergeStateStatus === "CLEAN") {
+    Object.assign(receipt, signals);
+    if (outcome !== "failed" && receipt.pendingChecks.length === 0 && readiness.missingContexts.length === 0 && readiness.mergeStateStatus === "CLEAN") {
       receipt.outcome = "passed";
     }
-    return { repository: target.repo, checkWatch: { attempts }, pullRequest };
+    return { repository: target.repo, checkWatch: { phase, attempts }, pullRequest };
   }
   throw new Error("PR head or base changed during three consecutive check-watch attempts.");
 }
@@ -365,7 +400,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   } else if (command === "watch") {
     const target = resolveTarget(options, executeGh);
     const interval = Number(options.interval ?? 30);
-    const receipt = watchChecksAndInventory(target, interval, executeGh);
+    const receipt = watchChecksAndInventory(target, interval, executeGh, options.phase);
     write(JSON.stringify(receipt, null, 2));
     return receipt.checkWatch.attempts.at(-1).outcome === "passed" ? 0 : 1;
   } else if (command === "react") {

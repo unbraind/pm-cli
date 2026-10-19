@@ -1,0 +1,51 @@
+id: pm-argzmt
+title: Refresh seven-day-eligible marked 18.1.1 Markdown tooling
+description: "Adopt the compatible marked18.1.1 patch only after its registry timestamp2026-10-12T12:29:51.405Z has aged seven full days. Preserve runtime dependencies and supply-chain aging. Retain newer incompatible or not-yet-eligible candidates under their existing canonical migrations rather than forcing them into this patch refresh."
+type: Chore
+status: in_progress
+priority: 2
+tags[2]: dependencies,update
+created_at: "2026-10-19T12:28:43.556Z"
+updated_at: "2026-10-19T13:12:50.866Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Registry timestamp satisfies the unchanged seven-day policy at adoption; Package manifest and lockfile use marked18.1.1; Documentation parsing and static quality plus exact coverage and dependency audit remain green; Remaining cooldown and compatibility holds retain canonical tracking
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: The eligible Markdown parser patch passes documentation tooling static quality coverage and dependency audit; held major migrations remain accurately recorded and unclaimed.
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0uxmwf,related,"2026-10-19T12:50:14.934Z","harness:codex","cli:update:dep",detected
+  pm-do5b,related,"2026-10-19T12:50:14.934Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-19T12:50:14.934Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-19T12:50:14.934Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-19T12:50:14.934Z","harness:codex","cli:update:dep",detected
+  pm-bj7rq0,related,"2026-10-19T13:12:50.166Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-19T12:28:43.556Z","harness:codex","Duplicate check: strict complete3001-item corpus and dependency refresh cooldown search find only completed refreshes for prior versions, including pm-0uxmwf. Its live full metadata confirms marked18.1.0 is already shipped. No open owner exists for18.1.1. Latest candidates were checked against registry timestamps engines and peers. TypeScript7 conflicts with typescript-eslint<6.1 and npm-package-arg14 exceeds the promised Node22.18 floor; preserve their existing owners."
+  "2026-10-19T12:44:05.060Z","harness:codex","Registry maturity proof: marked18.1.1 was published2026-10-12T12:29:51.405Z and is now older than seven complete days. Preparing the exact compatible tooling update while the earlier source suite finishes. No runtime dependency floor or supply-chain aging policy is changed. The only known compatible latest candidates not admitted now remain within their cooldown; npm-package-arg14 and TypeScript7 retain their existing engine/peer constraints."
+  "2026-10-19T13:01:39.692Z","harness:codex","Final prepared install changes only marked18.1.0 to18.1.1 and its integrity/snapshot rows in pnpm-lock.yaml. The frozen lockfile install passes. The final focused sandbox run passes56 tests, including38 Markdown/docs gate tests,15 watcher tests,2 retry/config tests and the real packed Node/Bun composed-continuation acceptance after the documented npm NODE_PATH prerequisite is supplied. No local full-coverage pass is claimed from the earlier failed run; exact final coverage will be proven by required hosted shards."
+  "2026-10-19T13:09:14.144Z","harness:codex",Latest pm-changelog2026.10.19-1 installs and its configured check reports CHANGELOG.md unchanged for the currently closed population. Keep the CLI-owned managed-extension updated_at receipt in the reviewed delivery and link that generated metadata here; no .agents/pm data is edited directly.
+files[3]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,project,300,"harness:codex","2026-10-19T12:56:26.484Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvf9lq94-u3jir3
+    kind: test
+    status: passed
+    started_at: "2026-10-19T13:02:38.195Z"
+    finished_at: "2026-10-19T13:03:05.512Z"
+    recorded_at: "2026-10-19T13:03:05.512Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+body: ""

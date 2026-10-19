@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-19T06:29:12.166Z"
+updated_at: "2026-10-19T13:15:14.444Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -19,7 +19,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[42]:
+comments[45]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -147,6 +147,15 @@ comments[42]:
   - created_at: "2026-10-19T06:29:11.504Z"
     author: "harness:codex"
     text: "Allocation change is locally verified: the extended workflow contract fails on the uncapped step before the edit; all30 workflow/registry contracts pass afterward. The exact serial four-file command passes15 real integration cases locally. Every selected path and the30000ms case/12-minute job deadlines are unchanged. Native Windows acceptance remains required on the revised PR head. Broader historical runtime/startup causation is still unproved and remains open; hand back this owner unclaimed after the bounded execution change."
+  - created_at: "2026-10-19T13:12:49.084Z"
+    author: "harness:codex"
+    text: "October19 candidate observation during delivery of pm-jm7m3o pm-89297t and pm-argzmt: local pnpm quality:static passes its prefix through complete tracker assurance and the unchanged SDK surface, then SDK entrypoint admission fails on Node26.9.0: contracts283/241ms core451/423 merge249/226 runtime796/452 testing731/461. Bare-node controls54/56ms classify the runner qualified; retain product_admission=failed and do not relabel it unqualified or weaken ceilings. Recorded host load is9.8-12.82 over8 available CPUs, which is context rather than causal proof. One isolated unchanged SDK measurement and final exact-head hosted static acceptance are required. This broader owner stays unclaimed; no SDK runtime source or budget changed in this delivery."
+  - created_at: "2026-10-19T13:14:08.352Z"
+    author: "harness:codex"
+    text: "Additional same-source benchmark at13:12:51UTC still reports qualified failed admission: aggregate544/500ms core505/423 merge251/226; runtime383/452 and testing365/461 now pass. This sample overlapped the typecheck command and is not described as isolated or used to infer a cause. Preserve both failures. Source typecheck and secret scan pass; the next benchmark is run without another verification command in flight, and required exact-head hosted static remains mandatory."
+  - created_at: "2026-10-19T13:15:14.444Z"
+    author: "harness:codex"
+    text: "The subsequent13:14UTC SDK import measurement, run without another verification command in flight, passes all10 entrypoints unchanged. This does not erase the two qualified failures or prove their cause, nor does it close the broader performance owner. The candidate's SDK code and budgets remain unchanged; final hosted static acceptance is still required."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

@@ -251,6 +251,14 @@ into the pass count; a persistent assertion still fails after the bounded
 retry. Local runs do not retry, so deterministic failures stay immediate while
 iterating.
 
+The complete receipt-operation, aborted-operation recovery, receipt-settlement, merge-portability and
+lossless-collection-union integration files run in the existing serial
+`lifecycle-performance` project after parallel contracts. Both nightly shards and
+full coverage use that same project partition, retaining every case and its
+original assertions, deadlines and retry policy. This allocation is tracked by
+[pm-89297t](../.agents/pm/tasks/pm-89297t.toon); it does not classify or erase
+historical failed attempts.
+
 Vitest's GitHub reporter emits annotations and retry evidence. The repository
 reliability reporter additionally writes
 `.vitest-reports/reliability-<shard>.json` and appends a job-summary table with

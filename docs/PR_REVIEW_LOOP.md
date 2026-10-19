@@ -15,6 +15,7 @@ capture, avoiding repeated diff hunks that are irrelevant to marker matching.
 ```bash
 node scripts/reviews/pr-review-loop.mjs inventory --pr 123 > /tmp/pr-123-review-inventory.json
 node scripts/reviews/pr-review-loop.mjs watch --pr 123 --interval 30 > /tmp/pr-123-review-inventory.json
+node scripts/reviews/pr-review-loop.mjs watch --pr 123 --phase reviews --interval 30 > /tmp/pr-123-full-review-inventory.json
 node scripts/reviews/pr-review-loop.mjs react --node-id IC_kw... --reaction THUMBS_UP
 node scripts/reviews/pr-review-loop.mjs acknowledge --pr 123 --node-id PRR_kw... --revision '<revision>' --reaction THUMBS_UP --body "CodeRabbit feedback implemented: https://github.com/owner/repo/pull/123#pullrequestreview-456. The suggested edge case is covered by test X."
 node scripts/reviews/pr-review-loop.mjs reply-inline --pr 123 --comment-id 456 --body "Addressed in abc123."
@@ -43,10 +44,19 @@ markers then distinguish revised feedback and suppress duplicate retry replies
 for that same revision. Inline markers are matched only within the selected
 reply thread. Legacy calls without the flag retain their existing behavior.
 
-After every push or reviewer retrigger, run `watch`. It delegates waiting to
-`gh pr checks --watch`, because reviewer agents report completion through GitHub
-checks, and only fetches the complete conversation inventory after those checks
-finish. Native watch success covers emitted checks only: a required provider may
+After every push or reviewer retrigger, run `watch`. Its default `checks` phase
+delegates waiting to `gh pr checks --watch --fail-fast`, returning the complete
+exact-head conversation inventory as soon as a check fails, even while an optional
+reviewer remains pending. Fix that failure before starting another wait. Use
+`--phase reviews` for the separate blocking review-completion phase: it delegates
+to `gh pr checks --watch` without fail-fast and waits for every emitted check.
+Both phases record `pendingChecks` and `unavailableChecks` from the final rollup,
+including names, states, URLs and whether each context is required. Neutral,
+skipped, canceled and other unavailable signals do not establish review approval;
+inspect the retained conversations for provider quota or service limitations.
+Pending checks prevent a successful receipt even if GitHub reports `CLEAN`.
+This behavior is tracked by [pm-jm7m3o](../.agents/pm/tasks/pm-jm7m3o.toon).
+Native watch success covers emitted checks only: a required provider may
 never emit its context. The helper unions classic branch-protection requirements
 with all effective ruleset requirements, compares those names with the complete
 head rollup, and records `mergeReadiness.requiredContexts`, `missingContexts`, and
@@ -62,8 +72,10 @@ The direct `watch` command emits its complete JSON receipt before exiting `1`
 for `incomplete` or `failed`, and exits `0` only for `passed`. Shell automation
 can therefore stop on the exit status while retaining all findings for triage.
 
-A failed reviewer check is still a completed review signal: `watch` records
-the failed outcome and returns all findings instead of aborting before inventory.
+A failed check is still an actionable signal: `watch` records the failed outcome
+and returns all findings instead of aborting before inventory. A fail-fast receipt
+does not establish completion of pending reviews; the explicit review phase and
+final inventory retain that separate obligation.
 If the PR head or target branch changes during the wait or final readiness read,
 the helper watches the new target, up to three consecutive attempts, before
 returning exact-head state. It does not poll an absent required provider status.
