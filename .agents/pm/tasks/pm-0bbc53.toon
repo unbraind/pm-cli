@@ -1,0 +1,59 @@
+id: pm-0bbc53
+title: Probe canonical include-mode retries with their actual packing policy
+description: "A new residual review case disproves exact budget advice for a canonical summary retry: the CLI consumes summary/full modes before packing while the current retry probe retains raw selectors and the original full-context policy. Reproduce on the current build, reuse shared SDK normalization and prove emitted argv boundaries across canonical modes and mixed selectors. The completed original budget repair remains preserved."
+type: Task
+status: closed
+priority: 1
+tags[3]: bug,cli,sdk
+created_at: "2026-10-19T19:33:00.682Z"
+updated_at: "2026-10-19T21:07:25.112Z"
+closed_at: "2026-10-19T20:01:00.681Z"
+completed_at: "2026-10-19T20:01:00.681Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "Fail before the repair on current source; execute canonical summary/full and mixed-selector retries from a foreign workspace; exact minima succeed and their immediately smaller budgets refuse; preserve all earlier byte, expected-error, cursor and resource controls; run unchanged global gates and reviewed delivery."
+parent: pm-f05lsg
+risk: medium
+confidence: high
+resolution: "Normalize canonical summary/full include modes through the shared read-output contract before probing retry budgets; use the normalized projection and summary evidence policy, retain residual selectors and original executable argv, and reject conflicting modes with the existing expected usage error."
+expected_result: Every advertised exact budget succeeds through the emitted CLI argv in a foreign workspace and fails one token below under the same include policy.
+actual_result: Three new controls fail on6385 and pass after the repair; all five mode/conflict controls and76 linked SDK/MCP/kernel cases pass. Six-file236-case coverage is exact100 percent across456 statements341 branches80 functions428 lines. Strict ESLint four TypeScript projects contracts public SDK surface and documentation links pass; hosted acceptance of the revised head remains the final delivery gate.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-odw3j8,discovered_from,"2026-10-19T19:33:00.682Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-19T19:33:00.682Z","harness:codex","Duplicate check: request-specific search plus complete 207 open / 0 in-progress lists show no live owner for this residual false-exact case. Full closed pm-odw3j8, its complete history and the open recovery parent were read. Create a fresh related leaf for the new pre-merge defect; no closed item is reopened or described as unfinished."
+  "2026-10-19T19:36:35.936Z","harness:codex","Exact current-source negative control fails three new contracts: canonical summary, summary plus an id selector, and conflicting summary/full modes. Both ordinary full-mode controls already pass. Reusing the authoritative SDK include normalizer for the emitted retry now makes all five directed cases pass, including foreign-workspace execution at the advertised exact minimum and refusal one token below. The probe adopts the normalized projection and summary evidence policy; invalid mode combinations use the existing expected projection refusal."
+  "2026-10-19T19:43:26.358Z","harness:codex","The repair passes 76 linked dependency/MCP/kernel/budget-search cases. A broader six-file run passes236 cases with exact scoped coverage:456 statements341 branches80 functions428 lines, all100%. Strict ESLint, all four TypeScript projects and generated contract/catalog checks pass. Five real-argv mode/boundary controls include three failures on6385 and two previously passing full-mode controls; all five now pass without new public exports or weakened coverage."
+  "2026-10-19T20:00:44.151Z","harness:codex","Docs/skills links and public SDK surface verification pass with zero classified public-surface changes. The preceding unchanged6385 rerun completes all eight native jobs successfully; this is predecessor proof, while the new canonical-mode source fix still requires its own hosted acceptance before merge."
+  "2026-10-19T21:07:25.112Z","harness:codex","Final source acceptance for the canonical include-mode fix is now satisfied on dd097e4e1: all required PR checks pass, and Nightly39321886786 passes quality plus all seven complete runtime jobs. Global Ubuntu24 passes10820 cases with exact100/100/100/100 coverage. The original three failing-before mode controls and foreign-workspace exact-boundary checks remain included; later reference-cost and SQLite fallback refinements are delivered through their separate canonical leaves."
+files[2]{path,scope}:
+  src/sdk/dependencies.ts,project
+  tests/unit/commands/query/deps-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts,project,300,"harness:codex","2026-10-19T19:33:05.399Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvfnph2a-myoyn1
+    kind: test
+    status: passed
+    started_at: "2026-10-19T19:37:19.322Z"
+    finished_at: "2026-10-19T19:37:54.850Z"
+    recorded_at: "2026-10-19T19:37:54.850Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: Verified canonical-mode retries against actual CLI packing and exact boundaries.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-f05lsg
+body: ""

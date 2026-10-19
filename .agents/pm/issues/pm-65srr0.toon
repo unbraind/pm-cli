@@ -1,0 +1,21 @@
+id: pm-65srr0
+title: "GH-1514: injected extension SDK client loses invocation author precedence"
+description: "Report on published 2026.10.19: ctx.sdk.client writes use a synthetic pm-extension actor instead of PM_AUTHOR or author_default. Explicit author works. Preserve the canonical invocation author chain across injected package clients and keep extension provenance separate. Intake is reported evidence; reproduction and implementation are pending. https://github.com/unbraind/pm-cli/issues/1514"
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-19T18:04:41.544Z"
+updated_at: "2026-10-19T18:04:41.544Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Reproduce injected-client attribution against core writes; verify environment/default/explicit precedence and scoped restoration; preserve extension provenance and history integrity.
+parent: pm-mpbb
+risk: medium
+confidence: medium
+expected_result: "Injected SDK writes preserve explicit author, PM_AUTHOR, workspace default and supported harness precedence consistently with core writes."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cpja,discovered_from,"2026-10-19T18:04:41.544Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-19T18:04:41.544Z","harness:codex","Duplicate check: request-specific extension author search plus complete 206 open / 3 in-progress lists show no matching active owner. Closed pm-cpja and its full history describe shipped core author support; this report is a new injected-client path under the existing pm-mpbb capability. Original GH report retained; no regression claim is made before reproduction."
+body: ""

@@ -21,7 +21,7 @@ export function usage(message, dependencies = {}) {
   if (message) writeError(message);
   writeError(`Usage:
   node scripts/reviews/pr-review-loop.mjs inventory [--pr <number>] [--repo <owner/name>]
-  node scripts/reviews/pr-review-loop.mjs watch [--pr <number>] [--repo <owner/name>] [--interval <seconds>]
+  node scripts/reviews/pr-review-loop.mjs watch [--pr <number>] [--repo <owner/name>] [--interval <seconds>] [--phase checks|reviews]
   node scripts/reviews/pr-review-loop.mjs react --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...>
   node scripts/reviews/pr-review-loop.mjs comment --body <text> [--pr <number>] [--repo <owner/name>]
   node scripts/reviews/pr-review-loop.mjs acknowledge --node-id <id> --reaction <THUMBS_UP|THUMBS_DOWN|...> --body <text> [--revision <sha256>] [--pr <number>] [--repo <owner/name>]
@@ -66,7 +66,7 @@ query ReviewInventory(
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
       number url headRefOid baseRefName mergeStateStatus updatedAt
-      baseRef { branchProtectionRule { requiredStatusCheckContexts } }
+      baseRef { branchProtectionRule { requiredStatusCheckContexts requiredStatusChecks { context app { databaseId } } } }
       comments(first: 100, after: $commentCursor) {
         pageInfo { hasNextPage endCursor }
         nodes { id databaseId author { login } body createdAt updatedAt reactionGroups { content users { totalCount } viewerHasReacted } }
@@ -146,6 +146,9 @@ export function fetchReviewInventory(target, executeGh = runGh) {
       baseRefName: page.baseRefName,
       mergeStateStatus: page.mergeStateStatus,
       requiredContexts: page.baseRef?.branchProtectionRule?.requiredStatusCheckContexts ?? [],
+      requiredChecks: (page.baseRef?.branchProtectionRule?.requiredStatusChecks ?? []).map((check) => ({
+        context: check.context, integrationId: check.app?.databaseId ?? null,
+      })),
       updatedAt: page.updatedAt,
     };
     comments.push(...page.comments.nodes);
@@ -235,11 +238,108 @@ export function addReaction(nodeId, reaction, executeGh = runGh) {
   ]);
 }
 
-/** Wait once per head, then verify required context presence and GitHub merge state before certifying success. */
-export function watchChecksAndInventory(target, interval, executeGh = runGh) {
+/** Retain pending and unavailable check signals without interpreting them as review approval. */
+function incompleteCheckSignals(checks, requiredContexts) {
+  const pendingChecks = [];
+  const unavailableChecks = [];
+  for (const check of checks) {
+    const state = check.conclusion || check.state || check.status;
+    const name = check.name ?? check.context;
+    const signal = { name, state, required: requiredContexts.includes(name), url: check.detailsUrl ?? check.targetUrl ?? null };
+    if (["PENDING", "EXPECTED", "QUEUED", "IN_PROGRESS", "REQUESTED", "WAITING", "PENDING_DEPLOYMENT"].includes(state)) {
+      pendingChecks.push(signal);
+    } else if (["NEUTRAL", "SKIPPED", "CANCELLED", "TIMED_OUT", "STALE", "ACTION_REQUIRED", "STARTUP_FAILURE", "ERROR"].includes(state)) {
+      unavailableChecks.push(signal);
+    }
+  }
+  return { pendingChecks, unavailableChecks };
+}
+
+/** Combine effective publisher bindings, dropping redundant unbound requirements for the same name. */
+function requiredCheckRequirements(pullRequest, rules) {
+  const records = [
+    ...pullRequest.requiredChecks,
+    ...pullRequest.requiredContexts.map((context) => ({ context, integrationId: null })),
+    ...rules.filter((rule) => rule.type === "required_status_checks")
+      .flatMap((rule) => rule.parameters.required_status_checks.map((check) => ({
+        context: check.context, integrationId: check.integration_id ?? null,
+      }))),
+  ].map((record) => ({ ...record, integrationId: record.integrationId === -1 ? null : record.integrationId }));
+  const boundNames = new Set(records.filter((record) => record.integrationId !== null).map((record) => record.context));
+  return [...new Map(records.filter((record) => record.integrationId !== null || !boundNames.has(record.context))
+    .map((record) => [JSON.stringify(record), record])).values()];
+}
+
+/** Fetch all exact-head check runs only when a required publisher needs independent identity evidence. */
+function checkPublisherEvidence(target, headRefOid, requirements, executeGh) {
+  if (!requirements.some((record) => record.integrationId !== null)) return [];
+  return JSON.parse(executeGh([
+    "api", `repos/${target.repo}/commits/${headRefOid}/check-runs?per_page=100&filter=all`, "--paginate", "--slurp",
+  ])).flatMap((page) => page.check_runs);
+}
+
+/** Disclose status-only publisher bindings that GitHub must verify because commit statuses expose no app ID. */
+function unverifiableStatusPublishers(checks, requirements) {
+  const statusOnlyContexts = new Set(checks.filter((check) => check.context !== undefined).map((check) => check.context));
+  for (const check of checks) {
+    if (check.name !== undefined) statusOnlyContexts.delete(check.name);
+  }
+  return requirements.filter((record) => record.integrationId !== null && statusOnlyContexts.has(record.context))
+    .map((record) => ({ ...record, source: "commit_status" }));
+}
+
+/** Read effective requirements and the final rollup without replacing GitHub verdict enforcement. */
+function readCheckReadiness(target, pullRequest, executeGh) {
+  const rules = JSON.parse(executeGh([
+    "api", `repos/${target.repo}/rules/branches/${encodeURIComponent(pullRequest.baseRefName)}`,
+    "--paginate", "--slurp",
+  ])).flat();
+  const requiredChecks = requiredCheckRequirements(pullRequest, rules);
+  const requiredContexts = [...new Set(requiredChecks.map((record) => record.context))];
+  const readiness = JSON.parse(executeGh([
+    "pr", "view", String(target.pr), "--repo", target.repo,
+    "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
+  ]));
+  const publishers = checkPublisherEvidence(target, readiness.headRefOid, requiredChecks, executeGh);
+  const checks = readiness.statusCheckRollup ?? [];
+  const publisherUnverifiable = unverifiableStatusPublishers(checks, requiredChecks);
+  const statusOnlyContexts = new Set(publisherUnverifiable.map((record) => record.context));
+  const emittedContexts = new Set(checks.map((check) => check.name ?? check.context));
+  const missingContexts = [...new Set(requiredChecks.filter((requirement) =>
+    !emittedContexts.has(requirement.context) || (requirement.integrationId !== null && !statusOnlyContexts.has(requirement.context) && !publishers.some((check) =>
+      check.name === requirement.context && check.app?.id === requirement.integrationId && check.head_sha === readiness.headRefOid,
+    )),
+  ).map((requirement) => requirement.context))];
+  const mergeReadiness = {
+    headRefOid: readiness.headRefOid,
+    baseRefName: readiness.baseRefName,
+    mergeStateStatus: readiness.mergeStateStatus,
+    requiredContexts,
+    requiredChecks,
+    missingContexts,
+    publisherUnverifiable,
+  };
+  return { mergeReadiness, ...incompleteCheckSignals(checks, requiredContexts) };
+}
+
+/** Validate the wait phase and construct one native GitHub CLI watch invocation. */
+function checkWatchArguments(target, interval, phase) {
   if (!Number.isInteger(interval) || interval < 10) {
     usage("watch requires --interval to be an integer of at least 10 seconds.");
   }
+  if (phase !== "checks" && phase !== "reviews") {
+    usage("watch requires --phase checks or reviews.");
+  }
+  return [
+    "pr", "checks", String(target.pr), "--repo", target.repo,
+    "--watch", "--interval", String(interval),
+    ...(phase === "checks" ? ["--fail-fast"] : []),
+  ];
+}
+
+/** Wait once per head, returning failures promptly in the checks phase or waiting for every reviewer in the reviews phase. */
+export function watchChecksAndInventory(target, interval, executeGh = runGh, phase = "checks") {
+  const watchArgs = checkWatchArguments(target, interval, phase);
   const attempts = [];
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const watched = JSON.parse(executeGh([
@@ -249,10 +349,7 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
     let outcome = "incomplete";
     let checkOutput;
     try {
-      checkOutput = executeGh([
-        "pr", "checks", String(target.pr), "--repo", target.repo,
-        "--watch", "--interval", String(interval),
-      ]);
+      checkOutput = executeGh(watchArgs);
     } catch (error) {
       outcome = "failed";
       checkOutput = String(error?.stdout ?? error).trim();
@@ -274,37 +371,18 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh) {
       receipt.superseded = true;
       continue;
     }
-    const rules = JSON.parse(executeGh([
-      "api", `repos/${target.repo}/rules/branches/${encodeURIComponent(pullRequest.baseRefName)}`,
-      "--paginate", "--slurp",
-    ])).flat();
-    const requiredContexts = [...new Set([
-      ...pullRequest.requiredContexts,
-      ...rules.filter((rule) => rule.type === "required_status_checks")
-        .flatMap((rule) => rule.parameters.required_status_checks.map((check) => check.context)),
-    ])];
-    const readiness = JSON.parse(executeGh([
-      "pr", "view", String(target.pr), "--repo", target.repo,
-      "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
-    ]));
+    const signals = readCheckReadiness(target, pullRequest, executeGh);
+    const readiness = signals.mergeReadiness;
     if (readiness.headRefOid !== watchedHeadRefOid || readiness.baseRefName !== watched.baseRefName) {
       receipt.superseded = true;
       continue;
     }
-    // Names prove presence only; publisher and state enforcement remains GitHub's CLEAN gate.
-    const emittedContexts = new Set((readiness.statusCheckRollup ?? []).map((check) => check.name ?? check.context));
-    const missingContexts = requiredContexts.filter((context) => !emittedContexts.has(context));
-    receipt.mergeReadiness = {
-      headRefOid: readiness.headRefOid,
-      baseRefName: readiness.baseRefName,
-      mergeStateStatus: readiness.mergeStateStatus,
-      requiredContexts,
-      missingContexts,
-    };
-    if (outcome !== "failed" && missingContexts.length === 0 && readiness.mergeStateStatus === "CLEAN") {
-      receipt.outcome = "passed";
+    const completeReceipt = { ...receipt, ...signals };
+    attempts[attempts.length - 1] = completeReceipt;
+    if (outcome !== "failed" && completeReceipt.pendingChecks.length === 0 && readiness.missingContexts.length === 0 && readiness.mergeStateStatus === "CLEAN") {
+      completeReceipt.outcome = "passed";
     }
-    return { repository: target.repo, checkWatch: { attempts }, pullRequest };
+    return { repository: target.repo, checkWatch: { phase, attempts }, pullRequest };
   }
   throw new Error("PR head or base changed during three consecutive check-watch attempts.");
 }
@@ -365,7 +443,7 @@ export function main(argv = process.argv.slice(2), dependencies = {}) {
   } else if (command === "watch") {
     const target = resolveTarget(options, executeGh);
     const interval = Number(options.interval ?? 30);
-    const receipt = watchChecksAndInventory(target, interval, executeGh);
+    const receipt = watchChecksAndInventory(target, interval, executeGh, options.phase);
     write(JSON.stringify(receipt, null, 2));
     return receipt.checkWatch.attempts.at(-1).outcome === "passed" ? 0 : 1;
   } else if (command === "react") {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 /**
@@ -7,6 +7,73 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
  * non-breaking warnings the pm-qxwu top-level detection produces.
  */
 describe("mcp nested option-key validation (pm-upi0)", () => {
+  it("returns an expected usage refusal for an impossible relationship context budget", async () => {
+    const server = await import("../../../src/mcp/server.js");
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--create-mode",
+          "progressive",
+          "--title",
+          "Bounded relationship context",
+          "--type",
+          "Task",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+      const request = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "pm_deps",
+          arguments: {
+            id,
+            path: context.pmPath,
+            options: { format: "context", tokenBudget: 1 },
+          },
+        },
+      };
+      const writeSpy = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
+      let response: unknown;
+      try {
+        await server.processRpcLine(JSON.stringify(request));
+        response = JSON.parse(
+          writeSpy.mock.calls.map(([chunk]) => String(chunk)).join(""),
+        );
+      } finally {
+        writeSpy.mockRestore();
+      }
+      expect(response).toMatchObject({
+        result: {
+          isError: true,
+          structuredContent: {
+            result: null,
+            code: 2,
+            details: {
+              code: "invalid_argument_value",
+              field: "tokenBudget",
+              recovery: {
+                suggested_flags: ["--token-budget"],
+                token_budget: {
+                  requested_tokens: 1,
+                  feasible_tokens: expect.any(Number),
+                  basis: "canonical_retry",
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+  });
+
   it("uses the transport-neutral accounting receipt for MCP content", async () => {
     const server = await import("../../../src/mcp/server.js");
     const result = { items: [{ id: "pm-one" }], hints: ["continue"] };
@@ -14,7 +81,12 @@ describe("mcp nested option-key validation (pm-upi0)", () => {
     const accounted = server._testOnly.resultContent(result, [], true) as {
       content: Array<{ text: string }>;
       structuredContent: {
-        result: { token_accounting: { total_bytes: number; accounting_receipt_bytes: number } };
+        result: {
+          token_accounting: {
+            total_bytes: number;
+            accounting_receipt_bytes: number;
+          };
+        };
       };
     };
     const baselineText = (baseline.content as Array<{ text: string }>)[0].text;
@@ -22,7 +94,8 @@ describe("mcp nested option-key validation (pm-upi0)", () => {
 
     expect(receipt.total_bytes).toBe(Buffer.byteLength(baselineText, "utf8"));
     expect(receipt.accounting_receipt_bytes).toBe(
-      Buffer.byteLength(accounted.content[0].text, "utf8") - receipt.total_bytes,
+      Buffer.byteLength(accounted.content[0].text, "utf8") -
+        receipt.total_bytes,
     );
   });
 
@@ -58,9 +131,13 @@ describe("mcp nested option-key validation (pm-upi0)", () => {
           arguments: { id, path: context.pmPath, tokenAccounting: true },
         },
       })) as {
-        structuredContent: { result: { token_accounting: { total_bytes: number } } };
+        structuredContent: {
+          result: { token_accounting: { total_bytes: number } };
+        };
       };
-      expect(accountedRead.structuredContent.result.token_accounting.total_bytes).toBeGreaterThan(0);
+      expect(
+        accountedRead.structuredContent.result.token_accounting.total_bytes,
+      ).toBeGreaterThan(0);
 
       const response = (await server.handleRequest({
         jsonrpc: "2.0",

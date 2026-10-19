@@ -2,10 +2,23 @@
 
 ## Unreleased
 
+### Changed
+
+- Refresh seven-day-eligible marked 18.1.1 Markdown tooling ([pm-argzmt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-argzmt.toon))
+
 ### Fixed
 
 - GH-1500: Preserve null, empty and reserved JSON row facts through host rendering ([pm-4euctr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4euctr.toon))
 - GH-1501: Compact default brief-list TOON envelopes without hiding source completeness ([pm-6pycus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pycus.toon))
+- Align token-budget recovery declaration states with the public runtime guard ([pm-8jzcwv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8jzcwv.toon))
+- Preserve authoritative history after native SQLite transaction startup failures ([pm-0orupq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0orupq.toon))
+- Bound recovery probes by missing-reference rendering retries ([pm-k6uglj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k6uglj.toon))
+- Probe canonical include-mode retries with their actual packing policy ([pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon))
+- Enforce rendered relationship budgets with expected SDK usage recovery ([pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon))
+- Preserve expected check publishers in PR readiness receipts ([pm-5p48kf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5p48kf.toon))
+- Bound complete macOS nightly validation with two shards ([pm-qrirz8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qrirz8.toon))
+- Run Git-heavy merge regression files after parallel contract workers ([pm-89297t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-89297t.toon))
+- Show failed required PR checks before waiting on pending optional reviewers ([pm-jm7m3o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-jm7m3o.toon))
 - item mutate --dry-run does not surface per-row advisory duplicate-detection warnings ([pm-ekf2gu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ekf2gu.toon))
 
 ### Security
@@ -14,6 +27,9 @@
 
 ### Other
 
+- Assemble complete review receipts without mutating the base receipt ([pm-gfksc7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gfksc7.toon))
+- Qualify Unicorn 78 after its exact release-age boundary ([pm-afshwe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-afshwe.toon))
+- Refresh newly matured TypeScript-ESLint 8.71.2 quality tooling ([pm-vcy3vq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vcy3vq.toon))
 - Run the command-example corpus scan after parallel coverage workers ([pm-a3c6g4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a3c6g4.toon))
 - Transaction preview refusal should identify a safe relative offending path ([pm-fa9olc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fa9olc.toon))
 

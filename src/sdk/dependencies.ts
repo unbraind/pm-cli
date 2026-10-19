@@ -4,7 +4,10 @@
  * Implements the pm deps command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
-import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
+import {
+  getActiveCommandContext,
+  getActiveExtensionRegistrations,
+} from "../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { isTerminalStatus } from "../core/item/status.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
@@ -17,7 +20,7 @@ import {
   locateItem,
   readLocatedItem,
 } from "../core/store/item-store.js";
-import {resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type {
   Dependency,
@@ -26,9 +29,19 @@ import type {
   ItemType,
 } from "../types/index.js";
 import { estimatePmOutputTokens } from "./cli-contracts/agent-output-contracts.js";
+import { renderPmCommand } from "./command-line.js";
+import { createPmCliExpectedError, type PmCliExpectedError } from "./errors.js";
+import {
+  isReadOutputBudgetExceeded,
+  normalizeReadOutputIncludeModeOptions,
+  PM_READ_OUTPUT_SURFACE_CONTRACTS,
+} from "./read-output-contracts.js";
+import { READ_OUTPUT_INVOCATION_PROVENANCE } from "./read-output/provenance.js";
+import type { ContextBudgetProbe } from "./dependencies/context-budget-recovery.js";
+import { attachReadOutputContracts } from "./context-intent-contracts.js";
+import { attachOutputTokenAccounting } from "./output-token-accounting.js";
 import {
   assertProjectionModeChoice,
-  attachOutputOmissionReceipt,
   type OutputProjectionDeclaration,
 } from "./output-projection.js";
 import {
@@ -44,6 +57,7 @@ import {
 } from "./graph/cache.js";
 import {
   buildRelationshipContext,
+  DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET,
   type RelationshipContextOptions,
   type RelationshipContextResult,
 } from "./relationship-context.js";
@@ -870,25 +884,66 @@ function includesContextMissingReference(params: {
   );
 }
 
-/**
- * Settle a token count embedded in the payload whose rendered size it
- * describes. The mapping can only change when the decimal digit width changes,
- * so repeatedly embedding the measured value reaches a stable fixed point.
- */
+/** Complete built-in transport policy, including metadata attached after graph packing. */
+interface DepsRenderingOptions {
+  format: "json" | "toon";
+  global: GlobalOptions;
+  commandOptions: DepsCommandOptions;
+  legacyAliasCounts: Record<string, number>;
+  commandOptionsOverride?: Record<string, unknown>;
+}
+
+/** Use the same read-contract disclosure and pure renderer as the final host delivery. */
+function discloseDepsOutput(
+  result: DepsResult,
+  rendering: DepsRenderingOptions,
+): unknown {
+  const activeCommand = getActiveCommandContext();
+  const commandOptions =
+    rendering.commandOptionsOverride ??
+    (activeCommand?.command === "deps"
+      ? activeCommand.options
+      : rendering.commandOptions);
+  return attachReadOutputContracts(
+    "deps",
+    {
+      ...commandOptions,
+      ...rendering.global,
+      resolvedOutputFormat: rendering.format,
+    },
+    result,
+  );
+}
+
+/** Render the complete built-in transport, including optional accounting metadata. */
+function renderDepsOutput(
+  result: DepsResult,
+  rendering: DepsRenderingOptions,
+): string {
+  const disclosed = discloseDepsOutput(result, rendering);
+  const render = (value: unknown): string =>
+    formatBuiltInOutput(
+      value,
+      rendering.format,
+      rendering.global.lean === true,
+    );
+  return render(
+    rendering.global.tokenAccounting === true
+      ? attachOutputTokenAccounting(disclosed, render)
+      : disclosed,
+  );
+}
+
+/** Settle embedded token-count digit width against the exact built-in delivery representation. */
 function settleRenderedTokenCount(
   result: DepsResult,
-  outputFormat: "json" | "toon",
+  rendering: DepsRenderingOptions,
   assign: (tokens: number) => void,
 ): number {
   let embeddedTokens: number | undefined;
   for (;;) {
     const measuredTokens = estimatePmOutputTokens(
-      new TextEncoder().encode(
-        formatBuiltInOutput(
-          attachOutputOmissionReceipt("deps", result),
-          outputFormat,
-        ),
-      ).byteLength,
+      new TextEncoder().encode(renderDepsOutput(result, rendering)).byteLength,
     );
     if (measuredTokens === embeddedTokens) return measuredTokens;
     assign(measuredTokens);
@@ -904,77 +959,51 @@ function isContextBudgetFloorError(error: unknown): error is TypeError {
   );
 }
 
-/**
- * Build one progressively smaller context packet, returning the last rendered
- * result when the context packer reports that no smaller structural packet fits.
- */
-function buildContextAtRenderedBudget(params: {
-  assembly: WorkspaceRelationshipAssembly;
-  canonicalId: string;
-  contextOptions: RelationshipContextOptions;
-  internalTokenBudget: number | undefined;
-  rootEvidence: readonly string[];
-  smallestResult: UnprojectedDepsResult | undefined;
-}): RelationshipContextResult | UnprojectedDepsResult {
-  try {
-    return buildContextFromAssembly(
-      params.assembly,
-      params.canonicalId,
-      {
-        ...params.contextOptions,
-        ...(params.internalTokenBudget === undefined
-          ? {}
-          : { tokenBudget: params.internalTokenBudget }),
-      },
-      params.rootEvidence,
-    );
-  } catch (error) {
-    if (
-      params.smallestResult !== undefined &&
-      isContextBudgetFloorError(error)
-    ) {
-      return params.smallestResult;
-    }
-    throw error;
-  }
-}
-
-function enforceContextRenderedTokenBudget(params: {
+interface DepsContextBudgetParameters {
+  pmRoot: string;
   assembly: WorkspaceRelationshipAssembly;
   canonicalId: string;
   contextOptions: RelationshipContextOptions;
   rootEvidence: readonly string[];
   summaryOnly: boolean;
-  outputFormat: "json" | "toon";
+  rendering: DepsRenderingOptions;
   missingCount: number;
   missingReferences: DanglingDependencyReference[];
-}): UnprojectedDepsResult {
+}
+
+/** Pack within the rendered ceiling, preserving the structural floor as a controlled signal. */
+function enforceContextRenderedTokenBudget(
+  params: DepsContextBudgetParameters,
+): UnprojectedDepsResult {
   const {
     assembly,
     canonicalId,
     contextOptions,
     rootEvidence,
     summaryOnly,
-    outputFormat,
+    rendering,
     missingCount,
     missingReferences,
   } = params;
   const referenceLimit = contextOptions.edgeLimit ?? 40;
-  let emittedReferenceLimit = referenceLimit;
+  let emittedReferenceLimit = Math.min(
+    referenceLimit,
+    missingReferences.length,
+  );
   let internalTokenBudget = contextOptions.tokenBudget;
   let requestedTokenBudget: number | undefined;
-  let smallestResult: UnprojectedDepsResult | undefined;
   for (;;) {
-    const contextOrFloor = buildContextAtRenderedBudget({
+    const context = buildContextFromAssembly(
       assembly,
       canonicalId,
-      contextOptions,
-      internalTokenBudget,
+      {
+        ...contextOptions,
+        ...(internalTokenBudget === undefined
+          ? {}
+          : { tokenBudget: internalTokenBudget }),
+      },
       rootEvidence,
-      smallestResult,
-    });
-    if ("format" in contextOrFloor) return contextOrFloor;
-    const context = contextOrFloor;
+    );
     requestedTokenBudget ??= context.meta.tokenBudget;
     internalTokenBudget ??= requestedTokenBudget;
     const result = createContextDepsResult({
@@ -985,12 +1014,25 @@ function enforceContextRenderedTokenBudget(params: {
       referenceLimit: emittedReferenceLimit,
       summaryOnly,
     });
-    smallestResult = result;
-    if (summaryOnly) return result;
+    if (summaryOnly) {
+      const tokens = estimatePmOutputTokens(
+        new TextEncoder().encode(
+          renderDepsOutput(
+            attachDepsProjection(result, true, rendering.legacyAliasCounts),
+            rendering,
+          ),
+        ).byteLength,
+      );
+      if (tokens > requestedTokenBudget)
+        throw new TypeError(
+          "Relationship context tokenBudget cannot fit the rendered summary",
+        );
+      return result;
+    }
     context.meta.tokenBudget = requestedTokenBudget;
     context.meta.usedTokens = settleRenderedTokenCount(
-      attachDepsProjection(result, false),
-      outputFormat,
+      attachDepsProjection(result, false, rendering.legacyAliasCounts),
+      rendering,
       (tokens) => {
         context.meta.usedTokens = tokens;
       },
@@ -1010,22 +1052,264 @@ function enforceContextRenderedTokenBudget(params: {
   }
 }
 
+/** Executable retry arguments and the exact output policy used to verify them. */
+interface ContextRetryPlan {
+  args: string[];
+  budgetIndex: number;
+  /** Native projection after canonical include modes have been consumed. */
+  summaryOnly: boolean;
+  rendering: DepsRenderingOptions;
+}
+
+/** Preserve retry scope and output policy, consuming canonical include modes before verification. */
+function createContextRetryPlan(
+  params: DepsContextBudgetParameters,
+  budget: number,
+): ContextRetryPlan {
+  const options = params.contextOptions;
+  const global = {
+    ...params.rendering.global,
+    outputFormat: params.rendering.format,
+  };
+  const args = [
+    "--pm-path",
+    params.pmRoot,
+    "item",
+    "deps",
+    params.canonicalId,
+    "--format",
+    "context",
+    "--output-format",
+    params.rendering.format,
+    "--token-budget",
+  ];
+  const budgetIndex = args.length;
+  args.push(String(budget));
+  const provided = new Set([
+    "--pm-path",
+    "--format",
+    "--output-format",
+    "--token-budget",
+  ]);
+  const commandOptions: Record<string, unknown> = {
+    format: "context",
+    tokenBudget: budget,
+    kind: options.kinds,
+  };
+  const values: Array<[string, string, unknown]> = [
+    ["--max-depth", "maxDepth", options.maxDepth],
+    ["--node-limit", "nodeLimit", options.nodeLimit],
+    ["--edge-limit", "edgeLimit", options.edgeLimit],
+    ["--direction", "direction", options.direction],
+    ["--cursor", "cursor", options.cursor],
+    ["--output-include", "outputInclude", global.outputInclude],
+    ["--output-limit", "outputLimit", global.outputLimit],
+    ["--output-budget", "outputBudget", global.outputBudget],
+    ["--output-session", "outputSession", global.outputSession],
+    ["--output-cursor", "outputCursor", global.outputCursor],
+  ];
+  for (const [flag, key, value] of values) {
+    if (value === undefined) continue;
+    args.push(flag, String(value));
+    provided.add(flag);
+    commandOptions[key] = value;
+  }
+  for (const kind of options.kinds ?? []) {
+    args.push("--kind", kind);
+    provided.add("--kind");
+  }
+  const booleans: Array<[string, string, boolean | undefined]> = [
+    ["--summary", "summary", params.summaryOnly],
+    ["--full", "full", params.rendering.commandOptions.full],
+    ["--json", "json", global.json],
+    ["--lean", "lean", global.lean],
+    ["--output-row-contract", "outputRowContract", global.outputRowContract],
+    ["--token-accounting", "tokenAccounting", global.tokenAccounting],
+    ["--no-extensions", "noExtensions", global.noExtensions],
+    ["--no-pager", "noPager", global.noPager],
+  ];
+  for (const [flag, key, enabled] of booleans) {
+    if (enabled !== true) continue;
+    args.push(flag);
+    provided.add(flag);
+    commandOptions[key] = true;
+  }
+  const contract = PM_READ_OUTPUT_SURFACE_CONTRACTS.find(
+    (candidate) => candidate.command === "deps",
+  )!;
+  Reflect.set(commandOptions, READ_OUTPUT_INVOCATION_PROVENANCE, {
+    canonical_include_modes: [],
+    cli_invocation_observed: true,
+    explicit_legacy_aliases: Object.values(contract.dimensions).flatMap(
+      (dimension) =>
+        dimension.legacy_aliases.flatMap((alias) =>
+          provided.has(alias.flag) ? [alias.flag] : [],
+        ),
+    ),
+  });
+  normalizeReadOutputIncludeModeOptions("deps", commandOptions);
+  assertProjectionModeChoice(
+    commandOptions.summary === true,
+    commandOptions.full === true,
+    "--summary",
+  );
+  global.outputInclude = commandOptions.outputInclude as string | undefined;
+  return {
+    args,
+    budgetIndex,
+    summaryOnly: commandOptions.summary === true,
+    rendering: {
+      ...params.rendering,
+      global,
+      commandOptionsOverride: commandOptions,
+    },
+  };
+}
+
+/** Probe the real packer without recursively constructing another refusal or hiding unrelated failures. */
+function probeContextRetry(
+  params: DepsContextBudgetParameters,
+  plan: ContextRetryPlan,
+  budget: number,
+): ContextBudgetProbe {
+  const rendering = {
+    ...plan.rendering,
+    commandOptionsOverride: {
+      ...plan.rendering.commandOptionsOverride,
+      tokenBudget: budget,
+    },
+  };
+  let result: UnprojectedDepsResult;
+  try {
+    result = enforceContextRenderedTokenBudget({
+      ...params,
+      contextOptions: { ...params.contextOptions, tokenBudget: budget },
+      summaryOnly: plan.summaryOnly,
+      rootEvidence: plan.summaryOnly ? [] : params.rootEvidence,
+      rendering,
+    });
+  } catch (error) {
+    if (!isContextBudgetFloorError(error)) throw error;
+    return "native_floor";
+  }
+  const disclosed = discloseDepsOutput(
+    attachDepsProjection(result, plan.summaryOnly, rendering.legacyAliasCounts),
+    rendering,
+  );
+  return isReadOutputBudgetExceeded(disclosed) ? "output_constraints" : "fits";
+}
+
+/** Compute bounded, honest budget advice and retain a separate compact inspection option. */
+async function createContextBudgetRefusal(
+  params: DepsContextBudgetParameters,
+  cause: TypeError,
+): Promise<PmCliExpectedError> {
+  const requested =
+    params.contextOptions.tokenBudget ??
+    DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET;
+  const plan = createContextRetryPlan(params, requested);
+  const referencePasses = plan.summaryOnly
+    ? 1
+    : 1 +
+      Math.min(
+        params.contextOptions.edgeLimit ?? 40,
+        params.missingReferences.length,
+      );
+  const workUnits =
+    referencePasses *
+    (params.assembly.details.reduce(
+      (sum, node) =>
+        sum +
+        node.id.length +
+        node.title.length +
+        node.status.length +
+        (node.type?.length ?? 0),
+      params.assembly.graph.edges().length + params.missingReferences.length,
+    ) +
+      (plan.summaryOnly ? [] : params.rootEvidence).reduce(
+        (sum, pointer) => sum + pointer.length,
+        0,
+      ));
+  const { findContextBudgetRecovery } =
+    await import("./dependencies/context-budget-recovery.js");
+  const bounds = findContextBudgetRecovery({
+    requested,
+    initialBudget: DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET,
+    workUnits,
+    probe: (budget) => probeContextRetry(params, plan, budget),
+  });
+  const inspectionArgs = [
+    "--pm-path",
+    params.pmRoot,
+    "item",
+    "deps",
+    params.canonicalId,
+    "--format",
+    "tree",
+    "--summary",
+  ];
+  const inspection = renderPmCommand(inspectionArgs);
+  const retryArgs =
+    bounds.feasible_tokens === null ? inspectionArgs : [...plan.args];
+  if (bounds.feasible_tokens !== null)
+    retryArgs[plan.budgetIndex] = String(bounds.feasible_tokens);
+  const retry = renderPmCommand(retryArgs);
+  return createPmCliExpectedError(
+    "Relationship context tokenBudget cannot fit the required rendered packet",
+    {
+      exitCode: EXIT_CODE.USAGE,
+      cause,
+      context: {
+        code: "invalid_argument_value",
+        field: "tokenBudget",
+        value: String(requested),
+        required:
+          bounds.feasible_tokens === null
+            ? "Inspect the compact summary and review the output constraints."
+            : "Retry the preserved context query with --token-budget " +
+              bounds.feasible_tokens +
+              ".",
+        why: "Budget advice is verified against the current query. A minimum is reported only after every smaller positive budget is checked.",
+        examples: [retry, inspection],
+        nextSteps: [retry],
+        recovery: {
+          recovery_mode: "compact",
+          suggested_flags: ["--token-budget"],
+          token_budget: bounds,
+          suggested_retry_args: retryArgs,
+          suggested_retry: retry,
+          next_best_command: inspection,
+          fallback_candidates: [
+            {
+              source: "relationship_summary",
+              command: inspection,
+              reason: "Inspect bounded counts separately from context rows.",
+            },
+          ],
+        },
+      },
+    },
+  );
+}
+
 /** Assemble the context-format deps result with traversal-scoped missing enumeration. */
-function buildContextDepsResult(params: {
+async function buildContextDepsResult(params: {
+  pmRoot: string;
   assembly: WorkspaceRelationshipAssembly;
   canonicalId: string;
   options: DepsCommandOptions;
   rootEvidence: readonly string[];
   summaryOnly: boolean;
-  outputFormat: "json" | "toon";
-}): UnprojectedDepsResult {
+  rendering: DepsRenderingOptions;
+}): Promise<UnprojectedDepsResult> {
   const {
+    pmRoot,
     assembly,
     canonicalId,
     options,
     rootEvidence,
     summaryOnly,
-    outputFormat,
+    rendering,
   } = params;
   const contextOptions = parseDepsContextOptions(
     options,
@@ -1065,16 +1349,23 @@ function buildContextDepsResult(params: {
       registry: relationshipRegistry,
     }),
   );
-  return enforceContextRenderedTokenBudget({
+  const budgetParams: DepsContextBudgetParameters = {
+    pmRoot,
     assembly,
     canonicalId,
     contextOptions,
     rootEvidence,
     summaryOnly,
-    outputFormat,
+    rendering,
     missingCount: missingReachable.length,
     missingReferences,
-  });
+  };
+  try {
+    return enforceContextRenderedTokenBudget(budgetParams);
+  } catch (error) {
+    if (!isContextBudgetFloorError(error)) throw error;
+    throw await createContextBudgetRefusal(budgetParams, error);
+  }
 }
 
 function trimDeepestDependency(tree: DepsTreeNode): boolean {
@@ -1093,6 +1384,7 @@ function trimDeepestDependency(tree: DepsTreeNode): boolean {
   return true;
 }
 
+/** Settle emitted tree/graph accounting while trimming the deepest dependency rows first. */
 function buildTreeOrGraphDepsResult(
   id: string,
   format: Exclude<DepsFormat, "context">,
@@ -1100,7 +1392,7 @@ function buildTreeOrGraphDepsResult(
   index: Map<string, IndexedItem>,
   maxDepth: number | undefined,
   collapse: DepsCollapseMode,
-  outputFormat: "json" | "toon",
+  rendering: DepsRenderingOptions,
 ): UnprojectedDepsResult {
   const effectiveMaxDepth = maxDepth ?? DEFAULT_DEPS_TREE_MAX_DEPTH;
   const nodeLimit =
@@ -1172,18 +1464,19 @@ function buildTreeOrGraphDepsResult(
       result.truncation === undefined
         ? estimatePmOutputTokens(
             new TextEncoder().encode(
-              formatBuiltInOutput(
-                attachOutputOmissionReceipt(
-                  "deps",
-                  attachDepsProjection(result, false),
+              renderDepsOutput(
+                attachDepsProjection(
+                  result,
+                  false,
+                  rendering.legacyAliasCounts,
                 ),
-                outputFormat,
+                rendering,
               ),
             ).byteLength,
           )
         : settleRenderedTokenCount(
-            attachDepsProjection(result, false),
-            outputFormat,
+            attachDepsProjection(result, false, rendering.legacyAliasCounts),
+            rendering,
             (tokens) => {
               result.truncation!.estimated_tokens = tokens;
             },
@@ -1282,6 +1575,12 @@ export async function runDeps(
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
 
+  const outputFormat =
+    global.outputFormat ??
+    (global.json === true ||
+    (global.json === undefined && global.defaultOutputFormat === "json")
+      ? "json"
+      : "toon");
   if (format === "context") {
     const canonicalId = index.get(id.trim().toLowerCase())!.id;
     const rootEvidence = summaryOnly
@@ -1308,19 +1607,32 @@ export async function runDeps(
         ),
     );
     return attachDepsProjection(
-      buildContextDepsResult({
+      await buildContextDepsResult({
+        pmRoot,
         assembly: lookup.assembly,
         canonicalId,
         options,
         rootEvidence,
         summaryOnly,
-        outputFormat: global.json === true ? "json" : "toon",
+        rendering: {
+          format: outputFormat,
+          global,
+          commandOptions: options,
+          legacyAliasCounts: lookup.assembly.legacyAliasCounts,
+        },
       }),
       summaryOnly,
       lookup.assembly.legacyAliasCounts,
     );
   }
 
+  const legacyAliasCounts = Object.fromEntries(
+    Object.entries(
+      assembleWorkspaceRelationshipGraph(items, (status) =>
+        isTerminalStatus(status, statusRegistry),
+      ).legacyAliasCounts,
+    ),
+  );
   if (summaryOnly) {
     return attachDepsProjection(
       {
@@ -1329,33 +1641,18 @@ export async function runDeps(
         ...countDependencyGraph(id, index, maxDepth),
       },
       true,
-      Object.fromEntries(
-        Object.entries(
-          assembleWorkspaceRelationshipGraph(items, (status) =>
-            isTerminalStatus(status, statusRegistry),
-          ).legacyAliasCounts,
-        ),
-      ),
+      legacyAliasCounts,
     );
   }
 
   return attachDepsProjection(
-    buildTreeOrGraphDepsResult(
-      id,
-      format,
-      options,
-      index,
-      maxDepth,
-      collapse,
-      global.json === true ? "json" : "toon",
-    ),
+    buildTreeOrGraphDepsResult(id, format, options, index, maxDepth, collapse, {
+      format: outputFormat,
+      global,
+      commandOptions: options,
+      legacyAliasCounts,
+    }),
     false,
-    Object.fromEntries(
-      Object.entries(
-        assembleWorkspaceRelationshipGraph(items, (status) =>
-          isTerminalStatus(status, statusRegistry),
-        ).legacyAliasCounts,
-      ),
-    ),
+    legacyAliasCounts,
   );
 }

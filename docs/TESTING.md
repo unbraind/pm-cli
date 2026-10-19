@@ -251,6 +251,22 @@ into the pass count; a persistent assertion still fails after the bounded
 retry. Local runs do not retry, so deterministic failures stay immediate while
 iterating.
 
+The complete receipt-operation, aborted-operation recovery, receipt-settlement, merge-portability and
+lossless-collection-union integration files run in the existing serial
+`lifecycle-performance` project after parallel contracts. Both nightly shards and
+full coverage use that same project partition, retaining every case and its
+original assertions, deadlines and retry policy. This allocation is tracked by
+[pm-89297t](../.agents/pm/tasks/pm-89297t.toon); it does not classify or erase
+historical failed attempts.
+
+The complete macOS Node 24 and Windows Node 24 nightly suites each use two
+Vitest shards. Both halves must pass within the existing 20-minute job limit;
+sharding retains the same complete file population, serial phase, assertions,
+per-test deadlines and retry policy. The recurrence collector retains the old
+unsharded platform families alongside both current shard identities, so changing
+the matrix does not erase earlier failures. macOS allocation is tracked by
+[pm-qrirz8](../.agents/pm/tasks/pm-qrirz8.toon).
+
 Vitest's GitHub reporter emits annotations and retry evidence. The repository
 reliability reporter additionally writes
 `.vitest-reports/reliability-<shard>.json` and appends a job-summary table with

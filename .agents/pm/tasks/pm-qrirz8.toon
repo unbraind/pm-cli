@@ -1,0 +1,82 @@
+id: pm-qrirz8
+title: Bound complete macOS nightly validation with two shards
+description: "Two unchanged macOS attempts in Nightly39262040130 at460dcba7b reach the existing20-minute job deadline. The second attempt passes packed Node/Bun continuation and has no persistent test failure reported before cancellation. Split complete macOS Node24 validation into two native Vitest shards using the existing Windows matrix mechanism, preserving every test, serial phase, assertions, retry policy, per-test and job deadlines, free standard runners and original first-attempt reliability history."
+type: Task
+status: closed
+priority: 1
+tags[3]: bug,ci,testing
+created_at: "2026-10-19T14:28:44.847Z"
+updated_at: "2026-10-19T15:34:31.142Z"
+closed_at: "2026-10-19T15:33:16.785Z"
+completed_at: "2026-10-19T15:33:16.785Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Two distinct macOS24 shards cover the complete existing suite with the original20-minute job timeout; Required Ubuntu exact coverage and complete Windows/Linux matrix remain unchanged; Workflow and reliability contracts retain legacy unsharded macOS history and identify both new shard families; Both macOS shards complete successfully without assertion deadline retry or coverage relaxation
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Split complete macOS24 tests into two native Vitest shards, retained the serial phase and all original assertions retries and deadlines, updated both recurrence families to require both halves, and preserved retired-family history."
+expected_result: "Both complete macOS halves finish successfully under the20-minute bound with no missing or duplicated files, and recurrence keeps legacy failures alongside current identities."
+actual_result: "Negative workflow/population controls fail before the change;54 workflow/reliability tests plus9 registry tests pass. The installed execution sequencer proves416 plus416 identities with no omissions or duplicates. Both macOS and Windows shards pass at22b5c7101 in Nightly39275311319; its separate Ubuntu24 publisher-coverage failure and quality outcome remain failures, not a green overall workflow. Chrome verifies matrix results after repeated GitHub jobs API502 responses. No assertion coverage threshold timeout or retry was relaxed."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-89297t,discovered_from,"2026-10-19T14:28:44.847Z","harness:codex","cli:create:dep",detected
+  pm-bj7rq0,related,"2026-10-19T14:28:44.847Z","harness:codex","cli:create:dep",detected
+  pm-ul9rye,related,"2026-10-19T14:28:44.847Z","harness:codex","cli:create:dep",detected
+  pm-zlv8jl,related,"2026-10-19T14:28:44.847Z","harness:codex","cli:create:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-19T14:28:44.847Z","harness:codex","Duplicate check: complete live open/in-progress lists plus all-status3005-item corpus and request-specific macOS nightly shard search found no exact open shard owner. Full live pm-ul9rye history confirms prior quality/Windows sharding is completed. The existing open broad performance and flake owners remain unclaimed. This leaf owns the newly repeated macOS deadline boundary rather than reopening shipped work. Original jobs118091927156 and118105150893 remain canceled evidence."
+  "2026-10-19T14:30:40.637Z","harness:codex","Negative control completed before workflow edits: two focused files report2 failed/52 passed, rejecting the unsharded macOS row and seven-family population. The fix declares macOS24 shards1/2 and2/2 using the already-tested Windows native Vitest shard command, with the same20-minute limit. Reliability tests now cover retired macOS history and new shard alert correlation, preserving original failure denominators. Standard macos-latest runners remain free for this public repository per GitHub's official runner documentation: https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job . No larger runner or paid service is introduced."
+  "2026-10-19T14:31:27.242Z","harness:codex","Local fixed acceptance passes all54 workflow/reliability tests, four TypeScript projects and focused ESLint. Direct sandboxed Vitest file-only collection proves two shards partition exactly832 project/file identities:416 plus416, zero missing extra or duplicated members. The shared native serial project remains in that population. The first complete unsharded macOS retry passed packed Node/Bun continuation but again reached the20-minute job limit; no second blind rerun was issued. New hosted validation must now prove both declared macOS halves on this change."
+  "2026-10-19T14:33:48.454Z","harness:codex","Correction to the preceding population note: Vitest list --filesOnly ignores execution sharding and returned all832 files for each requested half. The aggregation guard rejected that result with832 duplicated identities; it was not a valid partition proof. The54 passing focused tests typecheck and ESLint receipts remain valid. Inspect the installed Vitest execution sequencer and validate its actual split before reporting exact shard membership. The inaccurate earlier statement is retained in history with this explicit correction."
+  "2026-10-19T14:34:25.101Z","harness:codex","Correct execution-partition proof now passes: the installed public vitest/node BaseSequencer.shard used by executeTests partitions the complete file-only inventory into416 plus416 project/file identities, with zero missing extra or duplicated members. Source inspection confirms list --filesOnly only enumerates candidates whereas executeTests applies this sequencer before ordering projects. The failed listing-based receipt remains preserved alongside its correction. This proves membership without running or skipping assertions; hosted execution of both macOS halves remains mandatory."
+  "2026-10-19T14:58:37.696Z","harness:codex","Head d434018 hosted census identifies one deterministic integration omission: both recurrence families still name the retired unsharded macOS job in config/defect-recurrence-policy.json. Existing gate-registry negative controls reject that stale name on every affected platform and static quality; no gate is weakened. Both new macOS jobs finish within their20-minute bounds, with shard1 green and shard2 failing only those registry tests. Extend this same allocation item to register both replacement jobs in each affected family, and include registry tests in linked acceptance."
+  "2026-10-19T15:33:15.627Z","harness:codex","Hosted allocation acceptance is complete on22b5c7101 in Nightly39275311319: both new macOS shards and both Windows shards are successful, with Ubuntu22/25 full tests successful. GitHub jobs API repeatedly returned502, so Chrome's live run summary and each visible matrix status icon supplied the platform evidence. Ubuntu24 passes10786 tests but its exact coverage fails the separate publisher helper's redundant fallback branch; overall Nightly is not reported green. Both recurrence families now name both macOS halves and all9 registry plus54 workflow/reliability tests pass. Keep original unsharded canceled attempts and the earlier stale-registry failure rather than erase them."
+learnings[2]{created_at,author,text}:
+  "2026-10-19T14:30:43.076Z","harness:codex","A full suite can outgrow a platform job while individual assertions remain valid. Preserve one unchanged retry as evidence, then shard the complete population under the existing deadline and keep retired family history in the recurrence census."
+  "2026-10-19T15:04:49.940Z","harness:codex",Workflow matrix renames must update every declared hosted-check identity in recurrence policy and include the gate-registry check in local acceptance. File-only Vitest listing bypasses execution sharding; use the actual execution sequencer to prove partition membership.
+files[5]{path,scope}:
+  .github/workflows/nightly.yml,project
+  config/defect-recurrence-policy.json,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/unit/scripts/release/collect-nightly-reliability.spec.ts,project
+  tests/unit/scripts/release/gate-registry.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,project,300,"harness:codex","2026-10-19T14:29:12.155Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/gate-registry.spec.ts,project,300,"harness:codex","2026-10-19T14:58:36.764Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[2]:
+  - run_id: test-local-mvfcqbl2-wn265k
+    kind: test
+    status: passed
+    started_at: "2026-10-19T14:30:12.919Z"
+    finished_at: "2026-10-19T14:30:38.630Z"
+    recorded_at: "2026-10-19T14:30:38.630Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvfduxvc-1kkojt
+    kind: test
+    status: passed
+    started_at: "2026-10-19T15:01:44.711Z"
+    finished_at: "2026-10-19T15:02:13.752Z"
+    recorded_at: "2026-10-19T15:02:13.752Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+close_reason: Verified complete macOS nightly sharding under the original job limit and registered both replacement checks.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts
+  hosted_checks[2]: Gates (coverage),Nightly Validation
+  owner: pm-u9d0
+body: ""

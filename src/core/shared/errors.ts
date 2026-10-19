@@ -3,6 +3,48 @@
  *
  * Provides shared primitives and utilities for Errors.
  */
+/** Shared request identity for each canonical retry evidence state. */
+interface PmTokenBudgetRecoveryBase {
+  /** Estimated tokens requested by the failed query. */
+  requested_tokens: number;
+  /** The emitted retry preserves selection and makes its encoding explicit. */
+  basis: "canonical_retry";
+}
+
+/** Verified budget advice, narrowed by the evidence established for the preserved retry. */
+export type PmTokenBudgetRecovery = PmTokenBudgetRecoveryBase & (
+  | {
+      /** Every smaller positive budget was checked before proving this minimum. */
+      minimum_status: "exact";
+      /** Verified working budget; runtime validation also requires equality with the minimum. */
+      feasible_tokens: number;
+      /** Proved global minimum for the canonical retry. */
+      minimum_feasible_tokens: number;
+      /** A successful verification has no unavailable cause. */
+      reason?: undefined;
+    }
+  | {
+      /** A working budget is verified, while a global minimum remains unproved. */
+      minimum_status: "feasible_only";
+      /** Verified working budget for the canonical retry. */
+      feasible_tokens: number;
+      /** No exact minimum is claimed for a partial search. */
+      minimum_feasible_tokens: null;
+      /** A successful verification has no unavailable cause. */
+      reason?: undefined;
+    }
+  | {
+      /** Bounded recovery could not establish a working budget. */
+      minimum_status: "unavailable";
+      /** No working budget was verified. */
+      feasible_tokens: null;
+      /** No minimum can be claimed without a working budget. */
+      minimum_feasible_tokens: null;
+      /** Why recovery could not establish a working budget within its work limits. */
+      reason: "query_cost_limit" | "search_limit" | "output_constraints";
+    }
+);
+
 /** Carries structured recovery guidance attached to expected pm CLI errors. */
 export interface PmCliErrorRecoveryPayload {
   /** Strategy used to control recovery behavior. */
@@ -35,6 +77,8 @@ export interface PmCliErrorRecoveryPayload {
   suggested_retry?: string;
   /** Tokenized retry arguments for direct execution without reparsing display text. */
   suggested_retry_args?: string[];
+  /** Bounded, verified token-budget guidance for an executable context retry. */
+  token_budget?: PmTokenBudgetRecovery;
   /** Elapsed time in milliseconds for retry after. */
   retry_after_ms?: number;
   /** Value that configures or reports fallback candidates for this contract. */

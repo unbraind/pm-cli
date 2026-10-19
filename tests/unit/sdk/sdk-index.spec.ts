@@ -117,6 +117,7 @@ import {
   isPmExtensionServiceNameContract,
   isPmToolAction,
   isPmCliExpectedError,
+  isPmTokenBudgetRecovery,
   toCompletionFlagString,
   withFlagAliasMetadata,
   writeFileAtomic,
@@ -462,6 +463,23 @@ describe("public sdk entrypoint", () => {
     expect(Object.keys(error)).not.toContain("cause");
     expect(isPmCliExpectedError(error)).toBe(true);
     expect(isPmCliExpectedError(new Error("plain"))).toBe(false);
+    const exactBudget = { requested_tokens: 1, feasible_tokens: 500, minimum_feasible_tokens: 500,
+      minimum_status: "exact", basis: "canonical_retry" };
+    expect(isPmTokenBudgetRecovery(exactBudget)).toBe(true);
+    expect(isPmTokenBudgetRecovery({ ...exactBudget, minimum_feasible_tokens: null, minimum_status: "feasible_only" })).toBe(true);
+    expect(isPmTokenBudgetRecovery({ ...exactBudget, minimum_feasible_tokens: null, feasible_tokens: null, minimum_status: "unavailable", reason: "search_limit" })).toBe(true);
+    for (const malformed of [null, [], {}, { ...exactBudget, requested_tokens: "1" },
+      { ...exactBudget, requested_tokens: 0 }, { ...exactBudget, requested_tokens: 1.5 },
+      { ...exactBudget, requested_tokens: Infinity }, { ...exactBudget, basis: "guessed" },
+      { ...exactBudget, minimum_status: "unknown" }, { ...exactBudget, minimum_feasible_tokens: -1 },
+      { ...exactBudget, feasible_tokens: 501 }, { ...exactBudget, reason: "search_limit" },
+      { ...exactBudget, minimum_status: "feasible_only" },
+      { ...exactBudget, minimum_status: "feasible_only", minimum_feasible_tokens: null, feasible_tokens: 0 },
+      { ...exactBudget, minimum_status: "feasible_only", minimum_feasible_tokens: null, reason: "search_limit" },
+      { ...exactBudget, minimum_status: "unavailable", feasible_tokens: null, reason: "search_limit" },
+      { ...exactBudget, minimum_status: "unavailable", minimum_feasible_tokens: null, reason: "search_limit" },
+      { ...exactBudget, minimum_status: "unavailable", feasible_tokens: null, minimum_feasible_tokens: null, reason: "unknown" },
+    ]) expect(isPmTokenBudgetRecovery(malformed)).toBe(false);
     const invalidShape = new Error("invalid shape") as Error & { exitCode: number };
     invalidShape.name = PM_CLI_EXPECTED_ERROR_NAME;
     invalidShape.exitCode = Number.NaN;

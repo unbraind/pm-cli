@@ -121,7 +121,7 @@ export {
   type UpdateLinkedTestOptions,
   type UpdateLinkedTestResult,
 } from "./test/update.js";
-export { isItemAlreadyExistsError, type PmItemAlreadyExistsError } from "./errors.js";
+export { isItemAlreadyExistsError, type PmItemAlreadyExistsError, isPmTokenBudgetRecovery, type PmTokenBudgetRecovery } from "./errors.js";
 export * from "./agent-session-context.js";
 export { isAlreadyClaimedError } from "./lifecycle/claim.js";
 export {

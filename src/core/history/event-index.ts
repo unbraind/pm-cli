@@ -863,7 +863,17 @@ export async function appendHistoryEntryWithEventIndex(
           database.exec("BEGIN IMMEDIATE");
         } catch (error: unknown) {
           database.close();
-          throw error;
+          if (
+            isHistoryIndexSqliteContention(error) ||
+            !(error instanceof Error) ||
+            (error as NodeJS.ErrnoException).code !== "ERR_SQLITE_ERROR"
+          )
+            throw error;
+          // Native storage damage in this optional projection must not abort
+          // the authoritative append. Publish invalidation before proceeding.
+          await recordHistoryEventIndexInvalidation(pmRoot, false);
+          await appendAuthoritative();
+          return;
         }
         let appended = false;
         try {

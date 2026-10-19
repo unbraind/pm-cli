@@ -1,17 +1,22 @@
 import { writeFile } from "node:fs/promises";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import * as contextKernel from "../../../../src/sdk/relationship-context.js";
 import { runDeps } from "../../../../src/cli/commands/query/deps.js";
 import { runGraph } from "../../../../src/cli/commands/query/graph.js";
 import { buildDepsRelationshipContext } from "../../../../src/sdk/dependencies.js";
+import { isPmCliExpectedError } from "../../../../src/sdk/errors.js";
 import { collectDanglingDependencyReferences } from "../../../../src/sdk/graph/assembly.js";
 import { resetWorkspaceGraphCache } from "../../../../src/sdk/graph/cache.js";
 import type { GraphAuditResult } from "../../../../src/sdk/graph/run.js";
 import type { ItemMetadata } from "../../../../src/types/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { formatBuiltInOutput } from "../../../../src/core/output/output.js";
+import {
+  getActiveCommandContext,
+  setActiveCommandContext,
+} from "../../../../src/core/extensions/index.js";
+import { formatOutput } from "../../../../src/core/output/output.js";
 import { estimatePmOutputTokens } from "../../../../src/sdk/cli-contracts/agent-output-contracts.js";
-import { attachOutputOmissionReceipt } from "../../../../src/sdk/output-projection.js";
 import {
   locateItem,
   readLocatedItem,
@@ -21,13 +26,11 @@ import {
   type TempPmContext,
 } from "../../../helpers/withTempPmPath.js";
 import { overwriteTaskTests } from "../../../helpers/pmWorkspace.js";
+import { parseJsonErrorEnvelope } from "../../../helpers/jsonErrorEnvelope.js";
 
 /** Render the disclosed dependency envelope used by CLI and SDK consumers. */
 function formatDepsOutput(result: unknown, format: "json" | "toon"): string {
-  return formatBuiltInOutput(
-    attachOutputOmissionReceipt("deps", result),
-    format,
-  );
+  return formatOutput(result, { command: "deps", json: format === "json" });
 }
 
 function createTask(
@@ -780,6 +783,17 @@ describe("runDeps", () => {
           Buffer.byteLength(formatDepsOutput(defaultsJson, "json")) / 4,
         ),
       );
+      const configuredJson = await runDeps(
+        rootId,
+        { format: "context" },
+        {
+          path: context.pmPath,
+          defaultOutputFormat: "json",
+        },
+      );
+      expect(configuredJson.context?.meta.usedTokens).toBe(
+        defaultsJson.context?.meta.usedTokens,
+      );
       createTask(context, "context-dependent", [
         `id=${rootId},kind=blocked_by,author=test-author,created_at=now`,
       ]);
@@ -893,6 +907,68 @@ describe("runDeps", () => {
       );
       expect(linkedResult.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
 
+      const refusal = await runDeps(
+        linkedRootId,
+        {
+          format: "context",
+          nodeLimit: 1,
+          edgeLimit: 1,
+          tokenBudget: 1,
+        },
+        { path: context.pmPath, json: true },
+      ).catch((error: unknown) => error);
+      expect(isPmCliExpectedError(refusal)).toBe(true);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      expect(refusal).toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        code: "invalid_argument_value",
+        context: {
+          field: "tokenBudget",
+          recovery: {
+            suggested_flags: ["--token-budget"],
+            token_budget: {
+              requested_tokens: 1,
+              feasible_tokens: expect.any(Number),
+            },
+          },
+        },
+      });
+      const retryArgs = refusal.context.recovery!.suggested_retry_args!;
+      await withTempPmPath(async (foreign) => {
+        expect(foreign.runCli(["get", linkedRootId, "--json"]).code).toBe(
+          EXIT_CODE.NOT_FOUND,
+        );
+        const inspection = foreign.runCli([...retryArgs, "--json"], {
+          expectJson: true,
+        });
+        expect(inspection.code).toBe(0);
+        expect(inspection.json).toMatchObject({
+          id: linkedRootId,
+          format: "context",
+          context: { root: { id: linkedRootId } },
+        });
+      });
+      const cliRefusal = context.runCli([
+        "item",
+        "deps",
+        linkedRootId,
+        "--format",
+        "context",
+        "--token-budget",
+        "1",
+        "--node-limit",
+        "1",
+        "--edge-limit",
+        "1",
+        "--json",
+      ]);
+      expect(cliRefusal.code).toBe(EXIT_CODE.USAGE);
+      expect(parseJsonErrorEnvelope(cliRefusal.stderr)).toMatchObject({
+        code: "invalid_argument_value",
+        exit_code: EXIT_CODE.USAGE,
+        recovery: { suggested_retry_args: retryArgs },
+      });
+
       await expect(
         runDeps(
           linkedRootId,
@@ -900,33 +976,338 @@ describe("runDeps", () => {
             format: "context",
             nodeLimit: 1,
             edgeLimit: 1,
-            tokenBudget: 1,
+            tokenBudget: 300,
           },
           { path: context.pmPath, json: true },
         ),
-      ).rejects.toThrow(
-        "Relationship context tokenBudget cannot fit root and evidence",
-      );
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        code: "invalid_argument_value",
+      });
+    });
+  });
 
-      const minimumResult = await runDeps(
-        linkedRootId,
-        {
-          format: "context",
-          nodeLimit: 1,
-          edgeLimit: 1,
-          tokenBudget: 300,
-        },
-        { path: context.pmPath, json: true },
-      );
-      expect(minimumResult.missing_references).toEqual([]);
-      expect(minimumResult.context?.nodes).toHaveLength(1);
-      expect(minimumResult.context?.meta.tokenBudget).toBe(300);
-      expect(minimumResult.context?.meta.usedTokens).toBe(
-        Math.ceil(
-          Buffer.byteLength(formatDepsOutput(minimumResult, "json")) / 4,
+  it.each([
+    ["json", ["--json"]],
+    ["json", ["--json", "--lean"]],
+    ["json", ["--output-format", "json"]],
+    ["json", ["--json", "--output-row-contract"]],
+    ["json", ["--json", "--token-accounting"]],
+    ["toon", []],
+  ] as const)(
+    "accounts for final %s context bytes using %j with legacy aliases and refuses an oversized floor",
+    async (format, encoding) => {
+      await withTempPmPath(async (context) => {
+        const leaf = createTask(context, "rendered-budget-leaf");
+        const root = createTask(context, "rendered-budget-root", [
+          `id=${leaf},kind=related`,
+        ]);
+        const located = await locateItem(context.pmPath, root);
+        expect(located).not.toBeNull();
+        if (!located) throw new Error("Missing synthetic root fixture");
+        const { raw } = await readLocatedItem(located);
+        await writeFile(
+          located.itemPath,
+          raw.replace(",related,", ",related_to,"),
+          "utf8",
+        );
+        const args = [
+          "item",
+          "deps",
+          root,
+          "--format",
+          "context",
+          "--max-depth",
+          "0",
+          "--token-budget",
+        ];
+        const full = context.runCli([...args, "1200", ...encoding]);
+        expect(full.code).toBe(0);
+        const exactTokens = Math.ceil(Buffer.byteLength(full.stdout) / 4);
+        const reported =
+          format === "json"
+            ? JSON.parse(full.stdout).context.meta.usedTokens
+            : Number(full.stdout.match(/usedTokens: (\d+)/u)?.[1]);
+        expect(reported).toBe(exactTokens);
+        expect(full.stdout).toContain("related_to");
+        const belowFloor = context.runCli([...args, "200", ...encoding]);
+        expect(belowFloor.code).toBe(EXIT_CODE.USAGE);
+        expect(belowFloor.stderr).toContain("tokenBudget");
+        if (format === "json") {
+          const envelope = parseJsonErrorEnvelope(belowFloor.stderr);
+          const recovery = envelope.recovery as {
+            token_budget: { requested_tokens: number; feasible_tokens: number };
+            suggested_retry_args: string[];
+          };
+          expect(recovery.token_budget.requested_tokens).toBe(200);
+          const retry = context.runCli(recovery.suggested_retry_args);
+          expect(retry.code).toBe(0);
+          expect(JSON.parse(retry.stdout).context.meta.usedTokens).toBeLessThanOrEqual(
+            recovery.token_budget.feasible_tokens,
+          );
+        }
+      });
+    },
+  );
+
+  it("proves a small context retry minimum and discloses independently impossible output constraints", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "x");
+      const global = { path: context.pmPath, json: true };
+      const refusal = await runDeps(root, { format: "context", tokenBudget: 1 }, global)
+        .catch((error: unknown) => error);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      const recovery = refusal.context.recovery!;
+      expect(recovery.token_budget).toMatchObject({
+        requested_tokens: 1,
+        minimum_status: "exact",
+        feasible_tokens: recovery.token_budget!.minimum_feasible_tokens,
+      });
+      const minimum = recovery.token_budget!.minimum_feasible_tokens!;
+      expect(context.runCli(recovery.suggested_retry_args!).code).toBe(0);
+      const below = [...recovery.suggested_retry_args!];
+      below[below.indexOf("--token-budget") + 1] = String(minimum - 1);
+      expect(context.runCli(below).code).toBe(EXIT_CODE.USAGE);
+      const blocked = await runDeps(root, { format: "context", tokenBudget: 1 },
+        { ...global, outputBudget: "1" }).catch((error: unknown) => error);
+      expect(blocked).toMatchObject({ context: { recovery: { token_budget: {
+        minimum_status: "unavailable", feasible_tokens: null, reason: "output_constraints",
+      } } } });
+      const summary = await runDeps(root, { format: "context", tokenBudget: 1200, summary: true }, global);
+      expect(summary.context).toBeUndefined();
+      await expect(runDeps(root, { format: "context", tokenBudget: 300, summary: true }, { ...global, outputRowContract: true }))
+        .rejects.toMatchObject({ code: "invalid_argument_value" });
+    });
+  });
+
+  it("preserves filters and root evidence in default-budget recovery without swallowing probe defects", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "root-".repeat(2000));
+      expect(context.runCli(["files", root, "--add", "src/context.ts"]).code).toBe(0);
+      const refusal = await runDeps(root, { format: "context", kind: "related", maxDepth: 0 },
+        { path: context.pmPath, json: true }).catch((error: unknown) => error);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      const recovery = refusal.context.recovery!;
+      expect(recovery.token_budget).toMatchObject({ requested_tokens: 1200, feasible_tokens: expect.any(Number) });
+      expect(recovery.suggested_retry_args).toEqual(expect.arrayContaining(["--kind", "related", "--max-depth", "0"]));
+      expect(context.runCli(recovery.suggested_retry_args!).code).toBe(0);
+      const original = contextKernel.buildRelationshipContext;
+      const defect = new TypeError("Unrelated probe defect");
+      const builds = vi.spyOn(contextKernel, "buildRelationshipContext")
+        .mockImplementationOnce(original).mockImplementationOnce(() => { throw defect; });
+      try {
+        await expect(runDeps(root, { format: "context", tokenBudget: 1 }, { path: context.pmPath, json: true }))
+          .rejects.toBe(defect);
+      } finally { builds.mockRestore(); }
+    });
+  });
+
+  it.each(["context", "tree", "graph"] as const)("honors explicit TOON over a configured JSON fallback for %s budgets and recovery", async (format) => {
+    await withTempPmPath(async (context) => {
+      const leaf = createTask(context, "Encoding leaf");
+      const root = createTask(context, "Encoding root", [`id=${leaf},kind=related`]);
+      const global = { path: context.pmPath, json: false, defaultOutputFormat: "json" as const };
+      const options = { format, maxDepth: 0, tokenBudget: 3000 };
+      const result = await runDeps(root, options, global);
+      const rendered = formatOutput(result, { ...global, command: "deps", commandOptions: options });
+      const tokens = Math.ceil(Buffer.byteLength(rendered) / 4);
+      const reported = format === "context" ? result.context?.meta.usedTokens : result.truncation?.estimated_tokens;
+      expect(reported).toBe(tokens);
+      const tight = await runDeps(root, { ...options, tokenBudget: tokens + 16 }, global);
+      expect(Math.ceil(Buffer.byteLength(formatOutput(tight, { ...global, command: "deps", commandOptions: { ...options, tokenBudget: tokens + 16 } })) / 4)).toBeLessThanOrEqual(tokens + 16);
+      if (format !== "context") return;
+      const refusal = await runDeps(root, { ...options, tokenBudget: 1 }, global).catch((error: unknown) => error);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      const retry = refusal.context.recovery!.suggested_retry_args!;
+      expect(retry[retry.indexOf("--output-format") + 1]).toBe("toon");
+      const executed = context.runCli(retry);
+      expect(executed.code).toBe(0);
+      expect(executed.stdout).toMatch(/format: "?context"?/u);
+    });
+  });
+
+  it.each(["summary", "full", "summary,id", "full,id"])("verifies the actual canonical include %s retry and its exact boundary", async (outputInclude) => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "x");
+      expect(context.runCli(["files", root, "--add", "x"]).code).toBe(0);
+      const refusal = await runDeps(root, {
+        format: "context", tokenBudget: 1, maxDepth: 0,
+        nodeLimit: 1, edgeLimit: 1, kind: ["related"], direction: "outgoing",
+      }, {
+        path: context.pmPath, noExtensions: true, noPager: true,
+        outputFormat: "json", outputInclude, outputBudget: "unbounded",
+      }).catch((error: unknown) => error);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      const recovery = refusal.context.recovery!;
+      expect(recovery.token_budget?.minimum_status).toBe("exact");
+      const budget = recovery.token_budget!.minimum_feasible_tokens!;
+      const retry = recovery.suggested_retry_args!;
+      expect(retry[retry.indexOf("--output-include") + 1]).toBe(outputInclude);
+      await withTempPmPath(async (foreign) => {
+        const accepted = foreign.runCli(retry);
+        expect(accepted.code, accepted.stderr).toBe(0);
+        expect(JSON.parse(accepted.stdout).id).toBe(root);
+        expect(Math.ceil(Buffer.byteLength(accepted.stdout) / 4)).toBeLessThanOrEqual(budget);
+        const below = [...retry];
+        below[below.indexOf("--token-budget") + 1] = String(budget - 1);
+        const refused = foreign.runCli(below);
+        expect(refused.code, refused.stdout).toBe(EXIT_CODE.USAGE);
+      });
+    });
+  });
+
+  it("rejects conflicting canonical include modes without fabricating budget advice", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "x");
+      await expect(runDeps(root, { format: "context", tokenBudget: 1 }, {
+        path: context.pmPath, json: true, outputInclude: "summary,full",
+      })).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: "--summary cannot be combined with --full" });
+    });
+  });
+
+  it("preserves host invocation provenance in discovery and accounting bytes without swallowing cursor errors", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "host-rendered-context");
+      const options = { format: "context", maxDepth: 0, tokenBudget: 1200 };
+      const global = {
+        path: context.pmPath,
+        json: true,
+        outputRowContract: true,
+        tokenAccounting: true,
+      };
+      const previous = getActiveCommandContext();
+      setActiveCommandContext({
+        command: "deps",
+        args: [root],
+        options,
+        global,
+        pm_root: context.pmPath,
+      });
+      try {
+        const result = await runDeps(
+          root,
+          { ...options, collapse: "none" },
+          global,
+        );
+        const rendered = formatOutput(result, {
+          ...global,
+          command: "deps",
+          commandOptions: options,
+        });
+        expect(result.context?.meta.usedTokens).toBe(
+          Math.ceil(Buffer.byteLength(rendered) / 4),
+        );
+        expect(JSON.parse(rendered).read_output.legacy_aliases_used).toEqual([
+          "--token-budget",
+        ]);
+        await expect(
+          runDeps(root, { format: "context", cursor: "malformed" }, global),
+        ).rejects.toMatchObject({ code: "invalid_query_cursor" });
+      } finally {
+        setActiveCommandContext(previous);
+      }
+    });
+  });
+
+  it("bounds empty-reference retries independently of the declared edge limit", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "empty-reference-budget");
+      const builds = vi.spyOn(contextKernel, "buildRelationshipContext");
+      try {
+        const query = (edgeLimit: number) =>
+          runDeps(
+            root,
+            { format: "context", maxDepth: 0, tokenBudget: 300, edgeLimit },
+            { path: context.pmPath, json: true },
+          );
+        await expect(query(1000)).rejects.toMatchObject({
+          code: "invalid_argument_value",
+        });
+        expect(builds).toHaveBeenCalled();
+        const smallCount = builds.mock.calls.length;
+        builds.mockClear();
+        await expect(query(3000)).rejects.toMatchObject({
+          code: "invalid_argument_value",
+        });
+        const largeCount = builds.mock.calls.length;
+        expect(
+          largeCount,
+          JSON.stringify({ smallCount, largeCount }),
+        ).toBeLessThanOrEqual(smallCount + 128);
+      } finally {
+        builds.mockRestore();
+      }
+    });
+  });
+
+  it("bounds recovery work for many reachable missing references", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(
+        context,
+        "reference-aware-budget",
+        Array.from(
+          { length: 1100 },
+          (_, index) => `id=pm-budget-missing-${index},kind=related`,
         ),
       );
-      expect(minimumResult.context!.meta.usedTokens).toBeGreaterThan(300);
+      const build = contextKernel.buildRelationshipContext;
+      const builds = vi
+        .spyOn(contextKernel, "buildRelationshipContext")
+        .mockImplementation((...args) => {
+          if (builds.mock.calls.length > 128)
+            throw new Error("Recovery exceeded the bounded packer-work guard");
+          return build(...args);
+        });
+      try {
+        await expect(
+          runDeps(
+            root,
+            {
+              format: "context",
+              tokenBudget: 1,
+              edgeLimit: 1100,
+            },
+            { path: context.pmPath, json: true },
+          ),
+        ).rejects.toMatchObject({
+          code: "invalid_argument_value",
+          context: {
+            recovery: {
+              token_budget: {
+                minimum_status: "unavailable",
+                feasible_tokens: null,
+                reason: "query_cost_limit",
+              },
+            },
+          },
+        });
+        expect(builds.mock.calls.length).toBeLessThanOrEqual(128);
+        for (const options of [
+          { edgeLimit: 1 },
+          { edgeLimit: 1100, summary: true },
+        ]) {
+          builds.mockClear();
+          const refusal = await runDeps(
+            root,
+            {
+              format: "context",
+              tokenBudget: 1,
+              ...options,
+            },
+            { path: context.pmPath, json: true },
+          ).catch((error: unknown) => error);
+          if (!isPmCliExpectedError(refusal)) throw refusal;
+          expect(
+            refusal.context.recovery?.token_budget?.feasible_tokens,
+          ).toBeGreaterThan(0);
+          expect(refusal.context.recovery?.token_budget?.reason).not.toBe(
+            "query_cost_limit",
+          );
+          expect(builds.mock.calls.length).toBeLessThanOrEqual(128);
+        }
+      } finally {
+        builds.mockRestore();
+      }
     });
   });
 

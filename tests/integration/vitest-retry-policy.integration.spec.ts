@@ -64,6 +64,32 @@ const runReliabilityFixture = async (
 };
 
 describe("Vitest CI retry policy", () => {
+  it("runs every native merge keeper once after parallel contracts with the original deadlines", async () => {
+    const { default: config } = await import("../../vitest.config.js");
+    const test = config.test!;
+    const projects = test.projects as Array<{ test: {
+      name: string; include: string[]; exclude?: string[];
+      sequence: { groupOrder: number }; fileParallelism?: boolean; maxWorkers?: number;
+    } }>;
+    const contracts = projects.find((project) => project.test.name === "contracts")!.test;
+    const serial = projects.find((project) => project.test.name === "lifecycle-performance")!.test;
+    for (const file of [
+      "tests/integration/receipt-operation-boundaries.integration.spec.ts",
+      "tests/integration/aborted-rebase-recovery.integration.spec.ts",
+      "tests/integration/workspace/merge-receipt-settlement.integration.spec.ts",
+      "tests/integration/workspace/merge-portability.integration.spec.ts",
+      "tests/integration/workspace/lossless-merge-union.integration.spec.ts",
+    ]) {
+      expect(contracts.exclude).toContain(file);
+      expect(serial.include.filter((entry) => entry === file)).toHaveLength(1);
+    }
+    expect(serial.sequence.groupOrder).toBeGreaterThan(contracts.sequence.groupOrder);
+    expect(serial).toMatchObject({ fileParallelism: false, maxWorkers: 1 });
+    expect(test.testTimeout).toBe(30_000);
+    expect(test.hookTimeout).toBe(30_000);
+    expect(test.retry).toBe(process.env.CI ? 1 : 0);
+  });
+
   it("records a transient pass and keeps a persistent assertion failing", async () => {
     await withTempDir("pm-vitest-retry-", async (root) => {
       const transient = await runReliabilityFixture(

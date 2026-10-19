@@ -1533,6 +1533,115 @@ describe("history mutation event index", () => {
     });
   });
 
+  it.each([
+    ["PRAGMA busy_timeout = 0", true],
+    ["BEGIN IMMEDIATE", true],
+    ["BEGIN IMMEDIATE", false],
+  ] as const)(
+    "isolates native SQLite startup errors at %s (native=%s)",
+    async (failedSql, native) => {
+      await withTempPmPath(async (context) => {
+        const historyPath = path.join(
+          context.pmPath,
+          "history",
+          "pm-native-startup.jsonl",
+        );
+        const first = historyEntry(
+          "2026-07-24T09:00:00.000Z",
+          "agent",
+          "create",
+        );
+        const second = historyEntry(
+          "2026-07-24T10:00:00.000Z",
+          "agent",
+          "update",
+        );
+        const firstLine = `${JSON.stringify(first)}\n`;
+        await fs.writeFile(historyPath, firstLine);
+        await rebuildHistoryEventIndex(context.pmPath);
+        const failure = native
+          ? Object.assign(new Error("disk I/O error"), {
+              code: "ERR_SQLITE_ERROR",
+            })
+          : "unrelated native adapter refusal";
+        class StartupFailureDatabase {
+          readonly database: DatabaseSync;
+          /** Keep a real SQLite handle beneath the injected startup failure. */
+        constructor(...args: ConstructorParameters<typeof DatabaseSync>) {
+            this.database = new DatabaseSync(...args);
+          }
+          /** Preserve real metadata and append-base queries. */
+        prepare(...args: Parameters<DatabaseSync["prepare"]>) {
+            return this.database.prepare(...args);
+          }
+          /** Fail only the selected transaction-start statement. */
+        exec(sql: string) {
+            if (sql === failedSql) throw failure;
+            return this.database.exec(sql);
+          }
+          /** Release the native handle before fallback and invalidation. */
+        close() {
+            return this.database.close();
+          }
+        }
+        restoreDatabaseSync?.();
+        restoreDatabaseSync = _testOnly.setDatabaseSync(
+          StartupFailureDatabase as never,
+        );
+        if (!native) {
+          await expect(appendHistoryEntry(historyPath, second)).rejects.toBe(
+            failure,
+          );
+          expect(await fs.readFile(historyPath, "utf8")).toBe(firstLine);
+          return;
+        }
+        await expect(
+          appendHistoryEntry(historyPath, second),
+        ).resolves.toBeUndefined();
+        expect(
+          (await fs.readFile(historyPath, "utf8"))
+            .trim()
+            .split("\n")
+            .map((line) => JSON.parse(line).op),
+        ).toEqual(["create", "update"]);
+        await expect(
+          queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+        ).resolves.toBeNull();
+        expect(
+          (
+            await queryHistoryEventStreams(context.pmPath, { limit: 10 })
+          ).events.map(({ entry }) => entry.op),
+        ).toEqual(["create", "update"]);
+        restoreDatabaseSync?.();
+        restoreDatabaseSync = _testOnly.setDatabaseSync(DatabaseSync);
+        await rebuildHistoryEventIndex(context.pmPath);
+        await expect(
+          queryHistoryEventIndex(context.pmPath, { limit: 10 }),
+        ).resolves.toMatchObject({
+          events: [
+            { stream_offset: 0, entry: { op: "create" } },
+            { stream_offset: 1, entry: { op: "update" } },
+          ],
+        });
+        restoreDatabaseSync?.();
+        restoreDatabaseSync = _testOnly.setDatabaseSync(
+          StartupFailureDatabase as never,
+        );
+        const appendFailure = new Error("authoritative append failed");
+        const append = vi.fn(async () => {
+          throw appendFailure;
+        });
+        await expect(
+          appendHistoryEntryWithEventIndex(historyPath, second, append),
+        ).rejects.toBe(appendFailure);
+        expect(append).toHaveBeenCalledTimes(1);
+        expect(
+          (await fs.readFile(historyPath, "utf8")).trim().split("\n"),
+        ).toHaveLength(2);
+      });
+    },
+  );
+
   it("refuses an append when the index write lock cannot be acquired", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(

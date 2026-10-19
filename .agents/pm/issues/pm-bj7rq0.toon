@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-19T06:29:12.166Z"
+updated_at: "2026-10-19T21:50:49.935Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -15,11 +15,13 @@ risk: medium
 confidence: medium
 expected_result: "A qualified runner passes unchanged supported-runtime startup budgets, and genuine command regressions remain fail-closed with attributable evidence."
 actual_result: Two transport-floor runs failed fixed latency ceilings across changing commands; independent SDK import rerun passed. The broad static invocation therefore cannot be reported all green.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
-comments[42]:
+  pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
+  pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
+comments[56]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -147,6 +149,48 @@ comments[42]:
   - created_at: "2026-10-19T06:29:11.504Z"
     author: "harness:codex"
     text: "Allocation change is locally verified: the extended workflow contract fails on the uncapped step before the edit; all30 workflow/registry contracts pass afterward. The exact serial four-file command passes15 real integration cases locally. Every selected path and the30000ms case/12-minute job deadlines are unchanged. Native Windows acceptance remains required on the revised PR head. Broader historical runtime/startup causation is still unproved and remains open; hand back this owner unclaimed after the bounded execution change."
+  - created_at: "2026-10-19T13:12:49.084Z"
+    author: "harness:codex"
+    text: "October19 candidate observation during delivery of pm-jm7m3o pm-89297t and pm-argzmt: local pnpm quality:static passes its prefix through complete tracker assurance and the unchanged SDK surface, then SDK entrypoint admission fails on Node26.9.0: contracts283/241ms core451/423 merge249/226 runtime796/452 testing731/461. Bare-node controls54/56ms classify the runner qualified; retain product_admission=failed and do not relabel it unqualified or weaken ceilings. Recorded host load is9.8-12.82 over8 available CPUs, which is context rather than causal proof. One isolated unchanged SDK measurement and final exact-head hosted static acceptance are required. This broader owner stays unclaimed; no SDK runtime source or budget changed in this delivery."
+  - created_at: "2026-10-19T13:14:08.352Z"
+    author: "harness:codex"
+    text: "Additional same-source benchmark at13:12:51UTC still reports qualified failed admission: aggregate544/500ms core505/423 merge251/226; runtime383/452 and testing365/461 now pass. This sample overlapped the typecheck command and is not described as isolated or used to infer a cause. Preserve both failures. Source typecheck and secret scan pass; the next benchmark is run without another verification command in flight, and required exact-head hosted static remains mandatory."
+  - created_at: "2026-10-19T13:15:14.444Z"
+    author: "harness:codex"
+    text: "The subsequent13:14UTC SDK import measurement, run without another verification command in flight, passes all10 entrypoints unchanged. This does not erase the two qualified failures or prove their cause, nor does it close the broader performance owner. The candidate's SDK code and budgets remain unchanged; final hosted static acceptance is still required."
+  - created_at: "2026-10-19T13:20:41.939Z"
+    author: "harness:codex"
+    text: "Local CLI transport admission also fails with qualified controls85/68ms on the same final source: get544/362ms list439/419 context508/433 next485/440 create432/398; claim403/424 passes. Retain these as failed product admissions rather than attributing cause from the recorded host load. No CLI/SDK runtime implementation or latency ceiling changed. The remaining graph record-integrity and mutation checks are executed separately after this stopped the standard static chain; final full hosted static remains required."
+  - created_at: "2026-10-19T14:07:59.915Z"
+    author: "harness:codex"
+    text: "Additional preserved platform observation: Nightly39262040130 at460dcba7b has successful quality all Linux legs and both full Windows shards, while macOS job118091927156 reaches the unchanged20-minute deadline. Its packed composed-continuation Node consumer passes; Bun1.4.0 reports zero winners rather than one in both original assertion attempts before the later job cancellation. The fixture does not yet print those two rejection reasons, so root cause remains unknown. Fresh full reads confirm pm-58zon0 completed the prior one-winner/settled-duplicate fixture repair; it remains closed, not reopened or called outstanding. Added the real related edge for that predecessor and retained this separate runner/runtime observation under the existing open investigation. One unchanged exact-head macOS rerun is active; no retry assertion budget or timeout is relaxed."
+  - created_at: "2026-10-19T16:39:06.620Z"
+    author: "harness:codex"
+    text: "Final local static run after the SDK refusal and status-publisher fixes passes dependency audit, ESLint, duplicate checks, generated catalogs/contracts, repository assurance, package/SDK parity, grammar, refusal closure, token-task gates, tracker quality, registry and all10 SDK import admissions. It fails the qualified CLI transport-floor admission: get best365ms exceeds362ms; controls remain within106ms (maximum control median50ms), Node26.9.0. This is product admission failure evidence with unknown cause, not runner noise or a full static pass. No threshold changes or blind repeat; hosted exact-head static acceptance remains required."
+  - created_at: "2026-10-19T18:24:31.938Z"
+    author: "harness:codex"
+    text: "Source a235a7e6 local static qualification retained: sdk/authoring median-of-five 176ms exceeds 164ms; controls qualify at max64ms <=106ms. Other reported entrypoints pass; pipeline stops before the later CLI floor and mutation gates. This new-source result is not a local static pass and is not attributed to host load without a causal control. Earlier qualified get 365ms>362ms evidence remains. No thresholds, iterations, retries or qualification rules changed; hosted exact-head evidence is separate."
+  - created_at: "2026-10-19T18:27:50.359Z"
+    author: "harness:codex"
+    text: "CodSpeed head a235 advisory reports aggregate -0.76%, with createQueryFingerprint -2.84% and encodeQueryCursor +1.36%; the provider explicitly flags different runtime environments and uninstrumented syscalls on the fingerprint benchmark. Both src/sdk/pagination.ts and benchmarks/pagination.bench.ts have byte-identical Git blob IDs at base54a583c and head a235. This comparison is retained as qualified advisory evidence, not a causal source-regression attribution or a cold-start acceptance result. No CodSpeed acknowledgement is used to hide the report."
+  - created_at: "2026-10-19T18:30:28.936Z"
+    author: "harness:codex"
+    text: "Chrome directly verifies CodSpeed comparison a235a7e versus 54a583c: one fingerprint regression, one cursor improvement, nine unchanged benchmarks, with both different-runtime and syscall-instrumentation warnings visibly present. The immutable unchanged source/benchmark blobs and provider qualifications remain the basis for retaining this as advisory evidence; no UI acknowledgement or benchmark-policy change was made."
+  - created_at: "2026-10-19T19:00:26.121Z"
+    author: "harness:codex"
+    text: "Updated CodSpeed head22ed report changes the regressed case to decodeQueryCursor:242us baseline versus339.7us head, -28.78%; ten benchmarks unchanged. Chrome benchmark detail explicitly identifies different CPUs, AMD EPYC7763 versus EPYC9V74, and changed AVX512-related flags. The full pagination source and benchmark Git blobs remain identical at base54a and reviewedhead22ed. This qualified comparison does not isolate a code change; controlled runtime/hardware comparison remains needed. No acknowledgement or provider threshold change is used to hide it."
+  - created_at: "2026-10-19T20:38:46.426Z"
+    author: "harness:codex"
+    text: "Fresh e30d553 CodSpeed comparison reports aggregate -4.58 percent, decodeQueryCursor -21.41 percent and three smaller pagination changes. Chrome detail identifies Node24.21.0/V8node.53 versus24.22.0/V8node.57, plus the fingerprint syscall-instrumentation warning. Pagination benchmark implementation and shared serializer retain identical Git object IDs at base54a583c and e30d553. Preserve the observation as qualified evidence rather than a causal source attribution; the existing qualified176ms SDK admission failure remains separate and open. No provider acknowledgement or threshold change is used."
+  - created_at: "2026-10-19T21:07:27.147Z"
+    author: "harness:codex"
+    text: "Final source dd097e4e1 CodSpeed report now shows eleven untouched benchmarks and no reported performance alteration, retaining its fingerprint syscall-instrumentation warning. The earlier e30d553 different-Node/V8 observation remains in history; this report is not attributed causally to unchanged pagination blobs. The qualified local176ms versus164ms SDK admission finding has not been rerun or relabeled as passing."
+  - created_at: "2026-10-19T21:35:22.548Z"
+    author: "harness:codex"
+    text: Tracker-only fd5508f2 CI39325197522 completes every other job successfully but cancels Windows24 full packed acceptance118309763530 at the unchanged20-minute job limit. Earlier global README/MCP and setup stages succeed; the canceled stage is the complete npm/npx and Bun/bunx acceptance. No cause is inferred from timeout alone. Request exactly one unchanged rerun of that job; retain the original attempt and inspect its log without changing assertions timeouts or policy. CodeRabbit full review of fd5508f2 reports no actionable findings and minimal merge risk.
+  - created_at: "2026-10-19T21:50:49.935Z"
+    author: "harness:codex"
+    text: "The one unchanged rerun of Windows24 packed first-run acceptance in CI39325197522 now succeeds on the same fd5508f2 head, and the complete CI workflow is terminal-success. No assertions timeouts retries or performance limits changed. The original20-minute cancellation remains in attempt1; this green rerun qualifies current acceptance but does not establish a historical cause or erase the independent176ms SDK import admission finding."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

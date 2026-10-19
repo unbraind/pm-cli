@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 1998,
+    "covered_symbols": 2001,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 1999
+    "required_symbols": 2002
   },
   "breaking_acknowledgements": [
     {
@@ -2483,6 +2483,21 @@
       ],
       "package_version": "2026.10.19",
       "reason": "Add staged create-warning receipts and row projections plus optional preview-storage error context. Existing mutation inputs and runtime policies remain compatible; custom TypeScript preview-result producers must supply the new warnings collection."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorRecoveryPayload"
+      ],
+      "package_version": "2026.10.19",
+      "reason": "Add optional token_budget recovery metadata and public structural validation; existing producers and consumers remain assignable."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmTokenBudgetRecovery",
+        "signature ./sdk/core:PmTokenBudgetRecovery"
+      ],
+      "package_version": "2026.10.19",
+      "reason": "Tighten the newly introduced token-budget recovery declaration to the existing validated status states before its first published release; runtime behavior is unchanged."
     }
   ],
   "entrypoints": {
@@ -6244,6 +6259,12 @@
           "kind": "value",
           "name": "DEFAULT_EVAL_QUERIES_RELATIVE_PATH",
           "signature": "string"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET",
+          "signature": "1200"
         },
         {
           "classification": "advanced_export",
@@ -10128,6 +10149,12 @@
           "signature": "(exitCode: number) => boolean | calls: (exitCode: number) => boolean"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isPmTokenBudgetRecovery",
+          "signature": "(value: unknown) => value is PmTokenBudgetRecovery | calls: (value: unknown) => value is PmTokenBudgetRecovery"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "isPmToolAction",
@@ -13485,7 +13512,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorRecoveryPayload",
-          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; parsed_positionals?: Array<{ role: string; value: string; }>; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; option_scope?: \"declared_on_path\" | \"declared_elsewhere\" | \"declared_nowhere\"; suggested_retry?: string; suggested_retry_args?: string[]; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
+          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; parsed_positionals?: Array<{ role: string; value: string; }>; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; option_scope?: \"declared_on_path\" | \"declared_elsewhere\" | \"declared_nowhere\"; suggested_retry?: string; suggested_retry_args?: string[]; token_budget?: PmTokenBudgetRecovery; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -14674,6 +14701,12 @@
           "kind": "type",
           "name": "PmTokenAccountedResult",
           "signature": "export type PmTokenAccountedResult<Result> = Result extends Record<string, unknown> ? Result & { token_accounting: PmOutputTokenAccounting; } : { result: Result; token_accounting: PmOutputTokenAccounting; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmTokenBudgetRecovery",
+          "signature": "export type PmTokenBudgetRecovery = PmTokenBudgetRecoveryBase & ({ minimum_status: \"exact\"; feasible_tokens: number; minimum_feasible_tokens: number; reason?: undefined; } | { minimum_status: \"feasible_only\"; feasible_tokens: number; minimum_feasible_tokens: null; reason?: undefined; } | { minimum_status: \"unavailable\"; feasible_tokens: null; minimum_feasible_tokens: null; reason: \"query_cost_limit\" | \"search_limit\" | \"output_constraints\"; });"
         },
         {
           "classification": "contract_data",
@@ -26036,6 +26069,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "isPmTokenBudgetRecovery",
+          "signature": "(value: unknown) => value is PmTokenBudgetRecovery | calls: (value: unknown) => value is PmTokenBudgetRecovery"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "isReadOutputBudgetExceeded",
           "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
         },
@@ -26410,6 +26449,12 @@
           "kind": "interface",
           "name": "PmSettings",
           "signature": "export interface PmSettings { version: number; id_prefix: string; ids: { token_length: number; }; author_default: string; agent_identity?: { probes_enabled?: boolean; identity_vocabulary?: { version: number; aliases: Record<string, string>; }; harness_signals: Array<{ harness: string; environment_keys?: string[]; model_environment_keys?: string[]; session_environment_keys?: string[]; provenance_environment_keys?: Record<string, string[]>; provenance_resolvers?: Record<string, \"ai_agent_version\" | \"claude_session_file\">; provenance_unavailable_dimensions?: string[]; argv_markers?: string[]; client_names?: string[]; }>; }; mutation_guard: { require_attributed_author: boolean; secret_guard: \"off\" | \"advise\" | \"block\"; stale_in_progress_hours: number; }; item_format: ItemFormat; locks: { ttl_seconds: number; wait_ms: number; }; checkpoints: { retention_days: number; }; output: { default_format: \"toon\" | \"json\"; }; ux?: { deprecation_hints?: boolean; }; history: { missing_stream: \"auto_create\" | \"strict_error\"; compact_policy: HistoryCompactPolicy; }; validation: { sprint_release_format: SprintReleaseFormatPolicy; parent_reference: ParentReferencePolicy; metadata_profile: ValidateMetadataProfile; metadata_required_fields: ValidateMetadataRequiredField[]; lifecycle_stale_blocker_reason_patterns: string[]; lifecycle_closure_like_blocked_reason_patterns: string[]; lifecycle_closure_like_resolution_patterns: string[]; lifecycle_closure_like_actual_result_patterns: string[]; estimate_defaults_by_type: Record<string, number>; }; governance: GovernanceSettings; workflow: { definition_of_done: string[]; }; testing: { record_results_to_items: boolean; allow_untrusted_linked_tests: boolean; }; telemetry: { enabled: boolean; first_run_prompt_completed: boolean; capture_level: \"minimal\" | \"redacted\" | \"max\"; endpoint: string; installation_id: string; retention_days: number; }; agent_guidance: AgentGuidanceSettings; item_types: { definitions: ItemTypeDefinition[]; }; schema: RuntimeSchemaSettings; extensions: { enabled: string[]; disabled: string[]; policy: ExtensionPolicySettings; }; search: { score_threshold: number; hybrid_semantic_weight: number; max_results: number; embedding_model: string; embedding_corpus_max_characters?: number; embedding_batch_size: number; embedding_timeout_ms: number; scanner_max_batch_retries: number; provider?: string; default_mode?: SearchDefaultMode; corpus_fields?: string[]; mutation_refresh_policy: SearchMutationRefreshPolicy; query_expansion: SearchQueryExpansionSettings; rerank: SearchRerankSettings; bm25?: { k1?: number; b?: number; }; tuning?: { title_exact_bonus?: number; title_weight?: number; description_weight?: number; tags_weight?: number; status_weight?: number; body_weight?: number; comments_weight?: number; notes_weight?: number; learnings_weight?: number; dependencies_weight?: number; linked_content_weight?: number; }; }; providers: { openai: { base_url: string; api_key: string; model: string; }; ollama: { base_url: string; model: string; }; }; context: ContextSettings; vector_store: { adapter?: string; collection_name: string; qdrant: { url: string; api_key: string; }; lancedb: { path: string; }; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmTokenBudgetRecovery",
+          "signature": "export type PmTokenBudgetRecovery = PmTokenBudgetRecoveryBase & ({ minimum_status: \"exact\"; feasible_tokens: number; minimum_feasible_tokens: number; reason?: undefined; } | { minimum_status: \"feasible_only\"; feasible_tokens: number; minimum_feasible_tokens: null; reason?: undefined; } | { minimum_status: \"unavailable\"; feasible_tokens: null; minimum_feasible_tokens: null; reason: \"query_cost_limit\" | \"search_limit\" | \"output_constraints\"; });"
         },
         {
           "classification": "supported",
@@ -29008,6 +29053,12 @@
           "kind": "interface",
           "name": "DeadlineScheduleRow",
           "signature": "export interface DeadlineScheduleRow { id: string; deadline_id: string; latest_start: string; slack_minutes: number | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET",
+          "signature": "1200"
         },
         {
           "classification": "supported",

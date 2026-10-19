@@ -12,6 +12,7 @@ import {
 import { suppressHostOutput } from "../../../../src/core/output/output-control.js";
 import {
   formatOutput,
+  formatBuiltInOutput,
   outputTestOnly,
   printError,
   printResult,
@@ -384,6 +385,7 @@ describe("core/output/output", () => {
   });
 
   it("preserves a null root when lean JSON removes the complete payload", () => {
+    expect(formatBuiltInOutput({ empty: [], missing: null }, "json", true)).toBe("null\n");
     expect(formatOutput(null, { json: true, lean: true })).toBe("null\n");
     expect(
       formatOutput({ empty: [], missing: null }, { json: true, lean: true }),

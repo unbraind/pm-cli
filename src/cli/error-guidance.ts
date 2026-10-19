@@ -4,6 +4,7 @@
  * Provides CLI runtime support for Error Guidance.
  */
 import { isReadProjectionRecoveryFlag } from "../sdk/agent/command-recovery.js";
+import { isPmTokenBudgetRecovery } from "../sdk/errors.js";
 import {
   type PmCliErrorContext,
   type PmCliErrorRecoveryPayload,
@@ -391,6 +392,15 @@ function assignRecoveryCollection(
   }
 }
 
+/** Retain only validated, bounded budget advice from a package-carried expected error. */
+function assignRecoveryTokenBudget(target: PmCliErrorRecoveryPayload, value: unknown): void {
+  if (!isPmTokenBudgetRecovery(value)) return;
+  const { requested_tokens, feasible_tokens, minimum_feasible_tokens, minimum_status, basis, reason } = value;
+  // This whitelist preserves the correlated fields already verified by the guard.
+  target.token_budget = { requested_tokens, feasible_tokens, minimum_feasible_tokens, minimum_status, basis, reason } as typeof value;
+}
+
+/** Whitelist valid recovery fields before exposing them in public CLI diagnostics. */
 function normalizeRecoveryPayload(
   payload: PmCliErrorRecoveryPayload | undefined,
 ): PmCliErrorRecoveryPayload | undefined {
@@ -398,6 +408,7 @@ function normalizeRecoveryPayload(
     return undefined;
   }
   const normalized: PmCliErrorRecoveryPayload = {};
+  assignRecoveryTokenBudget(normalized, payload.token_budget);
   if (payload.recovery_mode === "compact") {
     normalized.recovery_mode = "compact";
   }
@@ -507,6 +518,7 @@ function appendRecoveryListLine(
   }
 }
 
+/** Render normalized recovery fields and verified budget evidence as human guidance. */
 function renderRecoveryBundle(
   recovery: PmCliErrorRecoveryPayload | undefined,
 ): string[] {
@@ -515,6 +527,12 @@ function renderRecoveryBundle(
     return [];
   }
   const lines = ["Recovery bundle:"];
+  if (normalized.token_budget) {
+    const budget = normalized.token_budget;
+    lines.push(`  requested_token_budget: ${budget.requested_tokens}`,
+      `  feasible_token_budget: ${budget.feasible_tokens ?? "unavailable"}`,
+      `  minimum_token_budget: ${budget.minimum_feasible_tokens ?? "not established"}`);
+  }
   appendRecoveryTextLine(lines, "suggested_retry", normalized.suggested_retry);
   appendRecoveryTextLine(
     lines,

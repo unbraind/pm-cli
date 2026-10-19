@@ -1,0 +1,58 @@
+id: pm-8jzcwv
+title: Align token-budget recovery declaration states with the public runtime guard
+description: "Final PR1508 full review identifies a new declaration-contract gap: the broad PmTokenBudgetRecovery interface permits null or inconsistent status-dependent fields that isPmTokenBudgetRecovery rejects. Express its three states as a discriminated union, preserving runtime validation of positive safe integers and equal exact budgets."
+type: Task
+status: closed
+priority: 2
+tags[3]: bug,sdk,types
+created_at: "2026-10-19T22:21:25.931Z"
+updated_at: "2026-10-19T22:27:27.911Z"
+closed_at: "2026-10-19T22:26:56.464Z"
+completed_at: "2026-10-19T22:26:56.464Z"
+author: "harness:codex"
+acceptance_criteria: Compile-time negative controls reject impossible status-dependent fields before runtime; all three legal variants and status narrowing remain usable through public root/core entrypoints; runtime validator and emitted JavaScript behavior are preserved; public-surface snapshot and four TypeScript projects pass
+parent: pm-f05lsg
+resolution: "Replace the broad recovery interface with a status-discriminated union: exact and feasible-only advice require numeric feasible budgets; only exact has a numeric minimum; unavailable requires null budgets and a cause. Preserve runtime numeric validation and whitelisted projection, document narrowing and acknowledge the two new public declaration signatures."
+expected_result: "Package producers reject nine inconsistent state shapes at compile time, consumers narrow valid variants through public root/core imports, and runtime behavior remains unchanged."
+actual_result: The isolated pre-fix public declaration control fails with nine unused expected-error directives and three failed narrowing assignments. Afterward all four TypeScript projects and189 linked runtime cases pass; the same type controls pass in a freshly packed installed consumer. Strict lint contracts SDK snapshot docs links graph and record checks pass. Comment-free JavaScript for the three touched source files is identical to native-accepted dd097e4e1. Revised-head hosted validation and review remain delivery gates.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-odw3j8,discovered_from,"2026-10-19T22:21:25.931Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-19T22:21:25.931Z","harness:codex","Duplicate check: measured orientation plus complete207 open and0 active items and request-specific searches find no live declaration-state owner. Full closed pm-odw3j8 and recovery-parent metadata/history were read. This is a residual type contract newly identified by review comment4319454760 on PR1508, not a reopening or runtime-failure claim."
+  "2026-10-19T22:23:10.191Z","harness:codex","Isolated pre-fix declaration control fails on all nine impossible status/field combinations: nine unused expected-error directives, plus three failed narrowing assignments. The same public root/core declaration test is retained. Replace the interface with exact/feasible_only/unavailable variants, require unavailable causes, and retain runtime safe-integer/equal-exact-budget validation. This changes declarations only; the private unavailable helper requires a non-null cause to match its existing callers."
+  "2026-10-19T22:26:49.221Z","harness:codex",All four TypeScript projects and both linked commands pass; the runtime cohort retains189 cases with all existing numeric-guard and whitelist assertions. Public root/core tests now reject all nine inconsistent shapes and narrow status-dependent fields. A fresh npm tarball installed in an isolated consumer compiles those same declarations successfully. Strict ESLint contracts SDK-surface check and docs links pass. The snapshot explicitly acknowledges two declaration signatures for this newly introduced not-yet-published type. Comment-free JavaScript from all three touched runtime files is byte-identical to accepted native dd097e4e1; no runtime guard numeric policy or adapter whitelist changed.
+files[5]{path,scope}:
+  sdk/public-surface.json,project
+  src/cli/error-guidance.ts,project
+  src/core/shared/errors.ts,project
+  src/sdk/dependencies/context-budget-recovery.ts,project
+  tests/types/diagnostic-output-contracts.test-d.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,"harness:codex","2026-10-19T22:23:09.047Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+  node scripts/run-tests.mjs test -- tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/error-guidance.spec.ts,project,"harness:codex","2026-10-19T22:23:09.047Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvftp1u2-acsfoz
+    kind: test
+    status: passed
+    started_at: "2026-10-19T22:24:44.518Z"
+    finished_at: "2026-10-19T22:25:32.810Z"
+    recorded_at: "2026-10-19T22:25:32.810Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/sdk/sdk-index.spec.ts tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: Align the new public recovery declaration with its validated evidence states.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: typecheck
+  negative_control: pnpm exec tsc --noEmit -p tsconfig.typetests.json
+  local_checks[2]: pnpm typecheck,node scripts/run-tests.mjs test -- tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/cli/error-guidance.spec.ts
+  hosted_checks[2]: Gates (typecheck),Gates (coverage)
+  owner: pm-f05lsg
+body: ""

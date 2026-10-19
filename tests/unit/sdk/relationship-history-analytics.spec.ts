@@ -1193,6 +1193,9 @@ describe("bounded relationship context", () => {
       buildRelationshipContext(chain, "a", [], { tokenBudget: 10 }),
     ).toThrow("cannot fit one node");
     expect(() =>
+      buildRelationshipContext(chain, "a", [], { tokenBudget: 10 }),
+    ).toThrow(TypeError);
+    expect(() =>
       buildRelationshipContext(
         chain,
         "a",

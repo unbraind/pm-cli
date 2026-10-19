@@ -67,13 +67,18 @@ const allSourceCoverageThresholds = {
   statements: 100,
 };
 
-// Keep whole-source policy scans and real corpus/latency keepers out of
-// competing contract workers without changing their corpus, assertions, or deadlines (pm-bj7rq0).
+// Keep policy scans, real corpus/latency keepers and Git-heavy merge files out of
+// competing contract workers without changing membership, assertions or deadlines (pm-bj7rq0, pm-89297t).
 const sequentialPerformanceSpecs = [
   "tests/unit/cli/canonical-example-guard.spec.ts",
   "tests/integration/scratch-lifecycle.integration.spec.ts",
   "tests/unit/scripts/point-read-costs.spec.ts",
   "tests/unit/scripts/release/absence-tolerance-gate.spec.ts",
+  "tests/integration/receipt-operation-boundaries.integration.spec.ts",
+  "tests/integration/aborted-rebase-recovery.integration.spec.ts",
+  "tests/integration/workspace/merge-receipt-settlement.integration.spec.ts",
+  "tests/integration/workspace/merge-portability.integration.spec.ts",
+  "tests/integration/workspace/lossless-merge-union.integration.spec.ts",
 ];
 
 export default defineConfig({

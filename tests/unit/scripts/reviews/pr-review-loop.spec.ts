@@ -253,6 +253,7 @@ describe("PR review loop helper", () => {
     for (const [mergeStateStatus, emittedContexts, expectedOutcome, missingContexts, protectedBranch] of [
       ["BLOCKED", ["build", "ruleset-scan"], "incomplete", ["codecov/patch"], true],
       ["CLEAN", ["build", "codecov/patch", "ruleset-scan"], "passed", [], true],
+      ["CLEAN", ["build", "codecov/patch", "ruleset-scan", "pending-review"], "incomplete", [], true],
       ["CLEAN", ["build", "ruleset-scan"], "incomplete", ["codecov/patch"], true],
       ["BLOCKED", ["build", "codecov/patch", "ruleset-scan"], "incomplete", [], true],
       ["UNKNOWN", ["build", "codecov/patch"], "incomplete", ["ruleset-scan"], true],
@@ -281,7 +282,9 @@ describe("PR review loop helper", () => {
         } }, { type: "pull_request" }] : []]))
         .mockReturnValueOnce(JSON.stringify({ headRefOid: "abc123", baseRefName: "release/main", mergeStateStatus,
           statusCheckRollup: emittedContexts?.map((context) => context === "build"
-            ? { name: context, status: "COMPLETED", conclusion: "SUCCESS" } : { context, state: "SUCCESS" }) ?? null,
+            ? { name: context, status: "COMPLETED", conclusion: "SUCCESS" }
+            : context === "pending-review" ? { name: context, status: "IN_PROGRESS", conclusion: "" }
+            : { context, state: "SUCCESS" }) ?? null,
         }));
       const log = vi.fn();
       expect(main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531"], { runGh: executeGh, log }))
@@ -298,10 +301,107 @@ describe("PR review loop helper", () => {
         pullRequest: { headRefOid: "abc123" },
       });
       expect(executeGh.mock.calls[1]?.[0]).toEqual([
-        "pr", "checks", "531", "--repo", "unbraind/pm-cli", "--watch", "--interval", "30",
+        "pr", "checks", "531", "--repo", "unbraind/pm-cli", "--watch", "--interval", "30", "--fail-fast",
       ]);
       expect(executeGh.mock.calls[3]?.[0]).toContain("repos/unbraind/pm-cli/rules/branches/release%2Fmain");
       expect(executeGh).toHaveBeenCalledTimes(5);
+    }
+  });
+
+  it.each(["classic", "ruleset"])("requires the exact-head publisher for %s bindings while retaining unbound contexts", (source) => {
+    const context = "bound-check";
+    for (const scenario of [
+      { app: 8, head: "abc123", binding: 7, missing: true },
+      { app: null, head: "abc123", binding: 7, missing: true },
+      { app: 7, head: "old-head", binding: 7, missing: true },
+      { app: 7, head: "abc123", binding: 7, missing: false },
+      { app: 8, head: "abc123", binding: -1, missing: false },
+      { app: null, head: "abc123", binding: 7, missing: false, delivery: "status", merge: "CLEAN" },
+      { app: null, head: "abc123", binding: 7, missing: false, delivery: "status", merge: "BLOCKED" },
+      { app: 8, head: "abc123", binding: 7, missing: true, delivery: "both", merge: "CLEAN" },
+      { app: 7, head: "abc123", binding: 7, missing: false, delivery: "both", merge: "CLEAN" },
+    ]) {
+      const bound = scenario.binding > 0;
+      const { delivery, merge: mergeStateStatus } = { delivery: "check", merge: "CLEAN", ...scenario };
+      const executeGh = vi.fn((args: string[]) => {
+        if (args[1] === "checks") return "bound-check\tpass\t1s\turl";
+        if (args.includes("graphql")) return JSON.stringify({ data: { repository: { pullRequest: {
+          number: 531, headRefOid: "abc123", baseRefName: "main",
+          baseRef: { branchProtectionRule: { requiredStatusCheckContexts: [context],
+            requiredStatusChecks: [{ context, app: source === "classic" && bound ? { databaseId: scenario.binding } : null }],
+          } },
+          comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
+        } } } });
+        if (args[1]?.includes("rules/branches")) return JSON.stringify([source === "ruleset"
+          ? [{ type: "required_status_checks", parameters: { required_status_checks: [{ context, integration_id: scenario.binding }] } }] : []]);
+        if (args[1]?.includes("/check-runs?")) return JSON.stringify([{ check_runs: [
+          { name: "unrelated-check", head_sha: "abc123", app: { id: 7 } },
+        ] }, { check_runs: [
+          { name: context, head_sha: scenario.head, app: scenario.app === null ? null : { id: scenario.app } },
+        ] }]);
+        return JSON.stringify({ headRefOid: "abc123", baseRefName: "main", mergeStateStatus,
+          statusCheckRollup: [
+            ...(delivery === "status" ? [] : [{ name: context, status: "COMPLETED", conclusion: "SUCCESS" }]),
+            ...(delivery === "check" ? [] : [{ context, state: "SUCCESS", __typename: "StatusContext" }]),
+          ],
+        });
+      });
+      const log = vi.fn();
+      expect(main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531"], { runGh: executeGh, log }))
+        .toBe(scenario.missing || mergeStateStatus !== "CLEAN" ? 1 : 0);
+      const readiness = JSON.parse(log.mock.calls[0]?.[0]).checkWatch.attempts[0].mergeReadiness;
+      expect(readiness.missingContexts).toEqual(scenario.missing ? [context] : []);
+      expect(readiness.requiredChecks).toContainEqual({ context, integrationId: bound ? 7 : null });
+      if (delivery === "status") expect(readiness.publisherUnverifiable).toEqual(
+        [{ context, integrationId: 7, source: "commit_status" }]);
+      const publisherCalls = executeGh.mock.calls.filter(([args]) => args[1]?.includes("/check-runs?"));
+      expect(publisherCalls).toHaveLength(bound ? 1 : 0);
+      if (bound) expect(publisherCalls[0]?.[0]).toEqual([
+        "api", "repos/unbraind/pm-cli/commits/abc123/check-runs?per_page=100&filter=all", "--paginate", "--slurp",
+      ]);
+    }
+  });
+
+  it("surfaces a required failure before optional reviewers finish and retains a separate full-review wait", () => {
+    for (const phase of ["checks", "reviews"]) {
+      const calls: string[][] = [];
+      const executeGh = (args: string[]) => {
+        calls.push(args);
+        if (args[0] === "pr" && args[1] === "checks") {
+          expect(args.includes("--fail-fast")).toBe(phase === "checks");
+          throw Object.assign(new Error("required check failed"), {
+            stdout: "Gates (static)\tfail\t1m\thttps://github.com/static\nHound\tpending\t0\t\n",
+          });
+        }
+        if (args[0] === "api" && args[1]?.includes("rules/branches")) return "[[]]";
+        if (args.includes("graphql")) return JSON.stringify({ data: { repository: { pullRequest: {
+          number: 531, headRefOid: "failed-head", baseRefName: "main",
+          baseRef: { branchProtectionRule: { requiredStatusCheckContexts: ["Gates (static)", "missing-scan"] } },
+          comments: connection([{ id: "review-status", body: "Provider quota exhausted" }]),
+          reviews: connection([]), reviewThreads: connection([]),
+        } } } });
+        return JSON.stringify({
+          headRefOid: "failed-head", baseRefName: "main", mergeStateStatus: "BLOCKED",
+          statusCheckRollup: [
+            { name: "Gates (static)", status: "COMPLETED", conclusion: "FAILURE", detailsUrl: "https://github.com/static" },
+            { context: "Hound", state: "PENDING", targetUrl: "" },
+            { name: "Quota-limited reviewer", status: "COMPLETED", conclusion: "NEUTRAL", detailsUrl: "https://example.com/quota" },
+          ],
+        });
+      };
+      const log = vi.fn();
+      expect(main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531", "--phase", phase], { runGh: executeGh, log })).toBe(1);
+      expect(JSON.parse(log.mock.calls[0]?.[0])).toMatchObject({
+        checkWatch: { phase, attempts: [{
+          outcome: "failed",
+          failedChecks: [{ name: "Gates (static)", state: "fail" }],
+          pendingChecks: [{ name: "Hound", state: "PENDING", required: false, url: "" }],
+          unavailableChecks: [{ name: "Quota-limited reviewer", state: "NEUTRAL", required: false, url: "https://example.com/quota" }],
+          mergeReadiness: { missingContexts: ["missing-scan"] },
+        }] },
+        pullRequest: { comments: { nodes: [{ body: "Provider quota exhausted" }] } },
+      });
+      expect(calls.filter((args) => args[0] === "pr" && args[1] === "checks")).toHaveLength(1);
     }
   });
 
@@ -432,6 +532,7 @@ describe("PR review loop helper", () => {
     expect(() => main(["reply-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["acknowledge-inline", "--repo", "unbraind/pm-cli", "--pr", "531"])).toThrow("exit");
     expect(() => main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531", "--interval", "9"])).toThrow("exit");
+    expect(() => main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531", "--phase", "unknown"])).toThrow("exit");
     expect(() => main(["unknown"])).toThrow("exit");
     expect(() => main(["acknowledge", "--revision", "not-a-revision"])).toThrow("exit");
 

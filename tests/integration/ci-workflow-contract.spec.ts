@@ -830,7 +830,8 @@ describe("GitHub workflow contract", () => {
       'os: ubuntu-latest, node: 22, label: "Nightly (ubuntu-latest, Node 22)"',
       'os: ubuntu-latest, node: 24, label: "Nightly (ubuntu-latest, Node 24)"',
       'os: ubuntu-latest, node: 25, label: "Nightly (ubuntu-latest, Node 25)"',
-      'os: macos-latest, node: 24, label: "Nightly (macos-latest, Node 24)"',
+      'os: macos-latest, node: 24, shard: 1, label: "Nightly (macos-latest, Node 24, shard 1/2)"',
+      'os: macos-latest, node: 24, shard: 2, label: "Nightly (macos-latest, Node 24, shard 2/2)"',
       'os: windows-latest, node: 24, shard: 1, label: "Nightly (windows-latest, Node 24, shard 1/2)"',
       'os: windows-latest, node: 24, shard: 2, label: "Nightly (windows-latest, Node 24, shard 2/2)"',
       PINNED_ACTIONS.checkout,
@@ -870,6 +871,13 @@ describe("GitHub workflow contract", () => {
       2,
     );
     expectExactValidationCacheSteps(nightlyWorkflow, 2);
+    const declared = parse(nightlyWorkflow).jobs.nightly;
+    const macos = declared.strategy.matrix.include.filter(
+      (entry: { os: string }) => entry.os === "macos-latest",
+    );
+    expect(macos.map((entry: { node: number; shard: number }) => [entry.node, entry.shard]))
+      .toEqual([[24, 1], [24, 2]]);
+    expect(declared["timeout-minutes"]).toBe(20);
     expectContainsAll(platformJob, [
       "timeout-minutes: 20",
       "run: pnpm test:coverage",
