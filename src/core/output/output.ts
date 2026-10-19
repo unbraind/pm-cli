@@ -307,18 +307,24 @@ function renderToonObjectEntry(
   return `${indent}${key}:\n${renderToonValue(entry, depth + 1)}`;
 }
 
+/** Independent presentation policies shared by recursive value compaction. */
+interface OutputCompactionPolicy {
+  readonly omitDuplicateCountAliases: boolean;
+  readonly preserveRowFacts: boolean;
+}
+
 /** Preserve row cells recursively while retaining explicit lean-JSON compaction. */
 function compactToonArray(
   values: unknown[],
-  omitDuplicateCountAliases: boolean,
+  policy: OutputCompactionPolicy,
   preserveEmpty: boolean,
 ): unknown[] | undefined {
   const compactedEntries = values
     .map((entry) =>
       compactToonValue(
         entry,
-        omitDuplicateCountAliases,
-        preserveEmpty || (omitDuplicateCountAliases && isPlainObject(entry)),
+        policy,
+        preserveEmpty || (policy.preserveRowFacts && isPlainObject(entry)),
       ),
     )
     .filter((entry): entry is unknown => entry !== undefined);
@@ -330,13 +336,16 @@ function compactToonArray(
 /** Keep sparse presentation rules shared while allowing lean JSON to retain count aliases. */
 function compactToonValue(
   value: unknown,
-  omitDuplicateCountAliases = true,
+  policy: OutputCompactionPolicy = {
+    omitDuplicateCountAliases: true,
+    preserveRowFacts: true,
+  },
   preserveEmpty = false,
 ): unknown | undefined {
   if (value === null) return preserveEmpty ? null : undefined;
 
   if (Array.isArray(value)) {
-    return compactToonArray(value, omitDuplicateCountAliases, preserveEmpty);
+    return compactToonArray(value, policy, preserveEmpty);
   }
 
   if (isPlainObject(value)) {
@@ -344,7 +353,7 @@ function compactToonValue(
     const entries = Object.entries(value).filter(([key, entry]) => {
       const canonicalCount = COLLECTION_COUNT_ALIASES.get(key);
       return (
-        !omitDuplicateCountAliases ||
+        !policy.omitDuplicateCountAliases ||
         canonicalCount === undefined ||
         !isPlainObject(value.collection_counts) ||
         entry !== value.collection_counts[canonicalCount]
@@ -361,7 +370,7 @@ function compactToonValue(
       }
       const compactedEntry = compactToonValue(
         entry,
-        omitDuplicateCountAliases,
+        policy,
         preserveEmpty,
       );
       if (compactedEntry !== undefined) {
@@ -453,7 +462,10 @@ const LEAN_READ_ENVELOPE_ECHO_KEYS = new Set([
 
 /** Remove sparse values and list echoes while preserving legacy JSON count aliases. */
 function projectLeanJsonValue(value: unknown): unknown {
-  const compacted = compactToonValue(value, false);
+  const compacted = compactToonValue(value, {
+    omitDuplicateCountAliases: false,
+    preserveRowFacts: false,
+  });
   if (!isPlainObject(compacted) || !Array.isArray(compacted.items)) {
     return compacted ?? null;
   }
@@ -553,7 +565,10 @@ export function formatBuiltInOutput(
   if (format === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
-  const compactedToon = compactToonValue(projectEmptyCheckDetails(projectPmBriefListEnvelope(result)));
+  const compactedToon = compactToonValue(
+    projectEmptyCheckDetails(projectPmBriefListEnvelope(result)),
+    { omitDuplicateCountAliases: true, preserveRowFacts: true },
+  );
   return compactedToon === undefined
     ? "{}\n"
     : `${renderToonValue(compactedToon, 0)}\n`;

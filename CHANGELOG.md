@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- GH-1501: Compact default brief-list TOON envelopes without hiding source completeness ([pm-6pycus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pycus.toon))
 - GH-1500: Preserve null, empty and reserved JSON row facts through host rendering ([pm-4euctr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4euctr.toon))
+- GH-1501: Compact default brief-list TOON envelopes without hiding source completeness ([pm-6pycus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pycus.toon))
 - GH-1475: settle authenticated lossless merges within one reviewed delivery ([pm-gh1475](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1475.toon))
 - GH-1491: Preserve both add/add snapshots on ambiguous creation ancestry ([pm-gh1491](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1491.toon))
 - Recognize literal dynamic imports in module-usage evidence ([pm-f38ovr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f38ovr.toon))
