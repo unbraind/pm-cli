@@ -2522,6 +2522,11 @@ smaller positive budget has been checked. Larger searches report `feasible_only`
 query cost limits, exhausted searches or independent output constraints can report
 `unavailable`. Both states leave the unproved minimum `null`. The bounded search
 uses the real packer and output policy, including alias disclosure.
+The public type is a discriminated union: checking `minimum_status` narrows the
+verified budgets and requires a reason for `unavailable`. Package authors cannot
+declare unavailable advice with a numeric budget or omit its cause. The runtime
+guard additionally checks positive safe integers and equal budgets for `exact`;
+those numeric invariants cannot be expressed by the declaration alone.
 `suggested_retry_args` preserves the selected tracker, query and output options
 with the verified feasible budget so it works from another workspace.
 Retry probes consume canonical summary/full include modes before packing and
@@ -2536,7 +2541,8 @@ CLI JSON and MCP preserve that recovery. The lower-level
 unrelated runtime errors still propagate.
 (Repository tracker: [pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon),
 [pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon),
-[pm-k6uglj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k6uglj.toon);
+[pm-k6uglj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k6uglj.toon),
+[pm-8jzcwv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8jzcwv.toon);
 tracker records are excluded from npm.)
 
 For policy, lint, or verification commands that should render their full result

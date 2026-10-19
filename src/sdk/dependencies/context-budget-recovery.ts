@@ -22,7 +22,7 @@ interface ContextBudgetRecoveryInput {
 /** Produce explicit unavailable advice without inventing a numeric minimum. */
 function unavailable(
   requested: number,
-  reason: PmTokenBudgetRecovery["reason"],
+  reason: NonNullable<PmTokenBudgetRecovery["reason"]>,
 ): PmTokenBudgetRecovery {
   return {
     requested_tokens: requested,

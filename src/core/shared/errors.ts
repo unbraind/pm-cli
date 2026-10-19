@@ -3,21 +3,47 @@
  *
  * Provides shared primitives and utilities for Errors.
  */
-/** Verified budget advice for the preserved canonical context retry. */
-export interface PmTokenBudgetRecovery {
+/** Shared request identity for each canonical retry evidence state. */
+interface PmTokenBudgetRecoveryBase {
   /** Estimated tokens requested by the failed query. */
   requested_tokens: number;
-  /** Verified working budget, or null when bounded recovery cannot establish one. */
-  feasible_tokens: number | null;
-  /** Global minimum only when every smaller positive budget was checked. */
-  minimum_feasible_tokens: number | null;
-  /** Whether the reported minimum is proved, only a feasible value is known, or neither is available. */
-  minimum_status: "exact" | "feasible_only" | "unavailable";
   /** The emitted retry preserves selection and makes its encoding explicit. */
   basis: "canonical_retry";
-  /** Why recovery could not establish a working budget within its work limits. */
-  reason?: "query_cost_limit" | "search_limit" | "output_constraints";
 }
+
+/** Verified budget advice, narrowed by the evidence established for the preserved retry. */
+export type PmTokenBudgetRecovery = PmTokenBudgetRecoveryBase & (
+  | {
+      /** Every smaller positive budget was checked before proving this minimum. */
+      minimum_status: "exact";
+      /** Verified working budget; runtime validation also requires equality with the minimum. */
+      feasible_tokens: number;
+      /** Proved global minimum for the canonical retry. */
+      minimum_feasible_tokens: number;
+      /** A successful verification has no unavailable cause. */
+      reason?: undefined;
+    }
+  | {
+      /** A working budget is verified, while a global minimum remains unproved. */
+      minimum_status: "feasible_only";
+      /** Verified working budget for the canonical retry. */
+      feasible_tokens: number;
+      /** No exact minimum is claimed for a partial search. */
+      minimum_feasible_tokens: null;
+      /** A successful verification has no unavailable cause. */
+      reason?: undefined;
+    }
+  | {
+      /** Bounded recovery could not establish a working budget. */
+      minimum_status: "unavailable";
+      /** No working budget was verified. */
+      feasible_tokens: null;
+      /** No minimum can be claimed without a working budget. */
+      minimum_feasible_tokens: null;
+      /** Why recovery could not establish a working budget within its work limits. */
+      reason: "query_cost_limit" | "search_limit" | "output_constraints";
+    }
+);
 
 /** Carries structured recovery guidance attached to expected pm CLI errors. */
 export interface PmCliErrorRecoveryPayload {

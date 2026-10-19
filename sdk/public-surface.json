@@ -2490,6 +2490,14 @@
       ],
       "package_version": "2026.10.19",
       "reason": "Add optional token_budget recovery metadata and public structural validation; existing producers and consumers remain assignable."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmTokenBudgetRecovery",
+        "signature ./sdk/core:PmTokenBudgetRecovery"
+      ],
+      "package_version": "2026.10.19",
+      "reason": "Tighten the newly introduced token-budget recovery declaration to the existing validated status states before its first published release; runtime behavior is unchanged."
     }
   ],
   "entrypoints": {
@@ -14696,9 +14704,9 @@
         },
         {
           "classification": "supported",
-          "kind": "interface",
+          "kind": "type",
           "name": "PmTokenBudgetRecovery",
-          "signature": "export interface PmTokenBudgetRecovery { requested_tokens: number; feasible_tokens: number | null; minimum_feasible_tokens: number | null; minimum_status: \"exact\" | \"feasible_only\" | \"unavailable\"; basis: \"canonical_retry\"; reason?: \"query_cost_limit\" | \"search_limit\" | \"output_constraints\"; }"
+          "signature": "export type PmTokenBudgetRecovery = PmTokenBudgetRecoveryBase & ({ minimum_status: \"exact\"; feasible_tokens: number; minimum_feasible_tokens: number; reason?: undefined; } | { minimum_status: \"feasible_only\"; feasible_tokens: number; minimum_feasible_tokens: null; reason?: undefined; } | { minimum_status: \"unavailable\"; feasible_tokens: null; minimum_feasible_tokens: null; reason: \"query_cost_limit\" | \"search_limit\" | \"output_constraints\"; });"
         },
         {
           "classification": "contract_data",
@@ -26444,9 +26452,9 @@
         },
         {
           "classification": "supported",
-          "kind": "interface",
+          "kind": "type",
           "name": "PmTokenBudgetRecovery",
-          "signature": "export interface PmTokenBudgetRecovery { requested_tokens: number; feasible_tokens: number | null; minimum_feasible_tokens: number | null; minimum_status: \"exact\" | \"feasible_only\" | \"unavailable\"; basis: \"canonical_retry\"; reason?: \"query_cost_limit\" | \"search_limit\" | \"output_constraints\"; }"
+          "signature": "export type PmTokenBudgetRecovery = PmTokenBudgetRecoveryBase & ({ minimum_status: \"exact\"; feasible_tokens: number; minimum_feasible_tokens: number; reason?: undefined; } | { minimum_status: \"feasible_only\"; feasible_tokens: number; minimum_feasible_tokens: null; reason?: undefined; } | { minimum_status: \"unavailable\"; feasible_tokens: null; minimum_feasible_tokens: null; reason: \"query_cost_limit\" | \"search_limit\" | \"output_constraints\"; });"
         },
         {
           "classification": "supported",

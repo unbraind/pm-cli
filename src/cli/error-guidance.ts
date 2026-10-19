@@ -396,7 +396,8 @@ function assignRecoveryCollection(
 function assignRecoveryTokenBudget(target: PmCliErrorRecoveryPayload, value: unknown): void {
   if (!isPmTokenBudgetRecovery(value)) return;
   const { requested_tokens, feasible_tokens, minimum_feasible_tokens, minimum_status, basis, reason } = value;
-  target.token_budget = { requested_tokens, feasible_tokens, minimum_feasible_tokens, minimum_status, basis, reason };
+  // This whitelist preserves the correlated fields already verified by the guard.
+  target.token_budget = { requested_tokens, feasible_tokens, minimum_feasible_tokens, minimum_status, basis, reason } as typeof value;
 }
 
 /** Whitelist valid recovery fields before exposing them in public CLI diagnostics. */
