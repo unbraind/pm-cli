@@ -316,8 +316,13 @@ describe("PR review loop helper", () => {
       { app: 7, head: "old-head", binding: 7, missing: true },
       { app: 7, head: "abc123", binding: 7, missing: false },
       { app: 8, head: "abc123", binding: -1, missing: false },
+      { app: null, head: "abc123", binding: 7, missing: false, delivery: "status", merge: "CLEAN" },
+      { app: null, head: "abc123", binding: 7, missing: false, delivery: "status", merge: "BLOCKED" },
+      { app: 8, head: "abc123", binding: 7, missing: true, delivery: "both", merge: "CLEAN" },
+      { app: 7, head: "abc123", binding: 7, missing: false, delivery: "both", merge: "CLEAN" },
     ]) {
       const bound = scenario.binding > 0;
+      const { delivery, merge: mergeStateStatus } = { delivery: "check", merge: "CLEAN", ...scenario };
       const executeGh = vi.fn((args: string[]) => {
         if (args[1] === "checks") return "bound-check\tpass\t1s\turl";
         if (args.includes("graphql")) return JSON.stringify({ data: { repository: { pullRequest: {
@@ -334,16 +339,21 @@ describe("PR review loop helper", () => {
         ] }, { check_runs: [
           { name: context, head_sha: scenario.head, app: scenario.app === null ? null : { id: scenario.app } },
         ] }]);
-        return JSON.stringify({ headRefOid: "abc123", baseRefName: "main", mergeStateStatus: "CLEAN",
-          statusCheckRollup: [{ name: context, status: "COMPLETED", conclusion: "SUCCESS" }],
+        return JSON.stringify({ headRefOid: "abc123", baseRefName: "main", mergeStateStatus,
+          statusCheckRollup: [
+            ...(delivery === "status" ? [] : [{ name: context, status: "COMPLETED", conclusion: "SUCCESS" }]),
+            ...(delivery === "check" ? [] : [{ context, state: "SUCCESS", __typename: "StatusContext" }]),
+          ],
         });
       });
       const log = vi.fn();
       expect(main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531"], { runGh: executeGh, log }))
-        .toBe(scenario.missing ? 1 : 0);
+        .toBe(scenario.missing || mergeStateStatus !== "CLEAN" ? 1 : 0);
       const readiness = JSON.parse(log.mock.calls[0]?.[0]).checkWatch.attempts[0].mergeReadiness;
       expect(readiness.missingContexts).toEqual(scenario.missing ? [context] : []);
       expect(readiness.requiredChecks).toContainEqual({ context, integrationId: bound ? 7 : null });
+      if (delivery === "status") expect(readiness.publisherUnverifiable).toEqual(
+        [{ context, integrationId: 7, source: "commit_status" }]);
       const publisherCalls = executeGh.mock.calls.filter(([args]) => args[1]?.includes("/check-runs?"));
       expect(publisherCalls).toHaveLength(bound ? 1 : 0);
       if (bound) expect(publisherCalls[0]?.[0]).toEqual([

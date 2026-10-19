@@ -3,15 +3,19 @@ import { describe, expect, it } from "vitest";
 import { runDeps } from "../../../../src/cli/commands/query/deps.js";
 import { runGraph } from "../../../../src/cli/commands/query/graph.js";
 import { buildDepsRelationshipContext } from "../../../../src/sdk/dependencies.js";
+import { isPmCliExpectedError } from "../../../../src/sdk/errors.js";
 import { collectDanglingDependencyReferences } from "../../../../src/sdk/graph/assembly.js";
 import { resetWorkspaceGraphCache } from "../../../../src/sdk/graph/cache.js";
 import type { GraphAuditResult } from "../../../../src/sdk/graph/run.js";
 import type { ItemMetadata } from "../../../../src/types/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { formatBuiltInOutput } from "../../../../src/core/output/output.js";
+import {
+  getActiveCommandContext,
+  setActiveCommandContext,
+} from "../../../../src/core/extensions/index.js";
+import { formatOutput } from "../../../../src/core/output/output.js";
 import { estimatePmOutputTokens } from "../../../../src/sdk/cli-contracts/agent-output-contracts.js";
-import { attachOutputOmissionReceipt } from "../../../../src/sdk/output-projection.js";
 import {
   locateItem,
   readLocatedItem,
@@ -21,13 +25,11 @@ import {
   type TempPmContext,
 } from "../../../helpers/withTempPmPath.js";
 import { overwriteTaskTests } from "../../../helpers/pmWorkspace.js";
+import { parseJsonErrorEnvelope } from "../../../helpers/jsonErrorEnvelope.js";
 
 /** Render the disclosed dependency envelope used by CLI and SDK consumers. */
 function formatDepsOutput(result: unknown, format: "json" | "toon"): string {
-  return formatBuiltInOutput(
-    attachOutputOmissionReceipt("deps", result),
-    format,
-  );
+  return formatOutput(result, { command: "deps", json: format === "json" });
 }
 
 function createTask(
@@ -780,6 +782,17 @@ describe("runDeps", () => {
           Buffer.byteLength(formatDepsOutput(defaultsJson, "json")) / 4,
         ),
       );
+      const configuredJson = await runDeps(
+        rootId,
+        { format: "context" },
+        {
+          path: context.pmPath,
+          defaultOutputFormat: "json",
+        },
+      );
+      expect(configuredJson.context?.meta.usedTokens).toBe(
+        defaultsJson.context?.meta.usedTokens,
+      );
       createTask(context, "context-dependent", [
         `id=${rootId},kind=blocked_by,author=test-author,created_at=now`,
       ]);
@@ -893,6 +906,52 @@ describe("runDeps", () => {
       );
       expect(linkedResult.context?.meta.usedTokens).toBeLessThanOrEqual(1_200);
 
+      const refusal = await runDeps(
+        linkedRootId,
+        {
+          format: "context",
+          nodeLimit: 1,
+          edgeLimit: 1,
+          tokenBudget: 1,
+        },
+        { path: context.pmPath, json: true },
+      ).catch((error: unknown) => error);
+      expect(isPmCliExpectedError(refusal)).toBe(true);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      expect(refusal).toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        code: "invalid_argument_value",
+        context: {
+          field: "tokenBudget",
+          recovery: { suggested_flags: ["--token-budget"] },
+        },
+      });
+      const retryArgs = refusal.context.recovery!.suggested_retry_args!;
+      const inspection = context.runCli([...retryArgs, "--json"], {
+        expectJson: true,
+      });
+      expect(inspection.code).toBe(0);
+      expect(inspection.json).toMatchObject({
+        format: "tree",
+        node_count: leaves.length + 1,
+      });
+      const cliRefusal = context.runCli([
+        "item",
+        "deps",
+        linkedRootId,
+        "--format",
+        "context",
+        "--token-budget",
+        "1",
+        "--json",
+      ]);
+      expect(cliRefusal.code).toBe(EXIT_CODE.USAGE);
+      expect(parseJsonErrorEnvelope(cliRefusal.stderr)).toMatchObject({
+        code: "invalid_argument_value",
+        exit_code: EXIT_CODE.USAGE,
+        recovery: { suggested_retry_args: retryArgs },
+      });
+
       await expect(
         runDeps(
           linkedRootId,
@@ -900,33 +959,108 @@ describe("runDeps", () => {
             format: "context",
             nodeLimit: 1,
             edgeLimit: 1,
-            tokenBudget: 1,
+            tokenBudget: 300,
           },
           { path: context.pmPath, json: true },
         ),
-      ).rejects.toThrow(
-        "Relationship context tokenBudget cannot fit root and evidence",
-      );
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        code: "invalid_argument_value",
+      });
+    });
+  });
 
-      const minimumResult = await runDeps(
-        linkedRootId,
-        {
-          format: "context",
-          nodeLimit: 1,
-          edgeLimit: 1,
-          tokenBudget: 300,
-        },
-        { path: context.pmPath, json: true },
-      );
-      expect(minimumResult.missing_references).toEqual([]);
-      expect(minimumResult.context?.nodes).toHaveLength(1);
-      expect(minimumResult.context?.meta.tokenBudget).toBe(300);
-      expect(minimumResult.context?.meta.usedTokens).toBe(
-        Math.ceil(
-          Buffer.byteLength(formatDepsOutput(minimumResult, "json")) / 4,
-        ),
-      );
-      expect(minimumResult.context!.meta.usedTokens).toBeGreaterThan(300);
+  it.each([
+    ["json", ["--json"]],
+    ["json", ["--json", "--lean"]],
+    ["json", ["--output-format", "json"]],
+    ["json", ["--json", "--output-row-contract"]],
+    ["json", ["--json", "--token-accounting"]],
+    ["toon", []],
+  ] as const)(
+    "accounts for final %s context bytes using %j with legacy aliases and refuses an oversized floor",
+    async (format, encoding) => {
+      await withTempPmPath(async (context) => {
+        const leaf = createTask(context, "rendered-budget-leaf");
+        const root = createTask(context, "rendered-budget-root", [
+          `id=${leaf},kind=related`,
+        ]);
+        const located = await locateItem(context.pmPath, root);
+        expect(located).not.toBeNull();
+        if (!located) throw new Error("Missing synthetic root fixture");
+        const { raw } = await readLocatedItem(located);
+        await writeFile(
+          located.itemPath,
+          raw.replace(",related,", ",related_to,"),
+          "utf8",
+        );
+        const args = [
+          "item",
+          "deps",
+          root,
+          "--format",
+          "context",
+          "--max-depth",
+          "0",
+          "--token-budget",
+        ];
+        const full = context.runCli([...args, "1200", ...encoding]);
+        expect(full.code).toBe(0);
+        const exactTokens = Math.ceil(Buffer.byteLength(full.stdout) / 4);
+        const reported =
+          format === "json"
+            ? JSON.parse(full.stdout).context.meta.usedTokens
+            : Number(full.stdout.match(/usedTokens: (\d+)/u)?.[1]);
+        expect(reported).toBe(exactTokens);
+        expect(full.stdout).toContain("related_to");
+        const belowFloor = context.runCli([...args, "200", ...encoding]);
+        expect(belowFloor.code).toBe(EXIT_CODE.USAGE);
+        expect(belowFloor.stderr).toContain("tokenBudget");
+      });
+    },
+  );
+
+  it("preserves host invocation provenance in discovery and accounting bytes without swallowing cursor errors", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "host-rendered-context");
+      const options = { format: "context", maxDepth: 0, tokenBudget: 1200 };
+      const global = {
+        path: context.pmPath,
+        json: true,
+        outputRowContract: true,
+        tokenAccounting: true,
+      };
+      const previous = getActiveCommandContext();
+      setActiveCommandContext({
+        command: "deps",
+        args: [root],
+        options,
+        global,
+        pm_root: context.pmPath,
+      });
+      try {
+        const result = await runDeps(
+          root,
+          { ...options, collapse: "none" },
+          global,
+        );
+        const rendered = formatOutput(result, {
+          ...global,
+          command: "deps",
+          commandOptions: options,
+        });
+        expect(result.context?.meta.usedTokens).toBe(
+          Math.ceil(Buffer.byteLength(rendered) / 4),
+        );
+        expect(JSON.parse(rendered).read_output.legacy_aliases_used).toEqual([
+          "--token-budget",
+        ]);
+        await expect(
+          runDeps(root, { format: "context", cursor: "malformed" }, global),
+        ).rejects.toMatchObject({ code: "invalid_query_cursor" });
+      } finally {
+        setActiveCommandContext(previous);
+      }
     });
   });
 

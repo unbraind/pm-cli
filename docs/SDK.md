@@ -2505,6 +2505,16 @@ throw createPmCliExpectedError("hello requires --name", {
 
 The helper returns an `Error` whose public name is `PmCliError` and whose `exitCode` is structural. That makes it safe for bundled, linked, and separately installed package code even when class identity is not shared with the running CLI.
 
+For example, the SDK command layer settles relationship token counts after alias
+counts, read disclosure, encoding and optional lean/token-accounting policies.
+It converts an impossible rendered context budget into an expected
+`invalid_argument_value` usage error, including
+compact inspection arguments in `context.recovery.suggested_retry_args`.
+CLI JSON and MCP preserve that recovery. The lower-level
+`buildRelationshipContext` primitive retains its `TypeError` validation contract;
+unrelated runtime errors still propagate.
+([pm-odw3j8](../.agents/pm/tasks/pm-odw3j8.toon))
+
 For policy, lint, or verification commands that should render their full result
 and report failure without throwing, return a structured object instead:
 

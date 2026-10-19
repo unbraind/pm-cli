@@ -278,6 +278,16 @@ function checkPublisherEvidence(target, headRefOid, requirements, executeGh) {
   ])).flatMap((page) => page.check_runs);
 }
 
+/** Disclose status-only publisher bindings that GitHub must verify because commit statuses expose no app ID. */
+function unverifiableStatusPublishers(checks, requirements) {
+  const statusOnlyContexts = new Set(checks.filter((check) => check.context !== undefined).map((check) => check.context));
+  for (const check of checks) {
+    if (check.name !== undefined) statusOnlyContexts.delete(check.name);
+  }
+  return requirements.filter((record) => record.integrationId !== null && statusOnlyContexts.has(record.context))
+    .map((record) => ({ ...record, source: "commit_status" }));
+}
+
 /** Read effective requirements and the final rollup without replacing GitHub verdict enforcement. */
 function readCheckReadiness(target, pullRequest, executeGh) {
   const rules = JSON.parse(executeGh([
@@ -291,9 +301,12 @@ function readCheckReadiness(target, pullRequest, executeGh) {
     "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
   ]));
   const publishers = checkPublisherEvidence(target, readiness.headRefOid, requiredChecks, executeGh);
-  const emittedContexts = new Set((readiness.statusCheckRollup ?? []).map((check) => check.name ?? check.context));
+  const checks = readiness.statusCheckRollup ?? [];
+  const publisherUnverifiable = unverifiableStatusPublishers(checks, requiredChecks);
+  const statusOnlyContexts = new Set(publisherUnverifiable.map((record) => record.context));
+  const emittedContexts = new Set(checks.map((check) => check.name ?? check.context));
   const missingContexts = [...new Set(requiredChecks.filter((requirement) =>
-    !emittedContexts.has(requirement.context) || (requirement.integrationId !== null && !publishers.some((check) =>
+    !emittedContexts.has(requirement.context) || (requirement.integrationId !== null && !statusOnlyContexts.has(requirement.context) && !publishers.some((check) =>
       check.name === requirement.context && check.app?.id === requirement.integrationId && check.head_sha === readiness.headRefOid,
     )),
   ).map((requirement) => requirement.context))];
@@ -304,8 +317,9 @@ function readCheckReadiness(target, pullRequest, executeGh) {
     requiredContexts,
     requiredChecks,
     missingContexts,
+    publisherUnverifiable,
   };
-  return { mergeReadiness, ...incompleteCheckSignals(readiness.statusCheckRollup ?? [], requiredContexts) };
+  return { mergeReadiness, ...incompleteCheckSignals(checks, requiredContexts) };
 }
 
 /** Validate the wait phase and construct one native GitHub CLI watch invocation. */

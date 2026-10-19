@@ -890,6 +890,14 @@ Linked files and docs keep reviews reproducible. `deps` is read-only and project
 
 Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; create/update `--dep` accepts `id,kind,type,author,created_at,source_kind`; `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Set `source_kind=global` for a dependency owned by another workspace: pm preserves its id verbatim, materializes it as an external graph endpoint, and excludes it from dangling-local-reference findings. Explicit remote locators also retain their spelling; other dependency and parent references share local `id_prefix` normalization, including uppercase and `#` shorthand. Bare values (`--add src/cli/main.ts`) skip key validation.
 
+Context `meta.usedTokens` measures the selected built-in JSON or TOON emission,
+including its newline, alias counts, omission receipt and optional discovery or
+token-accounting metadata. If the required rendered packet cannot fit in the requested
+token budget, `pm item deps` returns usage exit code 2 with
+`invalid_argument_value`. Its structured recovery provides an executable
+`pm item deps <id> --format tree --summary` inspection; use that summary before
+choosing a larger `--token-budget`. ([pm-odw3j8](../.agents/pm/tasks/pm-odw3j8.toon))
+
 ## Graph Queries
 
 ```bash

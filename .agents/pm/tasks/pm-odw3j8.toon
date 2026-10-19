@@ -1,0 +1,135 @@
+id: pm-odw3j8
+title: Return an expected SDK refusal for impossible relationship context budgets
+description: "Sentry PM-CLI-3N reports four handled production CLI TypeErrors in published2026.10.19: Relationship context tokenBudget cannot fit root and evidence, classified unclassified_runtime_error with exit1. The SDK command's controlled initial budget-floor signal should become an expected usage refusal with actionable budget and bounded-inspection guidance. Preserve low-level graph primitive TypeErrors, successful context packing, internal rendered-budget floor behavior and genuine runtime error reporting."
+type: Task
+status: in_progress
+priority: 1
+tags[4]: bug,cli,observability,sdk
+created_at: "2026-10-19T16:07:50.190Z"
+updated_at: "2026-10-19T16:54:35.792Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Reproduce the published budget-floor classification with a failing-before sandbox control; Translate only the existing controlled initial budget-floor signal into the public expected-error shape and usage exit2; Preserve low-level primitive errors and successful/shrinking packet behavior; Execute returned compact inspection guidance and verify SDK CLI and MCP refusal parity; Resolve the verified Sentry issue with release-aware evidence without deleting history or weakening observability gates
+parent: pm-f05lsg
+risk: medium
+confidence: high
+expected_result: "Relationship packets stay within their selected rendered JSON/TOON budget including aliases and lean projection, or return an expected usage refusal with executable compact recovery; CLI and MCP preserve the error while primitive TypeErrors and fatal faults remain unchanged."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ju83,discovered_from,"2026-10-19T16:07:50.190Z","harness:codex","cli:create:dep",detected
+  pm-5t33or,related,"2026-10-19T16:37:59.636Z","harness:codex","cli:update:dep",detected
+  pm-t2t709,discovered_from,"2026-10-19T16:37:59.636Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-19T16:07:50.190Z","harness:codex","Duplicate check: full live open/in-progress lists and specific budget/Sentry searches plus complete all-status corpus contain no exact active owner. Full live pm-ju83 metadata/history confirms the broad graph platform is completed; the open recovery-closure feature is the parent. New report PM-CLI-3N contains4 handled CLI events with exit1 on the published release, separate from this branch's publisher work. Evidence is sanitized to exclude host paths identities and payloads. The literal budget-floor producer and existing regression are located before implementation."
+  "2026-10-19T16:15:08.946Z","harness:codex","The repaired negative control is semantic: two regressions fail and25 existing tests pass. Direct SDK command callers receive a raw TypeError instead of an expected usage error, and MCP lets the same budget-floor exception escape. The initial malformed test edit is not counted as defect evidence. The command-layer fix converts only the existing controlled budget-floor signal, uses public expected-error and command-rendering helpers, preserves cause and compact executable recovery, and leaves low-level kernel TypeErrors and unrelated fatal errors unchanged."
+  "2026-10-19T16:16:00.751Z","harness:codex","SDK and real CLI recovery acceptance now pass. The MCP test initially invoked the internal dispatcher, which deliberately propagates errors to the transport; corrected the test to drive the actual JSON-RPC line processor and inspect its emitted tool-error envelope. No MCP production behavior is changed. The original command-layer negative control remains valid; the earlier direct-dispatch MCP expectation is not claimed as transport evidence."
+  "2026-10-19T16:20:50.099Z","harness:codex","Linked sandbox acceptance passes all51 tests:22 dependency-command cases,24 low-level relationship/history cases and5 MCP cases. The real CLI returns usage2 and structured invalid_argument_value, the suggested compact retry executes successfully, the JSON-RPC tool envelope retains recovery, and the primitive retains TypeError. All4 TypeScript projects and SDK surface check pass with0 classified export changes. Original published Sentry events remain preserved and unresolved until delivery acceptance; the next-release boundary must remain explicit."
+  "2026-10-19T16:23:00.616Z","harness:codex",Static contract validation detected the new producer location for the existing invalid_argument_value code. Ran the maintained error-code generator; its only catalog change adds sdk/dependencies.ts to that existing code. No code shape or public export changes. The failed stale-catalog gate is retained and the complete static gate is rerun after regeneration.
+  "2026-10-19T16:37:58.638Z","harness:codex","Fresh GH1513 reports the same infeasible-budget defect plus a related hard-ceiling failure. Independently reproduced in a separate CLI-initialized temporary tracker with telemetry disabled: legacy related_to counts and max-depth0 yield JSON budget300 success with400 emitted estimated tokens and495 reported; budget800 reports495 for400 emitted. TOON300 emits286 tokens. Extend this active leaf to settle final alias/projection/lean bytes and refuse an impossible rendered floor rather than returning oversized success. Four separate new context/cursor reports remain open and unclaimed under their own intake leaves."
+  "2026-10-19T16:53:32.211Z","harness:codex","Rendered-byte negative controls fail3 cases and pass21 existing cases before the hard-ceiling correction. Final linked acceptance passes99 tests. A dependency-command-only diagnostic has exact100/100/100/100 coverage:328 statements228 branches61 functions311 lines. Its scope is diagnostic; unchanged repository-wide100% remains a hosted requirement. Final bytes include populated legacy aliases, omitted row-discovery suppression, optional discovery, lean JSON, JSON output-format selection, configured encoding and token accounting. Host invocation metadata preserves the original caller aliases; default collapse none must not fabricate a migration hint. Initial and rendered-floor refusals return usage2 with executable compact inspection, while malformed cursors still propagate their original error. Lower-level TypeError validation is unchanged. The linked command was replaced through remove/add because command identities are immutable; original failed and successful run evidence remains in history."
+notes[1]{created_at,author,text}:
+  "2026-10-19T16:54:35.791Z","harness:codex","External report https://github.com/unbraind/pm-cli/issues/1513 corroborates the published-release runtime refusal and rendered ceiling defect. Original Sentry issue https://unbrained.sentry.io/issues/154689801/ remains preserved for next-release resolution after hosted acceptance. All changed producer contracts use the public SDK expected-error and safe command-rendering helpers; low-level graph semantics and user thresholds remain intact."
+files[8]:
+  - path: src/core/output/output.ts
+    scope: project
+    note: Shared pure built-in rendering must match lean JSON accounting
+  - path: src/sdk/dependencies.ts
+    scope: project
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+    note: Generated catalog records the existing invalid_argument_value producer in the SDK command layer
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+    note: Maintained runtime-contract snapshot includes the existing error code producer
+  - path: tests/unit/commands/query/deps-command.spec.ts
+    scope: project
+  - path: tests/unit/core/output/output.spec.ts
+    scope: project
+    note: Shared pure built-in rendering must match lean JSON accounting
+  - path: tests/unit/mcp/mcp-server-nested-options.spec.ts
+    scope: project
+  - path: tests/unit/sdk/relationship-history-analytics.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,300,"harness:codex","2026-10-19T16:45:43.425Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[6]:
+  - run_id: test-local-mvfgih3m-ycw202
+    kind: test
+    status: passed
+    started_at: "2026-10-19T16:16:02.360Z"
+    finished_at: "2026-10-19T16:16:30.994Z"
+    recorded_at: "2026-10-19T16:16:30.994Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvfhh3co-398b4u
+    kind: test
+    status: failed
+    started_at: "2026-10-19T16:42:56.960Z"
+    finished_at: "2026-10-19T16:43:26.136Z"
+    recorded_at: "2026-10-19T16:43:26.136Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvfhjdzb-rrez4y
+    kind: test
+    status: failed
+    started_at: "2026-10-19T16:44:55.652Z"
+    finished_at: "2026-10-19T16:45:13.223Z"
+    recorded_at: "2026-10-19T16:45:13.223Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvfhkike-mct7bd
+    kind: test
+    status: failed
+    started_at: "2026-10-19T16:45:44.379Z"
+    finished_at: "2026-10-19T16:46:05.822Z"
+    recorded_at: "2026-10-19T16:46:05.822Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvfhmikt-pv9ubl
+    kind: test
+    status: passed
+    started_at: "2026-10-19T16:47:21.782Z"
+    finished_at: "2026-10-19T16:47:39.149Z"
+    recorded_at: "2026-10-19T16:47:39.149Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvfhrppl-7c58c8
+    kind: test
+    status: passed
+    started_at: "2026-10-19T16:51:17.143Z"
+    finished_at: "2026-10-19T16:51:41.673Z"
+    recorded_at: "2026-10-19T16:51:41.673Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/core/output/output.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,"pnpm contracts:check"
+  hosted_checks[3]: Gates (coverage),Gates (static),Telemetry regression (Node 22)
+  owner: pm-f05lsg
+body: ""

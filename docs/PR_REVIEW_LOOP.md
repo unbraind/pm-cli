@@ -61,8 +61,12 @@ never emit its context. The helper unions classic branch-protection requirements
 with all effective ruleset requirements and retains publisher bindings in
 `mergeReadiness.requiredChecks` alongside `requiredContexts`. Bound requirements
 need both a name in the head rollup and paginated exact-head check-run evidence
-from the expected app. A wrong or unavailable publisher remains in
+from the expected app. A wrong or unavailable check-run publisher remains in
 `missingContexts`; unbound legacy contexts retain name-based presence checks.
+Commit statuses expose no app identity in the rollup. Status-only bound contexts
+are disclosed in `publisherUnverifiable` with source `commit_status` and rely on
+GitHub's `CLEAN` verdict to enforce the publisher binding. If the same context is
+also emitted as a check run, that run still requires exact-head app evidence.
 The receipt records GitHub's `mergeStateStatus` independently: an attempt is
 `passed` only when no requirement is missing and GitHub reports `CLEAN`.
 Publisher presence does not establish a passing verdict; GitHub retains that

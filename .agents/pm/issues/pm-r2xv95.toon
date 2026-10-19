@@ -1,0 +1,21 @@
+id: pm-r2xv95
+title: "GH-1512: define count-based context completion rounding at half-percent boundaries"
+description: "Published-release report:29 closed children of200 are rendered as14 percent because the floating-point product lies below the half boundary. Source: https://github.com/unbraind/pm-cli/issues/1512 . Exact counts are correct; define the rounding contract before changing percentages."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,context,github
+created_at: "2026-10-19T16:31:12.454Z"
+updated_at: "2026-10-19T16:31:12.454Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Exercise29/200 and neighboring boundaries with real-tracker public SDK CLI and MCP reads; apply one documented rule consistently to shared count-based progress surfaces.
+parent: pm-4k6b
+risk: medium
+confidence: medium
+expected_result: Count-based completion percentages have a documented consistent rounding rule and agree with the exact numerator and denominator at half boundaries.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ojpq,discovered_from,"2026-10-19T16:31:12.454Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-19T16:31:12.454Z","harness:codex","Duplicate check: fresh all-open and in-progress inventories, request-specific searches and complete earlier all-status intake show no exact active report owner. Full live predecessor metadata and history confirm completed prior scope; preserve it and create this narrowly reported follow-up. Intake only: unclaimed and open; no implementation or independent reproduction claimed."
+body: ""

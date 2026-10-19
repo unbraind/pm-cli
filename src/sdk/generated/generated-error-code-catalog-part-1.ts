@@ -1861,6 +1861,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
       "cli/error-guidance.ts",
       "core/telemetry/observability.ts",
       "sdk/context-intent-contracts.ts",
+      "sdk/dependencies.ts",
       "sdk/governance/assurance-mutation-error.ts",
       "sdk/lifecycle/create.ts",
       "sdk/lifecycle/task-composition.ts",

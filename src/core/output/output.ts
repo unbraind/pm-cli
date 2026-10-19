@@ -561,9 +561,10 @@ function omitEmptySuccessfulCheckDetails(check: unknown): unknown {
 export function formatBuiltInOutput(
   result: unknown,
   format: "json" | "toon",
+  lean = false,
 ): string {
   if (format === "json") {
-    return `${JSON.stringify(result, null, 2)}\n`;
+    return `${JSON.stringify(lean ? projectLeanJsonValue(result) : result, null, 2)}\n`;
   }
   const compactedToon = compactToonValue(
     projectEmptyCheckDetails(projectPmBriefListEnvelope(result)),
@@ -702,8 +703,9 @@ function formatEffectiveOutput(
     }
     if (format === "json") {
       return formatBuiltInOutput(
-        options.lean === true ? projectLeanJsonValue(value) : value,
+        value,
         "json",
+        options.lean === true,
       );
     }
     return formatBuiltInOutput(value, "toon");
