@@ -1,0 +1,49 @@
+id: pm-gfksc7
+title: Assemble complete review receipts without mutating the base receipt
+description: "Semgrep reports a nonblocking insecure-object-assign pattern in the review watcher. Static source-policy triage is not_actionable with high confidence: the GitHub head identifier is a value under a fixed receipt key and readiness signals have fixed locally constructed top-level keys. There is no attacker-controlled property-name assignment or privileged model sink. Clarify complete receipt assembly with a fresh result object while preserving every serialized receipt field, superseded attempt and fail-fast behavior; let the unchanged scanner reevaluate the pattern."
+type: Chore
+status: closed
+priority: 2
+tags[2]: quality,tooling
+created_at: "2026-10-19T21:27:15.167Z"
+updated_at: "2026-10-19T21:40:54.655Z"
+closed_at: "2026-10-19T21:30:16.035Z"
+completed_at: "2026-10-19T21:30:16.035Z"
+author: "harness:codex"
+estimated_minutes: 20
+acceptance_criteria: Complete receipts preserve all existing fields and outcome behavior; Superseded head/base attempts remain in order; Existing watcher/publisher regression coverage remains green; No scanner suppression or security-policy weakening is introduced; The report is documented as a static false positive rather than a confirmed vulnerability fix
+parent: pm-obq2
+risk: low
+confidence: high
+resolution: "Replace mutation of the base watch receipt with a fresh complete receipt in the same attempt slot. Preserve every serialized field, outcome, pending/unavailable signal, publisher requirement and superseded-attempt history. Record the reported assignment pattern as a statically defeated mass-assignment claim rather than a confirmed vulnerability."
+expected_result: Watch output and failure behavior stay compatible while receipt ownership is explicit and the unchanged scanner can reassess the pattern.
+actual_result: "All17 existing regressions pass, including complete readiness and superseded histories. Focused coverage is exact100/100/100/100 across238 statements187 branches54 functions207 lines. Linked checks, strict ESLint and syntax validation pass. SDK runtime code tests workflows and dependency manifests remain unchanged from accepted native source dd097e4e1; hosted rescanning is the final report-resolution check."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jm7m3o,discovered_from,"2026-10-19T21:27:15.167Z","harness:codex","cli:create:dep",detected
+  pm-qwoy,related,"2026-10-19T21:27:15.167Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-19T21:27:15.167Z","harness:codex","Duplicate check: full207 open and0 active records with zero omissions plus report-specific search show no live owner for this review-helper pattern. Full closed pm-jm7m3o and its complete history were read; shipped failure visibility remains completed. The imported report is statically defeated before public maintenance intake, consistent with the security policy distinction for non-security improvements."
+  "2026-10-19T21:30:12.525Z","harness:codex","Static-only triage of the reported receipt assignment is not_actionable with high confidence. The external head value stays under the fixed watchedHeadRefOid key; readiness functions construct fixed mergeReadiness/pendingChecks/unavailableChecks fields, and no arbitrary property names reach a privileged target. Prefer a fresh complete receipt stored in the same attempt position for clearer ownership. All17 existing watch/publisher tests pass with exact scoped coverage238 statements187 branches54 functions207 lines, all100 percent; strict ESLint and syntax validation pass. Linked verification records the same unchanged behavior cohort. No scanner suppression, rule disablement or vulnerability-fix claim is used."
+  "2026-10-19T21:40:54.650Z","harness:codex",Chrome also confirms the project-scoped refs/heads/main Open code-finding view has no matching findings. The organization-wide count is not attributed to this repository. PR1508 has the one statically defeated assignment-pattern report already assessed here; revised source will be rescanned without any manual ignore or rule change.
+files[2]{path,scope}:
+  scripts/reviews/pr-review-loop.mjs,project
+  tests/unit/scripts/reviews/pr-review-loop.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,180,"harness:codex","2026-10-19T21:28:03.154Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvfrow16-260pos
+    kind: test
+    status: passed
+    started_at: "2026-10-19T21:29:15.901Z"
+    finished_at: "2026-10-19T21:29:26.058Z"
+    recorded_at: "2026-10-19T21:29:26.058Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/PR_REVIEW_LOOP.md,project
+close_reason: Verified immutable complete-receipt assembly with the existing contract tests.
+body: ""

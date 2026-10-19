@@ -26,6 +26,7 @@
 
 ### Other
 
+- Assemble complete review receipts without mutating the base receipt ([pm-gfksc7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gfksc7.toon))
 - Qualify Unicorn 78 after its exact release-age boundary ([pm-afshwe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-afshwe.toon))
 - Refresh newly matured TypeScript-ESLint 8.71.2 quality tooling ([pm-vcy3vq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-vcy3vq.toon))
 - Run the command-example corpus scan after parallel coverage workers ([pm-a3c6g4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-a3c6g4.toon))

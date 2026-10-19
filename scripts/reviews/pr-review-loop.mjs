@@ -377,9 +377,10 @@ export function watchChecksAndInventory(target, interval, executeGh = runGh, pha
       receipt.superseded = true;
       continue;
     }
-    Object.assign(receipt, signals);
-    if (outcome !== "failed" && receipt.pendingChecks.length === 0 && readiness.missingContexts.length === 0 && readiness.mergeStateStatus === "CLEAN") {
-      receipt.outcome = "passed";
+    const completeReceipt = { ...receipt, ...signals };
+    attempts[attempts.length - 1] = completeReceipt;
+    if (outcome !== "failed" && completeReceipt.pendingChecks.length === 0 && readiness.missingContexts.length === 0 && readiness.mergeStateStatus === "CLEAN") {
+      completeReceipt.outcome = "passed";
     }
     return { repository: target.repo, checkWatch: { phase, attempts }, pullRequest };
   }
