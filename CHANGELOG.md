@@ -10,6 +10,7 @@
 
 - GH-1500: Preserve null, empty and reserved JSON row facts through host rendering ([pm-4euctr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4euctr.toon))
 - GH-1501: Compact default brief-list TOON envelopes without hiding source completeness ([pm-6pycus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pycus.toon))
+- Probe canonical include-mode retries with their actual packing policy ([pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon))
 - Enforce rendered relationship budgets with expected SDK usage recovery ([pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon))
 - Preserve expected check publishers in PR readiness receipts ([pm-5p48kf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5p48kf.toon))
 - Bound complete macOS nightly validation with two shards ([pm-qrirz8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qrirz8.toon))

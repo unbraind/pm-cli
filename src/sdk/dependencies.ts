@@ -33,6 +33,7 @@ import { renderPmCommand } from "./command-line.js";
 import { createPmCliExpectedError, type PmCliExpectedError } from "./errors.js";
 import {
   isReadOutputBudgetExceeded,
+  normalizeReadOutputIncludeModeOptions,
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
 } from "./read-output-contracts.js";
 import { READ_OUTPUT_INVOCATION_PROVENANCE } from "./read-output/provenance.js";
@@ -1055,10 +1056,12 @@ function enforceContextRenderedTokenBudget(
 interface ContextRetryPlan {
   args: string[];
   budgetIndex: number;
+  /** Native projection after canonical include modes have been consumed. */
+  summaryOnly: boolean;
   rendering: DepsRenderingOptions;
 }
 
-/** Preserve the tracker, selection, cursor and output policy in one executable canonical retry. */
+/** Preserve retry scope and output policy, consuming canonical include modes before verification. */
 function createContextRetryPlan(
   params: DepsContextBudgetParameters,
   budget: number,
@@ -1144,9 +1147,17 @@ function createContextRetryPlan(
         ),
     ),
   });
+  normalizeReadOutputIncludeModeOptions("deps", commandOptions);
+  assertProjectionModeChoice(
+    commandOptions.summary === true,
+    commandOptions.full === true,
+    "--summary",
+  );
+  global.outputInclude = commandOptions.outputInclude as string | undefined;
   return {
     args,
     budgetIndex,
+    summaryOnly: commandOptions.summary === true,
     rendering: {
       ...params.rendering,
       global,
@@ -1173,6 +1184,8 @@ function probeContextRetry(
     result = enforceContextRenderedTokenBudget({
       ...params,
       contextOptions: { ...params.contextOptions, tokenBudget: budget },
+      summaryOnly: plan.summaryOnly,
+      rootEvidence: plan.summaryOnly ? [] : params.rootEvidence,
       rendering,
     });
   } catch (error) {
@@ -1182,7 +1195,7 @@ function probeContextRetry(
   const disclosed = discloseDepsOutput(
     attachDepsProjection(
       result,
-      params.summaryOnly,
+      plan.summaryOnly,
       rendering.legacyAliasCounts,
     ),
     rendering,
@@ -1208,7 +1221,11 @@ async function createContextBudgetRefusal(
         node.status.length +
         (node.type?.length ?? 0),
       params.assembly.graph.edges().length + params.missingReferences.length,
-    ) + params.rootEvidence.reduce((sum, pointer) => sum + pointer.length, 0);
+    ) +
+    (plan.summaryOnly ? [] : params.rootEvidence).reduce(
+      (sum, pointer) => sum + pointer.length,
+      0,
+    );
   const { findContextBudgetRecovery } =
     await import("./dependencies/context-budget-recovery.js");
   const bounds = findContextBudgetRecovery({

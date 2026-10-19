@@ -144,7 +144,13 @@ const attempts = await Promise.allSettled(["First packed intent", "Second packed
 ));
 const winners = attempts.filter(({ status }) => status === "fulfilled");
 const losers = attempts.filter(({ status }) => status === "rejected");
-assert.equal(winners.length, 1);
+assert.equal(winners.length, 1, `Packed create outcomes: ${JSON.stringify({
+  runtime: { node: process.versions.node, bun: process.versions.bun, platform: process.platform, arch: process.arch },
+  conflictId,
+  outcomes: attempts.map((attempt) => attempt.status === "fulfilled"
+    ? { status: attempt.status, id: attempt.value?.item?.id }
+    : { status: attempt.status, name: attempt.reason?.name, code: attempt.reason?.code, message: attempt.reason?.message, context: attempt.reason?.context }),
+})}`);
 assert.equal(losers.length, 1);
 let conflict = losers[0].reason;
 if (conflict?.code === "lock_conflict") {

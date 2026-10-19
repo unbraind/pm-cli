@@ -2517,12 +2517,16 @@ query cost limits, exhausted searches or independent output constraints can repo
 uses the real packer and output policy, including alias disclosure.
 `suggested_retry_args` preserves the selected tracker, query and output options
 with the verified feasible budget so it works from another workspace.
+Retry probes consume canonical summary/full include modes before packing and
+retain only residual field selectors, matching the emitted CLI command.
 `next_best_command` retains a separate compact tree-summary inspection, which
 also supplies the fallback when no working context budget is established.
 CLI JSON and MCP preserve that recovery. The lower-level
 `buildRelationshipContext` primitive retains its `TypeError` validation contract;
 unrelated runtime errors still propagate.
-([pm-odw3j8](../.agents/pm/tasks/pm-odw3j8.toon))
+(Repository tracker: [pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon),
+[pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon);
+tracker records are excluded from npm.)
 
 For policy, lint, or verification commands that should render their full result
 and report failure without throwing, return a structured object instead:

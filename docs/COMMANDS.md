@@ -901,7 +901,8 @@ every smaller positive budget is checked; bounded searches can instead report
 is known, `suggested_retry_args` preserves the tracker, query and output options
 in an executable context retry with that `--token-budget`. A separate
 `next_best_command` provides a compact tree-summary inspection.
-([pm-odw3j8](../.agents/pm/tasks/pm-odw3j8.toon))
+(Repository tracker: [pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon);
+tracker records are excluded from npm.)
 
 ## Graph Queries
 

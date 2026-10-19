@@ -1126,6 +1126,45 @@ describe("runDeps", () => {
     });
   });
 
+  it.each(["summary", "full", "summary,id", "full,id"])("verifies the actual canonical include %s retry and its exact boundary", async (outputInclude) => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "x");
+      expect(context.runCli(["files", root, "--add", "x"]).code).toBe(0);
+      const refusal = await runDeps(root, {
+        format: "context", tokenBudget: 1, maxDepth: 0,
+        nodeLimit: 1, edgeLimit: 1, kind: ["related"], direction: "outgoing",
+      }, {
+        path: context.pmPath, noExtensions: true, noPager: true,
+        outputFormat: "json", outputInclude, outputBudget: "unbounded",
+      }).catch((error: unknown) => error);
+      if (!isPmCliExpectedError(refusal)) throw refusal;
+      const recovery = refusal.context.recovery!;
+      expect(recovery.token_budget?.minimum_status).toBe("exact");
+      const budget = recovery.token_budget!.minimum_feasible_tokens!;
+      const retry = recovery.suggested_retry_args!;
+      expect(retry[retry.indexOf("--output-include") + 1]).toBe(outputInclude);
+      await withTempPmPath(async (foreign) => {
+        const accepted = foreign.runCli(retry);
+        expect(accepted.code, accepted.stderr).toBe(0);
+        expect(JSON.parse(accepted.stdout).id).toBe(root);
+        expect(Math.ceil(Buffer.byteLength(accepted.stdout) / 4)).toBeLessThanOrEqual(budget);
+        const below = [...retry];
+        below[below.indexOf("--token-budget") + 1] = String(budget - 1);
+        const refused = foreign.runCli(below);
+        expect(refused.code, refused.stdout).toBe(EXIT_CODE.USAGE);
+      });
+    });
+  });
+
+  it("rejects conflicting canonical include modes without fabricating budget advice", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(context, "x");
+      await expect(runDeps(root, { format: "context", tokenBudget: 1 }, {
+        path: context.pmPath, json: true, outputInclude: "summary,full",
+      })).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: "--summary cannot be combined with --full" });
+    });
+  });
+
   it("preserves host invocation provenance in discovery and accounting bytes without swallowing cursor errors", async () => {
     await withTempPmPath(async (context) => {
       const root = createTask(context, "host-rendered-context");

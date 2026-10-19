@@ -1,0 +1,51 @@
+id: pm-0orupq
+title: Diagnose native packed-create zero-winner acceptance failures
+description: "Native Mac Bun qualification intermittently rejects both same-id create attempts, while the required invariant is one winner and one typed loser. Current assertion hides both rejection causes. Preserve the completed pm-58zon0 guard qualification, expose compact runtime and rejection context, and use the actual evidence to choose any repair. Retain all existing assertions, deadlines and retries."
+type: Task
+status: open
+priority: 1
+tags[3]: bug,ci,sdk
+created_at: "2026-10-19T19:40:27.190Z"
+updated_at: "2026-10-19T20:02:00.177Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Expose actual rejection name/code/message/context and runtime on a zero-winner failure without relaxing any invariant; qualify real packed consumers; diagnose any repeated cause and verify the final native head.
+parent: pm-u9d0
+risk: medium
+confidence: medium
+expected_result: "Native packed conflict failures explain both rejected operations, and verified Node/Bun qualification retains exactly one winner and both public conflict guards."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-58zon0,discovered_from,"2026-10-19T19:40:27.190Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-19T19:40:27.190Z","harness:codex","Duplicate check: complete 207 open / 1 active lists plus packed-conflict diagnostic search show no matching live diagnostic owner. Full closed pm-58zon0 and complete history describe shipped one-winner/lock-conflict qualification; this is a new zero-winner recurrence. Source22ed passes both native Mac shards, while a235 and6385 fail the Bun assertion. One unchanged failed-job rerun of6385 is now running; original traces remain preserved."
+  "2026-10-19T19:50:11.868Z","harness:codex","Added a failure-only diagnostic containing runtime versions/platform, the requested conflict id, every settled outcome and rejected name/code/message/context. The exact one-winner/one-loser assertions, both typed guards and settlement reread remain unchanged. Current real packed Node26 and Bun acceptance passes all19 continuation cases and both conflict guards. An isolated before/after fault control forces the two runtimes to reuse one id: both old and new fixtures correctly fail, but only the new fixture identifies typed item_already_exists rejections. This proves diagnostic value, not the cause of the historical Mac failure; native evidence remains required."
+  "2026-10-19T20:00:43.214Z","harness:codex","The one unchanged rerun of6385 now completes all eight Nightly jobs successfully, including both full Windows/macOS shards and Linux22/24/25. Attempt1 retains the Windows30-second settlement timeout and Mac Bun zero-winner failure. No runtime cause is inferred from the green rerun. The new failure-only diagnostic will be reviewed with the retry fix and exercised by the next native run; all assertions timeouts and retries stay unchanged."
+  "2026-10-19T20:01:58.087Z","harness:codex","The linked real npm-tarball Node/Bun continuation acceptance also passes through pm test with recorded sandbox provenance. The isolated forced collision verifies that the added message distinguishes two typed duplicate rejections while preserving failure. Diagnostic implementation is complete, but the historical zero-winner root cause remains unqualified; retain this investigation open and release its claim rather than recording a fabricated runtime fix. The next source-head native run remains delivery acceptance."
+files[2]{path,scope}:
+  tests/fixtures/read-output/packed-continuation-consumer.mjs,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,project,300,"harness:codex","2026-10-19T19:40:34.318Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvfok6et-1gv7mr
+    kind: test
+    status: passed
+    started_at: "2026-10-19T20:00:50.951Z"
+    finished_at: "2026-10-19T20:01:47.381Z"
+    recorded_at: "2026-10-19T20:01:47.381Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts
+  hosted_checks[2]: Gates (coverage),"Nightly (macos-latest, Node 24, shard 1/2)"
+  owner: pm-u9d0
+body: ""
