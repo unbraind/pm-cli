@@ -38,7 +38,7 @@ describe("core/fs/fs-utils", () => {
     expect(error).toMatchObject({ code: "transaction_preview_non_regular_file", exitCode: 2, context: { preview_storage: { storage_area: area, entry_redacted: relative === undefined } } });
     if (relative === undefined) expect(error.context.preview_storage).not.toHaveProperty("relative_entry");
     else expect(error.context.preview_storage?.relative_entry).toBe(relative);
-    if (entry && relative === undefined) expect(JSON.stringify(error)).not.toContain(entry);
+    if (entry && relative === undefined) expect([error.message, JSON.stringify(error), ...(error.context.nextSteps ?? [])].join("\n")).not.toContain(entry);
     expect(error.context.nextSteps).toEqual(expect.arrayContaining([expect.stringContaining("do not follow link targets")]));
   });
 

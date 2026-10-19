@@ -50,7 +50,9 @@ describe("semantic transaction previews (GH-1370)", () => {
         await expect(mcp).rejects.toMatchObject({ exitCode: 4, context: { transaction_operation: { index: 0 } } });
       } else {
         expect(cli.code).toBe(0);
-        const receipt = (await mcp)?.structuredContent as { result: { rows: unknown[]; validation: unknown } };
+        const response = await mcp;
+        if (!response?.structuredContent) throw new Error("MCP preview response must contain structured content.");
+        const receipt = response.structuredContent as { result: { rows: unknown[]; validation: unknown } };
         expect(cli.json).toMatchObject({ rows: receipt.result.rows, validation: receipt.result.validation });
         for (const [index, ref] of ["original", "later"].entries()) {
           expect(receipt.result.rows[index]).toMatchObject({ index, ref, ...(mode === "advisory" ? { warnings: expect.arrayContaining([expect.stringContaining("likely_duplicates:pm-canonical")]) } : {}) });
