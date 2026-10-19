@@ -2,13 +2,13 @@ id: pm-jm7m3o
 title: Show failed required PR checks before waiting on pending optional reviewers
 description: "The review watcher waits for every check before returning its inventory. On PR #1479 head 65e05f248, Gates (static) failed at 15:56 UTC while Hound stayed pending without a target URL; the blocking watcher still had not returned at 16:27 UTC. Expose a failed required check promptly with exact-head inventory while retaining a separate blocking review-completion phase. Preserve required check provenance and provider limitations; do not synthesize approval or add manual polling. Chrome confirmed this repository remains active in Hound, whose dashboard exposes no individual job detail."
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[3]: bug,ci,review
 created_at: "2026-10-16T17:08:17.492Z"
-updated_at: "2026-10-19T13:32:08.134Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
+updated_at: "2026-10-19T14:03:16.526Z"
+closed_at: "2026-10-19T14:03:15.395Z"
+completed_at: "2026-10-19T14:03:15.395Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: A failure plus pending optional-provider fixture returns the failed required context without waiting indefinitely; exact-head changes and missing required contexts remain fail-closed; a separate blocking review phase records pending/unavailable providers explicitly.
@@ -17,14 +17,18 @@ outcome: Failed required checks become actionable promptly without confusing a p
 parent: pm-obq2
 risk: medium
 confidence: high
-expected_result: A failed required context returns an actionable exact-head receipt even when an optional provider remains pending; full review completion and merge readiness remain independently verified.
-comments[6]{created_at,author,text}:
+resolution: "The native GitHub watcher defaults to fail-fast checks, supports an explicit reviews phase, and retains failed pending unavailable missing-required and exact-head readiness evidence. Focused controls and operating docs preserve fail-closed merge policy."
+expected_result: A required failure becomes visible while optional checks remain pending; a separate blocking review wait preserves complete feedback and no unverified merge success is reported.
+actual_result: "Negative controls failed before the fix; final linked watcher tests pass. PR1508 source head fe5743d returned the failed static context before pending Windows acceptance; head460dcba7b completed the full reviews phase with CLEAN state no pending or missing required checks. CI39261786049 passes static and exact100/100/100/100 coverage; CodeRabbit source review has no actionable findings, with later optional provider quota limitations retained."
+comments[8]{created_at,author,text}:
   "2026-10-16T17:08:17.492Z","harness:codex","Duplicate check: searched all 12 pr-review-loop keyword hits, all 29 Hound hits, and the first 50 open review hits; retained the live approved-review discipline task as parent. No candidate found for this specific failure-visibility behavior. Intake only; implementation is not active."
   "2026-10-19T12:20:30.842Z","harness:codex","Implementation evidence: the pre-fix sandbox run fails the required-failure/pending-Hound control and the native fail-fast command contract. Added default checks phase using the gh-native fail-fast watch, separate reviews phase retaining the complete blocking wait, and final pending/unavailable check signals. Missing classic/ruleset requirements and exact-head/base checks remain fail-closed. No polling or public status comments are introduced."
   "2026-10-19T12:27:05.304Z","harness:codex","Live delivery audit: all21 currently open GitHub issues already carry a canonical PM-link comment. GitHub Dependabot code-scanning and secret-scanning open-alert inventories are empty; pnpm audit reports no known vulnerabilities. pm-changelog installed/latest is2026.10.19-1 with no open upstream issues. Published2026.10.19 passes the maintained npm/npx/bunx CLI and stdio/HTTP MCP verifier, including every shipped bin. Today's later native schedule verifies the existing published tag instead of creating a second release. Historical reliability and held dependency migrations remain separate claims."
   "2026-10-19T13:09:27.506Z","harness:codex","User-requested tool hygiene completed: removed the dangling agent-browser installed-skill entry found during the host inventory. The skill was not used. Hosted provider data will use gh and, where unavailable there, Chrome computer use."
   "2026-10-19T13:15:15.112Z","harness:codex","Final local verification: linked watcher tests pass on the final helper split, four TypeScript projects and secret scan pass, and isolated SDK import admission passes all10 entrypoints unchanged after retaining the earlier failed local receipts. The current full static command stopped at that earlier admission failure; exact final hosted static/coverage and native validation remain required before closure."
   "2026-10-19T13:32:07.417Z","harness:codex","First hosted head fe5743d fails static only at graph-composition prose-edge-gaps-ceiling: observed1234 versus unchanged1233. Chrome job-log inspection confirms the exact finding while gh run logs remain unavailable until workflow completion. The retained benchmark comment named this watcher item without a typed relationship. Added the real related edge from pm-bj7rq0 to this item through pm; local graph assurance now passes all9 assertions, record-integrity passes and bounded SDK mutation passes348 mutants with341 killed and7 reviewed equivalents. No quality ceiling or source denominator changed."
+  "2026-10-19T13:57:07.848Z","harness:codex","Current-head hosted acceptance: PR1508 at460dcba7b2c5911ea959bcafaa4950eca6d34447 passes its complete checks/reviews-phase native wait with CLEAN merge state and no missing required contexts. The earlier checks-phase wait stopped on a GitHub HTTP502 transport error rather than a failed job; a fresh blocking reviews-phase wait completed successfully. Required static quality now accepts the typed relationship repair. Full exact-head inventory has no inline review threads. CodeRabbit's actual source review atfe5743d has no actionable findings; its metadata-head request is free-quota limited until the next allowance. Sourcery and cubic quotas and Greptile trial expiry remain unavailable evidence, not approvals."
+  "2026-10-19T14:03:14.518Z","harness:codex","Fresh bounded observability verification at13:44:13Z-13:44:18Z used three real get/list/contracts commands with per-process tracing sample rate1. Each command has exactly one telemetry start and finish in its own session, and fresh pm.command Sentry spans expose command names handler duration and timestamps. Sentry unresolved issue inventory is empty; the required14-day gate passes with critical0/high0. RabbitMQ ready/unacknowledged/total queue counts are0 and all six Prometheus targets are up. Flush drains1 buffered event to0. This proves the finite verification window rather than asserting complete pairing of every historical action or startup latency from handler durations. No persistent telemetry setting was changed."
 learnings[2]{created_at,author,text}:
   "2026-10-19T13:21:38.514Z","harness:codex","Failure visibility and review completion need separate wait phases. Use native fail-fast for repair feedback, retain a full-review wait, and preserve pending/unavailable provider evidence plus exact-head required-context enforcement."
   "2026-10-19T13:32:08.133Z","harness:codex","Evidence prose creates relationship obligations: when recording another item's involvement, add the real typed edge in the same delivery. Repair the missing relationship rather than widening a graph-quality ceiling."
@@ -59,6 +63,7 @@ test_runs[2]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/PR_REVIEW_LOOP.md,project
+close_reason: Implemented and verified required-check failure visibility with a separate complete review wait in PR1508.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

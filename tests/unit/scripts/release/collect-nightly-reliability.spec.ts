@@ -65,10 +65,16 @@ describe("nightly recurrence collector", () => {
     expect(collectNightlyReliability("owner/repo", policy, now, [family], reader({ jobs: pages("jobs", [{ ...job, status: "in_progress" }]) })).families[0]?.pending).toBe(1);
   });
 
-  it("preserves retired historical legs and deduplicates body/comment links to the same alert", () => {
-    const current = "Nightly (windows-latest, Node 24, shard 1/2)";
-    const report = collectNightlyReliability("owner/repo", policy, now, [current], reader({ comments: JSON.stringify([[{ id: 1, body: issue.body }, { id: 2, body: "https://github.com/foreign/repo/actions/runs/42" }, { id: 3 }, { id: 4, body: "Repair: https://github.com/owner/repo/blob/main/.agents/pm/issues/pm-repair.toon Foreign: https://github.com/foreign/repo/blob/main/.agents/pm/issues/pm-other.toon" }]]) }));
-    expect(report.families.map((row: { family: string }) => row.family)).toEqual([current, family]);
+  it.each(["windows-latest", "macos-latest"])("preserves retired %s legs and deduplicates alert links", (os) => {
+    const historical = `Nightly (${os}, Node 24)`;
+    const current = `Nightly (${os}, Node 24, shard 1/2)`;
+    const report = collectNightlyReliability("owner/repo", policy, now, [current], reader({
+      workflow: JSON.stringify({ jobs: { nightly: { strategy: { matrix: { include: [{ os, node: 24 }] } } } } }),
+      jobs: pages("jobs", [{ ...job, name: historical }]),
+      issues: JSON.stringify([{ total_count: 1, incomplete_results: false, items: [{ ...issue, title: `Nightly Validation failed: ${os} / Node 24` }] }]),
+      comments: JSON.stringify([[{ id: 1, body: issue.body }, { id: 2, body: "https://github.com/foreign/repo/actions/runs/42" }, { id: 3 }, { id: 4, body: "Repair: https://github.com/owner/repo/blob/main/.agents/pm/issues/pm-repair.toon Foreign: https://github.com/foreign/repo/blob/main/.agents/pm/issues/pm-other.toon" }]]),
+    }));
+    expect(report.families.map((row: { family: string }) => row.family)).toEqual([current, historical]);
     expect(report.families[1]).toMatchObject({ completed: 1, failed: 1 });
     expect(report.evidence[0]?.alerts).toHaveLength(1);
     expect(report.evidence[0]?.alerts[0].pm_items).toEqual(["pm-repair"]);
@@ -77,6 +83,7 @@ describe("nightly recurrence collector", () => {
 
   it.each([
     ["Nightly Validation failed: windows-latest / Node 24 shard 1/2", "Nightly (windows-latest, Node 24, shard 1/2)"],
+    ["Nightly Validation failed: macos-latest / Node 24 shard 2/2", "Nightly (macos-latest, Node 24, shard 2/2)"],
     ["Nightly Validation failed: ubuntu-latest / Node 24 quality", "Nightly quality (ubuntu-latest, Node 24)"],
   ])("correlates shard and quality titles %s", (title, label) => {
     const report = collectNightlyReliability("owner/repo", policy, now, [label], reader({ workflow: JSON.stringify({ jobs: { nightly: { strategy: { matrix: { include: [{ label }] } } } } }), jobs: pages("jobs", [{ ...job, name: label }]), issues: JSON.stringify([{ total_count: 1, incomplete_results: false, items: [{ ...issue, title, body: null }] }]), comments: JSON.stringify([[{ id: 1, body: issue.body }]]) }));
@@ -151,7 +158,10 @@ describe("nightly recurrence collector", () => {
   });
 
   it("derives the declared population and rejects malformed workflow matrices", () => {
-    expect(nightlyFamilies(readFileSync(".github/workflows/nightly.yml", "utf8"))).toHaveLength(7);
+    const declared = nightlyFamilies(readFileSync(".github/workflows/nightly.yml", "utf8"));
+    expect(declared).toHaveLength(8);
+    expect(declared).toContain("Nightly (macos-latest, Node 24, shard 1/2)");
+    expect(declared).toContain("Nightly (macos-latest, Node 24, shard 2/2)");
     expect(nightlyFamilies(originalWorkflow)).toEqual([family]);
     expect(() => nightlyFamilies('jobs: {nightly: {strategy: {matrix: {include: []}}}}')).toThrow();
     for (const source of ["x: [", "{}", 'jobs: {nightly: {strategy: {matrix: {include: [{label: wrong}]}}}, quality: {name: Nightly quality}}', 'jobs: {nightly: {strategy: {matrix: {include: [{label: Nightly quality}]}}}, quality: {name: Nightly quality}}', 'jobs: {nightly: {strategy: {matrix: {include: [{os: 42, node: 24}]}}}}', 'jobs: {nightly: {strategy: {matrix: {include: [{os: windows-latest, node: invalid}]}}}}']) {
