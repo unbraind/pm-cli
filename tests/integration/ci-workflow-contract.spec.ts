@@ -192,7 +192,7 @@ describe("GitHub workflow contract", () => {
     expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
     expect(setupNodeStep?.with).toMatchObject({ "node-version": 24 });
     expect(codSpeedStep?.uses).toBe(
-      "CodSpeedHQ/action@c4fd08a3a159bd0cc208da1e0edf32b8c47d75e5",
+      "CodSpeedHQ/action@f842b9a3ffe213dbb81768fd7f7eeb4dfcf1c369",
     );
     expect(codSpeedOptions).toMatchObject({
       mode: "simulation",
@@ -440,7 +440,7 @@ describe("GitHub workflow contract", () => {
       "path: dist",
       "if-no-files-found: error",
       PINNED_ACTIONS.downloadArtifact,
-      "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1",
+      "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2",
       "name: Download dist artifact",
       "name: Prepare tracker clone invariants",
       "name: Dist artifact version smoke",
@@ -1495,7 +1495,7 @@ describe("GitHub workflow contract", () => {
       "trivyignores: .trivyignore",
       "skip-dirs: node_modules,dist,coverage,.pnpm-store",
       "extra_args: --results=verified --fail-on-scan-errors --exclude-paths=.trufflehog-exclude-paths.txt",
-      "uses: trufflesecurity/trufflehog@0186870afd2c4a90def791d80260923ba583d076 # v3.98.0",
+      "uses: trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9 # v3.99.2",
       "shellcheck --version",
       "shellcheck --severity=style",
       "$moduleVersion = '1.24.0'",
@@ -1521,8 +1521,8 @@ describe("GitHub workflow contract", () => {
     const scanners = securitySteps.filter(({ uses }) => uses?.startsWith("trufflesecurity/trufflehog@"));
     expect(scanners.length).toBeGreaterThan(0);
     for (const scanner of scanners) {
-      expect(scanner.uses).toBe("trufflesecurity/trufflehog@0186870afd2c4a90def791d80260923ba583d076");
-      expect(scanner.with?.version).toBe("3.98.0");
+      expect(scanner.uses).toBe("trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9");
+      expect(scanner.with?.version).toBe("3.99.2");
     }
     const trivyStep = securitySteps.find(({ name }) => name === "Trivy repository scan");
     expect(trivyStep?.env).toEqual({ TRIVY_INCLUDE_DEV_DEPS: "true" });
