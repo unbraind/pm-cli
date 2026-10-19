@@ -66,7 +66,7 @@ query ReviewInventory(
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
       number url headRefOid baseRefName mergeStateStatus updatedAt
-      baseRef { branchProtectionRule { requiredStatusCheckContexts } }
+      baseRef { branchProtectionRule { requiredStatusCheckContexts requiredStatusChecks { context app { databaseId } } } }
       comments(first: 100, after: $commentCursor) {
         pageInfo { hasNextPage endCursor }
         nodes { id databaseId author { login } body createdAt updatedAt reactionGroups { content users { totalCount } viewerHasReacted } }
@@ -146,6 +146,9 @@ export function fetchReviewInventory(target, executeGh = runGh) {
       baseRefName: page.baseRefName,
       mergeStateStatus: page.mergeStateStatus,
       requiredContexts: page.baseRef?.branchProtectionRule?.requiredStatusCheckContexts ?? [],
+      requiredChecks: (page.baseRef?.branchProtectionRule?.requiredStatusChecks ?? []).map((check) => ({
+        context: check.context, integrationId: check.app?.databaseId ?? null,
+      })),
       updatedAt: page.updatedAt,
     };
     comments.push(...page.comments.nodes);
@@ -252,29 +255,54 @@ function incompleteCheckSignals(checks, requiredContexts) {
   return { pendingChecks, unavailableChecks };
 }
 
-/** Read effective requirements and the final rollup without replacing GitHub publisher enforcement. */
+/** Combine effective publisher bindings, dropping redundant unbound requirements for the same name. */
+function requiredCheckRequirements(pullRequest, rules) {
+  const records = [
+    ...(pullRequest.requiredChecks ?? []),
+    ...pullRequest.requiredContexts.map((context) => ({ context, integrationId: null })),
+    ...rules.filter((rule) => rule.type === "required_status_checks")
+      .flatMap((rule) => rule.parameters.required_status_checks.map((check) => ({
+        context: check.context, integrationId: check.integration_id ?? null,
+      }))),
+  ].map((record) => ({ ...record, integrationId: record.integrationId === -1 ? null : record.integrationId }));
+  const boundNames = new Set(records.filter((record) => record.integrationId !== null).map((record) => record.context));
+  return [...new Map(records.filter((record) => record.integrationId !== null || !boundNames.has(record.context))
+    .map((record) => [JSON.stringify(record), record])).values()];
+}
+
+/** Fetch all exact-head check runs only when a required publisher needs independent identity evidence. */
+function checkPublisherEvidence(target, headRefOid, requirements, executeGh) {
+  if (!requirements.some((record) => record.integrationId !== null)) return [];
+  return JSON.parse(executeGh([
+    "api", `repos/${target.repo}/commits/${headRefOid}/check-runs?per_page=100&filter=all`, "--paginate", "--slurp",
+  ])).flatMap((page) => page.check_runs);
+}
+
+/** Read effective requirements and the final rollup without replacing GitHub verdict enforcement. */
 function readCheckReadiness(target, pullRequest, executeGh) {
   const rules = JSON.parse(executeGh([
     "api", `repos/${target.repo}/rules/branches/${encodeURIComponent(pullRequest.baseRefName)}`,
     "--paginate", "--slurp",
   ])).flat();
-  const requiredContexts = [...new Set([
-    ...pullRequest.requiredContexts,
-    ...rules.filter((rule) => rule.type === "required_status_checks")
-      .flatMap((rule) => rule.parameters.required_status_checks.map((check) => check.context)),
-  ])];
+  const requiredChecks = requiredCheckRequirements(pullRequest, rules);
+  const requiredContexts = [...new Set(requiredChecks.map((record) => record.context))];
   const readiness = JSON.parse(executeGh([
     "pr", "view", String(target.pr), "--repo", target.repo,
     "--json", "headRefOid,baseRefName,mergeStateStatus,statusCheckRollup",
   ]));
-  // Names prove presence only; publisher and state enforcement remains GitHub's CLEAN gate.
+  const publishers = checkPublisherEvidence(target, readiness.headRefOid, requiredChecks, executeGh);
   const emittedContexts = new Set((readiness.statusCheckRollup ?? []).map((check) => check.name ?? check.context));
-  const missingContexts = requiredContexts.filter((context) => !emittedContexts.has(context));
+  const missingContexts = [...new Set(requiredChecks.filter((requirement) =>
+    !emittedContexts.has(requirement.context) || (requirement.integrationId !== null && !publishers.some((check) =>
+      check.name === requirement.context && check.app?.id === requirement.integrationId && check.head_sha === readiness.headRefOid,
+    )),
+  ).map((requirement) => requirement.context))];
   const mergeReadiness = {
     headRefOid: readiness.headRefOid,
     baseRefName: readiness.baseRefName,
     mergeStateStatus: readiness.mergeStateStatus,
     requiredContexts,
+    requiredChecks,
     missingContexts,
   };
   return { mergeReadiness, ...incompleteCheckSignals(readiness.statusCheckRollup ?? [], requiredContexts) };

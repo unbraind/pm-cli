@@ -58,12 +58,16 @@ Pending checks prevent a successful receipt even if GitHub reports `CLEAN`.
 This behavior is tracked by [pm-jm7m3o](../.agents/pm/tasks/pm-jm7m3o.toon).
 Native watch success covers emitted checks only: a required provider may
 never emit its context. The helper unions classic branch-protection requirements
-with all effective ruleset requirements, compares those names with the complete
-head rollup, and records `mergeReadiness.requiredContexts`, `missingContexts`, and
-GitHub's `mergeStateStatus`. An attempt is `passed` only when no required name is
-missing and GitHub reports `CLEAN`. GitHub's merge state also retains enforcement
-of expected check publishers and other merge requirements; a matching name alone
-does not establish that its expected app passed. Missing contexts and blocked or
+with all effective ruleset requirements and retains publisher bindings in
+`mergeReadiness.requiredChecks` alongside `requiredContexts`. Bound requirements
+need both a name in the head rollup and paginated exact-head check-run evidence
+from the expected app. A wrong or unavailable publisher remains in
+`missingContexts`; unbound legacy contexts retain name-based presence checks.
+The receipt records GitHub's `mergeStateStatus` independently: an attempt is
+`passed` only when no requirement is missing and GitHub reports `CLEAN`.
+Publisher presence does not establish a passing verdict; GitHub retains that
+enforcement along with other merge requirements. Publisher evidence is tracked by
+[pm-5p48kf](../.agents/pm/tasks/pm-5p48kf.toon). Missing contexts and blocked or
 unknown merge state remain `incomplete`; native watch failures remain `failed`.
 Superseded attempts carry `superseded: true` and never certify readiness. Unavailable policy or status reads
 fail visibly instead of certifying readiness. Successful

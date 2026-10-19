@@ -308,6 +308,48 @@ describe("PR review loop helper", () => {
     }
   });
 
+  it.each(["classic", "ruleset"])("requires the exact-head publisher for %s bindings while retaining unbound contexts", (source) => {
+    const context = "bound-check";
+    for (const scenario of [
+      { app: 8, head: "abc123", binding: 7, missing: true },
+      { app: null, head: "abc123", binding: 7, missing: true },
+      { app: 7, head: "old-head", binding: 7, missing: true },
+      { app: 7, head: "abc123", binding: 7, missing: false },
+      { app: 8, head: "abc123", binding: -1, missing: false },
+    ]) {
+      const bound = scenario.binding > 0;
+      const executeGh = vi.fn((args: string[]) => {
+        if (args[1] === "checks") return "bound-check\tpass\t1s\turl";
+        if (args.includes("graphql")) return JSON.stringify({ data: { repository: { pullRequest: {
+          number: 531, headRefOid: "abc123", baseRefName: "main",
+          baseRef: { branchProtectionRule: { requiredStatusCheckContexts: [context],
+            requiredStatusChecks: [{ context, app: source === "classic" && bound ? { databaseId: scenario.binding } : null }],
+          } },
+          comments: connection([]), reviews: connection([]), reviewThreads: connection([]),
+        } } } });
+        if (args[1]?.includes("rules/branches")) return JSON.stringify([source === "ruleset"
+          ? [{ type: "required_status_checks", parameters: { required_status_checks: [{ context, integration_id: scenario.binding }] } }] : []]);
+        if (args[1]?.includes("/check-runs?")) return JSON.stringify([{ check_runs: [] }, { check_runs: [
+          { name: context, head_sha: scenario.head, app: scenario.app === null ? null : { id: scenario.app } },
+        ] }]);
+        return JSON.stringify({ headRefOid: "abc123", baseRefName: "main", mergeStateStatus: "CLEAN",
+          statusCheckRollup: [{ name: context, status: "COMPLETED", conclusion: "SUCCESS" }],
+        });
+      });
+      const log = vi.fn();
+      expect(main(["watch", "--repo", "unbraind/pm-cli", "--pr", "531"], { runGh: executeGh, log }))
+        .toBe(scenario.missing ? 1 : 0);
+      const readiness = JSON.parse(log.mock.calls[0]?.[0]).checkWatch.attempts[0].mergeReadiness;
+      expect(readiness.missingContexts).toEqual(scenario.missing ? [context] : []);
+      expect(readiness.requiredChecks).toContainEqual({ context, integrationId: bound ? 7 : null });
+      const publisherCalls = executeGh.mock.calls.filter(([args]) => args[1]?.includes("/check-runs?"));
+      expect(publisherCalls).toHaveLength(bound ? 1 : 0);
+      if (bound) expect(publisherCalls[0]?.[0]).toEqual([
+        "api", "repos/unbraind/pm-cli/commits/abc123/check-runs?per_page=100&filter=all", "--paginate", "--slurp",
+      ]);
+    }
+  });
+
   it("surfaces a required failure before optional reviewers finish and retains a separate full-review wait", () => {
     for (const phase of ["checks", "reviews"]) {
       const calls: string[][] = [];

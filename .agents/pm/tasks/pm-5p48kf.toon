@@ -1,0 +1,62 @@
+id: pm-5p48kf
+title: Preserve expected check publishers in PR readiness receipts
+description: "CodeRabbit review4315208376 on PR1508 verifies a name-only presence gap: a same-name check from an unexpected publisher disappears from missingContexts even though GitHub CLEAN enforcement still blocks merge. Retain classic and ruleset publisher requirements, prove bound publisher identity from exact-head GitHub check-run metadata, and keep mismatched or unavailable publisher evidence missing without inferring approval."
+type: Task
+status: in_progress
+priority: 2
+tags[3]: bug,ci,review
+created_at: "2026-10-19T14:58:38.472Z"
+updated_at: "2026-10-19T15:07:47.148Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
+author: "harness:codex"
+acceptance_criteria: Classic and ruleset publisher bindings survive into the receipt; Matching names from another app cannot satisfy a bound requirement; Unbound legacy contexts retain existing behavior; Exact-head paginated publisher evidence and matching apps are tested without weakening GitHub CLEAN enforcement
+parent: pm-obq2
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jm7m3o,discovered_from,"2026-10-19T14:58:38.472Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-19T14:58:38.472Z","harness:codex","Duplicate check: complete live203 open and current in-progress lists plus required check publisher search and the full all-status corpus identify no exact active owner. Fresh full predecessor data confirms pm-jm7m3o is completed failure-visibility work and remains closed. This leaf owns the newly accepted review finding at https://github.com/unbraind/pm-cli/pull/1508#discussion_r4315208376 rather than reopening shipped work."
+  "2026-10-19T15:04:46.967Z","harness:codex","Accepted CodeRabbit finding has a failing-before control:15 existing watcher tests pass while a wrong-publisher receipt is incorrectly successful. Classic requiredStatusChecks app IDs and ruleset integration_id bindings now survive into requiredChecks. Paginated exact-head check-run metadata proves bound presence; wrong missing and wrong-head apps remain missing, and unbound contexts retain legacy behavior. Focused acceptance separately exercises both policy sources and matching evidence on the second API page. GitHub CLEAN remains independently required for verdict and merge enforcement."
+  "2026-10-19T15:07:47.147Z","harness:codex","Final local acceptance:17 watcher tests pass, with focused ESLint and all four TypeScript projects. A live exact-head GitHub negative read on d434018 retains all26 required records including classic Actions Codecov and CodeFactor app identities, correctly keeps only the genuinely absent codecov/patch context missing, and returns failed rather than approving the existing registry-failed head. No GitHub policy merge state or publisher setting was changed."
+learnings[1]{created_at,author,text}:
+  "2026-10-19T15:04:48.551Z","harness:codex",A check name proves presence only for an unbound requirement. Preserve publisher bindings from each effective policy and prove the expected app on the exact head; keep GitHub merge verdict enforcement separate.
+files[2]{path,scope}:
+  scripts/reviews/pr-review-loop.mjs,project
+  tests/unit/scripts/reviews/pr-review-loop.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,project,300,"harness:codex","2026-10-19T14:59:48.135Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[2]:
+  - run_id: test-local-mvfduanv-eg39k6
+    kind: test
+    status: passed
+    started_at: "2026-10-19T15:01:30.189Z"
+    finished_at: "2026-10-19T15:01:43.675Z"
+    recorded_at: "2026-10-19T15:01:43.675Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvfdy69s-tw7kmm
+    kind: test
+    status: passed
+    started_at: "2026-10-19T15:04:31.287Z"
+    finished_at: "2026-10-19T15:04:44.608Z"
+    recorded_at: "2026-10-19T15:04:44.608Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/PR_REVIEW_LOOP.md,project
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/reviews/pr-review-loop.spec.ts
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-obq2
+body: ""
