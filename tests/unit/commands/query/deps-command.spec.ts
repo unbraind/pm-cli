@@ -1240,6 +1240,77 @@ describe("runDeps", () => {
     });
   });
 
+  it("bounds recovery work for many reachable missing references", async () => {
+    await withTempPmPath(async (context) => {
+      const root = createTask(
+        context,
+        "reference-aware-budget",
+        Array.from(
+          { length: 1100 },
+          (_, index) => `id=pm-budget-missing-${index},kind=related`,
+        ),
+      );
+      const build = contextKernel.buildRelationshipContext;
+      const builds = vi
+        .spyOn(contextKernel, "buildRelationshipContext")
+        .mockImplementation((...args) => {
+          if (builds.mock.calls.length > 128)
+            throw new Error("Recovery exceeded the bounded packer-work guard");
+          return build(...args);
+        });
+      try {
+        await expect(
+          runDeps(
+            root,
+            {
+              format: "context",
+              tokenBudget: 1,
+              edgeLimit: 1100,
+            },
+            { path: context.pmPath, json: true },
+          ),
+        ).rejects.toMatchObject({
+          code: "invalid_argument_value",
+          context: {
+            recovery: {
+              token_budget: {
+                minimum_status: "unavailable",
+                feasible_tokens: null,
+                reason: "query_cost_limit",
+              },
+            },
+          },
+        });
+        expect(builds.mock.calls.length).toBeLessThanOrEqual(128);
+        for (const options of [
+          { edgeLimit: 1 },
+          { edgeLimit: 1100, summary: true },
+        ]) {
+          builds.mockClear();
+          const refusal = await runDeps(
+            root,
+            {
+              format: "context",
+              tokenBudget: 1,
+              ...options,
+            },
+            { path: context.pmPath, json: true },
+          ).catch((error: unknown) => error);
+          if (!isPmCliExpectedError(refusal)) throw refusal;
+          expect(
+            refusal.context.recovery?.token_budget?.feasible_tokens,
+          ).toBeGreaterThan(0);
+          expect(refusal.context.recovery?.token_budget?.reason).not.toBe(
+            "query_cost_limit",
+          );
+          expect(builds.mock.calls.length).toBeLessThanOrEqual(128);
+        }
+      } finally {
+        builds.mockRestore();
+      }
+    });
+  });
+
   it("shares the fingerprint-keyed workspace assembly with pm graph", async () => {
     await withTempPmPath(async (context) => {
       const rootId = createTask(context, "cache-shared-root");

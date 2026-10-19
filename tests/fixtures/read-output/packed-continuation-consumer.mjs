@@ -149,7 +149,7 @@ assert.equal(winners.length, 1, `Packed create outcomes: ${JSON.stringify({
   conflictId,
   outcomes: attempts.map((attempt) => attempt.status === "fulfilled"
     ? { status: attempt.status, id: attempt.value?.item?.id }
-    : { status: attempt.status, name: attempt.reason?.name, code: attempt.reason?.code, message: attempt.reason?.message, context: attempt.reason?.context }),
+    : { status: attempt.status, name: attempt.reason?.name, code: attempt.reason?.code, message: attempt.reason?.message, stack: attempt.reason?.stack, context: attempt.reason?.context }),
 })}`);
 assert.equal(losers.length, 1);
 let conflict = losers[0].reason;

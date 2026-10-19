@@ -1193,11 +1193,7 @@ function probeContextRetry(
     return "native_floor";
   }
   const disclosed = discloseDepsOutput(
-    attachDepsProjection(
-      result,
-      plan.summaryOnly,
-      rendering.legacyAliasCounts,
-    ),
+    attachDepsProjection(result, plan.summaryOnly, rendering.legacyAliasCounts),
     rendering,
   );
   return isReadOutputBudgetExceeded(disclosed) ? "output_constraints" : "fits";
@@ -1212,8 +1208,16 @@ async function createContextBudgetRefusal(
     params.contextOptions.tokenBudget ??
     DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET;
   const plan = createContextRetryPlan(params, requested);
+  const referencePasses = plan.summaryOnly
+    ? 1
+    : 1 +
+      Math.min(
+        params.contextOptions.edgeLimit ?? 40,
+        params.missingReferences.length,
+      );
   const workUnits =
-    params.assembly.details.reduce(
+    referencePasses *
+    (params.assembly.details.reduce(
       (sum, node) =>
         sum +
         node.id.length +
@@ -1222,10 +1226,10 @@ async function createContextBudgetRefusal(
         (node.type?.length ?? 0),
       params.assembly.graph.edges().length + params.missingReferences.length,
     ) +
-    (plan.summaryOnly ? [] : params.rootEvidence).reduce(
-      (sum, pointer) => sum + pointer.length,
-      0,
-    );
+      (plan.summaryOnly ? [] : params.rootEvidence).reduce(
+        (sum, pointer) => sum + pointer.length,
+        0,
+      ));
   const { findContextBudgetRecovery } =
     await import("./dependencies/context-budget-recovery.js");
   const bounds = findContextBudgetRecovery({

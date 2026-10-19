@@ -1667,6 +1667,13 @@ trees, custom runtime fields, dependency-aware filtering, unsupported filters,
 and stale/missing indexes take the canonical fallback path with identical
 result contracts. Custom hosts may call `queryItemMetadataIndex` directly, but
 must treat `null` as an instruction to rebuild or use authoritative storage.
+The separate history-event index is also optional. Recognized native SQLite
+failures while starting its write transaction invalidate that projection before
+appending authoritative history. Native lock contention retains its existing
+invalidation protocol; unrelated adapter exceptions and authoritative append
+failures propagate. A later index rebuild restores accelerated history reads.
+(Repository tracker: [pm-0orupq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0orupq.toon);
+tracker records are excluded from npm.)
 
 List results always expose `total`, `has_more`, `truncated`, and a nullable
 `next_cursor`, whether or not the page was truncated; unset filter echoes are
@@ -2518,14 +2525,18 @@ uses the real packer and output policy, including alias disclosure.
 `suggested_retry_args` preserves the selected tracker, query and output options
 with the verified feasible budget so it works from another workspace.
 Retry probes consume canonical summary/full include modes before packing and
-retain only residual field selectors, matching the emitted CLI command.
+retain only residual field selectors, matching the emitted CLI command. Recovery
+work estimates include repeated dangling-reference renders; summary probes count
+only their single rendering pass. Expensive queries return explicit unavailable
+budget advice and retain the compact inspection fallback.
 `next_best_command` retains a separate compact tree-summary inspection, which
 also supplies the fallback when no working context budget is established.
 CLI JSON and MCP preserve that recovery. The lower-level
 `buildRelationshipContext` primitive retains its `TypeError` validation contract;
 unrelated runtime errors still propagate.
 (Repository tracker: [pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon),
-[pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon);
+[pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon),
+[pm-k6uglj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k6uglj.toon);
 tracker records are excluded from npm.)
 
 For policy, lint, or verification commands that should render their full result

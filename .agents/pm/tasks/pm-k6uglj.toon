@@ -1,0 +1,56 @@
+id: pm-k6uglj
+title: Bound recovery probes by missing-reference rendering retries
+description: CodeRabbit full review of e30d553 identifies that recovery workUnits counts dangling references once while each real non-summary probe can rebuild and render a packet once per emitted reference count. Include that bounded multiplicity in the existing recovery estimate so both query-cost refusal and exhaustive verification limits account for it without changing public metadata or weakening packer correctness.
+type: Task
+status: closed
+priority: 1
+tags[3]: bug,performance,sdk
+created_at: "2026-10-19T20:27:12.689Z"
+updated_at: "2026-10-19T20:40:59.375Z"
+closed_at: "2026-10-19T20:40:57.504Z"
+completed_at: "2026-10-19T20:40:57.504Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: A real many-reference negative control fails before the repair and proves bounded recovery work afterward; Query-cost and exhaustive verification limits share the multiplicity-adjusted estimate; Small ordinary and canonical-mode retries retain their verified budget semantics; SDK CLI MCP parity coverage and public-surface gates pass without changing assertions deadlines or retry policy
+parent: pm-f05lsg
+risk: medium
+confidence: high
+resolution: "Multiply recovery work estimates by the actual bounded reference-render passes before applying query-cost and verification limits; summary probes retain one pass. Add a real1100-reference regression with a bounded packer-work guard, legal small-edge and summary controls, and document the policy."
+expected_result: "Large full-mode reference queries return honest unavailable budget advice within bounded work, while cheaper valid queries retain verified feasible retries."
+actual_result: "The original control exceeds128 packer calls before the repair. Afterward the large full-mode case returns query_cost_limit, while edgeLimit1 and summary controls retain feasible advice under the same guard. All77 linked cases and337 broader cases pass; scoped coverage is100 percent across546 statements367 branches106 functions504 lines. Strict lint four TypeScript projects SDK surface and documentation links pass. Revised hosted acceptance remains the delivery gate."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-odw3j8,discovered_from,"2026-10-19T20:27:12.689Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-19T20:27:12.689Z","harness:codex","Duplicate check: complete208 open and0 active records with zero omission receipts, targeted recovery/reference-cost search and full closed pm-odw3j8 plus complete history show no live bounded owner for the new reference-multiplicity residual. The shipped empty-reference bound remains completed. New leaf owns this distinct late-review condition."
+  "2026-10-19T20:33:28.007Z","harness:codex",The real1100-reference negative control exceeds a128-packer-call safety guard before the repair. Multiplying the per-evaluation estimate by the actual bounded reference passes now triggers query_cost_limit without exhaustive probing. Summary probes use one pass; small edge ceilings retain feasible advice. The limit values themselves remain unchanged.
+  "2026-10-19T20:37:07.161Z","harness:codex","The corrected legal small-edge control (edgeLimit1; zero is intentionally refused by the unchanged contract) and summary control both retain verified feasible advice under the128-call guard; the large full-mode query reports unavailable/query_cost_limit. All323 cases in the first broader run pass. Its scoped coverage population omits existing history harness/provenance filters and the separately tested public conflict guard, so that coverage run is correctly red rather than described as an exact pass. Add those existing suites to the scoped population without adding new coverage-only tests or changing thresholds."
+files[2]{path,scope}:
+  src/sdk/dependencies.ts,project
+  tests/unit/commands/query/deps-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,project,300,"harness:codex","2026-10-19T20:28:21.727Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvfpwzfe-px8ubc
+    kind: test
+    status: passed
+    started_at: "2026-10-19T20:39:05.037Z"
+    finished_at: "2026-10-19T20:39:44.473Z"
+    recorded_at: "2026-10-19T20:39:44.473Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: Verified bounded recovery cost for missing-reference renders.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/commands/query/deps-command.spec.ts tests/unit/sdk/dependencies/context-budget-recovery.spec.ts tests/unit/mcp/mcp-server-nested-options.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts
+  hosted_checks[2]: Gates (coverage),Nightly Validation
+  owner: pm-f05lsg
+body: ""
