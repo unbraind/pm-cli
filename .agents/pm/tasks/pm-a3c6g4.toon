@@ -1,0 +1,50 @@
+id: pm-a3c6g4
+title: Run the command-example corpus scan after parallel coverage workers
+description: "Two full local coverage attempts exhausted the existing 30-second command-example guard deadline while unrelated workers parsed and spawned contract suites. The unchanged isolated guard passes. Reuse the existing serial lifecycle-performance cohort for this full-source AST census; retain its exact source corpus, assertions and deadline."
+type: Task
+status: in_progress
+priority: 2
+tags[3]: coverage,runner-qualification,testing
+created_at: "2026-10-19T09:52:07.467Z"
+updated_at: "2026-10-19T10:40:21.705Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2b54b620f5065d13afefeb2f"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: The existing scanner runs in the serial cohort after parallel contract files; the source corpus/assertions/30-second deadline remain unchanged; complete all-source coverage and hosted checks still gate delivery
+parent: pm-bj7rq0
+risk: low
+confidence: high
+expected_result: Command-example policy validation retains full source coverage and its existing deadline while avoiding unrelated contract-worker contention.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dqej6b,related,"2026-10-19T09:52:07.467Z","harness:codex","cli:create:dep",detected
+  pm-mw5gip,related,"2026-10-19T09:52:07.467Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-19T09:52:07.467Z","harness:codex","Duplicate check: request-specific live search plus current open/in-progress inventories and complete3000-item all-status corpus inspected broad qualification owner pm-bj7rq0, shipped canonical-example owner pm-mw5gip and shipped scratch-cohort precedent pm-dqej6b. No canonical-example scheduling leaf exists. Both complete coverage failures are preserved; isolated retry passes40/40 across all failed files with npm path recovery, and the bounded full retry leaves only this census timeout."
+  "2026-10-19T09:53:36.793Z","harness:codex","Observed negative controls are the unchanged complete runs: first10771 passed/6 failed and bounded recovery10777 passed/1 failed, both retain the canonical source scan's original30-second timeout. The40-test isolated retry passes without changing source or deadlines. Move the existing keeper into the already-defined serial cohort after parallel files, alongside the prior corpus/latency precedents; do not shrink source selection, coverage denominator or assertions. A full CI-profile coverage rerun follows with the valid global npm lookup environment and exact coverage gate."
+  "2026-10-19T10:06:00.614Z","harness:codex",The existing command-example keeper passes3/3 in the serial cohort in7.10 seconds including transformation/import. Complete all-source coverage remains running with four contract workers and the unchanged CI profile; no complete-pass claim yet.
+  "2026-10-19T10:20:26.908Z","harness:codex","Complete CI-profile suite now passes10778 tests across831 passing files plus three platform skips. The unchanged serial canonical scan passes3/3 in13.881 seconds under coverage. The command remains failed because exact coverage identifies one new diagnostic projection branch in error-guidance.ts (69634/69635 statements,53506/53507 branches; functions/lines100%). Add a direct transport-envelope keeper, retain this failed exact-count receipt, and require complete hosted shard aggregation before merge. No coverage denominator or deadline changes."
+  "2026-10-19T10:40:21.705Z","harness:codex",The linked serial keeper executes3 passing tests in5.98 seconds including import/transform. Complete static quality and TypeScript gates pass. Earlier full-source execution passes10778 tests; exact-count coverage is awaiting hosted aggregation after adding the uncovered CLI-envelope keeper. Keep the broader runner qualification owner open.
+learnings[1]{created_at,author,text}:
+  "2026-10-19T10:05:57.072Z","harness:codex","Full-source policy scans can share CPU and memory pressure with contract workers even when they are not latency benchmarks. Use the existing serial test cohort while preserving corpus, assertions and deadline; an isolated retry diagnoses contention but does not replace complete coverage proof."
+files[3]{path,scope}:
+  CHANGELOG.md,project
+  tests/unit/cli/canonical-example-guard.spec.ts,project
+  vitest.config.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/canonical-example-guard.spec.ts,project,180,"harness:codex","2026-10-19T09:53:35.568Z",local_mutation,feat/actionable-mutation-previews
+test_runs[1]:
+  - run_id: test-local-mvf4flo0-n4wcu2
+    kind: test
+    status: passed
+    started_at: "2026-10-19T10:38:07.092Z"
+    finished_at: "2026-10-19T10:38:21.552Z"
+    recorded_at: "2026-10-19T10:38:21.552Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/canonical-example-guard.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+body: ""

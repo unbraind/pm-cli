@@ -2,11 +2,13 @@ id: pm-ekf2gu
 title: item mutate --dry-run does not surface per-row advisory duplicate-detection warnings
 description: "Bulk create rows run the full SDK create path, so governance.duplicate_detection_mode applies per row: strict refuses and advisory records a warning. The staged preview behind pm item mutate --dry-run returns validation metadata (validated, state, unresolved_commit_constraints) plus mutation_count, mutations, references, and rows, but none of those carry the per-row advisory warnings that create produced, so an agent importing a document under advisory mode cannot see which rows look like existing items before committing. Surface the advisory similarity warnings in the dry-run receipt, keyed by row index and ref, without changing the configured policy."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags: []
 created_at: "2026-10-15T19:59:23.318Z"
-updated_at: "2026-10-16T00:57:35.837Z"
+updated_at: "2026-10-19T10:42:51.998Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2b54b620f5065d13afefeb2f"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: Dry-run receipt lists each advisory similarity warning with the row index and ref; Strict mode still refuses the same rows and the configured policy is not changed; Receipt shape is covered by a unit test on the planner and an integration test on pm item mutate --dry-run
@@ -16,4 +18,50 @@ confidence: high
 expected_result: "pm item mutate --dry-run on a document whose create rows resemble existing items under duplicate_detection_mode advisory lists each advisory warning with the row index and ref in the receipt, and strict mode still refuses the same rows."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1456,discovered_from,"2026-10-15T19:59:23.318Z","harness:claude-code","cli:create:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-19T08:40:03.919Z","harness:codex","Selected with pm-fa9olc for one SDK-first actionable-preview delivery. Full strict all-status intake covers 3000 records, 2724 closed, no omissions/unreadables and no existing in-progress ownership. Existing shipped preview-safety owners were read live and remain completed. Implement shared staged warning receipts with per-row index/ref, preserve duplicate policy and no-write behavior, verify SDK plus CLI/MCP transport. GitHub intake: no open PRs or security alerts; every open issue already has a canonical PM link comment."
+  "2026-10-19T08:51:09.876Z","harness:codex","Failed-before evidence: keeper SDK tests on unchanged production omitted advisory warning receipts; off mode also lacked the declared empty collection. Existing strict duplicate refusal was independently confirmed at conflict exit4 (the initial test expectation of usage exit2 was corrected, without changing policy). Final focused suite passes149 tests across six files, including actual CLI/MCP source-row ref parity and immutable durable snapshots. Shared SDK preview collects original lifecycle create warnings and public previewItemMutationDocument joins them to source rows without changing the input plan; replay remains explicitly unvalidated with no fresh warnings. Conservative SDK signature gate acknowledges the additive result/row/context contracts and the new public projection helper."
+  "2026-10-19T09:17:23.167Z","harness:codex","Complete local coverage attempt finished10771 passed/6 failed/3 platform skips; it is a failed attempt, not coverage proof. One packed continuation fixture reports missing global npm/package.json under this Homebrew Node layout and explicitly prescribes NODE_PATH; five existing controls timed out under parallel load (merge portability, canonical examples, refusal closure, two surface-replication cases). Retain all failures. Retry the exact failed files with the advertised environment recovery and bounded workers, unchanged source/assertions/deadlines, then rerun complete coverage. New preview controls remain green."
+  "2026-10-19T09:24:32.872Z","harness:codex","The unchanged failed-file retry passes40/40 tests with the advertised NODE_PATH recovery and two workers; no time ceiling or assertion changed. Pre-PR projection review also found a new-helper edge case: a caller reusing rows from a prior preview could retain stale warnings after policy changes. The keeper fails before the correction and now rebuilds row warnings solely from the current staged receipt while preserving its input. Full coverage will be rerun on this corrected source."
+  "2026-10-19T10:03:49.557Z","harness:codex","Upstream changelog compatibility is now delivered: PR256 restores explicit full-list projection, and PR259 fixes the real npm numeric-suffix mandatory-tag refusal with explicit latest. Corrective release2026.10.19-1 completed workflow39233360234; independent exact/latest registry integrity matches, GitHub release points to d80fdea89c7b84d0dafb4a17b156db0eadcff6e7, and hosted Bun installation passes. Use the latest published package for this branch's generated changelog. No root same-day auto-release is created."
+  "2026-10-19T10:40:19.939Z","harness:codex","Local delivery gates pass: complete static quality including lint, generated contracts, SDK surface, package boundaries, behavior/cost gates and mutation assurance; all four TypeScript projects; version synchronization; tracked credential scan; and zero-vulnerability dependency audit. The linked warning command executes53 passing tests with local trust and isolated schema roots. Final complete exact-count coverage remains a required hosted gate before review closeout."
+  "2026-10-19T10:42:51.998Z","harness:codex","Packaged npx acceptance passes using the staged publication artifact: executable aliases, isolated workflow, installed consumer types and package capabilities. The latest pm-changelog2026.10.19-1 generator and canonical check both pass. Preparing one PR for the two SDK preview items and their unchanged-deadline verification cohort; keep claims active for complete hosted coverage and review, then land structured closure evidence and regenerate the changelog on that same PR."
+learnings[1]{created_at,author,text}:
+  "2026-10-19T08:54:32.466Z","harness:codex",A staged mutation preview must carry the lifecycle advisories it evaluated alongside its validation verdict. Join advisories by source row position and alias in the SDK so transports cannot disagree; a committed-plan replay must remain distinguishable from a fresh policy evaluation.
+files[11]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  CHANGELOG.md,project
+  sdk/public-surface.json,project
+  src/cli/register-structured-mutation.ts,project
+  src/mcp/server.ts,project
+  src/sdk/item-transaction.ts,project
+  src/sdk/lifecycle/structured-mutation-plan.ts,project
+  src/sdk/structured-mutations.ts,project
+  tests/integration/transactions/semantic-preview.integration.spec.ts,project
+  tests/unit/cli/structured-mutation-registration.spec.ts,project
+  tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,project,300,"harness:codex","2026-10-19T08:49:47.798Z",local_mutation,feat/actionable-mutation-previews
+test_runs[1]:
+  - run_id: test-local-mvf4e4if-o17wxp
+    kind: test
+    status: passed
+    started_at: "2026-10-19T10:36:30.865Z"
+    finished_at: "2026-10-19T10:37:12.663Z"
+    recorded_at: "2026-10-19T10:37:12.663Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: transaction-preview-row-advisories
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/structured-mutation-plan.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts
+  hosted_checks[5]: Coverage shard 1/4,Coverage shard 2/4,Coverage shard 3/4,Coverage shard 4/4,Gates (coverage)
+  owner: pm-ekf2gu
 body: ""

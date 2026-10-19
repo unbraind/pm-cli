@@ -51,7 +51,7 @@ import {
   discoverPmTools,
   parsePmToolDiscoveryOptions,
 } from "../sdk/mcp/discovery.js";
-import { commitItemMutations, previewItemMutations } from "../sdk/item-transaction.js";
+import { commitItemMutations } from "../sdk/item-transaction.js";
 import {
   isRuntimeRecord,
   markMcpMutationTransportInput,
@@ -62,7 +62,7 @@ import {
   runWithReproducibleProcessEnvironment,
 } from "../sdk/reproducibility/process.js";
 import { parseAtomicMutationControls } from "../sdk/structured-mutations.js";
-import { planItemMutationDocument } from "../sdk/lifecycle/structured-mutation-plan.js";
+import { planItemMutationDocument, previewItemMutationDocument } from "../sdk/lifecycle/structured-mutation-plan.js";
 import {
   resolveAuthor,
   resolvePmRoot,
@@ -393,15 +393,15 @@ const HANDLERS: Record<string, ToolHandler> = {
       ...(plan.upsert_key === undefined ? {} : { upsert_key: plan.upsert_key }),
     };
     if (args.dryRun === true) {
-      const validation = await runWithActiveExtensions(extensionScope, () => previewItemMutations({ pmRoot, transactionId, author: resolveAuthor(typeof args.author === "string" ? args.author : undefined, "unknown"), mutations }));
+      const preview = await runWithActiveExtensions(extensionScope, () => previewItemMutationDocument({ pmRoot, author: resolveAuthor(typeof args.author === "string" ? args.author : undefined, "unknown"), plan }));
       return {
         ...receipt,
         dry_run: true,
-        validation,
+        validation: preview.validation,
         mutation_count: mutations.length,
         mutations,
         references,
-        rows,
+        rows: preview.rows,
       };
     }
     // The commit activates extensions from the same resolved root the plan and preview used.

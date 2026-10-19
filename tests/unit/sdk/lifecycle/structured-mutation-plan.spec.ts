@@ -1,11 +1,38 @@
 import { describe, expect, it } from "vitest";
 import { runWithConfigurationOnlySettings } from "../../../../src/core/store/settings.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { commitItemMutations } from "../../../../src/sdk/item-transaction.js";
-import { planItemMutationDocument } from "../../../../src/sdk/lifecycle/structured-mutation-plan.js";
+import { commitItemMutations, previewItemMutations } from "../../../../src/sdk/item-transaction.js";
+import { planItemMutationDocument, previewItemMutationDocument } from "../../../../src/sdk/lifecycle/structured-mutation-plan.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("planItemMutationDocument (pm-gh1456)", () => {
+  it.each(["advisory", "strict", "off"])("previews ordered create warnings under the configured %s duplicate policy", async (mode) => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["create", "Task", "Canonical preview duplicate", "--id", "canonical", "--json"]).code).toBe(0);
+      expect(context.runCli(["config", "project", "set", "governance.duplicate_detection_mode", mode, "--json"]).code).toBe(0);
+      const plan = await planItemMutationDocument({ pmRoot: context.pmPath, input: JSON.stringify([
+        { ref: "first", title: "Canonical preview duplicate", type: "Task" },
+        { ref: "second", title: "Canonical preview duplicate", type: "Task" },
+      ]) });
+      const preview = previewItemMutations({ pmRoot: context.pmPath, transactionId: plan.transaction_id, author: "preview-agent", mutations: plan.mutations });
+      if (mode === "strict") await expect(preview).rejects.toMatchObject({ exitCode: 4, context: { transaction_operation: { index: 0 } } });
+      else {
+        const result = await preview;
+        expect(result).toMatchObject({ validated: true, warnings: mode === "off" ? [] : plan.rows.map((row) => ({ index: row.index, id: row.id, op: "create", warnings: expect.arrayContaining([expect.stringContaining("likely_duplicates:pm-canonical")]) })) });
+        const priorPreview = { ...plan, rows: plan.rows.map((row) => ({ ...row, warnings: ["stale-preview-warning"] })) };
+        const projected = await previewItemMutationDocument({ pmRoot: context.pmPath, author: "preview-agent", plan: priorPreview });
+        for (const row of projected.rows) {
+          expect(row).toMatchObject({ index: row.index, ref: row.index === 0 ? "first" : "second" });
+          if (mode === "advisory") expect(row.warnings).toEqual(result.warnings[row.index]!.warnings);
+          else expect(row).not.toHaveProperty("warnings");
+        }
+        expect(plan.rows.every((row) => row.warnings === undefined)).toBe(true);
+        expect(priorPreview.rows.every((row) => row.warnings[0] === "stale-preview-warning")).toBe(true);
+      }
+      expect(context.runCli(["list", "--all", "--json"], { expectJson: true }).json).toMatchObject({ count: 1 });
+    });
+  });
+
   it.each(["", " \t\n "])("refuses supplied blank upsert keys before writes: %j", async (upsertKey) => {
     await withTempPmPath(async (context) => {
       const { readdir } = await import("node:fs/promises");

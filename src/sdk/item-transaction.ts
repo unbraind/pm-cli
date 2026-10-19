@@ -246,6 +246,8 @@ interface BulkMutationStepConfig {
   transactionId: string;
   createCompensation: "close" | "delete";
   uniqueIndex: UniqueKeyIndex;
+  /** Collect the lifecycle's advisory facts when running a disposable preview. */
+  onCreateWarnings?: (id: string, warnings: readonly string[]) => void;
 }
 
 /** One atomic item update inside a bulk mutation batch. */
@@ -540,6 +542,7 @@ function buildCreateStep(
         { pmRoot: config.pmRoot },
       );
       const createdItem = created.item as Record<string, unknown>;
+      config.onCreateWarnings?.(String(createdItem.id), created.warnings);
       await config.uniqueIndex.recordCreate(createdItem);
       return { id: String(createdItem.id), op: "create" };
     },
@@ -829,6 +832,17 @@ export interface ItemMutationPreviewValidation {
   state: "staged_snapshot" | "replayed_committed_plan";
   /** Preview leaves current commit state and executable extension effects unvalidated, including host-run pending migrations, mutation guards and hooks. */
   unresolved_commit_constraints: readonly string[];
+  /** Advisory create warnings from newly executed stages; replay does not re-evaluate them. */
+  warnings: {
+    /** Zero-based mutation position, matching the planned document row. */
+    index: number;
+    /** Canonical item identity produced in the staged tracker. */
+    id: string;
+    /** Lifecycle operation that produced these warnings. */
+    op: "create";
+    /** Unmodified lifecycle warning tokens, including duplicate recovery hints. */
+    warnings: readonly string[];
+  }[];
 }
 
 /** Attach the resolved batch position while preserving lifecycle error classification. */
@@ -854,7 +868,7 @@ function includePreviewPath(root: string, file: string, ownedPaths: readonly str
 }
 
 /** Reject links and special files before preview can traverse or open their targets. */
-async function previewEntryStat(file: string): Promise<Stats> {
+async function previewEntryStat(root: string, file: string): Promise<Stats> {
   const entry = await lstat(file);
   if (entry.isSymbolicLink()) {
     // Retain the native diagnostic for persistent dangling links.
@@ -862,7 +876,7 @@ async function previewEntryStat(file: string): Promise<Stats> {
   } else if (entry.isDirectory() || entry.isFile()) {
     return entry;
   }
-  throw transactionPreviewNonRegularFileError();
+  throw transactionPreviewNonRegularFileError(path.relative(root, file));
 }
 
 /**
@@ -872,11 +886,11 @@ async function previewEntryStat(file: string): Promise<Stats> {
  * flags. Trusted, stable entries and ancestors remain required because these
  * checks do not prevent hostile concurrent path redirection before reading.
  */
-async function previewFileDigest(file: string): Promise<Buffer> {
+async function previewFileDigest(root: string, file: string): Promise<Buffer> {
   const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const entry = await handle.stat();
-    if (!entry.isFile()) throw transactionPreviewNonRegularFileError();
+    if (!entry.isFile()) throw transactionPreviewNonRegularFileError(path.relative(root, file));
     const contents = crypto.createHash("sha256");
     // Bound this read to the observed size, even if a concurrent writer appends.
     if (entry.size > 0) {
@@ -896,11 +910,11 @@ async function previewTrackerFingerprint(root: string, ownedPaths: readonly stri
     for (const name of (await readdir(directory)).sort()) {
       const file = path.join(directory, name);
       if (!includePreviewPath(root, file, ownedPaths, retainedPaths)) continue;
-      if ((await previewEntryStat(file)).isDirectory()) {
+      if ((await previewEntryStat(root, file)).isDirectory()) {
         await visit(file);
       } else {
         fingerprint.update(JSON.stringify(path.relative(root, file)));
-        fingerprint.update(await previewFileDigest(file));
+        fingerprint.update(await previewFileDigest(root, file));
       }
     }
   }
@@ -942,10 +956,10 @@ async function readPreviewConfiguration(root: string, relative: string): Promise
     let current = root;
     for (const component of relative.split(path.sep).slice(0, -1)) {
       current = path.join(current, component);
-      await previewEntryStat(current);
+      await previewEntryStat(root, current);
     }
-    if (!(await previewEntryStat(file)).isFile()) throw transactionPreviewNonRegularFileError();
-    return await readRegularFile(file, transactionPreviewNonRegularFileError());
+    if (!(await previewEntryStat(root, file)).isFile()) throw transactionPreviewNonRegularFileError(relative);
+    return await readRegularFile(file, transactionPreviewNonRegularFileError(relative));
   } catch (error) {
     if (await isDisappearingPreviewPath(error)) return undefined;
     throw error;
@@ -1045,7 +1059,7 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string, regis
       recursive: true, dereference: false,
       filter: async (source) => {
         if (!includePreviewPath(resolvedRoot, source, storage.ownedPaths, retainedPaths)) return false;
-        await previewEntryStat(source);
+        await previewEntryStat(resolvedRoot, source);
         return true;
       },
     });
@@ -1076,11 +1090,14 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
   try {
     await stagePreviewTracker(identity.pmRoot, stagedRoot, registrations);
     let validated = false;
+    const warnings: ItemMutationPreviewValidation["warnings"] = [];
     await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
       const config: BulkMutationStepConfig = { ...identity, pmRoot: stagedRoot, createCompensation: "close", uniqueIndex: createUniqueKeyIndex(stagedRoot) };
       const steps = mutations.map((mutation, index) => {
-        const step = buildStepForMutation(config, mutation, index);
+        const step = buildStepForMutation({ ...config, onCreateWarnings: (id, messages) => {
+          if (messages.length > 0) warnings.push({ index, id, op: "create", warnings: messages });
+        } }, mutation, index);
         return {
           ...step,
           inspect: () => validateMutationOperation(mutation, index, () => step.inspect()),
@@ -1090,7 +1107,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
       });
       await commitWorkspaceTransaction({ ...identity, pmRoot: stagedRoot, steps, onTransition: ({ transition }) => { if (transition === "committed") validated = true; } });
     });
-    return { validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] };
+    return { validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", warnings, unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] };
   } finally {
     await rm(root, { recursive: true, force: true });
   }

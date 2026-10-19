@@ -1910,9 +1910,9 @@ async function readConfigurationOnlySettings(pmRoot: string): Promise<SettingsRe
   let entry: Stats;
   try { entry = await lstat(file); }
   catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
-  if (!entry.isFile()) throw transactionPreviewNonRegularFileError();
+  if (!entry.isFile()) throw transactionPreviewNonRegularFileError("settings.json");
   let raw: string;
-  try { raw = await readRegularFile(file, transactionPreviewNonRegularFileError()); }
+  try { raw = await readRegularFile(file, transactionPreviewNonRegularFileError("settings.json")); }
   catch (error) { if (isFileAbsentError(error)) return buildFallbackSettingsReadResult(); throw error; }
   let parsed: unknown;
   try { parsed = JSON.parse(raw) as unknown; }

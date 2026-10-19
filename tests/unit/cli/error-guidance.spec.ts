@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { transactionPreviewNonRegularFileError } from "../../../src/core/fs/fs-utils.js";
 import {
   _testOnly,
   buildLinkedTestQuotedRetryCommand,
@@ -12,6 +13,17 @@ import {
 } from "../../../src/cli/error-guidance.js";
 
 describe("pm cli error guidance context plumbing", () => {
+  it.each([
+    { entry: "schema/fields.json", coordinate: { storage_area: "schema", relative_entry: "schema/fields.json", entry_redacted: false } },
+    { entry: "schema/unsafe\nentry", coordinate: { storage_area: "schema", entry_redacted: true } },
+  ])("preserves the producer's safe preview coordinate in JSON and classification: $entry", ({ entry, coordinate }) => {
+    const error = transactionPreviewNonRegularFileError(entry);
+    for (const envelope of [formatPmCliErrorForJson(error.message, error.exitCode, error.context), classifyPmCliError(error.message, error.context)]) {
+      expect(envelope).toMatchObject({ code: "transaction_preview_non_regular_file", preview_storage: coordinate });
+      expect(envelope.preview_storage).toEqual(coordinate);
+    }
+  });
+
   it("applies PmCliError context fields to JSON envelope output", () => {
     const envelope = formatPmCliErrorForJson(
       "Merge conflict markers detected in item document at line 1",

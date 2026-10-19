@@ -2,11 +2,13 @@ id: pm-fa9olc
 title: Transaction preview refusal should identify a safe relative offending path
 description: "During the current all-status tracker intake, pm item mutate --dry-run refused transaction_preview_non_regular_file without identifying which storage entry required repair. The safety boundary is correct and shipped under pm-preview-path-refusal, whose explicit path-redaction policy must remain intact. Improve operator recovery with a bounded tracker-relative category or safe diagnostic coordinate, never an absolute host path or following links. This is a new diagnostic enhancement, not a reopening of the shipped refusal."
 type: Task
-status: open
+status: in_progress
 priority: 3
 tags: []
 created_at: "2026-10-18T21:52:35.071Z"
-updated_at: "2026-10-18T23:31:08.359Z"
+updated_at: "2026-10-19T10:40:20.797Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#2b54b620f5065d13afefeb2f"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: A safe bounded diagnostic identifies the relevant storage category or tracker-relative entry without exposing host paths; Non-regular entries remain refused before reading or mutating them; Diagnostics explain how to inspect and repair the entry without requiring force
@@ -18,6 +20,42 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-preview-path-refusal,related,"2026-10-18T23:16:29.792Z","harness:codex","evidence:preview-recovery",detected
   pm-ekf2gu,related,"2026-10-18T23:31:07.953Z","harness:codex","triage:preview-duplicate-check",detected
   pm-n912nt,related,"2026-10-18T23:31:07.953Z","harness:codex","evidence:preview-portability",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-18T21:52:35.071Z","harness:codex","Duplicate check: strict all-status corpus and keyword search inspected pm-preview-path-refusal and pm-n912nt (completed safety/classification work) plus pm-ekf2gu (distinct advisory-warning scope). This new recovery diagnostic remains open and unclaimed."
+  "2026-10-19T08:40:04.734Z","harness:codex",Active paired delivery with pm-ekf2gu. Preserve shipped non-following path admission and native errno behavior; add a bounded safe tracker-relative coordinate or category with explicit redaction for unsafe names. No absolute discovered paths or link targets. Inspect/repair guidance must not require force.
+  "2026-10-19T08:51:10.796Z","harness:codex","Failed-before keeper controls for real file/directory/cyclic links lacked the expected diagnostic coordinate. Final focused suite149 passes, including real FIFO/descriptor races, schema/settings bootstrap, linked roots, native errno preservation, unsafe/control/overlong name redaction and no source changes. Typed preview_storage is carried in SDK context and CLI JSON: fixed storage category plus bounded safe relative coordinate; absolute paths, traversal and link targets stay excluded. The first compile check rejected an attempted object in scalar value; replaced it with an explicitly typed optional error-context field instead of weakening the scalar contract."
+  "2026-10-19T09:24:34.070Z","harness:codex","Pre-PR portability review found that a literal backslash in a POSIX filename must not be normalized into a different path coordinate. A real symlink fixture fails before the correction. Normalize only the host's actual separator, so Windows paths remain portable while ambiguous POSIX names are explicitly redacted; source safety remains unchanged."
+  "2026-10-19T10:05:58.436Z","harness:codex","Final focused correction run passes135/135 across path bounds, real preview snapshots, document projections, CLI registration and CLI/MCP semantic parity. An actual npm tarball consumer imports the public SDK under both Node and Bun, confirms row-ref warnings, unchanged source bytes, clearing prior warnings under off policy, and unsafe-coordinate redaction. Its dependencies are linked from the exact checkout; independent published-version npm/Bun installations are separately verified."
+  "2026-10-19T10:21:59.349Z","harness:codex","The new direct CLI keeper passes49/49 tests and executes both sides of the diagnostic projection (LCOV line642 count83; true branch4, false79). The deliberately file-focused coverage command still fails global100 thresholds because unrelated error-guidance branches belong to other suites; do not treat it as complete coverage. The preceding complete run covered every other statement/branch and all functions/lines. Required hosted full-shard aggregation must prove final exact coverage. Linked command now includes the new keeper; command identity was replaced through remove/add after the CLI correctly refused editing immutable linked-command metadata."
+  "2026-10-19T10:40:20.797Z","harness:codex","Linked verification executes160 passing tests, including49 direct CLI error-guidance cases plus real snapshot and CLI/MCP controls. Complete static quality, four TypeScript projects, secret scan and dependency audit pass. The expected coordinates are explicit case data, keeping the existing complexity limit and every assertion. Required complete hosted coverage will settle the one projection gap demonstrated by the preceding full local report."
+learnings[1]{created_at,author,text}:
+  "2026-10-19T08:54:34.308Z","harness:codex","Filesystem refusal coordinates belong to a typed optional diagnostic contract. Normalize only a contained tracker-relative spelling, bound and validate its components before rendering, and retain a fixed category when names must be withheld; preserve native errno behavior and the existing non-following admission boundary."
+files[11]{path,scope}:
+  CHANGELOG.md,project
+  sdk/public-surface.json,project
+  src/cli/error-guidance.ts,project
+  src/core/fs/fs-utils.ts,project
+  src/core/shared/errors.ts,project
+  src/core/store/settings.ts,project
+  src/sdk/item-transaction.ts,project
+  tests/integration/transactions/semantic-preview.integration.spec.ts,project
+  tests/unit/cli/error-guidance.spec.ts,project
+  tests/unit/core/fs/fs-utils.spec.ts,project
+  tests/unit/sdk/transactions/preview-snapshot.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts tests/unit/cli/error-guidance.spec.ts,project,300,"harness:codex","2026-10-19T10:21:25.951Z",local_mutation,feat/actionable-mutation-previews
+test_runs[1]:
+  - run_id: test-local-mvf4f9yi-nonjiw
+    kind: test
+    status: passed
+    started_at: "2026-10-19T10:37:13.923Z"
+    finished_at: "2026-10-19T10:38:06.378Z"
+    recorded_at: "2026-10-19T10:38:06.378Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/fs/fs-utils.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
 body: ""
