@@ -233,6 +233,7 @@ function primaryRole(
   )!;
 }
 
+/** Traverse each identity once within depth and kind limits, retaining inspection and truncation receipts. */
 function discoverNodes(
   graph: RelationshipGraph,
   root: string,
@@ -371,6 +372,7 @@ function selectContextNodes(params: {
   return { nodes, usedTokens };
 }
 
+/** Select edges between retained nodes using inverse-kind filters and the remaining token and edge limits. */
 function selectContextEdges(params: {
   graph: RelationshipGraph;
   included: ReadonlySet<string>;

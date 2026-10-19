@@ -399,6 +399,7 @@ function assignRecoveryTokenBudget(target: PmCliErrorRecoveryPayload, value: unk
   target.token_budget = { requested_tokens, feasible_tokens, minimum_feasible_tokens, minimum_status, basis, reason };
 }
 
+/** Whitelist valid recovery fields before exposing them in public CLI diagnostics. */
 function normalizeRecoveryPayload(
   payload: PmCliErrorRecoveryPayload | undefined,
 ): PmCliErrorRecoveryPayload | undefined {
@@ -516,6 +517,7 @@ function appendRecoveryListLine(
   }
 }
 
+/** Render normalized recovery fields and verified budget evidence as human guidance. */
 function renderRecoveryBundle(
   recovery: PmCliErrorRecoveryPayload | undefined,
 ): string[] {

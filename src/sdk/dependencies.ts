@@ -1363,6 +1363,7 @@ function trimDeepestDependency(tree: DepsTreeNode): boolean {
   return true;
 }
 
+/** Settle emitted tree/graph accounting while trimming the deepest dependency rows first. */
 function buildTreeOrGraphDepsResult(
   id: string,
   format: Exclude<DepsFormat, "context">,

@@ -1,0 +1,53 @@
+id: pm-afshwe
+title: Qualify Unicorn 78 after its exact release-age boundary
+description: "Registry version 78.0.0 reaches the seven-day minimum at 2026-10-19T19:03:18.376Z. Provider 77 is completed under pm-unicorn-77. Inspect the four configured rules, public declarations, dependency closure, package payload and strict quality gates before adopting this major. Retain concrete compatibility failures without bypassing release aging or lint policy."
+type: Chore
+status: closed
+priority: 3
+tags: []
+created_at: "2026-10-19T18:48:09.050Z"
+updated_at: "2026-10-19T19:08:28.875Z"
+closed_at: "2026-10-19T19:08:28.146Z"
+completed_at: "2026-10-19T19:08:28.146Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "Enforce exact seven-day age for the complete added closure; preserve lint rules and warning budgets; verify strict lint, types, dependency/source payload and frozen lockfile; require reviewed delivery checks."
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: Adopted pinned eslint-plugin-unicorn78.0.0 after its exact seven-day boundary and authenticated the complete new dependency closure.
+expected_result: "A mature compatible provider preserves four strict rules, runtime/package contracts and reproducible installation without policy overrides."
+actual_result: "All28 additions meet seven-day age and registry integrity; minimum Node22.18 engines and four rule implementations qualify. Linked lint/type/dependency checks, frozen install,42-package runtime lock and distribution artifact budget pass. Final hosted closeout checks govern landing."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-unicorn-77,discovered_from,"2026-10-19T18:48:09.050Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-19T18:48:09.050Z","harness:codex","Duplicate check: exact version/topic search and complete207 open/1 in-progress lists show no matching live owner. Full closed pm-unicorn-77 and history plus its parent were read; no closed lineage is reopened. Root engines/peers currently allow Node22+ and ESLint10.4+. This is queued until the actual age cutoff and completion of current native acceptance; no upgrade compatibility or failure is claimed yet."
+  "2026-10-19T19:08:26.125Z","harness:codex","Adopted pinned78.0.0 after the exact19:03:18.376Z age boundary using per-invocation pnpm_config_minimum_release_age=10080 and strict=true, verified in effective config. The generated lock adds28 registry package identities and removes only77.0.0; every addition is at least7.001 days old and matches registry integrity. All minimum Node22.18 engines and the four configured rule implementations qualify. Linked strict lint, all four TypeScript projects and dependency/source/native-payload audit pass; frozen install is unchanged. Runtime lock retains42 packages. Base artifact admission passes: distribution19292249 <=20000000 bytes, separately accounted runtime bundle23402553 bytes. No lint rule, exclusion, warning budget or package-size gate changed. Final reviewed delivery CI remains required."
+learnings[1]{created_at,author,text}:
+  "2026-10-19T19:08:27.070Z","harness:codex","Use verified per-invocation resolver aging for a timed admission and independently authenticate every added registry identity. A major lint provider can expand its transitive closure even when the configured rule set is unchanged; validate that closure, runtime floor and actual packaged payload before accepting it."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm lint:eslint",project,300,"harness:codex","2026-10-19T19:03:29.213Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+  pnpm typecheck,project,300,"harness:codex","2026-10-19T19:03:29.213Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+  "pnpm quality:dependencies",project,300,"harness:codex","2026-10-19T19:03:29.213Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+  "pnpm quality:package-artifact",project,300,"harness:codex","2026-10-19T19:08:24.633Z",local_mutation,fix/review-failure-visibility-native-test-allocation
+test_runs[1]:
+  - run_id: test-local-mvfmkody-f04yqh
+    kind: test
+    status: passed
+    started_at: "2026-10-19T19:04:49.085Z"
+    finished_at: "2026-10-19T19:06:11.446Z"
+    recorded_at: "2026-10-19T19:06:11.446Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      "pnpm quality:dependencies",schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Mature Unicorn78 passes strict local admission with configured lint contracts intact.
+body: ""

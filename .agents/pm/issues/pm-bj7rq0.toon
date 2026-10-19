@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-19T18:30:28.936Z"
+updated_at: "2026-10-19T19:00:26.122Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -21,7 +21,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
-comments[51]:
+comments[52]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -176,6 +176,9 @@ comments[51]:
   - created_at: "2026-10-19T18:30:28.936Z"
     author: "harness:codex"
     text: "Chrome directly verifies CodSpeed comparison a235a7e versus 54a583c: one fingerprint regression, one cursor improvement, nine unchanged benchmarks, with both different-runtime and syscall-instrumentation warnings visibly present. The immutable unchanged source/benchmark blobs and provider qualifications remain the basis for retaining this as advisory evidence; no UI acknowledgement or benchmark-policy change was made."
+  - created_at: "2026-10-19T19:00:26.121Z"
+    author: "harness:codex"
+    text: "Updated CodSpeed head22ed report changes the regressed case to decodeQueryCursor:242us baseline versus339.7us head, -28.78%; ten benchmarks unchanged. Chrome benchmark detail explicitly identifies different CPUs, AMD EPYC7763 versus EPYC9V74, and changed AVX512-related flags. The full pagination source and benchmark Git blobs remain identical at base54a and reviewedhead22ed. This qualified comparison does not isolate a code change; controlled runtime/hardware comparison remains needed. No acknowledgement or provider threshold change is used to hide it."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

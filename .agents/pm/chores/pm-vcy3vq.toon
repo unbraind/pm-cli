@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: dependencies,quality
 created_at: "2026-10-19T17:13:49.435Z"
-updated_at: "2026-10-19T18:31:16.156Z"
+updated_at: "2026-10-19T18:57:56.782Z"
 closed_at: "2026-10-19T18:31:14.213Z"
 completed_at: "2026-10-19T18:31:14.213Z"
 author: "harness:codex"
@@ -18,13 +18,15 @@ confidence: high
 resolution: Refreshed typescript-eslint and its coordinated packages to8.71.2 without overrides or compatibility-floor changes.
 expected_result: Adopt the compatible seven-day-mature patch with a reproducible lockfile and unchanged strict quality checks.
 actual_result: "All eleven package identities/integrities/engines/peers qualify; frozen install, linked four-project typecheck and ESLint pass, no vulnerabilities, required head-a235 CI is green."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-l8dzdv,discovered_from,"2026-10-19T17:13:49.435Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+  pm-bj7rq0,related,"2026-10-19T18:57:55.621Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-10-19T17:13:49.435Z","harness:codex","Duplicate check: explicit unbounded complete open/in-progress inventories correct the orientation lists whose default output budget omitted rows. Request-specific all-status search and earlier strict full corpus find no exact active8.71.2 owner. Full live predecessor metadata/comments and35-entry history confirm completed8.71.0 scope, which remains closed. Registry age is beyond seven days and peers accept ESLint10/current TypeScript6. No ownership or age override."
   "2026-10-19T17:43:58.409Z","harness:codex","All11 added package versions are8.71.2 with matching registry/lockfile integrity; minimum verified publication age exceeds7.003 days. Every engine range accepts Node22.18, and installed ESLint10/TypeScript6 satisfy all declared peers. Frozen install, linked four-project typecheck, full strict ESLint, zero-vulnerability audit and development-bundle source/native validation pass without overrides."
   "2026-10-19T18:05:11.913Z","harness:codex","The current patch remains limited to TypeScript-ESLint 8.71.2 after its seven-day admission. After the SDK recovery changes, all four typecheck projects and repository ESLint now also pass on the installed patch. Frozen lockfile, integrity/engine/peer checks and zero-advisory audit receipts are retained; final hosted acceptance remains pending."
   "2026-10-19T18:31:12.199Z","harness:codex","Accepted on exact head a235a7e6: PR required checks all pass with GitHub CLEAN, including typecheck/static/package consumers and security. All eleven TypeScript-ESLint packages are 8.71.2, registry age meets seven days, lock integrity/engines/peers align, frozen install and linked four-project typecheck/strict ESLint pass, zero advisories. Local qualified SDK import latency is separately retained under pm-bj7rq0 and is not relabeled as a local static pass."
+  "2026-10-19T18:57:56.781Z","harness:codex",Graph-composition caught the prose reference to the separate performance investigation without a typed relation. Added the corresponding related edge through pm. This preserves the completed patch acceptance and independent performance evidence; it does not assert a blocker or a latency fix. No assurance threshold or exemption changed.
 files[2]{path,scope}:
   package.json,project
   pnpm-lock.yaml,project
