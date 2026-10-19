@@ -1,0 +1,68 @@
+id: pm-396dil
+title: "GH-1504: Refresh eligible Actions and executed secret-scanner contracts"
+description: Adopt the nine compatible immutable Actions updates from PR1504 together with exact workflow contracts and the executed TruffleHog scanner version. Preserve free hosted features and existing gate strength.
+type: Chore
+status: closed
+priority: 2
+tags[3]: ci,dependencies,security
+created_at: "2026-10-19T06:29:13.076Z"
+updated_at: "2026-10-19T06:42:08.638Z"
+closed_at: "2026-10-19T06:37:58.453Z"
+completed_at: "2026-10-19T06:37:58.453Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Verify exact upstream revisions and seven-day eligibility; Update immutable workflow pins and approved-version contracts together; Pin and execute the selected TruffleHog version with unchanged verification flags; Pass workflow contracts security admission and required hosted checks
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: Refreshed nine immutable Actions references across ten workflows and synchronized exact-pin contracts; bound executed TruffleHog3.99.2 to its wrapper while preserving verification flags and read-only permissions.
+expected_result: Eligible Actions and scanner executable versions match approved upstream releases with complete defect evidence and unchanged enforcement.
+actual_result: Three stale-pin failures reproduce before correction; corrected30-test suite and both linked commands pass with all TypeScript projects. Official container reports3.99.2. Post-close audit identified missing classification metadata and it is now included before this closure. Final-head security/native/coverage checks remain merge requirements.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-38w3ii,related,"2026-10-19T06:29:13.076Z","harness:codex","intake:gh1504",detected
+  pm-yh6t,related,"2026-10-19T06:29:13.076Z","harness:codex","intake:gh1504",detected
+comments[4]{created_at,author,text}:
+  "2026-10-19T06:29:13.076Z","harness:codex",Duplicate check read all2999 items with full strict complete output and zero unreadable records plus fresh all-status Actions search and open/in_progress inventories. No item owns GH1504 or these exact newer pins. Completed scanner and benchmark owners retain their shipped scopes. This bounded dependency intake shares PR1502 with current output and Windows delivery.
+  "2026-10-19T06:33:59.307Z","harness:codex","Primary eligibility proof: setup-node7.1.0 publishedOct8; upload-artifact7.0.2 Oct7; download-artifact8.0.2 Oct7; codeql-action4.38.3 Oct8; CodSpeed action5.4.2 Oct9; Scorecard2.5.0 Oct12 02:54UTC; TruffleHog3.99.2 Oct8. All exceed seven full days at adoption. Exact upstream TruffleHog action.yml passes inputs.version into IMAGE:VERSION; bind with.version3.99.2 alongside its immutable wrapper. Executed official container reports trufflehog3.99.2 with image digest47a84bc18a0d04a165498bbbd3bacfd84176661cbc91f8e0f85467f6a771e99a. The pre-update workflow contracts reproduce3 failures; corrected workflow/registry run passes30. Read-only token permissions and cooldown policy pass unchanged. Full hosted security/native acceptance remains mandatory."
+  "2026-10-19T06:34:58.626Z","harness:codex","Continuation baseline refreshed from live main: integrated immutable release commitdbccf03f5 for2026.10.19 without retagging or republishing. The public2026.10.19 artifact independently passes npm/npx/bunx command and MCP discovery checks plus npm/Bun installed-agent journeys. These checks certify that published baseline; the output/CI changes remain in the reviewed candidate for the next eligible daily cut. Local updated Actions contracts and both linked sandbox-safe commands pass; all four TypeScript projects pass. Revised-head CI and native scanner/Windows execution remain required before merge."
+  "2026-10-19T06:42:08.638Z","harness:codex","Fresh final-candidate observability passes the required Sentry/telemetry gate: zero blocking Sentry issues; a pm.command span for pm list at 2026-10-19T06:39:32Z; 2.49 percent observed finish errors and zero missing error-code rows. The local flush drains to zero. Production evidence matches 665 command start/finish pairs in ten minutes; the physical broker queue snapshot is recorded separately. These are sampled delivery observations rather than a universal completeness or permanent queue-drain claim. Post-close defect evidence, graph composition and tracker-context quality pass after the explicit review-caught classification repair."
+files[11]{path,scope}:
+  .github/workflows/auto-release.yml,project
+  .github/workflows/ci.yml,project
+  .github/workflows/codeql.yml,project
+  .github/workflows/codspeed.yml,project
+  .github/workflows/docs.yml,project
+  .github/workflows/nightly.yml,project
+  .github/workflows/release-reliability.yml,project
+  .github/workflows/release.yml,project
+  .github/workflows/scorecard.yml,project
+  .github/workflows/security.yml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,project,300,"harness:codex","2026-10-19T06:33:57.282Z",local_mutation,fix/factful-compact-output
+  node scripts/check-workflow-permissions.mjs && node scripts/check-dependency-cooldown.mjs,project,120,"harness:codex","2026-10-19T06:33:58.188Z",local_mutation,fix/factful-compact-output
+test_runs[1]:
+  - run_id: test-local-mvevpovd-a5iqxa
+    kind: test
+    status: passed
+    started_at: "2026-10-19T06:34:00.426Z"
+    finished_at: "2026-10-19T06:34:15.721Z"
+    recorded_at: "2026-10-19T06:34:15.721Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
+      node scripts/check-workflow-permissions.mjs && node scripts/check-dependency-cooldown.mjs,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+close_reason: Actions and scanner contracts implemented with complete review-caught evidence; final-head hosted delivery is required.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: static
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (three stale-pin failures before correction)
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,node scripts/check-workflow-permissions.mjs,node scripts/check-dependency-cooldown.mjs
+  hosted_checks[3]: Gates (static),Gates (coverage),TruffleHog
+  owner: pm-396dil
+body: ""

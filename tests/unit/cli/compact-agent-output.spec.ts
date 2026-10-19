@@ -5,6 +5,7 @@ import {
   formatCommanderErrorForJson,
 } from "../../../src/cli/error-guidance.js";
 import { attachReadOutputContracts } from "../../../src/sdk/context-intent-contracts.js";
+import { projectPmBriefListEnvelope } from "../../../src/sdk/output.js";
 
 const completeList = {
   items: ["one", "two", "three"].map((title, index) => ({
@@ -37,6 +38,193 @@ const completeList = {
 };
 
 describe("compact agent presentation", () => {
+  it.each([
+    null,
+    [],
+    {},
+    { ...completeList, items: null },
+    { ...completeList, projection: null },
+    {
+      ...completeList,
+      projection: { mode: "brief", fields: "id,status,type,title" },
+    },
+    { ...completeList, projection: { mode: "brief", fields: ["id"] } },
+    {
+      ...completeList,
+      projection: { ...completeList.projection, evidence: "keep" },
+    },
+    { ...completeList, completeness: null },
+    {
+      ...completeList,
+      completeness: {
+        ...completeList.completeness,
+        status: { toString: () => "complete" },
+      },
+    },
+    {
+      ...completeList,
+      completeness: { ...completeList.completeness, status: "partial" },
+    },
+    { ...completeList, has_more: undefined },
+    { ...completeList, truncated: true },
+    { ...completeList, count: 2 },
+    { ...completeList, total: "3" },
+    { ...completeList, total: 3.5 },
+    { ...completeList, total: 4 },
+    { ...completeList, next_cursor: "unexpected" },
+    { ...completeList, has_more: true, truncated: true },
+    { ...completeList, total: 4, has_more: true, truncated: true },
+    {
+      ...completeList,
+      total: 4,
+      has_more: true,
+      truncated: true,
+      next_cursor: "",
+    },
+    { ...completeList, omission_receipt: null },
+    {
+      ...completeList,
+      omission_receipt: {
+        ...completeList.omission_receipt,
+        omitted_field_groups: null,
+      },
+    },
+    {
+      ...completeList,
+      omission_receipt: {
+        ...completeList.omission_receipt,
+        omitted_field_groups: [],
+      },
+    },
+    {
+      ...completeList,
+      omission_receipt: {
+        ...completeList.omission_receipt,
+        omitted_field_groups: [null],
+      },
+    },
+    {
+      ...completeList,
+      omission_receipt: {
+        ...completeList.omission_receipt,
+        omitted_field_groups: [{ name: "full_item_fields" }],
+      },
+    },
+    {
+      ...completeList,
+      omission_receipt: {
+        ...completeList.omission_receipt,
+        omitted_field_groups: [
+          { name: "full_item_fields", restore_with: "other" },
+        ],
+      },
+    },
+    {
+      ...completeList,
+      omission_receipt: {
+        ...completeList.omission_receipt,
+        has_omissions: false,
+      },
+    },
+    {
+      ...completeList,
+      omission_receipt: {
+        ...completeList.omission_receipt,
+        omitted_field_group_count: 2,
+      },
+    },
+    {
+      ...completeList,
+      omission_receipt: { ...completeList.omission_receipt, evidence: "keep" },
+    },
+  ])("leaves unsupported or inconsistent SDK envelopes intact: %j", (value) => {
+    expect(projectPmBriefListEnvelope(value)).toBe(value);
+  });
+
+  it("preserves producer metadata and does not mutate the input SDK receipt", () => {
+    const value = structuredClone(completeList);
+    const before = structuredClone(value);
+    expect(projectPmBriefListEnvelope(value)).toMatchObject({
+      details: "--full",
+    });
+    expect(value).toEqual(before);
+    const source = {
+      ...completeList.completeness,
+      evidence: "provider evidence",
+    };
+    const sort = { ...completeList.sorting, evidence: "sort evidence" };
+    expect(
+      projectPmBriefListEnvelope({
+        ...value,
+        completeness: source,
+        sorting: sort,
+      }),
+    ).toMatchObject({
+      completeness: { status: "complete", evidence: "provider evidence" },
+      sorting: sort,
+    });
+    expect(
+      projectPmBriefListEnvelope({ ...value, sorting: null }),
+    ).toMatchObject({ sorting: null });
+    expect(
+      projectPmBriefListEnvelope({
+        ...value,
+        sorting: { sort: "default", order: "desc" },
+      }),
+    ).toMatchObject({ sorting: { sort: "default", order: "desc" } });
+    expect(
+      projectPmBriefListEnvelope({
+        ...value,
+        items: [],
+        count: 0,
+        total: 0,
+        completeness: { ...value.completeness, status: "unchecked" },
+      }),
+    ).toMatchObject({
+      items: [],
+      count: 0,
+      total: 0,
+      has_more: false,
+      completeness: { status: "unchecked" },
+    });
+    expect(
+      projectPmBriefListEnvelope({
+        ...value,
+        total: 4,
+        has_more: true,
+        truncated: true,
+        next_cursor: "next",
+      }),
+    ).toMatchObject({
+      completeness: { status: "complete" },
+      next_cursor: "next",
+    });
+  });
+
+  it("compacts bounded unchecked brief lists while retaining honest source and continuation evidence", () => {
+    const value = {
+      ...completeList,
+      total: 12,
+      applied_limit: 3,
+      has_more: true,
+      truncated: true,
+      next_cursor: "continue-after-three",
+      completeness: { ...completeList.completeness, status: "unchecked" },
+      filters: { status: "open", limit: "3" },
+    };
+    const text = formatBuiltInOutput(value, "toon");
+    expect(text).toContain('status: "unchecked"');
+    expect(text).toContain('next_cursor: "continue-after-three"');
+    expect(text).toContain("total: 12");
+    expect(text).toContain("has_more: true");
+    expect(text).not.toContain("projection:");
+    expect(text).not.toContain("sorting:");
+    expect(text).not.toContain("now:");
+    expect(text).not.toContain("unreadable_item_count: 0");
+    expect(text).toContain('details: "--full"');
+    expect(JSON.parse(formatBuiltInOutput(value, "json"))).toEqual(value);
+  });
+
   it("renders nested search facts in a declared table without changing JSON", () => {
     const value = {
       query: "test",

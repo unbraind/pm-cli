@@ -1,0 +1,71 @@
+id: pm-6pycus
+title: "GH-1501: Compact default brief-list TOON envelopes without hiding source completeness"
+description: "Default brief list pages pay repeated projection, default sorting, timestamp and zero-count echoes. Compact only the declared brief-list presentation while retaining unchecked/partial source status, counts, cursors, non-default sorting, warnings and material omission receipts. Preserve complete SDK and JSON contracts."
+type: Issue
+status: closed
+priority: 2
+tags[4]: agent-ux,"area:cli","area:sdk",token-efficiency
+created_at: "2026-10-18T21:45:38.695Z"
+updated_at: "2026-10-18T23:46:23.272Z"
+closed_at: "2026-10-18T23:46:22.107Z"
+completed_at: "2026-10-18T23:46:22.107Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: A small bounded brief list has lower measured envelope bytes while preserving actionable cursor and counts; Unchecked and partial source evidence cannot become complete or disappear; Non-default projections and producer diagnostics survive; Public SDK projection is reusable and leaves its input unchanged; Existing JSON result contracts and final token accounting remain exact
+parent: pm-srns
+risk: medium
+confidence: high
+resolution: "Published the reusable SDK brief-list projection and used it in built-in TOON rendering to remove redundant default metadata while preserving source status, cursors and producer diagnostics."
+expected_result: "Default brief-list envelopes cost fewer bytes while full JSON/SDK query results, partial reads, selected fields, warnings and non-default sorting retain their contracts."
+actual_result: "Measured five-row output improves from 1370 to 1030 bytes. All 47 envelope tests, complete static checks, linked tests, packed npm/npx/bunx consumers and four TypeScript projects pass. Final-head source coverage and reviews are enforced before merge."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1408,related,"2026-10-18T23:16:28.132Z","harness:codex","evidence:output-receipts",detected
+  pm-5y05kq,related,"2026-10-18T23:31:06.732Z","harness:codex","evidence:toon-encoding",detected
+  pm-cfed,related,"2026-10-18T23:31:06.732Z","harness:codex","evidence:json-envelope-compatibility",detected
+  pm-kvxqp1,related,"2026-10-18T23:31:06.732Z","harness:codex","evidence:encoding-budgets",detected
+comments[8]{created_at,author,text}:
+  "2026-10-18T21:45:38.695Z","harness:codex","Scope decomposition of canonical pm-srns, not a duplicate parent: strict all-status read inspected all 2996 items including 2721 closed. No existing leaf owns GH-1500 or GH-1501. Existing completed pm-kvxqp1, pm-5y05kq, pm-cfed and pm-gh1408 establish compatibility boundaries. The two non-overlapping report slices will share one reviewed delivery."
+  "2026-10-18T21:46:55.813Z","harness:codex","Pre-fix proof: the new unchecked paginated brief-list regression fails because default projection/sorting/timestamp and zero-count echoes remain. The source status and cursor are required facts and will remain visible. All 22 open GitHub issues already have PM-link comments; zero PRs and zero security alert inventories."
+  "2026-10-18T21:57:51.785Z","harness:codex","Measured same-input comparison against the original Git formatter: live five-row open list is 1370 bytes before and 1030 after (24.82 percent reduction). Twelve-row context is 8600 before and 8528 after (0.84 percent reduction) while restoring previously dropped null/empty row facts. New public projection is additive in the SDK surface, leaves input unchanged, and conservatively preserves partial/custom/inconsistent receipts. Full coverage currently has three failures, including explicit timeouts, retained for investigation."
+  "2026-10-18T22:12:17.596Z","harness:codex","Complete initial broad result retained: 10740 passed, 3 platform/declared skips, 4 failed across 832 files. Failures were local npm/package.json resolution in the packed continuation test plus three wall-clock timeouts under high load; no coverage report was admitted. Retrying with the test's documented NODE_PATH recovery and bounded workers, without changing test deadlines or coverage policy. Review also tightened the public projection to literal complete/unchecked statuses so coercible objects cannot manufacture source evidence."
+  "2026-10-18T22:14:33.632Z","harness:codex",Bounded recovery passed all 71 tests across the four previously failing files and the updated projection matrix. The packed continuation journey completes with NODE_PATH set to the installed npm module root. The three original wall-clock failures pass with two workers and unchanged deadlines. A fresh all-source coverage run is now in progress with four workers; the initial failed run remains retained rather than reported as a pass.
+  "2026-10-18T22:23:48.080Z","harness:codex","Measurement correction: context --limit 12 returned 18 focus rows (12 high_level plus 6 low_level), not twelve total rows. The same-input size comparison remains 8600 bytes before and 8528 after. The list measurement is five actual rows, 1370 to 1030 bytes (24.82 percent). Preserve both row counts and command limits in later comparisons."
+  "2026-10-18T22:36:58.523Z","harness:codex","The final SDK projection and renderer pass full-source coverage at exact 100/100/100/100: 69605 statements, 53470 branches, 14339 functions and 66026 lines. Static verification and linked primary/packed consumer tests are now the remaining local gates. Public JSON envelopes and typed query results are unchanged; the additive export is captured in sdk/public-surface.json."
+  "2026-10-18T23:46:21.005Z","harness:codex","Final local implementation evidence: the public SDK helper is additive in the surface snapshot and keeps input immutable, source uncertainty and continuation visible, and custom/partial receipts intact. A same-input five-row list shrinks 1370 to 1030 bytes (24.82 percent). The 47 primary envelope tests, full static gate, linked tests, nine packed package workflows on npm/npx/bunx, and four TypeScript projects pass. Required exact-head coverage and hosted reviews remain mandatory before merge."
+notes[1]{created_at,author,text}:
+  "2026-10-18T22:02:33.697Z","harness:codex","Measured on the same actual five-row query: 1370 bytes before and 1030 after. Preserve source uncertainty as a required fact rather than optimizing it away. The SDK helper declines custom or inconsistent receipts so presentation cannot manufacture completeness."
+files[5]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/output/output.ts,project
+  src/sdk/output.ts,project
+  src/sdk/output/list-envelope.ts,project
+  tests/unit/cli/compact-agent-output.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts,project,240,"harness:codex","2026-10-18T21:48:42.622Z",local_mutation,fix/factful-compact-output
+  node scripts/smoke-npx-from-pack.mjs,project,900,"harness:codex","2026-10-18T22:36:28.023Z",local_mutation,fix/factful-compact-output
+test_runs[1]:
+  - run_id: test-local-mveg7amo-11g3ci
+    kind: test
+    status: passed
+    started_at: "2026-10-18T23:16:00.422Z"
+    finished_at: "2026-10-18T23:20:03.216Z"
+    recorded_at: "2026-10-18T23:20:03.216Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts,schema,schema,source,local_source_ref
+      node scripts/smoke-npx-from-pack.mjs,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SCRIPTING.md,project
+  docs/SDK.md,project
+close_reason: Implementation and local verification complete; required reviewed delivery follows.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts tests/unit/cli/compact-agent-output.spec.ts tests/unit/core/output/output.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-6pycus
+body: ""

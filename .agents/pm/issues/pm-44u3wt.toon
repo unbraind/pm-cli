@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:release",ci,observability,reliability,scheduling
 created_at: "2026-07-27T04:05:01.742Z"
-updated_at: "2026-09-24T13:32:41.851Z"
+updated_at: "2026-10-18T21:50:22.438Z"
 closed_at: "2026-09-24T13:32:40.645Z"
 completed_at: "2026-09-24T13:32:40.645Z"
 author: "harness:claude-code"
@@ -31,7 +31,7 @@ dependencies[5]{id,kind,created_at}:
   pm-u9d0,implements,"2026-07-27T04:05:01.742Z"
   pm-9gxi,related,"2026-07-27T04:21:28.511Z"
   pm-xp1xsw,implements,"2026-07-27T04:21:28.511Z"
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-07-31T06:14:41.159Z","harness:claude-code","Still live, verified 2026-07-31. Declared cron is \"35 2 * * *\" (02:35 UTC). Today's scheduled run created 05:50:49Z — 3h15m late. Last eleven scheduled runs all fired between 05:24:10Z and 06:05:09Z, i.e. the drift is stable at roughly three hours rather than intermittent, so the effective release clock is 05:30-06:05 UTC and no document says so."
   "2026-08-03T11:17:38.929Z","harness:codex","Current schedule evidence 2026-08-03: workflow declares cron 02:35 UTC; scheduled run 30788639874 started 05:57:42Z, a delay of about 3 hours 23 minutes, and succeeded. Functional release safety is intact, but the documented schedule-window and drift-SLO issue remains live."
   "2026-08-04T09:19:17.100Z","harness:codex","Fresh schedule evidence 2026-08-04: declared cron remains 02:35 UTC while scheduled Auto Release run 30880997668 started 05:32:20Z, about 2h57m late, and succeeded. Functional daily publication is healthy, but the declared-versus-observed release window remains materially different."
@@ -40,6 +40,7 @@ comments[8]{created_at,author,text}:
   "2026-09-24T13:04:15.756Z","harness:codex","Implementation paired with pm-e70zh5: compare schedule-created and runner-start timestamps separately against the 02:35 UTC nominal occurrence, declare the allowed dispatch window and missing-run deadline, and retain execution-day semantics for the existing one-release-per-day guard. Historical cron association is an inferred nearest preceding occurrence because GitHub does not expose an authoritative scheduled timestamp."
   "2026-09-24T13:14:30.260Z","harness:codex","Timing policy implementation distinguishes nominal 02:35 UTC occurrence, 60-minute dispatch allowance, queue delay, and latest overdue missing occurrence. A real 30-day GitHub census reports dispatch-window violations rather than treating historical multi-hour delays as healthy. Cron-policy parity and missing-run negative controls are included."
   "2026-09-24T13:32:39.370Z","harness:codex","Verification: policy/cron parity, late dispatch, queue separation, missing schedule and insufficient sample negative controls pass. The unchanged release guard uses the UTC execution date; the reporting clock explicitly infers the nearest preceding 02:35 UTC occurrence with a 60-minute allowance. Real historical lag remains a policy violation, not a reason to fit thresholds to failures."
+  "2026-10-18T21:50:22.425Z","harness:codex","Live rolling nightly report 39165968041 retains failure-rate findings for macOS Node24 and Windows Node24 cohorts. This output PR does not change historical attempts, raise thresholds, or claim the reliability window is green. The known latest Windows shard report remains canonical GitHub #1477. Report details were downloaded and inspected separately from PR CI."
 learnings[1]{created_at,author,text}:
   "2026-09-24T13:19:18.930Z","harness:codex","GitHub exposes creation and start timestamps, not an authoritative intended cron instant. Report nearest-preceding UTC occurrence as an inference and retain its greater-than-24-hour ambiguity; keep tag identity anchored to the documented execution day."
 files[2]{path,scope,note}:

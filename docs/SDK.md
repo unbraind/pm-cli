@@ -1688,6 +1688,16 @@ true. The normal JSON envelope remains unchanged, and an actionable cursor is
 always retained. SDK query functions continue returning their full typed
 results; lean projection belongs to the CLI presentation boundary.
 
+Custom agent hosts can import `projectPmBriefListEnvelope` from
+`@unbrained/pm-cli/sdk` to apply the same brief-list presentation without
+mutating the original result. It retains unchecked source status and actionable
+continuation, and leaves partial, custom, or inconsistent envelopes intact.
+The CLI applies this projection only to TOON; ordinary JSON and SDK query
+results retain their complete contracts. The public `encodePmTableRows` and
+`decodePmTableRows` primitives distinguish explicit null and empty cells from
+missing keys. TOON rendering preserves those row facts before selecting the
+smaller expanded or tabular encoding.
+
 Migration note: before this contract, `total` was present only when pagination
 omitted rows, a completed page omitted `next_cursor`, and verbose results
 emitted unset filter keys with `null` values. Consumers must use `has_more` or

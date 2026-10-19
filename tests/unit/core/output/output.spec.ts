@@ -154,17 +154,16 @@ describe("core/output/output", () => {
       num: 3,
       bool: false,
       arr_scalars: ["x", 2, true],
-      arr_single_nested: [{ key: "value" }],
-      arr_multi_line: [{ nested: ["a", { deep: 1 }] }],
+      arr_single_nested: [{ key: "value", drop: null }],
+      arr_multi_line: [{ nested: ["a", { deep: 1 }, {}], empty_nested: [] }, {}],
       nested: { child: { leaf: "done" } },
     });
     expect(rendered).not.toContain("  - null");
-    expect(rendered).toContain("arr_single_nested[1]{key}:\n  value");
-    expect(rendered).toContain("arr_multi_line[1]:");
-    expect(rendered).toContain("- nested[2]:");
+    expect(rendered).toContain("arr_single_nested[1]{key,drop}:\n  value,null");
+    expect(rendered).toContain("arr_multi_line[2]:");
+    expect(rendered).toContain("- nested[3]:");
     expect(rendered).toContain("- deep: 1");
-    expect(rendered).not.toContain("drop:");
-    expect(rendered).not.toContain("empty_nested:");
+    expect(rendered).toContain("empty_nested:");
     expect(rendered).not.toContain("empty_child:");
     expect(rendered).toContain("nested:");
     expect(rendered).toContain("  child:");
@@ -217,6 +216,25 @@ describe("core/output/output", () => {
     const unrelatedVerdict = formatOutput({ checks, verdict: { authority: "validation" } }, {});
     expect(unrelatedVerdict).toContain("checks_encoding:");
     expect(Buffer.byteLength(validation)).toBeLessThan(Buffer.byteLength(formatOutput({ checks, verdict: health.verdict }, {})));
+  });
+
+  it("keeps successful health diagnostics compact while preserving material and failing details", () => {
+    const empty = { name: "healthy", ok: true, details: {} };
+    const material = { name: "material", ok: true, details: { count: 0, empty: [], nil: null } };
+    const failing = { name: "failing", ok: false, details: {} };
+    const scalar = { name: "scalar", ok: true, details: null };
+    const value = { ok: true, verdict: { authority: "ok" }, checks: [empty, material, failing, scalar, "provider note"] };
+    const before = structuredClone(value);
+    expect(decode(formatOutput(value, {}))).toEqual({
+      ...value, checks: [{ name: "healthy", ok: true }, material, failing, scalar, "provider note"],
+    });
+    expect(JSON.parse(formatOutput(value, { json: true }))).toEqual(before);
+    expect(value).toEqual(before);
+    expect(decode(formatOutput({ ...value, ok: false }, {}))).toEqual({ ...value, ok: false });
+    const validation = { ...value, verdict: { authority: "validation" } };
+    expect(decode(formatOutput(validation, {}))).toEqual(validation);
+    expect(decode(formatOutput({ ok: true, verdict: value.verdict, checks: "provider diagnostic" }, {})))
+      .toEqual({ ok: true, verdict: value.verdict, checks: "provider diagnostic" });
   });
 
   it("covers raw TOON renderer empty collection branches", () => {

@@ -19,6 +19,8 @@ export {
   type PmEncodedTableRows,
 } from "./output/table-rows.js";
 
+export { projectPmBriefListEnvelope } from "./output/list-envelope.js";
+
 /**
  * Serialize object rows as newline-delimited JSON without adding a trailing
  * newline. CLI hosts can append their final newline while SDK consumers can

@@ -22,6 +22,7 @@ import {
 } from "../../sdk/read-output-contracts.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 import { encodePmTableRows } from "../../sdk/output/table-rows.js";
+import { projectPmBriefListEnvelope } from "../../sdk/output/list-envelope.js";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
 
@@ -306,28 +307,53 @@ function renderToonObjectEntry(
   return `${indent}${key}:\n${renderToonValue(entry, depth + 1)}`;
 }
 
+/** Independent presentation policies shared by recursive value compaction. */
+interface OutputCompactionPolicy {
+  readonly omitDuplicateCountAliases: boolean;
+  readonly preserveRowFacts: boolean;
+}
+
+/** Preserve row cells recursively while retaining explicit lean-JSON compaction. */
+function compactToonArray(
+  values: unknown[],
+  policy: OutputCompactionPolicy,
+  preserveEmpty: boolean,
+): unknown[] | undefined {
+  const compactedEntries = values
+    .map((entry) =>
+      compactToonValue(
+        entry,
+        policy,
+        preserveEmpty || (policy.preserveRowFacts && isPlainObject(entry)),
+      ),
+    )
+    .filter((entry): entry is unknown => entry !== undefined);
+  return compactedEntries.length > 0 || preserveEmpty
+    ? compactedEntries
+    : undefined;
+}
+
 /** Keep sparse presentation rules shared while allowing lean JSON to retain count aliases. */
 function compactToonValue(
   value: unknown,
-  omitDuplicateCountAliases = true,
+  policy: OutputCompactionPolicy = {
+    omitDuplicateCountAliases: true,
+    preserveRowFacts: true,
+  },
+  preserveEmpty = false,
 ): unknown | undefined {
-  if (value === null || value === undefined) {
-    return undefined;
-  }
+  if (value === null) return preserveEmpty ? null : undefined;
 
   if (Array.isArray(value)) {
-    const compactedEntries = value
-      .map((entry) => compactToonValue(entry, omitDuplicateCountAliases))
-      .filter((entry): entry is unknown => entry !== undefined);
-    return compactedEntries.length > 0 ? compactedEntries : undefined;
+    return compactToonArray(value, policy, preserveEmpty);
   }
 
   if (isPlainObject(value)) {
-    const compacted: Record<string, unknown> = {};
+    const compacted: Array<[string, unknown]> = [];
     const entries = Object.entries(value).filter(([key, entry]) => {
       const canonicalCount = COLLECTION_COUNT_ALIASES.get(key);
       return (
-        !omitDuplicateCountAliases ||
+        !policy.omitDuplicateCountAliases ||
         canonicalCount === undefined ||
         !isPlainObject(value.collection_counts) ||
         entry !== value.collection_counts[canonicalCount]
@@ -339,15 +365,21 @@ function compactToonValue(
         Array.isArray(entry) &&
         entry.length === 0
       ) {
-        compacted[key] = [];
+        compacted.push([key, []]);
         continue;
       }
-      const compactedEntry = compactToonValue(entry, omitDuplicateCountAliases);
+      const compactedEntry = compactToonValue(
+        entry,
+        policy,
+        preserveEmpty,
+      );
       if (compactedEntry !== undefined) {
-        compacted[key] = compactedEntry;
+        compacted.push([key, compactedEntry]);
       }
     }
-    return Object.keys(compacted).length > 0 ? compacted : undefined;
+    return compacted.length > 0 || preserveEmpty
+      ? Object.fromEntries(compacted)
+      : undefined;
   }
 
   return value;
@@ -372,7 +404,11 @@ function renderToonValue(value: unknown, depth: number): string {
           entry,
           depth,
           !Object.hasOwn(value, `${key}_encoding`) &&
-            !(key === "checks" && isPlainObject(value.verdict) && value.verdict.authority === "ok"),
+            !(
+              key === "checks" &&
+              isPlainObject(value.verdict) &&
+              value.verdict.authority === "ok"
+            ),
         ),
       )
       .join("\n");
@@ -426,7 +462,10 @@ const LEAN_READ_ENVELOPE_ECHO_KEYS = new Set([
 
 /** Remove sparse values and list echoes while preserving legacy JSON count aliases. */
 function projectLeanJsonValue(value: unknown): unknown {
-  const compacted = compactToonValue(value, false);
+  const compacted = compactToonValue(value, {
+    omitDuplicateCountAliases: false,
+    preserveRowFacts: false,
+  });
   if (!isPlainObject(compacted) || !Array.isArray(compacted.items)) {
     return compacted ?? null;
   }
@@ -490,48 +529,28 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
   };
 }
 
-/** Collapse only successful standard list receipts; retain warnings, custom fields, filters, and bounded-read diagnostics. */
-function projectCompleteBriefList(value: unknown): unknown {
+/** Omit only vacuous diagnostic objects on explicitly successful check rows. */
+function projectEmptyCheckDetails(value: unknown): unknown {
   if (
     !isPlainObject(value) ||
-    !Array.isArray(value.items) ||
-    Object.hasOwn(value, "details") ||
-    !isPlainObject(value.projection) ||
-    value.projection.mode !== "brief" ||
-    !isPlainObject(value.completeness) ||
-    value.completeness.status !== "complete" ||
-    [
-      value.completeness.unreadable_item_count,
-      value.completeness.unreadable_directory_count,
-    ].some((count) => count !== 0) ||
-    [value.has_more, value.truncated].some((flag) => flag !== false) ||
-    value.count !== value.items.length ||
-    value.total !== value.count ||
-    !isPlainObject(value.omission_receipt) ||
-    JSON.stringify(value.omission_receipt.omitted_field_groups) !==
-      JSON.stringify([{ name: "full_item_fields", restore_with: "--full" }])
-  ) {
-    return value;
-  }
-  const {
-    total: _total,
-    has_more: _hasMore,
-    truncated: _truncated,
-    next_cursor: _nextCursor,
-    completeness: _completeness,
-    projection: _projection,
-    now: _now,
-    omission_receipt: _omissions,
-    sorting,
-    ...rest
-  } = value;
-  return {
-    ...rest,
-    ...(isPlainObject(sorting) && sorting.sort === "default"
-      ? {}
-      : { sorting }),
-    details: "--full",
-  };
+    value.ok !== true ||
+    !isPlainObject(value.verdict) ||
+    value.verdict.authority !== "ok" ||
+    !Array.isArray(value.checks)
+  ) return value;
+  return { ...value, checks: value.checks.map(omitEmptySuccessfulCheckDetails) };
+}
+
+/** Preserve failing, material and producer-owned diagnostics during health presentation. */
+function omitEmptySuccessfulCheckDetails(check: unknown): unknown {
+  if (
+    !isPlainObject(check) ||
+    check.ok !== true ||
+    !isPlainObject(check.details) ||
+    Object.keys(check.details).length !== 0
+  ) return check;
+  const { details: _details, ...rest } = check;
+  return rest;
 }
 
 /**
@@ -546,7 +565,10 @@ export function formatBuiltInOutput(
   if (format === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
   }
-  const compactedToon = compactToonValue(projectCompleteBriefList(result));
+  const compactedToon = compactToonValue(
+    projectEmptyCheckDetails(projectPmBriefListEnvelope(result)),
+    { omitDuplicateCountAliases: true, preserveRowFacts: true },
+  );
   return compactedToon === undefined
     ? "{}\n"
     : `${renderToonValue(compactedToon, 0)}\n`;

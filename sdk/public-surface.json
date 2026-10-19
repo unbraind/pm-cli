@@ -15147,6 +15147,12 @@
           "signature": "(entry: HistoryEntry, vocabulary?: AuthorIdentityVocabulary, coordinates?: { itemId?: string; version?: number; }) => HistoryProvenanceRow | calls: (entry: HistoryEntry, vocabulary?: AuthorIdentityVocabulary, coordinates?: { itemId?: string; version?: number; }) => HistoryProvenanceRow"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "projectPmBriefListEnvelope",
+          "signature": "(value: unknown) => unknown | calls: (value: unknown) => unknown"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "projectPmDiagnosticOutput",

@@ -668,7 +668,8 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   Windows execution is tracked by [pm-bj7rq0](../.agents/pm/issues/pm-bj7rq0.toon).
   Script and native keeper cohorts run independently on Windows Node 24. Their
   source/script keeper steps retain the two-worker cap, and each cohort retains
-  the 12-minute deadline. The required
+  the 12-minute deadline. The four-file Git/worktree receipt slice uses one
+  worker to avoid competing subprocess-heavy files at the same case deadlines. The required
   `Windows regression (Node 24)` check waits for both cohorts and fails if either
   fails, is cancelled, or is skipped. This preserves every selected regression
   while avoiding a shared serial job deadline. See GitHub's

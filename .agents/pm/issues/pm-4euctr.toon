@@ -1,0 +1,83 @@
+id: pm-4euctr
+title: "GH-1500: Preserve null, empty and reserved JSON row facts through host rendering"
+description: "TOON compaction removes present null/empty row cells before table encoding, which labels them absent and disagrees with the JSON result. Preserve row value semantics and avoid unnecessary absent metadata while retaining genuinely missing-key encoding."
+type: Issue
+status: closed
+priority: 2
+tags[4]: agent-ux,"area:cli","area:sdk",token-efficiency
+created_at: "2026-10-18T21:45:34.695Z"
+updated_at: "2026-10-19T00:29:39.449Z"
+closed_at: "2026-10-19T00:29:38.724Z"
+completed_at: "2026-10-19T00:29:38.724Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Public rendering round trips explicit null, empty, missing and nested row values without classifying present cells as absent; Context-shaped scalar tables avoid redundant cell metadata; Ordinary lean JSON semantics and JSON envelopes remain compatible; Regression fails before the fix and passes with exact final-byte budget accounting; Host compaction preserves reserved JSON row keys through TOON and retains their nonempty values in explicit lean JSON without mutating input"
+parent: pm-srns
+risk: medium
+confidence: high
+resolution: "Preserved nulls, empty values, empty rows and reserved JSON keys through host rendering; made row preservation and count-alias compaction explicit independent policies while retaining lean JSON and health diagnostic behavior."
+expected_result: TOON preserves row facts and lean JSON stays sparse; each caller selects independent row/count policies without changing token limits or JSON contracts.
+actual_result: "All 110 primary tests, linked row tests, build, four TypeScript projects and the complete static gate pass on the refactor. The earlier PR head passed 10753 tests and exact all-source 100/100/100/100; revised-head CI and reviewer rechecks are required before merge."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kvxqp1,related,"2026-10-18T23:16:26.782Z","harness:codex","evidence:host-row-roundtrip",detected
+  pm-5y05kq,related,"2026-10-18T23:31:05.575Z","harness:codex","evidence:row-encoding",detected
+  pm-cfed,related,"2026-10-18T23:31:05.575Z","harness:codex","evidence:lean-json-compatibility",detected
+  pm-gh1408,related,"2026-10-18T23:31:05.575Z","harness:codex","evidence:field-projection",detected
+comments[12]{created_at,author,text}:
+  "2026-10-18T21:45:34.695Z","harness:codex","Scope decomposition of canonical pm-srns, not a duplicate parent: strict all-status read inspected all 2996 items including 2721 closed. No existing leaf owns GH-1500 or GH-1501. Existing completed pm-kvxqp1, pm-5y05kq, pm-cfed and pm-gh1408 establish compatibility boundaries. The two non-overlapping report slices will share one reviewed delivery."
+  "2026-10-18T21:46:54.142Z","harness:codex","Pre-fix proof: the new public renderer round-trip regression fails because explicit nulls, empty nested values and an empty object row are removed. Existing 35 tests pass. Same test/harness will verify the fix."
+  "2026-10-18T21:52:33.216Z","harness:codex","Focused proof passed 114 tests, including transport and completeness integration. TypeScript projects passed. Required live Sentry/telemetry gate passes with 0 recent unresolved issues, 2.55 percent telemetry finish error rate, and 0 missing error-code rows. Local flush drained its queue and a production query found current-minute events. Public release 2026.10.18 passes npm, npx, bunx, all bins, MCP discovery, Skills and Apps checks. Coverage is still running; any observed failure will be investigated before closeout."
+  "2026-10-18T21:57:54.438Z","harness:codex","Observability proof: the explicit opt-in pm list probe produced a current Sentry pm.command span at 2026-10-18T21:55:18Z with sanitized description pm list. The production telemetry query matched 456 recent start/finish pairs using installation, process session, command and started_at. Queue inspection was 0 ready / 0 unacknowledged. These are observed samples and delivery evidence, not a universal all-actions completeness claim."
+  "2026-10-18T22:14:35.238Z","harness:codex","Full-suite recovery: the complete composed producer/budget continuation journey passes through real packed SDK consumers in the bounded rerun. JSON and SDK result contracts remain unchanged. The fresh full-source coverage attempt includes the final literal-status and structural metadata guards from the companion list-envelope fix."
+  "2026-10-18T22:36:56.869Z","harness:codex","Fresh final all-source coverage passes with exact counts: statements 69605/69605, branches 53470/53470, functions 14339/14339, lines 66026/66026; zero uncovered or skipped coverage counts. Full suite passed after the documented local npm module-path correction and bounded workers. Earlier failed and focused recovery receipts remain recorded. The CLI resolves directly to this checkout's dist/cli.js."
+  "2026-10-18T22:39:17.026Z","harness:codex","Static gate follow-up: the row-value change exceeded the existing compactToonValue complexity ceiling (17 vs 16, cognitive 19 vs 16). Extracted its array step into a private helper without semantic changes. The 10751-test / exact-100-percent run above certifies the pre-extraction source. Current primary regressions, static/packed gates and exact-head hosted coverage will certify the final refactor; no threshold was raised."
+  "2026-10-18T22:52:39.847Z","harness:codex","Additional same-boundary probe: a JSON row with own keys id and __proto__ renders with only id through the host formatter. Direct SDK table encode, TOON encode/decode and SDK restoration preserve both keys, isolating the omission to the host compactor's ordinary-object accumulator. Include this edge case under the active row-facts owner rather than duplicating it as another issue."
+  "2026-10-18T22:57:23.462Z","harness:codex","Token regression sensitivity: preserving all empty row values initially expanded health-default to 258 estimated tokens above its unchanged 164-token ceiling. The new health diagnostic regression failed before the scoped correction. It now passes with 109 primary tests, and the 32-surface token gate passes unchanged. Only empty details objects on successful health rows are projected away; material/failing/null diagnostics and ordinary JSON remain intact."
+  "2026-10-18T23:46:17.784Z","harness:codex","Final local implementation evidence: all 110 primary tests, 32 unchanged token surfaces, the complete pnpm quality:static gate, linked row tests, packed npm/npx/bunx workflows and four TypeScript projects pass. The reserved-key regression failed on the prior host accumulator and passes with entry-based object reconstruction. Graph/context assurance passes after adding the actual cited lineage. Full-source coverage on the final pushed source remains a required CI merge gate; the earlier 10751-test exact-100-percent receipt is retained with its source-stage qualification."
+  "2026-10-19T00:16:40.547Z","harness:codex","PR #1502 initial head 2e2930b passed all required checks: 10753 tests and exact all-source 100/100/100/100; hosted analysis reports zero new issues and zero CodeFactor annotations. CodeRabbit full review completed with one trivial maintainability finding at review comment 4309382693. Reopened only this edited item to separate the row-preservation policy from count-alias deduplication. Operational tracker records remain in scope because the user explicitly requested dependency/release audits and recording new UX enhancements in the same delivery."
+  "2026-10-19T00:29:37.889Z","harness:codex","Review follow-through local verification passes: 63 linked row/host tests plus 47 list-envelope tests, build, all four TypeScript projects and the complete pnpm quality:static gate including unchanged 32-surface token budgets. Recursive compaction now carries independent named omitDuplicateCountAliases and preserveRowFacts policies; TOON and lean JSON select both explicitly. This is a behavior-preserving refactor requested by inline review 4309382693; final revised-head full coverage and review rechecks remain merge requirements."
+learnings[2]{created_at,author,text}:
+  "2026-10-18T22:02:35.703Z","harness:codex","Apply sparse row encoding before any lossy null/empty projection: a missing key and a present null must retain distinct meanings. Preserve row collection cardinality, including empty object rows and nested empty containers, even when lean JSON remains explicitly lossy."
+  "2026-10-18T22:57:25.006Z","harness:codex","For host row changes, probe null, empty, sparse and reserved-key data together, and run the fast producer token ratchets before broad verification. Lossless table encoding cannot recover facts already dropped by host compaction, while compact diagnostics need explicit producer-owned omission rules."
+files[3]{path,scope}:
+  src/core/output/output.ts,project
+  tests/unit/core/output/output.spec.ts,project
+  tests/unit/sdk/output/table-rows.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts tests/unit/core/output/output.spec.ts,project,240,"harness:codex","2026-10-18T21:48:40.777Z",local_mutation,fix/factful-compact-output
+test_runs[2]:
+  - run_id: test-local-mveg228f-55lx4w
+    kind: test
+    status: passed
+    started_at: "2026-10-18T23:15:45.496Z"
+    finished_at: "2026-10-18T23:15:59.055Z"
+    recorded_at: "2026-10-18T23:15:59.055Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts tests/unit/core/output/output.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvei94zp-vc6ewl
+    kind: test
+    status: passed
+    started_at: "2026-10-19T00:17:03.255Z"
+    finished_at: "2026-10-19T00:17:28.453Z"
+    recorded_at: "2026-10-19T00:17:28.453Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts tests/unit/core/output/output.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SCRIPTING.md,project
+  docs/SDK.md,project
+close_reason: Completed review-requested policy separation; final-head CI and review rechecks remain required before merge.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts tests/unit/cli/compact-agent-output.spec.ts tests/unit/core/output/output.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-4euctr
+body: ""

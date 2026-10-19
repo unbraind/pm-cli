@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1500: Preserve null, empty and reserved JSON row facts through host rendering ([pm-4euctr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4euctr.toon))
+- GH-1501: Compact default brief-list TOON envelopes without hiding source completeness ([pm-6pycus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6pycus.toon))
+
+### Security
+
+- GH-1504: Refresh eligible Actions and executed secret-scanner contracts ([pm-396dil](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-396dil.toon))
+
 ## 2026.10.19 - 2026-10-19
 
 ### Fixed

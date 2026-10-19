@@ -60,7 +60,7 @@ jobs:
           version: 11.28.5
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -90,7 +90,7 @@ jobs:
         run: pnpm build
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dist-node24-ubuntu
           path: dist
@@ -100,7 +100,7 @@ jobs:
         run: node scripts/release/runtime-lock.mjs check && node scripts/release/package-distribution.mjs --destination="${RUNNER_TEMP}"
 
       - name: Upload packed artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: packed-first-run
           path: ${{ runner.temp }}/*.tgz
@@ -122,16 +122,16 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
       - name: Download packed artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: packed-first-run
           path: packed
       - name: Download harness protocol contract
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist-node24-ubuntu
           path: dist
@@ -203,12 +203,12 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
 
       - name: Download dist artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist-node24-ubuntu
           path: dist
@@ -264,7 +264,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - name: Setup pnpm
@@ -274,7 +274,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Download dist artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist-node24-ubuntu
           path: dist
@@ -315,7 +315,7 @@ jobs:
           version: 11.28.5
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -348,7 +348,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download dist artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist-node24-ubuntu
           path: dist
@@ -380,7 +380,7 @@ jobs:
 
       - name: Retain SDK mutation evidence
         if: always() && matrix.gate == 'static'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: sdk-mutation-evidence
           path: .cache/mutation/*.json
@@ -492,7 +492,7 @@ jobs:
           version: 11.28.5
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -506,7 +506,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download dist artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist-node24-ubuntu
           path: dist
@@ -530,7 +530,7 @@ jobs:
 
       - name: Upload coverage shard report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: coverage-blob-${{ matrix.shard }}
           path: .vitest-reports/blob-${{ matrix.shard }}.json
@@ -540,7 +540,7 @@ jobs:
       # merger treats every JSON file there as a serialized blob array.
       - name: Upload test reliability report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-reliability-${{ matrix.shard }}
           path: .vitest-reports/reliability-${{ matrix.shard }}-4.json
@@ -570,7 +570,7 @@ jobs:
           version: 11.28.5
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -579,13 +579,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Download dist artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: dist-node24-ubuntu
           path: dist
 
       - name: Download coverage shard reports
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: coverage-blob-*
           merge-multiple: true
@@ -598,7 +598,7 @@ jobs:
 
       - name: Upload coverage artifact
         if: always() && steps.shard_admission.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: coverage-node24-ubuntu-latest
           path: coverage
@@ -686,7 +686,7 @@ jobs:
           version: 11.28.5
 
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -785,11 +785,12 @@ jobs:
 
       # pm-gh1405 / pm-gh1390: verify both Git object formats and durable
       # receipt settlement across real worktrees on the native Windows runner.
+      # pm-bj7rq0: isolate Git/process-heavy files without changing their deadlines.
       - name: Verify merge receipt recovery and settlement on Windows
         if: matrix.cohort == 'native'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts
+        run: node scripts/run-tests.mjs test -- --maxWorkers=1 tests/integration/receipt-operation-boundaries.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts
 
       - name: Verify nested linked-test dependency junctions
         if: matrix.cohort == 'native'
