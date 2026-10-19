@@ -14,6 +14,25 @@ import {
 
 describe("pm cli error guidance context plumbing", () => {
   it.each([
+    { requested_tokens: 1, feasible_tokens: 500, minimum_feasible_tokens: 500, minimum_status: "exact", basis: "canonical_retry" },
+    { requested_tokens: 1, feasible_tokens: 500, minimum_feasible_tokens: null, minimum_status: "feasible_only", basis: "canonical_retry" },
+    { requested_tokens: 1, feasible_tokens: null, minimum_feasible_tokens: null, minimum_status: "unavailable", basis: "canonical_retry", reason: "output_constraints" },
+  ] as const)("preserves validated budget advice in JSON and human recovery ($minimum_status)", (budget) => {
+    const context = { code: "invalid_argument_value", recovery: { token_budget: { ...budget, private_note: "must be omitted" } } };
+    const envelope = formatPmCliErrorForJson("Infeasible context budget", 2, context);
+    expect(envelope.recovery?.token_budget).toMatchObject(budget);
+    expect(JSON.stringify(envelope)).not.toContain("private_note");
+    const display = formatPmCliErrorForDisplay("Infeasible context budget", context);
+    expect(display).toContain("requested_token_budget: 1");
+    expect(display).toContain("feasible_token_budget: " + (budget.feasible_tokens ?? "unavailable"));
+    expect(display).toContain("minimum_token_budget: " + (budget.minimum_feasible_tokens ?? "not established"));
+  });
+
+  it("omits malformed package-carried budget advice", () => {
+    expect(_testOnly.normalizeRecoveryPayload({ token_budget: { requested_tokens: -1 } as never })).toBeUndefined();
+  });
+
+  it.each([
     { entry: "schema/fields.json", coordinate: { storage_area: "schema", relative_entry: "schema/fields.json", entry_redacted: false } },
     { entry: "schema/unsafe\nentry", coordinate: { storage_area: "schema", entry_redacted: true } },
   ])("preserves the producer's safe preview coordinate in JSON and classification: $entry", ({ entry, coordinate }) => {

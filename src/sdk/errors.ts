@@ -4,7 +4,55 @@
  * Defines public SDK APIs and package-author helpers for Errors.
  */
 import { EXIT_CODE } from "../core/shared/constants.js";
-import { PmCliError, type PmCliErrorContext } from "../core/shared/errors.js";
+import {
+  PmCliError,
+  type PmCliErrorContext,
+  type PmTokenBudgetRecovery,
+} from "../core/shared/errors.js";
+export type { PmTokenBudgetRecovery } from "../core/shared/errors.js";
+
+/** Accept only positive integer token counts that JSON can preserve exactly. */
+function isPositiveSafeTokenCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+/** Validate package-carried budget advice without trusting class identity or extra fields. */
+export function isPmTokenBudgetRecovery(
+  value: unknown,
+): value is PmTokenBudgetRecovery {
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return false;
+  const candidate = value as Partial<PmTokenBudgetRecovery>;
+  if (
+    !isPositiveSafeTokenCount(candidate.requested_tokens) ||
+    candidate.basis !== "canonical_retry"
+  )
+    return false;
+  switch (candidate.minimum_status) {
+    case "exact":
+      return (
+        isPositiveSafeTokenCount(candidate.minimum_feasible_tokens) &&
+        candidate.feasible_tokens === candidate.minimum_feasible_tokens &&
+        candidate.reason === undefined
+      );
+    case "feasible_only":
+      return (
+        candidate.minimum_feasible_tokens === null &&
+        isPositiveSafeTokenCount(candidate.feasible_tokens) &&
+        candidate.reason === undefined
+      );
+    case "unavailable":
+      return (
+        candidate.minimum_feasible_tokens === null &&
+        candidate.feasible_tokens === null &&
+        ["query_cost_limit", "search_limit", "output_constraints"].includes(
+          candidate.reason as string,
+        )
+      );
+    default:
+      return false;
+  }
+}
 
 /**
  * The `Error.name` value carried by every {@link PmCliExpectedError}. The CLI's
@@ -56,15 +104,26 @@ export interface PmItemAlreadyExistsError extends PmCliExpectedError {
  * Requires the producer code, conflict exit code and usable existing-item
  * coordinates; ownership conflicts and message lookalikes do not qualify.
  */
-export function isItemAlreadyExistsError(error: unknown): error is PmItemAlreadyExistsError {
-  if (!isPmCliExpectedError(error) || error.code !== "item_already_exists" || error.exitCode !== EXIT_CODE.CONFLICT) {
+export function isItemAlreadyExistsError(
+  error: unknown,
+): error is PmItemAlreadyExistsError {
+  if (
+    !isPmCliExpectedError(error) ||
+    error.code !== "item_already_exists" ||
+    error.exitCode !== EXIT_CODE.CONFLICT
+  ) {
     return false;
   }
   const context = error.context;
-  return typeof context === "object" && context !== null &&
+  return (
+    typeof context === "object" &&
+    context !== null &&
     context.code === "item_already_exists" &&
-    typeof context.id === "string" && context.id.trim().length > 0 &&
-    typeof context.path === "string" && context.path.trim().length > 0;
+    typeof context.id === "string" &&
+    context.id.trim().length > 0 &&
+    typeof context.path === "string" &&
+    context.path.trim().length > 0
+  );
 }
 
 /**

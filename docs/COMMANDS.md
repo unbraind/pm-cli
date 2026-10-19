@@ -894,9 +894,14 @@ Context `meta.usedTokens` measures the selected built-in JSON or TOON emission,
 including its newline, alias counts, omission receipt and optional discovery or
 token-accounting metadata. If the required rendered packet cannot fit in the requested
 token budget, `pm item deps` returns usage exit code 2 with
-`invalid_argument_value`. Its structured recovery provides an executable
-`pm item deps <id> --format tree --summary` inspection; use that summary before
-choosing a larger `--token-budget`. ([pm-odw3j8](../.agents/pm/tasks/pm-odw3j8.toon))
+`invalid_argument_value`. Structured `recovery.token_budget` reports the requested
+budget and a verified feasible budget. Its `minimum_status` is `exact` only after
+every smaller positive budget is checked; bounded searches can instead report
+`feasible_only` or `unavailable` with no invented minimum. When a feasible budget
+is known, `suggested_retry_args` preserves the tracker, query and output options
+in an executable context retry with that `--token-budget`. A separate
+`next_best_command` provides a compact tree-summary inspection.
+([pm-odw3j8](../.agents/pm/tasks/pm-odw3j8.toon))
 
 ## Graph Queries
 

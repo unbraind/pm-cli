@@ -3,6 +3,22 @@
  *
  * Provides shared primitives and utilities for Errors.
  */
+/** Verified budget advice for the preserved canonical context retry. */
+export interface PmTokenBudgetRecovery {
+  /** Estimated tokens requested by the failed query. */
+  requested_tokens: number;
+  /** Verified working budget, or null when bounded recovery cannot establish one. */
+  feasible_tokens: number | null;
+  /** Global minimum only when every smaller positive budget was checked. */
+  minimum_feasible_tokens: number | null;
+  /** Whether the reported minimum is proved, only a feasible value is known, or neither is available. */
+  minimum_status: "exact" | "feasible_only" | "unavailable";
+  /** The emitted retry preserves selection and makes its encoding explicit. */
+  basis: "canonical_retry";
+  /** Why recovery could not establish a working budget within its work limits. */
+  reason?: "query_cost_limit" | "search_limit" | "output_constraints";
+}
+
 /** Carries structured recovery guidance attached to expected pm CLI errors. */
 export interface PmCliErrorRecoveryPayload {
   /** Strategy used to control recovery behavior. */
@@ -35,6 +51,8 @@ export interface PmCliErrorRecoveryPayload {
   suggested_retry?: string;
   /** Tokenized retry arguments for direct execution without reparsing display text. */
   suggested_retry_args?: string[];
+  /** Bounded, verified token-budget guidance for an executable context retry. */
+  token_budget?: PmTokenBudgetRecovery;
   /** Elapsed time in milliseconds for retry after. */
   retry_after_ms?: number;
   /** Value that configures or reports fallback candidates for this contract. */

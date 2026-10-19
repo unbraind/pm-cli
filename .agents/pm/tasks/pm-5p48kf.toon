@@ -6,16 +6,16 @@ status: in_progress
 priority: 2
 tags[3]: bug,ci,review
 created_at: "2026-10-19T14:58:38.472Z"
-updated_at: "2026-10-19T16:20:49.182Z"
+updated_at: "2026-10-19T17:43:56.657Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#2b1352b8d1f9ffd894ba9de2"
 author: "harness:codex"
 estimated_minutes: 90
-acceptance_criteria: Classic and ruleset publisher bindings survive into the receipt; Matching names from another app cannot satisfy a bound requirement; Unbound legacy contexts retain existing behavior; Exact-head paginated publisher evidence and matching apps are tested without weakening GitHub CLEAN enforcement
+acceptance_criteria: Verify classic and ruleset bindings with wrong absent and wrong-head check-run publishers; distinguish status-only contexts with publisherUnverifiable and independent GitHub CLEAN; require app evidence when same-name check runs coexist; preserve unbound behavior complete inventory and exact coverage.
 parent: pm-obq2
 risk: medium
 confidence: high
-expected_result: Every effective bound check is present only with matching exact-head app evidence; unbound contexts keep their previous behavior and GitHub CLEAN independently gates merge readiness.
+expected_result: Publisher-bound check-run contexts require matching exact-head app evidence; status-only bound contexts disclose unavailable app identity and rely on GitHub CLEAN. Required contexts pending checks and independent merge policy remain enforced.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,discovered_from,"2026-10-19T14:58:38.472Z","harness:codex","cli:create:dep",detected
 comments[8]{created_at,author,text}:

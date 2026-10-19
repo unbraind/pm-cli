@@ -2508,8 +2508,17 @@ The helper returns an `Error` whose public name is `PmCliError` and whose `exitC
 For example, the SDK command layer settles relationship token counts after alias
 counts, read disclosure, encoding and optional lean/token-accounting policies.
 It converts an impossible rendered context budget into an expected
-`invalid_argument_value` usage error, including
-compact inspection arguments in `context.recovery.suggested_retry_args`.
+`invalid_argument_value` usage error. The public `PmTokenBudgetRecovery` type and
+`isPmTokenBudgetRecovery` guard describe `context.recovery.token_budget`: requested
+tokens, a verified feasible retry value, and an exact minimum only when every
+smaller positive budget has been checked. Larger searches report `feasible_only`;
+query cost limits, exhausted searches or independent output constraints can report
+`unavailable`. Both states leave the unproved minimum `null`. The bounded search
+uses the real packer and output policy, including alias disclosure.
+`suggested_retry_args` preserves the selected tracker, query and output options
+with the verified feasible budget so it works from another workspace.
+`next_best_command` retains a separate compact tree-summary inspection, which
+also supplies the fallback when no working context budget is established.
 CLI JSON and MCP preserve that recovery. The lower-level
 `buildRelationshipContext` primitive retains its `TypeError` validation contract;
 unrelated runtime errors still propagate.

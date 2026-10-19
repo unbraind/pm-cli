@@ -11,6 +11,22 @@ import {
   type PmDiagnosticOutputClass,
   type PmDiagnosticOutputReceipt,
 } from "@unbrained/pm-cli/sdk/contracts";
+import { isPmTokenBudgetRecovery, type PmTokenBudgetRecovery } from "@unbrained/pm-cli/sdk";
+import { isPmTokenBudgetRecovery as coreBudgetGuard } from "@unbrained/pm-cli/sdk/core";
+
+const budgetRecovery: PmTokenBudgetRecovery = {
+  requested_tokens: 1, feasible_tokens: 500, minimum_feasible_tokens: null,
+  minimum_status: "feasible_only", basis: "canonical_retry",
+};
+const unknownRecovery: unknown = budgetRecovery;
+if (isPmTokenBudgetRecovery(unknownRecovery)) {
+  const requested: number = unknownRecovery.requested_tokens;
+  void requested;
+}
+void coreBudgetGuard(budgetRecovery);
+// @ts-expect-error the evidence vocabulary is closed
+const invalidMinimumStatus: PmTokenBudgetRecovery["minimum_status"] = "guessed";
+void invalidMinimumStatus;
 
 const diagnosticClass: PmDiagnosticOutputClass = "error";
 const contract = resolvePmDiagnosticOutputBudget(diagnosticClass);

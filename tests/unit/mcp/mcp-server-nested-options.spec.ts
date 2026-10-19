@@ -59,7 +59,14 @@ describe("mcp nested option-key validation (pm-upi0)", () => {
             details: {
               code: "invalid_argument_value",
               field: "tokenBudget",
-              recovery: { suggested_flags: ["--token-budget"] },
+              recovery: {
+                suggested_flags: ["--token-budget"],
+                token_budget: {
+                  requested_tokens: 1,
+                  feasible_tokens: expect.any(Number),
+                  basis: "canonical_retry",
+                },
+              },
             },
           },
         },

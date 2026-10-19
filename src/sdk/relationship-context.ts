@@ -17,6 +17,9 @@ import {
   type RelationshipTraversalDirection,
 } from "./relationships.js";
 
+/** Canonical default shared by the kernel and rendered-budget recovery. */
+export const DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET = 1200;
+
 /** Semantic family explaining why a node or edge participates in graph context. */
 export type RelationshipContextRole =
   | "prerequisite"
@@ -246,9 +249,7 @@ function discoverNodes(
   if (!Number.isInteger(maxDepth) || maxDepth < 0)
     throw new TypeError("Relationship context maxDepth must be non-negative");
   const seen = new Set([root]);
-  const queue: { id: string; distance: number }[] = [
-    { id: root, distance: 0 },
-  ];
+  const queue: { id: string; distance: number }[] = [{ id: root, distance: 0 }];
   const rows: DiscoveredNode[] = [];
   let inspectedEdges = 0;
   let depthTruncated = false;
@@ -263,7 +264,8 @@ function discoverNodes(
     });
     inspectedEdges += adjacent.meta.inspectedEdges;
     if (current.distance >= maxDepth) {
-      if (adjacent.value.some((row) => !seen.has(row.id))) depthTruncated = true;
+      if (adjacent.value.some((row) => !seen.has(row.id)))
+        depthTruncated = true;
       continue;
     }
     for (const { id, edge } of adjacent.value) {
@@ -387,20 +389,13 @@ function selectContextEdges(params: {
         params.options.kinds.map((kind) => params.registry.require(kind).kind),
       )
     : undefined;
-  const candidates = params.graph
-    .edges()
-    .filter(
-      (edge) => {
-        if (
-          !params.included.has(edge.source) ||
-          !params.included.has(edge.target)
-        )
-          return false;
-        if (kinds === undefined || kinds.has(edge.kind)) return true;
-        const inverse = params.registry.resolve(edge.kind)?.inverse;
-        return inverse !== undefined && kinds.has(inverse);
-      },
-    );
+  const candidates = params.graph.edges().filter((edge) => {
+    if (!params.included.has(edge.source) || !params.included.has(edge.target))
+      return false;
+    if (kinds === undefined || kinds.has(edge.kind)) return true;
+    const inverse = params.registry.resolve(edge.kind)?.inverse;
+    return inverse !== undefined && kinds.has(inverse);
+  });
   const edges: RelationshipEdge[] = [];
   let usedTokens = params.initialTokens;
   for (const edge of candidates) {
@@ -424,7 +419,11 @@ export function buildRelationshipContext(
     throw new TypeError(`Relationship node not found: ${rootId}`);
   const nodeLimit = positiveInteger(options.nodeLimit, 20, "nodeLimit");
   const edgeLimit = positiveInteger(options.edgeLimit, 40, "edgeLimit");
-  const tokenBudget = positiveInteger(options.tokenBudget, 1200, "tokenBudget");
+  const tokenBudget = positiveInteger(
+    options.tokenBudget,
+    DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET,
+    "tokenBudget",
+  );
   const registry = options.registry ?? createRelationshipKindRegistry();
   const byId = new Map(details.map((detail) => [detail.id, detail]));
   const rootDetails: RelationshipContextNodeDetails = byId.get(rootId) ?? {
