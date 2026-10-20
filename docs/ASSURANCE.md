@@ -1,6 +1,8 @@
 # Project Assurance Primitives
 
-Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-88mo8m](../.agents/pm/issues/pm-88mo8m.toon), [pm-atnfh4](../.agents/pm/issues/pm-atnfh4.toon), [pm-xmmafu](../.agents/pm/issues/pm-xmmafu.toon), [pm-4ok4ex](../.agents/pm/tasks/pm-4ok4ex.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-eg5u1n](../.agents/pm/issues/pm-eg5u1n.toon)
+Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-88mo8m](../.agents/pm/issues/pm-88mo8m.toon), [pm-atnfh4](../.agents/pm/issues/pm-atnfh4.toon), [pm-xmmafu](../.agents/pm/issues/pm-xmmafu.toon), [pm-4ok4ex](../.agents/pm/tasks/pm-4ok4ex.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-eg5u1n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-eg5u1n.toon)
+
+Recovery follow-up: [pm-l6bpb8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l6bpb8.toon). These tracker records are repository-only and excluded from npm.
 
 ## Agent Quick Context
 
@@ -316,7 +318,14 @@ and gate reads use `AssuranceEvaluationRefusalError`, which remains a `TypeError
 for SDK compatibility. CLI and MCP `show` and missing-assertion `promote` requests
 normalize that refusal to `invalid_argument_value` with
 `reason: assurance_evaluation_refused`, rather than reporting an unexpected
-runtime fault. Other runtime errors retain their original classification.
+runtime fault. These missing-ID refusals carry `changed: false`, the rejected ID,
+and a bounded discovery invocation for that declaration kind. The executable
+`recovery.suggested_retry_args` preserves the selected `--pm-path` and explicitly
+limits discovery output to 2,000 tokens. Discovery lists configured declarations;
+it does not create an ID or weaken a gate. CLI, SDK action and MCP dispatch share
+this envelope. Direct SDK callers retain the typed refusal class. Registry and
+history bytes remain unchanged, while corruption, I/O failures and unexpected
+runtime errors retain their original classification.
 Source-resolution refusals
 also carry the gate, assertion, measurement, source kind, field, and optional
 health/validate check, so a zero value remains distinct from an absent or

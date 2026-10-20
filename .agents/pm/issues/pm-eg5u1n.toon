@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-20T20:40:15.393Z"
-updated_at: "2026-10-20T21:13:59.963Z"
+updated_at: "2026-10-20T21:57:15.087Z"
 closed_at: "2026-10-20T21:13:59.070Z"
 completed_at: "2026-10-20T21:13:59.070Z"
 author: "harness:codex"
@@ -26,7 +26,7 @@ component: SDK assurance declaration reads
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-9yhl2v,discovered_from,"2026-10-20T20:40:15.393Z","harness:codex","cli:create:dep",detected
   pm-eqxjzl,related,"2026-10-20T20:40:15.393Z","harness:codex","cli:create:dep",detected
-comments[3]:
+comments[4]:
   - created_at: "2026-10-20T20:40:15.393Z"
     author: "harness:codex"
     text: "Duplicate check: full all-status corpus and live searches for assurance missing Sentry, operational refusal, and assurance declaration not found found the closed pm-9yhl2v gate-selection predecessor but no declaration-read owner. Full predecessor metadata, history/comment evidence and release resolution were read. Current open/in-progress inventories distinguish this new Sentry group from completed gate-trigger work. https://unbrained.sentry.io/issues/154999406/"
@@ -37,6 +37,9 @@ comments[3]:
   - created_at: "2026-10-20T20:49:22.925Z"
     author: "harness:codex"
     text: "Built public SDK and CLI acceptance: Node and Bun each return exit 2 / invalid_argument_value for missing measurement, assertion and gate reads in isolated trackers. Both runtimes import the published governance entrypoint from the built package and preserve AssuranceEvaluationRefusalError plus TypeError identity for all three kinds. Linked 29-case SDK/action/MCP suite, targeted ESLint and no-emit TypeScript checks pass. The original Sentry group is retained until the reviewed fix lands and a fresh live probe proves no recurrence."
+  - created_at: "2026-10-20T21:57:15.087Z"
+    author: "harness:codex"
+    text: "Fresh GitHub audit found #1527 (https://github.com/unbraind/pm-cli/issues/1527), independently reproducing the same shipped-version lookup fault. The reviewed typed boundary here covers the core report. Remaining bounded discovery and read-only acceptance proof are carried by a separate recovery child under the canonical recovery programme, rather than reopening completed mutation/field validation work."
 learnings[1]{created_at,author,text}:
   "2026-10-20T21:11:38.730Z","harness:codex",Expected assurance lookup failures need the same typed SDK boundary as evaluation failures. Normalize only the declared refusal at each transport caller; preserve unexpected TypeErrors and verify both public runtimes.
 files[4]{path,scope}:

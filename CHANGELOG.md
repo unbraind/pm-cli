@@ -21,6 +21,7 @@
 
 ### Other
 
+- Complete bounded discovery and read-only recovery proof for missing assurance declarations ([pm-l6bpb8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l6bpb8.toon))
 - Expose freshness and completeness of independent dependency advisory feeds before merge ([pm-eqxjzl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-eqxjzl.toon))
 - Schedule corpus and policy fixture keepers after parallel contract workers ([pm-ckb8w5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ckb8w5.toon))
 

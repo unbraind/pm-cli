@@ -1,0 +1,50 @@
+id: pm-l6bpb8
+title: Complete bounded discovery and read-only recovery proof for missing assurance declarations
+description: "GitHub #1527 independently reproduces the missing-declaration fault addressed by the closed typed-refusal owner. The current built fix returns a typed usage error but still advertises only generic help, so complete the remaining bounded same-tracker discovery and refusal byte-preservation criteria without reopening shipped mutation/field-validation work. https://github.com/unbraind/pm-cli/issues/1527"
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-20T21:57:09.432Z"
+updated_at: "2026-10-20T22:17:26.860Z"
+closed_at: "2026-10-20T22:17:26.108Z"
+completed_at: "2026-10-20T22:17:26.108Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: "Expose bounded executable discovery for the requested declaration kind, preserve the selected tracker, and identify the rejected ID; prove show/promote SDK, CLI and MCP refusals leave registry/history bytes unchanged; retain typed remove behavior and unexpected corruption/I/O/provider faults; negative controls prove expected misses are excluded from unexpected-fault capture; preserve public SDK compatibility."
+parent: pm-f05lsg
+risk: medium
+confidence: high
+resolution: "Missing assurance show/promote declarations now expose changed=false, the rejected ID and an executable bounded discovery command for the requested kind in the selected tracker, using the existing SDK action transport and typed refusal without changing public SDK signatures."
+expected_result: "Agents recover by listing relevant configured declarations in the selected tracker; expected misses never mutate registry/history or become unexpected Sentry faults, while genuine corruption, I/O and runtime faults remain distinct."
+actual_result: "All 38 linked sandbox tests pass, including selected-tracker replay and all-file byte preservation; built Node/Bun each pass seven refusal controls and public SDK/action/MCP checks. Four recovery regressions failed before the patch. Build, typecheck, targeted lint and unchanged public SDK contract pass. Source correction is Unreleased pending final current-head CI, review and merge in PR #1526."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-88mo8m,related,"2026-10-20T21:57:09.432Z","harness:codex","cli:create:dep",detected
+  pm-eg5u1n,discovered_from,"2026-10-20T21:57:09.432Z","harness:codex","cli:create:dep",detected
+  pm-v0a0un,related,"2026-10-20T21:57:09.432Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-20T21:57:09.432Z","harness:codex","Duplicate check: fresh open/in-progress inventories, all-status assurance declaration discovery recovery search and the strict complete 3033-item corpus identify no dedicated remaining discovery owner. Full live parent and all three predecessor records were read. The closed typed lookup, put/remove mutation and field-validation fixes remain completed; this task owns the remaining GitHub #1527 recovery and read-only proof criteria. The issue was created during the ongoing delivery and found by the complete paginated GitHub audit."
+  "2026-10-20T22:17:25.152Z","harness:codex","Validation: four enhanced missing-declaration cases failed before bounded guidance and now pass. Linked sandbox suite passes all 38 tests (11 registry, 19 action, 8 CLI); CLI discovery is replayed against a selected tracker with spaces while the ambient tracker differs, and every selected tracker file remains byte-identical. Built Node and Bun each pass seven usage-refusal controls (three show kinds, promote and three remove kinds), replay all four executable discovery commands, and verify public SDK typed reads plus SDK/MCP dispatch without registry/history changes. Expected misses are excluded by the production Sentry capture predicate; corrupt registry, EACCES and unexpected TypeError controls retain genuine fault classification. Coherent build, typecheck, targeted ESLint and SDK snapshot check pass; the public surface has zero classified changes. GitHub #1527 is linked to this recovery task and the completed typed-refusal predecessor; the current PR will close it after reviewed merge. Source work remains Unreleased."
+files[3]{path,scope}:
+  src/sdk/governance/assurance-action.ts,project
+  tests/integration/assurance-cli.integration.spec.ts,project
+  tests/unit/sdk/assurance-action.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts tests/integration/assurance-cli.integration.spec.ts,project,"harness:codex","2026-10-20T22:08:09.062Z",local_mutation,fix/advisory-coverage
+test_runs[1]:
+  - run_id: test-local-mvh8n183-4or037
+    kind: test
+    status: passed
+    started_at: "2026-10-20T22:11:14.167Z"
+    finished_at: "2026-10-20T22:11:39.123Z"
+    recorded_at: "2026-10-20T22:11:39.123Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts tests/integration/assurance-cli.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/ASSURANCE.md,project
+close_reason: Bounded same-tracker declaration recovery and read-only proof complete
+body: ""
