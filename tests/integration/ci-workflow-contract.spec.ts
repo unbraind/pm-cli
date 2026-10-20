@@ -252,10 +252,14 @@ describe("GitHub workflow contract", () => {
     }
   });
 
-  it("requires both Windows cohorts and refuses unsuccessful aggregate outcomes", async () => {
+  it("requires complete Windows partitions and refuses unsuccessful aggregate outcomes", async () => {
     const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
     const cohorts = workflow.jobs["windows-regression-cohorts"];
-    expect(cohorts.strategy).toEqual({ "fail-fast": false, "max-parallel": 2, matrix: { cohort: ["scripts", "native"] } });
+    expect(cohorts.strategy).toMatchObject({ "fail-fast": false, "max-parallel": 2 });
+    const partitions: { cohort: string; shard: string }[] = cohorts.strategy.matrix.include ?? [];
+    expect(partitions).toHaveLength(3);
+    expect(partitions.filter((row) => row.cohort === "scripts").map((row) => row.shard).sort()).toEqual(["1/2", "2/2"]);
+    expect(partitions.filter((row) => row.cohort === "native")).toHaveLength(1);
     expect(cohorts["timeout-minutes"]).toBe(12);
     expect(cohorts["continue-on-error"]).toBeUndefined();
     const scripted = cohorts.steps.filter((step: { run?: string }) => step.run?.includes("node scripts/run-tests.mjs"));
@@ -600,8 +604,8 @@ describe("GitHub workflow contract", () => {
     });
     expect(completionStep?.["continue-on-error"]).toBeUndefined();
     expectContainsAll(windowsRegressionJob, [
-      "name: Windows regression cohort (${{ matrix.cohort }}, Node 24)",
-      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/scripts/",
+      "name: Windows regression cohort (${{ matrix.cohort }} ${{ matrix.shard }}, Node 24)",
+      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 --shard=${{ matrix.shard }} tests/unit/scripts/",
       "name: Restore exact TypeScript and Vitest caches",
       "needs: build-foundation",
       "runs-on: windows-latest",

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Bound Windows script regression admission with complete deterministic shards ([pm-vqwery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vqwery.toon))
+- Scorecard alert 29: patch newly disclosed follow-redirects credential-header vulnerabilities ([pm-px2raj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-px2raj.toon))
 - GH-1518: recover provably dead same-host item-lock owners before TTL expiry ([pm-02z97f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-02z97f.toon))
 - Replace unsafe live-lock force advice with invocation-preserving contention recovery ([pm-htiwmd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-htiwmd.toon))
 - GH-1520: reject unknown SDK mutation option keys before any write ([pm-fl3phm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fl3phm.toon))

@@ -1,0 +1,58 @@
+id: pm-vqwery
+title: Bound Windows script regression admission with complete deterministic shards
+description: "Main CI39473954236 at849dbf00515160f207738f555371fe254cbd020a canceled the Windows scripts cohort after its enforced12-minute job budget; the required Windows aggregate then failed closed. The preceding source PR passed the same suite, so passing one warm attempt does not establish durable bounded admission. Partition the complete existing scripts directory into two deterministic Vitest shards while preserving all native guards, the12-minute cap, worker limit and required aggregate."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-20T18:44:46.411Z"
+updated_at: "2026-10-20T19:19:07.040Z"
+closed_at: "2026-10-20T19:19:05.812Z"
+completed_at: "2026-10-20T19:19:05.812Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: The script shards are disjoint and cover the entire existing script file population; no guarded native command is removed; worker and timeout caps are retained; existing workflow contract checks and actual hosted Windows acceptance pass for both scripts shards plus native cohort; final main CI is green.
+parent: pm-bj7rq0
+risk: medium
+confidence: high
+severity: medium
+resolution: "Use two deterministic scripts shards and one intact native cohort, preserving maxWorkers2, max-parallel2, the12-minute job cap and the required aggregate that rejects non-success outcomes."
+expected_result: "Every script file and native guard remains admitted, each Windows cohort finishes under the unchanged cap and no failed canceled skipped or absent result can be accepted."
+actual_result: The guard fails before repair; all21 workflow contract tests and both linked checks pass. Actual Vitest partitions104 files into complete disjoint52/52 sets. Hosted scripts cohorts pass in383s/294s and native in417s; required aggregate and complete CI39479180880 pass with10852 tests and exact100/100/100/100 coverage. Historical canceled-attempt evidence is preserved.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-px2raj,discovered_from,"2026-10-20T18:44:46.411Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-20T18:44:46.411Z","harness:codex","Duplicate check: the complete initial all-status read plus fresh Windows scripts and Windows cohort keyword searches found no exact open shard-admission leaf. Full live parent pm-bj7rq0 retains the broader startup and runner qualification work; older Windows portability and allocation fixes remain completed. This leaf owns the newly observed required-check budget failure and its complete partition repair."
+  "2026-10-20T18:49:28.940Z","harness:codex","Negative control: the strengthened complete-partition contract fails before the workflow repair because the original matrix has no complete shard family. GitHub annotations confirm job118805667850 exceeded the exact12m0s cap, rather than an asserted product failure. The repaired matrix retains max-parallel2 and maxWorkers2, the12-minute timeout and the unchanged required all-cohort aggregate. Native guard commands and verified Cygwin provisioning remain intact. All21 workflow contract tests pass; actual hosted shard timing remains required."
+  "2026-10-20T18:51:44.741Z","harness:codex","Partition evidence: Vitest file-only list returns the full104-file inventory even when passed a shard option, so that output alone cannot certify a partition. Invoking the actual installed Vitest BaseSequencer on the discovered specifications yields52 and52 files, disjoint with a complete104-file union; runtime sharding is independent of timing caches. The21-test workflow contract also retains rejection of failed canceled skipped or absent aggregate results. Hosted Windows execution remains the acceptance for runtime budgeting."
+  "2026-10-20T19:00:29.393Z","harness:codex","Further inspection of the canceled main log found an additional partial failure receipt: verify-published-release.spec.ts reports1 failed case, kills a nested server after invalid discovery within the production readiness budget (native), before cancellation prevented the final failure stack. The timeout annotation alone does not establish a budget-only cause. Preserve this evidence and inspect the complete new shard results before closing; no broader Windows or process-cleanup fix is claimed yet."
+  "2026-10-20T19:19:01.017Z","harness:codex","Actual Windows acceptance in CI39479180880 at86edbdc391fdc0bf987257b24f802890aa63b861: scripts1/2 passes in383s, scripts2/2 passes in294s and native1/1 passes in417s, all under the unchanged12-minute cap. The required aggregate passes. Full CI has10852 passing tests with3 skips and exact100/100/100/100 coverage. The previous canceled attempt and its partial failed-verifier receipt remain historical evidence; this proves the bounded current partition and retained controls rather than a distinct process-cleanup repair."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T19:19:02.375Z","harness:codex","Require a disjoint complete runtime shard family plus the unchanged fail-closed all-cohort aggregate. File-only listing does not apply Vitest sharding; verify with the actual sequencer and actual hosted execution. A canceled cohort may contain earlier failure receipts, so inspect the full retained log before attributing cancellation solely to performance."
+files[2]{path,scope}:
+  .github/workflows/ci.yml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,300,"harness:codex","2026-10-20T18:49:27.760Z",local_mutation,fix/follow-redirects-security
+test_runs[1]:
+  - run_id: test-local-mvh1ig3m-3xdbin
+    kind: test
+    status: passed
+    started_at: "2026-10-20T18:51:50.689Z"
+    finished_at: "2026-10-20T18:52:07.809Z"
+    recorded_at: "2026-10-20T18:52:07.809Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+close_reason: Implement and verify complete bounded Windows script partitions
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: The complete-partition workflow contract fails against the original single scripts cohort; actual main job118805667850 exceeded the12m0s cap and its required aggregate failed closed.
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+  owner: pm-vqwery
+body: ""

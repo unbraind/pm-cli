@@ -1,0 +1,22 @@
+id: pm-eqxjzl
+title: Expose freshness and completeness of independent dependency advisory feeds before merge
+description: The2026-10-20 follow-redirects advisories were visible in OSV and the merged-main Scorecard instance while the registry-backed all-dependency audit still reported zero. The component patch is completed separately; this task owns advisory-source freshness and coverage context before merge. Prefer a project-owned assurance collector or extension on existing SDK primitives rather than ecosystem-specific behavior in the generic SDK.
+type: Task
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-20T19:27:47.107Z"
+updated_at: "2026-10-20T19:27:47.107Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Reuse registered assurance/extension contracts; define bounded queries and explicit provenance for complete project dependency coverage; add a negative control with a lagging zero registry result and positive independent feed, plus unavailable-feed and zero-known-advisory controls; preserve automated updater cooldown and all-severity policy; do not suppress actionable advisories or introduce unbounded polling."
+parent: pm-qwoy
+risk: medium
+confidence: high
+expected_result: "A dependency-security decision exposes source/version/time and coverage receipts, detects a fresh authoritative positive result even when another feed returns zero, and distinguishes unavailable evidence from clean evidence."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dba47,related,"2026-10-20T19:27:47.107Z","harness:codex","cli:create:dep",detected
+  pm-px2raj,discovered_from,"2026-10-20T19:27:47.107Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-20T19:27:47.107Z","harness:codex","Duplicate check: exact keyword search OSV audit found only the completed component fixes. Full live records for both closed leaves and the security parent distinguish independent-feed freshness from package-version remediation. Current open and in-progress inventories show no exact active owner. Intake only: open and unclaimed; this does not represent an unresolved affected dependency in the patched graph."
+body: ""
