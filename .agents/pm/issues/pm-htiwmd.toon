@@ -1,0 +1,43 @@
+id: pm-htiwmd
+title: Replace unsafe live-lock force advice with invocation-preserving contention recovery
+description: "Bounded delivery of the recovery-guidance defect reported in GH-1516: live or unknown locks must recommend waiting and the actual command, never placeholder item updates or force takeover. Keep the thousand-writer throughput and hierarchy-lock redesign in canonical parent pm-lvyd."
+type: Issue
+status: in_progress
+priority: 1
+tags[3]: agent-ux,concurrency,recovery
+created_at: "2026-10-20T15:15:31.532Z"
+updated_at: "2026-10-20T16:07:46.879Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#244d33e51b5f1223152c8358"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Human and JSON recovery preserve actual command arguments and item identity; no live-lock force advice or placeholder mutation; SDK conflict context exposes owner liveness and wait policy; shell-sensitive operands stay quoted; tests prove original payload and lock survive refusals
+parent: pm-lvyd
+risk: medium
+confidence: high
+expected_result: A contending agent can retry its exact operation with a larger bounded lock wait without changing its intent or overriding another owner.
+comments[5]{created_at,author,text}:
+  "2026-10-20T15:15:31.532Z","harness:codex","Duplicate check: fresh context/search/open/in-progress and complete strict all-status corpus (3027 items without omissions), plus full pm-lvyd/pm-02z97f and completed retry/takeover/publication/GC lineage reads. No active leaf owns the precise live-lock guidance defect. This child implements only recovery guidance; large-scale throughput remains with pm-lvyd."
+  "2026-10-20T15:26:15.655Z","harness:codex","Implemented invocation-preserving recovery on the shared CLI error surface, using already-redacted normalized argv from the runtime. SDK conflicts include actual lock id, observed owner-liveness reason, bounded-wait recovery policy and retry hint. Live or unknown locks receive wait/configuration advice rather than invented force mutations. Shell-sensitive comment operands survive tokenized recovery. Focused aggregate: 238 passing tests; full gates pending."
+  "2026-10-20T15:53:29.971Z","harness:codex","Follow-up acceptance:57 tests across the moved lock journey, owner-proof boundaries and all three previous failing suites now pass. Real packed SDK continuation acceptance succeeds under both Node and Bun after qualifying the local npm resolution environment. The repository file cap remains120 and the suppression ceiling is lowered to103. Full static and terminal coverage checks are pending; no full-coverage success is claimed from the earlier run."
+  "2026-10-20T15:59:29.776Z","harness:codex","Investigation while the static gate runs: the shared recovery normalizer trims opaque argv entries and drops empty tokens. A retry can therefore change a whitespace-sensitive payload even when the lock guidance retains the original command. This is inside this leaf's argument-preservation acceptance: preserve complete validated token arrays and add padded/empty operand controls, alongside a native SDK owner-state and live-lock protection assertion. No new duplicate issue is needed."
+  "2026-10-20T16:07:46.879Z","harness:codex","Argument-preservation acceptance passes: validated normalized and suggested retry vectors preserve padded and empty operands exactly. Invalid vectors are omitted whole rather than dropping tokens. Live conflicts report observed owner-process state and actual lock identity, and safe retries retain canonical command, operands and shell quoting without adding force. Final focused aggregate240 tests passes, including direct public diagnostic and real CLI transport controls."
+files[4]{path,scope}:
+  src/cli/error-guidance.ts,project
+  src/core/lock/lock.ts,project
+  tests/integration/locking/lock-owner-recovery.integration.spec.ts,project
+  tests/unit/cli/cli-main-errors.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,300,"harness:codex","2026-10-20T15:52:43.615Z",local_mutation,fix/lock-owner-recovery
+docs[2]{path,scope}:
+  docs/CONFIGURATION.md,project
+  docs/SDK.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: The live-owner integration test fails before the fix because required recovery text recommends force with a placeholder update instead of preserving the actual comments command and payload.
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-htiwmd
+body: ""

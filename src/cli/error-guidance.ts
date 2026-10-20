@@ -364,6 +364,12 @@ function assignRecoveryString(
   }
 }
 
+/** Preserve executable argument strings exactly; malformed vectors cannot be repaired by deleting tokens. */
+function normalizeRecoveryArgs(value: unknown): string[] | undefined {
+  return Array.isArray(value) && value.length > 0 && value.every((entry) => typeof entry === "string")
+    ? [...value] as string[] : undefined;
+}
+
 function assignRecoveryCollection(
   normalized: PmCliErrorRecoveryPayload,
   key:
@@ -378,6 +384,11 @@ function assignRecoveryCollection(
     | "candidate_commands",
   value: unknown,
 ): void {
+  if (key === "normalized_args" || key === "suggested_retry_args") {
+    const args = normalizeRecoveryArgs(value);
+    if (args) normalized[key] = args;
+    return;
+  }
   if (key === "parsed_positionals") {
     if (!Array.isArray(value)) return;
     const parsedPositionals = value
@@ -1149,19 +1160,24 @@ function buildLockConflictGuidance(
   if (!message.includes("is locked")) {
     return null;
   }
-  return applyPmCliErrorContext(
+  const args = normalizeRecoveryArgs(context?.recovery?.normalized_args);
+  const retry = args ? renderPmCommand(args) : undefined;
+  const guidance = applyPmCliErrorContext(
     makeGuidanceMessage({
       code: "lock_conflict",
       title: "Lock conflict",
       happened: message,
-      required:
-        "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
+      required: "Wait for lock release, then retry the same operation. Set PM_LOCK_WAIT_MS to a larger bounded millisecond budget for expected contention.",
       why: "Locking protects item files from concurrent write races.",
-      examples: ["pm update pm-a1b2 --status in_progress --force"],
+      examples: retry ? [`PM_LOCK_WAIT_MS=60000 ${retry}`] : ["pm gc --scope locks --dry-run"],
     }),
     rawMessage,
     context,
   );
+  if (args) {
+    guidance.recovery = { ...guidance.recovery, suggested_retry: retry, suggested_retry_args: [...args] };
+  }
+  return guidance;
 }
 
 function buildPmMissingRequiredOptionGuidance(

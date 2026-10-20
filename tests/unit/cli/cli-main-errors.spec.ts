@@ -4187,6 +4187,22 @@ describe("CLI error guidance helpers", () => {
     ).toContain("fallback_candidates:");
   });
 
+  it("preserves padded and empty retry operands while refusing malformed executable argument vectors", () => {
+    const args = ["comments", "pm-live", "--add", "  $HOME `literal`  ", ""];
+    const error = formatPmCliErrorForJson("Item pm-live is locked (owner process alive)", EXIT_CODE.CONFLICT, {
+      code: "lock_conflict", recovery: { normalized_args: args },
+    });
+    expect(error).toMatchObject({ recovery: { normalized_args: args, suggested_retry_args: args } });
+    expect(error.examples?.join(" ")).not.toMatch(/--force|pm-a1b2/u);
+    for (const malformed of [[], ["comments", 7]]) {
+      const refused = formatPmCliErrorForJson("Item pm-live is locked", EXIT_CODE.CONFLICT, {
+        recovery: { normalized_args: malformed as string[], suggested_retry_args: malformed as string[] },
+      });
+      expect(refused.recovery?.normalized_args).toBeUndefined();
+      expect(refused.recovery?.suggested_retry_args).toBeUndefined();
+    }
+  });
+
   it("formats specific pm errors, commander package hints, and fallback titles", () => {
     expect(formatPmCliErrorForDisplay("Tracker is not initialized at /tmp/demo. Run pm init first.")).toContain("Tracker is not initialized");
     expect(formatPmCliErrorForDisplay("pm-1 is assigned to alice. Use --force to override")).toContain("Ownership conflict");
@@ -4260,7 +4276,7 @@ describe("CLI error guidance helpers", () => {
     });
 
     expect(display).toContain("Recovery bundle:");
-    expect(display).toContain("normalized_args: demo");
+    expect(display).toContain("normalized_args:   demo");
     expect(display).not.toContain("Examples:");
     expect(display).not.toContain("Next steps:");
 

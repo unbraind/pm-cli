@@ -100,6 +100,28 @@ If the existing project `settings.json` has invalid JSON, a configuration write 
 | `schema.type_workflows[]`                  | per-type allowed status transitions (see Per-Type Workflows below)                                                                                                                                    |
 | `search.*`                                 | search mode, scoring, providers, embedding timeout, and vector settings                                                                                                                               |
 
+Lock recovery ([pm-02z97f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-02z97f.toon),
+[pm-htiwmd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-htiwmd.toon)),
+repository tracker records excluded from npm: new Linux lock receipts
+capture an opaque boot/PID-namespace coordinate and the owner's process start
+tick. A matching host can reclaim a provably dead original owner before TTL,
+including when its PID has been reused. Foreign hosts, legacy receipts, denied
+process probes and unavailable identity remain subject to the existing TTL
+policy. Early recovery writes an immutable `locks/recoveries/*.json` intent
+receipt before removal; it records the original owner and is an attempted
+recovery audit, not proof that a later mutation committed. Keep these local
+runtime receipts out of version control.
+
+For expected live contention, set `PM_LOCK_WAIT_MS` to a larger bounded
+millisecond budget, or configure `locks.wait_ms`, and retry the same operation.
+CLI recovery preserves its normalized arguments and quoted values, including
+whitespace and empty argument strings. Malformed argument vectors are omitted
+instead of being repaired by removing tokens. A retry
+advice bundle does not guarantee that another owner will release within that
+budget. Inspect `pm health --check-only --full` and `pm gc --scope locks
+--dry-run` before cleanup; force does not bypass a live owner's lock.
+
+
 Runtime item types are context primitives. Use `pm schema list` to inspect the merged registry and `pm schema show <Type>` to inspect one type's folder, aliases, defaults, required options, and extension provenance. `pm init --type-preset agile|ops|research` writes reusable domain types into `.agents/pm/schema/types.json`; this is equivalent to persisted project schema, not an extension-only runtime overlay.
 
 Each scalar setting above is settable via `pm config set <key> <value>` (no hand-editing of `settings.json`). The dotted `settings.json` path is shown in parentheses where it differs from the CLI key:
