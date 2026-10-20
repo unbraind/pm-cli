@@ -1142,7 +1142,8 @@ export function toContextRankingSummary<TItem>(
 }
 
 function completionPct(closed: number, total: number): number {
-  return total > 0 ? Math.round((closed / total) * 100) : 0;
+  // Multiply integer counts first so exact half-percent boundaries round up.
+  return total > 0 ? Math.round((closed * 100) / total) : 0;
 }
 
 /** Indexes items by their parent id, yielding a parent→direct-children map used by the hierarchy/progress rollups and by focus-row child completion. Items without a parent are skipped. Exported so sibling read commands reuse the same index. */
@@ -1755,18 +1756,12 @@ function pushHierarchySection(lines: string[], result: ContextResult): void {
   }
   lines.push("## Hierarchy");
   for (const node of result.hierarchy) {
-    const pct =
-      node.children_total > 0
-        ? Math.round((node.children_closed / node.children_total) * 100)
-        : 0;
+    const pct = completionPct(node.children_closed, node.children_total);
     lines.push(
       `- ${node.id} ${node.type} ${node.status} "${node.title}" [${node.children_closed}/${node.children_total} done ${pct}%]`,
     );
     for (const child of node.children) {
-      const cpct =
-        child.children_total > 0
-          ? Math.round((child.children_closed / child.children_total) * 100)
-          : 0;
+      const cpct = completionPct(child.children_closed, child.children_total);
       lines.push(
         `  - ${child.id} ${child.type} ${child.status} "${child.title}" [${child.children_closed}/${child.children_total} done ${cpct}%]`,
       );
@@ -2274,7 +2269,11 @@ async function resolveContextFocusGroups(
   );
   const packingIds = new Set([
     ...focusPage.map((item) => item.id),
-    ...rankedBlockedItems.slice(0, limit).map((item) => item.id),
+    // Active blocked rows already belong to the producer page. Only lifecycle
+    // blocked companions may be added independently for blocker/fallback detail.
+    ...rankedBlockedItems
+      .filter((item) => !activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)))
+      .slice(0, limit).map((item) => item.id),
   ]);
   const packing = packRankedContextItems(
     {

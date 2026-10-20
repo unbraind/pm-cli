@@ -1363,6 +1363,20 @@ async function buildContextDepsResult(params: {
   try {
     return enforceContextRenderedTokenBudget(budgetParams);
   } catch (error) {
+    if (error instanceof PmCliError && error.code === "invalid_query_cursor") {
+      const plan = createContextRetryPlan({
+        ...budgetParams,
+        contextOptions: { ...contextOptions, cursor: undefined },
+        rendering: { ...rendering, global: { ...rendering.global, outputCursor: undefined } },
+      }, contextOptions.tokenBudget ?? DEFAULT_RELATIONSHIP_CONTEXT_TOKEN_BUDGET);
+      const retry = renderPmCommand(plan.args);
+      throw new PmCliError(error.message, error.exitCode, {
+        ...error.context,
+        // Shared pagination refusals always supply their producer's guidance.
+        nextSteps: [...error.context.nextSteps!, retry],
+        recovery: { suggested_retry: retry, suggested_retry_args: plan.args },
+      });
+    }
     if (!isContextBudgetFloorError(error)) throw error;
     throw await createContextBudgetRefusal(budgetParams, error);
   }

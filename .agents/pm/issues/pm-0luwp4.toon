@@ -2,11 +2,13 @@ id: pm-0luwp4
 title: "GH-1511: keep blocked work prioritization inside context cursor page boundaries"
 description: "Published-release report: walking a producer cursor over two items repeats blocked active work and omits the next row. Source: https://github.com/unbraind/pm-cli/issues/1511 . Distinct from the completed producer/output-budget composition defect."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[3]: agent-ux,context,github
 created_at: "2026-10-19T16:31:06.871Z"
-updated_at: "2026-10-19T16:31:06.871Z"
+updated_at: "2026-10-20T05:42:42.059Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#c1a88afd7c2923578bad5c17"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Reproduce the two-item producer-only cursor walk with active blocked and next actionable rows; assert unique complete IDs and final counters; retain output-budget continuation semantics.
@@ -16,6 +18,50 @@ confidence: medium
 expected_result: An unchanged workspace cursor walk returns each selected focus item exactly once and reports truthful final-selection counts.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1371,discovered_from,"2026-10-19T16:31:06.871Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-19T16:31:06.871Z","harness:codex","Duplicate check: fresh all-open and in-progress inventories, request-specific searches and complete earlier all-status intake show no exact active report owner. Full live predecessor metadata and history confirm completed prior scope; preserve it and create this narrowly reported follow-up. Intake only: unclaimed and open; no implementation or independent reproduction claimed."
+  "2026-10-20T04:55:11.601Z","harness:codex","Reproduced GH-1511 independently on the current build: a two-row producer cursor walk repeats pm-active and loses pm-next. The same dedicated integration suite independently reproduces missing legacy blocker identity, 29/200 rounding to14, and deps cursor advice naming unsupported --after. The first setup-only failures were corrected and are not regression proof. Final pre-fix receipt: four intended behavioral failures on real disposable trackers; no repository tracker is used by tests. Implementation confines active blocked rows to their producer page while retaining lifecycle-blocked companion detail."
+  "2026-10-20T05:04:55.595Z","harness:codex","Focused validation passes59 context/pagination/new transport cases before final test refinements. Node24 and Bun packed composed-continuation acceptance then passes17 tests including30 list rows30search rows26context rows, both cursor layers, lifecycle-blocked companions and empty queries. Only the four implementation leaves are claimed/in_progress; broader roadmap and dependency maintenance remain open. Complete linked coverage and final static gates remain pending."
+  "2026-10-20T05:13:03.835Z","harness:codex","Live operational proof before review: strict complete intake3020items including2740closed and zero unreadable/omitted rows; only four implementation leaves are in progress. validate resolution/history returns ok with zero drift plus170 historical closure-metadata warnings; health returns ok with eight existing legacy hierarchy warnings. Latest pm-changelog2026.10.19-1 check and deep package doctor pass. Dependency audit and secret scan report zero findings. Required Sentry/telemetry gate passes at2.36percent error rate with zero missing-code rows; fresh opt-in get/context/deps spans arrived at05:06:59 through05:07:08UTC. The closed telemetry window has one matching start/finish pair per read and no command_error; explicit flush empties logical and physical queue, broker queue0, six Prometheus targets up. Broad Release Reliability and deferred dependency migrations remain separate open work. No all-green historical claim."
+  "2026-10-20T05:25:21.171Z","harness:codex","Complete local coverage attempt ended with exactly one assertion failure: existing tests/unit/sdk/governance-read-performance.spec.ts measured health10177.906399ms against its unchanged10000ms ceiling. The full new context transport regression file passed. Vitest withheld coverage-summary.json after the failing run, and the exact coverage gate consequently failed; neither full-suite success nor100percent coverage is claimed. Preserve this immutable failed linked receipt. Isolated reproduction, complete static gates and final hosted exact-head coverage remain required; no timeout or performance assertion is relaxed."
+  "2026-10-20T05:33:19.953Z","harness:codex","The complete local run has10823 passed cases, one governance-read performance failure and three explicit skips across834files; elapsed1147seconds. All four new regressions and the real Node/Bun composed continuation case pass. The four-way published writer/reader compatibility matrix also passes for2026.10.18 and2026.10.19, including SDK exact unknown fields restore native merge and history. Fresh installed npm and Bun2026.10.20 agent sessions pass13steps each. A focused instrumented diagnostic is queued after static validation to recheck the existing performance assertion without concurrent local acceptance work and expose changed-module coverage; its partial global denominator will remain a diagnostic, not a full-suite pass."
+files[2]{path,scope,note}:
+  src/sdk/query/context.ts,project,Producer page membership and focus packing
+  tests/integration/read-output/context-decision-contracts.integration.spec.ts,project,Real SDK CLI MCP cursor-walk regression
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs coverage,project,1200,"harness:codex","2026-10-20T04:58:46.067Z",local_mutation,fix/context-cursor-and-progress,Canonical complete-source coverage and context regression proof
+  node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts,project,240,"harness:codex","2026-10-20T05:40:39.352Z",local_mutation,fix/context-cursor-and-progress,All four real SDK CLI MCP context regressions; full-source CI coverage remains a separate gate
+test_runs[2]:
+  - run_id: test-local-mvg8m940-8v34nr
+    kind: test
+    status: failed
+    started_at: "2026-10-20T05:03:59.145Z"
+    finished_at: "2026-10-20T05:23:16.511Z"
+    recorded_at: "2026-10-20T05:23:16.511Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs coverage,schema,schema,source,local_source_ref
+  - run_id: test-local-mvg9b8g2-mxe23f
+    kind: test
+    status: passed
+    started_at: "2026-10-20T05:42:15.701Z"
+    finished_at: "2026-10-20T05:42:42.050Z"
+    recorded_at: "2026-10-20T05:42:42.050Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RELEVANCE.md,project,Producer page membership contract
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: CI / Gates (coverage)
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"walks blocked active\""
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: pm-0luwp4
 body: ""

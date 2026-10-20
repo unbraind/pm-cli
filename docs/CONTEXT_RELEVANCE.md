@@ -34,6 +34,21 @@ responses include `packing.token_budget` plus `ranking.feature_store` with:
 Missing, stale, corrupt, or unwritable derived data never outranks authoritative
 item files. The command rebuilds or degrades with a warning instead.
 
+Context producer pages retain their selected active rows even when an earlier
+page contains blocked active work. Lifecycle-blocked companion details remain
+available without reinserting active rows from another page. `returned_focus`
+counts describe the final delivered focus rows. Blocker details resolve legacy
+relationship aliases, including `depends_on`, through the shared relationship
+registry without rewriting item files or history.
+
+Count-based completion uses the nearest whole percentage, with exact halves
+rounded up: 29 closed descendants out of 200 yield 15%. Focus rows, progress
+entries, and Markdown hierarchy use the same calculation; exact counts remain
+available beside the rounded value. These contracts are tracked by
+[pm-0luwp4](../.agents/pm/issues/pm-0luwp4.toon),
+[pm-h5ko1l](../.agents/pm/issues/pm-h5ko1l.toon), and
+[pm-r2xv95](../.agents/pm/issues/pm-r2xv95.toon).
+
 ## SDK primitives
 
 Package authors can use the same stages without importing CLI internals:

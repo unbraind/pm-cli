@@ -272,6 +272,16 @@ describe("SDK query pagination", () => {
       code: "invalid_query_cursor",
       nextSteps: ["Repeat the original query without --after to obtain a fresh cursor."],
     } });
+    for (const read of [
+      () => decodeQueryCursorState("!", "fp"),
+      () => resolveQueryCursorStart(["a"], "!", "fp", (id) => id),
+      () => paginateQueryRows(["a"], { cursor: encodeQueryCursor("fp", "a", 0, "old"), fingerprint: "fp", snapshot: "new", limit: 1, readId: (id) => id }),
+    ]) {
+      try { read(); expect.unreachable("Invalid default cursors must be refused"); }
+      catch (error) {
+        expect(error).toMatchObject({ context: { nextSteps: ["Repeat the original query without --after to obtain a fresh cursor."] } });
+      }
+    }
     const outputCursor = encodeReadOutputContinuationCursor({
       command: "list", path: "items", offset: 2, total_rows: 5, fingerprint: "snapshot",
     });
@@ -285,6 +295,16 @@ describe("SDK query pagination", () => {
       expect(() => decodeQueryCursorEnvelope(Buffer.from(JSON.stringify(invalid)).toString("base64url"))).toThrow("Query cursor version or payload is unsupported.");
     }
     expect(() => decodeQueryCursor(encodeQueryCursor("old", "a"), "new")).toThrow("Query cursor does not match the current filters, sort, or query (old != new).");
+    for (const cursor of ["!", outputCursor, encodeQueryCursor("old", "a"), encodeQueryCursor("new", "missing")]) {
+      try {
+        resolveQueryCursorStart(["a"], cursor, "new", (id) => id, "--cursor");
+        expect.unreachable("The relationship producer must refuse this cursor");
+      } catch (error) {
+        expect(error).toBeInstanceOf(PmCliError);
+        expect(JSON.stringify((error as PmCliError).context)).toContain("--cursor");
+        expect(JSON.stringify((error as PmCliError).context)).not.toContain("--after");
+      }
+    }
   });
 
   it("emits the actual last row and position across consecutive one-row and three-row pages", () => {

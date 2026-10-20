@@ -13,6 +13,7 @@ import { isTerminalStatus, normalizeStatusForRegistry } from "./status.js";
 import type { RuntimeStatusRegistry } from "../schema/runtime-schema.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 import { BUILTIN_ITEM_EXECUTION_ROLES, resolveTypeDefinition, type ItemTypeRegistry } from "./type-registry.js";
+import { resolveCanonicalRelationshipKind } from "../../sdk/relationships.js";
 
 import {
   isExternalDependencyReference,
@@ -73,7 +74,7 @@ export function collectBlockedByIds(
     const dependencyId =
       typeof dependency.id === "string" ? dependency.id.trim() : "";
     if (
-      dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
+      resolveCanonicalRelationshipKind(dependency.kind) === BLOCKED_BY_DEPENDENCY_KIND &&
       dependencyId.length > 0 &&
       normalizeItemId(dependencyId) !== NO_ACTIVE_BLOCKER_SENTINEL
     ) {
@@ -106,7 +107,7 @@ export function indexBlockedByIds(
     if (candidateId.length === 0) continue;
     for (const dependency of candidate.dependencies ?? []) {
       const targetId =
-        dependency.kind === BLOCKS_DEPENDENCY_KIND &&
+        resolveCanonicalRelationshipKind(dependency.kind) === BLOCKS_DEPENDENCY_KIND &&
         typeof dependency.id === "string"
           ? normalizeItemId(dependency.id)
           : "";
@@ -175,7 +176,7 @@ function resolveItemBlockersWithIndex(
     (item.dependencies ?? [])
       .filter(
         (dependency) =>
-          dependency.kind === BLOCKED_BY_DEPENDENCY_KIND &&
+          resolveCanonicalRelationshipKind(dependency.kind) === BLOCKED_BY_DEPENDENCY_KIND &&
           isExternalDependencySourceKind(dependency.source_kind) &&
           typeof dependency.id === "string" &&
           dependency.id.trim().length > 0,

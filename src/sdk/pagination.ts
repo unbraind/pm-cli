@@ -115,11 +115,11 @@ export function encodeQueryCursor(
 }
 
 /** Attach the stable refusal code and a fresh-query recovery step to cursor errors. */
-function invalidCursor(message: string): PmCliError {
+function invalidCursor(message: string, cursorFlag: "--after" | "--cursor"): PmCliError {
   return new PmCliError(message, EXIT_CODE.USAGE, {
     code: "invalid_query_cursor",
     nextSteps: [
-      "Repeat the original query without --after to obtain a fresh cursor.",
+      `Repeat the original query without ${cursorFlag} to obtain a fresh cursor.`,
     ],
   });
 }
@@ -146,9 +146,10 @@ function isQueryCursorEnvelope(value: unknown): value is QueryCursorEnvelope {
 /** Decode and validate an opaque cursor without imposing caller query identity. */
 export function decodeQueryCursorEnvelope(
   cursor: unknown,
+  cursorFlag: "--after" | "--cursor" = "--after",
 ): QueryCursorEnvelope {
   if (typeof cursor !== "string") {
-    throw invalidCursor("Query cursor is malformed.");
+    throw invalidCursor("Query cursor is malformed.", cursorFlag);
   }
   const normalized = cursor.trim();
   if (
@@ -156,13 +157,13 @@ export function decodeQueryCursorEnvelope(
     normalized.length > MAX_CURSOR_LENGTH ||
     !BASE64URL_PATTERN.test(normalized)
   ) {
-    throw invalidCursor("Query cursor is malformed.");
+    throw invalidCursor("Query cursor is malformed.", cursorFlag);
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(Buffer.from(normalized, "base64url").toString("utf8"));
   } catch {
-    throw invalidCursor("Query cursor is malformed.");
+    throw invalidCursor("Query cursor is malformed.", cursorFlag);
   }
   if (!isQueryCursorEnvelope(parsed)) {
     let outputCursor = false;
@@ -173,12 +174,12 @@ export function decodeQueryCursorEnvelope(
       // Only a validated output envelope merits a flag-substitution recovery.
     }
     if (outputCursor) {
-      throw new PmCliError("An output cursor must be continued with --output-cursor, not --after.", EXIT_CODE.USAGE, {
+      throw new PmCliError(`An output cursor must be continued with --output-cursor, not ${cursorFlag}.`, EXIT_CODE.USAGE, {
         code: "invalid_query_cursor",
-        nextSteps: [`Repeat the same query, replacing --after with --output-cursor ${normalized}; retain any producer --after cursor from the original page.`],
+        nextSteps: [`Repeat the same query, replacing ${cursorFlag} with --output-cursor ${normalized}; retain any producer ${cursorFlag} cursor from the original page.`],
       });
     }
-    throw invalidCursor("Query cursor version or payload is unsupported.");
+    throw invalidCursor("Query cursor version or payload is unsupported.", cursorFlag);
   }
   return parsed;
 }
@@ -187,11 +188,13 @@ export function decodeQueryCursorEnvelope(
 export function decodeQueryCursorState(
   cursor: unknown,
   expectedFingerprint: string,
+  cursorFlag: "--after" | "--cursor" = "--after",
 ): QueryCursorState {
-  const envelope = decodeQueryCursorEnvelope(cursor);
+  const envelope = decodeQueryCursorEnvelope(cursor, cursorFlag);
   if (envelope.fingerprint !== expectedFingerprint) {
     throw invalidCursor(
       `Query cursor does not match the current filters, sort, or query (${envelope.fingerprint} != ${expectedFingerprint}).`,
+      cursorFlag,
     );
   }
   return {
@@ -217,11 +220,12 @@ export function resolveQueryCursorStart<T>(
   cursor: string | undefined,
   fingerprint: string,
   readId: (row: T) => string,
+  cursorFlag: "--after" | "--cursor" = "--after",
 ): number {
   if (cursor === undefined) {
     return 0;
   }
-  const state = decodeQueryCursorState(cursor, fingerprint);
+  const state = decodeQueryCursorState(cursor, fingerprint, cursorFlag);
   const index = rows.findIndex((row) => readId(row) === state.after_id);
   if (index < 0) {
     if (state.after_index !== undefined) {
@@ -229,6 +233,7 @@ export function resolveQueryCursorStart<T>(
     }
     throw invalidCursor(
       `Query cursor item ${state.after_id} is no longer present in this result set.`,
+      cursorFlag,
     );
   }
   return index + 1;
@@ -250,7 +255,7 @@ export function paginateQueryRows<T>(
     decodeQueryCursorState(options.cursor, options.fingerprint).snapshot !==
       options.snapshot
   )
-    throw invalidCursor("Query cursor does not match the requested snapshot.");
+    throw invalidCursor("Query cursor does not match the requested snapshot.", "--after");
   const pageStart = resolveQueryCursorStart(
     rows,
     options.cursor,

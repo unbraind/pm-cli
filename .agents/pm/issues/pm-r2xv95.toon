@@ -2,11 +2,13 @@ id: pm-r2xv95
 title: "GH-1512: define count-based context completion rounding at half-percent boundaries"
 description: "Published-release report:29 closed children of200 are rendered as14 percent because the floating-point product lies below the half boundary. Source: https://github.com/unbraind/pm-cli/issues/1512 . Exact counts are correct; define the rounding contract before changing percentages."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[3]: agent-ux,context,github
 created_at: "2026-10-19T16:31:12.454Z"
-updated_at: "2026-10-19T16:31:12.454Z"
+updated_at: "2026-10-20T05:11:38.973Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#c1a88afd7c2923578bad5c17"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Exercise29/200 and neighboring boundaries with real-tracker public SDK CLI and MCP reads; apply one documented rule consistently to shared count-based progress surfaces.
@@ -16,6 +18,37 @@ confidence: medium
 expected_result: Count-based completion percentages have a documented consistent rounding rule and agree with the exact numerator and denominator at half boundaries.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-ojpq,discovered_from,"2026-10-19T16:31:12.454Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-19T16:31:12.454Z","harness:codex","Duplicate check: fresh all-open and in-progress inventories, request-specific searches and complete earlier all-status intake show no exact active report owner. Full live predecessor metadata and history confirm completed prior scope; preserve it and create this narrowly reported follow-up. Intake only: unclaimed and open; no implementation or independent reproduction claimed."
+  "2026-10-20T05:04:52.848Z","harness:codex","Independent pre-fix proof created200 descendants through supported mutation paths,29closed: context reports14 rather than the required15. Integer count multiplication now precedes division, and focus/progress/Markdown hierarchy share the same calculation. Added neighboring28/20029/20030/20057/200199/200 unit controls. Integration setup now creates the200 children directly through public runCreate to retain real persistence/history while avoiding repeated transport bootstrap; acceptance still reads SDK CLI and MCP."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T05:11:38.972Z","harness:codex",Count-based percentages should multiply exact integer counts before division; dividing first can move an exact half-percent below the rounding boundary. Route every textual and structured progress surface through the same calculation and retain numerator/denominator facts.
+files[3]{path,scope,note}:
+  src/sdk/query/context.ts,project,Shared count rounding and Markdown hierarchy parity
+  tests/integration/read-output/context-decision-contracts.integration.spec.ts,project,Real200-child half-boundary regression
+  tests/unit/commands/query/context-command.spec.ts,project,Neighboring count rounding boundaries
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"rounds count-based\"",project,240,"harness:codex","2026-10-20T04:58:48.670Z",local_mutation,fix/context-cursor-and-progress,Exact29of200 completion across transports
+test_runs[1]:
+  - run_id: test-local-mvg7wxl8-uvqms9
+    kind: test
+    status: passed
+    started_at: "2026-10-20T05:02:59.193Z"
+    finished_at: "2026-10-20T05:03:35.180Z"
+    recorded_at: "2026-10-20T05:03:35.180Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"rounds count-based\"",schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RELEVANCE.md,project,Document exact count half-up rounding
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: CI / Gates (coverage)
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"rounds count-based\""
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: pm-r2xv95
 body: ""

@@ -1659,6 +1659,16 @@ contract compact and fail-safe for newly added flags. Use
 package-authored query surface. `encodeQueryCursor`, `decodeQueryCursorState`, and
 `paginateQueryRows` remain the transport-neutral continuation primitives.
 
+`decodeQueryCursorEnvelope`, `decodeQueryCursorState`, and
+`resolveQueryCursorStart` accept an optional final `cursorFlag` argument
+(`"--after"`, the default, or `"--cursor"`) so package-authored queries can
+name their actual producer flag in refusal guidance. Relationship packets use
+`--cursor`. The deps action additionally returns a scoped executable
+`recovery.suggested_retry_args` for a fresh query after a malformed or mismatched
+cursor; it preserves traversal and output policy while removing the rejected
+producer cursor and stale output continuation. See
+[pm-ohgg1b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ohgg1b.toon).
+
 At the storage boundary, the metadata cache maintains a rebuildable SQLite
 query projection under the same source cursor and cross-process writer lock as
 the JSON metadata/body/collection tiers. Bounded default-order light `list`

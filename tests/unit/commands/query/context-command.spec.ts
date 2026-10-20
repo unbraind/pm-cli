@@ -292,7 +292,9 @@ describe("context command module", () => {
     expect(contextInternals.normalizedParentId("  pm-parent  ")).toBe("pm-parent");
     expect(contextInternals.dateTokenForTimestamp("20260613T091530+0200")).toBe("2026-06-13");
     expect(contextInternals.normalizedParentId("   ")).toBeNull();
-    expect(contextInternals.completionPct(1, 4)).toBe(25);
+    for (const [closed, total, expected] of [[1, 4, 25], [28, 200, 14], [29, 200, 15], [30, 200, 15], [57, 200, 29], [199, 200, 100]]) {
+      expect(contextInternals.completionPct(closed!, total!)).toBe(expected);
+    }
     expect(contextInternals.compareCriticalItems(
       {
         ...openTask,

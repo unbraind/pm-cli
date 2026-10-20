@@ -2,11 +2,13 @@ id: pm-ohgg1b
 title: "GH-1510: make relationship packet cursor recovery command-aware"
 description: "Published-release report: deps context --cursor bad instructs removal of --after, which that command rejects. Source: https://github.com/unbraind/pm-cli/issues/1510 . This is distinct from scoped tracker recovery completed in the predecessor."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[3]: agent-ux,context,github
 created_at: "2026-10-19T16:30:59.004Z"
-updated_at: "2026-10-19T16:30:59.004Z"
+updated_at: "2026-10-20T05:42:14.749Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#c1a88afd7c2923578bad5c17"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Reproduce malformed and stale cursor refusals in isolated trackers; execute emitted recovery argv; verify CLI JSON and MCP parity with declared runtime flags.
@@ -16,6 +18,43 @@ confidence: medium
 expected_result: Malformed or stale relationship packet cursors provide an executable fresh query using declared cursor flags and preserve tracker scope.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1364,discovered_from,"2026-10-19T16:30:59.004Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-19T16:30:59.004Z","harness:codex","Duplicate check: fresh all-open and in-progress inventories, request-specific searches and complete earlier all-status intake show no exact active report owner. Full live predecessor metadata and history confirm completed prior scope; preserve it and create this narrowly reported follow-up. Intake only: unclaimed and open; no implementation or independent reproduction claimed."
+  "2026-10-20T05:00:08.374Z","harness:codex","Public SDK review: the optional final cursorFlag parameter preserves existing --after callers and selects --cursor for relationship packets. The SDK declaration gate classified six root/query signature changes, acknowledged with a concrete compatibility explanation and documented in docs/SDK.md. Recovery retains selected tracker, traversal filters and output policy, removes both invalid producer and stale output continuation, and uses tokenized executable argv. Focused tests exposed a transport-specific --no-pager addition; parity assertions preserve that legitimate output control. The old packed continuation test also requires installed npm to be visible through NODE_PATH on this local runtime; that environment prerequisite is being corrected without weakening assertions."
+  "2026-10-20T05:39:02.863Z","harness:codex","Canonical static validation passed every prefix through source boundaries contracts grammar refusal recovery task-token measurements SDK import and CLI transport floors graph composition and record integrity. Its terminal bounded-mutation gate found missing default --after refusal assertions on three new call paths and an existing equivalent empty-cursor mutant whose exact identity moved with line155to156. Added the three public-boundary assertions; the next complete352-mutant run kills345 with precisely the same seven justified equivalents and zero uncovered errors or timeouts. That measured98.01136363636364percent improves the prior97.98850574712644floor, so the baseline is ratcheted upward. The old waiver reason and owner are retained; no source scope is removed and no new equivalent waiver or ignore is introduced. Focused instrumented diagnostic passes124tests including the unchanged governance timing case; its deliberately partial global coverage is not counted as complete coverage."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T05:11:36.765Z","harness:codex","Cursor decoding is shared across producers with different flag names. Keep opaque cursor validation and refusal spelling in the SDK primitive, then add executable scope-preserving retry argv at the consumer that owns command semantics. Verify the emitted argv by executing it against the selected disposable tracker."
+files[8]{path,scope,note}:
+  scripts/release/sdk-mutation-baseline.json,project,Carry the same existing equivalent mutant across a line shift and raise the measured score floor
+  sdk/public-surface.json,project,Six root/query optional-argument declarations
+  src/sdk/dependencies.ts,project,Scope-preserving executable recovery argv
+  src/sdk/pagination.ts,project,Explicit producer cursor spelling
+  src/sdk/relationship-context.ts,project,Relationship cursor contract
+  tests/integration/read-output/context-decision-contracts.integration.spec.ts,project,Execute malformed and mismatched cursor recovery
+  tests/unit/commands/query/deps-command.spec.ts,project,Keep unrelated assembly and expected usage errors unchanged
+  tests/unit/sdk/pagination.spec.ts,project,Both cursor spellings and output-cursor rejection
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"executes scoped\"",project,240,"harness:codex","2026-10-20T04:58:49.994Z",local_mutation,fix/context-cursor-and-progress,Executable malformed and stale producer recovery
+test_runs[1]:
+  - run_id: test-local-mvg7xf8w-r532ci
+    kind: test
+    status: passed
+    started_at: "2026-10-20T05:03:36.000Z"
+    finished_at: "2026-10-20T05:03:58.064Z"
+    recorded_at: "2026-10-20T05:03:58.064Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"executes scoped\"",schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Public cursor flag and scoped recovery contracts
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: CI / Gates (coverage)
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"executes scoped\""
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: pm-ohgg1b
 body: ""
