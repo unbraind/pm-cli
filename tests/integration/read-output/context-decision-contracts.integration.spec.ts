@@ -31,24 +31,50 @@ describe("context decision contracts (GH-1509 through GH-1512)", () => {
   it("walks blocked active work and the next actionable row exactly once", async () => {
     await withTempPmPath(async ({ pmPath, runCliInProcess }) => {
       const run = cliHarness(runCliInProcess);
-      expect((await run(["create", "Task", "Active blocked", "--id", "pm-active", "--status", "in_progress", "--priority", "0", "--blocked-reason", "Waiting for input"])).code).toBe(0);
+      expect((await run(["create", "Task", "Active blocked", "--id", "pm-active", "--status", "in_progress", "--priority", "0", "--order", "0", "--blocked-reason", "Waiting for input"])).code).toBe(0);
       expect((await run(["create", "Task", "Next actionable", "--id", "pm-next", "--priority", "1"])).code).toBe(0);
       // Lifecycle remains active while this explicit missing prerequisite gates execution.
       expect((await run(["update", "pm-active", "--blocked-by", "pm-missing", "--allow-unresolved-deps"])).code).toBe(0);
-      for (const read of [
-        async (after?: string) => runContext({ limit: "1", after }, { path: pmPath }),
-        async (after?: string) => (await run(["context", "--limit", "1", ...(after ? ["--after", after] : [])])).json as ContextResult,
-        async (after?: string) => mcpContext(pmPath, { limit: "1", ...(after ? { after } : {}) }),
-      ]) {
-        const first = await read();
-        expect(first.next_cursor).toBeTruthy();
-        const second = await read(first.next_cursor);
-        const ids = [first, second].flatMap((page) => [...page.high_level, ...page.low_level, ...page.blocked_fallback].map((row) => row.id));
-        expect(ids).toEqual(["pm-active", "pm-next"]);
-        expect(first.summary.returned_focus).toEqual({ active_items: 1, in_progress: 1, open: 0, blocked: 1 });
-        expect(second.summary.returned_focus).toEqual({ active_items: 1, in_progress: 0, open: 1, blocked: 0 });
-        expect(second.next_cursor).toBeUndefined();
-      }
+      const readers = [
+        async (limit: string, after?: string) => runContext({ limit, after }, { path: pmPath }),
+        async (limit: string, after?: string) => (await run(["context", "--limit", limit, ...(after ? ["--after", after] : [])])).json as ContextResult,
+        async (limit: string, after?: string) => mcpContext(pmPath, { limit, ...(after ? { after } : {}) }),
+      ];
+      const assertPages = async (limit: string, pages: Array<{ ids: string[]; count?: number; inProgress: number; blocked: number }>) => {
+        for (const read of readers) {
+          let after: string | undefined;
+          const delivered: string[] = [];
+          for (const [index, expected] of pages.entries()) {
+            const page = await read(limit, after);
+            const ids = [...page.high_level, ...page.low_level, ...page.blocked_fallback].map((row) => row.id);
+            expect(ids).toHaveLength(expected.count ?? expected.ids.length);
+            expect(expected.ids).toEqual(expect.arrayContaining(ids));
+            expect(page.summary.returned_focus).toEqual({ active_items: ids.length, in_progress: expected.inProgress, open: ids.length - expected.inProgress, blocked: expected.blocked });
+            if (index < pages.length - 1) expect(page.next_cursor).toBeTruthy();
+            else expect(page.next_cursor).toBeUndefined();
+            after = page.next_cursor;
+            delivered.push(...ids);
+          }
+          expect(new Set(delivered).size).toBe(delivered.length);
+          expect(new Set(delivered)).toEqual(new Set(pages.flatMap((page) => page.ids)));
+        }
+      };
+      await assertPages("1", [
+        { ids: ["pm-active"], inProgress: 1, blocked: 1 },
+        { ids: ["pm-next"], inProgress: 0, blocked: 0 },
+      ]);
+      expect((await run(["create", "Task", "Second active blocked", "--id", "pm-active-second", "--status", "in_progress", "--priority", "0", "--order", "1"])).code).toBe(0);
+      expect((await run(["update", "pm-active-second", "--blocked-by", "pm-missing", "--allow-unresolved-deps"])).code).toBe(0);
+      // The blocked rows' relative relevance rank is independent of page accounting.
+      await assertPages("1", [
+        { ids: ["pm-active", "pm-active-second"], count: 1, inProgress: 1, blocked: 1 },
+        { ids: ["pm-active", "pm-active-second"], count: 1, inProgress: 1, blocked: 1 },
+        { ids: ["pm-next"], inProgress: 0, blocked: 0 },
+      ]);
+      await assertPages("2", [
+        { ids: ["pm-active", "pm-active-second"], inProgress: 2, blocked: 2 },
+        { ids: ["pm-next"], inProgress: 0, blocked: 0 },
+      ]);
     });
   });
 
