@@ -1590,10 +1590,10 @@ describe("runTest", () => {
       1,
     );
     expect(() =>
-      testInternals.resolveTestRunOptions({ timeout: "0" }, []),
+      testInternals.resolveTestRunOptions({ run: true, timeout: "0" }, []),
     ).toThrow(/positive number/);
     expect(
-      testInternals.resolveTestRunOptions({ timeout: "1.5" }, [])
+      testInternals.resolveTestRunOptions({ run: true, timeout: "1.5" }, [])
         .defaultTimeoutSeconds,
     ).toBe(1.5);
     expect(

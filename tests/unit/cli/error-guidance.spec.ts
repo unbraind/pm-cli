@@ -13,6 +13,14 @@ import {
 } from "../../../src/cli/error-guidance.js";
 
 describe("pm cli error guidance context plumbing", () => {
+  it("preserves verified no-change evidence without inferring it for execution failures", () => {
+    const context = { code: "invalid_argument_value", changed: false as const };
+    expect(formatPmCliErrorForJson("Refused before mutation", 2, context)).toMatchObject({ changed: false });
+    expect(classifyPmCliError("Refused before mutation", context)).toMatchObject({ changed: false });
+    expect(formatPmCliErrorForJson("Execution failed", 5)).not.toHaveProperty("changed");
+    expect(classifyPmCliError("Execution failed")).not.toHaveProperty("changed");
+  });
+
   it.each([
     { requested_tokens: 1, feasible_tokens: 500, minimum_feasible_tokens: 500, minimum_status: "exact", basis: "canonical_retry" },
     { requested_tokens: 1, feasible_tokens: 500, minimum_feasible_tokens: null, minimum_status: "feasible_only", basis: "canonical_retry" },

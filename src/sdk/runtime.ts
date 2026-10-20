@@ -31,6 +31,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
+import { HOISTED_ACTION_OPTION_KEYS } from "./runtime-input.js";
 import { createAsyncReadWriteGate } from "../core/shared/serial-queue.js";
 import { getSettingsPath,resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
@@ -2917,6 +2918,7 @@ export function analyzeSdkActionCoverage(
 }
 
 /** Normalize transport options, dispatch the SDK or extension action, and finalize read projections. Detached attestations return complete proof data without lossy projection. */
+/** Admit native mutations lazily, then dispatch through the core or extension handler. */
 async function dispatchAction(
   action: string,
   args: Record<string, unknown>,
@@ -2924,6 +2926,10 @@ async function dispatchAction(
   activeExtensions: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
   const options = optionsWithAuthor(args, action);
+  if (action === "create" || action === "update") {
+    const { assertNativeMutationOptions } = await import("./runtime/mutation-admission.js");
+    await assertNativeMutationOptions(action, args, options, global.path, HOISTED_ACTION_OPTION_KEYS[action]!);
+  }
   const handler = getOwnHandler(SDK_ACTION_HANDLERS, action);
   const extensionCommand = handler ? undefined : resolveActiveExtensionActionCommand(action, activeExtensions);
   const readCommand = extensionCommand === undefined ? action : `extension:${extensionCommand}`;

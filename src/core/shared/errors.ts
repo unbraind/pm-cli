@@ -93,6 +93,8 @@ export interface PmCliErrorRecoveryPayload {
 
 /** Documents the pm cli error context payload exchanged by command, SDK, and package integrations. */
 export interface PmCliErrorContext {
+  /** Admission completed before any mutation; omitted when writes may have occurred. */
+  changed?: false;
   /** Value that configures or reports code for this contract. */
   code?: string;
   /** Canonical existing item identity returned by a refused create operation. */

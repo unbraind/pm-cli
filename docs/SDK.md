@@ -164,6 +164,19 @@ snapshot. Breaking SDK changes require a date-based release and matching
 package compatibility bounds or migration guidance. Never refresh the snapshot
 merely to silence an unexplained diff.
 
+The mutation-admission update adds optional `changed?: false` to
+`PmCliErrorContext`. The conservative signature gate records this interface
+addition with a breaking acknowledgement; existing context objects and error
+codes remain valid. Consumers need no data migration or new dependency bounds.
+When adopting this update, read `error.context?.changed === false` as proof of a
+preflight refusal. An absent property gives no guarantee about writes; do not
+coerce it to `false` or treat an executed failure as safe to retry. Consumers
+that enumerate error keys should accept the additional optional property.
+JavaScript create/update callers must also remove misspelled keys and move
+mutation fields into `options` on generic `run` calls: these requests now fail
+instead of silently dropping fields. See [Robust Automation Pattern](#robust-automation-pattern)
+for supported aliases and runtime schema discovery.
+
 The snapshot also records an aggregate-completeness census. Every public symbol
 from every non-testing SDK subpath must be available from
 `@unbrained/pm-cli/sdk`; deliberate test-only exclusions require a named reason.
@@ -3298,6 +3311,20 @@ normal typed `update` action with `completedAt` so every correction writes item
 history and retains mutation governance.
 
 ## Robust Automation Pattern
+
+Native `PmClient.create`, `update`, and their generic `run` routes reject unknown
+option names at runtime, including JavaScript callers and injected extension
+clients ([pm-fl3phm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fl3phm.toon),
+a repository-only tracker record excluded from npm). A typo such as
+`priorty` refuses the whole request with `PmCliError.code =
+"invalid_argument_value"`, `context.reason = "unknown_mutation_option"`, a
+nearest-name hint when available, and `context.changed = false`. Put mutation
+fields under `options` when using `run`; existing declared top-level aliases
+remain accepted. Workspace schema option identities remain available through
+`run`, while typed convenience methods support extension item fields through `field`.
+MCP retains its existing transport-specific admission contract. The no-change
+receipt applies to these preflight refusals; an executed operation's outcome
+and evidence must be assessed separately.
 
 1. Read `PM_TOOL_ACTIONS` or `PM_TOOL_PARAMETERS_SCHEMA` for baseline static validation.
 2. Load runtime contracts with `getContracts(pmRoot, { runtimeOnly: true })` or run `pm contracts --runtime-only --json` inside the target project.

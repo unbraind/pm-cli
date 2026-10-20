@@ -25,6 +25,7 @@ import {
 } from "../sdk/cli-contracts/command-aliases.js";
 
 interface GuidanceMessage {
+  changed?: false;
   policyViolations?: PmCliErrorContext["policy_violations"];
   policyViolationCount?: number;
   itemId?: string;
@@ -70,6 +71,8 @@ export interface PmRefusalEnvelope {
 
 /** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
 export interface JsonErrorEnvelope {
+  /** Verified admission refusal before any mutation. */
+  changed?: false;
   /** Ordered mutation that failed semantic preview validation. */
   transaction_operation?: PmCliErrorContext["transaction_operation"];
   /** Bounded tracker-relative preview refusal coordinate. */
@@ -130,6 +133,8 @@ export function projectLeanErrorEnvelope(
 
 /** Documents the error classification payload exchanged by command, SDK, and package integrations. */
 export interface ErrorClassification {
+  /** Verified admission refusal before any mutation. */
+  changed?: false;
   /** Ordered mutation that failed semantic preview validation. */
   transaction_operation?: PmCliErrorContext["transaction_operation"];
   /** Bounded tracker-relative preview refusal coordinate. */
@@ -789,6 +794,7 @@ function buildRefusalEnvelope(
   };
 }
 
+/** Project guidance into JSON, preserving no-write evidence only when explicitly verified. */
 function guidanceToJsonEnvelope(
   message: GuidanceMessage,
   exitCode: number,
@@ -802,6 +808,7 @@ function guidanceToJsonEnvelope(
       required: message.required,
       exit_code: exitCode,
       refusal: buildRefusalEnvelope(message, exitCode),
+      ...(message.changed === false ? { changed: false as const } : {}),
     },
     message,
   );
@@ -823,6 +830,7 @@ function projectJsonErrorGuidance(
   });
 }
 
+/** Classify guidance with the same optional refusal evidence as the JSON envelope. */
 function guidanceToClassification(
   message: GuidanceMessage,
 ): ErrorClassification {
@@ -833,6 +841,7 @@ function guidanceToClassification(
       title: message.title,
       detail: message.happened,
       required: message.required,
+      ...(message.changed === false ? { changed: false as const } : {}),
     },
     message,
   );
@@ -952,6 +961,7 @@ function resolveErrorContextFlag(context: PmCliErrorContext, recovery: PmCliErro
 }
 
 /** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
+/** Merge typed SDK context into guidance without inferring mutation outcomes. */
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
   rawMessage: string,
@@ -981,6 +991,7 @@ function applyPmCliErrorContext(
   return {
     ...guidance,
     code,
+    changed: context.changed,
     type,
     title: fallbackTitle ?? guidance.title,
     happened:

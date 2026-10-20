@@ -56,6 +56,12 @@ policy-check budget. This allocation is tracked by
 [pm-a3c6g4](../.agents/pm/tasks/pm-a3c6g4.toon); broader runner qualification
 remains with [pm-bj7rq0](../.agents/pm/issues/pm-bj7rq0.toon).
 
+The same serial cohort runs the ten-thousand-item aggregation, cold governance
+read, and surface-replication fixture files after parallel contracts
+([pm-ckb8w5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ckb8w5.toon),
+a repository-only tracker record excluded from npm). Their original input
+populations, assertions, per-test deadlines and retry policy remain in force.
+
 `node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, disables
 external Sentry delivery for the build, test workers, and their nested CLI
 children, then cleans the roots up. Instrumentation tests can still exercise
@@ -566,6 +572,18 @@ the descriptor registry does not yet know about.
 
 For in-place metadata corrections and context admission/refusal semantics, see
 [Linked-test edits](LINKED_TEST_EDITS.md).
+
+Run-option admission is tracked by
+[pm-hdvxqg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hdvxqg.toon)
+(a repository-only tracker record excluded from npm).
+`pm test` requires `--run` for `--timeout`, `--progress`, execution context,
+environment directives, and run selectors. Registration-only calls refuse these
+options before saving links. Combined edits and execution validate the effective
+post-edit selection under the item lock before persistence, including out-of-range
+indexes and unmatched selectors. These admission errors carry `changed: false`
+in structured output. A valid request that executes a failing child can still
+save its accepted edits and execution evidence; inspect its run results before
+retrying.
 
 Add tests to the item that owns the work:
 

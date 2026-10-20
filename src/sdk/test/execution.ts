@@ -3086,8 +3086,11 @@ function applyLinkedTestMutations(
   );
 }
 
+/** Identify directives that need an actual execution rather than registration alone. */
 function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
   return [
+    options.timeout !== undefined,
+    options.progress === true,
     (options.envSet?.length ?? 0) > 0,
     (options.envClear?.length ?? 0) > 0,
     options.sharedHostSafe === true,
@@ -3105,10 +3108,11 @@ function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
   ].some(Boolean);
 }
 
+/** Reject run-only directives and keep trust acknowledgement separate from execution. */
 function assertTestRunFlagUsage(options: TestCommandOptions): void {
   if (hasTestRuntimeDirectiveFlags(options) && options.run !== true) {
     throw new PmCliError(
-      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --workspace-context, --override-linked-workspace-context, --allow-untrusted-linked-tests, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
+      "--timeout, --progress, --env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --workspace-context, --override-linked-workspace-context, --allow-untrusted-linked-tests, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
       EXIT_CODE.USAGE,
     );
   }
@@ -3130,6 +3134,7 @@ function assertTestRunFlagUsage(options: TestCommandOptions): void {
   }
 }
 
+/** Resolve links, admitting the effective selection under the writer lock before saving. */
 async function resolveLinkedTestItem(params: {
   id: string;
   options: TestCommandOptions;
@@ -3171,6 +3176,7 @@ async function resolveLinkedTestItem(params: {
         removes,
         removeIndexes,
       );
+      admitTestRunOptions(options, mutation.tests);
       removed = mutation.removed;
       if ((removes.length > 0 || removeIndexes.length > 0) && removed === 0) {
         throw new PmCliError(
@@ -3208,11 +3214,14 @@ async function resolveLinkedTestItem(params: {
   };
 }
 
+/** Parse all directives before checking usage and selecting the effective test list. */
 function resolveTestRunOptions(
   options: TestCommandOptions,
   tests: LinkedTest[],
 ): ResolvedTestRunOptions {
-  assertTestRunFlagUsage(options);
+  const pmContextMode = parsePmContextMode(options.pmContext);
+  parseWorkspaceContextMode(options.workspaceContext);
+  resolveRuntimeDirectives(options.envSet, options.envClear, options.sharedHostSafe);
   const selectorInput = {
     match: options.match,
     onlyIndex:
@@ -3221,26 +3230,37 @@ function resolveTestRunOptions(
         : parseOnlyIndexValue(options.onlyIndex),
     onlyLast: options.onlyLast,
   };
-  const runSelection =
-    options.run === true
-      ? resolveLinkedTestRunSelection(tests, selectorInput)
-      : undefined;
   const defaultTimeoutSeconds =
     options.timeout === undefined
       ? undefined
-      : parseOptionalNumber(options.timeout, "timeout");
+      : parseOptionalNumber(options.timeout, "--timeout");
   if (defaultTimeoutSeconds !== undefined && defaultTimeoutSeconds <= 0) {
     throw new PmCliError(
-      "Test timeout must be a positive number",
+      `--timeout must be a positive number (got "${options.timeout}")`,
       EXIT_CODE.USAGE,
     );
   }
+  assertTestRunFlagUsage(options);
+  const runSelection = options.run === true ? resolveLinkedTestRunSelection(tests, selectorInput) : undefined;
   return {
     defaultTimeoutSeconds,
-    pmContextMode: parsePmContextMode(options.pmContext),
+    pmContextMode,
     runSelection,
     testsToRun: runSelection?.selected ?? tests,
   };
+}
+
+/** Admit execution options against the effective list before any link persistence. */
+function admitTestRunOptions(options: TestCommandOptions, tests: LinkedTest[]): ResolvedTestRunOptions {
+  try {
+    return resolveTestRunOptions(options, tests);
+  } catch (error) {
+    if (!(error instanceof PmCliError) || error.exitCode !== EXIT_CODE.USAGE) throw error;
+    throw new PmCliError(`${error.message} No changes were made.`, EXIT_CODE.USAGE, {
+      ...error.context, code: "invalid_argument_value", reason: "test_option_invalid", changed: false,
+      required: error.message,
+    });
+  }
 }
 
 async function executeSelectedLinkedTests(params: {
@@ -3581,7 +3601,7 @@ export async function runTest(
     removes,
     removeIndexes,
   });
-  const runOptions = resolveTestRunOptions(options, item.tests);
+  const runOptions = admitTestRunOptions(options, item.tests);
   const trustAcknowledgement = await maybeAcknowledgeLinkedTests(
     options,
     pmRoot,

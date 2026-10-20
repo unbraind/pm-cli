@@ -70,6 +70,9 @@ const allSourceCoverageThresholds = {
 // Keep policy scans, real corpus/latency keepers and Git-heavy merge files out of
 // competing contract workers without changing membership, assertions or deadlines (pm-bj7rq0, pm-89297t).
 const sequentialPerformanceSpecs = [
+  "tests/unit/commands/query/aggregate-set-members.spec.ts",
+  "tests/unit/sdk/governance-read-performance.spec.ts",
+  "tests/unit/scripts/release/surface-replication-gate.spec.ts",
   "tests/unit/cli/canonical-example-guard.spec.ts",
   "tests/integration/scratch-lifecycle.integration.spec.ts",
   "tests/unit/scripts/point-read-costs.spec.ts",

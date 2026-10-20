@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-19T21:50:49.935Z"
+updated_at: "2026-10-20T13:18:35.473Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -21,7 +21,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
-comments[56]:
+comments[59]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -191,6 +191,15 @@ comments[56]:
   - created_at: "2026-10-19T21:50:49.935Z"
     author: "harness:codex"
     text: "The one unchanged rerun of Windows24 packed first-run acceptance in CI39325197522 now succeeds on the same fd5508f2 head, and the complete CI workflow is terminal-success. No assertions timeouts retries or performance limits changed. The original20-minute cancellation remains in attempt1; this green rerun qualifies current acceptance but does not establish a historical cause or erase the independent176ms SDK import admission finding."
+  - created_at: "2026-10-20T12:49:37.377Z"
+    author: "harness:codex"
+    text: "Current admission-delivery static attempt passes earlier source/contracts/SDK-surface checks but fails the unchanged CLI transport-floor gate: get best387ms exceeds362ms. Declared runner qualification is qualified, with before/after bare Node medians46/51ms under106ms; observed load is8.69 to9.71 across8 available CPUs. This is a qualified product-admission failure in that receipt; no unqualified-runner label, budget increase or causal claim is substituted. Final admission code will load only for native mutation actions, then the isolated gate will be rerun on that revised candidate."
+  - created_at: "2026-10-20T12:55:04.176Z"
+    author: "harness:codex"
+    text: "The revised lazy-admission candidate still fails the isolated unchanged transport-floor gate on this qualified local runner: get383/362ms and create415/398ms; bare Node medians47/59ms under106ms. Lazy loading avoids adding validation work to reads but does not establish remediation of the broader startup budget owner. Keep both failed receipts, budgets and assertions. Required exact-head hosted static admission remains mandatory; no green local static result or root cause is claimed."
+  - created_at: "2026-10-20T13:18:35.472Z"
+    author: "harness:codex"
+    text: "PR1521 CodSpeed report inspected in Chrome: createQueryFingerprint shows -2.27% CPU-simulation efficiency, with 14 excluded system calls totaling238.6 microseconds. The comparison changes Node24.21.0 to24.22.0, V8 node.53 to node.57 and AMD EPYC9V74 to7763. No benchmark or fingerprint implementation changed in this delivery. This report does not establish a source regression; retain it as environment-qualified evidence alongside the existing startup investigation. No regression acknowledgement, budget relaxation or provider setting was applied."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project
