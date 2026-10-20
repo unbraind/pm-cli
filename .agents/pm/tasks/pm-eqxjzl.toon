@@ -2,11 +2,13 @@ id: pm-eqxjzl
 title: Expose freshness and completeness of independent dependency advisory feeds before merge
 description: The2026-10-20 follow-redirects advisories were visible in OSV and the merged-main Scorecard instance while the registry-backed all-dependency audit still reported zero. The component patch is completed separately; this task owns advisory-source freshness and coverage context before merge. Prefer a project-owned assurance collector or extension on existing SDK primitives rather than ecosystem-specific behavior in the generic SDK.
 type: Task
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-20T19:27:47.107Z"
-updated_at: "2026-10-20T19:27:47.107Z"
+updated_at: "2026-10-20T20:30:44.614Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#244d33e51b5f1223152c8358"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Reuse registered assurance/extension contracts; define bounded queries and explicit provenance for complete project dependency coverage; add a negative control with a lagging zero registry result and positive independent feed, plus unavailable-feed and zero-known-advisory controls; preserve automated updater cooldown and all-severity policy; do not suppress actionable advisories or introduce unbounded polling."
@@ -17,6 +19,45 @@ expected_result: "A dependency-security decision exposes source/version/time and
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-dba47,related,"2026-10-20T19:27:47.107Z","harness:codex","cli:create:dep",detected
   pm-px2raj,discovered_from,"2026-10-20T19:27:47.107Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-20T19:27:47.107Z","harness:codex","Duplicate check: exact keyword search OSV audit found only the completed component fixes. Full live records for both closed leaves and the security parent distinguish independent-feed freshness from package-version remediation. Current open and in-progress inventories show no exact active owner. Intake only: open and unclaimed; this does not represent an unresolved affected dependency in the patched graph."
+  "2026-10-20T20:19:39.904Z","harness:codex","Implementation: fresh Scorecard at e4f5f10 identified two additional advisories published during prior review. Collect every pnpm-lock packages entry against OSV plus the unchanged all-severity registry audit; persist lock/input hashes, per-source retrieval times, coverage, availability, and explicit unknown database freshness. A repository-quality SDK provider verifies the bounded local receipt with no network. Missing, stale, incomplete, failed, or positive evidence blocks. New component remediation is pm-5sgx37."
+  "2026-10-20T20:26:20.512Z","harness:codex","Implemented repository-owned collector plus local-only assurance provider. All 53 focused regression cases pass with exact new-source coverage: lines 98/98, statements 110/110, functions 23/23, branches 56/56. Complete-lock negative control observed OSV positives with registry zero; patched client/core 2.3.0 and Vite 7.3.7 now return zero across all 569 locked packages. Both registry and independent source availability remain explicit; database freshness is unknown. Source qualification and hosted review are still pending."
+files[9]{path,scope}:
+  .agents/pm/assurance.json,project
+  package.json,project
+  scripts/release/dependency-advisories/feeds.mjs,project
+  scripts/release/dependency-advisories/gate.mjs,project
+  scripts/release/dependency-advisories/inventory.mjs,project
+  scripts/release/dependency-advisories/receipt.mjs,project
+  scripts/release/gate-registry.json,project
+  tests/unit/scripts/release/dependency-advisories/feeds.spec.ts,project
+  tests/unit/scripts/release/dependency-advisories/gate.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/ tests/unit/scripts/release/repository-assurance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,project,"harness:codex","2026-10-20T20:26:16.208Z",local_mutation,fix/advisory-coverage
+test_runs[2]:
+  - run_id: test-local-mvh4wzgc-3jtyor
+    kind: test
+    status: passed
+    started_at: "2026-10-20T20:27:02.864Z"
+    finished_at: "2026-10-20T20:27:24.924Z"
+    recorded_at: "2026-10-20T20:27:24.924Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/ tests/unit/scripts/release/repository-assurance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvh50mfv-r7bz8l
+    kind: test
+    status: passed
+    started_at: "2026-10-20T20:29:52.745Z"
+    finished_at: "2026-10-20T20:30:14.683Z"
+    recorded_at: "2026-10-20T20:30:14.683Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/ tests/unit/scripts/release/repository-assurance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
 body: ""

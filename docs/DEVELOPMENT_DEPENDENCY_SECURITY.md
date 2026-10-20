@@ -1,7 +1,9 @@
 # Development dependency security
 
 Tracked by [pm-r61juc](../.agents/pm/issues/pm-r61juc.toon) and
-[pm-fnx3np](../.agents/pm/issues/pm-fnx3np.toon).
+[pm-fnx3np](../.agents/pm/issues/pm-fnx3np.toon), with independent advisory evidence in
+[pm-eqxjzl](../.agents/pm/tasks/pm-eqxjzl.toon) and MCP/Vite remediation in
+[pm-5sgx37](../.agents/pm/issues/pm-5sgx37.toon).
 
 Development tools execute during tests, benchmarks and release preparation.
 Their dependencies have the same admission requirement as production packages:
@@ -12,8 +14,26 @@ pnpm install --frozen-lockfile
 pnpm quality:dependencies
 ```
 
-This runs the full `pnpm audit`, with no production-only or severity filter,
-then verifies the installed CodSpeed bundle policy. Network/audit errors,
+This collects the full `pnpm audit --json`, with no production-only or severity
+filter, and queries every npm name/version in the pnpm v9 lockfile against
+[OSV querybatch](https://google.github.io/osv.dev/post-v1-querybatch/). The inventory
+includes development, optional and platform-specific packages. Either source's
+positive result blocks, even when the other returns zero. Unsupported resolutions,
+empty inventories, malformed or partial responses, pagination and network failures
+also block. Collection has bounded batch sizes, deadlines and no automatic retries.
+Only public npm names and versions are sent to OSV.
+
+The ignored local `.cache/dependency-security/receipt.json` records input hashes,
+complete per-package OSV coverage, feed retrieval times, registry counts and
+advisory IDs. Collection invalidates the prior receipt before querying. Database
+update times are explicitly unknown: fresh retrieval does not prove a feed is
+current. The SDK-owned `repository-static-quality` assurance gate composes a
+`repository-quality/dependency-advisories` provider that verifies this receipt
+without network access. It rejects evidence older than fifteen minutes, changed
+manifests or lockfiles, incomplete coverage and unavailable sources. Fresh evidence
+is required again on each CI/static or release run.
+
+The command then verifies the installed CodSpeed bundle policy. Network/audit errors,
 missing packages, incomplete policy entries, changed package files, and unreviewed
 upgrades all fail. `quality:static` includes this command, so the existing CI,
 nightly quality and release paths enforce it. The registry-owned local
