@@ -7,7 +7,8 @@ import { createHash } from "node:crypto";
 
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
-import { PmCliError } from "../../core/shared/errors.js";
+import { PmCliError, type PmCliErrorContext } from "../../core/shared/errors.js";
+import { renderPmCommand } from "../../core/shared/command-line.js";
 import { stableStringify } from "../../core/shared/serialization.js";
 import {
   ASSURANCE_GATE_TRIGGERS,
@@ -377,6 +378,27 @@ async function runVerdictsAction(
   };
 }
 
+/** Advertise bounded declaration discovery in the selected tracker after a read-only lookup miss. */
+async function readDeclarationWithRecovery(pmRoot: string, kind: AssuranceDeclarationKind, id: string): Promise<AssuranceDeclaration> {
+  try {
+    return await normalizeAssuranceEvaluation(() => getAssuranceDeclaration(pmRoot, kind, id));
+  } catch (error: unknown) {
+    if (!(error instanceof PmCliError) || error.context.reason !== "assurance_evaluation_refused") throw error;
+    const args = ["--pm-path", pmRoot, "assurance", "list", kind, "--output-budget", "2000", "--json"];
+    const discovery = renderPmCommand(args);
+    Object.assign(error.context, {
+      changed: false,
+      value: id,
+      required: `Choose a configured ${kind} declaration ID using the bounded discovery command.`,
+      why: `The requested ${kind} declaration does not exist. The registry and history were not changed.`,
+      examples: [discovery],
+      recovery: { next_best_command: discovery, suggested_retry: discovery, suggested_retry_args: args },
+    } satisfies PmCliErrorContext);
+    throw error;
+  }
+}
+
+/** Apply presets, derive proposals, or promote assertions through shared assurance policy. */
 async function runAdoptionAction(
   action: Extract<AssuranceAction, "presets" | "apply" | "derive" | "promote">,
   input: AssuranceActionInput,
@@ -445,10 +467,8 @@ async function runAdoptionAction(
       EXIT_CODE.USAGE,
     );
   }
-  const definition = (await getAssuranceDeclaration(
-    pmRoot,
-    "assertion",
-    input.id,
+  const definition = (await readDeclarationWithRecovery(
+    pmRoot, "assertion", input.id,
   )) as AssuranceAssertionDefinition;
   return normalizeAssuranceMutation(() =>
     promoteAssuranceAssertion(
@@ -686,7 +706,7 @@ export async function runAssuranceAction(
   }
   const id = input.id;
   if (action === "show") {
-    return getAssuranceDeclaration(pmRoot, kind, id);
+    return readDeclarationWithRecovery(pmRoot, kind, id);
   }
   if (action === "remove") {
     const receipt = await normalizeAssuranceMutation(() =>

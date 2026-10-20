@@ -1249,6 +1249,16 @@
         "state": "missing"
       },
       "max_cost": 50000
+    },
+    {
+      "id": "repository-dependency-advisories-pass",
+      "description": "Complete fresh registry and OSV receipt for every locked npm dependency, including development and optional variants.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "dependency-advisories"
+      },
+      "max_cost": 1
     }
   ],
   "assertions": [
@@ -2663,6 +2673,29 @@
           }
         ]
       }
+    },
+    {
+      "id": "repository-dependency-advisories-required",
+      "measurement_id": "repository-dependency-advisories-pass",
+      "owner_item_id": "pm-eqxjzl",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
     }
   ],
   "gates": [
@@ -2756,6 +2789,7 @@
     {
       "id": "repository-static-quality",
       "assertion_ids": [
+        "repository-dependency-advisories-required",
         "repository-static-quality-required",
         "repository-absence-tolerance-required",
         "repository-token-budget-required",

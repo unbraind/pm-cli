@@ -117,6 +117,15 @@ function evaluationContext(): AssuranceEvaluationContext {
   };
 }
 
+describe("unknown assurance declaration reads", () => {
+  it.each(["measurement", "assertion", "gate"] as const)("preserves TypeError compatibility through the typed refusal for %s", async (kind) => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await expect(getAssuranceDeclaration(pmPath, kind, "missing-declaration")).rejects.toBeInstanceOf(AssuranceEvaluationRefusalError);
+      await expect(getAssuranceDeclaration(pmPath, kind, "missing-declaration")).rejects.toBeInstanceOf(TypeError);
+    });
+  });
+});
+
 describe("assurance SDK", () => {
   it("validates every declaration kind and rejects ambiguous or unproven bounds", () => {
     expect(validateMeasurementDefinition(itemsMeasurement)).toEqual(

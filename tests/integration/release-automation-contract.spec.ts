@@ -71,7 +71,7 @@ describe("release automation contract", () => {
       EXPECTED_QUALITY_STATIC_SCRIPT,
     );
     expect(packageJson.scripts?.["quality:dependencies"]).toBe(
-      "pnpm audit && node scripts/check-development-dependencies.mjs",
+      "node scripts/release/dependency-advisories/gate.mjs && node scripts/check-development-dependencies.mjs",
     );
     expect(packageJson.scripts?.["quality:context-eval"]).toBe(
       "pnpm build && node scripts/release/repository-assurance.mjs repository-context-quality --trigger ci --json && pnpm quality:token-surface",

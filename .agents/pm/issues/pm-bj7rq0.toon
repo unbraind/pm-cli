@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-20T19:22:28.989Z"
+updated_at: "2026-10-20T20:46:31.181Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[62]:
+comments[63]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -210,6 +210,9 @@ comments[62]:
   - created_at: "2026-10-20T19:22:28.989Z"
     author: "harness:codex"
     text: "New CodSpeed report on PR1524 source86edbdc versus main849dbf0 reports createQueryFingerprint -2.17% (displayed1ms to1.1ms), with9 untouched and1 improved benchmark. Chrome computer-use inspection of the report confirms different runtimes: Node24.21.0/V813.6.233.17-node.53 versus Node24.22.0/V813.6.233.17-node.57. It also identifies14 system calls totaling149.9us excluded from the CPU Simulation measure. Source and benchmark algorithms are unchanged in this dependency/CI patch. Retain this as a comparability gap requiring matched-runtime and syscall-aware Walltime evidence under the existing performance scope; no acknowledgement or benchmark threshold change was made. Report: https://app.codspeed.io/unbraind/pm-cli/branches/fix%2Ffollow-redirects-security"
+  - created_at: "2026-10-20T20:46:31.179Z"
+    author: "harness:codex"
+    text: "PR #1526 local static evidence on the qualified Node 26.9.0 runner: control medians 75/79ms against 106ms maximum; SDK entrypoint gate reported product_admission=failed. Governance 506>327ms, graph 290>172ms, merge 383>226ms, query 270>241ms, runtime 464>452ms, testing 482>461ms. Observed load ~22 on 8 available CPUs does not override the configured qualified result. Hosted source static job 118869982878 passed in 12m13s. Retain this as broader performance/runner evidence, without weakening budgets or claiming the local gate passed. No new performance implementation or parent claim in the advisory scope."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

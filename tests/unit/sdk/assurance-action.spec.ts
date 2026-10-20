@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -16,7 +16,13 @@ import {
 } from "../../../src/sdk/governance/assurance-mutation-error.js";
 import { runClose } from "../../../src/sdk/lifecycle/close.js";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
+import { shouldCaptureCliError } from "../../../src/core/sentry/helpers.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, readFile: vi.fn(actual.readFile) };
+});
 
 const measurement = {
   id: "all-items",
@@ -96,6 +102,26 @@ async function seedRegistry(pmPath: string): Promise<void> {
     global,
   );
 }
+
+describe("missing assurance declaration transport refusals", () => {
+  it.each([
+    { action: "show", kind: "measurement" }, { action: "show", kind: "assertion" },
+    { action: "show", kind: "gate" }, { action: "promote", kind: "assertion", enforcement: "block" },
+  ] as const)("normalizes $action $kind for SDK and MCP dispatch", async (request) => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await runAssuranceAction({ action: "put", kind: "measurement", id: measurement.id, definition: measurement }, { path: pmPath });
+      const registryFiles = [path.join(pmPath, "assurance.json"), path.join(pmPath, "history/_workspace.jsonl")];
+      const before = await Promise.all(registryFiles.map((file) => readFile(file, "utf8")));
+      const expected = { name: "PmCliError", exitCode: EXIT_CODE.USAGE, context: { code: "invalid_argument_value", reason: "assurance_evaluation_refused", changed: false, value: "missing-declaration", recovery: { suggested_retry_args: ["--pm-path", pmPath, "assurance", "list", request.kind, "--output-budget", "2000", "--json"] } } };
+      await expect(runAssuranceAction({ ...request, id: "missing-declaration" }, { path: pmPath })).rejects.toMatchObject(expected);
+      await expect(runAssuranceDispatch({ ...request, subcommand: request.action, id: "missing-declaration" }, {}, { path: pmPath })).rejects.toMatchObject(expected);
+      const refused = await runAssuranceAction({ ...request, id: "missing-declaration" }, { path: pmPath }).catch((error: unknown) => error);
+      expect(refused).toBeInstanceOf(PmCliError);
+      expect(shouldCaptureCliError(refused)).toBe(false);
+      expect(await Promise.all(registryFiles.map((file) => readFile(file, "utf8")))).toEqual(before);
+    });
+  });
+});
 
 describe("assurance action transport", () => {
   afterEach(() => {
@@ -311,6 +337,31 @@ describe("assurance action transport", () => {
         exitCode: EXIT_CODE.GENERIC_FAILURE,
         context: { code: "assurance_registry_invalid" },
       });
+      for (const request of [
+        { action: "show", kind: "measurement", id: "missing" },
+        { action: "promote", id: "missing", enforcement: "block" },
+      ] as const) {
+        const fault = await runAssuranceAction(request, { path: pmPath }).catch((error: unknown) => error);
+        expect(fault).toMatchObject({ exitCode: EXIT_CODE.GENERIC_FAILURE, context: { code: "assurance_registry_invalid" } });
+        expect((fault as PmCliError).context).not.toHaveProperty("recovery");
+        expect((fault as PmCliError).context).not.toHaveProperty("changed");
+      }
+    });
+  });
+
+  it("preserves read I/O failures as genuine faults on declaration reads and promotion", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const denied = Object.assign(new Error("synthetic registry read denied"), { code: "EACCES" });
+      const read = vi.mocked(readFile);
+      for (const request of [
+        { action: "show", kind: "measurement", id: "missing" },
+        { action: "promote", id: "missing", enforcement: "warn" },
+      ] as const) {
+        read.mockRejectedValueOnce(denied);
+        await expect(runAssuranceAction(request, { path: pmPath })).rejects.toBe(denied);
+        expect(read).toHaveBeenLastCalledWith(path.join(pmPath, "assurance.json"), "utf8");
+        expect(shouldCaptureCliError(denied)).toBe(true);
+      }
     });
   });
 
@@ -323,6 +374,7 @@ describe("assurance action transport", () => {
     await expect(
       normalizeAssuranceEvaluation(() => Promise.reject(unexpected)),
     ).rejects.toBe(unexpected);
+    expect(shouldCaptureCliError(unexpected)).toBe(true);
   });
 
   it("types provider-policy evaluation refusals without hiding runtime faults", async () => {

@@ -1,7 +1,10 @@
+import { cp, readFile, readdir } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import type { AssuranceGateVerdict } from "../../src/sdk/governance/assurance.js";
 import { resolvePmPositionalActionContract } from "../../src/sdk/cli-contracts/grammar-contracts.js";
+import { withTempDir } from "../helpers/temp.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const measurement = {
@@ -30,7 +33,45 @@ const gate = {
   triggers: ["ci", "pre-release"],
 };
 
+/** Capture every registry file so recovery cannot silently create or rewrite project state. */
+async function registrySnapshot(root: string) {
+  const entries = await readdir(root, { recursive: true, withFileTypes: true });
+  const files = entries.filter((entry) => entry.isFile()).map((entry) => path.relative(root, path.join(entry.parentPath, entry.name))).sort();
+  return Promise.all(files.map(async (file) => [file, (await readFile(path.join(root, file))).toString("hex")]));
+}
+
 describe("assurance CLI integration", () => {
+  it.each([
+    { action: "show", kind: "measurement" }, { action: "show", kind: "assertion" },
+    { action: "show", kind: "gate" }, { action: "promote", kind: "assertion" },
+  ])("replays bounded $kind discovery after $action in the selected tracker without changing any file", async (request) => {
+    await withTempPmPath(async (context) => {
+      await withTempDir("pm-assurance selected space-", async (root) => {
+        const selected = path.join(root, ".agents/pm");
+        await cp(context.pmPath, selected, { recursive: true });
+        for (const [kind, definition] of [["measurement", measurement], ["assertion", assertion], ["gate", gate]] as const) {
+          expect(context.runCli(["--pm-path", selected, "assurance", "put", kind, definition.id, "--definition", JSON.stringify(definition), "--json"]).code).toBe(0);
+        }
+        const before = await registrySnapshot(selected);
+        const args = ["--pm-path", selected, "assurance", request.action,
+          ...(request.action === "show" ? [request.kind] : []), "missing-declaration",
+          ...(request.action === "promote" ? ["--enforcement", "warn"] : []), "--json"];
+        const refused = context.runCli(args, { expectJson: true });
+        expect(refused.code).toBe(2);
+        const envelope = JSON.parse(refused.stderr);
+        expect(envelope).toMatchObject({ code: "invalid_argument_value", changed: false, detail: `assurance ${request.kind} missing-declaration not found` });
+        expect(envelope.required).toContain(request.kind);
+        expect(envelope.recovery.suggested_retry_args).toEqual(["--pm-path", selected, "assurance", "list", request.kind, "--output-budget", "2000", "--json"]);
+        const discovered = context.runCli(envelope.recovery.suggested_retry_args, { expectJson: true });
+        expect(discovered.code).toBe(0);
+        expect(discovered.json).toMatchObject({ count: 1, items: [{ id: request.kind === "measurement" ? measurement.id : request.kind === "assertion" ? assertion.id : gate.id }] });
+        expect((await registrySnapshot(selected))).toEqual(before);
+        const remove = context.runCli(["--pm-path", selected, "assurance", "remove", request.kind, "missing-declaration", "--json"], { expectJson: true });
+        expect(remove.code).toBe(2); expect(JSON.parse(remove.stderr).code).toBe("invalid_argument_value");
+        expect((await registrySnapshot(selected))).toEqual(before);
+      });
+    });
+  });
   it("executes the advertised risk definition and discloses policy recovery", async () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["create", "--type", "Task", "--title", "Nonempty risk tracker", "--create-mode", "progressive"]).code).toBe(0);
