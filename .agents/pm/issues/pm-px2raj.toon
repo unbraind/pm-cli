@@ -2,13 +2,13 @@ id: pm-px2raj
 title: "Scorecard alert 29: patch newly disclosed follow-redirects credential-header vulnerabilities"
 description: "The final live code-scanning inventory after PR1523 merge resurfaced Scorecard alert29 at main849dbf005. Two upstream high advisories published during the review, GHSA-8r9p-f939-6h3c at17:53Z and GHSA-q3jh-wrc6-jgq8 at17:58Z on2026-10-20, affect follow-redirects>=1.16.0<1.16.1. The current pnpm lock resolves1.16.0 under Axios1.20.0 in the CodSpeed development dependency graph. The registry audit still reports zero, so it is insufficient evidence against the fresh upstream advisories. No claim of a demonstrated exploit in pm-cli runtime is made."
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags: []
 created_at: "2026-10-20T18:37:36.178Z"
-updated_at: "2026-10-20T18:51:49.792Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#244d33e51b5f1223152c8358"
+updated_at: "2026-10-20T19:19:04.907Z"
+closed_at: "2026-10-20T19:19:03.818Z"
+completed_at: "2026-10-20T19:19:03.818Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Use an explicit patched lower bound and an exact-version security age exception only where required; verify the resolved complete dependency graph, builds and maintained dependency/package gates; retain zero known security alerts on the final merged head; land tracked evidence and package-owned changelog through normal review."
@@ -16,15 +16,19 @@ parent: pm-qwoy
 risk: high
 confidence: high
 severity: high
-expected_result: Resolve and install patched follow-redirects>=1.16.1<2; maintain CodSpeed client/native-byte and public SDK consumer guarantees; clear the actual current Scorecard vulnerability instance without suppressing it.
-actual_result: Live Scorecard instance at849dbf005 reports both advisories; root lockfile contains1.16.0 while the advisories identify1.16.1 as first patched version.
+resolution: "Override follow-redirects to>=1.16.1<2 and resolve the CodSpeed/Axios graph to1.16.1. Preserve automatic cooldowns and audited CodSpeed bundles, source maps and native payload."
+expected_result: Eliminate both newly published upstream advisories from the resolved graph while preserving dependency integrity and public SDK/package consumers.
+actual_result: Installed graph and lock resolve1.16.1; OSV returns no advisories for it versus both GHSA IDs for1.16.0. Linked dependency/native-payload gate and hosted CI39479180880 pass;10852 tests pass with3 skips and exact100/100/100/100 coverage. Main Scorecard clearance remains a post-merge operational verification against the older alert instance.
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gnzh,related,"2026-10-20T18:37:36.178Z","harness:codex","cli:create:dep",detected
   pm-r61juc,discovered_from,"2026-10-20T18:37:36.178Z","harness:codex","cli:create:dep",detected
   pm-vqwery,related,"2026-10-20T18:44:51.835Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-20T18:37:36.178Z","harness:codex","Duplicate check: fresh keyword searches for follow-redirects and both exact GHSA IDs return zero matches; current open and in-progress inventories show no exact owner. Full live records for the closed CodSpeed Axios precursor and security/Scorecard parents distinguish these newly published advisories from completed prior fixes. The issue groups both advisories for one dependency patch and does not reopen the completed precursor."
   "2026-10-20T18:44:57.249Z","harness:codex","Independent negative control: OSV reports exactly GHSA-8r9p-f939-6h3c and GHSA-q3jh-wrc6-jgq8 for1.16.0, and no advisories for1.16.1. The installed dependency graph now resolves1.16.1 under Axios1.20.0 and CodSpeed core5.7.1. Maintained all-dependency audit plus patched bundle/source-map/native-payload verification passes. Added only the patched1.x lower bound; the automatic seven-day cooldown and existing age exceptions are unchanged."
+  "2026-10-20T19:18:59.369Z","harness:codex","Source qualification CI39479180880 at86edbdc391fdc0bf987257b24f802890aa63b861 passes the dependency/native-bundle gate plus all source and consumer gates. Downloaded artifacts prove10852 passing tests with3 skips and exact100/100/100/100 coverage. Locked and installed follow-redirects is1.16.1 and the direct OSV query has no advisories for that version. The existing main Scorecard instance still refers to older849dbf005 and is a required post-merge operational check, not a reason to dismiss or suppress the alert."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T19:19:00.146Z","harness:codex",A registry audit can lag newly disclosed upstream advisories. Cross-check live Scorecard findings with the authoritative advisory range and OSV package/version evidence; patch the affected resolved component and enforce its minimum version rather than treating a zero audit count as a refutation.
 files[2]{path,scope}:
   pnpm-lock.yaml,project
   pnpm-workspace.yaml,project
@@ -42,6 +46,7 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:dependencies",schema,schema,source,local_source_ref
+close_reason: Enforce and verify the patched follow-redirects development dependency floor
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_strengthened
