@@ -214,6 +214,18 @@ aliases such as `updated_at`) and declare it in `projection.fields`. Explicit
 `--fields`, compact and full projections retain their requested fields.
 This rule is shared by SDK list queries.
 
+With the default sort, brief rows include `priority`. The compatible
+`sorting.sort: "default"` and `order: "asc"` fields are accompanied by ordered
+`sorting.effective_keys` tuples `[field, direction]`: nonterminal items before terminal items (using the
+active status registry), priority ascending, `updated_at` descending, then ID
+ascending. The synthetic key `status_registry:nonterminal_before_terminal`
+names both the registry source and the grouping semantics; it is not a stored
+item field. This policy remains visible in JSON and TOON,
+including status-filtered reads. Tracked by
+[pm-zd46m7](../.agents/pm/issues/pm-zd46m7.toon).
+Brief JSON lists use compact whitespace while retaining the complete envelope
+and receipts, so visible ranking facts fit the existing output ceilings.
+
 Lifecycle filters such as `--all` and `--status all` retain the canonical `list`
 command's brief default; they select rows without expanding item fields. Use
 `--full`, `--compact`, `--brief`, `--fields` or `--include-body` to choose more

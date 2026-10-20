@@ -2760,15 +2760,12 @@ async function dispatchActiveExtensionAction(
       EXIT_CODE.USAGE,
     );
   }
-  const extensionAuthor =
-    typeof global.author === "string" && global.author.trim()
-      ? global.author.trim()
-      : "pm-extension";
+  const extensionAuthor = typeof options.author === "string" ? options.author : global.author;
   const handlerResult = await runActiveCommandHandler({
     command: normalizeCommandPath(command),
     args: readStringArray(options.args ?? args.args),
     options: extensionOptionsFromArgs(args, options),
-    global,
+    global: { ...global, author: extensionAuthor },
     pm_root: active.pmRoot,
     sdk: createExtensionCommandSdk(
       active.pmRoot,

@@ -1028,9 +1028,9 @@ async function executeRegisteredRuntimeMigrations(migrations: RegisteredExtensio
 
 /* c8 ignore start */
 
-/** Build one host-bound extension SDK using the command's resolved author. */
+/** Bind explicit invocation identity while leaving environment and workspace defaults to the SDK. */
 function buildExtensionCommandSdk(pmRoot: string, global: GlobalOptions, commandPath: string) {
-  const author = typeof global.author === "string" && global.author.trim() ? global.author.trim() : "pm-extension";
+  const author = global.author;
   return createExtensionCommandSdk(pmRoot, PmClient.forActiveExtensionHost({ pmRoot, author }), author, normalizeExtensionCommandPath(commandPath));
 }
 
@@ -1043,6 +1043,7 @@ async function runRequiredExtensionCommand(
   const commandPath = getCommandPath(command);
   let commandArgs = stripLooseCommandOptionTokens(command.args.map(String), extensionFlagDefinitions);
   let commandOptions = { ...options };
+  delete commandOptions.author;
   let resolvedGlobalOptions = { ...globalOptions };
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
   const parserOverride = await runActiveParserOverride({
@@ -1174,6 +1175,9 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         const extensionFlagDefinitions = activeRegistrations ? collectExtensionFlagDefinitionsForInvocation(activeRegistrations, commandPath, commandArgs) : [];
         const runtimeFieldFlagDefinitions = await collectRuntimeFieldLooseFlagDefinitionsForCommand(commandPath, pmRoot);
         let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, [...extensionFlagDefinitions, ...runtimeFieldFlagDefinitions]);
+        if (activeRuntimeExtensionCommandDescriptors.has(normalizeExtensionCommandPath(commandPath))) {
+          delete commandOptions.author;
+        }
         const parserOverride = await runActiveParserOverride({
           command: commandPath,
           args: commandArgs,

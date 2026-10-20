@@ -252,7 +252,7 @@ describe("runList", () => {
     ).toEqual(["severity", "owner"]);
     expect(listInternals.parseProjectionConfig({ brief: true })).toEqual({
       mode: "brief",
-      fields: ["id", "status", "type", "title"],
+      fields: ["id", "status", "type", "title", "priority"],
     });
     expect(() =>
       listInternals.parseProjectionConfig({ brief: true, full: true }),
@@ -1043,7 +1043,7 @@ describe("runList", () => {
       expect(result.filters.status).toBe("open");
       expect(result.projection).toEqual({
         mode: "brief",
-        fields: ["id", "status", "type", "title"],
+        fields: ["id", "status", "type", "title", "priority"],
       });
     });
   });

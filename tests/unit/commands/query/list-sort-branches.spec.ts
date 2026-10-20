@@ -24,6 +24,7 @@ vi.mock("../../../../src/core/store/settings.js", () => ({
 
 vi.mock("../../../../src/core/store/item-store.js", () => ({
   listAllItemMetadata: listAllItemMetadataMock,
+  listAllItemMetadataLight: listAllItemMetadataMock,
   listAllItemMetadataWithBody: listAllItemMetadataWithBodyMock,
 }));
 
@@ -124,6 +125,19 @@ describe("runList sorting branches", () => {
       "pm-updated-old",
       "pm-terminal",
     ]);
+    expect(result.sorting).toMatchObject({
+      sort: "default",
+      order: "asc",
+      effective_keys: [
+        ["status_registry:nonterminal_before_terminal", "asc"],
+        ["priority", "asc"],
+        ["updated_at", "desc"],
+        ["id", "asc"],
+      ],
+    });
+    const brief = await runList(undefined, { brief: true }, { path: trackerRoot });
+    expect(brief.projection.fields).toEqual(["id", "status", "type", "title", "priority"]);
+    expect(brief.items.map((item) => item.priority)).toEqual([0, 1, 1, 3, 3, 0]);
   });
 
   it("covers terminal-first comparator branch", async () => {

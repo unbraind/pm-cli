@@ -20,7 +20,7 @@ export const DEFAULT_COMPACT_LIST_FIELDS = [
   "updated_at",
 ] as const;
 
-/** Stable field order for the agent-optimized brief list projection. */
+/** Stable base field order for brief lists; the query appends its effective leading sort field. */
 export const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
 
 /** Machine-readable default projection contract for every list command. */

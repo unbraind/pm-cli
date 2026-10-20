@@ -161,19 +161,28 @@ function validateExpectedOutput(payload, step) {
   }
 }
 
-/** Independently validate a self-reported accounting receipt and return its payload projection. */
-function validateSelfReportedAccounting(accountedPayload, step) {
+/** Infer only supported wire encodings from captured bytes without consulting the producer's formatter. */
+function jsonTransportSpacing(payload, wire, step) {
+  if (wire === `${JSON.stringify(payload)}\n`) return undefined;
+  if (wire === `${JSON.stringify(payload, null, 2)}\n`) return 2;
+  fail(`Agent-task transcript step ${step.id} emitted unsupported JSON whitespace`);
+}
+
+/** Independently validate a self-reported accounting receipt against captured wire bytes. */
+function validateSelfReportedAccounting(accountedPayload, step, accounted) {
+  const wire = step.expected_output_kind === "refusal" ? accounted.stderr : accounted.stdout;
+  const spacing = jsonTransportSpacing(accountedPayload, wire, step);
   const receipt = accountedPayload.token_accounting;
   const {
     token_accounting: _excludedReceipt,
     ...independentlyProjectedPayload
   } = accountedPayload;
   const baselineBytes = Buffer.byteLength(
-    `${JSON.stringify(independentlyProjectedPayload, null, 2)}\n`,
+    `${JSON.stringify(independentlyProjectedPayload, null, spacing)}\n`,
     "utf8",
   );
   const accountedBytes = Buffer.byteLength(
-    `${JSON.stringify(accountedPayload, null, 2)}\n`,
+    wire,
     "utf8",
   );
   const measuredReceiptBytes = accountedBytes - baselineBytes;
@@ -209,7 +218,7 @@ function validateSelfReportedAccounting(accountedPayload, step) {
       `Agent-task transcript step ${step.id} accounting receipt size drift: reported=${String(receipt.accounting_receipt_bytes)}, independent=${measuredReceiptBytes}`,
     );
   }
-  return { receipt, independentlyProjectedPayload };
+  return { receipt, independentlyProjectedPayload, spacing };
 }
 
 /** Reject accounting-induced payload drift after predicting only declared transport and fixture-root changes. */
@@ -339,8 +348,8 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step, trac
       `Agent-task transcript step ${step.id} independent_transport accounting is supported only for refusal output`,
     );
   }
-  const { receipt, independentlyProjectedPayload } =
-    validateSelfReportedAccounting(accountedPayload, step);
+  const { receipt, independentlyProjectedPayload, spacing } =
+    validateSelfReportedAccounting(accountedPayload, step, accounted);
   assertTransportPayloadParity(
     baselinePayload,
     independentlyProjectedPayload,
@@ -351,7 +360,7 @@ export function validateAgentTaskTokenInvocation(baseline, accounted, step, trac
   // real executable payload and its independent byte accounting untouched.
   const comparisonPayload = expectedAccountedPlanRoot(independentlyProjectedPayload,
     trackerRoots === undefined ? undefined : { baseline: trackerRoots.accounted, accounted: "/replay/.agents/pm" });
-  const comparisonBytes = Buffer.byteLength(`${JSON.stringify(comparisonPayload, null, 2)}\n`, "utf8");
+  const comparisonBytes = Buffer.byteLength(`${JSON.stringify(comparisonPayload, null, spacing)}\n`, "utf8");
   return {
     id: step.id,
     command: step.args.join(" "),

@@ -459,6 +459,8 @@ export interface ListVerboseResult extends ListResultBase {
   sorting: {
     sort: ListSortField | "default";
     order: ListSortOrder;
+    /** Ordered [field, direction] stages; status_registry:nonterminal_before_terminal is a synthetic grouping from the active status registry. */
+    effective_keys?: Array<[field: string, order: ListSortOrder]>;
   };
   /** Value that configures or reports now for this contract. */
   now: string;
@@ -905,7 +907,7 @@ function parseProjectionConfig(
     const sortField = parseSortField(options.sort);
     return {
       mode: "brief",
-      fields: [...new Set<string>([...BRIEF_LIST_FIELDS, ...(sortField ? [sortField] : [])])],
+      fields: [...new Set<string>([...BRIEF_LIST_FIELDS, sortField ?? "priority"])],
     };
   }
   if (compactRequested) {
@@ -2209,6 +2211,14 @@ export async function runList(
     sorting: {
       sort: ordering.sortField ?? "default",
       order: ordering.sortField ? ordering.sortOrder : "asc",
+      ...(ordering.sortField === undefined ? {
+        effective_keys: [
+          ["status_registry:nonterminal_before_terminal", "asc"],
+          ["priority", "asc"],
+          ["updated_at", "desc"],
+          ["id", "asc"],
+        ] satisfies Array<[string, ListSortOrder]>,
+      } : {}),
     },
     now,
     ...(warnings.length > 0 ? { warnings } : {}),

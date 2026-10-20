@@ -1,0 +1,26 @@
+id: pm-wb25c1
+title: "Refresh cooldown-pending October 20 lint, token and review tooling"
+description: "October20 registry census: eslint10.13.0 published October16; gpt-tokenizer4.1.0 and greptile3.7.0 October18; knip6.42.1 October19. Latest versions remain younger than seven days. Recheck exact publication timestamps before adoption."
+type: Chore
+status: open
+priority: 3
+tags[2]: dependencies,maintenance
+created_at: "2026-10-20T07:06:03.433Z"
+updated_at: "2026-10-20T07:49:33.508Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "Adopt eligible eslint, gpt-tokenizer, greptile and knip after seven-day cooldown; existing strict static, token, review-tool and coverage gates pass"
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: Eligible tooling updates pass existing quality and token contracts without release-age exceptions.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ul0ow4,discovered_from,"2026-10-20T07:06:03.433Z","harness:codex","cli:create:dep",detected
+  pm-do5b,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-20T07:06:03.433Z","harness:codex","Duplicate check: complete3021-item strict all-status/full-body read plus dependency/cooldown search and open/in-progress inventories found completed pm-ul0ow4 and broad owners, with no active minor-refresh leaf. Major migration owners are preserved. Open/unclaimed until eligible implementation."
+  "2026-10-20T07:08:29.386Z","harness:codex",Current live GitHub inventories have zero open dependency PRs or Dependabot/code-scanning/secret-scanning alerts. npm-package-arg14 remains assigned to pm-ksr40d (engines require22.22.2 vs supported22.18.0); TypeScript7 to pm-do5b; Sentry11 compile/privacy/distribution migration to pm-t3jxjj; Vitest5/CodSpeed6 to pm-fokyhh. No dependency update is called accepted solely because the security inventory is empty.
+body: ""

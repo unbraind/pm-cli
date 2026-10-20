@@ -564,7 +564,10 @@ export function formatBuiltInOutput(
   lean = false,
 ): string {
   if (format === "json") {
-    return `${JSON.stringify(lean ? projectLeanJsonValue(result) : result, null, 2)}\n`;
+    const value = lean ? projectLeanJsonValue(result) : result;
+    const briefList = isPlainObject(result) && isPlainObject(result.projection) &&
+      result.projection.mode === "brief" && Array.isArray(result.items);
+    return `${JSON.stringify(value, null, briefList ? undefined : 2)}\n`;
   }
   const compactedToon = compactToonValue(
     projectEmptyCheckDetails(projectPmBriefListEnvelope(result)),

@@ -500,7 +500,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const listResult = context.runCli(["list-open", "--limit", "10"]);
       expect(listResult.code).toBe(0);
       expect(listResult.stdout).toContain(
-        "items[1]{id,status,type,title}:",
+        "items[1]{id,status,type,title,priority}:",
       );
       expect(listResult.stdout).toContain("filters:");
       expect(listResult.stdout).toContain('status: "open"');
@@ -4120,7 +4120,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const listOpenBrief = context.runCli(["list-open", "--json", "--type", "Task", "--limit", "1"], { expectJson: true });
       expect(listOpenBrief.code).toBe(0);
       const listOpenBriefJson = listOpenBrief.json as { projection: { mode: string; fields: string[] } };
-      expect(listOpenBriefJson.projection).toEqual({ mode: "brief", fields: ["id", "status", "type", "title"] });
+      expect(listOpenBriefJson.projection).toEqual({ mode: "brief", fields: ["id", "status", "type", "title", "priority"] });
 
       const listOpen = context.runCli(["list-open", "--json", "--type", "Task", "--full"], { expectJson: true });
       expect(listOpen.code).toBe(0);
@@ -4240,9 +4240,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(listActiveJson.filters).not.toHaveProperty("status");
       expect(listActiveJson.projection).toEqual({
         mode: "brief",
-        fields: ["id", "status", "type", "title"],
+        fields: ["id", "status", "type", "title", "priority"],
       });
-      expect(Object.keys(listActiveJson.items[0] ?? {})).toEqual(["id", "status", "type", "title"]);
+      expect(Object.keys(listActiveJson.items[0] ?? {})).toEqual(["id", "status", "type", "title", "priority"]);
       const defaultStatuses = listActiveJson.items.map((item) => item.status as string);
       expect(defaultStatuses).toEqual(expect.arrayContaining([
         "draft",

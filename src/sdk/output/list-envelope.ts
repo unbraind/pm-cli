@@ -19,7 +19,8 @@ function hasStandardBriefProjection(value: unknown): boolean {
     value.mode === "brief" &&
     Object.keys(value).length === 2 &&
     Array.isArray(fields) &&
-    fields.length === BRIEF_LIST_FIELDS.length &&
+    (fields.length === BRIEF_LIST_FIELDS.length ||
+      (fields.length === BRIEF_LIST_FIELDS.length + 1 && fields.at(-1) === "priority")) &&
     BRIEF_LIST_FIELDS.every((field, index) => fields[index] === field)
   );
 }
