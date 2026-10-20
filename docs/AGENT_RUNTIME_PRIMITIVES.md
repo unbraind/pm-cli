@@ -54,7 +54,8 @@ An invocation author supplies the client's default; a deliberate per-call
 `client.run(action, { author, ... })` override affects that call only. Package
 flags do not receive the host's author as a package-owned option. Item and
 workspace history retain the actual actor and its `author_source`.
-Tracked by [pm-65srr0](../.agents/pm/issues/pm-65srr0.toon).
+Tracker (repository only; excluded from npm):
+[pm-65srr0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-65srr0.toon).
 
 Every newly created `HistoryEntry` records `author_source` as `asserted`,
 `configured`, `detected`, or `unknown`. Author selection and agent observation
