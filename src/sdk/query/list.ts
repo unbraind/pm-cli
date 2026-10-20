@@ -2211,7 +2211,7 @@ export async function runList(
     sorting: {
       sort: ordering.sortField ?? "default",
       order: ordering.sortField ? ordering.sortOrder : "asc",
-      ...(ordering.sortField === undefined ? {
+      ...(ordering.sortField === undefined && !ordering.treeEnabled ? {
         effective_keys: [
           ["status_registry:nonterminal_before_terminal", "asc"],
           ["priority", "asc"],

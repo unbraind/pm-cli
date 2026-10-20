@@ -1,0 +1,21 @@
+id: pm-hdvxqg
+title: "GH-1519: preflight test run options before persisting linked-test edits"
+description: "https://github.com/unbraind/pm-cli/issues/1519 reports on published 2026.10.20/plain non-Git trackers that test --add persists a link before refusing invalid --timeout, --pm-context, --env-set or --only-index values, so retries accumulate duplicate registrations. It also reports run counters on add-only --progress and generic errors for some invalid values. This is reporter evidence; current-head reproduction and implementation remain pending. The scope is admission of the entire requested link/run option combination before any write, beyond the earlier linked-context validation."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,"area:testing",mutation-safety
+created_at: "2026-10-20T10:34:31.518Z"
+updated_at: "2026-10-20T10:34:31.518Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Exercise invalid timeout, context, environment and index options through CLI and native SDK with add/remove edits: preflight refusals must leave item bytes, links and history unchanged and name the offending flag/value with an honest no-change receipt. Define run-only options on registration-only calls consistently, including progress output without fabricated execution counters. Preserve valid add-plus-run behavior, audit real executed failures truthfully, and keep existing context-intake/refusal semantics intact; do not equate a real post-admission child failure with a preflight refusal."
+parent: pm-33cw
+risk: medium
+confidence: medium
+expected_result: "Agents can safely retry invalid test-link requests without hidden edits or duplicates, while accepted registrations and genuine executions retain truthful mutation/run receipts."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1440,related,"2026-10-20T10:34:31.518Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-20T10:34:31.518Z","harness:codex","Duplicate check: live focused searches, open/in-progress lists and a complete strict 3023-item all-status read found no matching open item. Read the governance parent and full pm-gh1440 metadata/comments/history: that completed work covers none/source context admission and truthful unexecuted refusals, while this report adds validation of run-only options before combined link edits. Reuse that predecessor as related context; keep this distinct report open and unclaimed."
+body: ""

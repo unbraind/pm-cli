@@ -3,6 +3,23 @@ import { PmClient, type ContractsResult } from "../../../src/sdk/runtime.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("default list ordering context (pm-zd46m7)", () => {
+  it("omits flat sort claims when hierarchy traversal overrides priority order", async () => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      const parent = await client.create({ type: "Feature", title: "Lower priority parent", priority: "4", createMode: "progressive" });
+      const child = await client.create({ type: "Task", title: "Higher priority child", priority: "0", parent: parent.item.id, createMode: "progressive" });
+      const flat = await client.list({ brief: true });
+      expect(flat.items.map((item) => item.id)).toEqual([child.item.id, parent.item.id]);
+      expect(flat.sorting?.effective_keys).toContainEqual(["priority", "asc"]);
+      const tree = await client.list({ brief: true, tree: true });
+      expect(tree.items.map((item) => item.id)).toEqual([parent.item.id, child.item.id]);
+      expect(tree.sorting).toEqual({ sort: "default", order: "asc" });
+      const cli = context.runCli(["list", "--tree", "--json"], { expectJson: true });
+      expect(cli.code, cli.stderr).toBe(0);
+      expect(cli.json).toMatchObject({ items: [{ id: parent.item.id }, { id: child.item.id }], sorting: tree.sorting });
+    });
+  });
+
   it("preserves ranking, custom projections and bounded continuation across native and CLI reads", async () => {
     await withTempPmPath(async (context) => {
       const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
