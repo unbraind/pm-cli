@@ -1046,7 +1046,7 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 
 - `runtime` clears `runtime/test-runs/` and `runtime/history-drift-cache.json`. The next health check rescans history drift.
 - `embeddings` removes keyword/semantic artifacts (`search/embeddings.jsonl`, `search/vectorization-status.json`, `search/lancedb/`) plus `search/pending-refresh.json` and its gate, preventing a background worker from rebuilding a partial index against an empty ledger. Rebuild with keyword reindex and semantic reindex when enabled.
-- `locks` removes only provably expired locks, using embedded `created_at + ttl_seconds`. Active, unreadable, or unparseable locks remain. The result reports `scanned`, `removed`, and `retained` counts.
+- `locks` removes locks with an expired embedded `created_at + ttl_seconds` lease or positive same-host original-owner death evidence. It rechecks the observed receipt under the writer cleanup gate before deletion; replaced or initializing locks remain. Active, unreadable, or unparseable locks remain. The result reports `scanned`, `removed`, and `retained` counts.
 
 The `checkpoints` scope prunes bulk-mutation rollback checkpoints under `checkpoints/` (written by `pm update many`/`pm close many`) that are older than `checkpoints.retention_days` (default 14; set via `pm config <scope> set checkpoints_retention_days <n>`). Checkpoints whose `created_at` cannot be parsed are retained (safety-first, like the locks sweep), and the result includes a `checkpoints` summary (`scanned`/`removed`/`retained`/`retention_days`). Removing aged checkpoints permanently closes their `--rollback` window.
 
@@ -1121,7 +1121,7 @@ When more than one history stream is drifted, the `history_drift` remediation co
 
 `remediation_map` appears in default and `--full` output and is omitted in `--brief`/`--summary` to stay token-efficient. Extension checks keep their existing richer `details.triage.remediation` instead.
 
-`pm health` also runs a read-only `locks` check alongside the storage check: it classifies every file in `locks/` with the exact policy `pm gc --scope locks` acts on and reports `active_lock_count`, `stale_lock_count`, `unreadable_lock_count`, and `unparseable_lock_count` (counts appear in all projection modes; nothing is ever removed). It warns with `locks_stale_count:<n>` when stale locks exist (fix: `pm gc --scope locks`) and `locks_unreadable:<n>` when lock files cannot be read (inspect first: `pm gc --scope locks --dry-run`).
+`pm health` also runs a read-only `locks` check alongside the storage check: it classifies every file in `locks/` with the exact policy `pm gc --scope locks` acts on and reports `active_lock_count`, `stale_lock_count`, `unreadable_lock_count`, and `unparseable_lock_count` (counts appear in all projection modes; nothing is ever removed). Full details include at most twenty verified dead-owner samples (owner, PID, age and reason) and the cleanup command. Linux early-recovery identity and local audit receipts are explained in [Configuration](CONFIGURATION.md). It warns with `locks_stale_count:<n>` when stale locks exist (fix: `pm gc --scope locks`) and `locks_unreadable:<n>` when lock files cannot be read (inspect first: `pm gc --scope locks --dry-run`).
 
 ## Single-commit merge settlement
 

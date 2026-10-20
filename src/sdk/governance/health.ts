@@ -1906,6 +1906,7 @@ async function buildLocksCheck(
       details: {
         active_lock_count: scan.active_lock_count,
         stale_lock_count: scan.stale_lock_count,
+        ...(scan.owner_dead_lock_samples ? { owner_dead_lock_samples: scan.owner_dead_lock_samples, recovery_command: "pm gc --scope locks" } : {}),
         unreadable_lock_count: scan.unreadable_lock_count,
         unparseable_lock_count: scan.unparseable_lock_count,
       },

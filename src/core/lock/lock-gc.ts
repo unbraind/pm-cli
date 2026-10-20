@@ -3,12 +3,15 @@
  *
  * Safety-first policy: if a lock file cannot be read or parsed, it is RETAINED
  * rather than deleted. We only remove locks whose staleness can be conclusively
- * determined from the lock's own embedded `ttl_seconds` field.
+ * determined from the embedded lease or positive same-host owner-death evidence.
+ * Deletion is revalidated under the writer cleanup gate.
  *
  * Staleness formula: (now_ms - Date.parse(created_at)) > ttl_seconds * 1000
  * Zero ttl means any lock older than 0 ms is stale. Negative ttl means always stale.
  */
 
+import { inspectLockOwner, type LockOwnerIdentity } from "./lock-owner.js";
+import { acquireStaleCleanupGate, recordDeadLockRecovery } from "./lock.js";
 import { isFileMissingError } from "../fs/fs-utils.js";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -27,10 +30,14 @@ export interface StaleLockScanEntry {
   ttl_seconds: number | null;
   /** floor((now - created_at)/1000), null if unparseable */
   age_seconds: number | null;
-  /** true only when classified expired */
+  /** True only when lease expiry or positive original-owner death is established. */
   stale: boolean;
   /** Value that configures or reports reason for this contract. */
-  reason: "expired" | "active" | "unparseable";
+  reason: "expired" | "owner_dead" | "active" | "unparseable";
+  /** Verified original-process liveness, when the receipt supports same-host observation. */
+  owner_state?: "alive" | "dead" | "unknown";
+  /** Valid recorded PID, available for diagnosis without revealing host coordinates. */
+  pid?: number;
 }
 
 /** Documents the lock gc hooks payload exchanged by command, SDK, and package integrations. */
@@ -65,7 +72,7 @@ export interface LockGcResult {
   entries: StaleLockScanEntry[];
 }
 
-interface ParsedLock {
+interface ParsedLock extends LockOwnerIdentity {
   id: string;
   owner: string;
   created_at: string;
@@ -93,13 +100,22 @@ function parseLock(raw: string): ParsedLock | null {
   ) {
     return null;
   }
-  return { id, owner, created_at, ttl_seconds };
+  return {
+    id,
+    owner,
+    created_at,
+    ttl_seconds,
+    pid: candidate.pid,
+    host_identity: candidate.host_identity,
+    process_start_identity: candidate.process_start_identity,
+  };
 }
 
 /** Fine-grained classification outcome for one readable lock file's content. `unparseable_json` and `invalid_timestamp` both surface as the coarse `reason: "unparseable"` on the scan entry (gc retains both), but stay distinct here so callers can emit precise warnings. */
 export type LockClassificationDetail =
   | "active"
   | "expired"
+  | "owner_dead"
   | "unparseable_json"
   | "invalid_timestamp";
 
@@ -111,7 +127,7 @@ export interface LockContentClassification {
   entry: StaleLockScanEntry;
 }
 
-/** Pure classification of one lock file's raw content against `nowMs`. This is the single staleness/parse policy shared by `pm gc --scope locks` (which acts on it) and the `pm health` locks check (which only reports it). */
+/** Pure TTL classification retained for callers that cannot observe the owner process. Health and GC additionally share conservative same-host liveness observation. */
 export function classifyLockContent(
   file: string,
   raw: string,
@@ -167,6 +183,59 @@ export function classifyLockContent(
   };
 }
 
+/** Add positive same-host owner-death proof to the shared conservative TTL classification. */
+async function classifyObservedLock(
+  file: string,
+  raw: string,
+  nowMs: number,
+): Promise<LockContentClassification> {
+  const classified = classifyLockContent(file, raw, nowMs);
+  if (classified.detail !== "active") return classified;
+  const lock = parseLock(raw)!;
+  const state = await inspectLockOwner(lock);
+  if (state === "unknown") return classified;
+  return {
+    detail: state === "dead" ? "owner_dead" : "active",
+    entry: {
+      ...classified.entry,
+      owner_state: state,
+      pid: lock.pid as number,
+      ...(state === "dead"
+        ? { stale: true, reason: "owner_dead" as const }
+        : {}),
+    },
+  };
+}
+
+/** Compare the observed receipt under the same gate that fences writers and initialization. */
+async function removeObservedLock(
+  lockPath: string,
+  raw: string,
+  ownerDead: boolean,
+): Promise<boolean> {
+  const release = await acquireStaleCleanupGate(lockPath, "gc");
+  if (release === null) return false;
+  try {
+    let current: string;
+    try {
+      current = await fs.readFile(lockPath, "utf8");
+    } catch (error: unknown) {
+      if (isFileMissingError(error)) return true;
+      throw error;
+    }
+    if (current !== raw) return false;
+    if (ownerDead) await recordDeadLockRecovery(lockPath, raw);
+    try {
+      await fs.unlink(lockPath);
+    } catch (error: unknown) {
+      if (!isFileMissingError(error)) throw error;
+    }
+    return true;
+  } finally {
+    await release();
+  }
+}
+
 /** Documents the lock health scan payload exchanged by command, SDK, and package integrations. */
 export interface LockHealthScan {
   /** number of *.lock files examined (ghost files that vanish mid-scan are skipped) */
@@ -179,6 +248,27 @@ export interface LockHealthScan {
   unreadable_lock_count: number;
   /** invalid JSON, wrong shape, or an unparseable created_at timestamp */
   unparseable_lock_count: number;
+  /** At most twenty verified dead-owner receipts for actionable full health diagnosis. */
+  owner_dead_lock_samples?: StaleLockScanEntry[];
+}
+
+function addHealthObservation(
+  scan: LockHealthScan,
+  detail: LockClassificationDetail,
+  entry: StaleLockScanEntry,
+): void {
+  if (detail === "owner_dead") {
+    scan.owner_dead_lock_samples ??= [];
+    if (scan.owner_dead_lock_samples.length < 20)
+      scan.owner_dead_lock_samples.push(entry);
+  }
+  if (detail === "active") {
+    scan.active_lock_count += 1;
+  } else if (detail === "expired" || detail === "owner_dead") {
+    scan.stale_lock_count += 1;
+  } else {
+    scan.unparseable_lock_count += 1;
+  }
 }
 
 /** Read-only locks scan for `pm health`: classifies every lock file with the same policy `pm gc --scope locks` uses but never removes anything. */
@@ -221,17 +311,45 @@ export async function scanLockHealth(
       continue;
     }
     scan.scanned += 1;
-    const { detail } = classifyLockContent(file, raw, nowMs);
-    if (detail === "active") {
-      scan.active_lock_count += 1;
-    } else if (detail === "expired") {
-      scan.stale_lock_count += 1;
-    } else {
-      scan.unparseable_lock_count += 1;
-    }
+    const { detail, entry } = await classifyObservedLock(file, raw, nowMs);
+    addHealthObservation(scan, detail, entry);
   }
 
   return scan;
+}
+
+async function removeOrPreviewLock(
+  result: LockGcResult,
+  options: LockGcOptions,
+  absPath: string,
+  relPath: string,
+  file: string,
+  raw: string,
+  entry: StaleLockScanEntry,
+): Promise<void> {
+  if (!options.dryRun) {
+    try {
+      if (!(await removeObservedLock(absPath, raw, entry.reason === "owner_dead"))) {
+        result.warnings.push(`lock_changed_or_busy:${file}`);
+        result.retained.push(relPath);
+        result.entries.push(entry);
+        return;
+      }
+    } catch {
+      result.warnings.push(`lock_remove_failed:${file}`);
+      result.retained.push(relPath);
+      result.entries.push(entry);
+      return;
+    }
+    // onWrite hook after successful removal
+    if (options.hooks?.onWrite) {
+      const hookWarnings = await options.hooks.onWrite(absPath);
+      result.warnings.push(...hookWarnings);
+    }
+  }
+
+  result.removed.push(relPath);
+  result.entries.push(entry);
 }
 
 /** Implements run lock gc for the public runtime surface of this module. */
@@ -239,7 +357,7 @@ export async function runLockGc(
   pmRoot: string,
   options: LockGcOptions,
 ): Promise<LockGcResult> {
-  const { dryRun, hooks } = options;
+  const { hooks } = options;
   const nowMs = options.now ?? Date.now();
   const locksDir = path.join(pmRoot, "locks");
 
@@ -299,7 +417,7 @@ export async function runLockGc(
     }
 
     // --- classify (shared with the read-only pm health locks scan) ---
-    const classified = classifyLockContent(file, raw, nowMs);
+    const classified = await classifyObservedLock(file, raw, nowMs);
     if (classified.detail === "unparseable_json") {
       result.warnings.push(`lock_unparseable:${file}`);
       result.retained.push(relPath);
@@ -318,28 +436,15 @@ export async function runLockGc(
       continue;
     }
 
-    // --- stale: remove or preview ---
-    if (!dryRun) {
-      try {
-        await fs.unlink(absPath);
-      } catch (unlinkError: unknown) {
-        if (!isFileMissingError(unlinkError)) {
-          result.warnings.push(`lock_remove_failed:${file}`);
-          result.retained.push(relPath);
-          result.entries.push(classified.entry);
-          continue;
-        }
-        // ENOENT on unlink = already gone (race); treat as removed
-      }
-      // onWrite hook after successful removal
-      if (hooks?.onWrite) {
-        const hookWarnings = await hooks.onWrite(absPath);
-        result.warnings.push(...hookWarnings);
-      }
-    }
-
-    result.removed.push(relPath);
-    result.entries.push(classified.entry);
+    await removeOrPreviewLock(
+      result,
+      options,
+      absPath,
+      relPath,
+      file,
+      raw,
+      classified.entry,
+    );
   }
 
   return result;

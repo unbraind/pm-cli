@@ -19,7 +19,23 @@ import { toErrorMessage } from "../shared/primitives.js";
 import { getLockPath } from "../store/paths.js";
 import { nowIso } from "../shared/time.js";
 
-interface LockInfo {
+import {
+  captureProcessIdentity,
+  captureLockOwnerIdentity,
+  inspectLockOwner,
+  isProcessIdentityAlive,
+  parseLinuxProcessStartIdentity,
+  readProcessStartIdentity,
+  type ProcessIdentity,
+  type LockOwnerIdentity,
+} from "./lock-owner.js";
+export {
+  captureProcessIdentity,
+  isProcessIdentityAlive,
+  readProcessStartIdentity,
+} from "./lock-owner.js";
+
+interface LockInfo extends LockOwnerIdentity {
   id: string;
   pid: number;
   owner: string;
@@ -39,14 +55,6 @@ interface StaleLockRemovalResult {
   lockInfo: LockReadResult;
   shouldRetryCreate: boolean;
   staleRemovalCounted: boolean;
-}
-
-/** Stable operating-system identity for a process when the host exposes one. */
-export interface ProcessIdentity {
-  /** Operating-system process identifier captured with the owner record. */
-  pid: number;
-  /** Host process-start coordinate that distinguishes reuse of the same PID. */
-  process_start_identity?: string;
 }
 
 interface StaleCleanupGateOwner extends ProcessIdentity {
@@ -100,6 +108,8 @@ function parseLockInfo(raw: string): LockReadResult {
       ...(typeof token === "string" ? { token } : {}),
       created_at: createdAt,
       ttl_seconds: ttlSeconds,
+      host_identity: candidate.host_identity,
+      process_start_identity: candidate.process_start_identity,
     },
     warnings: [],
   };
@@ -195,13 +205,14 @@ async function emitLockWriteHook(
   });
 }
 
-function buildLockPayload(
+async function buildLockPayload(
   id: string,
   owner: string,
   ttlSeconds: number,
   token: string = randomUUID(),
-): LockInfo {
+): Promise<LockInfo> {
   return {
+    ...(await captureLockOwnerIdentity()),
     id,
     pid: process.pid,
     owner,
@@ -242,7 +253,7 @@ async function createLockFile(
     try {
       try {
         await handle.writeFile(
-          `${JSON.stringify(buildLockPayload(id, owner, ttlSeconds, token), null, 2)}\n`,
+          `${JSON.stringify(await buildLockPayload(id, owner, ttlSeconds, token), null, 2)}\n`,
           "utf8",
         );
       } finally {
@@ -332,6 +343,21 @@ function isStaleLock(info: LockInfo | null, ttlSeconds: number): boolean {
   return ageMs > ttlSeconds * 1000;
 }
 
+async function isConfirmedDeadLock(info: LockInfo | null): Promise<boolean> {
+  return (
+    info !== null &&
+    Number.isFinite(Date.parse(info.created_at)) &&
+    (await inspectLockOwner(info)) === "dead"
+  );
+}
+
+async function isReclaimableLock(
+  info: LockInfo | null,
+  ttlSeconds: number,
+): Promise<boolean> {
+  return isStaleLock(info, ttlSeconds) || (await isConfirmedDeadLock(info));
+}
+
 /** Observe a built-in lock's owner lease without acquiring it or changing storage. */
 export async function hasUnexpiredLockOwner(
   pmRoot: string,
@@ -342,7 +368,7 @@ export async function hasUnexpiredLockOwner(
   return (
     info !== null &&
     info.owner.startsWith(ownerPrefix) &&
-    !isStaleLock(info, info.ttl_seconds)
+    !(await isReclaimableLock(info, info.ttl_seconds))
   );
 }
 
@@ -408,17 +434,22 @@ function sleepWithJitter(baseDelayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, jitteredMs));
 }
 
-function buildLockConflictError(
+async function buildLockConflictError(
   id: string,
   info: LockInfo | null,
   waitedMs: number,
-): PmCliError {
+): Promise<PmCliError> {
+  const ownerState = await inspectLockOwner(info);
   const waitedSuffix = waitedMs > 0 ? ` after waiting ${waitedMs}ms` : "";
   return new PmCliError(
-    `Item ${id} is locked${lockOwnerSuffix(info)}${waitedSuffix}`,
+    `Item ${id} is locked${lockOwnerSuffix(info)} (owner process ${ownerState})${waitedSuffix}`,
     EXIT_CODE.CONFLICT,
     {
       code: "lock_conflict",
+      item_id: id,
+      reason: `lock_owner_${ownerState}`,
+      required:
+        "Wait for the owner to release the lock, then retry the same operation. Set PM_LOCK_WAIT_MS to a larger bounded millisecond budget when contention is expected. Inspect stale receipts with pm gc --scope locks --dry-run.",
       recovery: {
         retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
       },
@@ -509,75 +540,6 @@ async function readStaleCleanupGateOwner(
   }
 }
 
-function isProcessAlive(pid: number): boolean {
-  if (!Number.isSafeInteger(pid) || pid <= 0) return false;
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error: unknown) {
-    if (isErrno(error, "ESRCH")) {
-      return false;
-    }
-    return true;
-  }
-}
-
-function parseLinuxProcessStartIdentity(raw: string): string | null {
-  const closeParenIndex = raw.lastIndexOf(")");
-  if (closeParenIndex < 0) return null;
-  const startTime = raw
-    .slice(closeParenIndex + 2)
-    .trim()
-    .split(/\s+/u)[19];
-  return startTime !== undefined && /^\d+$/u.test(startTime) ? startTime : null;
-}
-
-/** Read the host process-start coordinate used to distinguish PID reuse. */
-export async function readProcessStartIdentity(
-  pid: number,
-): Promise<string | null> {
-  try {
-    return parseLinuxProcessStartIdentity(
-      await fs.readFile(`/proc/${pid}/stat`, "utf8"),
-    );
-  } catch {
-    return null;
-  }
-}
-
-/** Capture the current PID plus a host process-start coordinate when available. */
-export async function captureProcessIdentity(
-  pid = process.pid,
-): Promise<ProcessIdentity> {
-  const processStartIdentity = await readProcessStartIdentity(pid);
-  return {
-    pid,
-    ...(processStartIdentity === null
-      ? {}
-      : { process_start_identity: processStartIdentity }),
-  };
-}
-
-/**
- * Verify that a captured process owner still exists, with a bounded grace
- * period when the host cannot expose a reusable-PID-safe start coordinate.
- */
-export async function isProcessIdentityAlive(
-  identity: ProcessIdentity,
-  unverifiedAgeMs: number,
-  maxUnverifiedAgeMs: number,
-): Promise<boolean> {
-  if (!isProcessAlive(identity.pid)) return false;
-  const currentStartIdentity = await readProcessStartIdentity(identity.pid);
-  if (
-    identity.process_start_identity !== undefined &&
-    currentStartIdentity !== null
-  ) {
-    return currentStartIdentity === identity.process_start_identity;
-  }
-  return unverifiedAgeMs <= maxUnverifiedAgeMs;
-}
-
 async function removeStaleCleanupGateDirectory(
   gatePath: string,
 ): Promise<boolean> {
@@ -655,7 +617,8 @@ async function removeExpiredStaleCleanupGate(
   return removeStaleCleanupGateDirectory(gatePath);
 }
 
-async function acquireStaleCleanupGate(
+/** Fence lock publication, release and garbage collection under one cleanup owner. */
+export async function acquireStaleCleanupGate(
   lockPath: string,
   _id: string,
 ): Promise<(() => Promise<void>) | null> {
@@ -672,6 +635,24 @@ async function acquireStaleCleanupGate(
     return null;
   }
   return async () => releaseStaleCleanupGate(gatePath, recoveredOwner.token);
+}
+
+/** Retain an immutable local audit of early-recovery intent before removing the observed owner. */
+export async function recordDeadLockRecovery(
+  lockPath: string,
+  raw: string,
+): Promise<void> {
+  const directory = path.join(path.dirname(lockPath), "recoveries");
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(
+    path.join(directory, `${randomUUID()}.json`),
+    `${JSON.stringify({
+      event: "owner_dead_recovery_attempt",
+      recorded_at: nowIso(),
+      lock: JSON.parse(raw) as unknown,
+    })}\n`,
+    { encoding: "utf8", flag: "wx", mode: 0o600 },
+  );
 }
 
 async function removeConfirmedStaleLock(params: {
@@ -708,7 +689,8 @@ async function removeConfirmedStaleLock(params: {
         staleRemovalCounted: false,
       };
     }
-    if (!isStaleLock(currentLockInfo.info, params.ttlSeconds)) {
+    const ownerDead = await isConfirmedDeadLock(currentLockInfo.info);
+    if (!isStaleLock(currentLockInfo.info, params.ttlSeconds) && !ownerDead) {
       return {
         lockInfo: currentLockInfo,
         shouldRetryCreate: false,
@@ -718,16 +700,21 @@ async function removeConfirmedStaleLock(params: {
     throwIfStaleLockNeedsForce(
       params.id,
       currentLockInfo,
-      params.force,
+      params.force || ownerDead,
       params.forceRequiredForStaleLock,
     );
     if (params.staleRemovals >= MAX_STALE_LOCK_REMOVALS) {
-      throw buildLockConflictError(
+      throw await buildLockConflictError(
         params.id,
         currentLockInfo.info,
         Date.now() - params.startedAtMs,
       );
     }
+    if (ownerDead)
+      await recordDeadLockRecovery(
+        params.lockPath,
+        JSON.stringify(currentLockInfo.info),
+      );
     return {
       lockInfo: currentLockInfo,
       shouldRetryCreate: await unlinkLockWithHook(
@@ -759,7 +746,9 @@ export const _testOnly = {
 
 /**
  * Acquire a token-owned tracker lock with bounded contention waiting and
- * explicit stale-owner policy. Background consumers may disable creation of
+ * explicit stale-owner policy. Proven same-host original-process death permits
+ * automatic early recovery; unverifiable owners retain TTL policy.
+ * Background consumers may disable creation of
  * parent directories so acquiring or retrying a lock cannot revive removed
  * storage. An explicit maxWaitMs caps contention retries even when the process
  * environment requests a longer wait. Extension overrides receive that ceiling
@@ -837,7 +826,7 @@ export async function acquireLock(
         );
       }
       let lockInfo = await readLockInfo(lockPath);
-      if (isStaleLock(lockInfo.info, ttlSeconds)) {
+      if (await isReclaimableLock(lockInfo.info, ttlSeconds)) {
         const staleRemoval = await removeConfirmedStaleLock({
           lockPath,
           id,
@@ -859,7 +848,7 @@ export async function acquireLock(
       }
       const elapsedMs = Date.now() - startedAtMs;
       if (waitBudgetMs === 0 || elapsedMs >= waitBudgetMs) {
-        throw buildLockConflictError(
+        throw await buildLockConflictError(
           id,
           lockInfo.info,
           waitBudgetMs === 0 ? 0 : elapsedMs,

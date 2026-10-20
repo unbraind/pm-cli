@@ -1147,9 +1147,10 @@ describe("collection mutation transposition guidance", () => {
       _testOnly.normalizeRecoveryPayload({
         suggested_retry_args: [" search ", "two word query", 7] as never,
       }),
-    ).toEqual({
-      suggested_retry_args: ["search", "two word query"],
-    });
+    ).toBeUndefined();
+    expect(_testOnly.normalizeRecoveryPayload({
+      suggested_retry_args: ["search", "  two word query  ", ""],
+    })).toEqual({ suggested_retry_args: ["search", "  two word query  ", ""] });
   });
 });
 

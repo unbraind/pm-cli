@@ -223,6 +223,36 @@ follow the migration guidance for changed unions or error codes. The shared
 [primitive inventory](SDK_PRIMITIVE_INVENTORY.md) records CLI/MCP ownership:
 presentation modules import the SDK and have zero private-core edges.
 
+### Lock ownership and recovery
+
+Use the public `acquireLock` primitive when a package must serialize its own
+state changes. Always await its release in `finally`:
+
+```ts
+import { acquireLock } from "@unbrained/pm-cli/sdk";
+
+async function writePackageState(pmRoot: string, write: () => Promise<void>) {
+  const release = await acquireLock(pmRoot, "example.state", 3600, "example-package", false, true, 30_000);
+  try {
+    await write();
+  } finally {
+    await release();
+  }
+}
+```
+
+The built-in provider automatically recovers a provably dead original Linux
+owner before TTL. Unknown owners retain the existing lease policy. Conflicts
+expose the lock identity, observed process state and wait advice through
+`PmCliError.context`. Force does not bypass an unexpired lock whose owner is
+alive or unverifiable. TTL expiry permits removal regardless of owner liveness.
+An expired holder can continue writing, so mutual exclusion beyond TTL is not
+guaranteed. Choose a TTL longer than the critical section, or fence protected
+resource writes at the caller. See
+[Configuration](CONFIGURATION.md#common-settings) for host identity, local
+recovery audit receipts and `PM_LOCK_WAIT_MS` precedence. Extension lock
+providers retain responsibility for their own ownership and recovery policy.
+
 ### Portable merge settlement
 
 Tracked by [pm-gh1475](../.agents/pm/issues/pm-gh1475.toon) and

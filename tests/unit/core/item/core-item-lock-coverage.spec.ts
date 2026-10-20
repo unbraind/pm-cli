@@ -396,7 +396,7 @@ describe("core/lock/lock additional branch coverage", () => {
     expect(lockInternals.lockOwnerSuffix(null)).toBe("");
     expect(lockInternals.isStaleLock(null, 60)).toBe(true);
     expect(
-      lockInternals.buildLockPayload("pm-lock", "owner", 60),
+      await lockInternals.buildLockPayload("pm-lock", "owner", 60),
     ).toMatchObject({
       id: "pm-lock",
       pid: process.pid,
@@ -892,7 +892,8 @@ describe("core/lock/lock additional branch coverage", () => {
         acquireLock(pmPath, id, 60, "owner-a", false),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
-        message: "Item pm-lock-active-no-owner is locked",
+        message: "Item pm-lock-active-no-owner is locked (owner process unknown)",
+        context: { item_id: "pm-lock-active-no-owner", reason: "lock_owner_unknown", recovery: { retry_after_ms: 250 } },
       });
     });
   });

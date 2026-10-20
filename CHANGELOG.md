@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-1518: recover provably dead same-host item-lock owners before TTL expiry ([pm-02z97f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-02z97f.toon))
+- Replace unsafe live-lock force advice with invocation-preserving contention recovery ([pm-htiwmd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-htiwmd.toon))
 - GH-1520: reject unknown SDK mutation option keys before any write ([pm-fl3phm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fl3phm.toon))
 - GH-1519: preflight test run options before persisting linked-test edits ([pm-hdvxqg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hdvxqg.toon))
 - GH-1507: Explain effective default list ordering in brief rows and metadata ([pm-zd46m7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zd46m7.toon))
