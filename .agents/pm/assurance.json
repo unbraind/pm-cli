@@ -2789,13 +2789,13 @@
     {
       "id": "repository-static-quality",
       "assertion_ids": [
+        "repository-dependency-advisories-required",
         "repository-static-quality-required",
         "repository-absence-tolerance-required",
         "repository-token-budget-required",
         "repository-context-intent-calibration-required",
         "repository-docs-skills-required",
-        "repository-defect-evidence-required",
-        "repository-dependency-advisories-required"
+        "repository-defect-evidence-required"
       ],
       "triggers": [
         "ci",

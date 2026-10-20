@@ -2,30 +2,38 @@ id: pm-eqxjzl
 title: Expose freshness and completeness of independent dependency advisory feeds before merge
 description: The2026-10-20 follow-redirects advisories were visible in OSV and the merged-main Scorecard instance while the registry-backed all-dependency audit still reported zero. The component patch is completed separately; this task owns advisory-source freshness and coverage context before merge. Prefer a project-owned assurance collector or extension on existing SDK primitives rather than ecosystem-specific behavior in the generic SDK.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-20T19:27:47.107Z"
-updated_at: "2026-10-20T20:48:03.731Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#244d33e51b5f1223152c8358"
+updated_at: "2026-10-20T21:14:00.885Z"
+closed_at: "2026-10-20T21:11:46.105Z"
+completed_at: "2026-10-20T21:11:46.105Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Reuse registered assurance/extension contracts; define bounded queries and explicit provenance for complete project dependency coverage; add a negative control with a lagging zero registry result and positive independent feed, plus unavailable-feed and zero-known-advisory controls; preserve automated updater cooldown and all-severity policy; do not suppress actionable advisories or introduce unbounded polling."
 parent: pm-qwoy
 risk: medium
 confidence: high
-expected_result: "A dependency-security decision exposes source/version/time and coverage receipts, detects a fresh authoritative positive result even when another feed returns zero, and distinguishes unavailable evidence from clean evidence."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Repository collector queries every locked npm package against registry and OSV; versioned receipts bind manifests, complete coverage and retrieval times, distinguish unavailable evidence, and retain unknown database freshness. SDK provider verifies offline before slower providers, with refresh immediately before evaluation and network deadlines after the blocking audit."
+expected_result: "Every required source is complete and recent for the actual dependency inputs; independent positives or unavailable, partial, changed and stale evidence block without severity exceptions."
+actual_result: 116 focused cases and both linked commands pass; new source is exact 100/100/100/100; real 569-package feeds return zero; graph composition passes without budget changes.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-dba47,related,"2026-10-20T19:27:47.107Z","harness:codex","cli:create:dep",detected
   pm-px2raj,discovered_from,"2026-10-20T19:27:47.107Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+  pm-bj7rq0,related,"2026-10-20T21:07:43.154Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-10-20T19:27:47.107Z","harness:codex","Duplicate check: exact keyword search OSV audit found only the completed component fixes. Full live records for both closed leaves and the security parent distinguish independent-feed freshness from package-version remediation. Current open and in-progress inventories show no exact active owner. Intake only: open and unclaimed; this does not represent an unresolved affected dependency in the patched graph."
   "2026-10-20T20:19:39.904Z","harness:codex","Implementation: fresh Scorecard at e4f5f10 identified two additional advisories published during prior review. Collect every pnpm-lock packages entry against OSV plus the unchanged all-severity registry audit; persist lock/input hashes, per-source retrieval times, coverage, availability, and explicit unknown database freshness. A repository-quality SDK provider verifies the bounded local receipt with no network. Missing, stale, incomplete, failed, or positive evidence blocks. New component remediation is pm-5sgx37."
   "2026-10-20T20:26:20.512Z","harness:codex","Implemented repository-owned collector plus local-only assurance provider. All 53 focused regression cases pass with exact new-source coverage: lines 98/98, statements 110/110, functions 23/23, branches 56/56. Complete-lock negative control observed OSV positives with registry zero; patched client/core 2.3.0 and Vite 7.3.7 now return zero across all 569 locked packages. Both registry and independent source availability remain explicit; database freshness is unknown. Source qualification and hosted review are still pending."
   "2026-10-20T20:31:39.743Z","harness:codex","Source PR #1526 at 2cd2e7ffbacaa9efdef77dce050425e0845d9499. Updated focused evidence: 55 passing cases; exact source coverage lines 99/99, statements 111/111, functions 23/23, branches 60/60. Seeded removal of independent-positive admission caused the lagging-zero registry regression test to fail, then the source was restored. Linked provider/registry tests pass (76 cases), as do twelve component/runtime/MCP Apps cases. The first local full static invocation hit a mixed dist chunk after overlapping local builds; this is a validation collision, not clean product proof. Re-run in isolation before using the result. Hosted source CI 39492617355 is in progress; reviewers requested once for this head."
   "2026-10-20T20:47:16.057Z","harness:codex","Source CI 39492617355 completed. Required static, typecheck, smoke, compatibility and packed npm/npx/Bun/bunx jobs passed. Coverage and native Windows failed on the old quality:dependencies command expectation; the scripts Windows cohort also exposed a POSIX slash assumption in the new provider test. Updated the release contract to require the dual-feed collector and preserved native integrity step; compare native file paths using fileURLToPath. DeepScan report was inspected in Chrome: explicit null/object validation now replaces the implicit assertion narrowing, with null/scalar controls. All 57 new script tests pass at exact 100% (100 lines, 113 statements, 23 functions, 64 branches). No budget, timeout or security gate was weakened. The isolated local full static run reached the existing qualified SDK import-cost failure, retained under pm-bj7rq0; hosted source static passed. Next head includes the separately tracked SDK read-refusal correction pm-eg5u1n."
-files[11]{path,scope}:
+  "2026-10-20T21:07:45.234Z","harness:codex","Full source2 CI at be5fcef15 passed coverage, Windows, smoke, compatibility, typecheck and packed consumers. Static reached and passed both qualified import budgets, then correctly rejected one new prose-only performance-owner reference (1234 against unchanged ceiling 1233). Added the actual related edge to the existing owner. CodeRabbit full base-to-head review found two timing issues: refresh evidence before SDK evaluation and start OSV deadlines after the blocking registry command. Both fixes preserve per-source failure receipts and all-severity blocking; advisory verification is now first in the SDK gate before slower providers. A native boundary-order test failed before the sequencing fix."
+  "2026-10-20T21:11:44.704Z","harness:codex","Final local qualification: all 116 advisory/release contract cases pass with exact new-source coverage of 101/101 lines, 115/115 statements, 23/23 functions and 64/64 branches. Both linked commands pass after review fixes. Fresh complete evidence at 21:09 UTC covers all 569 locked npm versions with zero registry and OSV positives; database freshness remains explicitly unknown. The full graph-composition gate passes at its unchanged prose-gap ceiling 1233 after adding the justified owner relationship. The forthcoming reviewed head includes immutable close evidence and the latest package-generated changelog; no source is claimed published before the next eligible cut."
+  "2026-10-20T21:14:00.885Z","harness:codex","Review receipt: CodeRabbit completed a full base-to-head review on be5fcef15 and its two actionable timing findings are fixed with a failing-before boundary-order control and refreshed first-in-gate receipt evaluation. Sourcery emitted a guide but no substantive review; Greptile reports expired trial and Cubic its exhausted free monthly allowance. No paid feature was enabled and unavailable reviewers are not approvals. The final revised head will receive one consolidated re-review request and all required free checks must pass before merge. Latest pm-changelog 2026.10.20 generates the reviewed delivery entries; generator behavior needs no upstream repair."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T21:11:37.450Z","harness:codex","A zero registry audit is a source observation, not a universal absence proof. Require complete independent coverage, expose unknown database freshness, start network clocks after synchronous commands, and refresh evidence immediately before bounded local admission."
+files[12]{path,scope}:
   .agents/pm/assurance.json,project
   docs/ASSURANCE.md,project
   package.json,project
@@ -34,13 +42,14 @@ files[11]{path,scope}:
   scripts/release/dependency-advisories/inventory.mjs,project
   scripts/release/dependency-advisories/receipt.mjs,project
   scripts/release/gate-registry.json,project
+  tests/helpers/releaseContracts.ts,project
   tests/integration/release-automation-contract.spec.ts,project
   tests/unit/scripts/release/dependency-advisories/feeds.spec.ts,project
   tests/unit/scripts/release/dependency-advisories/gate.spec.ts,project
 tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/ tests/unit/scripts/release/repository-assurance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,project,"harness:codex","2026-10-20T20:26:16.208Z",local_mutation,fix/advisory-coverage
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,project,"harness:codex","2026-10-20T20:47:14.294Z",local_mutation,fix/advisory-coverage
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mvh4wzgc-3jtyor
     kind: test
     status: passed
@@ -75,6 +84,20 @@ test_runs[3]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/ tests/unit/scripts/release/repository-assurance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+  - run_id: test-local-mvh6f0e4-0vtbyh
+    kind: test
+    status: passed
+    started_at: "2026-10-20T21:09:01.797Z"
+    finished_at: "2026-10-20T21:09:25.564Z"
+    recorded_at: "2026-10-20T21:09:25.564Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/ tests/unit/scripts/release/repository-assurance.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Implemented complete dual-feed admission through existing SDK assurance primitives.
 body: ""

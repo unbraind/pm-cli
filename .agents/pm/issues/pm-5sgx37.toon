@@ -2,13 +2,13 @@ id: pm-5sgx37
 title: Patch MCP client redirect disclosure and Vite Windows editor injection advisories
 description: "Fresh merged-main Scorecard at e4f5f10 and authoritative GitHub advisories identify GHSA-6prh-2h8m-c8cw in @modelcontextprotocol/client 2.2.0 (<2.3.0), and GHSA-698v-4r3x-3vcv in Vite 7.3.5 (7.x <7.3.7). Published 2026-10-20 18:26/18:30 UTC while preceding dependency remediation was under review. Preserve all-severity gates, native bundle integrity, and automated update cooldown."
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags: []
 created_at: "2026-10-20T20:19:24.652Z"
-updated_at: "2026-10-20T20:30:43.811Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#244d33e51b5f1223152c8358"
+updated_at: "2026-10-20T21:13:56.994Z"
+closed_at: "2026-10-20T21:13:55.918Z"
+completed_at: "2026-10-20T21:13:55.918Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Upgrade compatible MCP client/core to 2.3.0 and Vite to 7.3.7 or newer safe 7.x; verify complete lock graph with OSV plus registry audit and preserve package/artifact/MCP consumer contracts.
@@ -18,8 +18,9 @@ confidence: high
 severity: medium
 environment: pnpm v9 lockfile development/optional dependency graph
 repro_steps: "Read fresh Scorecard SARIF, query both GitHub advisory records and OSV for locked versions, inspect pnpm why and lock overrides."
-expected_result: No affected MCP client/core or Vite versions remain; patched compatible graph passes consumer/build and complete independent dependency advisory checks.
-actual_result: Current graph has client/core 2.2.0 and Vite 7.3.5; registry audit zero lagged independent positive advisories.
+resolution: MCP client/core now resolve to 2.3.0 and the Vite 7.x override floor is 7.3.7. This retires GHSA-6prh-2h8m-c8cw and all three launch-editor/Vite advisory ranges while preserving update cooldown and bundle/map/native integrity.
+expected_result: No affected MCP/Vite version remains; complete independent feeds and published-entry consumer contracts remain enforced.
+actual_result: "Fresh registry and OSV queries cover 569 lockfile packages with zero positives; twelve linked bundle, loopback runtime and MCP Apps tests pass. Source CI be5fcef15 passed coverage, native Windows and all packed consumers; final reviewed CI still guards delivery."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-eqxjzl,related,"2026-10-20T20:19:24.652Z","harness:codex","cli:create:dep",detected
   pm-px2raj,discovered_from,"2026-10-20T20:19:24.652Z","harness:codex","cli:create:dep",detected
@@ -55,6 +56,16 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/unit/sdk/mcp/apps.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Patched all reported MCP client and Vite development dependency advisories.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: dependency-advisory-evidence
+  negative_control: The real pre-patch 569-package scan returned registry zero while OSV identified MCP client 2.2.0 and Vite 7.3.5 across four GHSA IDs; the patched graph returns zero from both feeds.
+  local_checks[2]: "pnpm quality:dependencies",node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/unit/sdk/mcp/apps.spec.ts
+  hosted_checks[3]: Gates (coverage),Windows regression (Node 24),Trivy
+  owner: pm-5sgx37
 body: ""

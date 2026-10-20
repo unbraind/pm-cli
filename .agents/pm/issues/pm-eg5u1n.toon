@@ -2,13 +2,13 @@ id: pm-eg5u1n
 title: Return a typed assurance refusal for unknown declaration reads instead of high-priority Sentry faults
 description: "Live Sentry PM-CLI-3P (154999406) has two high-priority handled TypeError events at 2026-10-20 20:18:50/57 UTC for assurance measurement repository-static-quality not found. getAssuranceDeclaration throws raw TypeError, while the existing transport already handles AssuranceEvaluationRefusalError for ordinary assurance input refusals. The historical gate/trigger fix pm-9yhl2v is closed and shipped; this distinct declaration-read path remains untyped."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-20T20:40:15.393Z"
-updated_at: "2026-10-20T20:49:22.925Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#244d33e51b5f1223152c8358"
+updated_at: "2026-10-20T21:13:59.963Z"
+closed_at: "2026-10-20T21:13:59.070Z"
+completed_at: "2026-10-20T21:13:59.070Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: "Reuse the existing typed SDK refusal, cover all declaration kinds through public SDK and action transport; prove failing-before and valid reads remain intact; verify fresh CLI/Sentry behavior after review and merge without suppressing genuine runtime errors."
@@ -18,8 +18,10 @@ confidence: high
 severity: high
 environment: "Public SDK governance entrypoint, CLI/MCP assurance show transports"
 repro_steps: In an isolated initialized tracker call getAssuranceDeclaration or runAssuranceAction show for a missing measurement/assertion/gate; compare direct SDK error subtype and structured action/CLI response.
-expected_result: Unknown declaration reads preserve TypeError compatibility through the existing AssuranceEvaluationRefusalError and normalize to invalid_argument_value usage guidance without unexpected-fault Sentry delivery.
-actual_result: Raw TypeError is classified as unclassified runtime error and emitted as a high-priority Sentry issue.
+resolution: getAssuranceDeclaration now throws the existing TypeError-compatible AssuranceEvaluationRefusalError. Show and promote normalize that expected refusal to invalid_argument_value / assurance_evaluation_refused while unexpected runtime faults remain unchanged.
+expected_result: Unknown measurement/assertion/gate reads and missing promotion assertions produce actionable usage refusals instead of unexpected-fault Sentry events.
+actual_result: Seven regression cases fail before and all 29 focused SDK/action/MCP cases pass after. Built public Node and Bun SDK probes preserve both class identities; both CLIs return usage exit 2 for all declaration kinds. The original two-event Sentry group awaits merged-main live verification before retirement; this source fix is Unreleased.
+affected_version: 2026.10.20
 component: SDK assurance declaration reads
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-9yhl2v,discovered_from,"2026-10-20T20:40:15.393Z","harness:codex","cli:create:dep",detected
@@ -35,6 +37,8 @@ comments[3]:
   - created_at: "2026-10-20T20:49:22.925Z"
     author: "harness:codex"
     text: "Built public SDK and CLI acceptance: Node and Bun each return exit 2 / invalid_argument_value for missing measurement, assertion and gate reads in isolated trackers. Both runtimes import the published governance entrypoint from the built package and preserve AssuranceEvaluationRefusalError plus TypeError identity for all three kinds. Linked 29-case SDK/action/MCP suite, targeted ESLint and no-emit TypeScript checks pass. The original Sentry group is retained until the reviewed fix lands and a fresh live probe proves no recurrence."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T21:11:38.730Z","harness:codex",Expected assurance lookup failures need the same typed SDK boundary as evaluation failures. Normalize only the declared refusal at each transport caller; preserve unexpected TypeErrors and verify both public runtimes.
 files[4]{path,scope}:
   src/sdk/governance/assurance-action.ts,project
   src/sdk/governance/assurance.ts,project
@@ -54,6 +58,16 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/ASSURANCE.md,project
+close_reason: Implemented typed missing-declaration refusals across public SDK and CLI/MCP action transports.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: Seven direct SDK and SDK/MCP transport cases fail on the raw TypeError path and pass with typed normalization. Existing unexpected-TypeError preservation cases remain green.
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/assurance.spec.ts tests/unit/sdk/assurance-action.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (typecheck)
+  owner: pm-eg5u1n
 body: ""

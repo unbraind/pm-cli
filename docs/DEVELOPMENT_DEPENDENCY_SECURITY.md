@@ -31,7 +31,10 @@ current. The SDK-owned `repository-static-quality` assurance gate composes a
 `repository-quality/dependency-advisories` provider that verifies this receipt
 without network access. It rejects evidence older than fifteen minutes, changed
 manifests or lockfiles, incomplete coverage and unavailable sources. Fresh evidence
-is required again on each CI/static or release run.
+is required again on each CI/static or release run. Static checks refresh collection
+immediately before SDK assurance evaluation, which verifies advisory evidence
+before slower providers. The blocking registry command settles before OSV starts
+its network deadlines.
 
 The command then verifies the installed CodSpeed bundle policy. Network/audit errors,
 missing packages, incomplete policy entries, changed package files, and unreviewed

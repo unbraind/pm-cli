@@ -45,6 +45,22 @@ describe("dependency advisory evidence", () => {
       await expect(main(["--verify-receipt"], root)).rejects.toThrow("Independent source");
     });
   });
+  it("starts independent network deadlines only after the blocking registry audit settles", async () => {
+    await withTempDir("pm-advisory-order-", async (root) => {
+      await fixture(root);
+      const order: string[] = [];
+      spawn.mockImplementationOnce(() => {
+        order.push("registry");
+        return { status: 0, stdout: JSON.stringify({ advisories: {}, metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 } } }) };
+      });
+      vi.mocked(fetch).mockImplementationOnce(async () => {
+        order.push("osv");
+        return { ok: true, json: async () => ({ results: [{}] }) } as Response;
+      });
+      await main([], root);
+      expect(order).toEqual(["registry", "osv"]);
+    });
+  });
   it("records unavailable sources independently and never reuses an earlier clean receipt", async () => {
     await withTempDir("pm-advisory-", async (root) => {
       await fixture(root); await main([], root);

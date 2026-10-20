@@ -27,10 +27,10 @@ export async function main(argv, root) {
     const inputs = await readInputs(root);
     receipt.inputs = inputs.inputs;
     receipt.scope = "all-pnpm-lock-packages-including-dev-optional";
-    const results = await Promise.allSettled([
-      Promise.resolve().then(() => queryRegistry(root)),
-      queryOsv(inputs.packages),
-    ]);
+    // The registry command blocks; start network deadlines only after it settles.
+    const [registry] = await Promise.allSettled([Promise.resolve().then(() => queryRegistry(root))]);
+    const [osv] = await Promise.allSettled([queryOsv(inputs.packages)]);
+    const results = [registry, osv];
     receipt.feeds = Object.fromEntries(["registry", "osv"].map((name, index) => [name,
       results[index].status === "fulfilled" ? results[index].value : { status: "unavailable", observed_at: new Date().toISOString(), database_updated_at: null },
     ]));
