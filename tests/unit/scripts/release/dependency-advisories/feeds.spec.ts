@@ -6,6 +6,7 @@ const spawn = vi.hoisted(() => vi.fn());
 vi.mock("node:child_process", () => ({ spawnSync: spawn }));
 const counts = { info: 0, low: 0, moderate: 0, high: 0, critical: 0 };
 const packages = [{ name: "@example/fixture", version: "1.2.3-beta+build" }];
+/** Build one npm lock entry to exercise supported and refused resolution forms. */
 const lock = (key = "@example/fixture@1.2.3-beta+build", resolution = { integrity: "sha512-fixture" }) =>
   `lockfileVersion: '9.0'\npackages:\n  '${key}':\n    resolution: ${JSON.stringify(resolution)}\n`;
 

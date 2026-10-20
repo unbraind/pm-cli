@@ -377,6 +377,7 @@ async function runVerdictsAction(
   };
 }
 
+/** Apply presets, derive proposals, or promote assertions through shared assurance policy. */
 async function runAdoptionAction(
   action: Extract<AssuranceAction, "presets" | "apply" | "derive" | "promote">,
   input: AssuranceActionInput,

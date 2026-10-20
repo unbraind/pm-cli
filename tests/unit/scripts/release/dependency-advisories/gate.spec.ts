@@ -15,12 +15,15 @@ type ReceiptFixture = {
   version: number; status: string; inputs: Record<string, string>; scope: string; started_at: string; completed_at: string;
   feeds: { osv: { observed_at: string; database_updated_at: string | null; endpoint: string; rows: { ids: string[] | null }[] }; registry: { counts: Record<string, number>; ids: string[] } };
 };
+/** Locate advisory evidence inside the disposable project rather than the source tracker. */
 const receiptPath = (root: string) => path.join(root, ".cache/dependency-security/receipt.json");
+/** Create the minimal complete dependency project consumed by the real collector. */
 async function fixture(root: string) {
   await writeFile(path.join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\npackages:\n  'fixture@1.2.3':\n    resolution: {integrity: sha512-fixture}\n");
   await writeFile(path.join(root, "package.json"), "{}");
   await writeFile(path.join(root, "pnpm-workspace.yaml"), "{}");
 }
+/** Alter saved evidence to prove the verifier rejects stale or incomplete receipts. */
 async function mutate(root: string, change: (value: ReceiptFixture) => void) {
   const value = JSON.parse(await readFile(receiptPath(root), "utf8")); change(value);
   await writeFile(receiptPath(root), JSON.stringify(value));
