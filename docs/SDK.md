@@ -244,7 +244,8 @@ async function writePackageState(pmRoot: string, write: () => Promise<void>) {
 The built-in provider automatically recovers a provably dead original Linux
 owner before TTL. Unknown owners retain the existing lease policy. Conflicts
 expose the lock identity, observed process state and wait advice through
-`PmCliError.context`; force never bypasses a live lock. See
+`PmCliError.context`. Force does not bypass an unexpired lock whose owner is
+alive or unverifiable. TTL expiry permits removal regardless of owner liveness. See
 [Configuration](CONFIGURATION.md#common-settings) for host identity, local
 recovery audit receipts and `PM_LOCK_WAIT_MS` precedence. Extension lock
 providers retain responsibility for their own ownership and recovery policy.

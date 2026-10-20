@@ -1169,7 +1169,7 @@ function buildLockConflictGuidance(
       happened: message,
       required: "Wait for lock release, then retry the same operation. Set PM_LOCK_WAIT_MS to a larger bounded millisecond budget for expected contention.",
       why: "Locking protects item files from concurrent write races.",
-      examples: retry ? [`PM_LOCK_WAIT_MS=60000 ${retry}`] : ["pm gc --scope locks --dry-run"],
+      examples: retry ? [retry] : ["pm gc --scope locks --dry-run"],
     }),
     rawMessage,
     context,

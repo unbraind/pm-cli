@@ -76,6 +76,10 @@ it.skipIf(process.platform !== "linux")(
       throw Object.assign(new Error("denied"), { code: "EPERM" });
     });
     expect(await inspectLockOwner(identity)).toBe("unknown");
+    for (const failure of [null, "unavailable", new Error("Unavailable process probe")]) {
+      kill.mockImplementation(() => { throw failure; });
+      expect(await inspectLockOwner(identity)).toBe("unknown");
+    }
     kill.mockImplementation(() => {
       throw Object.assign(new Error("gone"), { code: "ESRCH" });
     });

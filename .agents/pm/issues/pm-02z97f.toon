@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: agent-ux,"area:locking",concurrency
 created_at: "2026-10-20T10:34:24.727Z"
-updated_at: "2026-10-20T16:07:46.086Z"
+updated_at: "2026-10-20T16:30:10.893Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#244d33e51b5f1223152c8358"
 author: "harness:codex"
@@ -21,12 +21,14 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-lvyd,related,"2026-10-20T10:34:24.727Z","harness:codex","cli:create:dep",detected
   pm-v2pg4f,related,"2026-10-20T10:34:24.727Z","harness:codex","cli:create:dep",detected
   pm-zwib,related,"2026-10-20T10:34:24.727Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-20T10:34:24.727Z","harness:codex","Duplicate check: fresh request-specific searches, open/in-progress inventories and complete strict 3023-item all-status read found no matching open item. Full live records/comments/history for the concurrency parent and the TTL cleanup and takeover/publication precursors distinguish the requested liveness boundary. Their existing completed scopes are preserved. The live-lock report remains in pm-lvyd; this issue remains open and unclaimed."
   "2026-10-20T15:15:35.096Z","harness:codex","Implementation scope: preserve token-fenced initialization/takeover and TTL compatibility. Add conservative same-boot and PID-namespace identity on Linux; only positive original-process death permits automatic early recovery. Unsupported hosts and unverifiable owners retain TTL policy. Share classification with health/GC, revalidate GC removal under the cleanup gate, and retain auditable recovery evidence through existing lock write hooks. Related live-lock guidance is a bounded child of pm-lvyd; no unsafe force ownership or hierarchy redesign."
   "2026-10-20T15:26:14.267Z","harness:codex","Regression evidence: owned isolated current-head tests first reproduced a killed public-SDK owner counted as active and a live lock advertising force/placeholder recovery. After the SDK-first change, six focused suites pass 238 tests: real killed-holder CLI recovery/history, same-host positive death/PID reuse, conservative foreign/legacy/EPERM/unavailable observations, single-winner takeover, old-release fencing, initialization protection and GC replacement revalidation. Broader static/coverage/release checks are still pending. No thousand-agent throughput claim is made."
   "2026-10-20T15:52:44.426Z","harness:codex","Full local suite completed10839 passing tests and three failures: integration root file cap121 vs120, suppression baseline ratchet104 vs103 after removing an allowance, and packed SDK continuation unable to resolve globally installed npm. Corrected by placing the new journey in tests/integration/locking, lowering the two owned suppression ratchets, and exposing the existing global npm package through NODE_PATH for local acceptance. No source denominator, assertion, deadline or folder cap was weakened. Added explicit malformed-timestamp protection and bounded health-sample tests. Source changes waited until the full runner exited."
   "2026-10-20T16:07:46.086Z","harness:codex","Final focused recovery acceptance passes240 tests across the native owner-proof/scanner suites, CLI error contracts and real killed-holder SDK-to-CLI journey. Early recovery retains a local audit intent, malformed timestamps remain behind existing stale policy, audit-write failure preserves the old lock, modern live owners stay protected, and full health samples cap at20 while counting all21 test receipts. The latest installed pm-changelog is2026.10.20. Full final CI coverage, static checks and external review remain required before merge."
+  "2026-10-20T16:12:18.903Z","harness:codex","Implementation review: https://github.com/unbraind/pm-cli/pull/1523 at13d89b48f contains both recovery leaves with no ownership override. All installed review providers were requested once for this head; native full-check/review watcher is running. Item remains actively handled until review and terminal evidence settle."
+  "2026-10-20T16:30:10.893Z","harness:codex","First exact-head inventory completed with no pending emitted checks. Four actionable CodeRabbit findings were accepted (reminder summary/schedule, documentation prose, accurate TTL semantics and shell-neutral retries);197 focused review tests, lint and docs-link checks now pass. Sibling and release-census references are linked through real related edges; graph-composition passes without raising its1233 prose-gap ceiling. Hosted transport-floor admission passed all six operations on13d89b48f, separately from the two retained qualified local refusals. Sourcery and cubic are quota-limited and Greptile's trial has ended; these are unavailable reviews, not approvals."
 files[10]{path,scope}:
   eslint-suppressions.json,project
   scripts/release/gate-registry.json,project
@@ -40,6 +42,18 @@ files[10]{path,scope}:
   tests/unit/core/lock/lock-owner.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/core/lock/lock-owner.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-gc.spec.ts,project,300,"harness:codex","2026-10-20T15:52:42.609Z",local_mutation,fix/lock-owner-recovery
+test_runs[1]:
+  - run_id: test-local-mvgvvqhi-9msvfm
+    kind: test
+    status: passed
+    started_at: "2026-10-20T16:14:08.161Z"
+    finished_at: "2026-10-20T16:14:30.102Z"
+    recorded_at: "2026-10-20T16:14:30.102Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/core/lock/lock-owner.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-gc.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   docs/COMMANDS.md,project
   docs/CONFIGURATION.md,project

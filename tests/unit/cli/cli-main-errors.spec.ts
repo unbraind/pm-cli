@@ -4194,6 +4194,7 @@ describe("CLI error guidance helpers", () => {
     });
     expect(error).toMatchObject({ recovery: { normalized_args: args, suggested_retry_args: args } });
     expect(error.examples?.join(" ")).not.toMatch(/--force|pm-a1b2/u);
+    expect(error.examples?.[0]).toMatch(/^pm comments /u);
     for (const malformed of [[], ["comments", 7]]) {
       const refused = formatPmCliErrorForJson("Item pm-live is locked", EXIT_CODE.CONFLICT, {
         recovery: { normalized_args: malformed as string[], suggested_retry_args: malformed as string[] },
