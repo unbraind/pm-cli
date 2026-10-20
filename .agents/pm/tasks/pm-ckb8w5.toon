@@ -1,0 +1,52 @@
+id: pm-ckb8w5
+title: Schedule corpus and policy fixture keepers after parallel contract workers
+description: "Two full-source coverage runs at unchanged assertion deadlines expose worker-contention failures in the surface replication fixture checks; the runs also expose the ten-thousand-item aggregate and cold governance-read keepers. All seven targeted recovery files pass together (155 tests) with four workers. Reuse the established serial lifecycle-performance cohort for these three expensive files, preserving their original source/input populations and budgets."
+type: Task
+status: in_progress
+priority: 1
+tags[3]: quality-gate,runner-allocation,test-reliability
+created_at: "2026-10-20T12:27:13.226Z"
+updated_at: "2026-10-20T12:49:38.073Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#195da4edbf99e3a7d3dcd1aa"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: "All three files are excluded from parallel contracts and included exactly once after that project with one worker. Existing 10-second governance, 30-second aggregate and 120-second policy test limits, retry policy, fixture cardinality and canonical full-source 100 percent coverage remain unchanged. A real config negative control fails before allocation is changed; focused, full coverage and CI evidence are retained."
+goal: Make quality verdicts measure the intended SDK and policy behavior under qualified execution.
+objective: Allocate expensive corpus and policy keepers consistently with the existing sequential project.
+value: Preserve strict gate signal without rewarding timeout inflation or nondeterministic retries.
+why_now: Both canonical coverage runs during the current admission-safety delivery hit unchanged contention-sensitive fixture deadlines.
+parent: pm-bj7rq0
+risk: low
+confidence: high
+expected_result: Expensive keeper files run once after parallel contracts and remain strict failures for actual regressions.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-a3c6g4,recurs_from,"2026-10-20T12:27:13.226Z","harness:codex","cli:create:dep",detected
+comments[3]:
+  - created_at: "2026-10-20T12:27:13.226Z"
+    author: "harness:codex"
+    text: "Duplicate check: live request-specific search, open and in-progress inventories, complete all-status corpus and full live parent/predecessor metadata/comments/history. pm-bj7rq0 owns broader qualification and remains open; completed pm-a3c6g4 establishes the same serial-allocation recurrence. No matching active leaf covers these three fixtures."
+  - created_at: "2026-10-20T12:30:51.146Z"
+    author: "harness:codex"
+    text: "Allocation negative control: the new project-membership regression failed before configuration changed, naming aggregate-set-members missing from parallel exclusions. The real three fixture files now join the existing serial cohort exactly once; no fixture source, assertion, per-test deadline or retry count changed. The second full run has10832 passes and only two unchanged timeout failures (aggregate and surface replication). The first run also timed out the cold governance keeper. Register this recurrence lineage in policy so future scheduling edits select its keeper automatically. Product npm/Bun installed-artifact admission and execution probes pass, including real npx/bunx dispatch."
+  - created_at: "2026-10-20T12:32:59.599Z"
+    author: "harness:codex"
+    text: "Corrected numeric receipt from allocation-after.log: the post-change keeper command passes6 files and80 tests. Surface replication completes in15.480seconds, governance in4.504seconds and the ten-thousand-item aggregate file in7.423seconds, with original limits. This supersedes the prior mistaken count/timing text; the immutable edit history preserves that correction. Earlier full-run failures remain failures. Complete canonical coverage on the revised allocation is pending and will be required on the reviewed hosted head before closure."
+    edited_at: "2026-10-20T12:33:20.191Z"
+files[3]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  tests/integration/vitest-retry-policy.integration.spec.ts,project
+  vitest.config.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/query/aggregate-set-members.spec.ts tests/unit/sdk/governance-read-performance.spec.ts,project,300,"harness:codex","2026-10-20T12:27:42.428Z",local_mutation,fix/sdk-mutation-admission
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: qualified-corpus-keeper-allocation
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+  owner: pm-ckb8w5
+body: ""

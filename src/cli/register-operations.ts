@@ -886,10 +886,10 @@ async function runCloseTaskAction(
 function addLinkedTestExecutionOptions(command: Command): Command {
   return command
     .option("--background", "Run linked tests in managed background mode")
-    .option("--timeout <seconds>", "Default run timeout in seconds")
+    .option("--timeout <seconds>", "Default run timeout in seconds (requires --run)")
     .option(
       "--progress",
-      "Emit stderr progress (automatic in TTY)",
+      "Emit stderr run progress (requires --run; automatic in TTY)",
     )
     .option(
       "--env-set <value>",

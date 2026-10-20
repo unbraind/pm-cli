@@ -2,20 +2,53 @@ id: pm-hdvxqg
 title: "GH-1519: preflight test run options before persisting linked-test edits"
 description: "https://github.com/unbraind/pm-cli/issues/1519 reports on published 2026.10.20/plain non-Git trackers that test --add persists a link before refusing invalid --timeout, --pm-context, --env-set or --only-index values, so retries accumulate duplicate registrations. It also reports run counters on add-only --progress and generic errors for some invalid values. This is reporter evidence; current-head reproduction and implementation remain pending. The scope is admission of the entire requested link/run option combination before any write, beyond the earlier linked-context validation."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[3]: agent-ux,"area:testing",mutation-safety
 created_at: "2026-10-20T10:34:31.518Z"
-updated_at: "2026-10-20T10:34:31.518Z"
+updated_at: "2026-10-20T12:36:16.656Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#195da4edbf99e3a7d3dcd1aa"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Exercise invalid timeout, context, environment and index options through CLI and native SDK with add/remove edits: preflight refusals must leave item bytes, links and history unchanged and name the offending flag/value with an honest no-change receipt. Define run-only options on registration-only calls consistently, including progress output without fabricated execution counters. Preserve valid add-plus-run behavior, audit real executed failures truthfully, and keep existing context-intake/refusal semantics intact; do not equate a real post-admission child failure with a preflight refusal."
+goal: Make linked-test registration and execution safe for autonomous retries.
+objective: Validate the complete request and effective selection before saving linked-test edits.
+value: A usage refusal cannot leave hidden links or history that retries would duplicate.
+why_now: GH-1519 reproduces persistent side effects after invalid options on the current public package.
 parent: pm-33cw
 risk: medium
 confidence: medium
 expected_result: "Agents can safely retry invalid test-link requests without hidden edits or duplicates, while accepted registrations and genuine executions retain truthful mutation/run receipts."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1440,related,"2026-10-20T10:34:31.518Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-20T10:34:31.518Z","harness:codex","Duplicate check: live focused searches, open/in-progress lists and a complete strict 3023-item all-status read found no matching open item. Read the governance parent and full pm-gh1440 metadata/comments/history: that completed work covers none/source context admission and truthful unexecuted refusals, while this report adds validation of run-only options before combined link edits. Reuse that predecessor as related context; keep this distinct report open and unclaimed."
+  "2026-10-20T11:29:18.698Z","harness:codex","Implementation scope: admit all run directives and effective post-edit selection before link writes; preserve genuine executed failure receipts. Shared PR with runtime SDK option admission pm-fl3phm. Current corpus is complete across 3025 items, including closed lineage; no unrelated item is claimed."
+  "2026-10-20T11:36:18.538Z","harness:codex","Regression proof: new owned-sandbox integration controls failed on the pre-fix head because an invalid combined test request appended tests_add history and persisted the link before refusing. Candidate first pass preserves authoritative bytes for syntax/selection refusals, validates the effective list inside the item lock, requires run for timeout/progress, and keeps actual child failures distinct. Existing 19 linked-test editing tests pass; broader verification is underway."
+  "2026-10-20T11:54:21.518Z","harness:codex","Latest published pm-changelog2026.10.20 installs and passes deep package doctor. Separate existing upstream PR262 changes closed-issue classification, identifies upstream owner pmc-txk1, and is BLOCKED with unresolved local release-check timing risks in its live PR evidence. It is not consumed or merged by this implementation; current repaired issues have concrete linked source/tests and closure evidence. Retain the upstream distinction rather than treating its pending work as published behavior."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T11:46:44.698Z","harness:codex","Validate syntax before side effects, and validate selectors against the effective post-edit list inside the item mutation lock. An execution failure after successful admission may retain accepted edits and run history; a preflight refusal must not."
+files[9]{path,scope}:
+  src/cli/error-guidance.ts,project
+  src/cli/register-operations.ts,project
+  src/core/shared/errors.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/test/execution.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/sdk/mutation-admission.integration.spec.ts,project
+  tests/unit/cli/error-guidance.spec.ts,project
+  tests/unit/commands/test/test-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk/mutation-admission.integration.spec.ts tests/integration/linked-tests/linked-test-editing.integration.spec.ts,project,240,"harness:codex","2026-10-20T11:34:23.648Z",local_mutation,fix/sdk-mutation-admission
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-test-request-admission
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/sdk/mutation-admission.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+  owner: pm-hdvxqg
 body: ""

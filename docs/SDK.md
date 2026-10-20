@@ -3299,6 +3299,20 @@ history and retains mutation governance.
 
 ## Robust Automation Pattern
 
+Native `PmClient.create`, `update`, and their generic `run` routes reject unknown
+option names at runtime, including JavaScript callers and injected extension
+clients ([pm-fl3phm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fl3phm.toon),
+a repository-only tracker record excluded from npm). A typo such as
+`priorty` refuses the whole request with `PmCliError.code =
+"invalid_argument_value"`, `context.reason = "unknown_mutation_option"`, a
+nearest-name hint when available, and `context.changed = false`. Put mutation
+fields under `options` when using `run`; existing declared top-level aliases
+remain accepted. Workspace schema option identities remain available through
+`run`, while typed convenience methods support extension item fields through `field`.
+MCP retains its existing transport-specific admission contract. The no-change
+receipt applies to these preflight refusals; an executed operation's outcome
+and evidence must be assessed separately.
+
 1. Read `PM_TOOL_ACTIONS` or `PM_TOOL_PARAMETERS_SCHEMA` for baseline static validation.
 2. Load runtime contracts with `getContracts(pmRoot, { runtimeOnly: true })` or run `pm contracts --runtime-only --json` inside the target project.
 3. Verify the action appears in `actions` and has `action_availability[].invocable: true`.

@@ -25,6 +25,7 @@ import {
 } from "../sdk/cli-contracts/command-aliases.js";
 
 interface GuidanceMessage {
+  changed?: false;
   policyViolations?: PmCliErrorContext["policy_violations"];
   policyViolationCount?: number;
   itemId?: string;
@@ -70,6 +71,8 @@ export interface PmRefusalEnvelope {
 
 /** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
 export interface JsonErrorEnvelope {
+  /** Verified admission refusal before any mutation. */
+  changed?: false;
   /** Ordered mutation that failed semantic preview validation. */
   transaction_operation?: PmCliErrorContext["transaction_operation"];
   /** Bounded tracker-relative preview refusal coordinate. */
@@ -130,6 +133,8 @@ export function projectLeanErrorEnvelope(
 
 /** Documents the error classification payload exchanged by command, SDK, and package integrations. */
 export interface ErrorClassification {
+  /** Verified admission refusal before any mutation. */
+  changed?: false;
   /** Ordered mutation that failed semantic preview validation. */
   transaction_operation?: PmCliErrorContext["transaction_operation"];
   /** Bounded tracker-relative preview refusal coordinate. */
@@ -802,6 +807,7 @@ function guidanceToJsonEnvelope(
       required: message.required,
       exit_code: exitCode,
       refusal: buildRefusalEnvelope(message, exitCode),
+      ...(message.changed === false ? { changed: false as const } : {}),
     },
     message,
   );
@@ -833,6 +839,7 @@ function guidanceToClassification(
       title: message.title,
       detail: message.happened,
       required: message.required,
+      ...(message.changed === false ? { changed: false as const } : {}),
     },
     message,
   );
@@ -981,6 +988,7 @@ function applyPmCliErrorContext(
   return {
     ...guidance,
     code,
+    changed: context.changed,
     type,
     title: fallbackTitle ?? guidance.title,
     happened:

@@ -285,7 +285,8 @@ const LIFECYCLE_AUTHOR_ALIAS_ACTIONS = new Set([
   "close-task",
 ]);
 
-const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string[]>> =
+/** Supported top-level aliases, shared with native mutation admission. */
+export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string[]>> =
   {
     "history-attest": ["verify", "output", "hashAlgorithm"],
     list: ["status", "type", "tag", "priority", "limit", "offset"],

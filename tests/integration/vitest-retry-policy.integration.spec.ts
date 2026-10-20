@@ -64,7 +64,7 @@ const runReliabilityFixture = async (
 };
 
 describe("Vitest CI retry policy", () => {
-  it("runs every native merge keeper once after parallel contracts with the original deadlines", async () => {
+  it("runs every expensive keeper once after parallel contracts with the original deadlines", async () => {
     const { default: config } = await import("../../vitest.config.js");
     const test = config.test!;
     const projects = test.projects as Array<{ test: {
@@ -74,6 +74,9 @@ describe("Vitest CI retry policy", () => {
     const contracts = projects.find((project) => project.test.name === "contracts")!.test;
     const serial = projects.find((project) => project.test.name === "lifecycle-performance")!.test;
     for (const file of [
+      "tests/unit/commands/query/aggregate-set-members.spec.ts",
+      "tests/unit/sdk/governance-read-performance.spec.ts",
+      "tests/unit/scripts/release/surface-replication-gate.spec.ts",
       "tests/integration/receipt-operation-boundaries.integration.spec.ts",
       "tests/integration/aborted-rebase-recovery.integration.spec.ts",
       "tests/integration/workspace/merge-receipt-settlement.integration.spec.ts",

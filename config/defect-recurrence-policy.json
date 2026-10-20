@@ -3,6 +3,26 @@
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
   "families": [
     {
+      "id": "qualified-corpus-keeper-allocation",
+      "version": 1,
+      "title": "Expensive corpus and policy keepers retain strict deadlines under qualified serial scheduling",
+      "owner_item_id": "pm-ckb8w5",
+      "escape_class": "review_caught_late",
+      "triggers": {
+        "file_patterns": ["vitest.config.ts", "tests/integration/vitest-retry-policy.integration.spec.ts"],
+        "item_ids": ["pm-ckb8w5", "pm-a3c6g4"]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/query/aggregate-set-members.spec.ts tests/unit/sdk/governance-read-performance.spec.ts"
+        ],
+        "hosted": ["CI / Gates (coverage)", "CI / Gates (static)"]
+      },
+      "negative_control": { "files": ["vitest.config.ts"] },
+      "historical_item_ids": ["pm-a3c6g4"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.03 }
+    },
+    {
       "id": "merge-operation-restoration-and-receipt-settlement",
       "version": 2,
       "title": "Git abort recovery and durable receipt settlement preserve exact original-state proof and history idempotency",
