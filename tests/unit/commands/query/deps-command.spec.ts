@@ -1099,6 +1099,12 @@ describe("runDeps", () => {
         await expect(runDeps(root, { format: "context", tokenBudget: 1 }, { path: context.pmPath, json: true }))
           .rejects.toBe(defect);
       } finally { builds.mockRestore(); }
+      for (const unrelated of [new Error("Unrelated assembly defect"), new PmCliError("Other usage refusal", EXIT_CODE.USAGE, { code: "invalid_argument_value" })]) {
+        const assembly = vi.spyOn(contextKernel, "buildRelationshipContext").mockImplementationOnce(() => { throw unrelated; });
+        try {
+          await expect(runDeps(root, { format: "context" }, { path: context.pmPath, json: true })).rejects.toBe(unrelated);
+        } finally { assembly.mockRestore(); }
+      }
     });
   });
 

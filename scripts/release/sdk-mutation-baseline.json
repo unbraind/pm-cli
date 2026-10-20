@@ -5,7 +5,7 @@
     "src/sdk/dependency-provenance.ts",
     "src/sdk/pagination.ts"
   ],
-  "minimumScore": 97.98850574712644,
+  "minimumScore": 98.01136363636364,
   "equivalentMutants": [
     {
       "identity": "c0dd21b6b1034fe0d6ce8078c3bd3bbd15fba15605981d10d7c2c38faeb3ec3d",
@@ -56,9 +56,9 @@
       "owner": "pm-zclzll"
     },
     {
-      "identity": "140598363121dae9d1b8d3abee7a6b0da55128a0f32ea7bae3d49180f83455d4",
+      "identity": "bbcc39f3468bcbb440e75339e4eb360fd721bdc8258207ce8e4f6288b27db1cd",
       "file": "src/sdk/pagination.ts",
-      "line": 155,
+      "line": 156,
       "replacement": "false",
       "reason": "The anchored base64url pattern requires at least one character. Removing the separate zero-length check still rejects every empty cursor with the same error.",
       "owner": "pm-zclzll"

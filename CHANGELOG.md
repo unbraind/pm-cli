@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1511: keep blocked work prioritization inside context cursor page boundaries ([pm-0luwp4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0luwp4.toon))
+- GH-1510: make relationship packet cursor recovery command-aware ([pm-ohgg1b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ohgg1b.toon))
+- GH-1512: define count-based context completion rounding at half-percent boundaries ([pm-r2xv95](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2xv95.toon))
+- GH-1509: preserve legacy relationship blocker details in deep context ([pm-h5ko1l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-h5ko1l.toon))
+
 ## 2026.10.20 - 2026-10-20
 
 ### Changed

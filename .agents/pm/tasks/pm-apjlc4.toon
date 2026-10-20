@@ -1,0 +1,21 @@
+id: pm-apjlc4
+title: Investigate native GitHub check waits that remain active after terminal checks
+description: "Observed during PR1515: the native gh2.102.0 check watcher remained alive after a fresh head snapshot showed39successful checks and3skips. Its process was25minutes old. Interrupting only the read-only watcher and starting the reviews phase returned immediately with the accurate unresolved-conversation blocker. No CI job or required status was bypassed. Upstream cause and controlled reproduction remain unconfirmed."
+type: Task
+status: open
+priority: 2
+tags[3]: agent-ux,github,review
+created_at: "2026-10-20T06:14:19.977Z"
+updated_at: "2026-10-20T06:14:19.977Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce or explicitly attribute the stalled native watcher using terminal and genuinely pending controls; define bounded liveness behavior without certifying readiness from timeout or unavailable data; retain exact-head required publisher and conversation evidence; preserve the completed predecessor scope and record any upstream CLI issue.
+parent: pm-u9d0
+risk: medium
+confidence: medium
+expected_result: A stuck transport wait is distinguishable from pending hosted work and never becomes a false successful review receipt.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jm7m3o,discovered_from,"2026-10-20T06:14:19.977Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-20T06:14:19.977Z","harness:codex","Duplicate check: complete all-status intake and fresh keyword watch search plus open and in-progress inventories show no active exact liveness owner. Full live predecessor pm-jm7m3o is closed for separate fail-fast phase behavior. Intake only: open and unclaimed; implementation is outside the four context fixes in PR1515."
+body: ""

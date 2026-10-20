@@ -2,20 +2,54 @@ id: pm-h5ko1l
 title: "GH-1509: preserve legacy relationship blocker details in deep context"
 description: "Published-release report: deep context omits prerequisite identity and status for persisted legacy depends_on edges while relationship packets canonicalize them. Source: https://github.com/unbraind/pm-cli/issues/1509 . Report has not yet been independently reproduced in this delivery."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,context,github
 created_at: "2026-10-19T16:30:57.202Z"
-updated_at: "2026-10-19T16:30:57.202Z"
+updated_at: "2026-10-20T06:15:34.064Z"
+closed_at: "2026-10-20T06:15:33.148Z"
+completed_at: "2026-10-20T06:15:33.148Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Reproduce canonical and persisted legacy edges in isolated real trackers; verify deep context and packet parity through public SDK CLI and MCP; retain history and alias compatibility.
 parent: pm-4k6b
 risk: medium
 confidence: medium
-expected_result: Deep context resolves persisted relationship aliases through the same registry as packets and preserves blocker identity title and status.
+resolution: Canonicalize dependency kinds in the shared actionability primitive so persisted depends_on edges retain prerequisite identity title and status without rewriting source or history.
+expected_result: Canonical and legacy dependency fixtures produce the same blocker facts through SDK CLI and MCP while item and history bytes remain unchanged.
+actual_result: "Canonical and persisted legacy fixtures pass across all three transports with exact source/history preservation. PR1515 code head7ba76fd6ce2d43937e0c490343e8c9e195d7a82c: CI39376468501 passed all required hosted checks; exact coverage lines66214/66214 statements69818/69818 functions14387/14387 branches53652/53652. DeepScan0new and CodeFactor0annotations. Final review test improvement passes the focused linked transport suite. Original failed local performance and mutation-timeout receipts remain failed."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-ju83,discovered_from,"2026-10-19T16:30:57.202Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-19T16:30:57.202Z","harness:codex","Duplicate check: fresh all-open and in-progress inventories, request-specific searches and complete earlier all-status intake show no exact active report owner. Full live predecessor metadata and history confirm completed prior scope; preserve it and create this narrowly reported follow-up. Intake only: unclaimed and open; no implementation or independent reproduction claimed."
+  "2026-10-20T05:04:51.022Z","harness:codex","Independent pre-fix proof on real isolated storage: canonical blocked_by resolves the prerequisite; replacing only that persisted edge spelling with depends_on loses blocker identity title and status while deps packets still return canonical blocked_by. The fix resolves kinds through the existing dependency-free relationship registry in the shared actionability primitive, covering context and other scheduling consumers without rewriting source or history. SDK CLI and actual MCP tests retain exact source/history bytes."
+  "2026-10-20T06:15:32.058Z","harness:codex","Canonical and persisted legacy fixtures pass across all three transports with exact source/history preservation. PR1515 code head7ba76fd6ce2d43937e0c490343e8c9e195d7a82c: CI39376468501 passed all required hosted checks; exact coverage lines66214/66214 statements69818/69818 functions14387/14387 branches53652/53652. DeepScan0new and CodeFactor0annotations. Final review test improvement passes the focused linked transport suite. Original failed local performance and mutation-timeout receipts remain failed."
+files[2]{path,scope,note}:
+  src/core/item/actionability.ts,project,Registry-backed blocker alias resolution
+  tests/integration/read-output/context-decision-contracts.integration.spec.ts,project,Persisted alias and source preservation parity
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"resolves persisted legacy\"",project,240,"harness:codex","2026-10-20T04:58:47.193Z",local_mutation,fix/context-cursor-and-progress,Real persisted alias transport parity and immutable history
+test_runs[1]:
+  - run_id: test-local-mvg7w524-i8izsk
+    kind: test
+    status: passed
+    started_at: "2026-10-20T05:02:35.948Z"
+    finished_at: "2026-10-20T05:02:58.204Z"
+    recorded_at: "2026-10-20T05:02:58.204Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"resolves persisted legacy\"",schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/CONTEXT_RELEVANCE.md,project,Legacy alias and read preservation contract
+close_reason: "Resolve persisted legacy blocker relationships through the shared registry. Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1515"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: CI / Gates (coverage)
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts -t \"resolves persisted legacy\""
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/context-decision-contracts.integration.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: pm-h5ko1l
 body: ""

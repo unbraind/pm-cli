@@ -2498,6 +2498,18 @@
       ],
       "package_version": "2026.10.19",
       "reason": "Tighten the newly introduced token-budget recovery declaration to the existing validated status states before its first published release; runtime behavior is unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:decodeQueryCursorEnvelope",
+        "signature ./sdk:decodeQueryCursorState",
+        "signature ./sdk:resolveQueryCursorStart",
+        "signature ./sdk/query:decodeQueryCursorEnvelope",
+        "signature ./sdk/query:decodeQueryCursorState",
+        "signature ./sdk/query:resolveQueryCursorStart"
+      ],
+      "package_version": "2026.10.20",
+      "reason": "Add an optional final cursorFlag argument to three shared pagination primitives; existing callers retain --after, relationship consumers select --cursor, and all six root/query declarations are documented."
     }
   ],
   "entrypoints": {
@@ -6198,13 +6210,13 @@
           "classification": "supported",
           "kind": "function",
           "name": "decodeQueryCursorEnvelope",
-          "signature": "(cursor: unknown) => QueryCursorEnvelope | calls: (cursor: unknown) => QueryCursorEnvelope"
+          "signature": "(cursor: unknown, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorEnvelope | calls: (cursor: unknown, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorEnvelope"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "decodeQueryCursorState",
-          "signature": "(cursor: unknown, expectedFingerprint: string) => QueryCursorState | calls: (cursor: unknown, expectedFingerprint: string) => QueryCursorState"
+          "signature": "(cursor: unknown, expectedFingerprint: string, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorState | calls: (cursor: unknown, expectedFingerprint: string, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorState"
         },
         {
           "classification": "supported",
@@ -17454,7 +17466,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "resolveQueryCursorStart",
-          "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number"
+          "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number"
         },
         {
           "classification": "supported",
@@ -31320,13 +31332,13 @@
           "classification": "supported",
           "kind": "function",
           "name": "decodeQueryCursorEnvelope",
-          "signature": "(cursor: unknown) => QueryCursorEnvelope | calls: (cursor: unknown) => QueryCursorEnvelope"
+          "signature": "(cursor: unknown, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorEnvelope | calls: (cursor: unknown, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorEnvelope"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "decodeQueryCursorState",
-          "signature": "(cursor: unknown, expectedFingerprint: string) => QueryCursorState | calls: (cursor: unknown, expectedFingerprint: string) => QueryCursorState"
+          "signature": "(cursor: unknown, expectedFingerprint: string, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorState | calls: (cursor: unknown, expectedFingerprint: string, cursorFlag?: \"--after\" | \"--cursor\") => QueryCursorState"
         },
         {
           "classification": "supported",
@@ -32172,7 +32184,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "resolveQueryCursorStart",
-          "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string) => number"
+          "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number"
         },
         {
           "classification": "supported",

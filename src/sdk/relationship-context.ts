@@ -451,6 +451,7 @@ export function buildRelationshipContext(
     options.cursor,
     fingerprint,
     ({ id }) => id,
+    "--cursor",
   );
   const candidates = discovery.rows.slice(pageStart);
   const initialTokens = estimateTokens(root) + estimateTokens(evidence);
