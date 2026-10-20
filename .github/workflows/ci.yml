@@ -663,7 +663,7 @@ jobs:
           verbose: false
 
   windows-regression-cohorts:
-    name: Windows regression cohort (${{ matrix.cohort }}, Node 24)
+    name: Windows regression cohort (${{ matrix.cohort }} ${{ matrix.shard }}, Node 24)
     # Gate this focused Windows slice on a green foundation build; the job is
     # otherwise self-contained because it must install and run on windows-latest.
     needs: build-foundation
@@ -673,7 +673,13 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        cohort: [scripts, native]
+        include:
+          - cohort: scripts
+            shard: 1/2
+          - cohort: scripts
+            shard: 2/2
+          - cohort: native
+            shard: 1/1
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -732,7 +738,7 @@ jobs:
       # the full tests/unit/scripts/
       # directory now runs so a fresh Windows-only script regression fails this
       # required per-PR check rather than only the nightly.
-      # pm-bj7rq0: bound each subprocess-heavy cohort without serializing all Windows keepers.
+      # pm-vqwery: partition every script file under the unchanged cohort budget.
       - name: Install verified Cygwin for native launcher acceptance
         if: matrix.cohort == 'scripts'
         shell: pwsh
@@ -756,7 +762,7 @@ jobs:
         if: matrix.cohort == 'scripts'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/scripts/
+        run: node scripts/run-tests.mjs test -- --maxWorkers=2 --shard=${{ matrix.shard }} tests/unit/scripts/
 
       - name: Run Windows source-import regression tests
         if: matrix.cohort == 'native'
