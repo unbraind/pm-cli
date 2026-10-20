@@ -2,24 +2,27 @@ id: pm-zd46m7
 title: "GH-1507: Explain effective default list ordering in brief rows and metadata"
 description: "Verified on current source: pm list --status open --limit3 --json returns only id status type title, projection.fields matches those four, and sorting reports default/asc. GitHub1507 asks for the actual default ordering keys and visible priority without requiring a second --fields read. Keep the completed explicit-sort fix pm-gh1481 closed and preserve the compact default TOON projection from pm-6pycus. Implement the effective sort contract in the SDK for CLI MCP and extensions with additive compatible envelope metadata."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-19T13:18:41.296Z"
-updated_at: "2026-10-20T08:14:31.969Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1e3aaed2ebb33413fa918dd9"
+updated_at: "2026-10-20T09:14:54.966Z"
+closed_at: "2026-10-20T09:09:11.462Z"
+completed_at: "2026-10-20T09:09:11.462Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Default-sort metadata preserves compatible legacy sort/order fields and exposes an ordered effective-key contract including registry-derived nonterminal-before-terminal grouping, priority ascending, updated_at descending and final ID ascending; Unfiltered lists disclose every comparator stage and the synthetic terminal grouping semantics explicitly; Brief projection includes priority when the effective sort uses it and updates projection.fields and omission receipts accurately; Explicit fields compact and full selections remain authoritative and explicit-sort behavior stays covered; Public SDK CLI MCP and TOON/JSON share the effective policy with configured defaults and stable tie breaking; Focused and packed controls preserve bounded continuation"
 parent: pm-srns
 risk: low
 confidence: high
-expected_result: "Agents can understand default list ranking from one bounded read, while explicit field selection and existing sorting/continuation compatibility remain intact."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Added priority to default brief rows, declared the four effective status-registry/priority/updated_at/id comparator stages, aligned CLI/runtime/SDK contracts and package dogfood, compacted brief JSON without losing receipts, and independently validated compact and pretty transcript accounting."
+expected_result: "Agents can understand the default ranking from brief rows and declared sort stages, retain explicit/custom projections and complete continuation, and trust measured output budgets."
+actual_result: "Native and CLI ranking/projection/continuation regressions, independent accounting negative controls, and the real package workflow pass. The unchanged task transcript improves from 13,795 to 13,676 estimated tokens overall; the triage policy costs 67 additional tokens and the specific measured baselines are regenerated. Verification: all four source-identical CI-style coverage shards admitted successfully, then strict Vitest merge and exact covered/total gate pass. 835 test files pass, one configured file skip; 10,829 tests pass and 3 skip. Exact source counts: lines 66,222/66,222; statements 69,828/69,828; functions 14,388/14,388; branches 53,664/53,664. Both linked PM commands pass (author 2 tests, list/accounting/dogfood 170). Four TypeScript configurations pass; real package-first workflow passes; mutation gate has 345 killed plus 7 classified equivalents and zero failures. Graph composition passes the unchanged 1233 prose-gap ceiling; record integrity passes. First-head hosted coverage and all six cold transport budgets pass. Full local static timing failure and launcher lease-wait failures remain recorded separately; no budgets, graph bounds, coverage thresholds or exclusions were weakened. Final exact-head hosted static/smoke/security/analyzer checks and fresh reviews remain required on PR #1517 before merge. CodeRabbit first-head full review has no actionable findings; Sourcery, Greptile and Cubic are unavailable under their recorded free-service limits, not approvals. New source remains Unreleased for the next eligible daily publication."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6pycus,related,"2026-10-19T13:18:41.296Z","harness:codex","cli:create:dep",detected
   pm-gh1481,discovered_from,"2026-10-19T13:18:41.296Z","harness:codex","cli:create:dep",detected
-comments[9]{created_at,author,text}:
+  pm-yse5dt,related,"2026-10-20T08:42:35.943Z","harness:codex","cli:update:dep",detected
+comments[16]{created_at,author,text}:
   "2026-10-19T13:18:41.296Z","harness:codex","Duplicate check: complete strict3001-item all-status intake and default list sort priority brief search, plus full live pm-srns pm-gh1481 and pm-6pycus metadata. The two delivered predecessors are closed with completed narrower contracts. Current three-row JSON reproduces absent priority and unexplained default sorting. No exact open default-sort owner was found. This is intake only, open and unclaimed, and does not reopen shipped explicit-sort or compact-TOON work. Full GitHub report1507 is retained in the body."
   "2026-10-19T20:28:25.802Z","harness:codex","CodeRabbit inline source verification at src/sdk/query/list.ts compareDefaultSort confirms four effective stages: active status-registry terminal grouping, priority ascending, updated_at descending and ID localeCompare ascending. Corrected the proposed intake contract and acceptance criteria through pm to describe all four in order, including unfiltered grouping semantics. This is a specification correction only; the requested sorting feature remains open and is not represented as implemented."
   "2026-10-20T06:57:02.960Z","harness:codex","Implementation scope: preserve legacy sort/order metadata, disclose every effective comparator stage including registry-based terminal grouping, include priority in effective-default brief rows, and retain authoritative custom projections, explicit sorts and continuation semantics. Grouped with pm-65srr0 in one reviewed SDK context PR. Full live metadata and raw history read; prior pm-gh1481 and pm-6pycus remain completed narrower contracts."
@@ -29,10 +32,19 @@ comments[9]{created_at,author,text}:
   "2026-10-20T07:52:49.721Z","harness:codex","The unchanged token-budget gate now passes all32 surfaces after compacting only JSON whitespace for brief list envelopes; every item field, envelope field and receipt survives. Focused formatter/SDK acceptance passes92tests, including generic JSON formatting compatibility and full JSON round-trip. Help and generated contracts now correctly describe the leading sort column. No token-budget ceiling was raised. Recorded additional SDK typing follow-up pm-oybmsd as open/unclaimed; the intentional sparse continuation runtime remains intact."
   "2026-10-20T08:05:52.616Z","harness:codex","Static validation caught an independent replay oracle that assumed all JSON used two-space indentation. Updated that oracle to infer compact versus pretty encoding from exact captured wire bytes, reject other encodings, and independently recompute receipt and normalized-comparison costs in the observed encoding. Existing forged-count/section/envelope controls now execute for both encodings; no producer formatter is imported into the oracle and no gate ceiling is changed."
   "2026-10-20T08:13:14.469Z","harness:codex","Token-budget review: kept the 32-surface hard token-budget ceilings unchanged. Compact brief JSON saves whitespace without dropping any semantic fields; accounting independently validates compact or pretty JSON and rejects other encodings. The deterministic agent-task replay now costs 13676 tokens across the unchanged transcript versus 13795 previously: the four-read orientation falls 2325 -> 2139 while triage rises 552 -> 619 because it now carries all four effective comparator stages. Approved baseline regeneration records that specific information tradeoff; transcript digest, required facts, orientation winner (1087), refusal comparisons, negative controls and per-step regression checks remain enforced."
+  "2026-10-20T08:19:38.668Z","harness:codex","Delivery: https://github.com/unbraind/pm-cli/pull/1517, source revision fca7ba11d. Current focused regressions: 100 tests pass, including CLI/native author history and provenance, bounded list continuation/projections, compact JSON, independent accounting receipts and negative controls. Four TypeScript configurations pass. Full static and complete coverage remain required before closure and merge; draft status retains that boundary."
+  "2026-10-20T08:28:18.176Z","harness:codex","Hosted first-head smoke caught a stale dogfood list-open four-field expectation. Updated both the real package-first acceptance assertion and its independent mocked driver to require priority. The focused dogfood driver suite passes; the real workflow is being rerun before full coverage. Static semantic/contract/token/SDK gates pass up to transport-floor performance: first qualified control measured get best 393ms > 362ms; unchanged isolated rerun had control median 115ms >106ms (unqualified) and preserves an unverified verdict. No ceiling or qualification rule was relaxed. CodSpeed first-head report also flags an unchanged createQueryFingerprint benchmark (-1.42%) with differing runtime environments; exact revised-head report must be triaged."
+  "2026-10-20T08:42:37.193Z","harness:codex","Hosted static graph-composition caught three newly cited context pairs without typed edges: the author fix operational evidence and the contention predecessor. Added meaningful related links through pm, preserving all item statuses and the unchanged prose-gap ceiling 1233. Full before/current 3021/3023-item strict reads and SDK measurement comparison isolate these exact additions; no graph baseline, exemption or source rule changed. CodeRabbit full review of fca7ba11d completed with no actionable findings and no inline threads. Sourcery quota, Greptile expired trial and Cubic monthly free limit remain unavailable reviews, not approvals."
+  "2026-10-20T08:45:31.632Z","harness:codex","Chrome inspection of the first-head CodSpeed finding confirms a comparison limitation: CPU Simulation reports createQueryFingerprint -1.42% while omitting 14 system calls (202.8 microseconds). Base/head runtime differs: Node 24.21.0/V8 node.53 ->24.22.0/V8 node.57, and AMD EPYC 7763 ->9V45. The benchmark, createQueryFingerprint and stableStringify source are unchanged from the PR base. Treat this as a cross-environment observation requiring a fresh revised-head report, not proof of a source regression or an approval. No instrument, baseline, threshold or provider verdict was changed. Graph-composition now passes at the original 1233 prose-gap ceiling after typed relationships were added."
+  "2026-10-20T09:09:10.450Z","harness:codex","Verification: all four source-identical CI-style coverage shards admitted successfully, then strict Vitest merge and exact covered/total gate pass. 835 test files pass, one configured file skip; 10,829 tests pass and 3 skip. Exact source counts: lines 66,222/66,222; statements 69,828/69,828; functions 14,388/14,388; branches 53,664/53,664. Both linked PM commands pass (author 2 tests, list/accounting/dogfood 170). Four TypeScript configurations pass; real package-first workflow passes; mutation gate has 345 killed plus 7 classified equivalents and zero failures. Graph composition passes the unchanged 1233 prose-gap ceiling; record integrity passes. First-head hosted coverage and all six cold transport budgets pass. Full local static timing failure and launcher lease-wait failures remain recorded separately; no budgets, graph bounds, coverage thresholds or exclusions were weakened. Final exact-head hosted static/smoke/security/analyzer checks and fresh reviews remain required on PR #1517 before merge. CodeRabbit first-head full review has no actionable findings; Sourcery, Greptile and Cubic are unavailable under their recorded free-service limits, not approvals. New source remains Unreleased for the next eligible daily publication."
+  "2026-10-20T09:12:22.351Z","harness:codex","Generated CHANGELOG.md through the configured pm-changelog package workflow after atomic closure. The latest registry version advanced during verification; installed and independently confirmed version 2026.10.20. Generate and check both pass, 2726 eligible closed items, 499257 bytes, with exactly the two new fixes added under Unreleased. No generator code or manual changelog edits were made in this repository. Both selected items are closed and released; the live in-progress inventory is empty."
+  "2026-10-20T09:14:54.965Z","harness:codex","Post-closure diagnostics: defect-evidence gate passes with zero findings across 383 governed terminal defects. Strict history validation checks all 3023 live items and reports zero drift or identity discontinuities. Validation retains 170 legacy terminal expected/actual/resolution warnings; health returns authoritative ok with 14 legacy hierarchy advisories. Both new closures contain complete structured evidence; no historical fields or baselines were rewritten. Fresh pnpm audit and GitHub Dependabot/code-scanning/secret-scanning inventories report zero known/open alerts. All 24 open GitHub issues have corresponding PM links in comments."
 learnings[1]{created_at,author,text}:
   "2026-10-20T07:15:07.906Z","harness:codex","A bounded ranking read must disclose the actual comparator, including status-registry grouping and tie breakers, and include the leading stored ranking key in its default brief rows."
-files[18]{path,scope}:
+files[21]{path,scope}:
+  CHANGELOG.md,project
   docs/agent-task-token-baseline.json,project
+  scripts/dogfood-package-first.mjs,project
   scripts/release/agent-task-token-gate.mjs,project
   scripts/release/context-intent-calibration.json,project
   sdk/public-surface.json,project
@@ -49,10 +61,11 @@ files[18]{path,scope}:
   tests/unit/cli/compact-agent-output.spec.ts,project
   tests/unit/commands/query/list-command.spec.ts,project
   tests/unit/commands/query/list-sort-branches.spec.ts,project
+  tests/unit/scripts/dogfood-package-first.spec.ts,project
   tests/unit/scripts/release/agent-task-token-gate.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/unit/commands/query/list-sort-branches.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/cli/compact-agent-output.spec.ts,project,300,"harness:codex","2026-10-20T07:30:12.633Z",local_mutation,fix/sdk-agent-context-attribution-order
-test_runs[2]:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/unit/commands/query/list-sort-branches.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/cli/compact-agent-output.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts,project,300,"harness:codex","2026-10-20T08:29:27.820Z",local_mutation,fix/sdk-agent-context-attribution-order
+test_runs[3]:
   - run_id: test-local-mvgd9yg3-v4song
     kind: test
     status: passed
@@ -75,10 +88,23 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/unit/commands/query/list-sort-branches.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/cli/compact-agent-output.spec.ts,schema,schema,source,local_source_ref
-docs[3]{path,scope}:
+  - run_id: test-local-mvgfb2ku-vzy53d
+    kind: test
+    status: passed
+    started_at: "2026-10-20T08:29:45.910Z"
+    finished_at: "2026-10-20T08:30:32.142Z"
+    recorded_at: "2026-10-20T08:30:32.142Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/unit/commands/query/list-sort-branches.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/cli/compact-agent-output.spec.ts tests/unit/scripts/release/agent-task-token-gate.spec.ts tests/unit/scripts/dogfood-package-first.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
   docs/COMMANDS.md,project
   scripts/release/context-intent-calibration.json,project
   tests/fixtures/contracts/full.json,project
+close_reason: "Made default brief ordering agent-legible while preserving projection, cursor, accounting and package contracts."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

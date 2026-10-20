@@ -2,31 +2,39 @@ id: pm-65srr0
 title: "GH-1514: injected extension SDK client loses invocation author precedence"
 description: "Report on published 2026.10.19: ctx.sdk.client writes use a synthetic pm-extension actor instead of PM_AUTHOR or author_default. Explicit author works. Preserve the canonical invocation author chain across injected package clients and keep extension provenance separate. Intake is reported evidence; reproduction and implementation are pending. https://github.com/unbraind/pm-cli/issues/1514"
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-19T18:04:41.544Z"
-updated_at: "2026-10-20T08:14:29.961Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1e3aaed2ebb33413fa918dd9"
+updated_at: "2026-10-20T09:09:06.356Z"
+closed_at: "2026-10-20T09:09:05.594Z"
+completed_at: "2026-10-20T09:09:05.594Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Reproduce injected-client attribution against core writes; verify environment/default/explicit precedence and scoped restoration; preserve extension provenance and history integrity.
 parent: pm-mpbb
 risk: medium
 confidence: medium
-expected_result: "Injected SDK writes preserve explicit author, PM_AUTHOR, workspace default and supported harness precedence consistently with core writes."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Removed synthetic pm-extension attribution from host-bound SDK construction, threaded native options.author into the invocation scope, kept host author out of package flag validation, and resolved workspace mutation author provenance through the shared resolver."
+expected_result: "Extension SDK item writes follow per-call override, invocation, PM_AUTHOR and workspace default precedence; audited settings retain the outer invocation identity without leaking per-call overrides."
+actual_result: "Real CLI/native extension histories and audited settings pass all precedence, provenance and scope-restoration scenarios. Verification: all four source-identical CI-style coverage shards admitted successfully, then strict Vitest merge and exact covered/total gate pass. 835 test files pass, one configured file skip; 10,829 tests pass and 3 skip. Exact source counts: lines 66,222/66,222; statements 69,828/69,828; functions 14,388/14,388; branches 53,664/53,664. Both linked PM commands pass (author 2 tests, list/accounting/dogfood 170). Four TypeScript configurations pass; real package-first workflow passes; mutation gate has 345 killed plus 7 classified equivalents and zero failures. Graph composition passes the unchanged 1233 prose-gap ceiling; record integrity passes. First-head hosted coverage and all six cold transport budgets pass. Full local static timing failure and launcher lease-wait failures remain recorded separately; no budgets, graph bounds, coverage thresholds or exclusions were weakened. Final exact-head hosted static/smoke/security/analyzer checks and fresh reviews remain required on PR #1517 before merge. CodeRabbit first-head full review has no actionable findings; Sourcery, Greptile and Cubic are unavailable under their recorded free-service limits, not approvals. New source remains Unreleased for the next eligible daily publication."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-cpja,discovered_from,"2026-10-19T18:04:41.544Z","harness:codex","cli:create:dep",detected
   pm-zd46m7,related,"2026-10-20T07:49:27.207Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+  pm-prrlce,related,"2026-10-20T08:42:33.240Z","harness:codex","cli:update:dep",detected
+  pm-z3ez,related,"2026-10-20T08:42:33.240Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
   "2026-10-19T18:04:41.544Z","harness:codex","Duplicate check: request-specific extension author search plus complete 206 open / 3 in-progress lists show no matching active owner. Closed pm-cpja and its full history describe shipped core author support; this report is a new injected-client path under the existing pm-mpbb capability. Original GH report retained; no regression claim is made before reproduction."
   "2026-10-20T06:57:01.782Z","harness:codex","Implementation intake: strict complete CLI read certified all 3021 items (204 open, 59 draft, 2744 closed, 14 canceled), zero unreadable records and no omitted metadata. No prior active claims or open GitHub PRs. All 23 open GitHub issues have canonical PM comments; Dependabot/code-scanning/secret-scanning open inventories are empty. Grouping this injected-client defect with pm-zd46m7 as SDK-owned agent execution/context fidelity, preserving completed predecessor pm-cpja. Both CLI main and SDK runAction synthesize pm-extension before core author resolution; regression will cover real history and invocation isolation."
   "2026-10-20T07:10:13.904Z","harness:codex","Regression evidence: unchanged real CLI/native host test failed before the fix with pm-extension/asserted instead of workspace-actor/configured. The same test now passes environment/default/explicit/per-call cases, audited settings authors and scope restoration. It also exposed host author leaking into declared package flag validation; host controls now stay out of package options. Focused cohort82/82 passes. Full coverage/static and hosted acceptance remain pending; current production Sentry has zero recent/unresolved issues and required telemetry passes at2.36 percent with complete error codes."
   "2026-10-20T07:39:45.881Z","harness:codex","Final focused acceptance now passes197/197 across10 files, including native options.author overriding a client default, matching ctx.global.author, per-call item overrides and audited settings attribution. New tests live under focused extensions/read-output directories; no density cap or existing test deadline changed. Packed Node and Bun continuation journeys pass after the documented local npm discovery environment is provided."
+  "2026-10-20T08:19:37.718Z","harness:codex","Delivery: https://github.com/unbraind/pm-cli/pull/1517, source revision fca7ba11d. Current focused regressions: 100 tests pass, including CLI/native author history and provenance, bounded list continuation/projections, compact JSON, independent accounting receipts and negative controls. Four TypeScript configurations pass. Full static and complete coverage remain required before closure and merge; draft status retains that boundary."
+  "2026-10-20T08:28:16.194Z","harness:codex","Current operational verification 2026-10-20: required Sentry/telemetry gate passes (14-day critical/high/unresolved contract issues 0; 7-day finish error rate 2.36%, missing error-code rows 0). Four real context/list/get/deps probes have fresh pm.command spans and one start/finish pair per process session in production ingestion. Local logical/physical queues are empty after flush; broker event queue ready/unacknowledged depth is zero. Chrome project/main filters show DeepScan issue-free, Semgrep no matching open findings; CodeFactor A retains two already-tracked generated-wrapper duplicates under pm-z3ez. GitHub Dependabot/code-scanning/secret-scanning open-alert inventories remain empty. Historical Release Reliability remains an independent failure under pm-prrlce; current publication and probe success do not erase it."
+  "2026-10-20T09:09:04.676Z","harness:codex","Verification: all four source-identical CI-style coverage shards admitted successfully, then strict Vitest merge and exact covered/total gate pass. 835 test files pass, one configured file skip; 10,829 tests pass and 3 skip. Exact source counts: lines 66,222/66,222; statements 69,828/69,828; functions 14,388/14,388; branches 53,664/53,664. Both linked PM commands pass (author 2 tests, list/accounting/dogfood 170). Four TypeScript configurations pass; real package-first workflow passes; mutation gate has 345 killed plus 7 classified equivalents and zero failures. Graph composition passes the unchanged 1233 prose-gap ceiling; record integrity passes. First-head hosted coverage and all six cold transport budgets pass. Full local static timing failure and launcher lease-wait failures remain recorded separately; no budgets, graph bounds, coverage thresholds or exclusions were weakened. Final exact-head hosted static/smoke/security/analyzer checks and fresh reviews remain required on PR #1517 before merge. CodeRabbit first-head full review has no actionable findings; Sourcery, Greptile and Cubic are unavailable under their recorded free-service limits, not approvals. New source remains Unreleased for the next eligible daily publication."
 learnings[1]{created_at,author,text}:
   "2026-10-20T07:15:05.802Z","harness:codex",Injected clients must preserve absence of an author override until the normal resolver sees environment/workspace/harness inputs; supplying a synthetic default silently converts configured/detected identity into asserted history.
-files[6]{path,scope}:
+files[7]{path,scope}:
+  CHANGELOG.md,project
   docs/AGENT_RUNTIME_PRIMITIVES.md,project
   src/cli/main.ts,project
   src/sdk/extension-command-context.ts,project
@@ -35,7 +43,7 @@ files[6]{path,scope}:
   tests/integration/extensions/author-attribution.integration.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/extensions/author-attribution.integration.spec.ts,project,300,"harness:codex","2026-10-20T07:30:11.137Z",local_mutation,fix/sdk-agent-context-attribution-order
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvgd9f44-w2sih5
     kind: test
     status: passed
@@ -47,8 +55,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/extensions/author-attribution.integration.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+  - run_id: test-local-mvgfa2cr-m5gpi9
+    kind: test
+    status: passed
+    started_at: "2026-10-20T08:29:28.663Z"
+    finished_at: "2026-10-20T08:29:45.195Z"
+    recorded_at: "2026-10-20T08:29:45.195Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/author-attribution.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/AGENT_RUNTIME_PRIMITIVES.md,project
+close_reason: Preserved caller author precedence and audited provenance for injected CLI/native extension SDK mutations.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
