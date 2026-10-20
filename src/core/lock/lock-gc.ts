@@ -216,13 +216,21 @@ async function removeObservedLock(
   const release = await acquireStaleCleanupGate(lockPath, "gc");
   if (release === null) return false;
   try {
-    if ((await fs.readFile(lockPath, "utf8")) !== raw) return false;
+    let current: string;
+    try {
+      current = await fs.readFile(lockPath, "utf8");
+    } catch (error: unknown) {
+      if (isFileMissingError(error)) return true;
+      throw error;
+    }
+    if (current !== raw) return false;
     if (ownerDead) await recordDeadLockRecovery(lockPath, raw);
-    await fs.unlink(lockPath);
+    try {
+      await fs.unlink(lockPath);
+    } catch (error: unknown) {
+      if (!isFileMissingError(error)) throw error;
+    }
     return true;
-  } catch (error: unknown) {
-    if (isFileMissingError(error)) return true;
-    throw error;
   } finally {
     await release();
   }

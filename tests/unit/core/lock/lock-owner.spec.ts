@@ -178,9 +178,9 @@ it.skipIf(process.platform !== "linux")(
   },
 );
 
-it.skipIf(process.platform !== "linux")(
-  "GC preserves its dead-owner audit obligation when later host probes become unavailable",
-  async () => {
+it.skipIf(process.platform !== "linux").each(["gc", "acquire"])(
+  "%s preserves its dead-owner audit obligation when later host probes become unavailable",
+  async (operation) => {
     await withTempDir("pm-dead-lock-gc-audit-", async (root) => {
       const release = await acquireLock(root, "shared", 3600, "original");
       const lockPath = path.join(root, "locks/shared.lock");
@@ -193,12 +193,18 @@ it.skipIf(process.platform !== "linux")(
         JSON.stringify({ ...receipt, process_start_identity: "0" }),
       );
       const readlink = fs.readlink.bind(fs);
-      vi.spyOn(fs, "readlink")
+      const probe = vi.spyOn(fs, "readlink")
         .mockRejectedValue(new Error("Host identity temporarily unavailable"))
         .mockImplementationOnce((...args) => readlink(...args));
-      expect((await runLockGc(root, { dryRun: false })).removed).toEqual([
-        "locks/shared.lock",
-      ]);
+      let recoveredRelease: (() => Promise<void>) | undefined;
+      if (operation === "gc") {
+        expect((await runLockGc(root, { dryRun: false })).removed).toEqual([
+          "locks/shared.lock",
+        ]);
+      } else {
+        probe.mockImplementationOnce((...args) => readlink(...args));
+        recoveredRelease = await acquireLock(root, "shared", 3600, "next", true);
+      }
       const auditDir = path.join(root, "locks/recoveries");
       const audits = await fs.readdir(auditDir).catch(() => []);
       expect(audits).toHaveLength(1);
@@ -208,6 +214,7 @@ it.skipIf(process.platform !== "linux")(
         event: "owner_dead_recovery_attempt",
         lock: { owner: "original" },
       });
+      await recoveredRelease?.();
       await release();
     });
   },
@@ -256,6 +263,32 @@ it("GC retains a receipt replaced after its observation and a lock whose publica
     expect(await fs.readFile(lockPath, "utf8")).toBe(stale);
   });
 });
+
+it.each(["ENOENT", "EACCES", "ENOTDIR"])(
+  "GC distinguishes a vanished receipt from an inaccessible receipt under its gate: %s",
+  async (code) => {
+    await withTempDir("pm-lock-gc-read-race-", async (root) => {
+      const locks = path.join(root, "locks");
+      await fs.mkdir(locks);
+      const lockPath = path.join(locks, "shared.lock");
+      await fs.writeFile(lockPath, JSON.stringify({
+        id: "shared", owner: "old", created_at: "2000-01-01", ttl_seconds: 3600,
+      }));
+      const read = fs.readFile.bind(fs);
+      let observations = 0;
+      vi.spyOn(fs, "readFile").mockImplementation(async (...args) => {
+        if (args[0] === lockPath && ++observations === 2) {
+          if (code === "ENOENT") await fs.unlink(lockPath);
+          throw Object.assign(new Error("Receipt unavailable"), { code });
+        }
+        return read(...args);
+      });
+      const result = await runLockGc(root, { dryRun: false });
+      expect(result.removed).toEqual(code === "ENOENT" ? ["locks/shared.lock"] : []);
+      expect(result.retained).toEqual(code === "ENOENT" ? [] : ["locks/shared.lock"]);
+    });
+  },
+);
 
 it.skipIf(process.platform !== "linux")(
   "keeps malformed timestamps behind explicit stale-lock policy even with matching process coordinates",
@@ -314,9 +347,9 @@ it.skipIf(process.platform !== "linux")(
   },
 );
 
-it.skipIf(process.platform !== "linux")(
-  "retains the observed dead-owner lock when its recovery audit cannot be written",
-  async () => {
+it.skipIf(process.platform !== "linux").each(["EACCES", "ENOENT"])(
+  "retains the observed dead-owner lock when its recovery audit fails with %s",
+  async (code) => {
     await withTempDir("pm-lock-audit-failure-", async (root) => {
       const release = await acquireLock(root, "shared", 3600, "original");
       const lockPath = path.join(root, "locks/shared.lock");
@@ -330,7 +363,7 @@ it.skipIf(process.platform !== "linux")(
       vi.spyOn(fs, "writeFile").mockImplementation((...args) =>
         String(args[0]).includes(`${path.sep}recoveries${path.sep}`)
           ? Promise.reject(
-              Object.assign(new Error("Audit denied"), { code: "EACCES" }),
+              Object.assign(new Error("Audit denied"), { code }),
             )
           : write(...args),
       );

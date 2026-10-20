@@ -689,14 +689,14 @@ async function removeConfirmedStaleLock(params: {
         staleRemovalCounted: false,
       };
     }
-    if (!(await isReclaimableLock(currentLockInfo.info, params.ttlSeconds))) {
+    const ownerDead = await isConfirmedDeadLock(currentLockInfo.info);
+    if (!isStaleLock(currentLockInfo.info, params.ttlSeconds) && !ownerDead) {
       return {
         lockInfo: currentLockInfo,
         shouldRetryCreate: false,
         staleRemovalCounted: false,
       };
     }
-    const ownerDead = await isConfirmedDeadLock(currentLockInfo.info);
     throwIfStaleLockNeedsForce(
       params.id,
       currentLockInfo,
