@@ -2918,6 +2918,7 @@ export function analyzeSdkActionCoverage(
 }
 
 /** Normalize transport options, dispatch the SDK or extension action, and finalize read projections. Detached attestations return complete proof data without lossy projection. */
+/** Admit native mutations lazily, then dispatch through the core or extension handler. */
 async function dispatchAction(
   action: string,
   args: Record<string, unknown>,

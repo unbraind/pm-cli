@@ -164,6 +164,19 @@ snapshot. Breaking SDK changes require a date-based release and matching
 package compatibility bounds or migration guidance. Never refresh the snapshot
 merely to silence an unexplained diff.
 
+The mutation-admission update adds optional `changed?: false` to
+`PmCliErrorContext`. The conservative signature gate records this interface
+addition with a breaking acknowledgement; existing context objects and error
+codes remain valid. Consumers need no data migration or new dependency bounds.
+When adopting this update, read `error.context?.changed === false` as proof of a
+preflight refusal. An absent property gives no guarantee about writes; do not
+coerce it to `false` or treat an executed failure as safe to retry. Consumers
+that enumerate error keys should accept the additional optional property.
+JavaScript create/update callers must also remove misspelled keys and move
+mutation fields into `options` on generic `run` calls: these requests now fail
+instead of silently dropping fields. See [Robust Automation Pattern](#robust-automation-pattern)
+for supported aliases and runtime schema discovery.
+
 The snapshot also records an aggregate-completeness census. Every public symbol
 from every non-testing SDK subpath must be available from
 `@unbrained/pm-cli/sdk`; deliberate test-only exclusions require a named reason.

@@ -794,6 +794,7 @@ function buildRefusalEnvelope(
   };
 }
 
+/** Project guidance into JSON, preserving no-write evidence only when explicitly verified. */
 function guidanceToJsonEnvelope(
   message: GuidanceMessage,
   exitCode: number,
@@ -829,6 +830,7 @@ function projectJsonErrorGuidance(
   });
 }
 
+/** Classify guidance with the same optional refusal evidence as the JSON envelope. */
 function guidanceToClassification(
   message: GuidanceMessage,
 ): ErrorClassification {
@@ -959,6 +961,7 @@ function resolveErrorContextFlag(context: PmCliErrorContext, recovery: PmCliErro
 }
 
 /** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
+/** Merge typed SDK context into guidance without inferring mutation outcomes. */
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
   rawMessage: string,

@@ -3086,6 +3086,7 @@ function applyLinkedTestMutations(
   );
 }
 
+/** Identify directives that need an actual execution rather than registration alone. */
 function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
   return [
     options.timeout !== undefined,
@@ -3107,6 +3108,7 @@ function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
   ].some(Boolean);
 }
 
+/** Reject run-only directives and keep trust acknowledgement separate from execution. */
 function assertTestRunFlagUsage(options: TestCommandOptions): void {
   if (hasTestRuntimeDirectiveFlags(options) && options.run !== true) {
     throw new PmCliError(
@@ -3132,6 +3134,7 @@ function assertTestRunFlagUsage(options: TestCommandOptions): void {
   }
 }
 
+/** Resolve links, admitting the effective selection under the writer lock before saving. */
 async function resolveLinkedTestItem(params: {
   id: string;
   options: TestCommandOptions;
@@ -3211,6 +3214,7 @@ async function resolveLinkedTestItem(params: {
   };
 }
 
+/** Parse all directives before checking usage and selecting the effective test list. */
 function resolveTestRunOptions(
   options: TestCommandOptions,
   tests: LinkedTest[],

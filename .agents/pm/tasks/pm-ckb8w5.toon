@@ -2,13 +2,13 @@ id: pm-ckb8w5
 title: Schedule corpus and policy fixture keepers after parallel contract workers
 description: "Two full-source coverage runs at unchanged assertion deadlines expose worker-contention failures in the surface replication fixture checks; the runs also expose the ten-thousand-item aggregate and cold governance-read keepers. All seven targeted recovery files pass together (155 tests) with four workers. Reuse the established serial lifecycle-performance cohort for these three expensive files, preserving their original source/input populations and budgets."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[3]: quality-gate,runner-allocation,test-reliability
 created_at: "2026-10-20T12:27:13.226Z"
-updated_at: "2026-10-20T12:49:38.073Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#195da4edbf99e3a7d3dcd1aa"
+updated_at: "2026-10-20T13:19:40.805Z"
+closed_at: "2026-10-20T13:19:39.861Z"
+completed_at: "2026-10-20T13:19:39.861Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: "All three files are excluded from parallel contracts and included exactly once after that project with one worker. Existing 10-second governance, 30-second aggregate and 120-second policy test limits, retry policy, fixture cardinality and canonical full-source 100 percent coverage remain unchanged. A real config negative control fails before allocation is changed; focused, full coverage and CI evidence are retained."
@@ -19,10 +19,12 @@ why_now: Both canonical coverage runs during the current admission-safety delive
 parent: pm-bj7rq0
 risk: low
 confidence: high
-expected_result: Expensive keeper files run once after parallel contracts and remain strict failures for actual regressions.
+resolution: "Move the existing surface replication, aggregate membership and governance read files into the single-worker lifecycle-performance cohort after contracts. Add a failing-before membership keeper and recurrence policy without changing assertions, inputs, timeouts, retries or coverage denominator."
+expected_result: Each expensive keeper runs exactly once after parallel contracts and still detects real behavior regressions at its original limits.
+actual_result: Allocation negative control fails before config change. Revised six-file suite passes80 tests; linked four-file suite passes23 tests within original deadlines. Hosted head211b1c8 passes complete coverage with100% statements/branches/functions/lines and no fixture timeout. Earlier failed full local receipts and the separate qualified startup-budget issue remain documented. Graph/integrity and docstring checks pass after typed relationship corrections; final combined-head CI is required before merge.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-a3c6g4,recurs_from,"2026-10-20T12:27:13.226Z","harness:codex","cli:create:dep",detected
-comments[3]:
+comments[4]:
   - created_at: "2026-10-20T12:27:13.226Z"
     author: "harness:codex"
     text: "Duplicate check: live request-specific search, open and in-progress inventories, complete all-status corpus and full live parent/predecessor metadata/comments/history. pm-bj7rq0 owns broader qualification and remains open; completed pm-a3c6g4 establishes the same serial-allocation recurrence. No matching active leaf covers these three fixtures."
@@ -33,14 +35,30 @@ comments[3]:
     author: "harness:codex"
     text: "Corrected numeric receipt from allocation-after.log: the post-change keeper command passes6 files and80 tests. Surface replication completes in15.480seconds, governance in4.504seconds and the ten-thousand-item aggregate file in7.423seconds, with original limits. This supersedes the prior mistaken count/timing text; the immutable edit history preserves that correction. Earlier full-run failures remain failures. Complete canonical coverage on the revised allocation is pending and will be required on the reviewed hosted head before closure."
     edited_at: "2026-10-20T12:33:20.191Z"
+  - created_at: "2026-10-20T13:17:13.010Z"
+    author: "harness:codex"
+    text: "Review scope clarification: GitHub issue https://github.com/unbraind/pm-cli/issues/1522 mirrors this existing canonical task, with one PM-link comment. PR1521 intentionally includes the allocation keeper needed for its complete coverage verification; it creates no duplicate PM item. All linked checks passed:23 tests across4 files with original deadlines. First hosted head passes complete coverage and all required contexts except graph composition; two missing typed relationships are fixed through CLI, restoring the1233 prose-edge ceiling without policy changes."
 files[3]{path,scope}:
   config/defect-recurrence-policy.json,project
   tests/integration/vitest-retry-policy.integration.spec.ts,project
   vitest.config.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/query/aggregate-set-members.spec.ts tests/unit/sdk/governance-read-performance.spec.ts,project,300,"harness:codex","2026-10-20T12:27:42.428Z",local_mutation,fix/sdk-mutation-admission
+test_runs[1]:
+  - run_id: test-local-mvgpdksi-5xopge
+    kind: test
+    status: passed
+    started_at: "2026-10-20T13:11:14.944Z"
+    finished_at: "2026-10-20T13:12:25.216Z"
+    recorded_at: "2026-10-20T13:12:25.216Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/query/aggregate-set-members.spec.ts tests/unit/sdk/governance-read-performance.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/TESTING.md,project
+close_reason: Allocate expensive keepers after parallel contract workers
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

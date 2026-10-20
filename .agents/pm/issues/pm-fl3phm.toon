@@ -2,13 +2,13 @@ id: pm-fl3phm
 title: "GH-1520: reject unknown SDK mutation option keys before any write"
 description: "GitHub https://github.com/unbraind/pm-cli/issues/1520 reports that JavaScript callers and injected extension clients silently lose misspelled create/update fields. Existing pm-x29o compile-time contracts remain completed; this scope adds runtime admission before normalization can discard input."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:sdk",mutation-safety
 created_at: "2026-10-20T11:28:58.471Z"
-updated_at: "2026-10-20T12:55:03.532Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#195da4edbf99e3a7d3dcd1aa"
+updated_at: "2026-10-20T13:19:38.929Z"
+closed_at: "2026-10-20T13:19:37.864Z"
+completed_at: "2026-10-20T13:19:37.864Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Native PmClient create/update and run paths reject unknown option keys and misplaced mutation fields with typed usage diagnostics and nearest valid names before item or history writes. Preserve supported top-level aliases, runtime schema fields, injected extension clients, MCP transport contracts and valid typed calls. Prove refusal byte stability and real accepted mutations through public SDK integration tests."
@@ -19,10 +19,13 @@ why_now: GH-1520 demonstrates successful SDK calls that silently drop requested 
 parent: pm-33cw
 risk: medium
 confidence: medium
-expected_result: Mutation typos cannot silently drop data or partially apply a valid subset; callers get actionable no-change refusals.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Validate raw and normalized native create/update keys against complete flag contracts, declared aliases and active schema identities. Preserve valid clear flags, structured input, injected clients and MCP semantics. Add actionable typed no-change errors and explicit SDK migration guidance; load admission only for mutations."
+expected_result: "Unknown or misplaced mutation keys refuse the entire request before item/history writes, while valid core, schema and extension-client mutations retain their contracts."
+actual_result: "Failing-before typo and raw-key controls pass after repair, including mixed valid/invalid writes and malformed bags. Linked SDK integration passes; broader focused suites pass188 and155 tests. Hosted head211b1c8 proves full-source100/100/100/100 coverage, TypeScript, compatibility, Windows, packed consumers, security and external analyzers. CodeRabbit migration finding is addressed and build/surface/docstring checks pass. Final combined-head review/checks are mandatory before merge; today existing published version predates repair."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-x29o,related,"2026-10-20T11:28:58.471Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+  pm-gh1440,related,"2026-10-20T13:06:19.685Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-10-20T11:28:58.471Z","harness:codex","Duplicate check: canonical cold start, request-specific search, open and in-progress lists, complete strict 3025-item all-status corpus with no omissions, full pm-x29o and pm-gh1440 lineage reads. No open runtime option-key admission owner found. Reuse completed compile-time owner as related context; implement with pm-hdvxqg as one admission-safety PR."
   "2026-10-20T11:29:19.627Z","harness:codex","Implementation scope: validate raw create/update option keys before normalization drops unknown values, including active extension client dispatch and misplaced run arguments. Shared PR with pm-hdvxqg; preserve runtime schema customization and known transport aliases."
   "2026-10-20T11:36:19.218Z","harness:codex","Regression proof: native SDK typo mutation resolved successfully before the change. Runtime client admission now rejects unknown and misplaced create/update keys, preserves schema option identities and existing top-level aliases, and supplies actionable typed no-change context. The same test exercises the active-extension-host client route. Source and installed-candidate verification remain pending."
@@ -30,6 +33,7 @@ comments[7]{created_at,author,text}:
   "2026-10-20T12:05:34.038Z","harness:codex","The first full-suite pass exposed three validator compatibility gaps: clear flags, structured JSON transport, and the legacy fullChangedFields option. Admission now combines complete per-command flag contracts with registration aliases and explicit projection controls, retaining live schema identities. All seven recovery targets pass together:155 tests, including the strict clear-collection flow, real CLI/SDK custom-field transport, full client API flow, packed Node/Bun continuation, and both unchanged timing controls. The local npm module lookup is resolved with the existing NODE_PATH mechanism; no source threshold or assertion was weakened. A fresh canonical full coverage run is underway with eight workers."
   "2026-10-20T12:49:55.130Z","harness:codex","Additional raw-key negative control: a JSON object containing an own __proto__ option is normalized away and the current guard returns a successful no-op. The owned sandbox probe and the new integration case both reproduce this before the final fix. Admission now checks raw and normalized key sets, so normalization cannot hide an unrecognized input name. The validation module is imported only inside native create/update dispatch, preserving read-path loading discipline. Prior qualified get-budget failure is recorded under the existing runner owner; revised acceptance remains pending."
   "2026-10-20T12:55:03.532Z","harness:codex","Final raw-key focus passes4 files and188 tests, including complete client API flows, declared-schema CLI/SDK roundtrips and both no-change error projections. TypeScript and focused ESLint pass. The fresh isolated npm and Bun candidate probes each refuse4 requests without item/history changes, then execute1 valid linked command; npx and bunx dispatch both succeed. These are installed candidate receipts, distinct from immutable public2026.10.20 release acceptance."
+  "2026-10-20T13:17:13.926Z","harness:codex","CodeRabbit review on PR1521 requests migration guidance for the optional error-context signature change. SDK docs now explain that existing context objects/error codes remain compatible, absent changed evidence is unknown, explicit false proves only preflight refusal, enumerated-key consumers must accept the new optional key, and JavaScript callers must correct silently discarded keys. No dependency-bound or data migration is needed. Added purpose comments to touched admission/projection helpers. Linked SDK regression passes3 tests; first hosted complete coverage is green."
 learnings[1]{created_at,author,text}:
   "2026-10-20T11:46:46.468Z","harness:codex","Compile-time option types do not protect JavaScript or dynamically constructed package payloads. Validate native raw keys against the executable contract and active schema before dispatch, retaining explicit transport aliases and distinct MCP admission."
 files[8]{path,scope}:
@@ -43,8 +47,21 @@ files[8]{path,scope}:
   tests/integration/sdk/mutation-admission.integration.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/sdk/mutation-admission.integration.spec.ts,project,240,"harness:codex","2026-10-20T11:34:28.113Z",local_mutation,fix/sdk-mutation-admission
+test_runs[1]:
+  - run_id: test-local-mvgpc158-3j0j4q
+    kind: test
+    status: passed
+    started_at: "2026-10-20T13:10:44.648Z"
+    finished_at: "2026-10-20T13:11:13.100Z"
+    recorded_at: "2026-10-20T13:11:13.100Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mutation-admission.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
+close_reason: Reject native SDK mutation typos before dispatch
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
