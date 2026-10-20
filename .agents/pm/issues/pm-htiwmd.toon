@@ -2,23 +2,25 @@ id: pm-htiwmd
 title: Replace unsafe live-lock force advice with invocation-preserving contention recovery
 description: "Bounded delivery of the recovery-guidance defect reported in GH-1516: live or unknown locks must recommend waiting and the actual command, never placeholder item updates or force takeover. Keep the thousand-writer throughput and hierarchy-lock redesign in canonical parent pm-lvyd."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: agent-ux,concurrency,recovery
 created_at: "2026-10-20T15:15:31.532Z"
-updated_at: "2026-10-20T16:26:33.092Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#244d33e51b5f1223152c8358"
+updated_at: "2026-10-20T16:56:55.490Z"
+closed_at: "2026-10-20T16:56:52.605Z"
+completed_at: "2026-10-20T16:56:52.605Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Human and JSON recovery preserve actual command arguments and item identity; no live-lock force advice or placeholder mutation; SDK conflict context exposes owner liveness and wait policy; shell-sensitive operands stay quoted; tests prove original payload and lock survive refusals
 parent: pm-lvyd
 risk: medium
 confidence: high
-expected_result: A contending agent can retry its exact operation with a larger bounded lock wait without changing its intent or overriding another owner.
+resolution: "Replace placeholder force advice with actual normalized retry commands, observed owner-process state and bounded wait guidance. Preserve padded/empty arguments, reject malformed vectors whole, retain portable quoting and document actual TTL semantics."
+expected_result: "Contending callers retain their exact operation and argument values, receive truthful wait/liveness guidance and avoid invented force mutations on unexpired live or unknown locks."
+actual_result: "Native diagnostic and real CLI controls pass, including malformed vectors and padded/empty operands.197 focused review tests and final linked commands pass; exact-head CI is green with all four source coverage metrics100percent. Requested review fixes are resolved; provider quota limitations are explicit and final closure revision awaits review before merge."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-02z97f,related,"2026-10-20T16:26:04.694Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-20T15:15:31.532Z","harness:codex","Duplicate check: fresh context/search/open/in-progress and complete strict all-status corpus (3027 items without omissions), plus full pm-lvyd/pm-02z97f and completed retry/takeover/publication/GC lineage reads. No active leaf owns the precise live-lock guidance defect. This child implements only recovery guidance; large-scale throughput remains with pm-lvyd."
   "2026-10-20T15:26:15.655Z","harness:codex","Implemented invocation-preserving recovery on the shared CLI error surface, using already-redacted normalized argv from the runtime. SDK conflicts include actual lock id, observed owner-liveness reason, bounded-wait recovery policy and retry hint. Live or unknown locks receive wait/configuration advice rather than invented force mutations. Shell-sensitive comment operands survive tokenized recovery. Focused aggregate: 238 passing tests; full gates pending."
   "2026-10-20T15:53:29.971Z","harness:codex","Follow-up acceptance:57 tests across the moved lock journey, owner-proof boundaries and all three previous failing suites now pass. Real packed SDK continuation acceptance succeeds under both Node and Bun after qualifying the local npm resolution environment. The repository file cap remains120 and the suppression ceiling is lowered to103. Full static and terminal coverage checks are pending; no full-coverage success is claimed from the earlier run."
@@ -26,6 +28,9 @@ comments[7]{created_at,author,text}:
   "2026-10-20T16:07:46.879Z","harness:codex","Argument-preservation acceptance passes: validated normalized and suggested retry vectors preserve padded and empty operands exactly. Invalid vectors are omitted whole rather than dropping tokens. Live conflicts report observed owner-process state and actual lock identity, and safe retries retain canonical command, operands and shell quoting without adding force. Final focused aggregate240 tests passes, including direct public diagnostic and real CLI transport controls."
   "2026-10-20T16:12:20.638Z","harness:codex","Combined implementation PR: https://github.com/unbraind/pm-cli/pull/1523 at13d89b48f. Same-head checks and all installed external reviewers requested once; remaining source findings will be handled within this PR. Final package-generated changelog and closure evidence remain part of reviewed delivery."
   "2026-10-20T16:26:33.092Z","harness:codex","Review remediation: use the plain rendered retry example for Windows and POSIX portability, keep bounded-wait policy in required guidance, and update the older malformed-vector test to reject the whole vector while retaining a valid padded/empty-token control. CodeRabbit's TTL documentation finding is accepted: an unexpired live or unknown owner stays protected, while expiration retains the existing removal policy. Related sibling recovery and release/dependency census references now have real typed relationships rather than raising graph limits."
+  "2026-10-20T16:56:33.818Z","harness:codex","Final implementation evidence:197 focused review tests and both linked commands pass, plus all required checks on d89ad584c. Hosted complete coverage is exact100/100/100/100 with10846 passing and3 skipped cases. All four accepted inline findings are fixed and resolved; final full review awaits the next included free slot. CLI-only tracker mutations refreshed release actual results and the single October21 06:00UTC reminder. Generated changelog and terminal closure will be reviewed in this same PR."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T16:56:31.362Z","harness:codex","Executable recovery arguments are opaque values: retain whitespace and empty strings, and omit malformed vectors rather than deleting tokens. Keep wait policy separate from rendered commands so retry examples remain portable."
 files[5]{path,scope}:
   src/cli/error-guidance.ts,project
   src/core/lock/lock.ts,project
@@ -34,7 +39,7 @@ files[5]{path,scope}:
   tests/unit/cli/error-guidance.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,300,"harness:codex","2026-10-20T15:52:43.615Z",local_mutation,fix/lock-owner-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvgvwgx1-c8hm0u
     kind: test
     status: passed
@@ -46,9 +51,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvgxbr7r-gccryd
+    kind: test
+    status: passed
+    started_at: "2026-10-20T16:54:25.216Z"
+    finished_at: "2026-10-20T16:54:57.159Z"
+    recorded_at: "2026-10-20T16:54:57.159Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/SDK.md,project
+close_reason: Implement and verify faithful portable contention recovery for reviewed delivery
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

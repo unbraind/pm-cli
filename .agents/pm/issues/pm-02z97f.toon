@@ -2,26 +2,28 @@ id: pm-02z97f
 title: "GH-1518: recover provably dead same-host item-lock owners before TTL expiry"
 description: "https://github.com/unbraind/pm-cli/issues/1518 reports on published 2026.10.20/Linux/plain non-Git trackers that a killed public-SDK lock holder leaves an item unavailable for the full 3600-second TTL. Later update/comments calls and force recovery refuse after the normal wait, while health counts the receipt as active. This is reporter evidence; current-head reproduction and implementation remain pending. The new boundary is provable same-host process death before TTL expiry, rather than expired-lock GC, live-lock throughput or safe ownership publication."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:locking",concurrency
 created_at: "2026-10-20T10:34:24.727Z"
-updated_at: "2026-10-20T16:30:10.893Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#244d33e51b5f1223152c8358"
+updated_at: "2026-10-20T16:56:50.644Z"
+closed_at: "2026-10-20T16:56:47.040Z"
+completed_at: "2026-10-20T16:56:47.040Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Add owned-sandbox SDK and CLI crash recovery tests. Record enough host/process-start identity to distinguish a dead original owner from PID reuse, foreign hosts, EPERM/unknown liveness and legacy receipts. Reclaim only with positive proof through the existing token-validated stale-cleanup gate, preserving initialization and single-winner takeover invariants. Keep unknown/live owners and malformed/partial receipts conservative. Health, GC and conflict recovery should consistently expose liveness/staleness and an actionable actual command; record recovery provenance without losing acknowledged writes."
 parent: pm-dj98
 risk: high
 confidence: medium
-expected_result: "A provably dead same-host owner cannot block writes for an hour, while live, reused, foreign-host or unknown process identities remain protected."
+resolution: "Capture Linux boot/PID-namespace and process-start identity, reclaim only positively dead original owners before TTL, fence GC receipt comparison, retain local recovery audit intents and expose bounded health diagnosis. Preserve unverifiable-owner and expiration policy."
+expected_result: Dead original owners recover before TTL while unexpired live or unknown owners stay protected; acknowledged writes and history remain intact; GC and health share conservative classification.
+actual_result: "Real killed-holder SDK-to-CLI recovery, single-winner takeover, malformed/unknown-owner, audit-failure, live-owner and bounded-sample controls pass. Both linked commands pass. CI39458022500 is green with10846 passing tests,3 skipped and exact100/100/100/100 coverage; no public SDK signature drift. Four actionable review threads resolved; final closure revision still requires its review before merge."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-d70h,related,"2026-10-20T10:34:24.727Z","harness:codex","cli:create:dep",detected
   pm-lvyd,related,"2026-10-20T10:34:24.727Z","harness:codex","cli:create:dep",detected
   pm-v2pg4f,related,"2026-10-20T10:34:24.727Z","harness:codex","cli:create:dep",detected
   pm-zwib,related,"2026-10-20T10:34:24.727Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-20T10:34:24.727Z","harness:codex","Duplicate check: fresh request-specific searches, open/in-progress inventories and complete strict 3023-item all-status read found no matching open item. Full live records/comments/history for the concurrency parent and the TTL cleanup and takeover/publication precursors distinguish the requested liveness boundary. Their existing completed scopes are preserved. The live-lock report remains in pm-lvyd; this issue remains open and unclaimed."
   "2026-10-20T15:15:35.096Z","harness:codex","Implementation scope: preserve token-fenced initialization/takeover and TTL compatibility. Add conservative same-boot and PID-namespace identity on Linux; only positive original-process death permits automatic early recovery. Unsupported hosts and unverifiable owners retain TTL policy. Share classification with health/GC, revalidate GC removal under the cleanup gate, and retain auditable recovery evidence through existing lock write hooks. Related live-lock guidance is a bounded child of pm-lvyd; no unsafe force ownership or hierarchy redesign."
   "2026-10-20T15:26:14.267Z","harness:codex","Regression evidence: owned isolated current-head tests first reproduced a killed public-SDK owner counted as active and a live lock advertising force/placeholder recovery. After the SDK-first change, six focused suites pass 238 tests: real killed-holder CLI recovery/history, same-host positive death/PID reuse, conservative foreign/legacy/EPERM/unavailable observations, single-winner takeover, old-release fencing, initialization protection and GC replacement revalidation. Broader static/coverage/release checks are still pending. No thousand-agent throughput claim is made."
@@ -29,6 +31,9 @@ comments[7]{created_at,author,text}:
   "2026-10-20T16:07:46.086Z","harness:codex","Final focused recovery acceptance passes240 tests across the native owner-proof/scanner suites, CLI error contracts and real killed-holder SDK-to-CLI journey. Early recovery retains a local audit intent, malformed timestamps remain behind existing stale policy, audit-write failure preserves the old lock, modern live owners stay protected, and full health samples cap at20 while counting all21 test receipts. The latest installed pm-changelog is2026.10.20. Full final CI coverage, static checks and external review remain required before merge."
   "2026-10-20T16:12:18.903Z","harness:codex","Implementation review: https://github.com/unbraind/pm-cli/pull/1523 at13d89b48f contains both recovery leaves with no ownership override. All installed review providers were requested once for this head; native full-check/review watcher is running. Item remains actively handled until review and terminal evidence settle."
   "2026-10-20T16:30:10.893Z","harness:codex","First exact-head inventory completed with no pending emitted checks. Four actionable CodeRabbit findings were accepted (reminder summary/schedule, documentation prose, accurate TTL semantics and shell-neutral retries);197 focused review tests, lint and docs-link checks now pass. Sibling and release-census references are linked through real related edges; graph-composition passes without raising its1233 prose-gap ceiling. Hosted transport-floor admission passed all six operations on13d89b48f, separately from the two retained qualified local refusals. Sourcery and cubic are quota-limited and Greptile's trial has ended; these are unavailable reviews, not approvals."
+  "2026-10-20T16:56:32.399Z","harness:codex","Implementation evidence at d89ad584c89ac6658f5386d35f202b711ddfee8a: all required checks and complete CI run39458022500 pass. JUnit10849 cases has10846 passing,3 skipped,zero errors/failures. Exact coverage:66314/66314 lines,69942/69942 statements,14411/14411 functions,53786/53786 branches. Fresh exact-head watch passed CLEAN; all four actionable threads are resolved. Both final linked commands pass. Full manual re-review was free-rate-limited until approximately17:11UTC and will be requested for the final closure revision; no unavailable provider is counted as approval. Local qualified latency refusals remain separately recorded; hosted six-operation latency admission passes."
+learnings[1]{created_at,author,text}:
+  "2026-10-20T16:56:30.245Z","harness:codex",Early recovery requires matching boot and PID-namespace identity plus original process-start evidence. A PID alone cannot establish ownership on shared trackers. Revalidate the observed receipt under the publication gate and retain an audit intent before deletion; unknown evidence preserves lease policy.
 files[10]{path,scope}:
   eslint-suppressions.json,project
   scripts/release/gate-registry.json,project
@@ -42,7 +47,7 @@ files[10]{path,scope}:
   tests/unit/core/lock/lock-owner.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/core/lock/lock-owner.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-gc.spec.ts,project,300,"harness:codex","2026-10-20T15:52:42.609Z",local_mutation,fix/lock-owner-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvgvvqhi-9msvfm
     kind: test
     status: passed
@@ -54,10 +59,22 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/core/lock/lock-owner.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-gc.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvgxb1mi-5vx8ha
+    kind: test
+    status: passed
+    started_at: "2026-10-20T16:54:06.238Z"
+    finished_at: "2026-10-20T16:54:23.993Z"
+    recorded_at: "2026-10-20T16:54:23.993Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/locking/lock-owner-recovery.integration.spec.ts tests/unit/core/lock/lock-owner.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-gc.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   docs/COMMANDS.md,project
   docs/CONFIGURATION.md,project
   docs/SDK.md,project
+close_reason: Implement and verify fenced early dead-owner recovery for reviewed delivery
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
