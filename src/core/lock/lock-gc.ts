@@ -211,13 +211,13 @@ async function classifyObservedLock(
 async function removeObservedLock(
   lockPath: string,
   raw: string,
+  ownerDead: boolean,
 ): Promise<boolean> {
   const release = await acquireStaleCleanupGate(lockPath, "gc");
   if (release === null) return false;
   try {
     if ((await fs.readFile(lockPath, "utf8")) !== raw) return false;
-    if ((await inspectLockOwner(parseLock(raw))) === "dead")
-      await recordDeadLockRecovery(lockPath, raw);
+    if (ownerDead) await recordDeadLockRecovery(lockPath, raw);
     await fs.unlink(lockPath);
     return true;
   } catch (error: unknown) {
@@ -321,7 +321,7 @@ async function removeOrPreviewLock(
 ): Promise<void> {
   if (!options.dryRun) {
     try {
-      if (!(await removeObservedLock(absPath, raw))) {
+      if (!(await removeObservedLock(absPath, raw, entry.reason === "owner_dead"))) {
         result.warnings.push(`lock_changed_or_busy:${file}`);
         result.retained.push(relPath);
         result.entries.push(entry);

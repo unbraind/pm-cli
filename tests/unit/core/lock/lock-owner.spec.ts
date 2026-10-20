@@ -178,6 +178,41 @@ it.skipIf(process.platform !== "linux")(
   },
 );
 
+it.skipIf(process.platform !== "linux")(
+  "GC preserves its dead-owner audit obligation when later host probes become unavailable",
+  async () => {
+    await withTempDir("pm-dead-lock-gc-audit-", async (root) => {
+      const release = await acquireLock(root, "shared", 3600, "original");
+      const lockPath = path.join(root, "locks/shared.lock");
+      const receipt = JSON.parse(await fs.readFile(lockPath, "utf8")) as Record<
+        string,
+        unknown
+      >;
+      await fs.writeFile(
+        lockPath,
+        JSON.stringify({ ...receipt, process_start_identity: "0" }),
+      );
+      const readlink = fs.readlink.bind(fs);
+      vi.spyOn(fs, "readlink")
+        .mockRejectedValue(new Error("Host identity temporarily unavailable"))
+        .mockImplementationOnce((...args) => readlink(...args));
+      expect((await runLockGc(root, { dryRun: false })).removed).toEqual([
+        "locks/shared.lock",
+      ]);
+      const auditDir = path.join(root, "locks/recoveries");
+      const audits = await fs.readdir(auditDir).catch(() => []);
+      expect(audits).toHaveLength(1);
+      expect(
+        JSON.parse(await fs.readFile(path.join(auditDir, audits[0]!), "utf8")),
+      ).toMatchObject({
+        event: "owner_dead_recovery_attempt",
+        lock: { owner: "original" },
+      });
+      await release();
+    });
+  },
+);
+
 it("GC retains a receipt replaced after its observation and a lock whose publication gate is busy", async () => {
   await withTempDir("pm-lock-gc-revalidation-", async (root) => {
     const locks = path.join(root, "locks");

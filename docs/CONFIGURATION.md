@@ -123,7 +123,10 @@ instead of being repaired by removing tokens. A retry
 advice bundle does not guarantee that another owner will release within that
 budget. Inspect `pm health --check-only --full` and `pm gc --scope locks
 --dry-run` before cleanup. Force does not bypass an unexpired lock whose owner is alive
-or unverifiable. TTL expiry permits removal regardless of owner liveness.
+or unverifiable. TTL expiry permits removal regardless of owner liveness. An
+expired holder can continue writing, so mutual exclusion beyond TTL is not
+guaranteed. Choose a TTL longer than the critical section, or fence protected
+resource writes at the caller.
 
 
 Runtime item types are context primitives. Use `pm schema list` to inspect the merged registry and `pm schema show <Type>` to inspect one type's folder, aliases, defaults, required options, and extension provenance. `pm init --type-preset agile|ops|research` writes reusable domain types into `.agents/pm/schema/types.json`; this is equivalent to persisted project schema, not an extension-only runtime overlay.
