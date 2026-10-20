@@ -2062,7 +2062,8 @@ export async function getAssuranceDeclaration(
   const found = collectionFor(await readDocument(pmRoot), kind).find(
     (entry) => entry.id === id,
   );
-  if (!found) throw new TypeError(`assurance ${kind} ${id} not found`);
+  if (!found)
+    throw new AssuranceEvaluationRefusalError(`assurance ${kind} ${id} not found`);
   return structuredClone(found);
 }
 

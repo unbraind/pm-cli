@@ -97,6 +97,19 @@ async function seedRegistry(pmPath: string): Promise<void> {
   );
 }
 
+describe("missing assurance declaration transport refusals", () => {
+  it.each([
+    { action: "show", kind: "measurement" }, { action: "show", kind: "assertion" },
+    { action: "show", kind: "gate" }, { action: "promote", kind: "assertion", enforcement: "block" },
+  ] as const)("normalizes $action $kind for SDK and MCP dispatch", async (request) => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const expected = { name: "PmCliError", exitCode: EXIT_CODE.USAGE, context: { code: "invalid_argument_value", reason: "assurance_evaluation_refused" } };
+      await expect(runAssuranceAction({ ...request, id: "missing-declaration" }, { path: pmPath })).rejects.toMatchObject(expected);
+      await expect(runAssuranceDispatch({ ...request, subcommand: request.action, id: "missing-declaration" }, {}, { path: pmPath })).rejects.toMatchObject(expected);
+    });
+  });
+});
+
 describe("assurance action transport", () => {
   afterEach(() => {
     vi.restoreAllMocks();

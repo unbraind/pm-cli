@@ -445,10 +445,9 @@ async function runAdoptionAction(
       EXIT_CODE.USAGE,
     );
   }
-  const definition = (await getAssuranceDeclaration(
-    pmRoot,
-    "assertion",
-    input.id,
+  const assertionId = input.id;
+  const definition = (await normalizeAssuranceEvaluation(() =>
+    getAssuranceDeclaration(pmRoot, "assertion", assertionId),
   )) as AssuranceAssertionDefinition;
   return normalizeAssuranceMutation(() =>
     promoteAssuranceAssertion(
@@ -686,7 +685,9 @@ export async function runAssuranceAction(
   }
   const id = input.id;
   if (action === "show") {
-    return getAssuranceDeclaration(pmRoot, kind, id);
+    return normalizeAssuranceEvaluation(() =>
+      getAssuranceDeclaration(pmRoot, kind, id),
+    );
   }
   if (action === "remove") {
     const receipt = await normalizeAssuranceMutation(() =>

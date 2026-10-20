@@ -1,6 +1,6 @@
 # Project Assurance Primitives
 
-Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-88mo8m](../.agents/pm/issues/pm-88mo8m.toon), [pm-atnfh4](../.agents/pm/issues/pm-atnfh4.toon), [pm-xmmafu](../.agents/pm/issues/pm-xmmafu.toon), [pm-4ok4ex](../.agents/pm/tasks/pm-4ok4ex.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon)
+Tracker: [pm-2lex4r](../.agents/pm/features/pm-2lex4r.toon), [pm-lyfu7b](../.agents/pm/features/pm-lyfu7b.toon), [pm-wn6wot](../.agents/pm/features/pm-wn6wot.toon), [pm-91xeam](../.agents/pm/features/pm-91xeam.toon), [pm-uhv1m5](../.agents/pm/features/pm-uhv1m5.toon), [pm-m7bb7r](../.agents/pm/features/pm-m7bb7r.toon), [pm-py7qv2](../.agents/pm/issues/pm-py7qv2.toon), [pm-33mjrw](../.agents/pm/issues/pm-33mjrw.toon), [pm-q6n8sj](../.agents/pm/issues/pm-q6n8sj.toon), [pm-h06944](../.agents/pm/issues/pm-h06944.toon), [pm-88mo8m](../.agents/pm/issues/pm-88mo8m.toon), [pm-atnfh4](../.agents/pm/issues/pm-atnfh4.toon), [pm-xmmafu](../.agents/pm/issues/pm-xmmafu.toon), [pm-4ok4ex](../.agents/pm/tasks/pm-4ok4ex.toon), [pm-dwj33e](../.agents/pm/decisions/pm-dwj33e.toon), [pm-eg5u1n](../.agents/pm/issues/pm-eg5u1n.toon)
 
 ## Agent Quick Context
 
@@ -311,7 +311,13 @@ migrated/provider-backed population is the majority.
 `AssuranceMutationRefusalError` and `AssuranceEvaluationRefusalError` are
 exported from both `@unbrained/pm-cli/sdk` and
 `@unbrained/pm-cli/sdk/governance`, so hosts can classify expected declaration
-or evaluation refusals without parsing messages. Source-resolution refusals
+or evaluation refusals without parsing messages. Unknown measurement, assertion
+and gate reads use `AssuranceEvaluationRefusalError`, which remains a `TypeError`
+for SDK compatibility. CLI and MCP `show` and missing-assertion `promote` requests
+normalize that refusal to `invalid_argument_value` with
+`reason: assurance_evaluation_refused`, rather than reporting an unexpected
+runtime fault. Other runtime errors retain their original classification.
+Source-resolution refusals
 also carry the gate, assertion, measurement, source kind, field, and optional
 health/validate check, so a zero value remains distinct from an absent or
 mistyped field.

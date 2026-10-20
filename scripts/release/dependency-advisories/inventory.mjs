@@ -15,7 +15,8 @@ export function inventoryLock(text) {
   const document = parseDocument(text);
   assert.equal(document.errors.length, 0, "Invalid dependency lockfile");
   const lock = document.toJS();
-  assert.equal(lock?.lockfileVersion, "9.0", "Unsupported dependency lockfile version");
+  if (lock === null || typeof lock !== "object") throw new Error("Invalid dependency lockfile object");
+  assert.equal(lock.lockfileVersion, "9.0", "Unsupported dependency lockfile version");
   assert.ok(lock.packages && typeof lock.packages === "object" && !Array.isArray(lock.packages), "Missing lockfile package inventory");
   const packages = Object.entries(lock.packages).map(([key, entry]) => {
     const match = /^(@[a-z0-9._-]+\/[a-z0-9._-]+|[a-z0-9._-]+)@(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/u.exec(key);

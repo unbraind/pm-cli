@@ -20,7 +20,7 @@ describe("complete lock inventory", () => {
     expect(inventoryLock(`${lock()}  'aaa@2.0.0':\n    resolution: {integrity: sha512-optional}\n    optional: true\n`)).toEqual([...packages, { name: "aaa", version: "2.0.0" }]);
   });
   it.each([
-    "packages: {}", "lockfileVersion: '8.0'", "lockfileVersion: '9.0'\npackages: []",
+    "null", "scalar", "packages: {}", "lockfileVersion: '8.0'", "lockfileVersion: '9.0'\npackages: []",
     "lockfileVersion: '9.0'\npackages: {}", "lockfileVersion: [", lock("bad/git@hash"),
     lock("fixture@1.2.3", {}), lock("fixture@1.2.3", { integrity: "hash", tarball: "https://private.invalid" }),
     `${lock()}lockfileVersion: '9.0'`,

@@ -92,7 +92,7 @@ describe("dependency advisory evidence", () => {
     const execute = vi.fn().mockReturnValue({ status: 1, stdout: "", stderr: "incomplete advisory evidence" });
     const source = { kind: "provider", provider: "repository-quality", key: "dependency-advisories" } as const;
     const measurement = await resolveRepositoryQualityMeasurement(source, { entries, execute });
-    expect(execute.mock.calls[0]![1]).toEqual([expect.stringContaining("dependency-advisories/gate.mjs"), "--verify-receipt"]);
+    expect(execute.mock.calls[0]![1]).toEqual([fileURLToPath(new URL("../../../../../scripts/release/dependency-advisories/gate.mjs", import.meta.url)), "--verify-receipt"]);
     const assertion = { id: "advisories-required", measurement_id: "advisories-pass", owner_item_id: "pm-fixture", scope: { kind: "all" }, equals: 1, lifetime: "hold", enforcement: "block", negative_control: { cases: [{ observed: 1, expected: "pass" }, { observed: 0, expected: "fail" }] } } as const;
     expect(evaluateAssuranceAssertion(assertion, { id: "advisories-pass", definition_fingerprint: "fixture", ...measurement, cost: { units: 1, items_scanned: 0, history_entries: 0, provider_calls: 1, duration_ms: 0 } }).verdict).toBe("fail");
   });
