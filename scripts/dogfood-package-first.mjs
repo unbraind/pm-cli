@@ -297,7 +297,7 @@ try {
   const listOpenBrief = run("list-open default brief", ["list-open", "--limit", "1"]);
   assert(listOpenBrief?.projection?.mode === "brief", "list-open default should declare its brief projection");
   assert(
-    listOpenBrief?.projection?.fields?.join(",") === "id,status,type,title",
+    listOpenBrief?.projection?.fields?.join(",") === "id,status,type,title,priority",
     "list-open default brief fields drifted",
   );
   const getFields = run("get fields", ["get", id, "--fields", "id,title,status,parent,type"]);

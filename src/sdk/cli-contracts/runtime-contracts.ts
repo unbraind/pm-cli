@@ -3135,7 +3135,7 @@ function attachFlagContractsResult(
       .map(([command, defaultProjection]) => ({
         command,
         default: defaultProjection,
-        brief_fields: [...BRIEF_LIST_FIELDS],
+        brief_fields: [...BRIEF_LIST_FIELDS, "priority"],
         compact_fields: [...DEFAULT_COMPACT_LIST_FIELDS],
       }));
   } else {

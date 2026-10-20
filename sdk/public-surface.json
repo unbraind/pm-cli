@@ -2510,6 +2510,24 @@
       ],
       "package_version": "2026.10.20",
       "reason": "Add an optional final cursorFlag argument to three shared pagination primitives; existing callers retain --after, relationship consumers select --cursor, and all six root/query declarations are documented."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ListVerboseResult",
+        "signature ./sdk/query:ListVerboseResult",
+        "signature ./sdk/runtime:ListVerboseResult"
+      ],
+      "package_version": "2026.10.20",
+      "reason": "Add optional default-list effective_keys metadata; preserve every existing sort/order field and explicit-sort result. This additive signature change requires no consumer migration."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ListVerboseResult",
+        "signature ./sdk/query:ListVerboseResult",
+        "signature ./sdk/runtime:ListVerboseResult"
+      ],
+      "package_version": "2026.10.20",
+      "reason": "Add optional named [field, order] tuples for default-list comparator metadata; legacy sort/order and explicit-sort payloads remain unchanged."
     }
   ],
   "entrypoints": {
@@ -10986,7 +11004,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListVerboseResult",
-          "signature": "export interface ListVerboseResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: ListProjectionMode; fields: string[] | null; }; sorting: { sort: ListSortField | \"default\"; order: ListSortOrder; }; now: string; }"
+          "signature": "export interface ListVerboseResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: ListProjectionMode; fields: string[] | null; }; sorting: { sort: ListSortField | \"default\"; order: ListSortOrder; effective_keys?: Array<[ field: string, order: ListSortOrder ]>; }; now: string; }"
         },
         {
           "classification": "advanced_export",
@@ -31716,7 +31734,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListVerboseResult",
-          "signature": "export interface ListVerboseResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: ListProjectionMode; fields: string[] | null; }; sorting: { sort: ListSortField | \"default\"; order: ListSortOrder; }; now: string; }"
+          "signature": "export interface ListVerboseResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: ListProjectionMode; fields: string[] | null; }; sorting: { sort: ListSortField | \"default\"; order: ListSortOrder; effective_keys?: Array<[ field: string, order: ListSortOrder ]>; }; now: string; }"
         },
         {
           "classification": "supported",
@@ -33690,7 +33708,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ListVerboseResult",
-          "signature": "export interface ListVerboseResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: ListProjectionMode; fields: string[] | null; }; sorting: { sort: ListSortField | \"default\"; order: ListSortOrder; }; now: string; }"
+          "signature": "export interface ListVerboseResult extends ListResultBase { filters: Record<string, unknown>; projection: { mode: ListProjectionMode; fields: string[] | null; }; sorting: { sort: ListSortField | \"default\"; order: ListSortOrder; effective_keys?: Array<[ field: string, order: ListSortOrder ]>; }; now: string; }"
         },
         {
           "classification": "advanced_export",

@@ -48,7 +48,7 @@
       {
         "task_id": "orientation-operating-rules",
         "command_count": 4,
-        "estimated_tokens": 2325,
+        "estimated_tokens": 2139,
         "capabilities": [
           "actionable_work",
           "active_ownership",
@@ -137,7 +137,7 @@
     },
     {
       "id": "orientation-operating-rules",
-      "max_estimated_tokens": 2325,
+      "max_estimated_tokens": 2139,
       "steps": [
         {
           "id": "context",
@@ -151,23 +151,23 @@
         },
         {
           "id": "open",
-          "max_estimated_tokens": 878,
+          "max_estimated_tokens": 712,
           "accounting_mode": "self_reported"
         },
         {
           "id": "in-progress",
-          "max_estimated_tokens": 196,
+          "max_estimated_tokens": 176,
           "accounting_mode": "self_reported"
         }
       ]
     },
     {
       "id": "context-bootstrap",
-      "max_estimated_tokens": 2010,
+      "max_estimated_tokens": 2077,
       "steps": [
         {
           "id": "triage",
-          "max_estimated_tokens": 552,
+          "max_estimated_tokens": 619,
           "accounting_mode": "self_reported"
         },
         {
@@ -288,5 +288,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 13795
+  "composite_max_estimated_tokens": 13676
 }

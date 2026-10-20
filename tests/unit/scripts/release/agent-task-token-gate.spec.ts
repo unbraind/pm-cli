@@ -622,7 +622,7 @@ describe("agent-task transcript token gate", () => {
     },
   );
 
-  it("rejects invalid accounting, incomplete output, and envelope drift", () => {
+  it.each([undefined, 2])("rejects invalid accounting, incomplete output, and envelope drift with JSON spacing %s", (spacing) => {
     const step = {
       id: "validation",
       args: ["--json", "list"],
@@ -633,7 +633,7 @@ describe("agent-task transcript token gate", () => {
     };
     const payload = { items: [{ id: "pm-one" }] };
     const render = (value: unknown): string =>
-      `${JSON.stringify(value, null, 2)}\n`;
+      `${JSON.stringify(value, null, spacing)}\n`;
     const accounted = attachOutputTokenAccounting(payload, render);
     const validBaseline = { status: 0, stdout: render(payload), stderr: "" };
     const validAccounted = { status: 0, stdout: render(accounted), stderr: "" };
@@ -645,6 +645,8 @@ describe("agent-task transcript token gate", () => {
       output_kind: "collection",
       payload,
     });
+    expect(() => validateAgentTaskTokenInvocation(validBaseline,
+      { ...validAccounted, stdout: `${JSON.stringify(accounted, null, 4)}\n` }, step)).toThrow();
     expect(() =>
       validateAgentTaskTokenInvocation(
         { ...validBaseline, status: 1 },

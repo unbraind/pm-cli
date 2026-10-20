@@ -1,0 +1,22 @@
+id: pm-oybmsd
+title: Align SDK producer-continuation result types with sparse reference envelopes
+description: "During default-list acceptance, native PmClient.list({brief:true,limit:'1',after:cursor}) returns a sparse reference envelope ending with next_cursor:null; fields such as has_more and sorting are intentionally absent. ListResultBase and ListVerboseResult still require those fields, and PmReadOutputResultFor considers budget/session/outputCursor but not producer after options. Audit the public return-type contract against the advertised continuation envelope before choosing a fix; preserve the intentional runtime metadata-reference optimization."
+type: Issue
+status: open
+priority: 2
+tags[3]: pagination,sdk,types
+created_at: "2026-10-20T07:43:13.561Z"
+updated_at: "2026-10-20T07:43:13.561Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Type fixtures reflect first-page and producer-continuation envelopes without promising absent fields; CLI SDK and MCP serialized continuations retain complete membership and sparse metadata; public surface compatibility and packed consumer checks pass
+parent: pm-srns
+risk: medium
+confidence: high
+expected_result: Typed SDK callers can handle sparse producer continuations safely without casts or assumptions about omitted first-page metadata.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0luwp4,related,"2026-10-20T07:43:13.561Z","harness:codex","cli:create:dep",detected
+  pm-zd46m7,discovered_from,"2026-10-20T07:43:13.561Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-20T07:43:13.561Z","harness:codex","Duplicate check: complete all-status/full-body corpus plus request-specific continuation/reference/result-types searches and fresh open/in-progress inventories found broader pm-srns and completed continuation owners but no active exact type-contract leaf. Full live pm-0luwp4 metadata/history preserves its completed producer membership scope. New runtime observation comes from real isolated native list acceptance; type-shape cause is source-based and needs implementation review. This item is open/unclaimed; it is not part of the two actively edited leaves."
+body: ""

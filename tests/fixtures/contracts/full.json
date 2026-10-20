@@ -33183,7 +33183,8 @@
         "id",
         "status",
         "type",
-        "title"
+        "title",
+        "priority"
       ],
       "command": "list",
       "compact_fields": [

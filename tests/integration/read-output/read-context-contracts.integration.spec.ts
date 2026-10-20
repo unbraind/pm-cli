@@ -42,7 +42,7 @@ describe("SDK read context contracts", () => {
       };
       for (const filter of [["--all"], ["--status", "all"]]) {
         const implicit = read(filter);
-        expect(implicit.projection).toMatchObject({ mode: "brief", fields: ["id", "status", "type", "title"] });
+        expect(implicit.projection).toMatchObject({ mode: "brief", fields: ["id", "status", "type", "title", "priority"] });
         expect(implicit.items.map((item) => item.status).sort()).toEqual(["closed", "open"]);
         expect(read([...filter, "--sort", "priority"]).projection?.fields).toContain("priority");
         expect(read([...filter, "--fields", "id,title"]).projection).toMatchObject({ mode: "fields", fields: ["id", "title"] });

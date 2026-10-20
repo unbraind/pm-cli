@@ -562,6 +562,7 @@ export function extensionOptionsFromArgs(
   }
   const normalizedOptions = { ...passthrough, ...options };
   delete normalizedOptions.args;
+  delete normalizedOptions.author;
   return normalizedOptions;
 }
 

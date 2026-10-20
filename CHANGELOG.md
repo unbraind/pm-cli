@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-1507: Explain effective default list ordering in brief rows and metadata ([pm-zd46m7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zd46m7.toon))
+- GH-1514: injected extension SDK client loses invocation author precedence ([pm-65srr0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-65srr0.toon))
 - GH-1511: keep blocked work prioritization inside context cursor page boundaries ([pm-0luwp4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0luwp4.toon))
 - GH-1510: make relationship packet cursor recovery command-aware ([pm-ohgg1b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ohgg1b.toon))
 - GH-1512: define count-based context completion rounding at half-percent boundaries ([pm-r2xv95](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r2xv95.toon))

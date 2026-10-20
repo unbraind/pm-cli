@@ -553,7 +553,7 @@ function registerListCommand(
     )
     .option(
       "--brief",
-      "Ultra-compact output: id, status, type, title only (agent-optimized, mutually exclusive with --compact/--full/--fields)",
+      "Brief rows: id, status, type, title and leading sort field (priority by default; excludes --compact/--full/--fields)",
     )
     .option(
       "--full",

@@ -214,6 +214,20 @@ aliases such as `updated_at`) and declare it in `projection.fields`. Explicit
 `--fields`, compact and full projections retain their requested fields.
 This rule is shared by SDK list queries.
 
+With the default sort, brief rows include `priority`. For flat lists, the compatible
+`sorting.sort: "default"` and `order: "asc"` fields are accompanied by ordered
+`sorting.effective_keys` tuples `[field, direction]`: nonterminal items before terminal items (using the
+active status registry), priority ascending, `updated_at` descending, then ID
+ascending. The synthetic key `status_registry:nonterminal_before_terminal`
+names both the registry source and the grouping semantics; it is not a stored
+item field. This policy remains visible in JSON and TOON,
+including status-filtered reads. Tree mode places descendants beneath parents
+and omits these flat-order keys because hierarchy traversal can override priority.
+Tracker (repository only; excluded from npm):
+[pm-zd46m7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zd46m7.toon).
+Brief JSON lists use compact whitespace while retaining the complete envelope
+and receipts, so visible ranking facts fit the existing output ceilings.
+
 Lifecycle filters such as `--all` and `--status all` retain the canonical `list`
 command's brief default; they select rows without expanding item fields. Use
 `--full`, `--compact`, `--brief`, `--fields` or `--include-body` to choose more
@@ -387,7 +401,7 @@ unconditional pre-pagination match count, branch on `has_more` or
 `"total" in result`, `next_cursor !== undefined`, or
 `filters.<key> === null` guards.
 
-JSON output is compact by default (id/status/type/title) for token efficiency. To pull item bodies in bulk in a single call — instead of one `pm get` per item — add `--include-body`, which expands each row to the full field set plus `body`:
+JSON output uses brief rows by default (id/status/type/title/priority) for token efficiency. To pull item bodies in bulk in a single call — instead of one `pm get` per item — add `--include-body`, which expands each row to the full field set plus `body`:
 
 ```bash
 pm list --status open --json --include-body # full fields + body for every returned row

@@ -49,6 +49,7 @@ describe("compact agent presentation", () => {
       projection: { mode: "brief", fields: "id,status,type,title" },
     },
     { ...completeList, projection: { mode: "brief", fields: ["id"] } },
+    { ...completeList, projection: { mode: "brief", fields: ["id", "status", "type", "title", "deadline"] } },
     {
       ...completeList,
       projection: { ...completeList.projection, evidence: "keep" },
@@ -271,9 +272,15 @@ describe("compact agent presentation", () => {
     const text = formatBuiltInOutput(completeList, "toon");
     expect(text.trim().split("\n")).toHaveLength(6);
     expect(text).toContain("--full");
-    expect(JSON.parse(formatBuiltInOutput(completeList, "json"))).toEqual(
-      completeList,
-    );
+    const json = formatBuiltInOutput(completeList, "json");
+    expect(JSON.parse(json)).toEqual(completeList);
+    expect(json.trim().split("\n")).toHaveLength(1);
+    expect(Buffer.byteLength(json)).toBeLessThan(Buffer.byteLength(JSON.stringify(completeList, null, 2)));
+    const nonList = { projection: { mode: "brief" }, items: { id: "single-item" } };
+    expect(formatBuiltInOutput(nonList, "json")).toBe(`${JSON.stringify(nonList, null, 2)}\n`);
+    const emptyLean = formatBuiltInOutput({ ...completeList, items: [], count: 0, total: 0 }, "json", true);
+    expect(emptyLean.trim().split("\n")).toHaveLength(1);
+    expect(JSON.parse(emptyLean)).not.toHaveProperty("items");
   });
 
   it.each([

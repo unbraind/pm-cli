@@ -142,7 +142,7 @@ export function createExtensionCommandSdk(
           idempotencyKey: invocationCommand === undefined
             ? options.operationId
             : `${createHash("sha256").update(invocationCommand).digest("hex").slice(0, 16)}:${options.operationId}`,
-          author: invocationAuthor ?? resolveAuthor(undefined, settings.author_default),
+          author: resolveAuthor(invocationAuthor, settings.author_default),
           lockTtlSeconds: settings.locks.ttl_seconds,
           lockWaitMs: settings.locks.wait_ms,
           recordCreation: false,
