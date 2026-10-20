@@ -2,8 +2,8 @@
   "name": "pm-claude-runtime",
   "private": true,
   "type": "module",
-  "version": "2026.10.19",
+  "version": "2026.10.20",
   "dependencies": {
-    "@unbrained/pm-cli": "2026.10.19"
+    "@unbrained/pm-cli": "2026.10.20"
   }
 }
