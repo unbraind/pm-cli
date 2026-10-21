@@ -7,8 +7,9 @@ import {
   isReadOutputBudgetExceeded,
   type ListOptions,
   type ListResult,
+  type ContextResult,
+  type SearchResult,
   type PmReadOutputResultFor,
-  type PmReadOutputResult,
 } from "../../src/sdk/index.js";
 import type { PmReadOutputProducerContinuation as CoreContinuation } from "../../src/sdk/core.js";
 import type { PmReadOutputProducerContinuation as ContractsContinuation } from "../../src/sdk/contracts.js";
@@ -25,9 +26,14 @@ declare const unionOptions: { limit: string } | { outputBudget: number };
 declare const sessionOptions: { limit: string } | { outputSession: string };
 declare const outputCursorOptions: { limit: string } | { outputCursor: string };
 
-const first: Promise<PmReadOutputResult<ListResult>> = client.list();
-const freeFirst: Promise<PmReadOutputResult<ListResult>> = list();
-void [first, freeFirst];
+const first: Promise<ListResult> = client.list();
+const freeFirst: Promise<ListResult> = list();
+const explicitEmpty: Promise<ListResult> = client.list({});
+const initialContext: Promise<ContextResult> = client.context();
+const freeContext: Promise<ContextResult> = context();
+const initialSearch: Promise<SearchResult> = client.search("work");
+const freeSearch: Promise<SearchResult> = search("work");
+void [first, freeFirst, explicitEmpty, initialContext, freeContext, initialSearch, freeSearch];
 
 /** Require narrowing before using repeated metadata on every producer read form. */
 async function checkProducerPages(): Promise<void> {

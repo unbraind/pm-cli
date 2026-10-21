@@ -679,8 +679,8 @@ interface PmClientDefaults {
 
 type ReadOptions<Options> = Options & PmReadOutputOptions;
 
-/** An omitted options argument cannot carry a producer cursor. */
-type InitialReadOptions<Options> = ReadOptions<Options> & { after?: never };
+/** Omitted options carry neither producer cursors nor explicit budget controls. */
+type InitialReadOptions = Record<never, never>;
 
 type ReadPromise<Result, Options> = Promise<
   PmReadOutputResultFor<Result, Options>
@@ -738,7 +738,7 @@ export class PmClient {
   }
 
   /** Return the same context snapshot produced by `pm context`. */
-  context<Options extends ReadOptions<ContextOptions> = InitialReadOptions<ContextOptions>>(
+  context<Options extends ReadOptions<ContextOptions> = InitialReadOptions>(
     options: Options = {} as Options,
   ): ReadPromise<ContextResult, Options> {
     return this.runTyped("context", { options });
@@ -750,7 +750,7 @@ export class PmClient {
   }
 
   /** List items with the MCP/agent compact defaults. */
-  list<Options extends ReadOptions<ListOptions> = InitialReadOptions<ListOptions>>(
+  list<Options extends ReadOptions<ListOptions> = InitialReadOptions>(
     options: Options = {} as Options,
   ): ReadPromise<ListResult, Options> {
     return this.runTyped("list", { options });
@@ -760,7 +760,7 @@ export class PmClient {
   async listAllComplete(options: PmCompleteListOptions = {}): Promise<PmCompleteListResult> { return certifyCompleteListResult(await this.list(createCompleteListOptions(options))); }
 
   /** Search items with the MCP/agent compact defaults. */
-  search<Options extends ReadOptions<SearchOptions> = InitialReadOptions<SearchOptions>>(
+  search<Options extends ReadOptions<SearchOptions> = InitialReadOptions>(
     query: string,
     options: Options = {} as Options,
   ): ReadPromise<SearchResult, Options> {
@@ -1717,7 +1717,7 @@ export class PmClient {
 
 /** Return the same context snapshot produced by `pm context` without constructing a reusable client. */
 export function context<
-  Options extends ReadOptions<ContextOptions> = InitialReadOptions<ContextOptions>,
+  Options extends ReadOptions<ContextOptions> = InitialReadOptions,
 >(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
@@ -1726,7 +1726,7 @@ export function context<
 }
 
 /** List items with the MCP/agent compact defaults without constructing a reusable client. */
-export function list<Options extends ReadOptions<ListOptions> = InitialReadOptions<ListOptions>>(
+export function list<Options extends ReadOptions<ListOptions> = InitialReadOptions>(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
 ): ReadPromise<ListResult, Options> {
@@ -1738,7 +1738,7 @@ export function listAllComplete(options: PmCompleteListOptions = {}, clientOptio
 
 /** Search items with the MCP/agent compact defaults without constructing a reusable client. */
 export function search<
-  Options extends ReadOptions<SearchOptions> = InitialReadOptions<SearchOptions>,
+  Options extends ReadOptions<SearchOptions> = InitialReadOptions,
 >(
   query: string,
   options: Options = {} as Options,

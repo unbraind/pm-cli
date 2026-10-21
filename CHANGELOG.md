@@ -9,6 +9,7 @@
 
 ### Other
 
+- Keep omitted SDK read options as precise first-page results ([pm-qal1uw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qal1uw.toon))
 - Schedule the context decision corpus keeper after parallel contract workers ([pm-j2vwbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-j2vwbh.toon))
 
 ## 2026.10.21 - 2026-10-21

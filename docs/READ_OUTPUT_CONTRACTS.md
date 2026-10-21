@@ -87,8 +87,9 @@ apply. `estimated_tokens` measures the emitted envelope;
 
 ## Typed producer pages
 
-Tracked by [pm-oybmsd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oybmsd.toon) and
-[pm-jqgkis](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqgkis.toon)
+Tracked by [pm-oybmsd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oybmsd.toon),
+[pm-jqgkis](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqgkis.toon), and
+[pm-qal1uw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qal1uw.toon)
 (repository-only tracker records excluded from npm).
 Native `PmClient.list`, `search`, and `context` reads and their standalone
 convenience functions return sparse metadata when `after` resumes a producer
@@ -99,6 +100,9 @@ is optional in `PmReadOutputProducerContinuation<Result>`. Follow `next_cursor`
 until it is empty, rather than relying on the optional `has_more` field.
 
 Calls whose options contain no producer cursor retain their first-page types.
+Omitting the options argument has the same precise type as passing `{}` for
+client and standalone `list`, `context`, and `search` calls; it does not imply
+that an explicit budget, session, or output cursor was supplied.
 Options with an optional cursor can return either page shape. When a budget,
 session, or output cursor is possible, first use `isReadOutputBudgetExceeded`
 to narrow the omission branch before accessing rows. This remains required for
