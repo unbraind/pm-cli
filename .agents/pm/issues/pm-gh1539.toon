@@ -1,0 +1,25 @@
+id: pm-gh1539
+title: "GH-1539: enforce command builder keys and preserve literal types"
+description: "Reported against published2026.10.21: defineCommand accepts descripton/read_ouput and widens name to string under strict TypeScript5.9. Source https://github.com/unbraind/pm-cli/issues/1539 includes a public-package reproduction. Current src/sdk/define.ts still uses an ordinary generic identity builder while its docs promise literal preservation. The closed original feature shipped the builder and remains completed; this is a new exactness/literal-contract report requiring public type and contextual-handler checks."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,github-report,sdk
+created_at: "2026-10-21T21:28:05.779Z"
+updated_at: "2026-10-21T21:28:09.791Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reject misspelled keys in fresh public command definitions; Preserve literal name/action plus contextual handler inference; Audit sibling object builders under the same advertised contract; Verify public package declarations and legitimate customization compatibility
+parent: pm-ugqx
+risk: medium
+confidence: 80
+severity: medium
+expected_result: Publicly advertised authoring and mutation contracts produce verifiable outcomes or precise pre-execution refusals.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-12tj,discovered_from,"2026-10-21T21:28:05.779Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-21T21:28:05.779Z","harness:codex","Duplicate check: fresh keyword searches and the complete all-status corpus found the completed original builder and warning-only MCP controls, but no owner for this newly filed report. Full live metadata/comments/history were read for the prior lineage. Preserve those closed outcomes and create only this distinct reported contract gap. Intake only: status open, unclaimed; no implementation or independent reproduction is claimed."
+files[1]{path,scope}:
+  src/sdk/define.ts,project
+escape_class: production_defect
+body: ""
