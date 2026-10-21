@@ -312,6 +312,30 @@ describe("GitHub workflow contract", () => {
     expect(verifier.if).toContain("steps.shard_admission.outcome == 'success'");
   });
 
+  it("retains bounded advisory receipts after failed and successful static gates", async () => {
+    const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
+    const steps = workflow.jobs.gates.steps as Array<{
+      uses?: string; if?: string; run?: string; with?: Record<string, unknown>;
+    }>;
+    const uploads = steps.filter((step) => step.uses?.startsWith("actions/upload-artifact@") && String(step.with?.path ?? "").trim() === ".cache/dependency-security/receipt.json");
+    expect(uploads).toHaveLength(1);
+    const upload = uploads[0]!;
+    expect(String(upload.with?.["include-hidden-files"])).toBe("true");
+    expect(upload.with?.name).toContain("${{ github.run_attempt }}");
+    expect(steps.indexOf(upload)).toBeGreaterThan(steps.findIndex((step) => step.run?.includes("pnpm lint")));
+    for (const gate of ["static", "typecheck", "compat", "smokes"]) {
+      for (const failed of [false, true]) {
+        const condition = (upload.if ?? "true").replace(/^\$\{\{\s*|\s*\}\}$/gu, "");
+        const hasStatusCheck = /\b(always|success|failure|cancelled)\s*\(/u.test(condition);
+        const enabled = (hasStatusCheck || !failed) && Boolean(runInNewContext(condition, {
+          matrix: { gate }, always: () => true, success: () => !failed,
+          failure: () => failed, cancelled: () => false,
+        }, { timeout: 1000 }));
+        expect(enabled, `${gate}/failed=${failed}`).toBe(gate === "static");
+      }
+    }
+  });
+
   it("requires native preview regressions to consume the validated build", async () => {
     const ciWorkflow = normalizeWorkflow(
       await readFile(

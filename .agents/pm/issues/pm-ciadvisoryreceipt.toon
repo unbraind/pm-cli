@@ -1,0 +1,68 @@
+id: pm-ciadvisoryreceipt
+title: Retain dependency advisory failure evidence in CI
+description: "Required static jobs119465264554 and119475057456 stop at the dependency advisory collector without retaining .cache/dependency-security/receipt.json. GitHub artifacts omit the per-feed result, so the operator cannot distinguish unavailable feeds from positive advisories. Fresh local registry and OSV collection at20:43UTC completes with zero positives. Preserve the existing closed collector implementation and add CI evidence retention to diagnose the hosted blocker precisely."
+type: Issue
+status: closed
+priority: 2
+tags[3]: ci,review-feedback,security
+created_at: "2026-10-21T20:50:42.159Z"
+updated_at: "2026-10-21T20:54:20.913Z"
+closed_at: "2026-10-21T20:54:19.918Z"
+completed_at: "2026-10-21T20:54:19.918Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Retain the explicit advisory receipt on both successful and failed static jobs; Scope hidden-file upload to the single inspected public receipt and distinguish rerun attempts; Preserve strict gate outcomes and prove the workflow retention contract
+parent: pm-qwoy
+risk: low
+confidence: 90
+resolution: "Add a static-only always-run upload for the exact inspected advisory receipt with hidden-file inclusion, attempt-specific names and seven-day retention. Register the failure-retention regression in the existing review-contract family."
+expected_result: Operators can inspect the original per-feed receipt after a blocked hosted collector without weakening admission or exposing unrelated cache files.
+actual_result: "All22 linked workflow cases pass, including a failing-before missing-artifact control and successful/failed static matrix evaluation. Typecheck lint and workflow permissions pass. The hosted collector cause remains unknown until the new receipt is retrieved; no hosted pass is claimed prematurely."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-codeql4849,related,"2026-10-21T20:50:42.159Z","harness:codex","cli:create:dep",detected
+  pm-eqxjzl,discovered_from,"2026-10-21T20:50:42.159Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-21T20:50:42.159Z","harness:codex","Duplicate check: full all-status intake and live advisory searches found closed pm-eqxjzl for collector freshness and completeness but no CI failure-artifact owner. Reuse the security capability and recorded scanner import lineage. This item fixes missing hosted diagnostics and does not assert an unverified vulnerability or weaken the advisory gate."
+  "2026-10-21T20:54:15.213Z","harness:codex","Evidence: hosted required static jobs https://github.com/unbraind/pm-cli/actions/runs/39669768351/job/119465264554 and https://github.com/unbraind/pm-cli/actions/runs/39669768351/job/119475057456 both refuse in the advisory collector. Neither attempt retains its receipt, so the actual hosted feed failure is unknown. Independent local collection at20:43UTC completes registry and OSV with zero positives; this does not establish hosted feed availability. The existing collector stores only public package/version/advisory IDs, input hashes, counts and timestamps, with no raw command stderr or credentials. Upload is limited to its exact receipt file, not the containing cache."
+  "2026-10-21T20:54:16.019Z","harness:codex","Regression sensitivity: the unchanged new workflow contract fails before the retention step because it finds zero matching uploads. After the change all22 CI workflow contract cases pass. The new contract evaluates successful and failed static executions plus all other gate variants, checks hidden-file inclusion, bounds upload to the single receipt, and separates run attempts. Type checking, focused ESLint and read-only workflow-permission verification pass. Strict advisory verdicts and collection behavior are unchanged; hosted receipt and gate verification remain merge prerequisites."
+files[3]{path,scope}:
+  .github/workflows/ci.yml,project
+  config/defect-recurrence-policy.json,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,240,"harness:codex","2026-10-21T20:50:48.837Z",local_mutation,docs/codeql-48-49-assessment
+test_runs[2]:
+  - run_id: test-local-mvil8nsc-k9odyr
+    kind: test
+    status: passed
+    started_at: "2026-10-21T20:51:51.858Z"
+    finished_at: "2026-10-21T20:52:09.708Z"
+    recorded_at: "2026-10-21T20:52:09.708Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvila10c-ha7w5o
+    kind: test
+    status: passed
+    started_at: "2026-10-21T20:52:52.607Z"
+    finished_at: "2026-10-21T20:53:13.498Z"
+    recorded_at: "2026-10-21T20:53:13.498Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Retain bounded dependency-advisory receipts for successful and failed CI admission.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: review-caught-contract-drift
+  owner: pm-ciadvisoryreceipt
+  negative_control: "Run the CI workflow receipt contract before adding failure retention: no upload step exists for the receipt, so the same regression fails. The contract also evaluates failed and successful static jobs and rejects non-static jobs."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),Security and Script Quality / actionlint
+body: ""

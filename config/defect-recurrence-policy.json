@@ -293,8 +293,8 @@
     },
     {
       "id": "review-caught-contract-drift",
-      "version": 3,
-      "title": "CLI, SDK, MCP, and initialization contract drift caught in review",
+      "version": 4,
+      "title": "CLI, SDK, MCP, initialization, and CI evidence contract drift caught in review",
       "owner_item_id": "pm-rtn5h6",
       "escape_class": "review_caught_late",
       "triggers": {
@@ -303,17 +303,22 @@
           "src/sdk/**",
           "src/mcp/**",
           "src/core/init/**",
-          "tests/integration/**"
+          "tests/integration/**",
+          ".github/workflows/ci.yml"
         ],
-        "item_ids": ["pm-at1j", "pm-0bwe", "pm-kipd"],
+        "item_ids": ["pm-at1j", "pm-0bwe", "pm-kipd", "pm-ciadvisoryreceipt"],
         "tags": ["review-feedback", "surface-parity"]
       },
       "checks": {
-        "local": ["pnpm contracts:check", "pnpm quality:static"],
+        "local": [
+          "pnpm contracts:check",
+          "pnpm quality:static",
+          "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts"
+        ],
         "hosted": ["CI / Gates (coverage)", "CI / Gates (static)"]
       },
       "negative_control": {
-        "item_ids": ["pm-at1j"]
+        "item_ids": ["pm-at1j", "pm-ciadvisoryreceipt"]
       },
       "historical_item_ids": [
         "pm-kipd",
