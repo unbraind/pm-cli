@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PmClient, type ContractsResult } from "../../../src/sdk/runtime.js";
+import { handleRequest } from "../../../src/mcp/server.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("default list ordering context (pm-zd46m7)", () => {
@@ -36,6 +37,24 @@ describe("default list ordering context (pm-zd46m7)", () => {
       expect(second.items.map((item) => item.id)).toEqual([low.item.id]);
       expect(second.next_cursor).toBeNull();
       expect(second).toMatchObject({ continuation_contract: { metadata: "reference", restore_with: "omit --after" } });
+      const cliFirst = context.runCli(["list", "--brief", "--limit", "1", "--json"], { expectJson: true });
+      expect(cliFirst.code, cliFirst.stderr).toBe(0);
+      const cliCursor = (cliFirst.json as { next_cursor: string }).next_cursor;
+      const cliSecond = context.runCli(["list", "--brief", "--limit", "1", "--after", cliCursor, "--json"], { expectJson: true });
+      expect(cliSecond.code, cliSecond.stderr).toBe(0);
+      const mcpFirst = await handleRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: {
+        name: "pm_list", arguments: { path: context.pmPath, options: { brief: true, limit: "1" } },
+      } }) as { structuredContent: { result: { next_cursor: string } } };
+      const mcpSecond = await handleRequest({ jsonrpc: "2.0", id: 2, method: "tools/call", params: {
+        name: "pm_list", arguments: { path: context.pmPath, options: { brief: true, limit: "1", after: mcpFirst.structuredContent.result.next_cursor } },
+      } }) as { structuredContent: { result: unknown } };
+      for (const page of [second, cliSecond.json, mcpSecond.structuredContent.result]) {
+        expect(page).toMatchObject({ items: [{ id: low.item.id }], next_cursor: null,
+          continuation_contract: { metadata: "reference", restore_with: "omit --after" } });
+        for (const key of ["count", "total", "has_more", "sorting", "projection", "completeness"]) {
+          expect(Object.hasOwn(page as object, key), key).toBe(false);
+        }
+      }
       const contracts = await client.run("contracts", { options: { command: "list", full: true } }) as ContractsResult;
       expect(contracts.list_projections?.find((entry) => entry.command === "list")?.brief_fields)
         .toEqual(first.projection.fields);

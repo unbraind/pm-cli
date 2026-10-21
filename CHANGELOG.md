@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Preserve budget omission types across union SDK option shapes ([pm-jqgkis](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqgkis.toon))
+- Align SDK producer-continuation result types with sparse reference envelopes ([pm-oybmsd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oybmsd.toon))
+
+### Other
+
+- Schedule the context decision corpus keeper after parallel contract workers ([pm-j2vwbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-j2vwbh.toon))
+
 ## 2026.10.21 - 2026-10-21
 
 ### Fixed

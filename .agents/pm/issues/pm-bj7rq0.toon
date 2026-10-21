@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-20T20:46:31.181Z"
+updated_at: "2026-10-21T05:28:15.577Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[63]:
+comments[65]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -213,6 +213,12 @@ comments[63]:
   - created_at: "2026-10-20T20:46:31.179Z"
     author: "harness:codex"
     text: "PR #1526 local static evidence on the qualified Node 26.9.0 runner: control medians 75/79ms against 106ms maximum; SDK entrypoint gate reported product_admission=failed. Governance 506>327ms, graph 290>172ms, merge 383>226ms, query 270>241ms, runtime 464>452ms, testing 482>461ms. Observed load ~22 on 8 available CPUs does not override the configured qualified result. Hosted source static job 118869982878 passed in 12m13s. Retain this as broader performance/runner evidence, without weakening budgets or claiming the local gate passed. No new performance implementation or parent claim in the advisory scope."
+  - created_at: "2026-10-21T05:05:20.994Z"
+    author: "harness:codex"
+    text: "October21 final-source observations: an isolated SDK entrypoint-cost run now passes all10 entrypoints, independently of the earlier failed concurrent receipt. The subsequent CLI transport-floor run still returns benchmark_product_budget_exceeded on a qualified Node26.9.0 runner: get best370>362ms, next475>440, create440>398 and claim461>415. Control medians50/65ms are within106ms. Keep this qualified failure distinct from load observations and hosted Node24 acceptance; no baseline, threshold or retry was changed. The new child pm-j2vwbh owns only the independently proven missing context corpus allocation."
+  - created_at: "2026-10-21T05:28:15.576Z"
+    author: "harness:codex"
+    text: "A second independent local qualification observation from the complete four-shard replay: shard 4 timed out the existing tests/unit/scripts/cli-transport-floor.spec.ts case runs the default measurement with isolated permissive test budgets at its unchanged 30000ms deadline. This is separate from the earlier context corpus timeout, which now has serial allocation proof under its scoped child. All other shards are allowed to finish; the failed full shard will be rerun once in isolation against the same frozen source and limits before any code change is considered. No coverage merge is accepted from the failed attempt."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

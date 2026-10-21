@@ -77,6 +77,7 @@ describe("Vitest CI retry policy", () => {
       "tests/unit/commands/query/aggregate-set-members.spec.ts",
       "tests/unit/sdk/governance-read-performance.spec.ts",
       "tests/unit/scripts/release/surface-replication-gate.spec.ts",
+      "tests/integration/read-output/context-decision-contracts.integration.spec.ts",
       "tests/integration/receipt-operation-boundaries.integration.spec.ts",
       "tests/integration/aborted-rebase-recovery.integration.spec.ts",
       "tests/integration/workspace/merge-receipt-settlement.integration.spec.ts",
