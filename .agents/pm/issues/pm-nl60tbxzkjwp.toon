@@ -1,0 +1,90 @@
+id: pm-nl60tbxzkjwp
+title: "GH-1532: preserve every tracker cache exclusion when nested init shares a repository"
+description: "https://github.com/unbraind/pm-cli/issues/1532 reproduces nested pm init replacing the one managed runtime-cache fence, leaving enclosing tracker caches unignored. Live SDK reproduction confirms outer cache becomes unignored while nested cache is ignored. Preserve existing tracker rules and unrelated user content, support either init order, and keep every tracker eval-queries.json version controllable. Merge-attribute preservation was not broken in the independent issue reproduction and must remain covered."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:sdk","gh:1532",gitignore,init,multi-tracker
+created_at: "2026-10-21T11:44:24.626Z"
+updated_at: "2026-10-21T14:02:28.896Z"
+closed_at: "2026-10-21T13:38:42.088Z"
+completed_at: "2026-10-21T13:38:42.088Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Outer and nested trackers keep runtime/search/locks/transactions/checkpoints excluded in either initialization order; repeated initialization is byte-idempotent; unrelated ignore rules remain intact; curated eval queries remain trackable; both merge-attribute scopes remain effective
+parent: pm-o2kc
+risk: medium
+confidence: 90
+severity: high
+resolution: "Preserve tracker-specific cache rules, user bytes and unmatched prefixes through a single forward fence scan, retaining sibling scopes and repeated-init idempotence."
+expected_result: Both initialization orders and malformed managed markers preserve every intended scope and remain bounded and byte-idempotent.
+actual_result: "All linked commands pass, including4000 unmatched markers, real Git scope controls and orphan/CRLF fences. The prior idempotence failure is reproduced and fixed; public SDK measurements are linear at tested sizes. Revised exact-head CI and bot review remain mandatory before merge."
+affected_version: 2026.10.21
+component: sdk/workspace
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4uqm,recurs_from,"2026-10-21T11:44:24.626Z","harness:codex","cli:create:dep",detected
+  pm-kynkl8,related,"2026-10-21T11:44:24.626Z","harness:codex","cli:create:dep",detected
+  pm-hous,recurs_from,"2026-10-21T12:42:17.929Z","harness:codex","cli:update:dep",detected
+  pm-preview-path-refusal,related,"2026-10-21T12:42:17.929Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-21T11:44:24.626Z","harness:codex","Duplicate check: complete strict 3040-item all-status/full-body read (no omissions), current init/gitignore/root-layout keyword searches and open/in-progress inventories, and full canonical pm-hous/pm-4uqm/pm-kynkl8 metadata plus relevant history establish prior fixes but no active owner for this reproduced defect. Preserve completed lineage and create only this bounded recurrence slice."
+  "2026-10-21T11:45:36.545Z","harness:codex","Baseline reproduction on checkout c34a5327a: nested ensurePmGitignore removes outer Git ignore coverage. GitHub/security intake: no open PRs, Dependabot/code-scanning/secret-scanning alerts all zero. All 24 open issues have existing PM-link comments except newly reported #1532, which this item owns. Batch dry-run safely refused a pre-existing non-regular tracker entry; the validated explicit two-item batch itself committed successfully, with no override."
+  "2026-10-21T11:57:39.141Z","harness:codex","Regression sensitivity: before the production patch, the strengthened unit suite failed seven cases, including both nested-init orders and real Git literal/root-layout matching. After repair, 27 focused cases across the shared SDK unit suite, actual CLI nested-init journeys and existing merge-version-skew regression pass. Unrelated user text and CRLF content are retained, duplicate managed fences are consolidated, curated search/eval-queries.json remains trackable, and both merge-driver scopes are checked. Full source coverage is running. Batch preview refusal is expected fail-closed behavior under the completed pm-preview-path-refusal contract, not an ownership or permissions bypass."
+  "2026-10-21T13:21:55.701Z","harness:codex","Final review found a missing malformed-input case in the new reconciliation: repeated unmatched opening markers cause repeated regex scanning, and appending a complete fence makes the next invocation treat the old unmatched prefix as managed content. A disposable SDK probe measured60ms for2000 openings and roughly fourfold cost for4000. Add a regression preserving the unmatched prefix byte-for-byte with a byte-idempotent second call, then replace global backtracking matching with one forward line scan."
+  "2026-10-21T13:38:40.383Z","harness:codex","The malformed-fence keeper failed on the prior matcher because the second invocation changed the file. The new single forward scan retains unmatched prefixes and complete-block boundaries. The same disposable SDK measurement improved from60/270ms at2000/4000 openings to2/1ms, without a timing waiver. All linked regressions and strict typecheck pass; the first hosted full-source coverage gate passed, with security normalization and reminder feedback handled before the next reviewed push."
+  "2026-10-21T14:02:28.896Z","harness:codex","PR1533 premerge evidence for both sibling cache/path fixes: reviewed source68265838c passes CI static, typecheck, compatibility, smokes, all four coverage shards and the exact100/100/100/100 source-coverage gate. Hosted analyzer admission proves DeepScan0new and CodeFactor0annotations on that exact head; CodeQL now succeeds after the demonstrated normalization fix. GitHub reports zero open Dependabot, code-scanning and secret-scanning alerts; all24 open issues have canonical PM-link comments and1533 is the sole open PR. CI run39610518539 is not all-green: required macOS Node24 packed-first-run job119258427185 was cancelled with no runner and no steps; its annotation explicitly says hosted runner acquisition failed and macOS arm64 capacity is constrained. A fresh successful required run is still mandatory. CodeRabbit confirmed the reminder finding addressed; full re-review was requested but free quota resets after14:08UTC. Sourcery quota, Greptile expired trial and Cubic monthly quota are review limitations, not approvals. New review and all required exact-head checks must settle before merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T13:00:20.423Z","harness:codex","A repository-scoped ignore fence can serve several trackers. Reconcile only the active tracker rules, retain sibling scopes and user bytes, and verify exclusions with Git rather than generated text alone."
+files[4]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  src/sdk/workspace.ts,project
+  tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,project
+  tests/unit/core/workspace/gitignore.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,project,240,"harness:codex","2026-10-21T11:49:35.968Z",local_mutation,fix/workspace-cache-ignore-scopes
+test_runs[3]:
+  - run_id: test-local-mvi3r4fs-stnegq
+    kind: test
+    status: passed
+    started_at: "2026-10-21T12:42:23.331Z"
+    finished_at: "2026-10-21T12:42:38.008Z"
+    recorded_at: "2026-10-21T12:42:38.008Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvi4392h-49xsp1
+    kind: test
+    status: passed
+    started_at: "2026-10-21T12:51:46.252Z"
+    finished_at: "2026-10-21T12:52:03.881Z"
+    recorded_at: "2026-10-21T12:52:03.881Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvi5gebg-u6pay3
+    kind: test
+    status: passed
+    started_at: "2026-10-21T13:29:58.875Z"
+    finished_at: "2026-10-21T13:30:16.827Z"
+    recorded_at: "2026-10-21T13:30:16.827Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/MERGE_SAFETY.md,project
+close_reason: Closed after linear malformed-fence reconciliation and executed keeper proof.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  owner: pm-nl60tbxzkjwp
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts tests/unit/sdk/merge-safety.spec.ts,pnpm typecheck,"pnpm smoke:npx"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

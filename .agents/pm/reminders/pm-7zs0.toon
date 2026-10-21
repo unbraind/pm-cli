@@ -6,9 +6,9 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-20T16:26:08.040Z"
+updated_at: "2026-10-21T13:32:11.904Z"
 reminders[1]{at,text}:
-  "2026-10-21T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
+  "2026-10-22T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
@@ -16,7 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "Every eligible UTC day publishes once through reviewed producer and tag-driven acceptance; verify actual public registry, consumers and observability while preserving historical failures."
-actual_result: "Verified public 2026.10.20: tag-driven Release 39362713744 and native scheduled Auto Release 39389505717 succeeded. The later schedule accepted the existing immutable publication without a second release. Public npm/latest and npm, npx, Bun, bunx and MCP verifier journeys pass. Required Sentry/telemetry checks pass with recent command spans and paired lifecycle probes; queues drained. Historical nightly and release reliability failures remain separately tracked. Next one-shot verification is October 21 at 06:00 UTC."
+actual_result: "Verified public 2026.10.21: morning dispatcher 39534744458, native schedule 39565612674 and tag-driven Release 39538035696 succeeded with one immutable daily tag. Public npm/Bun/npx/bunx and MCP verifiers and installed consumer sessions passed. Required Sentry/telemetry checks passed with four fresh command spans, four paired lifecycle probes and drained queues. This publication predates the cache-scope fixes. Historical reliability and local startup-budget failures remain separately tracked. Next one-shot verification: October 22 at 06:00 UTC."
 dependencies[14]:
   - id: pm-7n5a
     kind: related
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[235]:
+comments[236]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -798,6 +798,9 @@ comments[235]:
   - created_at: "2026-10-20T15:30:14.473Z"
     author: "harness:codex"
     text: "Live2026-10-20 verification: published verifier --version2026.10.20 --npm-attempts1 passes public npm/GitHub artifacts, npm/Bun executors, npx/bunx bins and stateless MCP journeys. Latest native scheduled Auto Release39389505717 succeeds by accepting today's existing immutable publication; tag-driven Release39362713744 succeeds. No additional release/tag was created. GitHub has zero open PRs/Dependabot/code-scanning/secret-scanning alerts; all23 open issues carry PM-link comments. Current minor dependency updates remain within seven-day cooldown under pm-wb25c1; major owners remain separate. Required14-day Sentry/telemetry check passes with zero unresolved/critical/high issues,2.37 percent finish error rate and zero missing-code rows. Queue flush drained its physical entry and broker ready/unacknowledged counts were zero. Latest Windows nightly and historical Release Reliability failures remain separate, not greened by these publication checks."
+  - created_at: "2026-10-21T12:03:29.629Z"
+    author: "harness:codex"
+    text: "Live October21 independent published verification passed: verify-published-release.mjs --version2026.10.21 --npm-attempts1 --executor-attempts1 plus verify-installed-agent-session.mjs --version2026.10.21 --json. Public npm/GitHub, npm/Bun installed13-step sessions, npx/bunx declared bins, stateless MCP stdio/HTTP and missing-command controls pass. Exactly one current-day tag exists. This artifact predates the active cache-scope fixes and does not certify publication of those changes. Required Sentry/telemetry gate passes with zero unresolved/critical/high issues,2.46 percent finish error rate and zero missing-code rows. Four explicit current command probes have four recent Sentry pm.command spans and four matched remote start/finish pairs; physical client queue is empty. Historical Release Reliability remains separately red."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

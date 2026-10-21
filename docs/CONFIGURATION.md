@@ -177,6 +177,15 @@ For command-level tracker targeting, prefer `--pm-path <tracker-root>`. The old
 itself, not the repository workspace. During `pm init`, explicit tracker paths
 that look like workspace roots are rejected unless `--force` is provided.
 
+Initialization maintains the repository's runtime-cache `.gitignore` fence for
+every tracker sharing that repository. Initializing or reinitializing a nested
+tracker preserves the enclosing tracker's exclusions and unrelated user rules.
+Custom tracker paths are literal Git paths, including spaces and wildcard
+characters. An intentional root-layout tracker uses repository-root exclusions.
+Paths containing line breaks are refused because `.gitignore` cannot safely
+represent them. Curated `search/eval-queries.json` files remain trackable in
+each tracker. See [merge safety](MERGE_SAFETY.md#runtime-receipts-and-retention).
+
 Implicit discovery checks the current directory and its ancestors up to the
 nearest `.git` directory or file, including worktrees and submodules. An
 uninitialized repository selects its own `.agents/pm` and returns initialization

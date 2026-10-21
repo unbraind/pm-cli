@@ -23645,7 +23645,8 @@
         "sdk/lifecycle/task-composition.ts",
         "sdk/runtime/mutation-admission.ts",
         "sdk/runtime/schema-preview.ts",
-        "sdk/test/execution.ts"
+        "sdk/test/execution.ts",
+        "sdk/workspace.ts"
       ],
       "stability": "stable"
     },
