@@ -105,6 +105,9 @@ describe("bounded context evidence (GH-1534 and GH-1535)", () => {
       }
       const complete = await runAction({ action: "context", path: pmPath, options: { section: ["tests"], limit: "1", tag: "selected", tokenBudget: "8000" }, outputBudget: "unbounded" }) as ContextResult;
       expect(complete.tests!.items_failing).toEqual(["pm-a", "pm-b", "pm-c"]);
+      const sdkMarkdown = renderContextMarkdown(complete);
+      expect(sdkMarkdown).toContain("- items_failing: [pm-a]");
+      expect(sdkMarkdown).toContain("- items_failing_omitted: 2");
       const markdown = await runCliInProcess(["context", "--section", "tests", "--limit", "1", "--tag", "selected", "--format", "markdown", "--token-budget", "8000"]);
       expect(markdown.code, markdown.stderr).toBe(0);
       expect(markdown.stdout).toContain("- items_failing: [pm-a]");
