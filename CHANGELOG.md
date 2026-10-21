@@ -15,6 +15,8 @@
 
 ### Security
 
+- Vitest redirect allowlist misses Windows backslash traversal ([pm-vitestredirect](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vitestredirect.toon))
+- Vitest manual-mock registration interpolates untrusted JavaScript ([pm-vitestmanual](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vitestmanual.toon))
 - Retain dependency advisory failure evidence in CI ([pm-ciadvisoryreceipt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ciadvisoryreceipt.toon))
 - GH-1530: dependency advisory CLI silently skips checks through filesystem aliases ([pm-tl7vlu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tl7vlu.toon))
 

@@ -250,7 +250,7 @@
     },
     {
       "id": "security-scanner-finding",
-      "version": 4,
+      "version": 5,
       "title": "Secret, dependency, and static-analysis findings",
       "owner_item_id": "pm-6ixn",
       "escape_class": "scanner_finding",
@@ -265,7 +265,7 @@
           "tests/unit/helpers/withTempPmPath.spec.ts",
           ".github/workflows/security.yml"
         ],
-        "item_ids": ["pm-qgvj", "pm-4ris"],
+        "item_ids": ["pm-qgvj", "pm-4ris", "pm-vitest4112", "pm-vitestmanual", "pm-vitestredirect"],
         "tags": ["security", "codeql", "semgrep"]
       },
       "checks": {
@@ -273,7 +273,8 @@
           "pnpm security:scan",
           "pnpm quality:dependencies",
           "pnpm audit --prod",
-          "node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)",
@@ -283,7 +284,7 @@
         ]
       },
       "negative_control": {
-        "item_ids": ["pm-qgvj"]
+        "item_ids": ["pm-qgvj", "pm-vitestmanual", "pm-vitestredirect"]
       },
       "historical_item_ids": ["pm-qgvj", "pm-4ris", "pm-2cv2o1", "pm-r61juc"],
       "budget": {

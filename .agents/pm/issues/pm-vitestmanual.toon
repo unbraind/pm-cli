@@ -1,0 +1,46 @@
+id: pm-vitestmanual
+title: Vitest manual-mock registration interpolates untrusted JavaScript
+description: "Public mocker/interceptor WebSocket manual registration can interpolate an attacker-controlled URL or export name into JavaScript, including asynchronous rebinding. Requires a reachable public handler; tracked Node test configs do not register it, so application exploitability is not established. Upstream: https://github.com/advisories/GHSA-qxg6-89mg-rqv8. The locked development dependency is affected; version4.1.12 is patched."
+type: Issue
+status: closed
+priority: 1
+tags[3]: dependencies,security,vitest
+created_at: "2026-10-21T21:12:27.675Z"
+updated_at: "2026-10-21T21:19:13.004Z"
+closed_at: "2026-10-21T21:19:11.859Z"
+completed_at: "2026-10-21T21:19:11.859Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "Inspect the upstream shared boundary and alternate representations; Preserve legitimate test and benchmark behavior; Verify exact lock, fresh advisories and native Windows CI before merge"
+parent: pm-vitest4112
+risk: medium
+confidence: 95
+severity: medium
+resolution: "Upgrade Vitest and coverage-v8 together to4.1.12, remove affected locked mocker4.1.11, add real installed-handler regression controls and version the existing scanner recurrence family. Preserve CodSpeed5.7.1, Vite7 and normal release-age/cooldown policy."
+expected_result: Both advisory boundaries are repaired in the locked development toolchain and legitimate test/benchmark behavior remains intact under strict full-lock advisory admission.
+actual_result: Both regressions fail against4.1.11 and pass against4.1.12. The linked focused cohort passes9/9; frozen install/build/typechecks and dedicated benchmarks pass. Fresh registry+OSV cover all568 locked versions with zero positives. Independent candidate review found no concrete bypass or regression. Native Windows CI and whole-project coverage remain required before merge; no CLI/SDK exploit or publication is claimed.
+comments[4]{created_at,author,text}:
+  "2026-10-21T21:12:27.675Z","harness:codex","Duplicate check: complete all-status corpus3042/3042 including closed items has no occurrence of either advisory or predecessor GHSA-82fw-gwwq-j7x9. Live request-specific searches and open/in_progress inventories found no exact advisory owner; semantic-only search results are not duplicate evidence. Reuse the security epic; keep the broader Vitest5 migration separately open."
+  "2026-10-21T21:16:55.092Z","harness:codex","Boundary and compatibility evidence: both public plugin regressions fail against4.1.11 and pass against4.1.12. The generated-source test executes only a harmless synthetic sentinel in a disposable Node child and also verifies exact URL preservation, quotes/backslashes/newlines in export names and asynchronous binding updates. The redirect test exercises the real registration handler and Vite allowlist without reading any files, rejects slash/backslash and nested escapes, and preserves an allowed redirect. This tests the normalization-to-allowlist boundary portably; native Windows CI remains required before merge. No tracked application config registers these public handlers, so no CLI/SDK exploit is claimed."
+  "2026-10-21T21:16:56.183Z","harness:codex","Fresh patched evidence at21:13UTC: both feeds complete over all568 locked versions with zero positives; the previous hosted569-version receipt remains the positive before-control. Frozen installation, build and all typecheck targets pass. Existing retry/reporter/CodSpeed runtime cohort passes7/7, new handler regressions pass2/2, and the dedicated benchmark invocation succeeds. Paired4.1.12 packages satisfy pnpm default one-day age without exclusions; Vitest5 and CodSpeed6 migration remains separate."
+  "2026-10-21T21:19:10.680Z","harness:codex",Independent candidate review found no concrete surviving bypass or regression. It traced all three shared serialization sites and redirect normalization before allowlist admission and the unchanged checked-path read. Additional read-only controls covered nine redirect representations and five export-name classes. Linux boundary execution passed; native Windows acceptance and whole-project coverage are required hosted gates before merging this reviewed delivery.
+files[4]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  package.json,project
+  pnpm-lock.yaml,project
+  tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/mcp-contract-reporter.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,project,"harness:codex","2026-10-21T21:16:53.063Z",local_mutation,docs/codeql-48-49-assessment
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Replace the affected Vitest4 dependency pair and register both public-handler regressions.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: security-scanner-finding
+  owner: pm-vitestmanual
+  negative_control: "The same real public-handler probes fail against installed4.1.11 and pass against4.1.12: synthetic URL injection changes a child-only sentinel; backslash redirect escapes are registered before the patch. Unusual export names and asynchronous rebinding plus allowed redirect are legitimate controls. The captured original hosted OSV receipt independently reports both affected-version advisories."
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts,"pnpm quality:dependencies"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

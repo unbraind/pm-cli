@@ -36,6 +36,11 @@ immediately before SDK assurance evaluation, which verifies advisory evidence
 before slower providers. The blocking registry command settles before OSV starts
 its network deadlines.
 
+CI retains this single receipt after successful and failed static jobs, with a
+separate artifact name for each run attempt and seven-day retention. Inspect both
+feeds before diagnosing a blocked collector: a positive advisory is a refusal,
+even when the other feed is clean.
+
 The command then verifies the installed CodSpeed bundle policy. Network/audit errors,
 missing packages, incomplete policy entries, changed package files, and unreviewed
 upgrades all fail. `quality:static` includes this command, so the existing CI,
@@ -49,6 +54,29 @@ commit and explicitly selects scanner version `3.98.0`; the action otherwise
 defaults to the `latest` image. The workflow contract checks both values on
 every TruffleHog step. Recheck the action's executable selectors when renewing
 its commit pin.
+
+## Vitest mocker advisory pair
+
+[pm-vitest4112](../.agents/pm/tasks/pm-vitest4112.toon) coordinates the
+[manual-registration finding](../.agents/pm/issues/pm-vitestmanual.toon) and
+[Windows redirect finding](../.agents/pm/issues/pm-vitestredirect.toon).
+[GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8)
+and [GHSA-xp26-3454-mjgp](https://github.com/advisories/GHSA-xp26-3454-mjgp)
+affect the previously locked `@vitest/mocker` 4.1.11. The compatible Vitest and
+coverage-provider pair now requires 4.1.12, whose shared mock-source generator
+serializes module URLs and export names, including asynchronous rebinding, and
+whose public redirect handler normalizes backslashes before the file allowlist
+check. Both fixes apply to public mocker/interceptor WebSocket handlers. The
+repository's Node test configurations do not register these handlers, so the
+affected development dependency does not establish an exploitable CLI or SDK
+route.
+
+The retained hosted OSV receipt identified both advisories while the registry
+audit returned zero. Keep full-lock admission mandatory and verify the patched
+graph against both feeds. This patch keeps Vitest 4, the CodSpeed peer contract
+and the Vite 7 override; the broader Vitest 5 migration remains separate. The
+October 15 patch releases meet pnpm's one-day minimum age on October 21 without
+an exclusion. Dependabot's seven-day scheduling cooldown is unchanged.
 
 ## Indexed source-map offsets
 
