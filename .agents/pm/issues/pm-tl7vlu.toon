@@ -2,36 +2,48 @@ id: pm-tl7vlu
 title: "GH-1530: dependency advisory CLI silently skips checks through filesystem aliases"
 description: "MacOS nightly39575255547 on main2a1e7dab0 fails parsing empty stdout from the copied dependency advisory executable. The executable compares lexical argv[1] against canonical import.meta.url. A Linux symlink reproduction of the exact script returns exit0 and empty output even for --unknown, confirming silent entrypoint bypass. Resolve physical script identity before deciding whether to execute; retain side-effect-free imports."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: ci,macos,nightly,read-output,security
 created_at: "2026-10-21T09:48:44.974Z"
-updated_at: "2026-10-21T10:16:35.766Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#a064f14a96b4e8187e80e76b"
+updated_at: "2026-10-21T10:44:21.930Z"
+closed_at: "2026-10-21T10:39:28.621Z"
+completed_at: "2026-10-21T10:39:28.621Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "Real and aliased executable paths emit the complete verified receipt and reject invalid arguments; importing the module does not execute the gate; unchanged-source alias regression fails before and passes after the fix; supported hosted macOS verification runs without weakening advisory, coverage or timeout policies"
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: Filesystem alias spelling cannot turn a dependency security check into a zero-exit no-op.
+resolution: "Canonicalize invocation and module paths before executing advisory verification; cover real and aliased paths in ordinary and symlink-preserving Node modes, preserve inert imports, and register the advisory recurrence family."
+expected_result: "Alias spelling cannot suppress dependency checks: successful invocations emit complete verified receipts, invalid arguments fail, imports stay inert, and native macOS verifies the same behavior."
+actual_result: "The unchanged alias test failed before the fix with empty JSON output; all22 advisory and8 policy tests now pass, both hosted macOS Node24 shards passed, and complete lineage validation reports zero uncovered members. Final PR checks remain mandatory before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-eqxjzl,recurs_from,"2026-10-21T09:48:44.974Z","harness:codex","cli:create:dep",detected
   pm-2zjs0g,discovered_from,"2026-10-21T10:05:32.122Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-21T09:48:44.974Z","harness:codex","Duplicate check: complete3038-item intake corpus plus current recovery leaf, fresh all-status search and refreshed open/in-progress lists found no alias-entrypoint defect leaf. Live full pm-eqxjzl is the completed collector implementation; live pm-u9d0 is the open delivery parent. Automatic issue1530 links only the completed recurrence meter pm-2zjs0g. This specific child preserves those completed implementations and records the new runtime failure."
   "2026-10-21T09:53:40.714Z","harness:codex","Root-cause proof: exact current gate invoked through a real file alias exits0 with0 stdout/stderr bytes on --unknown. Extended existing directory-junction subprocess test fails on unchanged code with the same Unexpected end of JSON input as hosted macOS. Fix is being verified in an isolated checkout while the original PR source is held by long-running coverage. Only this new leaf is actively claimed."
   "2026-10-21T09:59:01.354Z","harness:codex","Isolated corrected guard compares physical invocation and module paths. The unchanged directory-alias regression now passes all22 tests, including real and alias paths with ordinary Node loading and --preserve-symlinks-main, valid complete receipts, invalid-argument failure and inert imports. Original source failed21/22 with the same empty-output parse failure as macOS. No advisory thresholds, source requirements, test membership or deadlines changed."
   "2026-10-21T10:16:35.765Z","harness:codex","The alias fix and unchanged subprocess regression are now integrated into PR #1531 alongside the related SDK/CLI read contracts. The linked root test passed all 22 cases. The guard canonicalizes both invocation and module paths, including symlink-preserving Node startup, while imports remain inert. Hosted native macOS acceptance remains pending before closure. GitHub issue #1530 has a specific PM-link comment; its original failed nightly remains preserved."
+  "2026-10-21T10:22:42.759Z","harness:codex","The full local static gate correctly rejects two uncovered recurrence members: this defect and its completed collector predecessor. The recorded recurs_from edge exposed a new semantic component absent from the policy. Register a specific physical-entrypoint advisory family with the real subprocess negative control, native macOS checks and complete-lineage validation; retain all enforcement bounds and historical facts."
+  "2026-10-21T10:25:18.777Z","harness:codex","Recursive improvement evidence: the new advisory identity family registers the real two-member recurrence component without changing coverage enforcement. Complete-population defect evidence now passes with zero findings and 27 families; all 30 focused advisory/policy cases pass. The CLI assurance risk and lineages primitives select the family from the changed script/item and report no uncovered lineage, so future edits inherit the native and local checks."
+  "2026-10-21T10:39:27.771Z","harness:codex","Native acceptance: both macOS Node24 nightly shards succeeded on source 06298bc06e4b9fc2c93cd11e5b16c740c1c215d3 in run39583927222, including the real/alias advisory subprocess regression. The linked advisory and policy commands pass all30 cases. The complete recurrence gate passes after registering the specific actual lineage. The earlier quality job correctly failed the then-unregistered lineage and remains historical evidence. Final reviewed delivery must still pass the unchanged static and coverage checks before merge."
+  "2026-10-21T10:44:21.929Z","harness:codex","Settled native run39583927222 confirms both macOS and both Windows Node24 shards succeeded, as did Ubuntu Node22 and25. The quality failure is the already-corrected recurrence registration; the full Ubuntu Node24 coverage job was cancelled and is not counted as passing. Native path acceptance for this fix is complete, while final PR coverage and static admission remain mandatory."
 learnings[1]{created_at,author,text}:
   "2026-10-21T10:16:34.685Z","harness:codex","Executable identity must compare physical paths on both sides: macOS temporary-directory aliases and --preserve-symlinks-main can make lexical argv and module URLs disagree while identifying the same script. Verify complete output and invalid-argument failure through both real and aliased subprocess entrypoints."
-files[2]{path,scope}:
-  scripts/release/dependency-advisories/gate.mjs,project
-  tests/unit/scripts/release/dependency-advisories/gate.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+files[3]:
+  - path: config/defect-recurrence-policy.json
+    scope: project
+    note: Register the actual advisory entrypoint recurrence component with focused and native checks
+  - path: scripts/release/dependency-advisories/gate.mjs
+    scope: project
+  - path: tests/unit/scripts/release/dependency-advisories/gate.spec.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts,project,240,"harness:codex","2026-10-21T09:58:59.070Z",local_mutation,fix/read-session-types-and-recovery
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/defect-evidence-gate.spec.ts,project,240,"harness:codex","2026-10-21T10:23:47.204Z",local_mutation,fix/read-session-types-and-recovery
+test_runs[2]:
   - run_id: test-local-mvhyi7fd-88ruy1
     kind: test
     status: passed
@@ -43,8 +55,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvhyxron-qraejy
+    kind: test
+    status: passed
+    started_at: "2026-10-21T10:27:11.919Z"
+    finished_at: "2026-10-21T10:27:49.991Z"
+    recorded_at: "2026-10-21T10:27:49.991Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/defect-evidence-gate.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Document physical entrypoint verification for the advisory security gate
+close_reason: "Verified physical entrypoint admission locally and on native macOS, with recurrence checks registered."
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

@@ -3,6 +3,31 @@
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
   "families": [
     {
+      "id": "dependency-advisory-executable-identity",
+      "version": 1,
+      "title": "Dependency advisory execution survives physical path aliases without weakening feed admission",
+      "owner_item_id": "pm-tl7vlu",
+      "escape_class": "nightly_regression",
+      "triggers": {
+        "file_patterns": ["scripts/release/dependency-advisories/**", "tests/unit/scripts/release/dependency-advisories/**"],
+        "item_ids": ["pm-tl7vlu", "pm-eqxjzl"]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts",
+          "node scripts/release/defect-evidence-gate.mjs"
+        ],
+        "hosted": [
+          "CI / Gates (static)",
+          "Nightly Validation / Nightly (macos-latest, Node 24, shard 1/2)",
+          "Nightly Validation / Nightly (macos-latest, Node 24, shard 2/2)"
+        ]
+      },
+      "negative_control": { "files": ["scripts/release/dependency-advisories/gate.mjs"] },
+      "historical_item_ids": ["pm-eqxjzl"],
+      "budget": { "max_escape_rate": 0, "max_false_positive_rate": 0.03 }
+    },
+    {
       "id": "qualified-corpus-keeper-allocation",
       "version": 1,
       "title": "Expensive corpus and policy keepers retain strict deadlines under qualified serial scheduling",

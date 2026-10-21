@@ -4,9 +4,14 @@
 
 ### Fixed
 
+- GH-1528: recover completeness and TOON mistakes on the attempted read command ([pm-7gpx34](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7gpx34.toon))
 - Model session-suppressed row references in public SDK result types ([pm-t1p1jv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t1p1jv.toon))
 - Preserve budget omission types across union SDK option shapes ([pm-jqgkis](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqgkis.toon))
 - Align SDK producer-continuation result types with sparse reference envelopes ([pm-oybmsd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oybmsd.toon))
+
+### Security
+
+- GH-1530: dependency advisory CLI silently skips checks through filesystem aliases ([pm-tl7vlu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tl7vlu.toon))
 
 ### Other
 

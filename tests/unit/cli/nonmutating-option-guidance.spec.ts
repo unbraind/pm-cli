@@ -8,6 +8,17 @@ afterEach(() => {
 });
 
 describe("agent command guidance", () => {
+  it("prioritizes a semantic read correction over a supplied fallback", () => {
+    const refusal = formatCommanderErrorForJson("unknown option '--full'", "context", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["context", "--full", "--pm-path", "tracker with spaces", "--no-extensions", "--json"],
+      suggestedRetryCommand: "pm context --help",
+    });
+    expect(refusal.code).toBe("unknown_option");
+    expect(refusal.recovery?.suggested_retry_args).toEqual([
+      "context", "--depth", "full", "--pm-path", "tracker with spaces", "--no-extensions", "--json",
+    ]);
+    expect(refusal.recovery?.suggested_retry).toContain("pm context --depth full");
+  });
   it("preserves read intent when no command was resolved", () => {
     const refusal = formatCommanderErrorForJson("unknown option '--toon'", undefined, "Task|Issue", 2);
     expect(refusal.code).toBe("unknown_option");
