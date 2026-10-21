@@ -4,7 +4,7 @@
   "families": [
     {
       "id": "workspace-cache-tracker-scope",
-      "version": 1,
+      "version": 2,
       "title": "Tracker cache exclusions and merge patterns preserve literal repository scopes",
       "owner_item_id": "pm-nl60tbxzkjwp",
       "escape_class": "production_defect",
@@ -27,7 +27,8 @@
         ],
         "hosted": [
           "CI / Gates (coverage)",
-          "CI / Gates (static)"
+          "CI / Gates (static)",
+          "CodeQL / Analyze (javascript-typescript)"
         ]
       },
       "negative_control": {

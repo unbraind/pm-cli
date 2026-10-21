@@ -6,9 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:sdk",custom-root,gitignore,init
 created_at: "2026-10-21T11:44:27.604Z"
-updated_at: "2026-10-21T13:00:29.784Z"
-closed_at: "2026-10-21T13:00:28.713Z"
-completed_at: "2026-10-21T13:00:28.713Z"
+updated_at: "2026-10-21T13:38:44.743Z"
+closed_at: "2026-10-21T13:38:43.928Z"
+completed_at: "2026-10-21T13:38:43.928Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Root-layout tracker caches are ignored at the repository root without hiding unrelated nested runtime paths; Git metacharacters and whitespace in tracker roots match only literal intended paths; default/custom/external roots retain their documented behavior; public helper and CLI initialization are verified with real Git
@@ -16,16 +16,16 @@ parent: pm-o2kc
 risk: medium
 confidence: 90
 severity: medium
-resolution: "Escape literal Git path metacharacters and leading negation, anchor root-layout cache rules, reject unrepresentable line breaks and preserve a lone non-default merge fence."
-expected_result: Configured tracker paths protect only their intended runtime state and retain merge behavior in every initialization order.
-actual_result: "All linked tests pass against real Git; pre-fix controls demonstrated seven initial failures and two leading-negation failures. Public SDK signatures are unchanged, generated contracts are current, typecheck and nine-package packed executor smoke pass. Full hosted coverage and static admission gate the merge."
+resolution: "Render literal/root-layout ignore and merge paths safely, preserve non-default merge fences, reject unrepresentable roots and replace polynomial suffix normalization with a backward scan."
+expected_result: Configured tracker roots preserve intended literal Git scope and public SDK normalization remains responsive for long slash runs.
+actual_result: "All linked commands and typecheck pass. The exact CodeQL keeper falls from9072.65ms before the fix to3ms afterward, below its unchanged1000ms ceiling. Final hosted security, static and full-source coverage plus re-requested bot review gate the merge."
 affected_version: 2026.10.21
 component: sdk/workspace
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4uqm,recurs_from,"2026-10-21T11:44:27.604Z","harness:codex","cli:create:dep",detected
   pm-hous,recurs_from,"2026-10-21T12:42:19.028Z","harness:codex","cli:update:dep",detected
   pm-kynkl8,recurs_from,"2026-10-21T12:42:19.028Z","harness:codex","cli:update:dep",detected
-comments[5]:
+comments[7]:
   - created_at: "2026-10-21T11:44:27.604Z"
     author: "harness:codex"
     text: "Duplicate check: complete strict 3040-item all-status/full-body read (no omissions), current init/gitignore/root-layout keyword searches and open/in-progress inventories, and full canonical pm-hous/pm-4uqm/pm-kynkl8 metadata plus relevant history establish prior fixes but no active owner for this reproduced defect. Preserve completed lineage and create only this bounded recurrence slice."
@@ -42,6 +42,12 @@ comments[5]:
   - created_at: "2026-10-21T13:00:22.354Z"
     author: "harness:codex"
     text: "Final linked proof covers literal bracket and leading-exclamation tracker names in both initialization orders, all five cache/recovery directories, preserved evaluation files, unrelated sibling exclusions and both merge-driver assignments. The added leading-negation controls failed twice before the final fix and pass afterward. All linked commands, strict typecheck, the bounded352-mutant gate and the nine-package npx/bunx smoke pass. Generated refusal-producer catalog and contract snapshot were refreshed. Local startup benchmark failures are separately retained; required exact-head hosted static and full-source coverage must pass before merge."
+  - created_at: "2026-10-21T13:26:55.275Z"
+    author: "harness:codex"
+    text: "CodeQL check119240838983 on PR1533/head80be905 identifies polynomial trailing-slash normalization in normalizeTrackerRelativeRoot, reachable from public SDK input. Its slash-suffix regex can retry on long slash runs followed by a non-slash. Replace suffix matching with one backward index scan, preserve the existing leading-dot and native-separator semantics, and verify literal renderer output with long input and trimmed roots. No scanner suppression or threshold change is permitted."
+  - created_at: "2026-10-21T13:38:41.095Z"
+    author: "harness:codex"
+    text: "CodeQL regression sensitivity is executed: the80,000-slash input required9072.65ms before the fix and failed the1,000ms keeper ceiling. With backward suffix scanning the same public SDK operation took3ms and the keeper passes. All linked tests and typecheck pass. Recurrence policy version2 also binds the family to hosted CodeQL analysis. Scanner rules and all performance/coverage thresholds remain intact."
 learnings[1]{created_at,author,text}:
   "2026-10-21T13:00:21.435Z","harness:codex","Quoting a Git attribute path does not make wildcard or leading-negation characters literal. Escape caller-owned path components separately from installer-owned recursive globs, and exercise initialization in both orders."
 files[7]{path,scope}:
@@ -56,7 +62,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,project,240,"harness:codex","2026-10-21T11:49:36.807Z",local_mutation,fix/workspace-cache-ignore-scopes
   node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,project,240,"harness:codex","2026-10-21T12:03:21.273Z",local_mutation,fix/workspace-cache-ignore-scopes
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240,"harness:codex","2026-10-21T12:42:22.580Z",local_mutation,fix/workspace-cache-ignore-scopes
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvi3saj2-044h5d
     kind: test
     status: passed
@@ -83,16 +89,29 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvi5ho2y-nkjvny
+    kind: test
+    status: passed
+    started_at: "2026-10-21T13:30:17.743Z"
+    finished_at: "2026-10-21T13:31:16.138Z"
+    recorded_at: "2026-10-21T13:31:16.138Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/MERGE_SAFETY.md,project
-close_reason: Implemented literal and root-layout cache and merge protection with regression evidence.
+close_reason: Closed after literal-path protection and CodeQL normalization remediation.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   gate_id: repository-static-quality
   owner: pm-47wuv8awpqvj
-  negative_control: node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts
-  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts tests/unit/sdk/merge-safety.spec.ts,pnpm typecheck,"pnpm smoke:npx"
-  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts tests/unit/sdk/merge-safety.spec.ts,pnpm typecheck
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CodeQL / Analyze (javascript-typescript)
 body: ""

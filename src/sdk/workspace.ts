@@ -77,9 +77,10 @@ async function withGitignorePermissionRecovery<T>(operation: () => Promise<T>): 
 }
 
 function normalizeTrackerRelativeRoot(trackerRelativeRoot: string): string {
-  return trackerRelativeRoot.split(path.sep).join("/")
-    .replace(/^\.\/+/, "")
-    .replace(/\/+$/, "");
+  const root = trackerRelativeRoot.split(path.sep).join("/").replace(/^\.\/+/, "");
+  let end = root.length;
+  while (end > 0 && root[end - 1] === "/") end -= 1;
+  return root.slice(0, end);
 }
 
 /** Return whether a relative path escapes its owning root, without rejecting valid names such as `..pm`. */
@@ -137,12 +138,36 @@ function mergeTrackerIgnoreRules(lines: string[], trackerRoot: string, rules: st
   return merged;
 }
 
+/** Find complete line-delimited fences in one pass; a newer opener leaves unmatched prefixes outside the managed block. */
+function managedGitignoreBlocks(current: string): Array<{ index: number; end: number; lines: string[] }> {
+  const blocks: Array<{ index: number; end: number; lines: string[] }> = [];
+  let start = -1;
+  let bodyStart = 0;
+  let offset = 0;
+  for (const line of current.split("\n")) {
+    const marker = line.endsWith("\r") ? line.slice(0, -1) : line;
+    if (marker === PM_GITIGNORE_START) {
+      start = offset;
+      bodyStart = offset + line.length + 1;
+    } else if (marker === PM_GITIGNORE_END && start >= 0) {
+      blocks.push({
+        index: start,
+        end: offset + marker.length,
+        lines: current.slice(bodyStart, offset).split(/\r?\n/u).filter((entry) => entry.length > 0),
+      });
+      start = -1;
+    }
+    offset += line.length + 1;
+  }
+  return blocks;
+}
+
 /** Reconcile complete managed fences without moving or rewriting unrelated user content. */
 function reconcileGitignoreContent(current: string, trackerRoot: string): string {
   const newline = current.includes("\r\n") ? "\r\n" : "\n";
   const rules = getPmGitignoreBlock(trackerRoot).split("\n").slice(1, -1);
-  const blocks = [...current.matchAll(/^# pm-cli:runtime-cache:start\r?\n([\s\S]*?)^# pm-cli:runtime-cache:end(?=\r?$)/gmu)];
-  const existingRules = blocks.flatMap((block) => block[1].split(/\r?\n/u).filter((line) => line.length > 0));
+  const blocks = managedGitignoreBlocks(current);
+  const existingRules = blocks.flatMap((entry) => entry.lines);
   const block = [PM_GITIGNORE_START, ...mergeTrackerIgnoreRules(existingRules, trackerRoot, rules), PM_GITIGNORE_END].join(newline);
   if (blocks.length === 0) {
     const separator = current.length === 0 ? "" : current.endsWith("\n") ? newline : `${newline}${newline}`;
@@ -150,7 +175,7 @@ function reconcileGitignoreContent(current: string, trackerRoot: string): string
   }
   let next = current;
   for (const [index, match] of [...blocks.entries()].reverse()) {
-    next = `${next.slice(0, match.index)}${index === 0 ? block : ""}${next.slice(match.index + match[0].length)}`;
+    next = `${next.slice(0, match.index)}${index === 0 ? block : ""}${next.slice(match.end)}`;
   }
   return next;
 }

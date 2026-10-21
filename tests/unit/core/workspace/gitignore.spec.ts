@@ -11,6 +11,18 @@ import {
 } from "../../../../src/sdk/workspace.js";
 
 describe("ensurePmGitignore", () => {
+  it.each([["./custom///", "custom"], ["/", ""]])("normalizes renderer root %j without changing its scope", (input, expected) => {
+    expect(getPmGitignoreBlock(input)).toBe(getPmGitignoreBlock(expected));
+  });
+
+  it("bounds normalization work for a long slash run followed by a literal name", () => {
+    const tracker = `custom${"/".repeat(80_000)}x`;
+    const started = performance.now();
+    const rendered = getPmGitignoreBlock(tracker);
+    expect(performance.now() - started).toBeLessThan(1_000);
+    expect(rendered).toContain(`${tracker}/runtime/`);
+  });
+
   it("creates, repairs, and then preserves the canonical fenced block", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-"));
     try {
@@ -107,13 +119,28 @@ describe("ensurePmGitignore", () => {
     }
   });
 
-  it.each(["sentinel", "# example: # pm-cli:runtime-cache:start\n"])("preserves unmatched user content %j", async (content) => {
+  it.each(["sentinel", "# example: # pm-cli:runtime-cache:start\n", "# pm-cli:runtime-cache:end\n"])("preserves unmatched user content %j", async (content) => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-user-"));
     try {
       await writeFile(path.join(root, ".gitignore"), content);
       await ensurePmGitignore(root);
       expect((await readFile(path.join(root, ".gitignore"), "utf8")).startsWith(content)).toBe(true);
       expect((await ensurePmGitignore(root)).changed).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves repeated unmatched opening fences and remains idempotent", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-unmatched-"));
+    const prefix = "# pm-cli:runtime-cache:start\n".repeat(4_000);
+    try {
+      await writeFile(path.join(root, ".gitignore"), prefix);
+      await ensurePmGitignore(root);
+      const after = await readFile(path.join(root, ".gitignore"), "utf8");
+      expect(after.startsWith(prefix)).toBe(true);
+      expect((await ensurePmGitignore(root)).changed).toBe(false);
+      expect(await readFile(path.join(root, ".gitignore"), "utf8")).toBe(after);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
