@@ -386,6 +386,18 @@ jobs:
           path: .cache/mutation/*.json
           if-no-files-found: warn
 
+      # pm-ciadvisoryreceipt: preserve the bounded public feed receipt even
+      # when the collector refuses admission; never upload the whole cache.
+      - name: Retain dependency advisory evidence
+        if: always() && matrix.gate == 'static'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: dependency-advisory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/dependency-security/receipt.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Enforce discovery and answer token budgets
         if: matrix.gate == 'static'
         run: pnpm quality:token-budget
@@ -769,6 +781,13 @@ jobs:
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts tests/integration/cli/agent-receipt-recovery.integration.spec.ts
+
+      # pm-vitest4112: execute advisory boundaries with native Windows path semantics.
+      - name: Verify installed mocker advisory boundaries on Windows
+        if: matrix.cohort == 'native'
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
+        run: node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts
 
       # pm-q91qyd: interception cannot prove the native npm.cmd execution boundary.
       - name: Verify native release-ledger npm and Git providers

@@ -1,0 +1,51 @@
+id: pm-codeql4849
+title: Import and disposition CodeQL observation-projection alerts 48 and 49
+description: "Reviewed post-merge import of CodeQL alerts48/49 from main29b4ab7e, replacing comment-only tracking with the existing security epic per-finding convention. Both claims are statically defeated by the existing synchronous path guard; this is scanner disposition work, not a vulnerability fix."
+type: Task
+status: closed
+priority: 2
+tags[3]: changelog-exclude,codeql,security
+created_at: "2026-10-21T20:14:32.680Z"
+updated_at: "2026-10-21T20:18:37.790Z"
+closed_at: "2026-10-21T20:18:36.522Z"
+completed_at: "2026-10-21T20:18:36.522Z"
+author: "harness:codex"
+estimated_minutes: 15
+acceptance_criteria: Each alert has an independent child issue with its source and static verdict; Existing source controls and strict quality gates remain unchanged
+parent: pm-qwoy
+risk: low
+confidence: 95
+resolution: "Added one child Issue per CodeQL alert with source links, static not_actionable verdicts and audited GitHub false-positive dispositions; preserve every existing guard and gate."
+expected_result: Batch and finding records are independently inspectable and satisfy terminal scanner evidence without claiming a product fix.
+actual_result: "Both child issues are closed/released; the linked SDK environment suite passes16/16. The batch and findings record explicit no-new-gate reasons expiring November21. Source, scanner configuration and coverage thresholds are unchanged."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6ixn,related,"2026-10-21T20:14:32.680Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-21T20:14:32.680Z","harness:codex","Duplicate check: complete all-status intake and live CodeQL48/49 searches plus full canonical security epic reads found epic comments but no per-alert child issues. Reuse pm-qwoy and pm-6ixn lineage and create only the missing batch and two finding records."
+  "2026-10-21T20:15:57.223Z","harness:codex","Review correction: individual scanner records now exist as pm-codeql48 and pm-codeql49 under this batch. Both preserve medium scanner severity and separate not_actionable verdicts with positive guard evidence. The governance waivers cover only the absence of a justified new gate for a false positive; no scanner or coverage control is disabled. Both records are excluded from the public changelog because they do not describe product changes."
+files[1]{path,scope}:
+  src/sdk/environment/agent-environment.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/environment/agent-environment.spec.ts,project,240,"harness:codex","2026-10-21T20:15:55.903Z",local_mutation,docs/codeql-48-49-assessment
+test_runs[1]:
+  - run_id: test-local-mvijyekl-fxxxz2
+    kind: test
+    status: passed
+    started_at: "2026-10-21T20:15:58.605Z"
+    finished_at: "2026-10-21T20:16:11.588Z"
+    recorded_at: "2026-10-21T20:16:11.588Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/environment/agent-environment.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  SECURITY.md,project
+close_reason: Complete independently triageable scanner import and governance evidence.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: explicit_waiver
+  owner: pm-codeql4849
+  waiver_reason: "This coordination batch imports two independently assessed false positives. Existing synchronous SDK path guards defeat both reported claims and are unchanged. A new product gate is not justified for the import itself; retain strict scanners and coverage, and reassess the disposition if the guard or scanner path changes."
+  waiver_expires_at: "2026-11-21T00:00:00.000Z"
+body: ""

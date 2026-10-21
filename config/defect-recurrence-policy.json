@@ -250,7 +250,7 @@
     },
     {
       "id": "security-scanner-finding",
-      "version": 4,
+      "version": 6,
       "title": "Secret, dependency, and static-analysis findings",
       "owner_item_id": "pm-6ixn",
       "escape_class": "scanner_finding",
@@ -265,7 +265,7 @@
           "tests/unit/helpers/withTempPmPath.spec.ts",
           ".github/workflows/security.yml"
         ],
-        "item_ids": ["pm-qgvj", "pm-4ris"],
+        "item_ids": ["pm-qgvj", "pm-4ris", "pm-vitest4112", "pm-vitestmanual", "pm-vitestredirect"],
         "tags": ["security", "codeql", "semgrep"]
       },
       "checks": {
@@ -273,17 +273,20 @@
           "pnpm security:scan",
           "pnpm quality:dependencies",
           "pnpm audit --prod",
-          "node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)",
+          "CI / Windows regression (Node 24)",
           "CodeQL / Analyze (javascript-typescript)",
           "Security and Script Quality / TruffleHog",
           "Security and Script Quality / Trivy"
         ]
       },
       "negative_control": {
-        "item_ids": ["pm-qgvj"]
+        "item_ids": ["pm-qgvj", "pm-vitestmanual", "pm-vitestredirect"]
       },
       "historical_item_ids": ["pm-qgvj", "pm-4ris", "pm-2cv2o1", "pm-r61juc"],
       "budget": {
@@ -293,8 +296,8 @@
     },
     {
       "id": "review-caught-contract-drift",
-      "version": 3,
-      "title": "CLI, SDK, MCP, and initialization contract drift caught in review",
+      "version": 5,
+      "title": "CLI, SDK, MCP, initialization, and CI evidence contract drift caught in review",
       "owner_item_id": "pm-rtn5h6",
       "escape_class": "review_caught_late",
       "triggers": {
@@ -303,17 +306,22 @@
           "src/sdk/**",
           "src/mcp/**",
           "src/core/init/**",
-          "tests/integration/**"
+          "tests/integration/**",
+          ".github/workflows/ci.yml"
         ],
-        "item_ids": ["pm-at1j", "pm-0bwe", "pm-kipd"],
+        "item_ids": ["pm-at1j", "pm-0bwe", "pm-kipd", "pm-ciadvisoryreceipt"],
         "tags": ["review-feedback", "surface-parity"]
       },
       "checks": {
-        "local": ["pnpm contracts:check", "pnpm quality:static"],
+        "local": [
+          "pnpm contracts:check",
+          "pnpm quality:static",
+          "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts"
+        ],
         "hosted": ["CI / Gates (coverage)", "CI / Gates (static)"]
       },
       "negative_control": {
-        "item_ids": ["pm-at1j"]
+        "item_ids": ["pm-at1j", "pm-ciadvisoryreceipt"]
       },
       "historical_item_ids": [
         "pm-kipd",

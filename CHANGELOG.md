@@ -15,6 +15,9 @@
 
 ### Security
 
+- Retain dependency advisory failure evidence in CI ([pm-ciadvisoryreceipt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ciadvisoryreceipt.toon))
+- Patch Vitest Windows backslash redirect traversal ([pm-vitestredirect](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vitestredirect.toon))
+- Patch Vitest manual-mock registration code injection ([pm-vitestmanual](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vitestmanual.toon))
 - GH-1530: dependency advisory CLI silently skips checks through filesystem aliases ([pm-tl7vlu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tl7vlu.toon))
 
 ### Other

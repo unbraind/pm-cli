@@ -1,0 +1,77 @@
+id: pm-vitest4112
+title: Remediate Vitest mocker advisory pair from the hosted OSV receipt
+description: "Hosted static receipt39674740199 attempt1 at21:03UTC covers all569 locked package versions and reports two advisories for @vitest/mocker4.1.11 while the registry audit reports zero. Import each finding as its own child Issue and upgrade the compatible Vitest4 pair."
+type: Task
+status: closed
+priority: 1
+tags[4]: changelog-exclude,dependencies,security,vitest
+created_at: "2026-10-21T21:12:25.217Z"
+updated_at: "2026-10-21T22:02:57.595Z"
+closed_at: "2026-10-21T22:02:55.983Z"
+completed_at: "2026-10-21T22:02:55.983Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "Remove affected4.1.11 packages without a major migration; Preserve coverage, Node22 and CodSpeed compatibility; Retain complete per-feed evidence and exact-head hosted validation"
+parent: pm-qwoy
+risk: medium
+confidence: 95
+resolution: "Upgrade the compatible Vitest4/coverage pair to4.1.12, add real public-handler before/after regressions and select them in the required Windows native cohort. Strengthen the existing workflow contract and recurrence family without changing cooldown, Vite/CodSpeed compatibility, coverage thresholds or CI budgets."
+expected_result: "The affected locked dependency is removed, legitimate behavior is preserved, and the same advisory boundary tests run under both Ubuntu coverage and required Windows path semantics before merge."
+actual_result: "Original handler probes fail on4.1.11 and pass on4.1.12; the native-selection contract fails before the workflow step and passes afterward. Linked local checks pass31/31, build/typecheck/lint pass, and fresh full-lock feeds are rechecked. The required native Windows step is now selected and must pass on the final head before merge; no earlier Windows advisory execution is claimed."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ciadvisoryreceipt,discovered_from,"2026-10-21T21:12:25.217Z","harness:codex","cli:create:dep",detected
+  pm-fokyhh,related,"2026-10-21T21:12:25.217Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-21T21:12:25.217Z","harness:codex","Duplicate check: complete all-status corpus3042/3042 including closed items has no occurrence of either advisory or predecessor GHSA-82fw-gwwq-j7x9. Live request-specific searches and open/in_progress inventories found no exact advisory owner; semantic-only search results are not duplicate evidence. Reuse the security epic; keep the broader Vitest5 migration separately open."
+  "2026-10-21T21:17:06.131Z","harness:codex","Boundary and compatibility evidence: both public plugin regressions fail against4.1.11 and pass against4.1.12. The generated-source test executes only a harmless synthetic sentinel in a disposable Node child and also verifies exact URL preservation, quotes/backslashes/newlines in export names and asynchronous binding updates. The redirect test exercises the real registration handler and Vite allowlist without reading any files, rejects slash/backslash and nested escapes, and preserves an allowed redirect. This tests the normalization-to-allowlist boundary portably; native Windows CI remains required before merge. No tracked application config registers these public handlers, so no CLI/SDK exploit is claimed."
+  "2026-10-21T21:17:07.307Z","harness:codex","Fresh patched evidence at21:13UTC: both feeds complete over all568 locked versions with zero positives; the previous hosted569-version receipt remains the positive before-control. Frozen installation, build and all typecheck targets pass. Existing retry/reporter/CodSpeed runtime cohort passes7/7, new handler regressions pass2/2, and the dedicated benchmark invocation succeeds. Paired4.1.12 packages satisfy pnpm default one-day age without exclusions; Vitest5 and CodSpeed6 migration remains separate."
+  "2026-10-21T21:20:56.971Z","harness:codex",Independent candidate review found no concrete surviving bypass or regression. It traced all three shared serialization sites and redirect normalization before allowlist admission and the unchanged checked-path read. Additional read-only controls covered nine redirect representations and five export-name classes. Linux boundary execution passed; native Windows acceptance and whole-project coverage remain required hosted gates before merge.
+  "2026-10-21T21:59:32.085Z","harness:codex","Pre-merge verification correction: final required Windows jobs pass, but their focused native cohort does not select the new installed-mocker boundary file; Ubuntu coverage alone does not satisfy the recorded native Windows acceptance criterion. Reopen this canonical lineage before editing the existing Windows cohort and its workflow contract. Preserve earlier before/after controls and closure history; no duplicate issue or weakened check is needed."
+  "2026-10-21T22:02:54.218Z","harness:codex","Windows selection repair: the existing partition contract fails before the native advisory step is added (missing step), then passes with the suite selected only in the native cohort. The complete local workflow+handler cohort passes24/24, and linked dependency/retry/reporter plus workflow commands pass31/31. Build/typecheck/lint/workflow permissions pass. Preserve all three Windows partitions, the12-minute cohort budget and strict aggregate outcomes. Prior head f304eb2 passed26 required checks and100% coverage, but did not run these advisory probes on Windows; the new reviewed head must prove that native step before merge."
+files[6]{path,scope}:
+  .github/workflows/ci.yml,project
+  config/defect-recurrence-policy.json,project
+  package.json,project
+  pnpm-lock.yaml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/mcp-contract-reporter.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,project,"harness:codex","2026-10-21T21:17:04.982Z",local_mutation,docs/codeql-48-49-assessment
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,"harness:codex","2026-10-21T22:01:15.108Z",local_mutation,docs/codeql-48-49-assessment
+test_runs[2]:
+  - run_id: test-local-mvim5367-jhsh5m
+    kind: test
+    status: passed
+    started_at: "2026-10-21T21:17:09.524Z"
+    finished_at: "2026-10-21T21:17:22.639Z"
+    recorded_at: "2026-10-21T21:17:22.639Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/mcp-contract-reporter.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvinqqdq-b5w0un
+    kind: test
+    status: passed
+    started_at: "2026-10-21T22:01:34.599Z"
+    finished_at: "2026-10-21T22:02:12.110Z"
+    recorded_at: "2026-10-21T22:02:12.110Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/mcp-contract-reporter.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Patch the paired dependencies and require advisory boundary execution on native Windows.
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: security-scanner-finding
+  owner: pm-vitest4112
+  negative_control: "The same real public-handler probes fail against installed4.1.11 and pass against4.1.12: synthetic URL injection changes a child-only sentinel; backslash redirect escapes are registered before the patch. Unusual export names and asynchronous rebinding plus allowed redirect are legitimate controls. The captured original hosted OSV receipt independently reports both affected-version advisories. The existing Windows partition workflow contract also fails before adding the advisory suite to the native cohort and passes after that selection is added; native execution remains enforced by the required Windows aggregate."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts,"pnpm quality:dependencies",node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+body: ""

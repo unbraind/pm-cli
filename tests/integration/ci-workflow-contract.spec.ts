@@ -265,6 +265,13 @@ describe("GitHub workflow contract", () => {
     const scripted = cohorts.steps.filter((step: { run?: string }) => step.run?.includes("node scripts/run-tests.mjs"));
     expect(scripted.filter((step: { if?: string }) => step.if === "matrix.cohort == 'scripts'")).toHaveLength(1);
     expect(scripted.every((step: { if?: string }) => ["matrix.cohort == 'scripts'", "matrix.cohort == 'native'"].includes(step.if ?? ""))).toBe(true);
+    const mockerStep = scripted.find((step: { run?: string }) => step.run?.includes("tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts"));
+    expect(mockerStep).toMatchObject({
+      if: "matrix.cohort == 'native'",
+      env: { PM_RUN_TESTS_SKIP_BUILD: "1" },
+      run: "node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts",
+    });
+    expect(mockerStep["continue-on-error"]).toBeUndefined();
     const receiptStep = scripted.find((step: { name?: string }) => step.name === "Verify merge receipt recovery and settlement on Windows");
     expect(receiptStep?.run).toMatch(/--maxWorkers=1(?:\s|$)/);
     expect(receiptStep?.run.match(/tests\/\S+\.spec\.ts/g)).toEqual([
@@ -310,6 +317,32 @@ describe("GitHub workflow contract", () => {
     const verifier = aggregate.steps.find((step: { id?: string }) => step.id === "codecov_cli");
     expect(artifact.if).toContain("steps.shard_admission.outcome == 'success'");
     expect(verifier.if).toContain("steps.shard_admission.outcome == 'success'");
+  });
+
+  it("retains bounded advisory receipts after failed and successful static gates", async () => {
+    const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
+    const steps = workflow.jobs.gates.steps as Array<{
+      uses?: string; if?: string; run?: string; with?: Record<string, unknown>;
+    }>;
+    const uploads = steps.filter((step) => step.uses?.startsWith("actions/upload-artifact@") && String(step.with?.path ?? "").trim() === ".cache/dependency-security/receipt.json");
+    expect(uploads).toHaveLength(1);
+    const upload = uploads[0]!;
+    expect(String(upload.with?.["include-hidden-files"])).toBe("true");
+    expect(upload.with?.name).toContain("${{ github.run_attempt }}");
+    const lintIndex = steps.findIndex((step) => step.run?.includes("pnpm lint"));
+    expect(lintIndex).toBeGreaterThanOrEqual(0);
+    expect(steps.indexOf(upload)).toBeGreaterThan(lintIndex);
+    for (const gate of ["static", "typecheck", "compat", "smokes"]) {
+      for (const failed of [false, true]) {
+        const condition = (upload.if ?? "true").replace(/^\$\{\{\s*|\s*\}\}$/gu, "");
+        const hasStatusCheck = /\b(always|success|failure|cancelled)\s*\(/u.test(condition);
+        const enabled = (hasStatusCheck || !failed) && Boolean(runInNewContext(condition, {
+          matrix: { gate }, always: () => true, success: () => !failed,
+          failure: () => failed, cancelled: () => false,
+        }, { timeout: 1000 }));
+        expect(enabled, `${gate}/failed=${failed}`).toBe(gate === "static");
+      }
+    }
   });
 
   it("requires native preview regressions to consume the validated build", async () => {
