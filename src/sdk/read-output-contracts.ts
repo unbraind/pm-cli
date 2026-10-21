@@ -61,6 +61,8 @@ import {
 } from "./read-output-session.js";
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "./pagination.js";
 import type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
+import type { PmReadOutputSessionResult } from "./read-output/session-result.js";
+export type { PmReadOutputSessionResult } from "./read-output/session-result.js";
 export type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
 import {
   READ_OUTPUT_INVOCATION_PROVENANCE,
@@ -306,8 +308,7 @@ export interface PmReadOutputBudgetExceeded {
   read_output: PmReadOutputReceipt;
 }
 
-/** Read result with an optional shaping receipt or a discriminated omission. */
-export type PmReadOutputResult<Result> =
+type ReadOutputEnvelope<Result> =
   | (Result & {
       read_output?: PmReadOutputReceipt;
       read_session?: PmReadOutputSessionReceipt;
@@ -316,6 +317,9 @@ export type PmReadOutputResult<Result> =
   | (PmReadOutputBudgetExceeded & {
       read_session?: PmReadOutputSessionReceipt;
     });
+
+/** Read result admitting session reference rows and a discriminated budget omission. */
+export type PmReadOutputResult<Result> = ReadOutputEnvelope<Result | PmReadOutputSessionResult<Result>>;
 
 /** Preserve first-page results while admitting sparse pages for a possible producer cursor. */
 type ProducerResultFor<Result, Options> = "after" extends keyof Options
@@ -326,12 +330,14 @@ type ProducerResultFor<Result, Options> = "after" extends keyof Options
 
 /** Distribute over option variants so every possible budget omission and sparse page remains visible. */
 export type PmReadOutputResultFor<Result, Options> = Options extends unknown
-  ? "outputBudget" extends keyof Options
-    ? PmReadOutputResult<ProducerResultFor<Result, Options>>
-    : "outputSession" extends keyof Options
-      ? PmReadOutputResult<ProducerResultFor<Result, Options>>
+  ? "outputSession" extends keyof Options
+    ? [Options["outputSession"]] extends [undefined]
+      ? ReadOutputEnvelope<ProducerResultFor<Result, Options>>
+      : PmReadOutputResult<ProducerResultFor<Result, Options>>
+    : "outputBudget" extends keyof Options
+      ? ReadOutputEnvelope<ProducerResultFor<Result, Options>>
       : "outputCursor" extends keyof Options
-        ? PmReadOutputResult<ProducerResultFor<Result, Options>>
+        ? ReadOutputEnvelope<ProducerResultFor<Result, Options>>
         : ProducerResultFor<Result, Options>
   : never;
 

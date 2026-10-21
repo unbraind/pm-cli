@@ -1,0 +1,71 @@
+id: pm-7gpx34
+title: "GH-1528: recover completeness and TOON mistakes on the attempted read command"
+description: "Wrong-command completeness spellings and --toon currently point at other commands or lose intent. Provide a typed SDK recovery resolver consumed by CLI guidance: context --full becomes --depth full; list/search --depth full becomes --full; read --toon becomes --output-format toon. Preserve all operands, tracker selection and unrelated options; refuse ambiguous or conflicting rewrites."
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,read-output,recovery
+created_at: "2026-10-21T07:16:02.980Z"
+updated_at: "2026-10-21T09:31:04.853Z"
+closed_at: "2026-10-21T09:31:03.515Z"
+completed_at: "2026-10-21T09:31:03.515Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: The SDK emits shell-free same-command retries for GH1528 completeness and TOON cases; retries execute successfully in isolated trackers with whitespace operands and preserve authoritative bytes; conflicting or ambiguous options receive no unsafe retry; docs explain canonical controls and explicit format selection
+parent: pm-f05lsg
+risk: medium
+confidence: high
+resolution: "Public SDK recovery resolver supplies token-preserving read retries; CLI prioritizes semantic corrections and declines conflicting, malformed, duplicate and wrong-path rewrites."
+expected_result: An agent can execute the refusal-provided same-command retry for completeness or TOON controls without losing operands or mutating authoritative tracker data.
+actual_result: All linked regressions pass. Six emitted retries execute with whitespace search operands and explicit tracker/extension selection; authoritative tracker bytes remain unchanged. The identical isolated-main test fails on missing retry argv.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-szn67i,recurs_from,"2026-10-21T07:41:01.002Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-21T07:16:02.980Z","harness:codex","Duplicate check: complete 3038-item all-status corpus, request-specific search and live open/in-progress inventories found existing umbrella pm-f05lsg and grammar owner pm-n7rr but no leaf for GH1528. Existing issue comment links both owners. This bounded child implements the concrete recovery gap without claiming the entire grammar/recovery programme."
+  "2026-10-21T07:19:59.430Z","harness:codex","Implementation plan: preserve command identity and argv tokens through an SDK resolver, prioritize verified semantic replacement over lexical guesses, and decline conflicting controls. New isolated integration regression executes emitted retries and compares all authoritative tracker bytes. The broad format-alias consolidation remains under pm-srns/pm-n7rr."
+  "2026-10-21T07:44:40.806Z","harness:codex","Regression proof: the final integration test was copied unchanged into an isolated worktree at main 2a1e7dab0d34dc725d0b3b18e3cb9a49e82ec1c9 and failed because context --full did not emit suggested_retry_args. On the implementation, all six read correction cases execute successfully with whitespace search operands and explicit tracker/extension selection; authoritative tracker bytes remain identical. Unit controls decline malformed, conflicting, duplicate and cross-command rewrites."
+  "2026-10-21T09:30:38.205Z","harness:codex","Final focused acceptance: all linked SDK/CLI regressions pass, including supported-option no-rewrite and malformed/conflicting/duplicate/path-mismatch controls. Emitted completeness and TOON retries preserve search operands, tracker selection, extension suppression and authoritative item/history bytes. This child delivers the concrete GH1528 recovery gap; uniform alias consolidation remains on the existing grammar/output owners."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T09:30:40.518Z","harness:codex","A semantic read-option correction must outrank lexical guesses, keep the attempted command and argv tokens, and decline conflicting presentation controls rather than discarding the requested intent."
+files[4]{path,scope}:
+  src/cli/error-guidance.ts,project
+  src/sdk/agent/command-recovery.ts,project
+  tests/integration/read-output/option-recovery.integration.spec.ts,project
+  tests/unit/sdk/agent/read-option-recovery.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/agent/read-option-recovery.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts,project,240,"harness:codex","2026-10-21T07:41:47.862Z",local_mutation,fix/read-session-types-and-recovery
+test_runs[2]:
+  - run_id: test-local-mvhwvcm0-rmo618
+    kind: test
+    status: passed
+    started_at: "2026-10-21T09:29:44.106Z"
+    finished_at: "2026-10-21T09:29:57.912Z"
+    recorded_at: "2026-10-21T09:29:57.912Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/agent/read-option-recovery.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvhww6i0-apqvdm
+    kind: test
+    status: passed
+    started_at: "2026-10-21T09:30:23.090Z"
+    finished_at: "2026-10-21T09:30:36.648Z"
+    recorded_at: "2026-10-21T09:30:36.648Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/agent/read-option-recovery.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: Implemented and replayed same-command read completeness and TOON recovery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  owner: pm-7gpx34
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/option-recovery.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/agent/read-option-recovery.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

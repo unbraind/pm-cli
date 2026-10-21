@@ -24,5 +24,6 @@ export * from "./agent/closed-domain-contracts.js";
 export * from "./agent/tracker-preflight-contracts.js";
 export type {
   PmReadOutputSessionReceipt,
+  PmReadOutputSessionReference,
   PmReadOutputSessionState,
 } from "./read-output-session.js";

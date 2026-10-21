@@ -123,6 +123,42 @@ while (cursor) {
 
 ## Cross-Call Context Sessions
 
+Typed session results are tracked by
+[pm-t1p1jv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t1p1jv.toon)
+(repository-only tracker record excluded from npm). After narrowing budget
+omission with `isReadOutputBudgetExceeded`, use `isReadOutputSessionReference`
+from the SDK or `sdk/core` before accessing row prose or a search hit's nested
+`item`. A reference contains only `id` and `context_ref`. Calls with no session,
+including calls that specify only an output budget, retain their ordinary row
+types. `PmReadOutputSessionResult<Result>` models literal `row_contract.row_keys`
+paths (including nested arrays and keyed maps). Dynamic path declarations
+conservatively admit references in nested collections, and envelopes without a
+row declaration use the top-level array fallback. Keep package row paths literal
+with `as const` to preserve precision in package result declarations.
+
+```ts
+const page = await client.context({ outputSession: sessionState });
+if (!isReadOutputBudgetExceeded(page)) {
+  for (const row of page.high_level) {
+    if (isReadOutputSessionReference(row)) consumeReference(row.context_ref);
+    else consumeTitle(row.title);
+  }
+}
+```
+
+Read-option recovery is tracked by
+[pm-7gpx34](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7gpx34.toon)
+(repository-only tracker record excluded from npm). For explicit static encoding,
+use `--output-format toon|json` across read commands. Completeness uses
+`--output-include full` on list, search and get; context detail depth uses
+`--depth full`. These controls retain the normal row and token ceilings.
+When `context --full`, `list/search --depth full`, or `--toon` on list, search,
+context or get is refused,
+the error provides `recovery.suggested_retry_args` for the same command with the
+supported spelling. The SDK's `resolveReadOptionRetryArgs` exposes the same
+token-preserving correction. Conflicting controls or ambiguous operands do not
+receive a guessed retry.
+
 `--output-session <json>` / `outputSession` composes the four per-call
 dimensions across a request group. The caller supplies versioned state and
 passes the returned `read_session.next_state` to the next read:

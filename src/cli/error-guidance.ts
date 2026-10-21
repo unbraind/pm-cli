@@ -3,7 +3,7 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
-import { isReadProjectionRecoveryFlag } from "../sdk/agent/command-recovery.js";
+import { isReadProjectionRecoveryFlag, resolveReadOptionRetryArgs } from "../sdk/agent/command-recovery.js";
 import { isPmTokenBudgetRecovery } from "../sdk/errors.js";
 import {
   type PmCliErrorContext,
@@ -1667,13 +1667,22 @@ function buildUnknownOptionNextSteps(
   ].filter((entry): entry is string => typeof entry === "string");
 }
 
-/**
- * Publish a shell-free correction only when removing the unknown token leaves
- * positional ownership unambiguous; explicit producer guidance stays authoritative.
- */
+/** Recover read intent before lexical fallbacks can replace or discard it. */
+function resolveReadIntentRetry(
+  context: CommanderGuidanceContext,
+  optionName: string,
+  commandName: string | undefined,
+): { retryCommand?: string; suggestedRetryArgs?: string[] } | undefined {
+  const retry = resolveReadOptionRetryArgs(commandName ?? "", context.normalizedInvocationArgs ?? [], optionName);
+  if (retry) return { retryCommand: renderPmCommand(retry), suggestedRetryArgs: retry };
+  return ["--full", "--depth", "--toon"].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
+}
+
+/** Keep unknown-option fallbacks from dropping presentation or preview intent. */
 function resolveUnknownOptionRetry(
   context: CommanderGuidanceContext,
   optionName: string,
+  commandName: string | undefined,
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } {
   if (
     ["--dry-run", "--check", "--check-only", "--plan", "--preview"].includes(
@@ -1682,6 +1691,8 @@ function resolveUnknownOptionRetry(
   ) {
     return {};
   }
+  const readRetry = resolveReadIntentRetry(context, optionName, commandName);
+  if (readRetry) return readRetry;
   if (context.suggestedRetryCommand !== undefined) {
     return { retryCommand: context.suggestedRetryCommand };
   }
@@ -1735,6 +1746,7 @@ function buildUnknownOptionGuidance(
   const { retryCommand, suggestedRetryArgs } = resolveUnknownOptionRetry(
     guidanceContext,
     optionName,
+    commandName,
   );
   if (
     commandName === "update" &&
