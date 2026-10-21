@@ -1,0 +1,56 @@
+id: pm-tl7vlu
+title: "GH-1530: dependency advisory CLI silently skips checks through filesystem aliases"
+description: "MacOS nightly39575255547 on main2a1e7dab0 fails parsing empty stdout from the copied dependency advisory executable. The executable compares lexical argv[1] against canonical import.meta.url. A Linux symlink reproduction of the exact script returns exit0 and empty output even for --unknown, confirming silent entrypoint bypass. Resolve physical script identity before deciding whether to execute; retain side-effect-free imports."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: ci,macos,nightly,read-output,security
+created_at: "2026-10-21T09:48:44.974Z"
+updated_at: "2026-10-21T10:16:35.766Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#a064f14a96b4e8187e80e76b"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "Real and aliased executable paths emit the complete verified receipt and reject invalid arguments; importing the module does not execute the gate; unchanged-source alias regression fails before and passes after the fix; supported hosted macOS verification runs without weakening advisory, coverage or timeout policies"
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: Filesystem alias spelling cannot turn a dependency security check into a zero-exit no-op.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-eqxjzl,recurs_from,"2026-10-21T09:48:44.974Z","harness:codex","cli:create:dep",detected
+  pm-2zjs0g,discovered_from,"2026-10-21T10:05:32.122Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-21T09:48:44.974Z","harness:codex","Duplicate check: complete3038-item intake corpus plus current recovery leaf, fresh all-status search and refreshed open/in-progress lists found no alias-entrypoint defect leaf. Live full pm-eqxjzl is the completed collector implementation; live pm-u9d0 is the open delivery parent. Automatic issue1530 links only the completed recurrence meter pm-2zjs0g. This specific child preserves those completed implementations and records the new runtime failure."
+  "2026-10-21T09:53:40.714Z","harness:codex","Root-cause proof: exact current gate invoked through a real file alias exits0 with0 stdout/stderr bytes on --unknown. Extended existing directory-junction subprocess test fails on unchanged code with the same Unexpected end of JSON input as hosted macOS. Fix is being verified in an isolated checkout while the original PR source is held by long-running coverage. Only this new leaf is actively claimed."
+  "2026-10-21T09:59:01.354Z","harness:codex","Isolated corrected guard compares physical invocation and module paths. The unchanged directory-alias regression now passes all22 tests, including real and alias paths with ordinary Node loading and --preserve-symlinks-main, valid complete receipts, invalid-argument failure and inert imports. Original source failed21/22 with the same empty-output parse failure as macOS. No advisory thresholds, source requirements, test membership or deadlines changed."
+  "2026-10-21T10:16:35.765Z","harness:codex","The alias fix and unchanged subprocess regression are now integrated into PR #1531 alongside the related SDK/CLI read contracts. The linked root test passed all 22 cases. The guard canonicalizes both invocation and module paths, including symlink-preserving Node startup, while imports remain inert. Hosted native macOS acceptance remains pending before closure. GitHub issue #1530 has a specific PM-link comment; its original failed nightly remains preserved."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T10:16:34.685Z","harness:codex","Executable identity must compare physical paths on both sides: macOS temporary-directory aliases and --preserve-symlinks-main can make lexical argv and module URLs disagree while identifying the same script. Verify complete output and invalid-argument failure through both real and aliased subprocess entrypoints."
+files[2]{path,scope}:
+  scripts/release/dependency-advisories/gate.mjs,project
+  tests/unit/scripts/release/dependency-advisories/gate.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts,project,240,"harness:codex","2026-10-21T09:58:59.070Z",local_mutation,fix/read-session-types-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvhyi7fd-88ruy1
+    kind: test
+    status: passed
+    started_at: "2026-10-21T10:15:23.030Z"
+    finished_at: "2026-10-21T10:15:43.897Z"
+    recorded_at: "2026-10-21T10:15:43.897Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Document physical entrypoint verification for the advisory security gate
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  owner: pm-tl7vlu
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories/gate.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

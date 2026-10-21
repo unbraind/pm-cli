@@ -8,6 +8,13 @@ afterEach(() => {
 });
 
 describe("agent command guidance", () => {
+  it("preserves read intent when no command was resolved", () => {
+    const refusal = formatCommanderErrorForJson("unknown option '--toon'", undefined, "Task|Issue", 2);
+    expect(refusal.code).toBe("unknown_option");
+    expect(refusal.recovery?.suggested_retry).toBeUndefined();
+    expect(refusal.recovery?.suggested_retry_args).toBeUndefined();
+    expect(refusal.examples).toEqual(["pm --help --all"]);
+  });
   it.each(["--full", "--ful"])("preserves unsupported read intent %s in the real JSON refusal", (option) => {
     const refusal = formatCommanderErrorForJson(`unknown option '${option}'`, "telemetry status", "Task|Issue", 2, {
       normalizedInvocationArgs: ["telemetry", "status", option, "--json"],

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: output-sessions,sdk,types
 created_at: "2026-10-21T04:50:19.034Z"
-updated_at: "2026-10-21T09:35:16.656Z"
+updated_at: "2026-10-21T10:05:33.643Z"
 closed_at: "2026-10-21T09:31:00.916Z"
 completed_at: "2026-10-21T09:31:00.916Z"
 author: "harness:codex"
@@ -22,14 +22,29 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-hid9g1,discovered_from,"2026-10-21T04:50:19.034Z","harness:codex","cli:create:dep",detected
   pm-oybmsd,related,"2026-10-21T04:50:19.034Z","harness:codex","cli:create:dep",detected
   pm-57ir3b,recurs_from,"2026-10-21T07:41:04.157Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
-  "2026-10-21T04:50:19.034Z","harness:codex","created_at=now,text=Duplicate check: complete3034-item all-status snapshot plus complete seven-hit session suppressed row types search and refreshed open/in-progress inventories found no exact active leaf. Live full pm-hid9g1 confirms session suppression is completed and preserved, while pm-oybmsd is limited to producer metadata envelopes. Source evidence: applyReadOutputSessionReferences and the existing read-output-contracts session replacement regression. This follow-up remains open/unclaimed and is not part of the two active implementations."
-  "2026-10-21T07:15:47.123Z","harness:codex","Implementation start: model session reference rows at declared collection paths, preserve ordinary non-session result types, and prove source plus packed declaration consumers. Connected delivery also addresses GH1528 same-command read-option recovery; unrelated backlog remains open and unclaimed."
-  "2026-10-21T07:19:58.060Z","harness:codex","Regression sensitivity: unchanged declarations failed seven assertions in tests/types/read-session-results.test-d.ts, including unused expected-error directives for context prose, nested search item access and declared object-map rows. The same consumer also exposed context_ref as unknown. Implementing a typed session-result transform and public structural narrowing guard; budget-only/no-session calls retain original row shapes."
-  "2026-10-21T07:42:25.663Z","harness:codex","Expanded package-author acceptance in an isolated checkout: literal nested maps, dynamic row-key arrays, optional row contracts, overlapping parent/child row declarations and item_id identities now admit session references without weakening ordinary no-session types. Source compile consumers pass. Full static run passed code quality, SDK boundaries, contract/recovery/token checks, then correctly stopped on missing expected_result for the new recovery leaf; corrected through pm update and linked both defects to existing recurrence families."
-  "2026-10-21T09:23:12.011Z","harness:codex","Full local coverage attempt on Homebrew Node26.9.0:10941 tests passed,3 skipped and1 packed-consumer fixture failed before packing because npm/package.json is outside that runtime standard lookup roots. No coverage summary was emitted after the test failure, so this is not a coverage pass. Re-running unchanged source on installed Node24.21.0, matching hosted CI and exposing its bundled npm normally. Public registry verifier and separate npm/Bun installed-agent acceptance remain successful."
-  "2026-10-21T09:30:37.370Z","harness:codex","Final focused acceptance: linked typecheck and real npm-tarball declaration consumers pass with the advertised npm lookup environment, including literal/dynamic/optional/overlapping/numeric row paths. Both Node and Bun packed runtime matrices pass19 scenarios and conflict guards. The earlier host npm-discovery failure remains in test history. GitHub intake:23 open issues all carry PM-link comments; no open PRs or dependency/code/secret alerts; audit has0 vulnerabilities. Current release2026.10.21 and both installed-manager journeys pass. Required Sentry/telemetry gate passes with0 high/critical,2.38percent error rate and0 missing-code rows; recent matched start/finish sessions and physical queue0 were independently read. Pending compatible updates remain under existing cooldown/migration owners."
-  "2026-10-21T09:35:16.655Z","harness:codex","Changelog checkpoint: npm now publishes pm-changelog2026.10.21, consumed by the canonical install/generate/check scripts. Package-owned output adds the two new Fixed entries and reclassifies historical duplicate/already-fixed/not-reproducible closures; sampled live terminal metadata supports those changes, including pm-tld20c duplicate exclusion. No generator was patched or hand-edited in pm-cli. Terminal defect evidence, validation and health pass after closure; current in-progress population is empty."
+comments[7]:
+  - created_at: "2026-10-21T04:50:19.034Z"
+    author: "harness:codex"
+    text: "created_at=now,text=Duplicate check: complete3034-item all-status snapshot plus complete seven-hit session suppressed row types search and refreshed open/in-progress inventories found no exact active leaf. Live full pm-hid9g1 confirms session suppression is completed and preserved, while pm-oybmsd is limited to producer metadata envelopes. Source evidence: applyReadOutputSessionReferences and the existing read-output-contracts session replacement regression. This follow-up remains open/unclaimed and is not part of the two active implementations."
+  - created_at: "2026-10-21T07:15:47.123Z"
+    author: "harness:codex"
+    text: "Implementation start: model session reference rows at declared collection paths, preserve ordinary non-session result types, and prove source plus packed declaration consumers. Connected delivery also addresses GH1528 same-command read-option recovery; unrelated backlog remains open and unclaimed."
+  - created_at: "2026-10-21T07:19:58.060Z"
+    author: "harness:codex"
+    text: "Regression sensitivity: unchanged declarations failed seven assertions in tests/types/read-session-results.test-d.ts, including unused expected-error directives for context prose, nested search item access and declared object-map rows. The same consumer also exposed context_ref as unknown. Implementing a typed session-result transform and public structural narrowing guard; budget-only/no-session calls retain original row shapes."
+  - created_at: "2026-10-21T07:42:25.663Z"
+    author: "harness:codex"
+    text: "Expanded package-author acceptance in an isolated checkout: literal nested maps, dynamic row-key arrays, optional row contracts, overlapping parent/child row declarations and item_id identities now admit session references without weakening ordinary no-session types. Source compile consumers pass. Full static run passed code quality, SDK boundaries, contract/recovery/token checks, then correctly stopped on missing expected_result for the new recovery leaf; corrected through pm update and linked both defects to existing recurrence families."
+  - created_at: "2026-10-21T09:23:12.011Z"
+    author: "harness:codex"
+    text: "Full local coverage attempt on Homebrew Node26.9.0:10941 tests passed,3 skipped and1 packed-consumer fixture failed before packing because npm/package.json is outside that runtime standard lookup roots. No coverage summary was emitted after the test failure, so this is not a coverage pass. Re-running unchanged source on installed Node24.21.0, matching hosted CI and exposing its bundled npm normally. Public registry verifier and separate npm/Bun installed-agent acceptance remain successful."
+  - created_at: "2026-10-21T09:30:37.370Z"
+    author: "harness:codex"
+    text: "Final focused acceptance: linked typecheck and real npm-tarball declaration consumers pass with the advertised npm lookup environment, including literal/dynamic/optional/overlapping/numeric row paths. Both Node and Bun packed runtime matrices pass19 scenarios and conflict guards. The earlier host npm-discovery failure remains in test history. GitHub intake:23 open issues all carry PM-link comments; no open PRs or dependency/code/secret alerts; audit has0 vulnerabilities. Current release2026.10.21 and both installed-manager journeys pass. Required Sentry/telemetry gate passes with0 high/critical,2.38percent error rate and0 missing-code rows; recent matched start/finish sessions and physical queue0 were independently read. Pending compatible updates remain under existing cooldown/migration owners."
+  - created_at: "2026-10-21T09:35:16.655Z"
+    author: "harness:codex"
+    text: "Changelog checkpoint: npm now publishes pm-changelog2026.10.21, consumed by the canonical install/generate/check scripts. Package-owned output adds the two new Fixed entries and reclassifies historical duplicate/already-fixed/not-reproducible closures; sampled live terminal metadata supports those changes. No generator was patched or hand-edited in pm-cli. Terminal defect evidence, validation and health pass after closure; current in-progress population was empty at that checkpoint."
+    edited_at: "2026-10-21T10:05:33.643Z"
 learnings[1]{created_at,author,text}:
   "2026-10-21T09:30:39.202Z","harness:codex","Session result declarations must follow runtime row identities and paths: nested search hits, item_id, optional or dynamic contracts, overlapping declarations and numeric array segments all admit fact references. Preserve precise ordinary reads and provide a structural guard for schema-extensible rows."
 files[10]{path,scope}:

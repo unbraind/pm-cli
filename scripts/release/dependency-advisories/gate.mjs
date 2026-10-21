@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /** Repository advisory collector and read-only SDK provider adapter (pm-eqxjzl). */
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, realpath, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { repoRoot } from "../utils.mjs";
 import { queryOsv, queryRegistry } from "./feeds.mjs";
 import { readInputs } from "./inventory.mjs";
@@ -47,7 +46,9 @@ export async function main(argv, root) {
 
 /** Keep CLI diagnostics and exit status at the executable boundary. */
 export async function runIfMain(candidate, argv, root) {
-  if (candidate === undefined || import.meta.url !== pathToFileURL(path.resolve(candidate)).href) return;
+  if (candidate === undefined) return;
+  const physical = await realpath(path.resolve(candidate)).catch(() => null);
+  if (physical === null || physical !== await realpath(new URL(import.meta.url))) return;
   try {
     const result = await main(argv, root);
     process.stdout.write(`${JSON.stringify(result)}\n`);
