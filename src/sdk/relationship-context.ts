@@ -282,10 +282,6 @@ function discoverNodes(
       queue.push(row);
     }
   }
-  rows.sort(
-    (left, right) =>
-      left.distance - right.distance || left.id.localeCompare(right.id),
-  );
   return {
     rows,
     visitedNodes: queue.length,
@@ -334,6 +330,25 @@ interface ContextNodeProjection {
   registry: RelationshipKindRegistry;
 }
 
+/** Keep direct prerequisites and ancestors ahead of optional nodes in every producer page. */
+function orderContextNodes(
+  rows: readonly DiscoveredNode[],
+  rootEdges: readonly RelationshipEdge[],
+  rootId: string,
+  registry: RelationshipKindRegistry,
+): DiscoveredNode[] {
+  const requiredIds = new Set<string>();
+  for (const edge of rootEdges) {
+    const id = edge.source === rootId ? edge.target : edge.source;
+    const role = explainDirectEdge(edge, id, registry);
+    if (role === "prerequisite" || role === "ancestor") requiredIds.add(id);
+  }
+  return [...rows].sort((left, right) =>
+    Number(requiredIds.has(right.id)) - Number(requiredIds.has(left.id)) ||
+    left.distance - right.distance || left.id.localeCompare(right.id),
+  );
+}
+
 /** Explain one discovered identity before charging its node and direct-edge costs. */
 function projectContextNode(
   candidate: DiscoveredNode,
@@ -353,6 +368,7 @@ function projectContextNode(
   };
 }
 
+/** Admit endpoint rows while reserving their direct relationship costs before optional detail. */
 function selectContextNodes(params: ContextNodeProjection & {
   candidates: readonly DiscoveredNode[];
   nodeLimit: number;
@@ -420,7 +436,7 @@ function selectContextEdges(params: {
   for (const edge of candidates) {
     if (edges.length >= params.edgeLimit) break;
     const cost = estimateTokens(edge);
-    if (usedTokens + cost > params.tokenBudget) break;
+    if (usedTokens + cost > params.tokenBudget) continue;
     edges.push(edge);
     usedTokens += cost;
   }
@@ -457,20 +473,22 @@ export function buildRelationshipContext(
     registry,
     options,
   );
+  const orderedRows = orderContextNodes(discovery.rows, rootEdges, rootId, registry);
   const fingerprint = createQueryFingerprint("relationship-context", {
     rootId,
     direction: options.direction ?? "both",
     kinds: [...(options.kinds ?? [])].sort(),
     maxDepth: options.maxDepth ?? 3,
+    ordering: "required-root-evidence-first-v1",
   });
   const pageStart = resolveQueryCursorStart(
-    discovery.rows,
+    orderedRows,
     options.cursor,
     fingerprint,
     ({ id }) => id,
     "--cursor",
   );
-  const candidates = discovery.rows.slice(pageStart);
+  const candidates = orderedRows.slice(pageStart);
   const initialTokens = estimateTokens(root) + estimateTokens(evidence);
   if (initialTokens > tokenBudget)
     throw new TypeError(
@@ -502,7 +520,7 @@ export function buildRelationshipContext(
   const { edges, usedTokens } = edgeSelection;
 
   const consumed = pageStart + nodes.length;
-  const hasMoreNodes = consumed < discovery.rows.length;
+  const hasMoreNodes = consumed < orderedRows.length;
   const lastNode = nodes.at(-1);
   const omittedEdges = edgeSelection.candidateCount - edges.length;
   const truncated =
@@ -511,10 +529,10 @@ export function buildRelationshipContext(
     rootId,
     ...(root.status === undefined ? {} : { rootStatus: root.status }),
     ...directSummary,
-    discoveredNodes: discovery.rows.length,
+    discoveredNodes: orderedRows.length,
     returnedNodes: nodes.length,
     returnedEdges: edges.length,
-    omittedNodes: discovery.rows.length - consumed,
+    omittedNodes: orderedRows.length - consumed,
     omittedEdges,
     evidenceCount: evidence.length,
     hasMore: hasMoreNodes,
@@ -535,7 +553,7 @@ export function buildRelationshipContext(
       usedTokens,
       visitedNodes: discovery.visitedNodes,
       inspectedEdges: discovery.inspectedEdges,
-      omittedNodes: discovery.rows.length - consumed,
+      omittedNodes: orderedRows.length - consumed,
       omittedEdges,
       ...(hasMoreNodes && lastNode
         ? {

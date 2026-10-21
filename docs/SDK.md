@@ -1909,6 +1909,11 @@ terminal items are excluded unless the project schema classifies their status
 as active. The main summary still counts every matching lifecycle status.
 Consumers constructing `TestHealthSummary` values must supply the new scope and
 denominator fields; consumers reading results can use them directly.
+Markdown limits failing-item identities to the effective focus limit (or the
+default context limit) and native token budget, with `items_failing_omitted`
+when detail is withheld. Population counters remain exact. Structured SDK and
+MCP results retain the complete failing-item collection before their normal
+read-output budget handling.
 
 Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon),
 [pm-h3no](../.agents/pm/tasks/pm-h3no.toon),

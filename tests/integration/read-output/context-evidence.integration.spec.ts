@@ -5,11 +5,43 @@ import { runAction } from "../../../src/sdk/runtime.js";
 import { renderContextMarkdown, type ContextResult } from "../../../src/sdk/query/context.js";
 import { buildRelationshipContext } from "../../../src/sdk/relationship-context.js";
 import { RelationshipGraph } from "../../../src/sdk/relationships.js";
+import { createQueryFingerprint, encodeQueryCursor } from "../../../src/sdk/pagination.js";
 import type { DepsResult } from "../../../src/sdk/dependencies.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { overwriteTaskTestRuns } from "../../helpers/pmWorkspace.js";
 
 describe("bounded context evidence (GH-1534 and GH-1535)", () => {
+  it("retains required root endpoints before a lexically earlier descendant and continues in that order", () => {
+    const graph = new RelationshipGraph(["root", "a-child", "z-blocker"], [
+      { source: "a-child", target: "root", kind: "parent" },
+      { source: "root", target: "z-blocker", kind: "blocked_by" },
+    ]);
+    const details = [{ id: "a-child", title: "padding ".repeat(35) }];
+    const bounded = buildRelationshipContext(graph, "root", details, { tokenBudget: 130 });
+    expect(bounded.edges).toContainEqual({ source: "root", target: "z-blocker", kind: "blocked_by" });
+    expect(bounded.meta.usedTokens).toBeLessThanOrEqual(130);
+    const first = buildRelationshipContext(graph, "root", details, { nodeLimit: 1 });
+    expect(first.nodes.map(({ id }) => id)).toEqual(["z-blocker"]);
+    const second = buildRelationshipContext(graph, "root", details, { nodeLimit: 1, cursor: first.meta.nextCursor });
+    expect(second.nodes.map(({ id }) => id)).toEqual(["a-child"]);
+    expect(second.meta.nextCursor).toBeUndefined();
+    const legacyCursor = encodeQueryCursor(createQueryFingerprint("relationship-context", { rootId: "root", direction: "both", kinds: [], maxDepth: 3 }), "a-child", 0);
+    expect(() => buildRelationshipContext(graph, "root", details, { nodeLimit: 1, cursor: legacyCursor })).toThrow("does not match");
+  });
+
+  it("skips an oversized edge while retaining later feasible root evidence and omitted counts", () => {
+    const oversized = "a".repeat(300);
+    const graph = new RelationshipGraph(["root", oversized, "z"], [
+      { source: "root", target: oversized, kind: "related" },
+      { source: "root", target: "z", kind: "related" },
+    ]);
+    const packet = buildRelationshipContext(graph, "root", [], { tokenBudget: 175 });
+    expect(packet.nodes).toHaveLength(2);
+    expect(packet.edges).toEqual([{ source: "root", target: "z", kind: "related" }]);
+    expect(packet.meta.omittedEdges).toBe(1);
+    expect(packet.meta.usedTokens).toBeLessThanOrEqual(175);
+  });
+
   it("reserves root relationships before spending the kernel budget on distant nodes", () => {
     const graph = new RelationshipGraph(["root", "parent", "blocker", ...Array.from({ length: 10 }, (_, i) => `sibling-${i}`)], [
       { source: "root", target: "parent", kind: "parent" },
@@ -68,6 +100,19 @@ describe("bounded context evidence (GH-1534 and GH-1535)", () => {
           expect(renderContextMarkdown(result)).toContain("matching_active_items: 4");
         }
       }
+      for (const id of ["pm-a", "pm-b"]) {
+        await overwriteTaskTestRuns(context, id, [{ run_id: `failure-${id}`, kind: "test", status: "failed", started_at: "2026-10-21T00:00:00.000Z", finished_at: "2026-10-21T00:00:01.000Z", recorded_at: "2026-10-21T00:00:02.000Z", passed: 0, failed: 1, skipped: 0 }]);
+      }
+      const complete = await runAction({ action: "context", path: pmPath, options: { section: ["tests"], limit: "1", tag: "selected", tokenBudget: "8000" }, outputBudget: "unbounded" }) as ContextResult;
+      expect(complete.tests!.items_failing).toEqual(["pm-a", "pm-b", "pm-c"]);
+      const markdown = await runCliInProcess(["context", "--section", "tests", "--limit", "1", "--tag", "selected", "--format", "markdown", "--token-budget", "8000"]);
+      expect(markdown.code, markdown.stderr).toBe(0);
+      expect(markdown.stdout).toContain("- items_failing: [pm-a]");
+      expect(markdown.stdout).toContain("- items_failing_omitted: 2");
+      expect(markdown.stdout).toContain("- matching_active_items: 4");
+      const tiny = renderContextMarkdown({ ...complete, filters: { ...complete.filters, token_budget: 1 } });
+      expect(tiny).not.toContain("- items_failing: [");
+      expect(tiny).toContain("- items_failing_omitted: 3");
     });
   });
 });

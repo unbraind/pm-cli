@@ -1604,6 +1604,7 @@ function buildUnparented(
     .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
 }
 
+/** Count linked tests and stored runs across the complete matching active population. */
 function buildTestHealth(activeItems: ItemMetadata[]): TestHealthSummary {
   let itemsWithTests = 0;
   let itemsWithRecentRuns = 0;
@@ -1896,6 +1897,21 @@ function pushStalenessSection(lines: string[], result: ContextResult): void {
   lines.push("");
 }
 
+/** Select a deterministic failure prefix within the Markdown row and native token bounds. */
+function boundedTestHealthFailures(tests: TestHealthSummary, limit: number, tokenBudget: number): string[] {
+  const included: string[] = [];
+  let usedTokens = 0;
+  for (const id of tests.items_failing) {
+    if (included.length >= limit) break;
+    const tokens = estimateJsonTokens(id);
+    if (usedTokens + tokens > tokenBudget) break;
+    included.push(id);
+    usedTokens += tokens;
+  }
+  return included;
+}
+
+/** Render exact test counters with bounded failure detail and an explicit omitted count. */
 function pushTestHealthSection(lines: string[], result: ContextResult): void {
   if (!result.tests) {
     return;
@@ -1909,8 +1925,13 @@ function pushTestHealthSection(lines: string[], result: ContextResult): void {
   lines.push(
     `- passed: ${result.tests.recent_runs.passed}, failed: ${result.tests.recent_runs.failed}, skipped: ${result.tests.recent_runs.skipped}`,
   );
-  if (result.tests.items_failing.length > 0) {
-    lines.push(`- items_failing: [${result.tests.items_failing.join(",")}]`);
+  const failures = boundedTestHealthFailures(result.tests, result.applied_limit ?? DEFAULT_CONTEXT_LIMIT, result.filters.token_budget);
+  if (failures.length > 0) {
+    lines.push(`- items_failing: [${failures.join(",")}]`);
+  }
+  const omitted = result.tests.items_failing.length - failures.length;
+  if (omitted > 0) {
+    lines.push(`- items_failing_omitted: ${omitted}`);
   }
   lines.push("");
 }
@@ -2448,6 +2469,7 @@ function countContextStatus(
   ).length;
 }
 
+/** Assemble requested sections while keeping population counters independent of focus selection. */
 async function buildOptionalContextSections(params: {
   runtime: ContextRuntime;
   allItems: ItemMetadata[];

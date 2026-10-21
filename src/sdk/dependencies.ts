@@ -1506,6 +1506,7 @@ function buildTreeOrGraphDepsResult(
   }
 }
 
+/** Declare full/summary field groups and independently disclose producer traversal bounds. */
 function attachDepsProjection(
   result: UnprojectedDepsResult,
   summaryOnly: boolean,

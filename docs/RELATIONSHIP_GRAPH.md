@@ -238,8 +238,11 @@ Every returned node is explainable: `role` names its semantic family (`prerequis
 
 `meta.completeness` reports result quality: the exact in-memory kernel emits `complete` or `truncated`, and the contract reserves `sampled`, `approximate`, `stale_index`, and `redacted` for index-backed or policy-filtered providers so consumers can branch on one field.
 
-The packer reserves the root's direct relationships alongside their endpoints
-before admitting more distant nodes, and emits root-incident edges first. An
+The packer orders direct prerequisite and ancestor endpoints before optional
+descendants or related nodes, reserves their direct relationship costs, and
+emits root-incident edges first. An oversized edge is skipped so later feasible
+edges can still be returned. The same order governs cursor pages; the cursor
+fingerprint identifies this packing policy and rejects earlier-policy cursors. An
 edge limit or a budget too small for an endpoint and its edges can still omit
 evidence: inspect the direct-family totals, omitted counts and completeness
 before using the packet to make a decision. The native adapter also reports

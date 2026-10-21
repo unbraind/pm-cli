@@ -119,8 +119,8 @@ describe("runDeps", () => {
 
     expect(context.nodes.map(({ id }) => id)).toEqual([
       "pm-missing-blocker",
-      "pm-missing-related",
       "pm-parent",
+      "pm-missing-related",
     ]);
     expect(
       context.nodes

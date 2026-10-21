@@ -6,23 +6,23 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-21T16:30:07.371Z"
-updated_at: "2026-10-21T17:34:13.393Z"
-closed_at: "2026-10-21T17:34:12.465Z"
-completed_at: "2026-10-21T17:34:12.465Z"
+updated_at: "2026-10-21T18:12:17.212Z"
+closed_at: "2026-10-21T18:12:16.144Z"
+completed_at: "2026-10-21T18:12:16.144Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Direct root relationships and endpoints precede optional sibling detail; Infeasible evidence is reported within the token ceiling; SDK CLI and MCP share packing and omission contracts
 parent: pm-gh1361
 risk: medium
 confidence: 90
-resolution: "Reserve direct root-edge token costs beside their endpoints, emit root-incident edges first, and disclose bounded relationship omissions through the shared SDK projection."
-expected_result: A fitting bounded context packet preserves root blocker and parent relationships before sibling detail and reports omissions within its rendered token ceiling.
-actual_result: "Kernel and1200-token SDK CLI and MCP fixtures retain blocker and parent edges with usedTokens at or below1200 and an explicit omission receipt. Unchanged regressions fail on base13c19fe9. All68 linked cases, typecheck and source/static contracts pass. Qualified local startup-floor and broad coverage failures remain explicit; final hosted static and coverage are merge prerequisites."
+resolution: "Order direct prerequisite and ancestor endpoints before optional context, reserve root-edge costs, skip unaffordable edges while retaining omission counts, and bind cursor continuation to the required-evidence packing policy."
+expected_result: "Required root endpoints precede optional descendants and feasible later edges survive an oversized edge, with stable producer pages and explicit bounded omissions."
+actual_result: "The three review regressions fail on the first head and pass after remediation. All70 linked graph/dependency cases pass, including root ordering, cursor continuity, stale-policy rejection and oversized-edge accounting. Typecheck lint SDK surface and documentation checks pass. Final hosted static and coverage remain required; failed local startup admissions remain recorded."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1535,related,"2026-10-21T17:18:03.062Z","harness:codex","cli:update:dep",detected
   pm-8kch,related,"2026-10-21T17:33:46.610Z","harness:codex","cli:update:dep",detected
   pm-bj7rq0,related,"2026-10-21T17:33:46.610Z","harness:codex","cli:update:dep",detected
-comments[7]:
+comments[11]:
   - created_at: "2026-10-21T16:30:07.371Z"
     author: "harness:codex"
     text: "Duplicate check: strict full all-status read inspected 3042/3042 items including 2766 closed with no omissions. No GH-1534 owner exists. Closed pm-8kch fixes missing references while pm-gh1361 owns broader semantic coverage. GitHub open PR and security-alert inventories are empty."
@@ -45,17 +45,30 @@ comments[7]:
   - created_at: "2026-10-21T17:34:11.505Z"
     author: "harness:codex"
     text: "Final local source/static contracts pass through registry/OSV evidence, lint, exports, contracts, SDK/package parity, grammar/recovery/token checks, tracker-context assurance and SDK import-cost admission. Remaining graph/record assurance and mutation controls are verified separately. The complete static command retains a qualified local CLI transport-floor failure; no budget is raised and final hosted static and coverage are merge prerequisites. Linked suites pass68/68 and46/46 cases. Typecheck and plain-directory acceptance pass. Preserve the failed broad local coverage attempt separately. Current Sentry gate, three explicit command spans, paired remote telemetry and local queue drainage are independently verified."
+  - created_at: "2026-10-21T18:03:48.746Z"
+    author: "harness:codex"
+    text: "Full-review remediation: reproduce required-root ordering and oversized-edge suppression before fixing the kernel; preserve deterministic continuation with a revised packing fingerprint. Hosted static identified generic machine-home paths in newly added performance evidence. Preview and apply the supported literal history redaction, retaining the audited chain, rather than editing generated history. Append corrections for two inaccurate maintenance statements. The user explicitly requested the GitHub/security/dependency/release inventory, so its canonical PM evidence stays in this reviewed delivery."
+  - created_at: "2026-10-21T18:07:26.388Z"
+    author: "harness:codex"
+    text: "Verified CodeRabbit packing findings: unchanged first-head tests now fail three new assertions (required root endpoint ordering, feasible edge after an oversized edge, and Markdown detail bounds). The updated kernel prioritizes direct prerequisite/ancestor endpoints, keeps that order for producer cursors under a versioned fingerprint, and continues past an oversized edge. PM history redaction preview and apply each report zero hash mismatches, with a new audited redaction marker. Live nightly metadata confirms its measurement owner was already closed; both inaccurate maintenance statements have explicit corrective comments."
+  - created_at: "2026-10-21T18:09:39.107Z"
+    author: "harness:codex"
+    text: "The review counterexamples fail3/5 cases before remediation. With the fixes, the new5-case integration file and41-case dependency suite pass46/46, and the unchanged graph-history/context suites previously pass24+43 cases. One legacy ordering assertion is intentionally updated to put the parent ahead of dependent context. Full tracker corrections use appended comments; generic environment paths are redacted through the audited CLI with verify_ok true and zero hash mismatches. No source or policy thresholds changed."
+  - created_at: "2026-10-21T18:12:14.517Z"
+    author: "harness:codex"
+    text: "Final review-remediation linked tests pass70/70 graph/dependency cases and48/48 context cases (113 distinct). Typecheck, focused ESLint, SDK surface and documentation-link gates pass. New regressions cover priority before a lexically earlier descendant, cursor continuity and old-policy rejection, a feasible root edge after an oversized edge, and bounded Markdown failure details with exact counters. Corrective metadata and history-redaction audit remain in the same PR. Hosted static/coverage and the new full review are still required before merge."
 notes[2]{created_at,author,text}:
   "2026-10-21T16:54:01.451Z","harness:codex","Packing policy: direct endpoints remain in breadth-first producer order. Reserve their root-edge token costs before admitting more distant nodes and emit root-incident edges first. Tiny accepted packets and explicit edge/depth caps may still omit relationships; completeness and producer-bounds omission receipts must remain visible. Do not equate a full field projection with an unbounded traversal."
   "2026-10-21T17:33:48.823Z","harness:codex",Graph preflight linked the historical dependency-context comparison and the actual startup-admission investigation as related work. The unrelated GitHub issue census points directly to its already-reviewed PR instead of inventing an implementation relationship. The graph policy and exemption ledger are unchanged.
-files[4]{path,scope}:
+files[5]{path,scope}:
   config/defect-recurrence-policy.json,project
   src/sdk/dependencies.ts,project
   src/sdk/relationship-context.ts,project
   tests/integration/read-output/context-evidence.integration.spec.ts,project
+  tests/unit/commands/query/deps-command.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/commands/query/deps-command.spec.ts,project,240,"harness:codex","2026-10-21T16:37:30.458Z",local_mutation,fix/context-evidence-packing
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvid6dyh-vbae9o
     kind: test
     status: passed
@@ -67,10 +80,21 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/commands/query/deps-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvifgh8j-nbg8e6
+    kind: test
+    status: passed
+    started_at: "2026-10-21T18:09:36.547Z"
+    finished_at: "2026-10-21T18:10:16.771Z"
+    recorded_at: "2026-10-21T18:10:16.771Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/sdk/relationship-history-analytics.spec.ts tests/unit/commands/query/deps-command.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/RELATIONSHIP_GRAPH.md,project
-close_reason: Retain root decision evidence before optional relationship detail and disclose truncation.
+close_reason: Preserve required root evidence across ordering and edge-cost corner cases.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
