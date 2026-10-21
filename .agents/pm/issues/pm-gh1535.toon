@@ -1,0 +1,62 @@
+id: pm-gh1535
+title: "GH-1535: report context test health over the matching population"
+description: "Reproduce GH-1535: tests counters use the focus page while summary uses matching_items. Compute test health over the same filtered active population independently of focus limits. Source: https://github.com/unbraind/pm-cli/issues/1535"
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-21T16:30:10.816Z"
+updated_at: "2026-10-21T17:34:15.101Z"
+closed_at: "2026-10-21T17:34:14.519Z"
+completed_at: "2026-10-21T17:34:14.519Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Test counters are invariant under focus limits; Filters and active statuses constrain the denominator; Public SDK and human output declare test scope and denominator
+parent: pm-gh1361
+risk: medium
+confidence: 90
+resolution: "Aggregate test health across all matching active items and expose matching_active_items scope and total_items in SDK types and Markdown, with migration guidance and recurrence coverage."
+expected_result: Focus limits do not change test-health counts; filters and schema active-status semantics determine an explicit denominator.
+actual_result: "SDK CLI and MCP at limits1/10 report3 test-bearing items among4 matching active items and the same failing run, excluding draft and other-tag items. Plain-directory acceptance reports3/3 at both limits. All46 linked cases, typecheck, lint and source/static contracts pass. Local startup-floor admission remains failed and final hosted static and coverage are required before merge."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-79gv6q,recurs_from,"2026-10-21T16:30:10.816Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-21T16:30:10.816Z","harness:codex","Duplicate check: strict full all-status read inspected 3042/3042 items without omissions. No GH-1535 owner exists. Closed pm-79gv6q fixes summary population counts. This tests-section recurrence belongs under pm-gh1361 and preserves the shipped summary fix."
+  "2026-10-21T16:30:40.725Z","harness:codex","Implementation plan: compute test-health counters from the complete matching active population and publish matching_items scope plus total_items. Extend the existing context decision integration fixture for limit, filters, statuses and real CLI/MCP parity. Apply pm-test-audit failing-before and passing-after requirements."
+  "2026-10-21T16:38:41.603Z","harness:codex","Regression sensitivity: final test copied unchanged to isolated base 13c19fe9 reports items_with_tests=1 and items_with_recent_runs=0 instead of3 and1 at limit1. Current SDK/CLI/MCP reads pass at limits1/10 with a tag filter, four active items, excluded draft/other-tag items, one failing run and the explicit matching_active_items denominator. Earlier fixture failures were invalid test data (array tag and missing run identity/timestamps), corrected without production workarounds."
+  "2026-10-21T17:08:53.242Z","harness:codex","Final linked verification passes46/46 cases, and the graph owner linked suite passes68/68 (111 distinct focused cases across the shared regression file). Typecheck and focused ESLint pass after extracting node projection below the existing complexity ceiling. Real no-Git temporary workspace acceptance reports3 test-bearing items at both focus limits1/10. The qualified packed Node/Bun continuation matrix also passes. Full static and exact-head hosted coverage are still pending at this evidence point."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T16:54:03.203Z","harness:codex","Counts shown beside a bounded focus page need an independently declared population. Test health retains active-status semantics but aggregates all matching active items, reports its denominator and ignores focus limits. Seed complete run identity and timestamps in fixtures so persistence normalization cannot remove the intended evidence."
+files[5]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  sdk/public-surface.json,project
+  src/sdk/query/context.ts,project
+  tests/integration/read-output/context-evidence.integration.spec.ts,project
+  tests/unit/commands/query/context-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts,project,240,"harness:codex","2026-10-21T16:37:33.808Z",local_mutation,fix/context-evidence-packing
+test_runs[1]:
+  - run_id: test-local-mvid6vmo-qavx52
+    kind: test
+    status: passed
+    started_at: "2026-10-21T17:06:27.728Z"
+    finished_at: "2026-10-21T17:06:49.632Z"
+    recorded_at: "2026-10-21T17:06:49.632Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: Count test health over a declared matching active population independently of focus limits.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: output-budget-and-continuation
+  owner: pm-gh1535
+  negative_control: "Copy the unchanged context-evidence regression to base 13c19fe9 and run it in an isolated worktree: test-health returns one test-bearing item and zero runs instead of three and one."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+body: ""

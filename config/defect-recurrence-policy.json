@@ -333,7 +333,7 @@
     },
     {
       "id": "output-budget-and-continuation",
-      "version": 4,
+      "version": 5,
       "title": "Token-budget, omission, and continuation contract regressions",
       "owner_item_id": "pm-1qkivy",
       "escape_class": "production_defect",
@@ -342,14 +342,25 @@
           "src/sdk/read-output**",
           "src/sdk/output**",
           "src/sdk/context-packing.ts",
-          "tests/**/*output*"
+          "tests/**/*output*",
+          "src/sdk/relationship-context.ts",
+          "src/sdk/dependencies.ts",
+          "src/sdk/query/context.ts"
         ],
-        "tags": ["output-budget", "token-efficiency"]
+        "tags": [
+          "output-budget",
+          "token-efficiency"
+        ],
+        "item_ids": [
+          "pm-gh1534",
+          "pm-gh1535"
+        ]
       },
       "checks": {
         "local": [
           "pnpm quality:token-surface",
-          "node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts"
         ],
         "hosted": [
           "CI / Gates (static)",
@@ -358,7 +369,9 @@
         ]
       },
       "negative_control": {
-        "files": ["src/sdk/read-output-budget.ts"]
+        "files": [
+          "src/sdk/read-output-budget.ts"
+        ]
       },
       "historical_item_ids": [
         "pm-57ir3b",

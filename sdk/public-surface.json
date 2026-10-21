@@ -2598,6 +2598,15 @@
       ],
       "package_version": "2026.10.21",
       "reason": "pm-t1p1jv: infer direct dimension-helper session capability from concrete options while preserving budget omissions, alias controls and existing explicit result type arguments"
+    },
+    {
+      "changes": [
+        "signature ./sdk:TestHealthSummary",
+        "signature ./sdk/query:TestHealthSummary",
+        "signature ./sdk/runtime:TestHealthSummary"
+      ],
+      "package_version": "2026.10.21",
+      "reason": "GH-1535: TestHealthSummary now declares matching_active_items scope and total_items; SDK consumers constructing summaries must provide both denominator fields."
     }
   ],
   "entrypoints": {
@@ -20284,7 +20293,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "TestHealthSummary",
-          "signature": "export interface TestHealthSummary { items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
+          "signature": "export interface TestHealthSummary { scope: \"matching_active_items\"; total_items: number; items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -32614,7 +32623,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "TestHealthSummary",
-          "signature": "export interface TestHealthSummary { items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
+          "signature": "export interface TestHealthSummary { scope: \"matching_active_items\"; total_items: number; items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
         },
         {
           "classification": "supported",
@@ -35404,7 +35413,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "TestHealthSummary",
-          "signature": "export interface TestHealthSummary { items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
+          "signature": "export interface TestHealthSummary { scope: \"matching_active_items\"; total_items: number; items_with_tests: number; items_with_recent_runs: number; recent_runs: { passed: number; failed: number; skipped: number; }; items_failing: string[]; }"
         },
         {
           "classification": "advanced_export",

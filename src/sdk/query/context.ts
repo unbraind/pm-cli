@@ -344,6 +344,10 @@ export interface RecentContextItem extends ContextFocusItem {
 
 /** Documents the test health summary payload exchanged by command, SDK, and package integrations. */
 export interface TestHealthSummary {
+  /** Complete filtered active population, independent of focus paging and packing. */
+  scope: "matching_active_items";
+  /** Number of matching active items, including items without linked tests. */
+  total_items: number;
   /** Value that configures or reports items with tests for this contract. */
   items_with_tests: number;
   /** Value that configures or reports items with recent runs for this contract. */
@@ -1631,6 +1635,8 @@ function buildTestHealth(activeItems: ItemMetadata[]): TestHealthSummary {
   }
 
   return {
+    scope: "matching_active_items",
+    total_items: activeItems.length,
     items_with_tests: itemsWithTests,
     items_with_recent_runs: itemsWithRecentRuns,
     recent_runs: { passed, failed, skipped },
@@ -1895,6 +1901,7 @@ function pushTestHealthSection(lines: string[], result: ContextResult): void {
     return;
   }
   lines.push("## Test health");
+  lines.push(`- ${result.tests.scope}: ${result.tests.total_items}`);
   lines.push(`- items_with_tests: ${result.tests.items_with_tests}`);
   lines.push(
     `- items_with_recent_runs: ${result.tests.items_with_recent_runs}`,
@@ -2528,7 +2535,9 @@ async function buildOptionalContextSections(params: {
           runtime.limit,
         )
       : undefined,
-    tests: has("tests") ? buildTestHealth(focusGroups.activeItems) : undefined,
+    tests: has("tests") ? buildTestHealth(allItems.filter((item) =>
+      runtime.statusRegistry.active_statuses.has(normalizeStatusForRegistry(item.status, runtime.statusRegistry)),
+    )) : undefined,
   };
 }
 
