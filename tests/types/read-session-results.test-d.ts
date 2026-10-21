@@ -53,6 +53,21 @@ if (!isReadOutputBudgetExceeded(context)) {
 }
 
 declare const hit: SearchHit;
+for (const options of [{}, { outputBudget: 10_000 }, { outputSession: undefined }, { output_session: undefined }]) {
+  const ordinary = applyReadOutputDimensions("search", options, { items: [hit], count: 1 });
+  if (!isReadOutputBudgetExceeded(ordinary)) {
+    const title: string = ordinary.items[0]!.item.title;
+    void title;
+  }
+}
+const ordinaryMap = applyReadOutputDimensions("graph", {}, {
+  row_contract: { row_keys: ["data.rows"] as const },
+  data: { rows: { first: { id: "pm-one", title: "Work" } } },
+});
+if (!isReadOutputBudgetExceeded(ordinaryMap)) {
+  const title: string = ordinaryMap.data.rows.first.title;
+  void title;
+}
 const shaped = applyReadOutputDimensions("search", { outputSession: "session" }, { items: [hit], count: 1 });
 if (!isReadOutputBudgetExceeded(shaped)) {
   const row = shaped.items[0]!;
@@ -68,7 +83,32 @@ if (!isReadOutputBudgetExceeded(shaped)) {
   }
 }
 
-const nested = applyReadOutputDimensions("graph", {}, {
+declare const unknownOptions: Record<string, unknown>;
+declare const unionOptions: { outputSession?: undefined } | { outputSession: string };
+const unknownPage = applyReadOutputDimensions("search", unknownOptions, { items: [hit], count: 1 });
+if (!isReadOutputBudgetExceeded(unknownPage)) {
+  // @ts-expect-error dynamic options can select a session
+  void unknownPage.items[0]!.item.title;
+}
+const unionPage = applyReadOutputDimensions("search", unionOptions, { items: [hit], count: 1 });
+if (!isReadOutputBudgetExceeded(unionPage)) {
+  // @ts-expect-error one union variant selects a session
+  void unionPage.items[0]!.item.title;
+}
+const optionalPage = applyReadOutputDimensions("search", maybeSession, { items: [hit], count: 1 });
+if (!isReadOutputBudgetExceeded(optionalPage)) {
+  // @ts-expect-error an optional session remains possible
+  void optionalPage.items[0]!.item.title;
+}
+const aliasPage = applyReadOutputDimensions("search", { output_session: "session" }, { items: [hit], count: 1 });
+if (!isReadOutputBudgetExceeded(aliasPage)) {
+  // @ts-expect-error the accepted alias also selects a session
+  void aliasPage.items[0]!.item.title;
+}
+const explicitResult = applyReadOutputDimensions<{ items: SearchHit[] }>("search", {}, { items: [hit] });
+void explicitResult;
+
+const nested = applyReadOutputDimensions("graph", { outputSession: "session" }, {
   row_contract: { row_keys: ["data.rows"] as const },
   data: { rows: { first: { id: "pm-one", title: "Work" } }, label: "Graph" },
   metadata: [{ id: "metadata", title: "Unchanged" }],
@@ -88,19 +128,19 @@ if (!isReadOutputBudgetExceeded(nested)) {
 void consumeSessions;
 
 declare const dynamicPaths: { row_contract: { row_keys: string[] }; data: { rows: { first: { id: string; title: string } } } };
-const dynamic = applyReadOutputDimensions("graph", {}, dynamicPaths);
+const dynamic = applyReadOutputDimensions("graph", { outputSession: "session" }, dynamicPaths);
 if (!isReadOutputBudgetExceeded(dynamic)) {
   // @ts-expect-error a runtime-declared nested map can replace a fact with a reference
   void dynamic.data.rows.first.title;
 }
 declare const optionalPaths: { row_contract?: { row_keys: readonly ["data.rows"] }; data: { rows: { first: { id: string; title: string } } } };
-const optional = applyReadOutputDimensions("graph", {}, optionalPaths);
+const optional = applyReadOutputDimensions("graph", { outputSession: "session" }, optionalPaths);
 if (!isReadOutputBudgetExceeded(optional)) {
   // @ts-expect-error an optional contract can still select a nested row map
   void optional.data.rows.first.title;
 }
 
-const overlapping = applyReadOutputDimensions("graph", {}, {
+const overlapping = applyReadOutputDimensions("graph", { outputSession: "session" }, {
   row_contract: { row_keys: ["data", "data.rows"] as const },
   data: { rows: [{ item_id: "pm-one", title: "Work" }] },
 });
@@ -110,7 +150,7 @@ if (!isReadOutputBudgetExceeded(overlapping)) {
 }
 
 declare const arrayMaps: { first: { id: string; title: string } }[];
-const indexed = applyReadOutputDimensions("graph", {}, {
+const indexed = applyReadOutputDimensions("graph", { outputSession: "session" }, {
   row_contract: { row_keys: ["data.0"] as const }, data: arrayMaps,
 });
 if (!isReadOutputBudgetExceeded(indexed)) {

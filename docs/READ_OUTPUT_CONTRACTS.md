@@ -130,7 +130,11 @@ omission with `isReadOutputBudgetExceeded`, use `isReadOutputSessionReference`
 from the SDK or `sdk/core` before accessing row prose or a search hit's nested
 `item`. A reference contains only `id` and `context_ref`. Calls with no session,
 including calls that specify only an output budget, retain their ordinary row
-types. `PmReadOutputSessionResult<Result>` models literal `row_contract.row_keys`
+types. The direct `applyReadOutputDimensions` helper also infers session
+capability from its options, including the accepted `output_session` spelling.
+Unspecified or explicitly undefined session options retain ordinary rows;
+optional, union, or dynamically typed session options admit references.
+`PmReadOutputSessionResult<Result>` models literal `row_contract.row_keys`
 paths (including nested arrays and keyed maps). Dynamic path declarations
 conservatively admit references in nested collections, and envelopes without a
 row declaration use the top-level array fallback. Keep package row paths literal
@@ -158,6 +162,9 @@ the error provides `recovery.suggested_retry_args` for the same command with the
 supported spelling. The SDK's `resolveReadOptionRetryArgs` exposes the same
 token-preserving correction. Conflicting controls or ambiguous operands do not
 receive a guessed retry.
+An explicit `--json` conflicts with `--toon`, so that invocation receives no
+encoding-changing retry. Non-conflicting TOON refusals include the corrected
+command in human output without requiring JSON diagnostics.
 
 `--output-session <json>` / `outputSession` composes the four per-call
 dimensions across a request group. The caller supplies versioned state and

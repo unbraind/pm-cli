@@ -341,6 +341,16 @@ export type PmReadOutputResultFor<Result, Options> = Options extends unknown
         : ProducerResultFor<Result, Options>
   : never;
 
+/** Infer possible session values from either spelling accepted by the direct helper. */
+type ReadOutputSessionOption<Options> =
+  | ("outputSession" extends keyof Options ? Options["outputSession"] : never)
+  | ("output_session" extends keyof Options ? Options["output_session"] : never);
+
+/** Keep universal budget omissions while adding references only for possible sessions. */
+type ReadOutputResultForSession<Result, Options> = Options extends unknown
+  ? PmReadOutputResultFor<Result, { outputSession: ReadOutputSessionOption<Options> }>
+  : never;
+
 const READ_OUTPUT_PRECEDENCE = [
   "canonical",
   "legacy",
@@ -2138,13 +2148,14 @@ function compactReadOutputProjection(
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
 export function applyReadOutputDimensions<
   Result extends Record<string, unknown>,
+  Options extends Record<string, unknown> = Record<string, unknown>,
 >(
   command: string,
-  options: Record<string, unknown>,
+  options: Options,
   result: Result,
-): PmReadOutputResult<Result> {
+): ReadOutputResultForSession<Result, Options> {
   const resolved = resolveReadOutputDimensions(command, options);
-  if (!resolved) return result;
+  if (!resolved) return result as ReadOutputResultForSession<Result, Options>;
   const format = readOutputMeasurementFormat(options);
   const session = parseReadOutputSession(
     options.outputSession ?? options.output_session,
@@ -2169,7 +2180,7 @@ export function applyReadOutputDimensions<
       options,
     )
   ) {
-    return continuationReadyResult as PmReadOutputResult<Result>;
+    return continuationReadyResult as ReadOutputResultForSession<Result, Options>;
   }
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
   const projection = projectReadOutputRows(
@@ -2247,11 +2258,9 @@ export function applyReadOutputDimensions<
       bindingBudget,
       receipt.estimated_tokens,
       format,
-    ) as PmReadOutputResult<Result>;
+    ) as ReadOutputResultForSession<Result, Options>;
   }
-  return projected as Result & {
-    read_output: PmReadOutputReceipt;
-  };
+  return projected as ReadOutputResultForSession<Result, Options>;
 }
 
 /** Narrow a universal read result to its budget-omission branch. */

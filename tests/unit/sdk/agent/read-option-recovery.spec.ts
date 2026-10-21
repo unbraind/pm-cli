@@ -23,6 +23,8 @@ describe("read-option recovery", () => {
     ["context", ["context", "--full", "--full"], "--full"],
     ["context", ["context"], "--full"],
     ["get", ["get", "pm-one", "--toon", "--output-format=json"], "--toon"],
+    ["get", ["--json", "get", "pm-one", "--toon"], "--toon"],
+    ["list", ["list", "--toon", "--json=true"], "--toon"],
     ["search", ["search", "--", "--toon"], "--toon"],
     ["get", ["get", "pm-one", "--depth", "full"], "--depth"],
     ["get", ["get", "pm-one", "--full"], "--full"],

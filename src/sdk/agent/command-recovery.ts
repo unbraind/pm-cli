@@ -26,7 +26,7 @@ function readOptionCorrection(command: string, flag: string, token: string, next
     return { consumed: inline ? 1 : 2, replacement: ["--full"], conflicts: ["--full", "--brief", "--compact", "--output-include", "--fields", "--for"] };
   }
   return flag === "--toon" && token === flag
-    ? { consumed: 1, replacement: ["--output-format", "toon"], conflicts: ["--format", "--output-format", "--stream"] }
+    ? { consumed: 1, replacement: ["--output-format", "toon"], conflicts: ["--json", "--format", "--output-format", "--stream"] }
     : undefined;
 }
 

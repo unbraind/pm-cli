@@ -2589,6 +2589,15 @@
       ],
       "package_version": "2026.10.21",
       "reason": "Session-capable read declarations now require reference-row narrowing; budget-only and ordinary calls retain their row shapes. Migration uses isReadOutputSessionReference after omission narrowing."
+    },
+    {
+      "changes": [
+        "signature ./sdk:applyReadOutputDimensions",
+        "signature ./sdk/contracts:applyReadOutputDimensions",
+        "signature ./sdk/core:applyReadOutputDimensions"
+      ],
+      "package_version": "2026.10.21",
+      "reason": "pm-t1p1jv: infer direct dimension-helper session capability from concrete options while preserving budget omissions, alias controls and existing explicit result type arguments"
     }
   ],
   "entrypoints": {
@@ -3289,7 +3298,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
+          "signature": "<Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options> | calls: <Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options>"
         },
         {
           "classification": "contract_data",
@@ -23173,7 +23182,7 @@
           "classification": "contract_data",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
+          "signature": "<Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options> | calls: <Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options>"
         },
         {
           "classification": "contract_data",
@@ -25765,7 +25774,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
+          "signature": "<Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options> | calls: <Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options>"
         },
         {
           "classification": "supported",

@@ -8,6 +8,14 @@ afterEach(() => {
 });
 
 describe("agent command guidance", () => {
+  it("preserves explicit JSON intent when TOON conflicts even with a supplied fallback", () => {
+    const refusal = formatCommanderErrorForJson("unknown option '--toon'", "get", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["get", "pm-one", "--json", "--toon"],
+      suggestedRetryCommand: "pm get pm-one --output-format toon",
+    });
+    expect(refusal.recovery?.suggested_retry).toBeUndefined();
+    expect(refusal.recovery?.suggested_retry_args).toBeUndefined();
+  });
   it("prioritizes a semantic read correction over a supplied fallback", () => {
     const refusal = formatCommanderErrorForJson("unknown option '--full'", "context", "Task|Issue", 2, {
       normalizedInvocationArgs: ["context", "--full", "--pm-path", "tracker with spaces", "--no-extensions", "--json"],

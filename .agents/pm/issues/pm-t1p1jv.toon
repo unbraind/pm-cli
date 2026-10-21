@@ -6,23 +6,23 @@ status: closed
 priority: 2
 tags[3]: output-sessions,sdk,types
 created_at: "2026-10-21T04:50:19.034Z"
-updated_at: "2026-10-21T10:05:33.643Z"
-closed_at: "2026-10-21T09:31:00.916Z"
-completed_at: "2026-10-21T09:31:00.916Z"
+updated_at: "2026-10-21T11:15:04.650Z"
+closed_at: "2026-10-21T11:15:03.619Z"
+completed_at: "2026-10-21T11:15:03.619Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Public result declarations model session reference rows at their declared row paths; callers can narrow a reference before accessing original prose or nested hit fields; ordinary non-session rows retain their useful types; independent source and packed declaration consumers fail before and pass after correction while runtime consent suppression budgets and cursors remain unchanged
 parent: pm-srns
 risk: medium
 confidence: high
-resolution: SDK session-capable results admit reference rows at declared paths; ordinary no-session rows stay precise; public reference guard and migration guidance are exported with snapshot acknowledgement.
-expected_result: Typed session consumers distinguish delivered facts from previously served references without unsafe casts.
-actual_result: "Source typecheck and packed declaration consumers pass for context, nested search hits, literal and dynamic maps, optional and overlapping paths and numeric array segments. Node/Bun packed matrices pass; unchanged declarations fail the regression consumer."
+resolution: "Model session references at literal and dynamic row paths; export a narrowing guard; infer direct-helper session capability from both accepted option spellings while preserving ordinary rows, budget omissions and existing explicit Result arguments. Publish migration guidance and acknowledged SDK signatures."
+expected_result: "Session-free consumers retain useful row types, session-capable consumers must narrow references, and source plus actual packed declarations agree."
+actual_result: "Source typecheck, lint, SDK snapshot and packed consumer checks pass, including ordinary, budget-only, undefined, optional, union, dynamic and aliased options. Pre-fix ordinary helper consumers fail. Nineteen Node/Bun runtime scenarios pass; final reviewed-head hosted gates remain required before merge."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-hid9g1,discovered_from,"2026-10-21T04:50:19.034Z","harness:codex","cli:create:dep",detected
   pm-oybmsd,related,"2026-10-21T04:50:19.034Z","harness:codex","cli:create:dep",detected
   pm-57ir3b,recurs_from,"2026-10-21T07:41:04.157Z","harness:codex","cli:update:dep",detected
-comments[7]:
+comments[9]:
   - created_at: "2026-10-21T04:50:19.034Z"
     author: "harness:codex"
     text: "created_at=now,text=Duplicate check: complete3034-item all-status snapshot plus complete seven-hit session suppressed row types search and refreshed open/in-progress inventories found no exact active leaf. Live full pm-hid9g1 confirms session suppression is completed and preserved, while pm-oybmsd is limited to producer metadata envelopes. Source evidence: applyReadOutputSessionReferences and the existing read-output-contracts session replacement regression. This follow-up remains open/unclaimed and is not part of the two active implementations."
@@ -45,8 +45,15 @@ comments[7]:
     author: "harness:codex"
     text: "Changelog checkpoint: npm now publishes pm-changelog2026.10.21, consumed by the canonical install/generate/check scripts. Package-owned output adds the two new Fixed entries and reclassifies historical duplicate/already-fixed/not-reproducible closures; sampled live terminal metadata supports those changes. No generator was patched or hand-edited in pm-cli. Terminal defect evidence, validation and health pass after closure; current in-progress population was empty at that checkpoint."
     edited_at: "2026-10-21T10:05:33.643Z"
-learnings[1]{created_at,author,text}:
+  - created_at: "2026-10-21T11:10:16.440Z"
+    author: "harness:codex"
+    text: "CodeRabbit thread4335926304 confirmed a direct-helper typing regression. New session-free helper consumer cases fail on the pre-fix declarations with missing item/title diagnostics. The helper now infers session capability from camel/snake options, keeps budget omissions, distributes option unions and retains existing explicit Result type arguments. Optional, dynamic and session-bearing cases still require reference narrowing. Full source typecheck passes; the generated SDK snapshot records3 acknowledged signature changes. Packed declaration acceptance is next."
+  - created_at: "2026-10-21T11:15:00.723Z"
+    author: "harness:codex"
+    text: "Final review remediation passes source typecheck and the real packed declaration consumer with the precise helper cases. The same linked run passes all19 runtime continuation scenarios on Node and Bun. Ordinary and budget-only helper rows retain prose, while optional, union, dynamic and snake-case session options require narrowing. Lint and SDK snapshot checks pass with the3 conservative signature acknowledgements. Previous-head repository coverage is100/100/100/100; the revised head must independently pass the unchanged hosted checks."
+learnings[2]{created_at,author,text}:
   "2026-10-21T09:30:39.202Z","harness:codex","Session result declarations must follow runtime row identities and paths: nested search hits, item_id, optional or dynamic contracts, overlapping declarations and numeric array segments all admit fact references. Preserve precise ordinary reads and provide a structural guard for schema-extensible rows."
+  "2026-10-21T11:10:18.097Z","harness:codex","Session capability must be inferred at every public result-producing boundary, including direct shaping helpers. Keep no-session options precise while admitting references for optional, aliased, union and dynamically typed session values; validate the same consumer through source and real packed declarations."
 files[10]{path,scope}:
   sdk/public-surface.json,project
   src/sdk/contracts.ts,project
@@ -61,7 +68,7 @@ files[10]{path,scope}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   pnpm typecheck,project,240,"harness:codex","2026-10-21T07:41:45.987Z",local_mutation,fix/read-session-types-and-recovery
   node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,project,240,"harness:codex","2026-10-21T07:41:45.987Z",local_mutation,fix/read-session-types-and-recovery
-test_runs[2]:
+test_runs[4]:
   - run_id: test-local-mvhwq2ed-tax04o
     kind: test
     status: failed
@@ -86,9 +93,33 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       pnpm typecheck,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvi0iij9-8grg2w
+    kind: test
+    status: passed
+    started_at: "2026-10-21T11:10:20.220Z"
+    finished_at: "2026-10-21T11:11:57.524Z"
+    recorded_at: "2026-10-21T11:11:57.524Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvi0lucg-z8sxyo
+    kind: test
+    status: passed
+    started_at: "2026-10-21T11:13:24.432Z"
+    finished_at: "2026-10-21T11:14:32.799Z"
+    recorded_at: "2026-10-21T11:14:32.799Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/READ_OUTPUT_CONTRACTS.md,project
-close_reason: Implemented session-aware result declarations and verified source plus packed consumers.
+close_reason: "Verified session-aware result types across client and direct helper consumers, including full-review precision remediation."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

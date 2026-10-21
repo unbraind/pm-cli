@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { renderPmCommand } from "../../../src/sdk/command-line.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 /** Snapshot authoritative bytes while excluding regenerable runtime/search caches. */
@@ -27,9 +28,6 @@ describe("same-command read option recovery (GH-1528)", () => {
         ["context", "--full"],
         ["list", "--depth", "full"],
         ["search", "Whitespace query", "--mode", "keyword", "--depth=full"],
-        ["get", id, "--toon"],
-        ["list", "--toon"],
-        ["search", "Whitespace query", "--mode", "keyword", "--toon"],
       ]) {
         const refused = context.runCli(["--pm-path", context.pmPath, "--no-extensions", "--json", ...args], { expectJson: true });
         expect(refused.code).toBe(2);
@@ -41,10 +39,22 @@ describe("same-command read option recovery (GH-1528)", () => {
         if (args[0] === "search") expect(retry).toContain("Whitespace query");
         const recovered = context.runCli(retry);
         expect(recovered.code, recovered.stderr).toBe(0);
-        if (args.includes("--toon")) {
-          expect(retry.slice(-2)).toEqual(["--output-format", "toon"]);
-          expect(recovered.stdout.trimStart().startsWith("{")).toBe(false);
-        }
+      }
+      const prefix = ["--pm-path", context.pmPath, "--no-extensions"];
+      for (const args of [["get", id], ["list"], ["search", "Whitespace query", "--mode", "keyword"], ["context"]]) {
+        const retry = [...prefix, ...args, "--output-format", "toon"];
+        const refused = context.runCli([...prefix, ...args, "--toon"]);
+        expect(refused.code).toBe(2);
+        expect(refused.stderr).toContain(`suggested_retry: ${renderPmCommand(retry)}`);
+        const recovered = context.runCli(retry);
+        expect(recovered.code, recovered.stderr).toBe(0);
+        expect(recovered.stdout.trimStart().startsWith("{")).toBe(false);
+
+        const conflict = context.runCli([...prefix, "--json", ...args, "--toon"]);
+        expect(conflict.code).toBe(2);
+        const error = JSON.parse(conflict.stderr) as { recovery?: { suggested_retry_args?: string[]; suggested_retry?: string } };
+        expect(error.recovery?.suggested_retry_args).toBeUndefined();
+        expect(error.recovery?.suggested_retry).toBeUndefined();
       }
       expect(await authoritativeFiles(context.pmPath)).toEqual(before);
     });
