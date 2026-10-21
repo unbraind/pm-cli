@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-21T14:02:28.155Z"
+updated_at: "2026-10-21T18:14:48.446Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[74]:
+comments[79]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -247,6 +247,21 @@ comments[74]:
   - created_at: "2026-10-21T14:02:28.154Z"
     author: "harness:codex"
     text: "PR1533 revised-head performance follow-through: CodSpeed now reports all11 benchmarks untouched for68265838c versus c34a532, with encodeQueryCursor211.6 to211.4us and decodeQueryCursor369.1 to368.8us. Chrome inspection confirms zero regressions; the earlier head80be905 encoder regression did not repeat. The revised comparison names differing AMD EPYC7763/9V74 runner CPUs, so it does not prove a product speedup. The system-call instrumentation warning belongs to createQueryFingerprint, remains visible, and is not used to dismiss encoder evidence. No source in src/sdk/pagination.ts, benchmark or performance threshold changed. The qualified local startup-budget failures above remain unresolved; no blanket performance-green claim is made."
+  - created_at: "2026-10-21T17:04:00.857Z"
+    author: "harness:codex"
+    text: "Full local coverage run on Node26.9 finished with10972 passing tests,3 skipped and3 failures after1458seconds. Invocation-profile measured parent/spawn gap267.84ms versus250ms; scale-benchmark100-item case exceeded its30second deadline under concurrent coverage load. Packed continuation failed deterministically because this Homebrew Node cannot resolve global npm/package.json through its own execPath. Actual npm is <npm-global-root>/npm, so the test-prescribed NODE_PATH exposure is the environment correction. No thresholds, assertions, source denominator or retry policy are changed. The failed run emitted no coverage-summary.json and therefore establishes no coverage percentage. Recheck those exact cases with corrected npm discovery and one worker, and require full hosted coverage at the final head."
+  - created_at: "2026-10-21T17:08:52.361Z"
+    author: "harness:codex"
+    text: "Qualified rerun evidence: NODE_PATH=<npm-global-root> node scripts/run-tests.mjs test -- --maxWorkers=1 tests/integration/invocation-profile.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/scripts/scale-benchmark.spec.ts passes10/10 cases in67seconds. The packed public SDK continuation matrix passes19 scenarios each on Node and Bun, including declarations and conflict guards. No test source, deadline or retry policy was changed. This isolates the earlier failures from the context-evidence changes but does not turn the unsuccessful full-coverage run into a pass; final hosted coverage remains required."
+  - created_at: "2026-10-21T17:30:54.205Z"
+    author: "harness:codex"
+    text: "Current context-evidence static attempt: SDK import-cost admission passes, but the CLI transport-floor control qualifies at44ms within106ms and product admission fails get368ms>362ms, list424ms>419ms and context457ms>433ms. The measured runner has8 available CPUs and load averages17.5 to18.9. This is a failed product admission, not runner-unqualified evidence. Transport source and budgets are unchanged. Record a fresh immutable-base counterfactual and explicit supported Node24 measurement separately; do not infer causality or raise limits. Required final-head hosted static remains an independent acceptance."
+  - created_at: "2026-10-21T17:32:02.233Z"
+    author: "harness:codex"
+    text: "Fresh counterfactual: immutable main13c19fe9 on Node26.9 also qualifies its control (87ms) and fails get415>362ms, context507>433ms, next528>440ms and create441>398ms. A separate explicit Node24.21 candidate census qualifies41ms and fails get395, context447, next480, create409 and claim426ms against unchanged limits. Both retained failed admissions were observed under active host load; they do not isolate a causal context-fix regression or establish performance acceptance. No budget or support policy changes. Final hosted static admission is mandatory."
+  - created_at: "2026-10-21T18:14:48.446Z"
+    author: "harness:codex"
+    text: "PR1536 first-head25d8b6f CodSpeed report marks encodeQueryCursor211.7 to214.8microseconds (-1.43percent), decodeQueryCursor368.8 to244.8 (+50.64percent), and9 cases untouched. Chrome inspection confirms global threshold1percent and CPU Simulation; baseline AMD EPYC9V74 and head Intel Xeon Platinum8573C differ. The encoder source, benchmark fixture and dependency lockfile are unchanged. The system-call warning belongs to createQueryFingerprint, not the encoder. Causality remains unproven; no regression acknowledgement, threshold change or speedup claim is made. Assess the revised exact-head comparison separately."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

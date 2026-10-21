@@ -1899,6 +1899,22 @@ compact rounded report metrics for stable machine output.
 
 ### Context relevance and evaluation
 
+Context test health is tracked by
+[pm-gh1535](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1535.toon)
+(repository tracker records are excluded from npm). `ContextResult.tests` counts
+the complete matching active population, independently of the focus page and
+token selection. `scope: "matching_active_items"` and `total_items` declare its
+denominator, including active items without tests. Draft, blocked-lifecycle and
+terminal items are excluded unless the project schema classifies their status
+as active. The main summary still counts every matching lifecycle status.
+Consumers constructing `TestHealthSummary` values must supply the new scope and
+denominator fields; consumers reading results can use them directly.
+Markdown limits failing-item identities to the effective focus limit (or the
+default context limit) and native token budget, with `items_failing_omitted`
+when detail is withheld. Population counters remain exact. Structured SDK and
+MCP results retain the complete failing-item collection before their normal
+read-output budget handling.
+
 Tracked by [pm-4k6b](../.agents/pm/features/pm-4k6b.toon),
 [pm-h3no](../.agents/pm/tasks/pm-h3no.toon),
 [pm-3hps](../.agents/pm/tasks/pm-3hps.toon),

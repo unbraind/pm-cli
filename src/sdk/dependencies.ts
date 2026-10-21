@@ -1506,6 +1506,7 @@ function buildTreeOrGraphDepsResult(
   }
 }
 
+/** Declare full/summary field groups and independently disclose producer traversal bounds. */
 function attachDepsProjection(
   result: UnprojectedDepsResult,
   summaryOnly: boolean,
@@ -1520,12 +1521,18 @@ function attachDepsProjection(
           : "relationship_context",
     restore_with: "--full",
   };
+  const boundedGroups = result.context?.meta.truncated
+    ? [{
+        name: "relationship_context_bounds",
+        restore_with: "--token-budget <n> --node-limit <n> --edge-limit <n> --max-depth <n>",
+      }]
+    : [];
   return {
     ...result,
     legacy_alias_counts: legacyAliasCounts,
     projection: {
       mode: summaryOnly ? "summary" : "full",
-      declared_field_groups: [group],
+      declared_field_groups: [group, ...boundedGroups],
       included_field_groups: summaryOnly ? [] : [group.name],
     },
   };

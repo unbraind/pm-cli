@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-1535: report context test health over the matching population ([pm-gh1535](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1535.toon))
+- GH-1534: retain root relationship evidence before optional context detail ([pm-gh1534](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1534.toon))
 - Render literal and root-layout tracker paths safely in SDK cache ignore rules ([pm-47wuv8awpqvj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-47wuv8awpqvj.toon))
 - GH-1532: preserve every tracker cache exclusion when nested init shares a repository ([pm-nl60tbxzkjwp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nl60tbxzkjwp.toon))
 - GH-1528: recover completeness and TOON mistakes on the attempted read command ([pm-7gpx34](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7gpx34.toon))

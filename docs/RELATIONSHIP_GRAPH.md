@@ -238,6 +238,21 @@ Every returned node is explainable: `role` names its semantic family (`prerequis
 
 `meta.completeness` reports result quality: the exact in-memory kernel emits `complete` or `truncated`, and the contract reserves `sampled`, `approximate`, `stale_index`, and `redacted` for index-backed or policy-filtered providers so consumers can branch on one field.
 
+The packer orders direct prerequisite and ancestor endpoints before optional
+descendants or related nodes, reserves their direct relationship costs, and
+emits root-incident edges first. An oversized edge is skipped so later feasible
+edges can still be returned. The same order governs cursor pages; the cursor
+fingerprint identifies this packing policy and rejects earlier-policy cursors. An
+edge limit or a budget too small for an endpoint and its edges can still omit
+evidence: inspect the direct-family totals, omitted counts and completeness
+before using the packet to make a decision. The native adapter also reports
+`relationship_context_bounds` in `omission_receipt` whenever the producer is
+truncated. Increase the relevant bounds or follow the node cursor for more
+detail; a full projection alone does not remove traversal limits.
+
+Tracked by [pm-gh1534](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1534.toon)
+(repository tracker records are excluded from npm).
+
 Node, edge, depth, kind, direction, and token bounds are independent. The cursor fingerprint covers semantic filters and traversal shape, so it is rejected when reused for a different root or query. Output remains a plain object suitable for TOON, JSON, JSONL, MCP, or a custom UI; adapters own rendering and do not reimplement traversal.
 
 The native adapter is `pm deps <id> --format context`. It is also available through `PmClient.deps`, `runAction({ action: "deps" })`, and the MCP `pm_deps` tool. `--max-depth`, `--node-limit`, `--edge-limit`, `--token-budget`, `--cursor`, `--direction`, and repeatable or comma-separated `--kind` map directly to the public SDK context options; `--summary` keeps only counts. Unknown `--kind` values fail fast with the registered-kind list instead of silently matching nothing. Tree and graph formats share those first four bounds, use safe defaults when omitted, and report deterministic truncation metadata instead of recursively expanding a cyclic or multiply-linked graph without limit.

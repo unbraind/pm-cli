@@ -1,0 +1,86 @@
+id: pm-gh1535
+title: "GH-1535: report context test health over the matching population"
+description: "Reproduce GH-1535: tests counters use the focus page while summary uses matching_items. Compute test health over the same filtered active population independently of focus limits. Source: https://github.com/unbraind/pm-cli/issues/1535"
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-21T16:30:10.816Z"
+updated_at: "2026-10-21T18:35:44.116Z"
+closed_at: "2026-10-21T18:35:42.533Z"
+completed_at: "2026-10-21T18:35:42.533Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Test counters are invariant under focus limits; Filters and active statuses constrain the denominator; Public SDK and human output declare test scope and denominator
+parent: pm-gh1361
+risk: medium
+confidence: 90
+resolution: Count all matching active items; expose scope and denominator; cap Markdown failure identities by focus amount and token cost with omitted counts.
+expected_result: "Exact counters across focus limits and bounded failure details through SDK, CLI and MCP; strict canonical coverage remains required."
+actual_result: "All48 linked context cases pass including direct SDK row-cap proof, CLI transport rendering, the tiny token ceiling, and complete structured counters. Hosted full-source coverage and static quality remain merge prerequisites."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-79gv6q,recurs_from,"2026-10-21T16:30:10.816Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-21T16:30:10.816Z","harness:codex","Duplicate check: strict full all-status read inspected 3042/3042 items without omissions. No GH-1535 owner exists. Closed pm-79gv6q fixes summary population counts. This tests-section recurrence belongs under pm-gh1361 and preserves the shipped summary fix."
+  "2026-10-21T16:30:40.725Z","harness:codex","Implementation plan: compute test-health counters from the complete matching active population and publish matching_items scope plus total_items. Extend the existing context decision integration fixture for limit, filters, statuses and real CLI/MCP parity. Apply pm-test-audit failing-before and passing-after requirements."
+  "2026-10-21T16:38:41.603Z","harness:codex","Regression sensitivity: final test copied unchanged to isolated base 13c19fe9 reports items_with_tests=1 and items_with_recent_runs=0 instead of3 and1 at limit1. Current SDK/CLI/MCP reads pass at limits1/10 with a tag filter, four active items, excluded draft/other-tag items, one failing run and the explicit matching_active_items denominator. Earlier fixture failures were invalid test data (array tag and missing run identity/timestamps), corrected without production workarounds."
+  "2026-10-21T17:08:53.242Z","harness:codex","Final linked verification passes46/46 cases, and the graph owner linked suite passes68/68 (111 distinct focused cases across the shared regression file). Typecheck and focused ESLint pass after extracting node projection below the existing complexity ceiling. Real no-Git temporary workspace acceptance reports3 test-bearing items at both focus limits1/10. The qualified packed Node/Bun continuation matrix also passes. Full static and exact-head hosted coverage are still pending at this evidence point."
+  "2026-10-21T18:07:27.215Z","harness:codex","Verified Markdown finding with the real CLI: all3 failing IDs were printed at focus limit1. Keep exact population counters and complete structured pre-budget data, but bound Markdown identities by effective focus amount and native token cost and report items_failing_omitted. The regression also covers a one-token detail ceiling that emits no IDs while disclosing all3 omissions. Full-surface source docstrings are added for the touched private helpers."
+  "2026-10-21T18:35:41.108Z","harness:codex","Hosted head46e105 coverage merged four successful shards but found the failure-row cap branch uncovered. The CLI transport assertion exercises built dist code, so extend the same real workspace fixture with a direct public SDK Markdown assertion: focus limit1 retains pm-a and reports two omitted identities. The existing token-budget assertion covers the independent token cap. All48 linked context cases pass. No gate, denominator, retry policy, source ignore or production surface changed."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T16:54:03.203Z","harness:codex","Counts shown beside a bounded focus page need an independently declared population. Test health retains active-status semantics but aggregates all matching active items, reports its denominator and ignores focus limits. Seed complete run identity and timestamps in fixtures so persistence normalization cannot remove the intended evidence."
+files[5]{path,scope}:
+  config/defect-recurrence-policy.json,project
+  sdk/public-surface.json,project
+  src/sdk/query/context.ts,project
+  tests/integration/read-output/context-evidence.integration.spec.ts,project
+  tests/unit/commands/query/context-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts,project,240,"harness:codex","2026-10-21T16:37:33.808Z",local_mutation,fix/context-evidence-packing
+test_runs[3]:
+  - run_id: test-local-mvid6vmo-qavx52
+    kind: test
+    status: passed
+    started_at: "2026-10-21T17:06:27.728Z"
+    finished_at: "2026-10-21T17:06:49.632Z"
+    recorded_at: "2026-10-21T17:06:49.632Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvifgyjz-i71kaj
+    kind: test
+    status: passed
+    started_at: "2026-10-21T18:10:17.771Z"
+    finished_at: "2026-10-21T18:10:39.215Z"
+    recorded_at: "2026-10-21T18:10:39.215Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvigcsb2-huylv4
+    kind: test
+    status: passed
+    started_at: "2026-10-21T18:34:59.609Z"
+    finished_at: "2026-10-21T18:35:24.110Z"
+    recorded_at: "2026-10-21T18:35:24.110Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: Complete matching-population test health and bounded SDK Markdown regression proof.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: output-budget-and-continuation
+  owner: pm-gh1535
+  negative_control: "Copy the unchanged context-evidence regression to base 13c19fe9 and run it in an isolated worktree: test-health returns one test-bearing item and zero runs instead of three and one."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/unit/commands/query/context-command.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+body: ""

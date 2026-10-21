@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: ci,recurrence,reliability
 created_at: "2026-08-03T20:34:28.473Z"
-updated_at: "2026-10-09T21:47:04.605Z"
+updated_at: "2026-10-21T18:00:17.059Z"
 closed_at: "2026-10-09T21:47:04.012Z"
 completed_at: "2026-10-09T21:47:04.012Z"
 author: "harness:claude-code"
@@ -51,7 +51,7 @@ dependencies[32]{id,kind,created_at,author,source_kind,author_source}:
   pm-xaib,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
   pm-xpkt,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
   pm-zpe7,discovered_from,"2026-10-09T20:13:22.181Z","harness:codex","cli:update:dep",detected
-comments[12]:
+comments[14]:
   - created_at: "2026-08-03T20:56:39.512Z"
     author: "harness:claude-code"
     text: "A clean natural experiment, observed 2026-08-03 immediately after this item was filed.\n\nA commit touching only tracker data under the pm store, with no source, script, workflow or test file changed, turned the Windows regression job on main red. Two tests in the init command suite failed at 30010 and 30002 milliseconds, which is the generic Vitest timeout rather than an assertion. Re-running the failed job against byte-identical content passed, and main is green at the same commit.\n\nThe experiment is clean because the input could not have caused a behavioural change. Tracker data is not read by that suite, which sandboxes its own store path. So the failure carried zero information about the commit and the leg still reported red.\n\nTwo consequences for this item.\n\nFirst, the measured failure rate is a mixture and nothing separates its parts. Of the 28 alerts counted here, an unknown fraction are product defects that a pre-merge control would have caught, and an unknown fraction are infrastructure timeouts that no control can catch because there is nothing to catch. A rate that mixes them cannot justify any decision, which strengthens rather than weakens the case for measuring it properly: the first thing the meter has to do is partition.\n\nSecond, the timeout class is itself a recurrence. Two items in this tracker are already closed for the same subject, Windows init package acceptance exceeding the generic Vitest timeout, and both closed with a per-site timeout increase. The class has returned on a third site. That is the second independent recurrence found today and it arrived, unprompted, in the CI response to the commit that filed the recurrence work.\n\nPartitioning rule this suggests, recorded as input rather than as a decision: a failure whose signature is a timeout at the declared limit, on a leg whose median passing duration for that suite is far below the limit, and which passes on re-run with identical content, is infrastructure. Everything else is a candidate defect until proved otherwise. The re-run is the discriminator and it is cheap.\n"
@@ -89,6 +89,12 @@ comments[12]:
   - created_at: "2026-10-09T21:47:01.576Z"
     author: "harness:codex"
     text: "Review-corrected evidence: original-head workflow populations retain 230 genuine observations, all 28 historical alert issues and 45 distinct workflow SHAs in the 45-day replay ending 2026-08-04. The earlier 280-row receipt remains in immutable history; its synthetic current-family pending rows are superseded by this corrected census. Legacy healthy zero-rate controls remain genuine, and newly added current families have no fabricated historical attempts. The unchanged linked SDK/collector command passes 62 cases. A reused-alert regression preserves two failures with unknown causes and shared alert-closure latencies of 60 and 120 minutes; those endpoints are not verified product-repair dates."
+  - created_at: "2026-10-21T16:48:37.589Z"
+    author: "harness:codex"
+    text: "October21 live Release Reliability39618012349 artifact remains red for rolling nightly rates: Windows Node24 shards retain5/28 and7/28 original failures, legacy macOS7/28 and the new macOS shard families have only2 samples. Current main CI39617747196 passed independently. Preserve original-attempt denominators and unknown-cause labels; no thresholds are relaxed and this recurrence owner remains open/unclaimed while the current implementation work is limited to GH1534/1535."
+  - created_at: "2026-10-21T18:00:17.059Z"
+    author: "harness:codex"
+    text: "Correction to my October21 reliability note: the live item is closed, with its recorded resolution completing the measurement and recurrence-governance work. It is not an open owner awaiting implementation. The current rolling original-attempt failure rates and sample insufficiency remain separate observed red metrics; they do not reopen or undo this completed measurement work. My earlier open/unclaimed statement was incorrect and remains preserved in history."
 learnings[2]{created_at,author,text}:
   "2026-10-09T20:13:24.004Z","harness:codex","A reliability denominator must count original job attempts, not alert issues. Reused alert comments can carry several occurrences; closure is only an observed latency endpoint and never rewrites the original outcome or supplies an inferred product/infrastructure cause."
   "2026-10-09T21:47:02.106Z","harness:codex","Historical populations are versioned evidence: read each original run workflow at its immutable SHA and cache repeated definitions within one census. The current matrix cannot supply absent historical attempts, and closure-only alert latency must remain explicitly separate from verified product repair."

@@ -344,6 +344,10 @@ export interface RecentContextItem extends ContextFocusItem {
 
 /** Documents the test health summary payload exchanged by command, SDK, and package integrations. */
 export interface TestHealthSummary {
+  /** Complete filtered active population, independent of focus paging and packing. */
+  scope: "matching_active_items";
+  /** Number of matching active items, including items without linked tests. */
+  total_items: number;
   /** Value that configures or reports items with tests for this contract. */
   items_with_tests: number;
   /** Value that configures or reports items with recent runs for this contract. */
@@ -1600,6 +1604,7 @@ function buildUnparented(
     .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
 }
 
+/** Count linked tests and stored runs across the complete matching active population. */
 function buildTestHealth(activeItems: ItemMetadata[]): TestHealthSummary {
   let itemsWithTests = 0;
   let itemsWithRecentRuns = 0;
@@ -1631,6 +1636,8 @@ function buildTestHealth(activeItems: ItemMetadata[]): TestHealthSummary {
   }
 
   return {
+    scope: "matching_active_items",
+    total_items: activeItems.length,
     items_with_tests: itemsWithTests,
     items_with_recent_runs: itemsWithRecentRuns,
     recent_runs: { passed, failed, skipped },
@@ -1890,11 +1897,27 @@ function pushStalenessSection(lines: string[], result: ContextResult): void {
   lines.push("");
 }
 
+/** Select a deterministic failure prefix within the Markdown row and native token bounds. */
+function boundedTestHealthFailures(tests: TestHealthSummary, limit: number, tokenBudget: number): string[] {
+  const included: string[] = [];
+  let usedTokens = 0;
+  for (const id of tests.items_failing) {
+    if (included.length >= limit) break;
+    const tokens = estimateJsonTokens(id);
+    if (usedTokens + tokens > tokenBudget) break;
+    included.push(id);
+    usedTokens += tokens;
+  }
+  return included;
+}
+
+/** Render exact test counters with bounded failure detail and an explicit omitted count. */
 function pushTestHealthSection(lines: string[], result: ContextResult): void {
   if (!result.tests) {
     return;
   }
   lines.push("## Test health");
+  lines.push(`- ${result.tests.scope}: ${result.tests.total_items}`);
   lines.push(`- items_with_tests: ${result.tests.items_with_tests}`);
   lines.push(
     `- items_with_recent_runs: ${result.tests.items_with_recent_runs}`,
@@ -1902,8 +1925,13 @@ function pushTestHealthSection(lines: string[], result: ContextResult): void {
   lines.push(
     `- passed: ${result.tests.recent_runs.passed}, failed: ${result.tests.recent_runs.failed}, skipped: ${result.tests.recent_runs.skipped}`,
   );
-  if (result.tests.items_failing.length > 0) {
-    lines.push(`- items_failing: [${result.tests.items_failing.join(",")}]`);
+  const failures = boundedTestHealthFailures(result.tests, result.applied_limit ?? DEFAULT_CONTEXT_LIMIT, result.filters.token_budget);
+  if (failures.length > 0) {
+    lines.push(`- items_failing: [${failures.join(",")}]`);
+  }
+  const omitted = result.tests.items_failing.length - failures.length;
+  if (omitted > 0) {
+    lines.push(`- items_failing_omitted: ${omitted}`);
   }
   lines.push("");
 }
@@ -2441,6 +2469,7 @@ function countContextStatus(
   ).length;
 }
 
+/** Assemble requested sections while keeping population counters independent of focus selection. */
 async function buildOptionalContextSections(params: {
   runtime: ContextRuntime;
   allItems: ItemMetadata[];
@@ -2528,7 +2557,9 @@ async function buildOptionalContextSections(params: {
           runtime.limit,
         )
       : undefined,
-    tests: has("tests") ? buildTestHealth(focusGroups.activeItems) : undefined,
+    tests: has("tests") ? buildTestHealth(allItems.filter((item) =>
+      runtime.statusRegistry.active_statuses.has(normalizeStatusForRegistry(item.status, runtime.statusRegistry)),
+    )) : undefined,
   };
 }
 

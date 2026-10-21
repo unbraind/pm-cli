@@ -1491,6 +1491,8 @@ describe("context command module", () => {
         },
       ],
       tests: {
+        scope: "matching_active_items",
+        total_items: 1,
         items_with_tests: 1,
         items_with_recent_runs: 1,
         recent_runs: { passed: 0, failed: 1, skipped: 0 },
