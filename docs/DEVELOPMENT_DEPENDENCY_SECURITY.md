@@ -75,6 +75,8 @@ The retained hosted OSV receipt identified both advisories while the registry
 audit returned zero. Keep full-lock admission mandatory and verify the patched
 graph against both feeds. This patch keeps Vitest 4, the CodSpeed peer contract
 and the Vite 7 override; the broader Vitest 5 migration remains separate. The
+installed-handler regressions run in coverage and the required native Windows
+cohort, whose aggregate refuses failed, canceled or skipped partitions. The
 October 15 patch releases meet pnpm's one-day minimum age on October 21 without
 an exclusion. Dependabot's seven-day scheduling cooldown is unchanged.
 

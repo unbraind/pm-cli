@@ -250,7 +250,7 @@
     },
     {
       "id": "security-scanner-finding",
-      "version": 5,
+      "version": 6,
       "title": "Secret, dependency, and static-analysis findings",
       "owner_item_id": "pm-6ixn",
       "escape_class": "scanner_finding",
@@ -274,10 +274,12 @@
           "pnpm quality:dependencies",
           "pnpm audit --prod",
           "node scripts/run-tests.mjs test -- tests/unit/helpers/withTempPmPath.spec.ts",
-          "node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts",
+          "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts"
         ],
         "hosted": [
           "CI / Gates (coverage)",
+          "CI / Windows regression (Node 24)",
           "CodeQL / Analyze (javascript-typescript)",
           "Security and Script Quality / TruffleHog",
           "Security and Script Quality / Trivy"
@@ -294,7 +296,7 @@
     },
     {
       "id": "review-caught-contract-drift",
-      "version": 4,
+      "version": 5,
       "title": "CLI, SDK, MCP, initialization, and CI evidence contract drift caught in review",
       "owner_item_id": "pm-rtn5h6",
       "escape_class": "review_caught_late",

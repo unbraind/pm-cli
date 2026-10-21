@@ -265,6 +265,13 @@ describe("GitHub workflow contract", () => {
     const scripted = cohorts.steps.filter((step: { run?: string }) => step.run?.includes("node scripts/run-tests.mjs"));
     expect(scripted.filter((step: { if?: string }) => step.if === "matrix.cohort == 'scripts'")).toHaveLength(1);
     expect(scripted.every((step: { if?: string }) => ["matrix.cohort == 'scripts'", "matrix.cohort == 'native'"].includes(step.if ?? ""))).toBe(true);
+    const mockerStep = scripted.find((step: { run?: string }) => step.run?.includes("tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts"));
+    expect(mockerStep).toMatchObject({
+      if: "matrix.cohort == 'native'",
+      env: { PM_RUN_TESTS_SKIP_BUILD: "1" },
+      run: "node scripts/run-tests.mjs test -- tests/integration/dependencies/vitest-mocker-advisory.integration.spec.ts",
+    });
+    expect(mockerStep["continue-on-error"]).toBeUndefined();
     const receiptStep = scripted.find((step: { name?: string }) => step.name === "Verify merge receipt recovery and settlement on Windows");
     expect(receiptStep?.run).toMatch(/--maxWorkers=1(?:\s|$)/);
     expect(receiptStep?.run.match(/tests\/\S+\.spec\.ts/g)).toEqual([
@@ -322,7 +329,9 @@ describe("GitHub workflow contract", () => {
     const upload = uploads[0]!;
     expect(String(upload.with?.["include-hidden-files"])).toBe("true");
     expect(upload.with?.name).toContain("${{ github.run_attempt }}");
-    expect(steps.indexOf(upload)).toBeGreaterThan(steps.findIndex((step) => step.run?.includes("pnpm lint")));
+    const lintIndex = steps.findIndex((step) => step.run?.includes("pnpm lint"));
+    expect(lintIndex).toBeGreaterThanOrEqual(0);
+    expect(steps.indexOf(upload)).toBeGreaterThan(lintIndex);
     for (const gate of ["static", "typecheck", "compat", "smokes"]) {
       for (const failed of [false, true]) {
         const condition = (upload.if ?? "true").replace(/^\$\{\{\s*|\s*\}\}$/gu, "");
