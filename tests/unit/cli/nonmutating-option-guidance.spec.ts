@@ -8,6 +8,32 @@ afterEach(() => {
 });
 
 describe("agent command guidance", () => {
+  it("preserves explicit JSON intent when TOON conflicts even with a supplied fallback", () => {
+    const refusal = formatCommanderErrorForJson("unknown option '--toon'", "get", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["get", "pm-one", "--json", "--toon"],
+      suggestedRetryCommand: "pm get pm-one --output-format toon",
+    });
+    expect(refusal.recovery?.suggested_retry).toBeUndefined();
+    expect(refusal.recovery?.suggested_retry_args).toBeUndefined();
+  });
+  it("prioritizes a semantic read correction over a supplied fallback", () => {
+    const refusal = formatCommanderErrorForJson("unknown option '--full'", "context", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["context", "--full", "--pm-path", "tracker with spaces", "--no-extensions", "--json"],
+      suggestedRetryCommand: "pm context --help",
+    });
+    expect(refusal.code).toBe("unknown_option");
+    expect(refusal.recovery?.suggested_retry_args).toEqual([
+      "context", "--depth", "full", "--pm-path", "tracker with spaces", "--no-extensions", "--json",
+    ]);
+    expect(refusal.recovery?.suggested_retry).toContain("pm context --depth full");
+  });
+  it("preserves read intent when no command was resolved", () => {
+    const refusal = formatCommanderErrorForJson("unknown option '--toon'", undefined, "Task|Issue", 2);
+    expect(refusal.code).toBe("unknown_option");
+    expect(refusal.recovery?.suggested_retry).toBeUndefined();
+    expect(refusal.recovery?.suggested_retry_args).toBeUndefined();
+    expect(refusal.examples).toEqual(["pm --help --all"]);
+  });
   it.each(["--full", "--ful"])("preserves unsupported read intent %s in the real JSON refusal", (option) => {
     const refusal = formatCommanderErrorForJson(`unknown option '${option}'`, "telemetry status", "Task|Issue", 2, {
       normalizedInvocationArgs: ["telemetry", "status", option, "--json"],

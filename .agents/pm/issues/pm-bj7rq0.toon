@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-21T06:25:30.293Z"
+updated_at: "2026-10-21T10:42:29.985Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[66]:
+comments[70]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -223,6 +223,18 @@ comments[66]:
     author: "harness:codex"
     text: "Separate hosted measurement retained for PR1529 f480367: CodSpeed reports jaccardSimilarity 332us to349.8us (-5.1%) and explicitly warns that significant changes compare different runtime environments; createQueryFingerprint also carries the system-call instrumentation warning. The measured text-normalization code and benchmark are unchanged by this declaration-focused PR. This is an unresolved comparison qualification report, not proof of a source regression or of its absence, and is separate from the local CLI admission failure. The requested Chrome Computer Use fallback opened the exact CodSpeed branch page, but subsequent tab access failed Debugger unattached twice; no benchmark was acknowledged or hidden. Report: https://github.com/unbraind/pm-cli/pull/1529#issuecomment-6309096531 . Require the final revision report and retain the qualification limitation if it persists."
     edited_at: "2026-10-21T06:25:30.293Z"
+  - created_at: "2026-10-21T10:05:34.460Z"
+    author: "harness:codex"
+    text: "New hosted observation: PR1531 head762ecac90 CI39578322060 native Windows cohort timed out at the unchanged30000ms deadline in tests/integration/history-maintenance-replay.integration.spec.ts, divergent Git merge/reconciliation case. Other Windows cohorts passed. No change in this PR touched that fixture or history implementation. Preserve this failed attempt; inspect the next exact-head cohort before assigning a contention or product cause. This observation does not reopen completed performance fixes."
+  - created_at: "2026-10-21T10:37:05.433Z"
+    author: "harness:codex"
+    text: "Local full static at the revised source passed repository assurance and SDK snapshot, then the qualified import benchmark refused governance median386ms versus327ms and merge249ms versus226ms under Node26.9.0. Control medians61/49ms qualified; load average was17.76 to19.58. This is a recorded product-budget failure, not a waiver based on load. Hosted Windows native regression passed on the second PR head without relevant source changes; the original timeout remains historical evidence. A separate supported Node24 benchmark is being measured without changing any budget."
+  - created_at: "2026-10-21T10:40:36.446Z"
+    author: "harness:codex"
+    text: "Supported Node24.21.0 import-cost measurement also refused its product budgets with a qualified control (66/74ms): aggregate817ms, core693ms, governance588ms, merge361ms, query494ms, runtime488ms and testing693ms. Preserve these independent failed local measurements. No performance source or budget was changed in this PR; hosted final-head static remains an independent required admission."
+  - created_at: "2026-10-21T10:42:29.985Z"
+    author: "harness:codex"
+    text: "Separate transport-floor result: runner control177ms exceeded its106ms qualification ceiling, so the gate correctly returned benchmark_runner_unqualified with product_admission unverified. This is distinct from the qualified import-budget failures above. Preserve the raw failed run and retain all budgets; do not count an unqualified runner as product acceptance or as a proven command regression."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

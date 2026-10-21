@@ -278,11 +278,13 @@ export type {
   PmReadOutputProducerContinuation,
   PmReadOutputResult,
   PmReadOutputResultFor,
+  PmReadOutputSessionResult,
   PmReadOutputSurfaceContract
 } from "./read-output-contracts.js";
 
 export type {
   PmReadOutputSessionReceipt,
+  PmReadOutputSessionReference,
   PmReadOutputSessionState
 } from "./read-output-session.js";
 

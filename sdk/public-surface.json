@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2002,
+    "covered_symbols": 2004,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2003
+    "required_symbols": 2005
   },
   "breaking_acknowledgements": [
     {
@@ -2575,6 +2575,29 @@
       ],
       "package_version": "2026.10.21",
       "reason": "Give omitted list, context and search options the same precise first-page result as an explicit empty object; explicit budget, session and cursor options retain their omission and metadata narrowing contracts. Runtime payloads are unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputResult",
+        "signature ./sdk:PmReadOutputResultFor",
+        "signature ./sdk/contracts:PmReadOutputResult",
+        "signature ./sdk/contracts:PmReadOutputResultFor",
+        "signature ./sdk/core:PmReadOutputResult",
+        "signature ./sdk/core:PmReadOutputResultFor",
+        "signature ./sdk/runtime:PmReadOutputResult",
+        "signature ./sdk/runtime:PmReadOutputResultFor"
+      ],
+      "package_version": "2026.10.21",
+      "reason": "Session-capable read declarations now require reference-row narrowing; budget-only and ordinary calls retain their row shapes. Migration uses isReadOutputSessionReference after omission narrowing."
+    },
+    {
+      "changes": [
+        "signature ./sdk:applyReadOutputDimensions",
+        "signature ./sdk/contracts:applyReadOutputDimensions",
+        "signature ./sdk/core:applyReadOutputDimensions"
+      ],
+      "package_version": "2026.10.21",
+      "reason": "pm-t1p1jv: infer direct dimension-helper session capability from concrete options while preserving budget omissions, alias controls and existing explicit result type arguments"
     }
   ],
   "entrypoints": {
@@ -3275,7 +3298,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
+          "signature": "<Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options> | calls: <Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options>"
         },
         {
           "classification": "contract_data",
@@ -10268,6 +10291,12 @@
           "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isReadOutputSessionReference",
+          "signature": "(value: unknown) => value is PmReadOutputSessionReference | calls: (value: unknown) => value is PmReadOutputSessionReference"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "isReadProjectionRecoveryFlag",
@@ -14555,13 +14584,13 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = ReadOutputEnvelope<Result | PmReadOutputSessionResult<Result>>;"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputBudget\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputSession\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputSession\" extends keyof Options ? [ Options[\"outputSession\"] ] extends [ undefined ] ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputBudget\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
         },
         {
           "classification": "advanced_export",
@@ -14580,6 +14609,12 @@
           "kind": "interface",
           "name": "PmReadOutputSessionReference",
           "signature": "export interface PmReadOutputSessionReference { id: string; context_ref: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputSessionResult",
+          "signature": "export type PmReadOutputSessionResult<Result> = Result extends unknown ? \"row_contract\" extends keyof Result ? DeclaredSessionPaths<Result, Result[\"row_contract\"]> : SessionArrayFallback<Result> : never;"
         },
         {
           "classification": "supported",
@@ -17538,6 +17573,12 @@
           "kind": "function",
           "name": "resolveQueryCursorStart",
           "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveReadOptionRetryArgs",
+          "signature": "(commandName: string, invocationArgv: readonly string[], unknownOption: string) => string[] | undefined | calls: (commandName: string, invocationArgv: readonly string[], unknownOption: string) => string[] | undefined"
         },
         {
           "classification": "supported",
@@ -23141,7 +23182,7 @@
           "classification": "contract_data",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
+          "signature": "<Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options> | calls: <Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options>"
         },
         {
           "classification": "contract_data",
@@ -24845,19 +24886,31 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = ReadOutputEnvelope<Result | PmReadOutputSessionResult<Result>>;"
         },
         {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputBudget\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputSession\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputSession\" extends keyof Options ? [ Options[\"outputSession\"] ] extends [ undefined ] ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputBudget\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
           "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputSessionReference",
+          "signature": "export interface PmReadOutputSessionReference { id: string; context_ref: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmReadOutputSessionResult",
+          "signature": "export type PmReadOutputSessionResult<Result> = Result extends unknown ? \"row_contract\" extends keyof Result ? DeclaredSessionPaths<Result, Result[\"row_contract\"]> : SessionArrayFallback<Result> : never;"
         },
         {
           "classification": "contract_data",
@@ -25721,7 +25774,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "applyReadOutputDimensions",
-          "signature": "<Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result> | calls: <Result extends Record<string, unknown>>(command: string, options: Record<string, unknown>, result: Result) => PmReadOutputResult<Result>"
+          "signature": "<Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options> | calls: <Result extends Record<string, unknown>, Options extends Record<string, unknown> = Record<string, unknown>>(command: string, options: Options, result: Result) => ReadOutputResultForSession<Result, Options>"
         },
         {
           "classification": "supported",
@@ -26169,6 +26222,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "isReadOutputSessionReference",
+          "signature": "(value: unknown) => value is PmReadOutputSessionReference | calls: (value: unknown) => value is PmReadOutputSessionReference"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "ISSUE_SEVERITY_VALUES",
           "signature": "readonly [\"low\", \"medium\", \"high\", \"critical\"]"
@@ -26501,13 +26560,13 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = ReadOutputEnvelope<Result | PmReadOutputSessionResult<Result>>;"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputBudget\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputSession\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputSession\" extends keyof Options ? [ Options[\"outputSession\"] ] extends [ undefined ] ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputBudget\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
         },
         {
           "classification": "supported",
@@ -26520,6 +26579,12 @@
           "kind": "interface",
           "name": "PmReadOutputSessionReference",
           "signature": "export interface PmReadOutputSessionReference { id: string; context_ref: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputSessionResult",
+          "signature": "export type PmReadOutputSessionResult<Result> = Result extends unknown ? \"row_contract\" extends keyof Result ? DeclaredSessionPaths<Result, Result[\"row_contract\"]> : SessionArrayFallback<Result> : never;"
         },
         {
           "classification": "supported",
@@ -34289,19 +34354,31 @@
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResult",
-          "signature": "export type PmReadOutputResult<Result> = (Result & { read_output?: PmReadOutputReceipt; read_session?: PmReadOutputSessionReceipt; output_budget_truncation?: PmReadOutputTruncationDisclosure; }) | (PmReadOutputBudgetExceeded & { read_session?: PmReadOutputSessionReceipt; });"
+          "signature": "export type PmReadOutputResult<Result> = ReadOutputEnvelope<Result | PmReadOutputSessionResult<Result>>;"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputResultFor",
-          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputBudget\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputSession\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? PmReadOutputResult<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
+          "signature": "export type PmReadOutputResultFor<Result, Options> = Options extends unknown ? \"outputSession\" extends keyof Options ? [ Options[\"outputSession\"] ] extends [ undefined ] ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : PmReadOutputResult<ProducerResultFor<Result, Options>> : \"outputBudget\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : \"outputCursor\" extends keyof Options ? ReadOutputEnvelope<ProducerResultFor<Result, Options>> : ProducerResultFor<Result, Options> : never;"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
           "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "PmReadOutputSessionReference",
+          "signature": "export interface PmReadOutputSessionReference { id: string; context_ref: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "PmReadOutputSessionResult",
+          "signature": "export type PmReadOutputSessionResult<Result> = Result extends unknown ? \"row_contract\" extends keyof Result ? DeclaredSessionPaths<Result, Result[\"row_contract\"]> : SessionArrayFallback<Result> : never;"
         },
         {
           "classification": "supported",

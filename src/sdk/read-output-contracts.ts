@@ -61,6 +61,8 @@ import {
 } from "./read-output-session.js";
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "./pagination.js";
 import type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
+import type { PmReadOutputSessionResult } from "./read-output/session-result.js";
+export type { PmReadOutputSessionResult } from "./read-output/session-result.js";
 export type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
 import {
   READ_OUTPUT_INVOCATION_PROVENANCE,
@@ -306,8 +308,7 @@ export interface PmReadOutputBudgetExceeded {
   read_output: PmReadOutputReceipt;
 }
 
-/** Read result with an optional shaping receipt or a discriminated omission. */
-export type PmReadOutputResult<Result> =
+type ReadOutputEnvelope<Result> =
   | (Result & {
       read_output?: PmReadOutputReceipt;
       read_session?: PmReadOutputSessionReceipt;
@@ -316,6 +317,9 @@ export type PmReadOutputResult<Result> =
   | (PmReadOutputBudgetExceeded & {
       read_session?: PmReadOutputSessionReceipt;
     });
+
+/** Read result admitting session reference rows and a discriminated budget omission. */
+export type PmReadOutputResult<Result> = ReadOutputEnvelope<Result | PmReadOutputSessionResult<Result>>;
 
 /** Preserve first-page results while admitting sparse pages for a possible producer cursor. */
 type ProducerResultFor<Result, Options> = "after" extends keyof Options
@@ -326,13 +330,25 @@ type ProducerResultFor<Result, Options> = "after" extends keyof Options
 
 /** Distribute over option variants so every possible budget omission and sparse page remains visible. */
 export type PmReadOutputResultFor<Result, Options> = Options extends unknown
-  ? "outputBudget" extends keyof Options
-    ? PmReadOutputResult<ProducerResultFor<Result, Options>>
-    : "outputSession" extends keyof Options
-      ? PmReadOutputResult<ProducerResultFor<Result, Options>>
+  ? "outputSession" extends keyof Options
+    ? [Options["outputSession"]] extends [undefined]
+      ? ReadOutputEnvelope<ProducerResultFor<Result, Options>>
+      : PmReadOutputResult<ProducerResultFor<Result, Options>>
+    : "outputBudget" extends keyof Options
+      ? ReadOutputEnvelope<ProducerResultFor<Result, Options>>
       : "outputCursor" extends keyof Options
-        ? PmReadOutputResult<ProducerResultFor<Result, Options>>
+        ? ReadOutputEnvelope<ProducerResultFor<Result, Options>>
         : ProducerResultFor<Result, Options>
+  : never;
+
+/** Infer possible session values from either spelling accepted by the direct helper. */
+type ReadOutputSessionOption<Options> =
+  | ("outputSession" extends keyof Options ? Options["outputSession"] : never)
+  | ("output_session" extends keyof Options ? Options["output_session"] : never);
+
+/** Keep universal budget omissions while adding references only for possible sessions. */
+type ReadOutputResultForSession<Result, Options> = Options extends unknown
+  ? PmReadOutputResultFor<Result, { outputSession: ReadOutputSessionOption<Options> }>
   : never;
 
 const READ_OUTPUT_PRECEDENCE = [
@@ -2132,13 +2148,14 @@ function compactReadOutputProjection(
 /** Apply universal field, row, and token bounds and attach an exact receipt. */
 export function applyReadOutputDimensions<
   Result extends Record<string, unknown>,
+  Options extends Record<string, unknown> = Record<string, unknown>,
 >(
   command: string,
-  options: Record<string, unknown>,
+  options: Options,
   result: Result,
-): PmReadOutputResult<Result> {
+): ReadOutputResultForSession<Result, Options> {
   const resolved = resolveReadOutputDimensions(command, options);
-  if (!resolved) return result;
+  if (!resolved) return result as ReadOutputResultForSession<Result, Options>;
   const format = readOutputMeasurementFormat(options);
   const session = parseReadOutputSession(
     options.outputSession ?? options.output_session,
@@ -2163,7 +2180,7 @@ export function applyReadOutputDimensions<
       options,
     )
   ) {
-    return continuationReadyResult as PmReadOutputResult<Result>;
+    return continuationReadyResult as ReadOutputResultForSession<Result, Options>;
   }
   const bindingBudget = resolveBindingReadOutputBudget(resolved, session);
   const projection = projectReadOutputRows(
@@ -2241,11 +2258,9 @@ export function applyReadOutputDimensions<
       bindingBudget,
       receipt.estimated_tokens,
       format,
-    ) as PmReadOutputResult<Result>;
+    ) as ReadOutputResultForSession<Result, Options>;
   }
-  return projected as Result & {
-    read_output: PmReadOutputReceipt;
-  };
+  return projected as ReadOutputResultForSession<Result, Options>;
 }
 
 /** Narrow a universal read result to its budget-omission branch. */

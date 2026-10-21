@@ -315,6 +315,14 @@ missing locked package. npm 12 ignores published shrinkwraps; shipping
 a shrinkwrap alone therefore cannot enforce this contract. SDK consumers
 supply the bounded optional Node types peer themselves.
 
+Physical entrypoint verification is tracked by
+[pm-tl7vlu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tl7vlu.toon)
+(repository-only tracker record excluded from npm). The dependency advisory CLI
+resolves both its invocation and module to physical paths, so directory aliases
+and Node's symlink-preserving main-module mode still execute verification and
+return a receipt or failure status. Module imports expose the collector without
+starting verification.
+
 Push the final implementation commit through a reviewed pull request first,
 wait for DeepScan and CodeFactor to finish on that reviewed SHA, then run the
 canonical registry-owned preflight:

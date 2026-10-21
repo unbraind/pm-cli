@@ -152,6 +152,19 @@ function verifyPackedEvidence(raw: string): void {
   expect(evidence.results.some((result) => result.blocked && result.recovery)).toBe(true);
 }
 
+/** Compile independent source contracts against the actual packed declarations. */
+async function verifyPackedDeclarations(consumer: string, repository: string, env: NodeJS.ProcessEnv): Promise<void> {
+  const declarationConsumer = path.join(consumer, "declarations.mts");
+  for (const fixture of ["producer-continuation", "read-session-results"]) {
+    const typeFixture = await readFile(new URL(`../../types/${fixture}.test-d.ts`, import.meta.url), "utf8");
+    await writeFile(declarationConsumer, typeFixture
+      .replaceAll("../../src/sdk/index.js", "@unbrained/pm-cli/sdk")
+      .replaceAll("../../src/sdk/core.js", "@unbrained/pm-cli/sdk/core")
+      .replaceAll("../../src/sdk/contracts.js", "@unbrained/pm-cli/sdk/contracts"));
+    execFileSync(process.execPath, [path.join(repository, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck", "--module", "nodenext", "--target", "ES2022", declarationConsumer], { cwd: consumer, env, encoding: "utf8", timeout: 60_000 });
+  }
+}
+
 /** Reuse each producer's real ordering for ID and title projections under both nonbinding token ceilings. */
 async function verifyAmountOnlyProducers(run: RunRead, pmRoot: string): Promise<void> {
   for (const command of [["list", "--all"], ["search", "Matrix", "--mode", "keyword", "--status", "all"]]) {
@@ -260,13 +273,7 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       await symlink(path.join(repository, "node_modules"), path.join(packedRoot, "node_modules"), "junction");
       const consumerScript = path.join(consumer, "consumer.mjs");
       await cp(new URL("../../fixtures/read-output/packed-continuation-consumer.mjs", import.meta.url), consumerScript);
-      const declarationConsumer = path.join(consumer, "declarations.mts");
-      const typeFixture = await readFile(new URL("../../types/producer-continuation.test-d.ts", import.meta.url), "utf8");
-      await writeFile(declarationConsumer, typeFixture
-        .replace("../../src/sdk/index.js", "@unbrained/pm-cli/sdk")
-        .replace("../../src/sdk/core.js", "@unbrained/pm-cli/sdk/core")
-        .replace("../../src/sdk/contracts.js", "@unbrained/pm-cli/sdk/contracts"));
-      execFileSync(process.execPath, [path.join(repository, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck", "--module", "nodenext", "--target", "ES2022", declarationConsumer], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 });
+      await verifyPackedDeclarations(consumer, repository, context.env);
       const manifest = JSON.parse(await readFile(path.join(packedRoot, "package.json"), "utf8")) as { exports: Record<string, unknown> };
       expect(manifest).toEqual(sourceManifest);
       expect(manifest.exports["./sdk"]).toBeDefined();

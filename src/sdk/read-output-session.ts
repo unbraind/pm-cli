@@ -34,6 +34,14 @@ export interface PmReadOutputSessionReference {
   context_ref: string;
 }
 
+/** Narrow a delivered reference before accessing the original row's fields. */
+export function isReadOutputSessionReference(value: unknown): value is PmReadOutputSessionReference {
+  return typeof value === "object" && value !== null &&
+    "id" in value && typeof value.id === "string" &&
+    "context_ref" in value && typeof value.context_ref === "string" &&
+    value.context_ref.startsWith("session:") && value.context_ref.endsWith(`:${value.id}`);
+}
+
 /** Receipt proving cross-call suppression and budget accounting. */
 export interface PmReadOutputSessionReceipt {
   /** Session-receipt schema version. */

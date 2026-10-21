@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -144,8 +144,14 @@ describe("dependency advisory evidence", () => {
       await mkdir(path.join(root, "node_modules"));
       await cp(path.dirname(fileURLToPath(import.meta.resolve("yaml/package.json"))), path.join(root, "node_modules/yaml"), { recursive: true });
       const script = path.join(directory, "gate.mjs");
-      expect(JSON.parse(execFileSync(process.execPath, [script, "--verify-receipt"], { encoding: "utf8" })).verdict).toBe("pass");
-      expect(() => execFileSync(process.execPath, [script, "--unknown"], { stdio: "pipe" })).toThrow();
+      const alias = path.join(root, "linked-scripts");
+      await symlink(path.join(root, "scripts"), alias, "junction");
+      for (const entry of [script, path.join(alias, "release/dependency-advisories/gate.mjs")]) {
+        for (const flags of [[], ["--preserve-symlinks-main"]]) {
+          expect(JSON.parse(execFileSync(process.execPath, [...flags, entry, "--verify-receipt"], { encoding: "utf8" })).verdict).toBe("pass");
+          expect(() => execFileSync(process.execPath, [...flags, entry, "--unknown"], { stdio: "pipe" })).toThrow();
+        }
+      }
     });
   });
 });

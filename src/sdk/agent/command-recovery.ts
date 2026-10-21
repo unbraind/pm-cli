@@ -9,9 +9,43 @@ import { renderPmCommand } from "../command-line.js";
 import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
 import { parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
 import { READ_OUTPUT_DIMENSION_FLAGS, READ_OUTPUT_COMPOSITION_FLAGS } from "../read-output/options.js";
+import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 
 const READ_PROJECTION_FLAGS = new Set<string>([...Object.values(READ_OUTPUT_DIMENSION_FLAGS), ...READ_OUTPUT_COMPOSITION_FLAGS, "--full", "--brief", "--compact", "--summary", "--fields", "--section", "--token-budget"]);
 const MUTATION_RECEIPT_FLAGS = new Set(["--full-changed-fields", "--no-changed-fields", "--id-only"]);
+
+/** Keep completeness corrections distinct from detail-depth and encoding controls. */
+function readOptionCorrection(command: string, flag: string, token: string, next: string | undefined): { consumed: number; replacement: string[]; conflicts: string[] } | undefined {
+  if (flag === "--full" && command === "context" && token === flag) {
+    return { consumed: 1, replacement: ["--depth", "full"], conflicts: ["--depth", "--output-include", "--fields", "--section", "--for"] };
+  }
+  if (flag === "--depth" && ["list", "search"].includes(command)) {
+    const inline = token.includes("=");
+    const value = inline ? token.slice(token.indexOf("=") + 1) : next;
+    if (value !== "full") return undefined;
+    return { consumed: inline ? 1 : 2, replacement: ["--full"], conflicts: ["--full", "--brief", "--compact", "--output-include", "--fields", "--for"] };
+  }
+  return flag === "--toon" && token === flag
+    ? { consumed: 1, replacement: ["--output-format", "toon"], conflicts: ["--json", "--format", "--output-format", "--stream"] }
+    : undefined;
+}
+
+/** Derive a same-command read retry for known completeness and encoding mistakes without discarding intent. */
+export function resolveReadOptionRetryArgs(commandName: string, invocationArgv: readonly string[], unknownOption: string): string[] | undefined {
+  const command = commandName === "ctx" ? "context" : resolvePmCommandOperation(commandName);
+  if (!["context", "list", "search", "get"].includes(command) || invocationArgv.includes("--")) return undefined;
+  const invoked = parseBootstrapCommandName(invocationArgv);
+  if ((invoked === "ctx" ? "context" : invoked) !== command) return undefined;
+  const flag = unknownOption.split("=", 1)[0]!;
+  const indices = invocationArgv.flatMap((token, index) => token === flag || token.startsWith(`${flag}=`) ? [index] : []);
+  if (indices.length !== 1) return undefined;
+  const index = indices[0]!;
+  const correction = readOptionCorrection(command, flag, invocationArgv[index]!, invocationArgv[index + 1]);
+  if (!correction) return undefined;
+  const { replacement, consumed, conflicts } = correction;
+  if (invocationArgv.some((argument) => conflicts.includes(argument.split("=", 1)[0]!))) return undefined;
+  return [...invocationArgv.slice(0, index), ...replacement, ...invocationArgv.slice(index + consumed)];
+}
 
 /** Identify presentation intent that must not be silently dropped from an unknown-option retry. */
 export function isReadProjectionRecoveryFlag(flag: string): boolean {

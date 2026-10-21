@@ -143,6 +143,7 @@ export {
   attachReadOutputSessionReceipt,
   parseReadOutputSession,
   readOutputSessionRemainingTokens,
+  isReadOutputSessionReference,
 } from "./read-output-session.js";
 export type {
   PmReadOutputBudgetExceeded,
@@ -155,6 +156,7 @@ export type {
   PmReadOutputReceipt,
   PmReadOutputResult,
   PmReadOutputResultFor,
+  PmReadOutputSessionResult,
   PmReadOutputSurface,
   PmReadOutputSurfaceContract,
 } from "./read-output-contracts.js";
