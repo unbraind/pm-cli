@@ -62,6 +62,11 @@ read, and surface-replication fixture files after parallel contracts
 a repository-only tracker record excluded from npm). Their original input
 populations, assertions, per-test deadlines and retry policy remain in force.
 
+The context decision keeper also runs in that phase, preserving its 200-item
+corpus and 30-second completion-regression deadline. Allocation is tracked by
+[pm-j2vwbh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-j2vwbh.toon)
+(a repository-only tracker record excluded from npm).
+
 `node scripts/run-tests.mjs` wraps Vitest in temporary tracker roots, disables
 external Sentry delivery for the build, test workers, and their nested CLI
 children, then cleans the roots up. Instrumentation tests can still exercise

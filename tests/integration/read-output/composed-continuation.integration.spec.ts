@@ -1,4 +1,4 @@
-import { cp, glob, lstat, mkdir, readFile, readdir, symlink } from "node:fs/promises";
+import { cp, glob, lstat, mkdir, readFile, readdir, symlink, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -260,6 +260,13 @@ describe("composed producer and budget continuation (GH-1371)", () => {
       await symlink(path.join(repository, "node_modules"), path.join(packedRoot, "node_modules"), "junction");
       const consumerScript = path.join(consumer, "consumer.mjs");
       await cp(new URL("../../fixtures/read-output/packed-continuation-consumer.mjs", import.meta.url), consumerScript);
+      const declarationConsumer = path.join(consumer, "declarations.mts");
+      const typeFixture = await readFile(new URL("../../types/producer-continuation.test-d.ts", import.meta.url), "utf8");
+      await writeFile(declarationConsumer, typeFixture
+        .replace("../../src/sdk/index.js", "@unbrained/pm-cli/sdk")
+        .replace("../../src/sdk/core.js", "@unbrained/pm-cli/sdk/core")
+        .replace("../../src/sdk/contracts.js", "@unbrained/pm-cli/sdk/contracts"));
+      execFileSync(process.execPath, [path.join(repository, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck", "--module", "nodenext", "--target", "ES2022", declarationConsumer], { cwd: consumer, env: context.env, encoding: "utf8", timeout: 60_000 });
       const manifest = JSON.parse(await readFile(path.join(packedRoot, "package.json"), "utf8")) as { exports: Record<string, unknown> };
       expect(manifest).toEqual(sourceManifest);
       expect(manifest.exports["./sdk"]).toBeDefined();

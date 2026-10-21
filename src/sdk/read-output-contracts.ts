@@ -60,6 +60,8 @@ import {
   type PmReadOutputSessionState,
 } from "./read-output-session.js";
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "./pagination.js";
+import type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
+export type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
 import {
   READ_OUTPUT_INVOCATION_PROVENANCE,
   type PmReadOutputInvocationProvenance,
@@ -315,15 +317,23 @@ export type PmReadOutputResult<Result> =
       read_session?: PmReadOutputSessionReceipt;
     });
 
-/** Select the omission-aware result type when an option shape can request a budget. */
-export type PmReadOutputResultFor<Result, Options> =
-  "outputBudget" extends keyof Options
-    ? PmReadOutputResult<Result>
+/** Preserve first-page results while admitting sparse pages for a possible producer cursor. */
+type ProducerResultFor<Result, Options> = "after" extends keyof Options
+  ? [Options["after"]] extends [undefined]
+    ? Result
+    : Result | PmReadOutputProducerContinuation<Result>
+  : Result;
+
+/** Distribute over option variants so every possible budget omission and sparse page remains visible. */
+export type PmReadOutputResultFor<Result, Options> = Options extends unknown
+  ? "outputBudget" extends keyof Options
+    ? PmReadOutputResult<ProducerResultFor<Result, Options>>
     : "outputSession" extends keyof Options
-      ? PmReadOutputResult<Result>
+      ? PmReadOutputResult<ProducerResultFor<Result, Options>>
       : "outputCursor" extends keyof Options
-        ? PmReadOutputResult<Result>
-        : Result;
+        ? PmReadOutputResult<ProducerResultFor<Result, Options>>
+        : ProducerResultFor<Result, Options>
+  : never;
 
 const READ_OUTPUT_PRECEDENCE = [
   "canonical",

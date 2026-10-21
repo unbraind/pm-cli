@@ -1,0 +1,73 @@
+id: pm-jqgkis
+title: Preserve budget omission types across union SDK option shapes
+description: "PmReadOutputResultFor checks outputBudget, outputSession and outputCursor against keyof Options. For a union such as {limit:string}|{outputBudget:number}, keyof retains only shared keys, so a valid budgeted runtime branch is typed as an ordinary result. Distribute the return-type calculation across option variants and retain correct first-page, producer-continuation and omission narrowing."
+type: Issue
+status: closed
+priority: 2
+tags[3]: output-contracts,sdk,types
+created_at: "2026-10-21T04:23:02.916Z"
+updated_at: "2026-10-21T05:41:31.744Z"
+closed_at: "2026-10-21T05:41:29.913Z"
+completed_at: "2026-10-21T05:41:29.913Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: A union containing any budget-capable variant retains PmReadOutputBudgetExceeded; no-control variants preserve ordinary results; union producer and budget variants compose safely; source and packed public declaration fixtures fail before and pass after the correction
+parent: pm-srns
+risk: medium
+confidence: high
+resolution: "Distribute option-sensitive read results across union variants before key inspection, retaining every possible budget, session, output-cursor omission and producer continuation shape without changing serialized payloads."
+expected_result: "Every possible omission stays visible to a typed caller using union-shaped options, and useful rows remain accessible after narrowing."
+actual_result: "All final PM-linked compiler checks and the shared source and actual-tarball public declaration fixture pass, including forbidden unsafe access for budget/session/output-cursor unions and composed producer-budget variants. Complete accepted source coverage is exact 100/100/100/100. The isolated pre-fix compiler fails the independent expectations."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-oybmsd,related,"2026-10-21T05:12:08.788Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-21T04:23:02.916Z","harness:codex","Duplicate check: complete live 3034-item all-status snapshot with no omissions plus keyword searches for union options budget result and conditional result types found no exact active owner. The existing pm-oybmsd owns sparse producer envelopes, while this separate shared conditional-type defect affects every bounded read. Both are bundled under pm-srns without claiming the broader parent."
+  "2026-10-21T04:28:15.063Z","harness:codex","Regression sensitivity: the same initial fixture against an isolated pre-fix source copy exits 2 with unused unsafe-items expectations for union option shapes. Producer page assertions separately expose falsely required metadata. Current correction distributes Options before key inspection. No runtime payload or budget policy is changed."
+  "2026-10-21T04:34:31.395Z","harness:codex","PM-linked pnpm typecheck passes all four configurations. The shared packed acceptance also compiles the identical union-option and combined producer-budget fixture using public sdk, sdk/core and sdk/contracts declarations. Static/security and full source coverage are being completed before closure."
+  "2026-10-21T05:41:27.683Z","harness:codex","All final PM-linked compiler checks and the shared source and actual-tarball public declaration fixture pass, including forbidden unsafe access for budget/session/output-cursor unions and composed producer-budget variants. Complete accepted source coverage is exact 100/100/100/100. The isolated pre-fix compiler fails the independent expectations."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T05:07:53.485Z","harness:codex",Conditional SDK result types must distribute over option unions before inspecting keys. keyof applied to a union keeps shared keys and can erase a real budget-omission branch; verify forbidden access through a packed public declaration consumer.
+files[3]{path,scope}:
+  src/sdk/read-output-contracts.ts,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+  tests/types/producer-continuation.test-d.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,240,"harness:codex","2026-10-21T04:27:16.060Z",local_mutation,fix/sdk-continuation-result-contracts
+test_runs[2]:
+  - run_id: test-local-mvhma61g-4vd9zk
+    kind: test
+    status: passed
+    started_at: "2026-10-21T04:32:50.937Z"
+    finished_at: "2026-10-21T04:33:33.460Z"
+    recorded_at: "2026-10-21T04:33:33.460Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mvhojjik-wgf4dn
+    kind: test-all
+    status: passed
+    started_at: "2026-10-21T05:36:50.032Z"
+    finished_at: "2026-10-21T05:37:56.190Z"
+    recorded_at: "2026-10-21T05:37:56.190Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: Complete union-sensitive SDK read result declarations
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-jqgkis
+  gate_id: sdk-union-read-result-declarations
+  negative_control: pnpm typecheck
+  local_checks[2]: pnpm typecheck,node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts
+  hosted_checks[2]: Gates (typecheck),Gates (coverage)
+body: ""

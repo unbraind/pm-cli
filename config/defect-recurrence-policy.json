@@ -10,11 +10,11 @@
       "escape_class": "review_caught_late",
       "triggers": {
         "file_patterns": ["vitest.config.ts", "tests/integration/vitest-retry-policy.integration.spec.ts"],
-        "item_ids": ["pm-ckb8w5", "pm-a3c6g4"]
+        "item_ids": ["pm-ckb8w5", "pm-a3c6g4", "pm-j2vwbh"]
       },
       "checks": {
         "local": [
-          "node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/query/aggregate-set-members.spec.ts tests/unit/sdk/governance-read-performance.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/query/aggregate-set-members.spec.ts tests/unit/sdk/governance-read-performance.spec.ts tests/integration/read-output/context-decision-contracts.integration.spec.ts"
         ],
         "hosted": ["CI / Gates (coverage)", "CI / Gates (static)"]
       },

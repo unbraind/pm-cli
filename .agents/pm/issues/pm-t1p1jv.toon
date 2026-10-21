@@ -1,0 +1,22 @@
+id: pm-t1p1jv
+title: Model session-suppressed row references in public SDK result types
+description: "The existing session mapper replaces declared rows with {id,context_ref} when their facts were already served. PmReadOutputResult<Result> and PmReadOutputResultFor still retain the original row types after budget-omission narrowing. Context focus rows and nested search hits can therefore promise fields that the runtime reference intentionally omits. Existing read-output-contracts unit acceptance proves replacement; this is separate from producer after-cursor metadata optionality in pm-oybmsd."
+type: Issue
+status: open
+priority: 2
+tags[3]: output-sessions,sdk,types
+created_at: "2026-10-21T04:50:19.034Z"
+updated_at: "2026-10-21T04:50:19.034Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Public result declarations model session reference rows at their declared row paths; callers can narrow a reference before accessing original prose or nested hit fields; ordinary non-session rows retain their useful types; independent source and packed declaration consumers fail before and pass after correction while runtime consent suppression budgets and cursors remain unchanged
+parent: pm-srns
+risk: medium
+confidence: high
+expected_result: Typed session consumers distinguish delivered facts from previously served references without unsafe casts.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-hid9g1,discovered_from,"2026-10-21T04:50:19.034Z","harness:codex","cli:create:dep",detected
+  pm-oybmsd,related,"2026-10-21T04:50:19.034Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-21T04:50:19.034Z","harness:codex","created_at=now,text=Duplicate check: complete3034-item all-status snapshot plus complete seven-hit session suppressed row types search and refreshed open/in-progress inventories found no exact active leaf. Live full pm-hid9g1 confirms session suppression is completed and preserved, while pm-oybmsd is limited to producer metadata envelopes. Source evidence: applyReadOutputSessionReferences and the existing read-output-contracts session replacement regression. This follow-up remains open/unclaimed and is not part of the two active implementations."
+body: ""

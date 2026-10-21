@@ -85,6 +85,42 @@ If brief still exceeds the ceiling, normal compaction and eventual refusal
 apply. `estimated_tokens` measures the emitted envelope;
 `omitted_result_estimated_tokens` measures the useful result that could not fit.
 
+## Typed producer pages
+
+Tracked by [pm-oybmsd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oybmsd.toon),
+[pm-jqgkis](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqgkis.toon), and
+[pm-qal1uw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qal1uw.toon)
+(repository-only tracker records excluded from npm).
+Native `PmClient.list`, `search`, and `context` reads and their standalone
+convenience functions return sparse metadata when `after` resumes a producer
+page. Retain the first page's filters, projection, sorting, totals and completeness
+certificate. Subsequent pages carry `continuation_contract` with
+`metadata: "reference"` and `restore_with: "omit --after"`; repeated metadata
+is optional in `PmReadOutputProducerContinuation<Result>`. Follow `next_cursor`
+until it is empty, rather than relying on the optional `has_more` field.
+
+Calls whose options contain no producer cursor retain their first-page types.
+Omitting the options argument has the same precise type as passing `{}` for
+client and standalone `list`, `context`, and `search` calls; it does not imply
+that an explicit budget, session, or output cursor was supplied.
+Options with an optional cursor can return either page shape. When a budget,
+session, or output cursor is possible, first use `isReadOutputBudgetExceeded`
+to narrow the omission branch before accessing rows. This remains required for
+unions of option shapes: a budgeted variant cannot be erased by an unbudgeted
+variant. The low-level query producers retain their original result contracts;
+metadata suppression belongs to the shared native SDK transport.
+
+```ts
+const first = await client.list({ brief: true, limit: "10" });
+consume(first.items);
+let cursor = first.next_cursor;
+while (cursor) {
+  const page = await client.list({ brief: true, limit: "10", after: cursor });
+  consume(page.items);
+  cursor = page.next_cursor;
+}
+```
+
 ## Cross-Call Context Sessions
 
 `--output-session <json>` / `outputSession` composes the four per-call

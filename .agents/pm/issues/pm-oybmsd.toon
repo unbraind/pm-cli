@@ -2,21 +2,97 @@ id: pm-oybmsd
 title: Align SDK producer-continuation result types with sparse reference envelopes
 description: "During default-list acceptance, native PmClient.list({brief:true,limit:'1',after:cursor}) returns a sparse reference envelope ending with next_cursor:null; fields such as has_more and sorting are intentionally absent. ListResultBase and ListVerboseResult still require those fields, and PmReadOutputResultFor considers budget/session/outputCursor but not producer after options. Audit the public return-type contract against the advertised continuation envelope before choosing a fix; preserve the intentional runtime metadata-reference optimization."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: pagination,sdk,types
 created_at: "2026-10-20T07:43:13.561Z"
-updated_at: "2026-10-20T07:43:13.561Z"
+updated_at: "2026-10-21T05:41:23.656Z"
+closed_at: "2026-10-21T05:41:21.784Z"
+completed_at: "2026-10-21T05:41:21.784Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Type fixtures reflect first-page and producer-continuation envelopes without promising absent fields; CLI SDK and MCP serialized continuations retain complete membership and sparse metadata; public surface compatibility and packed consumer checks pass
 parent: pm-srns
 risk: medium
 confidence: high
-expected_result: Typed SDK callers can handle sparse producer continuations safely without casts or assumptions about omitted first-page metadata.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Native SDK producer continuations now expose optional repeated metadata and a typed reference contract derived from the runtime suppression keys. No-cursor reads and low-level producer contracts remain intact, including optional and generic-record cursor inputs."
+expected_result: "SDK callers handle sparse continuation metadata safely while native, CLI and MCP membership and packed Node/Bun behavior remain correct."
+actual_result: "All four TypeScript configurations, final linked checks, source negative controls and packed public declaration consumers pass. Complete accepted coverage passes 10922 tests with 3 configured skips across 841 files and exact lines 66427/66427, statements 70072/70072, functions 14436/14436 and branches 53858/53858. Initial failed receipts are preserved; required hosted review and CI remain merge admission."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-0luwp4,related,"2026-10-20T07:43:13.561Z","harness:codex","cli:create:dep",detected
   pm-zd46m7,discovered_from,"2026-10-20T07:43:13.561Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-prrlce,related,"2026-10-21T05:12:18.032Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
   "2026-10-20T07:43:13.561Z","harness:codex","Duplicate check: complete all-status/full-body corpus plus request-specific continuation/reference/result-types searches and fresh open/in-progress inventories found broader pm-srns and completed continuation owners but no active exact type-contract leaf. Full live pm-0luwp4 metadata/history preserves its completed producer membership scope. New runtime observation comes from real isolated native list acceptance; type-shape cause is source-based and needs implementation review. This item is open/unclaimed; it is not part of the two actively edited leaves."
+  "2026-10-21T04:24:08.570Z","harness:codex","Implementation scope: preserve first-page and low-level producer contracts, represent metadata as optional only for cursor-capable native SDK reads, share the exact metadata-key inventory with runtime collapse, and prove CLI/MCP serialization and packed declaration consumers. Related conditional union defect is pm-jqgkis."
+  "2026-10-21T04:30:34.564Z","harness:codex","Repository intake: the strict all-status full-metadata snapshot contains3034 records, completeness complete and zero omissions. GitHub census has0 open PRs and0 open Dependabot, secret-scanning and code-scanning alerts. All22 open issues have an existing canonical PM-record link in comments, with complete comment pages. No agent-browser skill was found in the installed skill roots. Published release and historical reliability evidence are recorded separately on pm-prrlce."
+  "2026-10-21T04:34:30.160Z","harness:codex","Focused acceptance passes: the PM-linked command compiles all four TypeScript configurations and passes24 source/transport/packed continuation regressions, including source negative-access expectations compiled through the actual tarball public declarations and Node/Bun serialized journeys. The initial failed run is retained: it used a cursor from a different transport and the host Node installation could not locate npm. Corrected each transport to obtain its own cursor and reran with the existing documented NODE_PATH fallback. The same implementation then passed without relaxing assertions or timeouts."
+  "2026-10-21T04:48:48.990Z","harness:codex","Additional independent declaration consumer reproduces the generic-record case: PmClient.list(Record<string, unknown>) permits an unsafe required count after omission narrowing even though the record may contain after. The isolated public-export compiler exits2 on its unused expected-error marker. Preserve the before receipt and correct this under the same producer-continuation acceptance after current frozen-source gates finish."
+  "2026-10-21T04:54:57.385Z","harness:codex","The first full static run passed dependency security, documentation, exports/lint/duplication, workflow/cooldown checks, runtime contracts, repository assurance, package boundaries, command grammar, refusal closure, token replay, tracker assertions, gate registry and SDK surface compatibility, then failed the SDK import-cost gate: contracts median302ms exceeds241ms and merge238ms exceeds226ms on a qualified Node26 runner while full coverage was also active. This remains a failed receipt. Recheck that exact benchmark in isolation after the source-frozen coverage run finishes; do not relax its policy or call the aggregate pipeline green."
+  "2026-10-21T04:59:31.770Z","harness:codex","First full coverage receipt is failed:841 files,10921 passing tests,3 configured skips and one unchanged200-item context completion fixture timed out at its existing30000ms deadline. Vitest produced no coverage-summary.json, so this is not coverage proof. Preserve that result, isolate the exact test with unchanged assertions and deadline, then obtain complete accepted coverage against final source. Generic-record typing now passes in an isolated proposed source copy before transfer; final-source compiler and packed transport revalidation are running."
+  "2026-10-21T05:06:43.900Z","harness:codex","Final SDK declaration/transport acceptance passes: all four TypeScript configurations, current public surface and7 focused native/CLI/MCP/packed tests across3 files. Generic Record<string,unknown> options now retain possible sparse metadata after budget-omission narrowing. The same packed consumer verifies both source and actual tarball declarations through sdk/core/contracts imports. The updated guide consumes the initial page and every continuation."
+  "2026-10-21T05:15:00.132Z","harness:codex","Final governance evidence: graph composition passes all 9 assertions after adding the real related edges between the shared declaration corrections and the release evidence owner; the prose-edge population remains at the unchanged 1233 ceiling. Record integrity passes. Changed-source ESLint, docs/skills, docstrings and gate registry pass. The maintained bounded mutation gate passes with 345 killed and 7 recorded equivalents among 352 candidates, zero timeouts or errors; this is bounded evidence rather than whole-repository mutation proof."
+  "2026-10-21T05:31:07.276Z","harness:codex","Final-source replay receipt: complete shards 1, 2 and 3 pass with 2666, 2587 and 3010 passing tests respectively (3 configured skips in shard 2). Shard 4 retains one CLI transport-benchmark timeout among 2659 tests. The orchestrator correctly refuses merging [0,0,0,1]. A single isolated replay of that complete shard is running against identical source, two workers, assertions and deadlines; the failed blob and logs are preserved outside the merge input directory."
+  "2026-10-21T05:41:20.395Z","harness:codex","All four TypeScript configurations, final linked checks, source negative controls and packed public declaration consumers pass. Complete accepted coverage passes 10922 tests with 3 configured skips across 841 files and exact lines 66427/66427, statements 70072/70072, functions 14436/14436 and branches 53858/53858. Initial failed receipts are preserved; required hosted review and CI remain merge admission."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T05:07:54.967Z","harness:codex","A sparse transport envelope needs its own truthful metadata contract. Derive optional keys from the runtime suppression inventory, cover optional cursors and generic records, and retain the original page while following next_cursor."
+files[8]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/context-intent-contracts.ts,project
+  src/sdk/core.ts,project
+  src/sdk/read-output-contracts.ts,project
+  src/sdk/runtime.ts,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+  tests/integration/read-output/default-list-order.integration.spec.ts,project
+  tests/types/producer-continuation.test-d.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck && node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts,project,600,"harness:codex","2026-10-21T04:27:14.679Z",local_mutation,fix/sdk-continuation-result-contracts
+test_runs[3]:
+  - run_id: test-local-mvhm5vwx-u5zxyq
+    kind: test
+    status: failed
+    started_at: "2026-10-21T04:28:47.529Z"
+    finished_at: "2026-10-21T04:30:13.713Z"
+    recorded_at: "2026-10-21T04:30:13.713Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck && node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvhm98a2-z7gtn4
+    kind: test
+    status: passed
+    started_at: "2026-10-21T04:31:26.355Z"
+    finished_at: "2026-10-21T04:32:49.705Z"
+    recorded_at: "2026-10-21T04:32:49.705Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck && node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-all-local-mvhojjik-wgf4dn
+    kind: test-all
+    status: passed
+    started_at: "2026-10-21T05:36:50.032Z"
+    finished_at: "2026-10-21T05:39:15.967Z"
+    recorded_at: "2026-10-21T05:39:15.967Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    items: 1
+    linked_tests: 1
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck && node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: Complete sparse SDK continuation declarations and public consumer acceptance
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-oybmsd
+  gate_id: sdk-producer-continuation-declarations
+  negative_control: pnpm typecheck
+  local_checks[2]: pnpm typecheck,node scripts/run-tests.mjs test -- tests/integration/read-output/default-list-order.integration.spec.ts tests/integration/read-output/composed-continuation.integration.spec.ts
+  hosted_checks[2]: Gates (typecheck),Gates (coverage)
 body: ""

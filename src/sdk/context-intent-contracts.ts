@@ -957,6 +957,29 @@ export function attachContextIntentReceipt<
   return projected as Result & { context_intent: PmContextIntentReceipt };
 }
 
+const CONTINUATION_METADATA_KEYS = [
+  "applied_limit", "completeness", "context_intent", "count", "filters",
+  "has_more", "now", "omission_receipt", "projection", "row_contract",
+  "sorting", "total", "truncated",
+] as const;
+
+/** Producer page whose repeated metadata is referenced from the original page. */
+export type PmReadOutputProducerContinuation<Result> = Result extends unknown
+  ? Omit<Result, (typeof CONTINUATION_METADATA_KEYS)[number]> &
+      Partial<Pick<Result, Extract<keyof Result, (typeof CONTINUATION_METADATA_KEYS)[number]>>> & {
+        /** Identity and recovery for metadata served by the initial producer page. */
+        continuation_contract: {
+          /** Query identity carried by the producer cursor. */
+          fingerprint: string;
+          /** Repeated metadata remains in the caller's original page. */
+          metadata: "reference";
+          /** Reissue the initial query to restore its metadata. */
+          restore_with: "omit --after";
+        };
+      }
+  : never;
+
+/** Replace repeated metadata with a cursor-bound reference on resumed producer pages. */
 function collapseContinuationMetadata(
   options: Record<string, unknown>,
   result: Record<string, unknown>,
@@ -967,21 +990,7 @@ function collapseContinuationMetadata(
   const fingerprint =
     decodeContextIntentCursor(options.after)?.fingerprint ?? "opaque_cursor";
   const projected = { ...result };
-  for (const key of [
-    "applied_limit",
-    "completeness",
-    "context_intent",
-    "count",
-    "filters",
-    "has_more",
-    "now",
-    "omission_receipt",
-    "projection",
-    "row_contract",
-    "sorting",
-    "total",
-    "truncated",
-  ]) {
+  for (const key of CONTINUATION_METADATA_KEYS) {
     delete projected[key];
   }
   projected.continuation_contract = {

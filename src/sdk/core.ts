@@ -151,6 +151,7 @@ export type {
   PmReadOutputDimension,
   PmReadOutputLegacyAlias,
   PmReadOutputOptions,
+  PmReadOutputProducerContinuation,
   PmReadOutputReceipt,
   PmReadOutputResult,
   PmReadOutputResultFor,

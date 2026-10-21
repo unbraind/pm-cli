@@ -1,0 +1,61 @@
+id: pm-qal1uw
+title: Keep omitted SDK read options as precise first-page results
+description: "PR1529 CodeRabbit inline4333511118 identifies an ergonomic refinement in InitialReadOptions: it imports the full ReadOptions shape, so a no-argument list context or search call remains omission-aware while an explicit empty object uses the first-page type. The conservative no-argument behavior already existed through the indexed ListOptions default; align omitted options with explicit empty options without changing runtime serialization. Explicit budgets sessions output cursors optional producer cursors and generic records must retain their existing narrowing requirements."
+type: Task
+status: closed
+priority: 2
+tags[3]: review-feedback,sdk,types
+created_at: "2026-10-21T06:11:30.169Z"
+updated_at: "2026-10-21T06:23:56.030Z"
+closed_at: "2026-10-21T06:23:54.728Z"
+completed_at: "2026-10-21T06:23:54.728Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: No-argument client and standalone list context search calls expose first-page fields directly; empty-object calls match omitted calls; explicit budget session output-cursor union and optional producer-cursor calls retain omission or metadata narrowing; independent source and packed declaration cases fail before and pass after the refinement; SDK snapshot docs and package-generated changelog remain current
+parent: pm-srns
+risk: low
+confidence: high
+resolution: Use an empty-key default for all client and standalone list context search read generics. Explicit ReadOptions constraints preserve budget session output-cursor union and producer metadata narrowing. Document the precise omitted and empty-object behavior and regenerate the public surface snapshot.
+expected_result: No-argument SDK reads match explicit empty options while all explicit output-control and producer continuation safety contracts remain enforced in source and packed declarations.
+actual_result: Independent before consumer fails TS2322 for no-argument ListResult assignments. Final PM-linked suite passes all four TypeScript configurations and 3 focused integration tests including actual npm tarball declaration compilation and Node/Bun journeys. Focused ESLint docs links SDK snapshot and docstring quality pass; final revised-head hosted admission remains required before merge.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-jqgkis,related,"2026-10-21T06:11:30.169Z","harness:codex","cli:create:dep",detected
+  pm-oybmsd,discovered_from,"2026-10-21T06:11:30.169Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-21T06:11:30.169Z","harness:codex","Duplicate check: full all-status lineage and fresh omitted argument default SDK and no argument first page searches plus open/in-progress inventories found no exact active refinement. The original producer and union fixes are completed in the current unmerged PR and remain closed. This new narrow review task preserves their delivered behavior and records the distinction between a precision improvement and a runtime regression. Review: https://github.com/unbraind/pm-cli/pull/1529#discussion_r4333511118"
+  "2026-10-21T06:14:05.110Z","harness:codex","Independent before proof through the current built public SDK: no-argument client.list() and standalone list() fail assignment to Promise<ListResult>, while an explicit empty object passes. The source change uses an empty-key generic default rather than importing optional output controls. Positive fixtures cover all six client/standalone read forms; existing negative cases continue to protect explicit budgets, sessions, output cursors, unions and producer metadata."
+  "2026-10-21T06:23:32.622Z","harness:codex","Validation: the PM-linked suite passed all four TypeScript configurations and both focused integration files (3 tests), including declaration compilation through the actual npm tarball plus Node and Bun continuation journeys. Independent before fixture rejects the no-argument ListResult assignments with TS2322; after the empty-key generic default those six client/standalone declarations pass while all existing explicit-control negative assertions remain required. Focused ESLint, packaged docs links, SDK snapshot check and docstring quality pass. The prior full source coverage and initial PR required checks are green; the new pushed revision will require fresh exact-head CI admission."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T06:23:31.924Z","harness:codex","Generic default options are observable API behavior: omit keys entirely for omitted arguments rather than importing optional budget or cursor keys from broad option interfaces. Compile no-argument, empty-object, optional and union options through the public packed SDK to preserve both ergonomics and truthful narrowing."
+files[4]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/runtime.ts,project
+  tests/integration/read-output/composed-continuation.integration.spec.ts,project
+  tests/types/producer-continuation.test-d.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck && node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/integration/read-output/default-list-order.integration.spec.ts,project,600,"harness:codex","2026-10-21T06:14:02.321Z",local_mutation,fix/sdk-continuation-result-contracts
+test_runs[1]:
+  - run_id: test-local-mvhq6rih-l5qjfh
+    kind: test
+    status: passed
+    started_at: "2026-10-21T06:21:30.359Z"
+    finished_at: "2026-10-21T06:22:53.129Z"
+    recorded_at: "2026-10-21T06:22:53.129Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck && node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/integration/read-output/default-list-order.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: Implemented the accepted no-argument SDK typing refinement from PR1529 review and verified source plus packed declarations.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-qal1uw
+  gate_id: sdk-omitted-read-options-declarations
+  negative_control: pnpm typecheck
+  local_checks[2]: pnpm typecheck,node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts
+  hosted_checks[2]: Gates (typecheck),Gates (coverage)
+body: ""
