@@ -77,8 +77,7 @@ async function withGitignorePermissionRecovery<T>(operation: () => Promise<T>): 
 }
 
 function normalizeTrackerRelativeRoot(trackerRelativeRoot: string): string {
-  return trackerRelativeRoot
-    .replaceAll("\\", "/")
+  return trackerRelativeRoot.split(path.sep).join("/")
     .replace(/^\.\/+/, "")
     .replace(/\/+$/, "");
 }
@@ -98,23 +97,71 @@ export function getPmGitignoreBlock(
   trackerRelativeRoot: string = PM_GITIGNORE_DEFAULT_TRACKER_ROOT,
 ): string {
   const root = normalizeTrackerRelativeRoot(trackerRelativeRoot);
+  if (/[\r\n]/u.test(root)) {
+    throw new PmCliError("A tracker path containing a line break cannot be represented safely in .gitignore.", EXIT_CODE.USAGE, {
+      code: "invalid_argument_value",
+      required: "a tracker path without line breaks",
+      nextSteps: ["Choose a tracker path without carriage returns or newlines and rerun pm init."],
+    });
+  }
+  const literalRoot = root.replace(/[\\*?[\]#! \t]/gu, "\\$&");
   return [
     PM_GITIGNORE_START,
     ...PM_GITIGNORE_RUNTIME_DIRECTORIES.map((directory) =>
       directory === "search/"
-        ? `${root}/${directory}*`
-        : `${root}/${directory}`,
+        ? `${literalRoot}/${directory}*`
+        : `${literalRoot}/${directory}`,
     ),
-    ...PM_GITIGNORE_TRACKED_FILES.map((file) => `!${root}/${file}`),
+    ...PM_GITIGNORE_TRACKED_FILES.map((file) => `!${literalRoot}/${file}`),
     PM_GITIGNORE_END,
   ].join("\n");
 }
 
+/** Replace this tracker's rules in place while retaining every sibling scope, including legacy unescaped rules. */
+function mergeTrackerIgnoreRules(lines: string[], trackerRoot: string, rules: string[]): string[] {
+  const literalRoot = trackerRoot.replace(/[\\*?[\]#! \t]/gu, "\\$&");
+  const prefixes = [...new Set([trackerRoot, literalRoot])].flatMap((root) =>
+    PM_GITIGNORE_RUNTIME_DIRECTORIES.flatMap((directory) => [`${root}/${directory}`, `!${root}/${directory}`]),
+  );
+  const merged: string[] = [];
+  let replaced = false;
+  for (const line of lines) {
+    if (prefixes.some((prefix) => line.startsWith(prefix))) {
+      if (!replaced) merged.push(...rules);
+      replaced = true;
+    } else {
+      merged.push(line);
+    }
+  }
+  if (!replaced) merged.push(...rules);
+  return merged;
+}
+
+/** Reconcile complete managed fences without moving or rewriting unrelated user content. */
+function reconcileGitignoreContent(current: string, trackerRoot: string): string {
+  const newline = current.includes("\r\n") ? "\r\n" : "\n";
+  const rules = getPmGitignoreBlock(trackerRoot).split("\n").slice(1, -1);
+  const blocks = [...current.matchAll(/^# pm-cli:runtime-cache:start\r?\n([\s\S]*?)^# pm-cli:runtime-cache:end(?=\r?$)/gmu)];
+  const existingRules = blocks.flatMap((block) => block[1].split(/\r?\n/u).filter((line) => line.length > 0));
+  const block = [PM_GITIGNORE_START, ...mergeTrackerIgnoreRules(existingRules, trackerRoot, rules), PM_GITIGNORE_END].join(newline);
+  if (blocks.length === 0) {
+    const separator = current.length === 0 ? "" : current.endsWith("\n") ? newline : `${newline}${newline}`;
+    return `${current}${separator}${block}${newline}`;
+  }
+  let next = current;
+  for (const [index, match] of [...blocks.entries()].reverse()) {
+    next = `${next.slice(0, match.index)}${index === 0 ? block : ""}${next.slice(match.index + match[0].length)}`;
+  }
+  return next;
+}
+
 /**
- * Idempotently create or replace the fenced pm cache block in a workspace
+ * Idempotently reconcile the fenced pm cache rules in a workspace
  * `.gitignore`. When `pmRoot` is provided the ignored runtime directories are
  * rendered under the resolved workspace-relative tracker root, so custom-root
  * workspaces (`--pm-path`/`PM_PATH`) stop committing runtime caches (GH-598).
+ * Sibling tracker rules are retained, and an explicitly root-layout tracker
+ * uses anchored repository-root rules rather than the default tracker path.
  * A tracker root outside the workspace needs no ignore rules here, so the
  * file is left untouched.
  */
@@ -134,9 +181,7 @@ export async function ensurePmGitignore(
     if (isPathOutsideRoot(relative)) {
       return { path: gitignorePath, changed: false };
     }
-    if (relative.length > 0) {
-      trackerRelativeRoot = relative;
-    }
+    trackerRelativeRoot = relative;
   }
   let current = "";
   try {
@@ -150,14 +195,7 @@ export async function ensurePmGitignore(
       throw error;
     }
   }
-  const start = current.indexOf(PM_GITIGNORE_START);
-  const end = current.indexOf(PM_GITIGNORE_END);
-  const withoutManagedBlock =
-    start >= 0 && end >= start
-      ? `${current.slice(0, start)}${current.slice(end + PM_GITIGNORE_END.length)}`
-      : current;
-  const prefix = withoutManagedBlock.trimEnd();
-  const next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${getPmGitignoreBlock(trackerRelativeRoot)}\n`;
+  const next = reconcileGitignoreContent(current, trackerRelativeRoot);
   if (next === current) {
     return { path: gitignorePath, changed: false };
   }

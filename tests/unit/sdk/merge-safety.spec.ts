@@ -36,6 +36,8 @@ import {
   mergeJsonDocuments,
   mergeRelationshipEventStreams,
   refreshMergeAttributeFenceIfInstalled,
+  readSettings,
+  resolveProjectMergeTypeFolders,
   resolveMergeInstallContext,
   runMergeDriver,
   runMergeInstall,
@@ -1391,7 +1393,7 @@ describe("public merge-safety SDK primitives", () => {
           (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
         ).toBe("not_installed");
 
-        const installed = await runMergeInstall({}, { path: context.pmPath });
+        await runMergeInstall({}, { path: context.pmPath });
         expect(
           (await refreshMergeAttributeFenceIfInstalled(context.pmPath)).status,
         ).toBe("unchanged");
@@ -1455,10 +1457,7 @@ describe("public merge-safety SDK primitives", () => {
           (
             await auditMergeAttributeFence(
               context.pmPath,
-              installed.gitattributes.patterns
-                .filter((pattern) => pattern.endsWith("merge=pm-item-toon"))
-                .map((pattern) => pattern.match(/pm\/(.+?)\/\*\.toon/)?.[1])
-                .filter((folder): folder is string => folder !== undefined),
+              resolveProjectMergeTypeFolders(await readSettings(context.pmPath)),
             )
           ).status,
         ).toBe("ok");

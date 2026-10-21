@@ -1868,6 +1868,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
       "sdk/runtime/mutation-admission.ts",
       "sdk/runtime/schema-preview.ts",
       "sdk/test/execution.ts",
+      "sdk/workspace.ts",
     ],
     emitting_commands: ["*", "create", "task-composition"],
     canonical_code: "invalid_argument_value",

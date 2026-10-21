@@ -3,6 +3,49 @@
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
   "families": [
     {
+      "id": "workspace-cache-tracker-scope",
+      "version": 1,
+      "title": "Tracker cache exclusions and merge patterns preserve literal repository scopes",
+      "owner_item_id": "pm-nl60tbxzkjwp",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": [
+          "src/sdk/workspace.ts",
+          "src/sdk/merge/install.ts",
+          "tests/unit/core/workspace/gitignore.spec.ts",
+          "tests/integration/workspace/cache-ignore-scopes.integration.spec.ts"
+        ],
+        "item_ids": [
+          "pm-nl60tbxzkjwp",
+          "pm-47wuv8awpqvj",
+          "pm-4uqm"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (coverage)",
+          "CI / Gates (static)"
+        ]
+      },
+      "negative_control": {
+        "files": [
+          "src/sdk/workspace.ts"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-4uqm",
+        "pm-hous",
+        "pm-kynkl8"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.03
+      }
+    },
+    {
       "id": "dependency-advisory-executable-identity",
       "version": 1,
       "title": "Dependency advisory execution survives physical path aliases without weakening feed admission",

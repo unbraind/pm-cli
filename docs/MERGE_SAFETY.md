@@ -667,6 +667,14 @@ Never remove conflict markers manually while leaving the authoritative item and 
 
 `transactions/` and `checkpoints/` are per-branch crash-recovery state, not shared project context. `pm init` places both below the resolved tracker root in the managed `.gitignore` block, including custom `--pm-path` roots.
 
+Each tracker sharing a repository retains its own cache exclusions and merge
+patterns in either initialization order. Tracker names containing Git wildcard
+characters are escaped as literal paths, while the generated item/history globs
+remain active. Unrelated user rules and curated evaluation files are preserved.
+These contracts are tracked by
+[pm-nl60tbxzkjwp](../.agents/pm/issues/pm-nl60tbxzkjwp.toon) and
+[pm-47wuv8awpqvj](../.agents/pm/issues/pm-47wuv8awpqvj.toon).
+
 Ignore rules do not remove files that were already committed. `pm health`
 (`integrity`) and `pm validate` (`storage_integrity`) therefore scan Git's
 index for tracked files below `runtime/`, `search/`, `locks/`,

@@ -332,7 +332,12 @@ async function resolveGitWorkspaceRoot(cwd: string): Promise<string> {
 
 /** Express a repository-relative path with portable Git attribute separators. */
 function toPosixRelative(fromPath: string, toPath: string): string {
-  return path.relative(fromPath, toPath).replaceAll("\\", "/");
+  return path.relative(fromPath, toPath).split(path.sep).join("/");
+}
+
+/** Escape literal path components without disabling the installer-owned recursive and extension globs. */
+function literalGitAttributePath(value: string): string {
+  return value.replace(/[\\*?[\]!]/gu, "\\$&");
 }
 
 /** Encode one Git attributes pattern with C-style quoting so whitespace, backslashes, and quotation marks remain part of the repository path instead of being parsed as attribute separators. */
@@ -461,7 +466,7 @@ export function buildMergeAttributePatterns(
   typeFolders: string[],
 ): string[] {
   const prefix =
-    trackerRelativeRoot.length > 0 ? `${trackerRelativeRoot}/` : "";
+    trackerRelativeRoot.length > 0 ? `${literalGitAttributePath(trackerRelativeRoot)}/` : "";
   // Package-owned types can register folders at runtime, and a branch can
   // contain their items before the receiving branch has installed the package.
   // Fence every tracker TOON/Markdown item first; the explicit per-type rows
@@ -471,11 +476,12 @@ export function buildMergeAttributePatterns(
     `${quoteGitAttributePattern(`${prefix}**/*.md`)} merge=pm-item-markdown`,
   ];
   for (const folder of typeFolders) {
+    const literalFolder = literalGitAttributePath(folder);
     patterns.push(
-      `${quoteGitAttributePattern(`${prefix}${folder}/*.toon`)} merge=pm-item-toon`,
+      `${quoteGitAttributePattern(`${prefix}${literalFolder}/*.toon`)} merge=pm-item-toon`,
     );
     patterns.push(
-      `${quoteGitAttributePattern(`${prefix}${folder}/*.md`)} merge=pm-item-markdown`,
+      `${quoteGitAttributePattern(`${prefix}${literalFolder}/*.md`)} merge=pm-item-markdown`,
     );
   }
   // RelationshipEventStore deliberately accepts a caller-chosen relativePath
@@ -618,13 +624,13 @@ async function reconcileGitattributesBlock(
     const owned = blocks.filter((candidate) =>
       blockBelongsToTracker(candidate.lines, patterns, trackerRelativeRoot),
     );
-    // A marker-only legacy fence carries no owner. The default tracker can
-    // migrate it safely when it is the sole managed block in the repository.
+    // A legacy fence with no directory-scoped patterns carries no tracker
+    // owner. Never infer that a lone non-default tracker belongs to default.
     if (
       owned.length === 0 &&
       trackerRelativeRoot === ".agents/pm" &&
       blocks.length === 1 &&
-      blocks[0].lines.every((line) => !line.includes(".agents/pm/"))
+      blocks[0].lines.every((line) => !line.includes("/"))
     ) {
       owned.push(blocks[0]);
     }

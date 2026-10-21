@@ -1,3 +1,4 @@
+import { execFileSync, spawnSync } from "node:child_process";
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -33,7 +34,7 @@ describe("ensurePmGitignore", () => {
       expect(repaired).toBe(`node_modules/\n\n${getPmGitignoreBlock()}\n`);
       expect((await ensurePmGitignore(root)).changed).toBe(false);
       expect((await ensurePmGitignore(root, { pmRoot: root })).changed).toBe(
-        false,
+        true,
       );
 
       const dotDotNamedRoot = path.join(root, "..pm");
@@ -42,6 +43,89 @@ describe("ensurePmGitignore", () => {
         (await ensurePmGitignore(root, { pmRoot: dotDotNamedRoot })).changed,
       ).toBe(true);
       expect(await readFile(first.path, "utf8")).toContain("..pm/runtime/");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each([false, true])("preserves all tracker scopes and user bytes in either order (nested first: %s)", async (nestedFirst) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-scopes-"));
+    try {
+      const roots = [".agents/pm", "sub/t"];
+      if (nestedFirst) roots.reverse();
+      const userRules = "node_modules/\n# user content\n";
+      await writeFile(path.join(root, ".gitignore"), userRules);
+      for (const tracker of roots) await ensurePmGitignore(root, { pmRoot: path.join(root, tracker) });
+      const before = await readFile(path.join(root, ".gitignore"), "utf8");
+      expect(before.startsWith(userRules)).toBe(true);
+      for (const tracker of roots) {
+        expect((await ensurePmGitignore(root, { pmRoot: path.join(root, tracker) })).changed).toBe(false);
+        expect(before).toContain(`${tracker}/runtime/`);
+        expect(before).toContain(`!${tracker}/search/eval-queries.json`);
+      }
+      expect(await readFile(path.join(root, ".gitignore"), "utf8")).toBe(before);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["", "custom[1]", "star*", "question?", "#tracker", "!tracker", "with space", "trailing "])("uses literal, anchored Git rules for tracker root %j", async (tracker) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-literal-"));
+    try {
+      const env = { ...process.env };
+      for (const key of Object.keys(env)) if (key.startsWith("GIT_")) delete env[key];
+      execFileSync("git", ["init", "--quiet"], { cwd: root, env });
+      await ensurePmGitignore(root, { pmRoot: path.join(root, tracker) });
+      const prefix = tracker ? `${tracker}/` : "";
+      for (const directory of ["runtime", "search", "locks", "transactions", "checkpoints"]) {
+        const candidate = `${prefix}${directory}/cache`;
+        const result = spawnSync("git", ["check-ignore", "--no-index", "--", candidate], { cwd: root, env, encoding: "utf8" });
+        expect(result.status, candidate + result.stderr).toBe(0);
+      }
+      for (const candidate of [`${prefix}search/eval-queries.json`, `${prefix}tasks/item.toon`, `other/${prefix}runtime/cache`, "custom1/runtime/cache", "starX/runtime/cache", "questionX/runtime/cache"]) {
+        expect(spawnSync("git", ["check-ignore", "--no-index", "--", candidate], { cwd: root, env }).status, candidate).toBe(1);
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("consolidates complete legacy fences while retaining CRLF and user suffixes", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-legacy-"));
+    try {
+      const content = `# before\r\n${getPmGitignoreBlock().replaceAll("\n", "\r\n")}\r\n${getPmGitignoreBlock("other").replaceAll("\n", "\r\n")}\r\n# after\r\n`;
+      await writeFile(path.join(root, ".gitignore"), content);
+      await ensurePmGitignore(root);
+      const after = await readFile(path.join(root, ".gitignore"), "utf8");
+      expect(after.startsWith("# before\r\n")).toBe(true);
+      expect(after.endsWith("# after\r\n")).toBe(true);
+      expect(after).toContain("other/runtime/\r\n");
+      expect(after.replaceAll("\r\n", "")).not.toContain("\n");
+      expect((await ensurePmGitignore(root, { pmRoot: path.join(root, "other") })).changed).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["sentinel", "# example: # pm-cli:runtime-cache:start\n"])("preserves unmatched user content %j", async (content) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-user-"));
+    try {
+      await writeFile(path.join(root, ".gitignore"), content);
+      await ensurePmGitignore(root);
+      expect((await readFile(path.join(root, ".gitignore"), "utf8")).startsWith(content)).toBe(true);
+      expect((await ensurePmGitignore(root)).changed).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["bad\nroot", "bad\rroot"])("refuses unrepresentable tracker root %j without changing ignore bytes", async (tracker) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-linebreak-"));
+    try {
+      await writeFile(path.join(root, ".gitignore"), "sentinel\n");
+      expect(() => getPmGitignoreBlock(tracker)).toThrow(PmCliError);
+      await expect(ensurePmGitignore(root, { pmRoot: path.join(root, tracker) })).rejects.toMatchObject({ code: "invalid_argument_value" });
+      expect(await readFile(path.join(root, ".gitignore"), "utf8")).toBe("sentinel\n");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

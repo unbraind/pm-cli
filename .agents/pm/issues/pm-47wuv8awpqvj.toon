@@ -1,0 +1,98 @@
+id: pm-47wuv8awpqvj
+title: Render literal and root-layout tracker paths safely in SDK cache ignore rules
+description: "Independent isolated Git reproduction on current build: ensurePmGitignore(repo,{pmRoot:repo}) writes .agents/pm rules, leaving root-layout runtime/cache unignored. A custom[1] tracker produces Git wildcard rules: custom[1]/runtime/cache is unignored and unrelated custom1/runtime/cache is ignored. Generate anchored literal rules for actual tracker location, preserving custom names, curated evidence and external-root no-op semantics."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:sdk",custom-root,gitignore,init
+created_at: "2026-10-21T11:44:27.604Z"
+updated_at: "2026-10-21T13:00:29.784Z"
+closed_at: "2026-10-21T13:00:28.713Z"
+completed_at: "2026-10-21T13:00:28.713Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Root-layout tracker caches are ignored at the repository root without hiding unrelated nested runtime paths; Git metacharacters and whitespace in tracker roots match only literal intended paths; default/custom/external roots retain their documented behavior; public helper and CLI initialization are verified with real Git
+parent: pm-o2kc
+risk: medium
+confidence: 90
+severity: medium
+resolution: "Escape literal Git path metacharacters and leading negation, anchor root-layout cache rules, reject unrepresentable line breaks and preserve a lone non-default merge fence."
+expected_result: Configured tracker paths protect only their intended runtime state and retain merge behavior in every initialization order.
+actual_result: "All linked tests pass against real Git; pre-fix controls demonstrated seven initial failures and two leading-negation failures. Public SDK signatures are unchanged, generated contracts are current, typecheck and nine-package packed executor smoke pass. Full hosted coverage and static admission gate the merge."
+affected_version: 2026.10.21
+component: sdk/workspace
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4uqm,recurs_from,"2026-10-21T11:44:27.604Z","harness:codex","cli:create:dep",detected
+  pm-hous,recurs_from,"2026-10-21T12:42:19.028Z","harness:codex","cli:update:dep",detected
+  pm-kynkl8,recurs_from,"2026-10-21T12:42:19.028Z","harness:codex","cli:update:dep",detected
+comments[5]:
+  - created_at: "2026-10-21T11:44:27.604Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete strict 3040-item all-status/full-body read (no omissions), current init/gitignore/root-layout keyword searches and open/in-progress inventories, and full canonical pm-hous/pm-4uqm/pm-kynkl8 metadata plus relevant history establish prior fixes but no active owner for this reproduced defect. Preserve completed lineage and create only this bounded recurrence slice."
+  - created_at: "2026-10-21T11:51:41.887Z"
+    author: "harness:codex"
+    text: "Focused CLI/Git regression discovered coupled merge-attribute defects: quoted tracker names still retain wildcard semantics, and default-tracker initialization incorrectly classifies a sole non-default fence as marker-only. Both orders are now required acceptance. Repair literal path escaping in the shared SDK merge pattern builder and limit marker-only migration to an actually empty fence; no history or ownership override is involved."
+  - created_at: "2026-10-21T12:03:26.755Z"
+    author: "harness:codex"
+    text: "Runtime proof now passes literal Git wildcard, comment/negation prefix, whitespace and root-layout exclusions. Unrepresentable CR/LF roots refuse with typed invalid_argument_value before any ignore-file write. CLI integration also verifies both scoped merge drivers and the non-matching sub/t1 sibling. Existing legacy/unknown-type merge-version-skew cases remain green. Public signatures remain unchanged; SDK and CLI share these implementations. Read-only lint, docs links and secrets gates pass."
+  - created_at: "2026-10-21T12:16:43.734Z"
+    author: "harness:codex"
+    text: "Full local run completed 10963 passing cases with two failures: the merge-audit test parsed the generated recursive ** glob as a literal type folder, and the composed-continuation pack fixture could not resolve this host npm package. The audit test now derives independent declared folders from the public project type registry. The verification child uses NODE_PATH to discover npm without changing product dependencies, policies or test thresholds. All five affected/scoped files subsequently passed 52 cases, including packed SDK consumers under Node and Bun. Full required CI coverage will run on the reviewed head."
+    edited_at: "2026-10-21T12:33:04.158Z"
+  - created_at: "2026-10-21T13:00:22.354Z"
+    author: "harness:codex"
+    text: "Final linked proof covers literal bracket and leading-exclamation tracker names in both initialization orders, all five cache/recovery directories, preserved evaluation files, unrelated sibling exclusions and both merge-driver assignments. The added leading-negation controls failed twice before the final fix and pass afterward. All linked commands, strict typecheck, the bounded352-mutant gate and the nine-package npx/bunx smoke pass. Generated refusal-producer catalog and contract snapshot were refreshed. Local startup benchmark failures are separately retained; required exact-head hosted static and full-source coverage must pass before merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T13:00:21.435Z","harness:codex","Quoting a Git attribute path does not make wildcard or leading-negation characters literal. Escape caller-owned path components separately from installer-owned recursive globs, and exercise initialization in both orders."
+files[7]{path,scope}:
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/merge/install.ts,project
+  src/sdk/workspace.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,project
+  tests/unit/core/workspace/gitignore.spec.ts,project
+  tests/unit/sdk/merge-safety.spec.ts,project
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,project,240,"harness:codex","2026-10-21T11:49:36.807Z",local_mutation,fix/workspace-cache-ignore-scopes
+  node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,project,240,"harness:codex","2026-10-21T12:03:21.273Z",local_mutation,fix/workspace-cache-ignore-scopes
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,project,240,"harness:codex","2026-10-21T12:42:22.580Z",local_mutation,fix/workspace-cache-ignore-scopes
+test_runs[2]:
+  - run_id: test-local-mvi3saj2-044h5d
+    kind: test
+    status: passed
+    started_at: "2026-10-21T12:42:38.907Z"
+    finished_at: "2026-10-21T12:43:32.558Z"
+    recorded_at: "2026-10-21T12:43:32.558Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvi44qtw-1al0b3
+    kind: test
+    status: passed
+    started_at: "2026-10-21T12:52:04.635Z"
+    finished_at: "2026-10-21T12:53:13.554Z"
+    recorded_at: "2026-10-21T12:53:13.554Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/CONFIGURATION.md,project
+  docs/MERGE_SAFETY.md,project
+close_reason: Implemented literal and root-layout cache and merge protection with regression evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  owner: pm-47wuv8awpqvj
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workspace/cache-ignore-scopes.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts tests/integration/merge-fence-version-skew.integration.spec.ts tests/unit/sdk/merge-safety.spec.ts,pnpm typecheck,"pnpm smoke:npx"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""
