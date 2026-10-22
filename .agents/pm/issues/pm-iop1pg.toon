@@ -1,0 +1,33 @@
+id: pm-iop1pg
+title: "GH-1516: queued writers fail at a fixed lock deadline even while the lock is changing hands"
+description: "locks.wait_ms (default 3000) is a total wall-clock budget, so with ~20 concurrent writers on one plain-directory tracker most writers exhaust it while the lock is handed from writer to writer and fail with lock_conflict (exit 4); their comments/creates are lost unless each agent retries. A live, progressing queue is indistinguishable from a stuck owner."
+type: Issue
+status: closed
+priority: 1
+tags[5]: bug,concurrency,locks,multi-agent,sdk
+created_at: "2026-10-22T18:10:30.531Z"
+updated_at: "2026-10-22T19:15:15.086Z"
+closed_at: "2026-10-22T19:15:15.063Z"
+completed_at: "2026-10-22T19:15:15.063Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A waiter fails only when the SAME lock owner holds the lock for the configured wait window without progress, or a hard ceiling is reached; Every observed owner handoff (token change or release) restarts the no-progress window; Explicit maxWaitMs ceilings (background consumers) and wait 0 fail-fast are unchanged; The conflict receipt reports waited time and observed owner handoffs; A multi-process conformance test runs many concurrent writers (comments + parented creates) on one non-git tracker and loses zero writes under default settings; Docs for locks.wait_ms and PM_LOCK_WAIT_MS describe the no-progress semantics"
+parent: pm-dj98
+risk: high
+confidence: high
+severity: high
+repro_steps: "See GH-1516: 20 background shells each running pm create --parent, pm comments --add, pm update on one plain-directory tracker."
+resolution: "Queued writers behind a progressing lock now commit instead of failing at a fixed 3 s deadline; a stalled single owner still refuses after the budget. Multi-process conformance (10 comments + 10 parented creates, PM_LOCK_WAIT_MS=1000) loses zero writes; the same test fails on the previous build (negative control 2 of 3 runs red, new build 4 of 4 green). Scoping the hierarchy lock per parent and lock-free appends remain on pm-lvyd (cycle and cardinality checks need a workspace snapshot)."
+expected_result: Concurrent writers queued behind a progressing lock all commit; only a stalled owner or the hard ceiling produces lock_conflict.
+actual_result: All 20 concurrent writers committed in the conformance test; stalled-owner and maxWaitMs-ceiling controls refuse as specified.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1549,related,"2026-10-22T18:10:30.531Z","harness:claude-code","cli:create:dep",detected
+  pm-lvyd,implements,"2026-10-22T18:10:30.531Z","harness:claude-code","cli:create:dep",detected
+files[3]{path,scope}:
+  docs/CONFIGURATION.md,project
+  src/core/lock/lock.ts,project
+  tests/unit/core/lock/lock-lease-fencing.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,project,"harness:claude-code","2026-10-22T18:29:38.324Z",local_mutation,fix/lock-lease-fencing-and-progress-wait
+close_reason: "Shipped progress-aware lock waiting: the lock wait budget is a no-progress window that restarts on every observed owner handoff, capped at 120 s total; explicit maxWaitMs ceilings and wait 0 fail-fast are unchanged; lock_conflict recovery reports waited_ms and owner_handoffs."
+body: ""

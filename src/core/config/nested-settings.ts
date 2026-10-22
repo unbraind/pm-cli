@@ -333,7 +333,7 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     kind: "integer",
     min: 0,
     summary:
-      "Bounded jittered wait in milliseconds before a contended item mutation fails with lock_conflict; 0 fails fast. PM_LOCK_WAIT_MS overrides per invocation.",
+      "No-progress wait window in milliseconds before a contended item mutation fails with lock_conflict; each observed owner handoff restarts it (120 s total cap); 0 fails fast. PM_LOCK_WAIT_MS overrides per invocation.",
   },
   {
     key: "ids_token_length",

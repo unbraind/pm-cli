@@ -14,7 +14,7 @@ import {
   runActiveServiceOverride,
 } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
-import { PmCliError } from "../shared/errors.js";
+import { PmCliError, type PmCliErrorContext } from "../shared/errors.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import { getLockPath } from "../store/paths.js";
 import { nowIso } from "../shared/time.js";
@@ -234,7 +234,7 @@ async function createLockFile(
   ttlSeconds: number,
   token: string,
   createParentDirectories: boolean,
-): Promise<void> {
+): Promise<string> {
   if (createParentDirectories)
     await fs.mkdir(path.dirname(lockPath), { recursive: true });
   // Publication of an empty file precedes its owner JSON. Fence both steps
@@ -248,14 +248,14 @@ async function createLockFile(
       code: "EEXIST",
     });
   }
+  let createdAt: string;
   try {
     const handle = await fs.open(lockPath, "wx");
     try {
       try {
-        await handle.writeFile(
-          `${JSON.stringify(await buildLockPayload(id, owner, ttlSeconds, token), null, 2)}\n`,
-          "utf8",
-        );
+        const payload = await buildLockPayload(id, owner, ttlSeconds, token);
+        createdAt = payload.created_at;
+        await handle.writeFile(`${JSON.stringify(payload, null, 2)}\n`, "utf8");
       } finally {
         await handle.close();
       }
@@ -267,6 +267,7 @@ async function createLockFile(
     await releaseCleanupGate();
   }
   await emitLockWriteHook(lockPath, "lock:create");
+  return createdAt;
 }
 
 async function unlinkLockWithHook(
@@ -379,6 +380,8 @@ function lockOwnerSuffix(info: LockInfo | null): string {
 const LOCK_WAIT_INITIAL_DELAY_MS = 25;
 const LOCK_WAIT_MAX_DELAY_MS = 200;
 const LOCK_CONFLICT_RETRY_HINT_MS = 250;
+/** Hard ceiling for a wait whose no-progress window keeps restarting on owner handoffs. */
+const LOCK_PROGRESS_MAX_WAIT_MS = 120_000;
 const MAX_STALE_LOCK_REMOVALS = 3;
 const STALE_CLEANUP_GATE_SUFFIX = ".stale-cleanup";
 const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
@@ -438,9 +441,13 @@ async function buildLockConflictError(
   id: string,
   info: LockInfo | null,
   waitedMs: number,
+  ownerHandoffs = 0,
 ): Promise<PmCliError> {
   const ownerState = await inspectLockOwner(info);
-  const waitedSuffix = waitedMs > 0 ? ` after waiting ${waitedMs}ms` : "";
+  const handoffSuffix =
+    ownerHandoffs > 0 ? ` across ${ownerHandoffs} owner handoff(s)` : "";
+  const waitedSuffix =
+    waitedMs > 0 ? ` after waiting ${waitedMs}ms${handoffSuffix}` : "";
   return new PmCliError(
     `Item ${id} is locked${lockOwnerSuffix(info)} (owner process ${ownerState})${waitedSuffix}`,
     EXIT_CODE.CONFLICT,
@@ -452,9 +459,180 @@ async function buildLockConflictError(
         "Wait for the owner to release the lock, then retry the same operation. Set PM_LOCK_WAIT_MS to a larger bounded millisecond budget when contention is expected. Inspect stale receipts with pm gc --scope locks --dry-run.",
       recovery: {
         retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
+        ...(waitedMs > 0
+          ? { waited_ms: waitedMs, owner_handoffs: ownerHandoffs }
+          : {}),
       },
     },
   );
+}
+
+/** Outcome of observing a contended lock once while waiting for it. */
+interface LockWaitObservation {
+  /** The wait must stop and refuse with lock_conflict. */
+  exhausted: boolean;
+  /** Milliseconds since the wait started. */
+  elapsedMs: number;
+  /** Longest sleep that stays inside both the stall window and the ceiling. */
+  remainingMs: number;
+  /** Lock generations observed to change hands so far. */
+  ownerHandoffs: number;
+}
+
+/**
+ * Track a no-progress wait window: every observed owner handoff restarts it,
+ * while the total wait stays bounded by `totalCeilingMs`.
+ */
+function createLockWaitTracker(waitBudgetMs: number, totalCeilingMs: number) {
+  const startedAtMs = Date.now();
+  let stallStartedAtMs = startedAtMs;
+  let observedGeneration: string | undefined;
+  let ownerHandoffs = 0;
+  return {
+    startedAtMs,
+    observe(info: LockInfo | null): LockWaitObservation {
+      const nowMs = Date.now();
+      const generation = lockGenerationKey(info);
+      if (
+        observedGeneration !== undefined &&
+        generation !== observedGeneration
+      ) {
+        ownerHandoffs += 1;
+        stallStartedAtMs = nowMs;
+      }
+      observedGeneration = generation;
+      const elapsedMs = nowMs - startedAtMs;
+      const stalledMs = nowMs - stallStartedAtMs;
+      return {
+        exhausted:
+          waitBudgetMs === 0 ||
+          stalledMs >= waitBudgetMs ||
+          elapsedMs >= totalCeilingMs,
+        elapsedMs,
+        remainingMs: Math.min(
+          waitBudgetMs - stalledMs,
+          totalCeilingMs - elapsedMs,
+        ),
+        ownerHandoffs,
+      };
+    },
+  };
+}
+
+/** Identity of one lock generation; a change proves another writer made progress. */
+function lockGenerationKey(info: LockInfo | null): string {
+  if (info === null) return "released";
+  return info.token ?? `${info.pid}:${info.owner}:${info.created_at}`;
+}
+
+function describeLease(lease: {
+  owner: string;
+  acquiredAt: string;
+  ttlSeconds: number;
+}): NonNullable<PmCliErrorContext["lease"]> {
+  const acquiredMs = Date.parse(lease.acquiredAt);
+  return {
+    owner: lease.owner,
+    acquired_at: lease.acquiredAt,
+    ttl_seconds: lease.ttlSeconds,
+    expires_at: Number.isFinite(acquiredMs)
+      ? new Date(acquiredMs + lease.ttlSeconds * 1000).toISOString()
+      : null,
+  };
+}
+
+function buildLockLostError(
+  id: string,
+  lease: { owner: string; acquiredAt: string; ttlSeconds: number },
+  current: LockInfo | null,
+  reason: "lease_taken_over" | "lease_released" | "fence_gate_unavailable",
+): PmCliError {
+  const holder =
+    reason === "fence_gate_unavailable"
+      ? "its commit fence could not be entered"
+      : current === null
+        ? "the lock no longer exists"
+        : `it is now held by ${current.owner} since ${current.created_at}`;
+  return new PmCliError(
+    `Lock for ${id} was lost before commit: the lease acquired at ${lease.acquiredAt} (ttl ${lease.ttlSeconds}s) is no longer owned by this writer, and ${holder}. Nothing was written.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "lock_lost",
+      item_id: id,
+      reason,
+      lease: describeLease(lease),
+      current_owner:
+        current === null
+          ? null
+          : {
+              owner: current.owner,
+              pid: current.pid,
+              created_at: current.created_at,
+              ttl_seconds: current.ttl_seconds,
+            },
+      required:
+        "Re-read the item and apply the mutation again; this writer's change was not committed and the newer value was kept. Keep mutation work shorter than locks.ttl_seconds, or raise locks.ttl_seconds for long-running callbacks.",
+      recovery: {
+        retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
+      },
+    },
+  );
+}
+
+/** Wait for the per-lock cleanup gate that every takeover must also hold. */
+async function waitForStaleCleanupGate(
+  lockPath: string,
+  id: string,
+): Promise<(() => Promise<void>) | null> {
+  const startedAtMs = Date.now();
+  let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
+  for (;;) {
+    const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
+    if (releaseCleanupGate !== null) return releaseCleanupGate;
+    const elapsedMs = Date.now() - startedAtMs;
+    if (elapsedMs >= LOCK_RELEASE_GATE_WAIT_MS) return null;
+    await sleepWithJitter(
+      Math.min(backoffMs, LOCK_RELEASE_GATE_WAIT_MS - elapsedMs),
+    );
+    backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);
+  }
+}
+
+/**
+ * Run a commit only while this writer still owns its lock generation. Stale
+ * removal and lock publication both hold the same cleanup gate, so verifying the
+ * token under that gate excludes a takeover for the whole commit.
+ */
+async function fenceOwnedLock<T>(
+  lockPath: string,
+  id: string,
+  lease: {
+    owner: string;
+    token: string;
+    acquiredAt: string;
+    ttlSeconds: number;
+  },
+  commit: () => Promise<T>,
+): Promise<T> {
+  const releaseCleanupGate = await waitForStaleCleanupGate(lockPath, id);
+  if (releaseCleanupGate === null) {
+    const current = await readLockInfo(lockPath, false);
+    throw buildLockLostError(id, lease, current.info, "fence_gate_unavailable");
+  }
+  try {
+    const current = await readLockInfo(lockPath, false);
+    if (!isOwnedLock(current.info, id, lease.owner, lease.token)) {
+      throw buildLockLostError(
+        id,
+        lease,
+        current.info,
+        current.info === null ? "lease_released" : "lease_taken_over",
+      );
+    }
+    return await commit();
+  } finally {
+    await releaseCleanupGate();
+  }
 }
 
 type LockReleaseOverride = () => Promise<void> | void;
@@ -738,10 +916,32 @@ export const _testOnly = {
   isStaleLock,
   lockOwnerSuffix,
   resolveLockWaitMs,
+  lockGenerationKey,
   parseLinuxProcessStartIdentity,
   readProcessStartIdentity,
   acquireStaleCleanupGate,
   removeConfirmedStaleLock,
+};
+
+/** A held tracker lock whose commits can be fenced against a lost lease. */
+export interface LockLease {
+  /** Release the lock if this writer still owns it; idempotent for peers' locks. */
+  release: () => Promise<void>;
+  /**
+   * Run `commit` only while this lease still owns its lock generation. A lease
+   * that expired and was taken over (or released) refuses with `lock_lost` and
+   * never runs `commit`. Extension lock overrides own their lifecycle, so their
+   * leases run `commit` unfenced.
+   */
+  fence: <T>(commit: () => Promise<T>) => Promise<T>;
+}
+
+/** Positional lock policy shared by acquireLock and acquireLockLease. */
+type AcquireLockOptions = {
+  /** Allow lock acquisition to initialize missing lock directories. */
+  createParentDirectories?: boolean;
+  /** Ceiling on the effective retry budget, including PM_LOCK_WAIT_MS. */
+  maxWaitMs?: number;
 };
 
 /**
@@ -762,13 +962,38 @@ export async function acquireLock(
   force = false,
   forceRequiredForStaleLock = true,
   waitMs?: number,
-  options: {
-    /** Allow lock acquisition to initialize missing lock directories. */
-    createParentDirectories?: boolean;
-    /** Ceiling on the effective retry budget, including PM_LOCK_WAIT_MS. */
-    maxWaitMs?: number;
-  } = {},
+  options: AcquireLockOptions = {},
 ): Promise<() => Promise<void>> {
+  const lease = await acquireLockLease(
+    pmRoot,
+    id,
+    ttlSeconds,
+    owner,
+    force,
+    forceRequiredForStaleLock,
+    waitMs,
+    options,
+  );
+  return lease.release;
+}
+
+/**
+ * Acquire a lock as a fenceable lease. The wait budget is a no-progress window:
+ * every observed owner handoff restarts it, so a queue of live writers drains
+ * instead of failing at a fixed deadline, while a stalled owner still refuses
+ * after the configured budget. Without an explicit maxWaitMs the total wait is
+ * bounded by LOCK_PROGRESS_MAX_WAIT_MS (or the budget itself when larger).
+ */
+export async function acquireLockLease(
+  pmRoot: string,
+  id: string,
+  ttlSeconds: number,
+  owner: string,
+  force = false,
+  forceRequiredForStaleLock = true,
+  waitMs?: number,
+  options: AcquireLockOptions = {},
+): Promise<LockLease> {
   const maxWaitMs = parseNonNegativeIntegerWaitMs(options.maxWaitMs);
   const lockOverride = await runActiveServiceOverride("lock_acquire", {
     pm_root: pmRoot,
@@ -782,27 +1007,35 @@ export async function acquireLock(
   if (lockOverride.handled) {
     const release = resolveLockOverrideRelease(lockOverride.result);
     if (release) {
-      return async () => {
-        await Promise.resolve(release());
-        await runActiveServiceOverride("lock_release", {
-          pm_root: pmRoot,
-          id,
-          owner,
-        });
+      return {
+        release: async () => {
+          await Promise.resolve(release());
+          await runActiveServiceOverride("lock_release", {
+            pm_root: pmRoot,
+            id,
+            owner,
+          });
+        },
+        fence: (commit) => commit(),
       };
     }
   }
 
   const lockPath = getLockPath(pmRoot, id);
   const waitBudgetMs = cappedLockWaitMs(waitMs, maxWaitMs);
-  const startedAtMs = Date.now();
+  const totalCeilingMs =
+    maxWaitMs === undefined
+      ? Math.max(waitBudgetMs, LOCK_PROGRESS_MAX_WAIT_MS)
+      : waitBudgetMs;
+  const waitTracker = createLockWaitTracker(waitBudgetMs, totalCeilingMs);
+  const startedAtMs = waitTracker.startedAtMs;
   let staleRemovals = 0;
   let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
   const token = randomUUID();
 
   for (;;) {
     try {
-      await createLockFile(
+      const acquiredAt = await createLockFile(
         lockPath,
         id,
         owner,
@@ -810,13 +1043,17 @@ export async function acquireLock(
         token,
         options.createParentDirectories !== false,
       );
-      return async () => {
-        await releaseOwnedLock(lockPath, id, owner, token);
-        await runActiveServiceOverride("lock_release", {
-          pm_root: pmRoot,
-          id,
-          owner,
-        });
+      const lease = { owner, token, acquiredAt, ttlSeconds };
+      return {
+        release: async () => {
+          await releaseOwnedLock(lockPath, id, owner, token);
+          await runActiveServiceOverride("lock_release", {
+            pm_root: pmRoot,
+            id,
+            owner,
+          });
+        },
+        fence: (commit) => fenceOwnedLock(lockPath, id, lease, commit),
       };
     } catch (error: unknown) {
       if (!(await isLockCreateContention(error, lockPath))) {
@@ -846,15 +1083,16 @@ export async function acquireLock(
           continue;
         }
       }
-      const elapsedMs = Date.now() - startedAtMs;
-      if (waitBudgetMs === 0 || elapsedMs >= waitBudgetMs) {
+      const observation = waitTracker.observe(lockInfo.info);
+      if (observation.exhausted) {
         throw await buildLockConflictError(
           id,
           lockInfo.info,
-          waitBudgetMs === 0 ? 0 : elapsedMs,
+          waitBudgetMs === 0 ? 0 : observation.elapsedMs,
+          observation.ownerHandoffs,
         );
       }
-      await sleepWithJitter(Math.min(backoffMs, waitBudgetMs - elapsedMs));
+      await sleepWithJitter(Math.min(backoffMs, observation.remainingMs));
       backoffMs = Math.min(backoffMs * 2, LOCK_WAIT_MAX_DELAY_MS);
     }
   }

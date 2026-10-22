@@ -788,7 +788,7 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
       const { planItemMutationDocument } = await import("../../src/sdk/lifecycle/structured-mutation-plan.js");
       const { commitItemMutations } = await import("../../src/sdk/item-transaction.js");
       const locks = await import("../../src/core/lock/lock.js");
-      const originalAcquire = locks.acquireLock;
+      const originalAcquire = locks.acquireLockLease;
       const id = "pm-item-lock-race";
       expect(context.runCli(["create", "--id", id, "--title", "Original", "--type", "Task", "--description", "original-key", "--json"]).code).toBe(0);
       const plan = await planItemMutationDocument({
@@ -797,7 +797,7 @@ describe("bulk creation through item mutate (pm-gh1456)", () => {
         upsertKey: "description",
       });
       let moved = false;
-      const lockBoundary = vi.spyOn(locks, "acquireLock").mockImplementation(async (...args) => {
+      const lockBoundary = vi.spyOn(locks, "acquireLockLease").mockImplementation(async (...args) => {
         if (args[0] === context.pmPath && args[1] === id && !moved) {
           moved = true;
           // A separate CLI process writes through the ordinary item lock while the importer has not acquired it.

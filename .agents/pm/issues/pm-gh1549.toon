@@ -2,11 +2,14 @@ id: pm-gh1549
 title: "GH-1549: fence item commits after an expired mutation lease is taken over"
 description: "A newly received GitHub report demonstrates a stale SDK mutateItem callback silently overwriting a newer committed CLI update after TTL takeover. Independently reproduced through the public SDK entrypoint on current744a4c95a in a disposable non-Git tracker, with only locks.ttl_seconds changed to1. The peer commits successfully, the stale SDK writer is not refused, and the final title is Stale overwrite. This is small-N correctness, separate from large-N lock throughput and checkpoint claim-generation fencing."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: bug,concurrency,data-integrity,sdk
 created_at: "2026-10-22T14:40:08.187Z"
-updated_at: "2026-10-22T14:40:08.187Z"
+updated_at: "2026-10-22T19:15:05.608Z"
+closed_at: "2026-10-22T19:15:05.583Z"
+completed_at: "2026-10-22T19:15:05.583Z"
+claim_principal: "harness:claude-code#f93f297a00e60b66e8815dbe"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Deterministic cross-process and same-process controls preserve a newer write after lease takeover; Stale commits return a typed conflict with bounded ownership/generation evidence and no item/history write; Preserve dead-owner recovery and explicit stale-lock policy without unsafe force advice; Audit other SDK mutation paths and document the lease/fencing contract
@@ -14,16 +17,25 @@ parent: pm-dj98
 risk: high
 confidence: high
 severity: high
+resolution: "A writer whose lease expired and was taken over now refuses with lock_lost (exit 4, lease + current_owner evidence) and writes neither item nor history; the newer value is kept. Unlocked edits under a held lease refuse with stale_revision. Dead-owner recovery and stale-lock policy are unchanged (acquireLock is a thin wrapper). acquireLockLease and LockLease are public SDK so packages can fence their own state; SDK.md documents the contract. Heartbeat renewal intentionally not added: rewriting the lock to renew races takeover; refusal at commit is the safe primitive."
 expected_result: "After another writer takes over and commits, the stale mutation refuses before overwriting item or authoritative history state; the newer committed value remains unchanged. Preserve supported stale takeover and proven-dead-owner recovery policies."
-actual_result: "Isolated public-SDK plus CLI reproduction: ttl1, newerCommitted=true, staleWriterRefused=false, finalTitle=Stale overwrite. Current source remains affected; no production tracker was used or modified."
+actual_result: "Same-process repro from the issue now rejects lock_lost; final title is the newer value and history carries only the newer writer. Cross-lease takeover, released lease and stale_revision controls pass in tests/unit/core/lock/lock-lease-fencing.spec.ts."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-02z97f,related,"2026-10-22T14:40:08.187Z","harness:codex","cli:create:dep",detected
   pm-gh1359,related,"2026-10-22T14:40:08.187Z","harness:codex","cli:create:dep",detected
   pm-lvyd,related,"2026-10-22T14:40:08.187Z","harness:codex","cli:create:dep",detected
 comments[1]{created_at,author,text}:
   "2026-10-22T14:40:08.187Z","harness:codex","Duplicate check: initial complete strict3058-item all-status corpus plus fresh exact GH1549 and fencing/TTL/lost-writer searches and current open/in-progress lists found no exact mutation-lease fence owner. Full live pm-02z97f is completed dead-owner recovery and explicitly preserves expired-lease policy with caller fencing guidance; pm-gh1359 owns checkpoint claim generations and pm-lvyd owns large-N throughput. This separate integrity boundary is reproduced on the current source through the published public SDK import surface. The focused package/workspace delivery remains under active review; this intake stays open and unclaimed rather than implying an implemented fence."
-files[2]{path,scope}:
+notes[1]{created_at,author,text}:
+  "2026-10-22T18:29:20.995Z","harness:claude-code","Design: acquireLockLease returns {release, fence}. fence(commit) waits for the per-lock stale-cleanup gate (the same gate stale removal and lock publication hold), verifies the lease token under it, then runs the commit while still holding it, so a TTL/forced takeover cannot interleave with a fenced commit. mutateItem/deleteItem additionally compare the stored item bytes with the bytes read under the lock (stale_revision) to catch unlocked edits and extension-lock overrides, which have no file lease to verify. restore fences its write with the lease only (it already re-verifies item/history under the lock). acquireLock is now a thin wrapper over acquireLockLease, so every other caller keeps its exact contract. Heartbeat renewal deliberately NOT added: renewing created_at rewrites the lock file and races takeover; refusing at commit is the safe primitive, and callers can bound work with lease.expires_at from the refusal."
+files[5]{path,scope}:
+  docs/SDK.md,project
   src/core/lock/lock.ts,project
   src/core/store/item-store.ts,project
+  src/sdk/lifecycle/restore.ts,project
+  tests/unit/core/lock/lock-lease-fencing.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,project,"harness:claude-code","2026-10-22T18:29:25.035Z",local_mutation,fix/lock-lease-fencing-and-progress-wait
+close_reason: "Shipped commit-time lease fencing: acquireLockLease(...).fence(commit) verifies the lease token under the per-lock cleanup gate shared with stale takeover; mutateItem, deleteItem and restore fence their writes; item mutations also refuse stale_revision when the stored bytes changed after the read."
 escape_class: production_defect
 body: ""

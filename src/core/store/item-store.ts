@@ -38,8 +38,8 @@ import {
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { effectiveItemFormatVersion, requiredItemFormatVersion } from "../item/item-format-version.js";
 import { assertProjectRuntimeFormatGuard } from "../../sdk/environment/project-runtime-compatibility.js";
-import { acquireLock } from "../lock/lock.js";
-import { writeFileAtomic } from "../fs/fs-utils.js";
+import { acquireLockLease, type LockLease } from "../lock/lock.js";
+import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import { isUtf8 } from "node:buffer";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
 import {
@@ -487,6 +487,7 @@ async function prepareLockedItem(params: {
   document: ItemDocument;
   warnings: string[];
   releaseLock: () => Promise<void>;
+  lease: LockLease;
 }> {
   const typeToFolder =
     params.typeToFolder ??
@@ -508,7 +509,7 @@ async function prepareLockedItem(params: {
     );
   }
 
-  const releaseLock = await acquireLock(
+  const lease = await acquireLockLease(
     params.pmRoot,
     located.id,
     params.settings.locks.ttl_seconds,
@@ -517,6 +518,7 @@ async function prepareLockedItem(params: {
     params.settings.governance.force_required_for_stale_lock,
     params.settings.locks.wait_ms,
   );
+  const releaseLock = lease.release;
 
   try {
     const warnings: string[] = [];
@@ -557,11 +559,50 @@ async function prepareLockedItem(params: {
       document,
       warnings,
       releaseLock,
+      lease,
     };
   } catch (error: unknown) {
     await releaseLock();
     throw error;
   }
+}
+
+/**
+ * Commit a locked item write only while the lease still owns its lock
+ * generation and the stored item still matches the revision the mutation read.
+ * Either mismatch means a newer writer committed (after a TTL takeover, a
+ * forced takeover or an unlocked edit), so the stale writer refuses and writes
+ * nothing instead of silently overwriting that newer value.
+ */
+async function commitLockedItemWrite<T>(
+  lease: LockLease,
+  located: LocatedItem,
+  originalRaw: string,
+  commit: () => Promise<T>,
+): Promise<T> {
+  return lease.fence(async () => {
+    let currentRaw: string | null;
+    try {
+      currentRaw = await fs.readFile(located.itemPath, "utf8");
+    } catch (error: unknown) {
+      if (!isFileMissingError(error)) throw error;
+      currentRaw = null;
+    }
+    if (currentRaw !== originalRaw) {
+      throw new PmCliError(
+        `Item ${located.id} changed after this mutation read it; refusing to overwrite the newer revision. Nothing was written.`,
+        EXIT_CODE.CONFLICT,
+        {
+          code: "stale_revision",
+          item_id: located.id,
+          reason: currentRaw === null ? "item_removed" : "item_revision_changed",
+          required:
+            "Re-read the item and apply the mutation again; the newer stored revision was kept.",
+        },
+      );
+    }
+    return commit();
+  });
 }
 
 function resolveItemStoreWriteOverride(
@@ -674,6 +715,7 @@ async function mutateItemWithDeferredHistoryContext(
     document,
     warnings: parseWarnings,
     releaseLock,
+    lease,
   } = prepared;
 
   try {
@@ -765,57 +807,65 @@ async function mutateItemWithDeferredHistoryContext(
         serializedAfter,
       );
 
-    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
-      params.pmRoot,
-      params.author,
-    );
-    let derivedIndexWarnings: string[] = [];
-    try {
-      if (!skipItemWrite) {
-        await writeFileAtomic(
-          effectiveTargetItemPath,
-          effectiveSerializedAfter,
+    const derivedIndexWarnings = await commitLockedItemWrite(
+      lease,
+      located,
+      originalRaw,
+      async () => {
+        const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+          params.pmRoot,
+          params.author,
         );
-      }
-      if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
-        await fs.rm(located.itemPath);
-      }
-      const entry = createHistoryEntry({
-        nowIso: afterDocument.metadata.updated_at,
-        author: params.author,
-        op: params.op,
-        before: beforeDocument,
-        after: afterDocument,
-        message: params.message,
-        context: workflowPolicy.decisions.length === 0 ? historyContext : {
-          ...historyContext, workflow_policies: workflowPolicy.decisions,
-        },
-      });
-      try {
-        await appendHistoryEntry(historyPath, entry);
-      } catch (error: unknown) {
-        await rollbackMutatedItemWrite({
-          skipItemWrite,
-          effectiveTargetItemPath,
-          originalItemPath: located.itemPath,
-          originalRaw,
-        });
-        throw error;
-      }
-      if (!skipItemWrite) {
-        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
-          pmRoot: params.pmRoot,
-          preferredFormat: params.settings.item_format,
-          typeToFolder,
-          schema: params.settings.schema,
-          itemPath: effectiveTargetItemPath,
-          previousItemPath: located.itemPath,
-          document: afterDocument,
-        });
-      }
-    } finally {
-      await releaseDerivedIndexLock();
-    }
+        let derivedIndexWarnings: string[] = [];
+        try {
+          if (!skipItemWrite) {
+            await writeFileAtomic(
+              effectiveTargetItemPath,
+              effectiveSerializedAfter,
+            );
+          }
+          if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
+            await fs.rm(located.itemPath);
+          }
+          const entry = createHistoryEntry({
+            nowIso: afterDocument.metadata.updated_at,
+            author: params.author,
+            op: params.op,
+            before: beforeDocument,
+            after: afterDocument,
+            message: params.message,
+            context: workflowPolicy.decisions.length === 0 ? historyContext : {
+              ...historyContext, workflow_policies: workflowPolicy.decisions,
+            },
+          });
+          try {
+            await appendHistoryEntry(historyPath, entry);
+          } catch (error: unknown) {
+            await rollbackMutatedItemWrite({
+              skipItemWrite,
+              effectiveTargetItemPath,
+              originalItemPath: located.itemPath,
+              originalRaw,
+            });
+            throw error;
+          }
+          if (!skipItemWrite) {
+            derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+              pmRoot: params.pmRoot,
+              preferredFormat: params.settings.item_format,
+              typeToFolder,
+              schema: params.settings.schema,
+              itemPath: effectiveTargetItemPath,
+              previousItemPath: located.itemPath,
+              document: afterDocument,
+            });
+          }
+        } finally {
+          await releaseDerivedIndexLock();
+        }
+        return derivedIndexWarnings;
+      },
+    );
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,
@@ -988,6 +1038,7 @@ export async function deleteItem(params: {
     document,
     warnings: parseWarnings,
     releaseLock,
+    lease,
   } = prepared;
 
   try {
@@ -1078,36 +1129,44 @@ export async function deleteItem(params: {
       };
     }
 
-    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
-      params.pmRoot,
-      params.author,
-    );
-    let derivedIndexWarnings: string[] = [];
-    try {
-      if (!skipDelete) {
-        await fs.rm(effectiveItemPath);
-      }
-      try {
-        await appendHistoryEntry(historyPath, historyEntry);
-      } catch (error: unknown) {
-        if (!skipDelete) {
-          await writeFileAtomic(effectiveItemPath, originalRaw);
+    const derivedIndexWarnings = await commitLockedItemWrite(
+      lease,
+      located,
+      originalRaw,
+      async () => {
+        const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+          params.pmRoot,
+          params.author,
+        );
+        let derivedIndexWarnings: string[] = [];
+        try {
+          if (!skipDelete) {
+            await fs.rm(effectiveItemPath);
+          }
+          try {
+            await appendHistoryEntry(historyPath, historyEntry);
+          } catch (error: unknown) {
+            if (!skipDelete) {
+              await writeFileAtomic(effectiveItemPath, originalRaw);
+            }
+            throw error;
+          }
+          if (!skipDelete) {
+            derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+              pmRoot: params.pmRoot,
+              preferredFormat: params.settings.item_format,
+              typeToFolder: prepared.typeToFolder,
+              schema: params.settings.schema,
+              itemPath: effectiveItemPath,
+              document: null,
+            });
+          }
+        } finally {
+          await releaseDerivedIndexLock();
         }
-        throw error;
-      }
-      if (!skipDelete) {
-        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
-          pmRoot: params.pmRoot,
-          preferredFormat: params.settings.item_format,
-          typeToFolder: prepared.typeToFolder,
-          schema: params.settings.schema,
-          itemPath: effectiveItemPath,
-          document: null,
-        });
-      }
-    } finally {
-      await releaseDerivedIndexLock();
-    }
+        return derivedIndexWarnings;
+      },
+    );
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
