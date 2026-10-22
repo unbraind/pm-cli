@@ -116,8 +116,9 @@ recovery audit, not proof that a later mutation committed. Keep these local
 runtime receipts out of version control.
 
 For item-store mutations (update, close, claim, comments, notes and the other
-item-store writes), restore and parented creates the wait budget measures
-stalls, not queue length: while other writers keep acquiring and releasing the
+item-store writes), restore and the hierarchy-integrity lock (parented creates,
+parent changes and integrity-sensitive dependency additions) the wait budget
+measures stalls, not queue length: while other writers keep acquiring and releasing the
 lock, a waiter keeps waiting (up to 120 s total), so many concurrent agents on
 one tracker queue instead of failing. Other lock users, including package import
 commits and internal short-lived locks, keep a fixed total budget. A lock held by

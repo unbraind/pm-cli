@@ -645,6 +645,36 @@ function resolveItemStoreWriteOverride(
   };
 }
 
+/** Run the item_store_delete override and resolve its target path and skip flag. */
+async function resolveItemStoreDeleteOverride(payload: {
+  op: "delete";
+  pm_root: string;
+  item_id: string;
+  item_path: string;
+  history_path: string;
+  before: ItemDocument;
+}): Promise<{
+  effectiveItemPath: string;
+  skipDelete: boolean;
+  warnings: string[];
+}> {
+  const override = await runActiveServiceOverride("item_store_delete", payload);
+  const record =
+    override.handled &&
+    typeof override.result === "object" &&
+    override.result !== null
+      ? (override.result as { item_path?: unknown; skip_delete?: unknown })
+      : {};
+  return {
+    effectiveItemPath:
+      typeof record.item_path === "string" && record.item_path.trim().length > 0
+        ? record.item_path
+        : payload.item_path,
+    skipDelete: record.skip_delete === true,
+    warnings: override.warnings,
+  };
+}
+
 async function rollbackMutatedItemWrite(params: {
   skipItemWrite: boolean;
   effectiveTargetItemPath: string;
@@ -786,33 +816,37 @@ async function mutateItemWithDeferredHistoryContext(
       typeToFolder,
     );
     const historyPath = getHistoryPath(params.pmRoot, located.id);
-    const serviceWriteOverride = await runActiveServiceOverride(
-      "item_store_write",
-      {
-        op: params.op,
-        pm_root: params.pmRoot,
-        item_id: located.id,
-        source_item_path: located.itemPath,
-        target_item_path: targetItemPath,
-        history_path: historyPath,
-        item_format: targetItemFormat,
-        before: beforeDocument,
-        after: afterDocument,
-        contents: serializedAfter,
-      },
-    );
-    const { effectiveTargetItemPath, effectiveSerializedAfter, skipItemWrite } =
-      resolveItemStoreWriteOverride(
-        serviceWriteOverride,
-        targetItemPath,
-        serializedAfter,
-      );
-
-    const derivedIndexWarnings = await commitLockedItemWrite(
+    // Storage overrides are extension code that may persist the payload, so
+    // they run inside the fence: a refused commit never reaches them.
+    const committed = await commitLockedItemWrite(
       lease,
       located,
       originalRaw,
       async () => {
+        const serviceWriteOverride = await runActiveServiceOverride(
+          "item_store_write",
+          {
+            op: params.op,
+            pm_root: params.pmRoot,
+            item_id: located.id,
+            source_item_path: located.itemPath,
+            target_item_path: targetItemPath,
+            history_path: historyPath,
+            item_format: targetItemFormat,
+            before: beforeDocument,
+            after: afterDocument,
+            contents: serializedAfter,
+          },
+        );
+        const {
+          effectiveTargetItemPath,
+          effectiveSerializedAfter,
+          skipItemWrite,
+        } = resolveItemStoreWriteOverride(
+          serviceWriteOverride,
+          targetItemPath,
+          serializedAfter,
+        );
         const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
           params.pmRoot,
           params.author,
@@ -864,9 +898,14 @@ async function mutateItemWithDeferredHistoryContext(
         } finally {
           await releaseDerivedIndexLock();
         }
-        return derivedIndexWarnings;
+        return {
+          derivedIndexWarnings,
+          effectiveTargetItemPath,
+          overrideWarnings: serviceWriteOverride.warnings,
+        };
       },
     );
+    const { derivedIndexWarnings, effectiveTargetItemPath } = committed;
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,
@@ -916,7 +955,7 @@ async function mutateItemWithDeferredHistoryContext(
         ...(mutation.warnings ?? []),
         ...workflowPolicy.warnings,
         ...historyPolicy.warnings,
-        ...serviceWriteOverride.warnings,
+        ...committed.overrideWarnings,
         ...derivedIndexWarnings,
         ...hookWarnings,
       ],
@@ -1083,58 +1122,39 @@ export async function deleteItem(params: {
       context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
     });
     const historyPath = getHistoryPath(params.pmRoot, located.id);
-    const serviceDeleteOverride = await runActiveServiceOverride(
-      "item_store_delete",
-      {
+    const runDeleteOverride = () =>
+      resolveItemStoreDeleteOverride({
         op: "delete",
         pm_root: params.pmRoot,
         item_id: located.id,
         item_path: located.itemPath,
         history_path: historyPath,
         before: beforeDocument,
-      },
-    );
-    let effectiveItemPath = located.itemPath;
-    let skipDelete = false;
-    if (
-      serviceDeleteOverride.handled &&
-      typeof serviceDeleteOverride.result === "object" &&
-      serviceDeleteOverride.result !== null
-    ) {
-      const overrideRecord = serviceDeleteOverride.result as {
-        item_path?: unknown;
-        skip_delete?: unknown;
-      };
-      if (
-        typeof overrideRecord.item_path === "string" &&
-        overrideRecord.item_path.trim().length > 0
-      ) {
-        effectiveItemPath = overrideRecord.item_path;
-      }
-      if (overrideRecord.skip_delete === true) {
-        skipDelete = true;
-      }
-    }
+      });
 
     if (params.dryRun === true) {
+      const preview = await runDeleteOverride();
       return {
         item: beforeDocument.metadata,
         changedFields: ["deleted"],
-        targetPath: effectiveItemPath,
+        targetPath: preview.effectiveItemPath,
         warnings: [
           ...parseWarnings,
           ...workflowPolicy.warnings,
           ...historyPolicy.warnings,
-          ...serviceDeleteOverride.warnings,
+          ...preview.warnings,
         ],
       };
     }
 
-    const derivedIndexWarnings = await commitLockedItemWrite(
+    // The delete override may act on storage, so it runs inside the fence.
+    const committed = await commitLockedItemWrite(
       lease,
       located,
       originalRaw,
       async () => {
+        const { effectiveItemPath, skipDelete, warnings } =
+          await runDeleteOverride();
         const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
           params.pmRoot,
           params.author,
@@ -1165,9 +1185,14 @@ export async function deleteItem(params: {
         } finally {
           await releaseDerivedIndexLock();
         }
-        return derivedIndexWarnings;
+        return {
+          derivedIndexWarnings,
+          effectiveItemPath,
+          overrideWarnings: warnings,
+        };
       },
     );
+    const { derivedIndexWarnings, effectiveItemPath } = committed;
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
@@ -1211,7 +1236,7 @@ export async function deleteItem(params: {
         ...parseWarnings,
         ...workflowPolicy.warnings,
         ...historyPolicy.warnings,
-        ...serviceDeleteOverride.warnings,
+        ...committed.overrideWarnings,
         ...derivedIndexWarnings,
         ...hookWarnings,
       ],

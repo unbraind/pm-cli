@@ -14,7 +14,7 @@ import {
 } from "../../../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { getHistoryPath, getLockPath } from "../../../../src/core/store/paths.js";
-import { locateItem, mutateItem } from "../../../../src/core/store/item-store.js";
+import { deleteItem, locateItem, mutateItem } from "../../../../src/core/store/item-store.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { distCliPath } from "../../../helpers/cliRunner.js";
 import { withTempDir } from "../../../helpers/temp.js";
@@ -247,6 +247,58 @@ describe("item commit revision fence", () => {
         }),
       ).rejects.toMatchObject({ code: "stale_revision", context: { reason: "item_removed" } });
       await expect(fs.stat(located.itemPath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("never reaches storage overrides when the commit fence refuses", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Baseline");
+      const settings = await readSettings(context.pmPath);
+      const located = await locateItem(context.pmPath, id, "pm-", "toon");
+      if (!located) throw new Error("missing fixture");
+      const overrideCalls: string[] = [];
+      setActiveExtensionServices({
+        overrides: ["item_store_write", "item_store_delete"].map((service) => ({
+          layer: "project" as const,
+          name: `${service}-observer`,
+          service,
+          run: () => {
+            overrideCalls.push(service);
+            return { skip_write: true, skip_delete: true };
+          },
+        })),
+      });
+      let edits = 0;
+      const editBeforeCommit = async () => {
+        const raw = await fs.readFile(located.itemPath, "utf8");
+        edits += 1;
+        await fs.writeFile(located.itemPath, raw.replace(/Baseline|Unlocked edit \d+/u, `Unlocked edit ${edits}`), "utf8");
+      };
+      await expect(
+        mutateItem({
+          pmRoot: context.pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "writer",
+          async mutate(document) {
+            await editBeforeCommit();
+            document.metadata.title = "Locked overwrite";
+            return { changedFields: ["title"] };
+          },
+        }),
+      ).rejects.toMatchObject({ code: "stale_revision" });
+      const lockModule = await import("../../../../src/core/lock/lock.js");
+      const realAcquire = lockModule.acquireLockLease;
+      vi.spyOn(lockModule, "acquireLockLease").mockImplementation(async (...args) => {
+        const lease = await realAcquire(...args);
+        return { ...lease, fence: async (commit) => { await editBeforeCommit(); return lease.fence(commit); } };
+      });
+      await expect(
+        deleteItem({ pmRoot: context.pmPath, settings, id, author: "writer" }),
+      ).rejects.toMatchObject({ code: "stale_revision" });
+      expect(edits).toBe(2);
+      expect(overrideCalls).toEqual([]);
     });
   });
 
