@@ -36558,6 +36558,7 @@
     "duplicate_target_self",
     "empty_corpus",
     "empty_surface",
+    "ENOTDIR",
     "error_code_mismatch",
     "event_cursor_query_mismatch",
     "event_index_unavailable",

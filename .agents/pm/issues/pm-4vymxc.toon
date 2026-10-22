@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: bug,review,sdk
 created_at: "2026-10-22T12:58:46.665Z"
-updated_at: "2026-10-22T13:43:22.918Z"
+updated_at: "2026-10-22T14:16:16.842Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
 author: "harness:codex"
@@ -21,7 +21,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
   pm-gxq0dt,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
   pm-p8s5k7e6lhda,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
-comments[5]:
+comments[7]:
   - created_at: "2026-10-22T12:58:46.665Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status intake plus current open/in-progress lists and rollback ancestry provenance review keyword search find no exact open owner. The three original source items have complete live closure evidence and remain closed. This is a distinct review_caught_late leaf for newly validated refusal boundaries rather than a duplicate implementation item or forced claim on terminal work. CodeRabbit inline findings4348548828 and4348548842 are assessed against current source; exact thread IDs and tests are recorded below."
@@ -38,6 +38,14 @@ comments[5]:
   - created_at: "2026-10-22T13:43:22.918Z"
     author: "harness:codex"
     text: "Existing resolved ancestors now require stat.isDirectory before a missing suffix is reattached. A structural ENOTDIR refusal is preserved on platforms that otherwise report a file descendant as missing. Direct-file negative controls fail2/33 assertions on217eece7c with31 controls passing; fixed linked SDK acceptance passes42/42, including both direct-file and nested-file cases and unchanged ignore bytes. Four TypeScript projects, focused ESLint and all generated contract checks pass. The real Windows failures remain the native negative receipt; a new complete native run must prove this correction."
+  - created_at: "2026-10-22T14:05:22.525Z"
+    author: "harness:codex"
+    text: "Native68499c070 confirms the new real directory-type guard passes on Windows. Its hosted checks expose a generated receipt omission: sdk/public-surface.json must include the newly emitted native ENOTDIR value in its error vocabulary. I missed regenerating that after the guard addition. The configured SDK generator now records exactly one additive emitted-error change; no compatibility acknowledgement, threshold or vocabulary filter is weakened. Add the SDK surface script suite to linked acceptance before the next push."
+  - created_at: "2026-10-22T14:16:15.991Z"
+    author: "harness:codex"
+    text: "The complete full CodeRabbit review at68499c070 finishes with no actionable comments after all five earlier findings were resolved. Its two generated-source exclusions remain disclosed; generated contracts are checked separately. Current local linked acceptance passes42 SDK cases plus17 SDK surface script cases, and sdk:surface:check reports0 classified changes after the configured generator adds ENOTDIR. The remaining change is the generated vocabulary receipt and CLI-authored evidence, with runtime source unchanged from the reviewed directory guard."
+learnings[1]{created_at,author,text}:
+  "2026-10-22T14:16:16.842Z","harness:codex",Filesystem absence does not prove that the nearest existing ancestor is a directory on every platform. Check directory type before reattaching missing suffixes. A newly emitted native errno also changes the SDK emitted-error vocabulary even when no declaration changes; run SDK surface verification as well as command contracts before pushing.
 files[7]{path,scope}:
   sdk/public-surface.json,project
   src/core/shared/errors.ts,project
@@ -46,9 +54,10 @@ files[7]{path,scope}:
   tests/types/package-install-receipts.test-d.ts,project
   tests/unit/core/workspace/gitignore.spec.ts,project
   tests/unit/extensions/extension-verified-replacement.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,project,300,"harness:codex","2026-10-22T13:01:07.712Z",local_mutation,fix/package-and-workspace-lifecycle
-test_runs[3]:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,300,"harness:codex","2026-10-22T14:05:23.146Z",local_mutation,fix/package-and-workspace-lifecycle
+test_runs[4]:
   - run_id: test-local-mvjjxyp8-yyiscm
     kind: test
     status: passed
@@ -82,6 +91,18 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvjm63gz-ki9otg
+    kind: test
+    status: passed
+    started_at: "2026-10-22T14:05:24.653Z"
+    finished_at: "2026-10-22T14:05:55.859Z"
+    recorded_at: "2026-10-22T14:05:55.859Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/EXTENSION_LIFECYCLE.md,project
 escape_class: review_caught_late
