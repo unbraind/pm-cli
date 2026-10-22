@@ -1865,6 +1865,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
       "sdk/governance/assurance-mutation-error.ts",
       "sdk/lifecycle/create.ts",
       "sdk/lifecycle/task-composition.ts",
+      "sdk/runtime-input.ts",
       "sdk/runtime/mutation-admission.ts",
       "sdk/runtime/schema-preview.ts",
       "sdk/test/execution.ts",

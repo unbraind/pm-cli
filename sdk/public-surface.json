@@ -2607,6 +2607,42 @@
       ],
       "package_version": "2026.10.21",
       "reason": "GH-1535: TestHealthSummary now declares matching_active_items scope and total_items; SDK consumers constructing summaries must provide both denominator fields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:defineCommand",
+        "signature ./sdk:defineExtensionManifest",
+        "signature ./sdk:defineFlag",
+        "signature ./sdk:defineItemField",
+        "signature ./sdk:defineItemType",
+        "signature ./sdk:defineMigration",
+        "signature ./sdk:definePreflightOverride",
+        "signature ./sdk:defineProjectProfile",
+        "signature ./sdk:defineRendererOverride",
+        "signature ./sdk:defineSearchProvider",
+        "signature ./sdk:defineVectorStoreAdapter",
+        "signature ./sdk/authoring:defineCommand",
+        "signature ./sdk/authoring:defineExtensionManifest",
+        "signature ./sdk/authoring:defineFlag",
+        "signature ./sdk/authoring:defineItemField",
+        "signature ./sdk/authoring:defineItemType",
+        "signature ./sdk/authoring:defineMigration",
+        "signature ./sdk/authoring:definePreflightOverride",
+        "signature ./sdk/authoring:defineProjectProfile",
+        "signature ./sdk/authoring:defineRendererOverride",
+        "signature ./sdk/authoring:defineSearchProvider",
+        "signature ./sdk/authoring:defineVectorStoreAdapter"
+      ],
+      "package_version": "2026.10.21",
+      "reason": "pm-gh1539 enforces documented exact authoring keys and preserves literals with const generics; runtime identity and valid registration contracts remain compatible."
+    },
+    {
+      "changes": [
+        "signature ./sdk:TOOL_CREATE_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk/contracts:TOOL_CREATE_OPTION_CONTRACT_SOURCE"
+      ],
+      "package_version": "2026.10.21",
+      "reason": "pm-ap7ilf adds the already-advertised closeReason and completedAt to the canonical create option tuple; consumers exhaustively enumerating its keys must accept both terminal-import fields."
     }
   ],
   "entrypoints": {
@@ -6559,7 +6595,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineCommand",
-          "signature": "<TDefinition extends CommandDefinition>(definition: TDefinition) => TDefinition | calls: <TDefinition extends CommandDefinition>(definition: TDefinition) => TDefinition"
+          "signature": "<const TDefinition extends CommandDefinition>(definition: ExactDefinition<TDefinition, CommandDefinition>) => TDefinition | calls: <const TDefinition extends CommandDefinition>(definition: ExactDefinition<TDefinition, CommandDefinition>) => TDefinition"
         },
         {
           "classification": "supported",
@@ -6601,13 +6637,13 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineExtensionManifest",
-          "signature": "<TManifest extends ExtensionManifest>(manifest: TManifest) => TManifest | calls: <TManifest extends ExtensionManifest>(manifest: TManifest) => TManifest"
+          "signature": "<const TManifest extends ExtensionManifest>(manifest: ExactDefinition<TManifest, ExtensionManifest>) => TManifest | calls: <const TManifest extends ExtensionManifest>(manifest: ExactDefinition<TManifest, ExtensionManifest>) => TManifest"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineFlag",
-          "signature": "<TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag | calls: <TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag"
+          "signature": "<const TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag | calls: <const TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag"
         },
         {
           "classification": "supported",
@@ -6619,19 +6655,19 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineItemField",
-          "signature": "<TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField | calls: <TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField"
+          "signature": "<const TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField | calls: <const TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineItemType",
-          "signature": "<TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType | calls: <TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType"
+          "signature": "<const TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType | calls: <const TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineMigration",
-          "signature": "<TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration | calls: <TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration"
+          "signature": "<const TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration | calls: <const TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration"
         },
         {
           "classification": "advanced_export",
@@ -6685,25 +6721,25 @@
           "classification": "supported",
           "kind": "function",
           "name": "definePreflightOverride",
-          "signature": "{ (override: PreflightOverride): PreflightOverride; <TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>): TDefinition; } | calls: (override: PreflightOverride) => PreflightOverride ; <TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>) => TDefinition"
+          "signature": "{ (override: PreflightOverride): PreflightOverride; <const TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>): TDefinition; } | calls: (override: PreflightOverride) => PreflightOverride ; <const TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>) => TDefinition"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineProjectProfile",
-          "signature": "<TProfile extends ProjectProfileDefinition>(profile: TProfile) => TProfile | calls: <TProfile extends ProjectProfileDefinition>(profile: TProfile) => TProfile"
+          "signature": "<const TProfile extends ProjectProfileDefinition>(profile: ExactDefinition<TProfile, ProjectProfileDefinition>) => TProfile | calls: <const TProfile extends ProjectProfileDefinition>(profile: ExactDefinition<TProfile, ProjectProfileDefinition>) => TProfile"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineRendererOverride",
-          "signature": "{ (renderer: RendererOverride): RendererOverride; <TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>): TDefinition; } | calls: (renderer: RendererOverride) => RendererOverride ; <TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>) => TDefinition"
+          "signature": "{ (renderer: RendererOverride): RendererOverride; <const TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>): TDefinition; } | calls: (renderer: RendererOverride) => RendererOverride ; <const TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>) => TDefinition"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineSearchProvider",
-          "signature": "<TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider | calls: <TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider"
+          "signature": "<const TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider | calls: <const TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider"
         },
         {
           "classification": "supported",
@@ -6715,7 +6751,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineVectorStoreAdapter",
-          "signature": "<TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter | calls: <TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter"
+          "signature": "<const TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter | calls: <const TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter"
         },
         {
           "classification": "advanced_export",
@@ -15732,6 +15768,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "readRuntimeFieldOptionValue",
+          "signature": "(options: Record<string, unknown>, definition: RuntimeFieldDefinitionResolved) => unknown | calls: (options: Record<string, unknown>, definition: RuntimeFieldDefinitionResolved) => unknown"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "readSettings",
           "signature": "(pmRoot: string) => Promise<PmSettings> | calls: (pmRoot: string) => Promise<PmSettings>"
         },
@@ -20545,7 +20587,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_CREATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
+          "signature": "readonly [{ readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
         },
         {
           "classification": "contract_data",
@@ -21877,7 +21919,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineCommand",
-          "signature": "<TDefinition extends CommandDefinition>(definition: TDefinition) => TDefinition | calls: <TDefinition extends CommandDefinition>(definition: TDefinition) => TDefinition"
+          "signature": "<const TDefinition extends CommandDefinition>(definition: ExactDefinition<TDefinition, CommandDefinition>) => TDefinition | calls: <const TDefinition extends CommandDefinition>(definition: ExactDefinition<TDefinition, CommandDefinition>) => TDefinition"
         },
         {
           "classification": "supported",
@@ -21907,13 +21949,13 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineExtensionManifest",
-          "signature": "<TManifest extends ExtensionManifest>(manifest: TManifest) => TManifest | calls: <TManifest extends ExtensionManifest>(manifest: TManifest) => TManifest"
+          "signature": "<const TManifest extends ExtensionManifest>(manifest: ExactDefinition<TManifest, ExtensionManifest>) => TManifest | calls: <const TManifest extends ExtensionManifest>(manifest: ExactDefinition<TManifest, ExtensionManifest>) => TManifest"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineFlag",
-          "signature": "<TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag | calls: <TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag"
+          "signature": "<const TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag | calls: <const TFlag extends FlagAuthoringDefinition>(flag: ExactDefinition<TFlag, FlagAuthoringDefinition>) => TFlag"
         },
         {
           "classification": "supported",
@@ -21925,19 +21967,19 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineItemField",
-          "signature": "<TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField | calls: <TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField"
+          "signature": "<const TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField | calls: <const TField extends ItemFieldAuthoringDefinition>(field: ExactDefinition<TField, ItemFieldAuthoringDefinition>) => TField"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineItemType",
-          "signature": "<TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType | calls: <TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType"
+          "signature": "<const TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType | calls: <const TType extends ItemTypeAuthoringDefinition>(type: ExactDefinition<TType, ItemTypeAuthoringDefinition>) => TType"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineMigration",
-          "signature": "<TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration | calls: <TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration"
+          "signature": "<const TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration | calls: <const TMigration extends MigrationAuthoringDefinition>(migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>) => TMigration"
         },
         {
           "classification": "supported",
@@ -21967,25 +22009,25 @@
           "classification": "supported",
           "kind": "function",
           "name": "definePreflightOverride",
-          "signature": "{ (override: PreflightOverride): PreflightOverride; <TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>): TDefinition; } | calls: (override: PreflightOverride) => PreflightOverride ; <TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>) => TDefinition"
+          "signature": "{ (override: PreflightOverride): PreflightOverride; <const TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>): TDefinition; } | calls: (override: PreflightOverride) => PreflightOverride ; <const TDefinition extends ScopedPreflightOverrideDefinition>(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>) => TDefinition"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineProjectProfile",
-          "signature": "<TProfile extends ProjectProfileDefinition>(profile: TProfile) => TProfile | calls: <TProfile extends ProjectProfileDefinition>(profile: TProfile) => TProfile"
+          "signature": "<const TProfile extends ProjectProfileDefinition>(profile: ExactDefinition<TProfile, ProjectProfileDefinition>) => TProfile | calls: <const TProfile extends ProjectProfileDefinition>(profile: ExactDefinition<TProfile, ProjectProfileDefinition>) => TProfile"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineRendererOverride",
-          "signature": "{ (renderer: RendererOverride): RendererOverride; <TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>): TDefinition; } | calls: (renderer: RendererOverride) => RendererOverride ; <TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>) => TDefinition"
+          "signature": "{ (renderer: RendererOverride): RendererOverride; <const TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>): TDefinition; } | calls: (renderer: RendererOverride) => RendererOverride ; <const TDefinition extends ScopedRendererOverrideDefinition>(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>) => TDefinition"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "defineSearchProvider",
-          "signature": "<TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider | calls: <TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider"
+          "signature": "<const TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider | calls: <const TProvider extends SearchProviderAuthoringDefinition>(provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>) => TProvider"
         },
         {
           "classification": "supported",
@@ -21997,7 +22039,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "defineVectorStoreAdapter",
-          "signature": "<TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter | calls: <TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter"
+          "signature": "<const TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter | calls: <const TAdapter extends VectorStoreAdapterAuthoringDefinition>(adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>) => TAdapter"
         },
         {
           "classification": "supported",
@@ -25441,7 +25483,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_CREATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
+          "signature": "readonly [{ readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
         },
         {
           "classification": "contract_data",

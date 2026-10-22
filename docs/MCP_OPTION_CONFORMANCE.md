@@ -1,11 +1,32 @@
 # MCP Option Conformance
 
-Tracked by [pm-v0s2rm](../.agents/pm/chores/pm-v0s2rm.toon).
+Tracked by [pm-v0s2rm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-v0s2rm.toon), [pm-gh1538](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1538.toon), and [pm-ap7ilf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ap7ilf.toon).
+These repository-only tracking records are excluded from npm.
 
 An integration test can pass while an undeclared option is ignored. That leaves
 the test asserting a behavior it never exercised. The repository therefore
 treats emitted MCP unknown-option diagnostics as test failures, while the
 production server retains its advisory warning behavior for clients.
+
+`pm_create` and `pm_update` accept the canonical mutation fields advertised by
+their input schemas either at the top level or inside `options`. `pm_run` with
+the corresponding action uses the same SDK normalization. Explicit nested
+options take precedence, including CLI
+aliases for the same field. Repeatable inputs, numeric values, and linked-resource
+aliases use the shared mutation contracts before persistence. Native SDK `run`
+callers continue to put update fields inside `options`.
+
+Malformed option containers, values discarded from known scalar fields, and malformed repeatable
+entries refuse before execution with `invalid_argument_value` and
+`changed: false`. `force` must be a boolean. These checks preserve project-defined
+custom fields and template-based type resolution while preventing a bad field
+from disappearing as a sibling field is written.
+
+For example, `{ "id": "pm-one", "options": {}, "priority": 4 }` changes priority;
+with `"options": { "priority": 2 }`, priority becomes `2`. Create also honors its
+advertised explicit `id`, `deadline`, and other metadata. Regressions check the
+discovered schema, persisted values and verified history, and compare item and
+history bytes after invalid mutations to prove atomic refusal.
 
 Every run using [vitest.config.ts](../vitest.config.ts) installs
 [McpContractReporter](../scripts/mcp-contract-reporter.mts). The reporter records

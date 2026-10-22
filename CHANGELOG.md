@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- MCP create drops advertised metadata outside its small top-level allowlist ([pm-ap7ilf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ap7ilf.toon))
+- GH-1539: enforce command builder keys and preserve literal types ([pm-gh1539](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1539.toon))
+- GH-1538: refuse or honor supplied MCP update fields before reporting success ([pm-gh1538](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1538.toon))
 - GH-1535: report context test health over the matching population ([pm-gh1535](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1535.toon))
 - GH-1534: retain root relationship evidence before optional context detail ([pm-gh1534](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1534.toon))
 - Render literal and root-layout tracker paths safely in SDK cache ignore rules ([pm-47wuv8awpqvj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-47wuv8awpqvj.toon))

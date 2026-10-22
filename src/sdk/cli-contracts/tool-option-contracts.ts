@@ -273,6 +273,8 @@ export const TOOL_CREATE_OPTION_CONTRACT_SOURCE = [
   { param: "createMode", flag: "--create-mode" },
   { param: "schedulePreset", flag: "--schedule-preset" },
   { param: "status", flag: "--status" },
+  { param: "closeReason", flag: "--close-reason" },
+  { param: "completedAt", flag: "--completed-at" },
   { param: "priority", flag: "--priority" },
   { param: "tags", flag: "--tags", allowEmpty: true },
   { param: "addTags", flag: "--add-tags", repeatable: true },

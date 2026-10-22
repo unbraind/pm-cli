@@ -24,8 +24,8 @@
  * - Definitions can be colocated, exported, reused, and unit-tested apart from
  *   the `activate` call instead of being trapped as inline literals.
  *
- * Object-definition builders use a generic constraint (`<T extends Def>`) so the
- * narrow literal type survives the round-trip, mirroring `defineExtension`.
+ * Object-definition builders use const type parameters and exact-key constraints
+ * so literals survive the round-trip and misspelled metadata fails at author time.
  * Function-definition builders are intentionally non-generic: a generic
  * constrained to a whole function type suppresses contextual typing of a bare
  * arrow's parameter (it would fall back to implicit `any`), whereas the
@@ -75,7 +75,9 @@ type FlagAuthoringDefinition = Pick<
   | "value_type"
   | "type"
   | "list"
+  | "repeatable"
   | "default"
+  | "value_validation"
 >;
 type ItemFieldAuthoringDefinition = Pick<
   SchemaFieldDefinition,
@@ -124,8 +126,8 @@ type VectorStoreAdapterAuthoringDefinition = Pick<
  * {@link ./compose.js#deriveExtensionCapabilities | `deriveExtensionCapabilities`}
  * to keep `capabilities` matched to the surfaces the extension actually registers.
  */
-export function defineExtensionManifest<TManifest extends ExtensionManifest>(
-  manifest: TManifest,
+export function defineExtensionManifest<const TManifest extends ExtensionManifest>(
+  manifest: ExactDefinition<TManifest, ExtensionManifest>,
 ): TManifest {
   return manifest;
 }
@@ -142,8 +144,8 @@ export function defineExtensionManifest<TManifest extends ExtensionManifest>(
  * typed at the definition site, mirroring {@link defineItemType}. It is the
  * authoring anchor a first-party or third-party profile package builds on.
  */
-export function defineProjectProfile<TProfile extends ProjectProfileDefinition>(
-  profile: TProfile,
+export function defineProjectProfile<const TProfile extends ProjectProfileDefinition>(
+  profile: ExactDefinition<TProfile, ProjectProfileDefinition>,
 ): TProfile {
   return profile;
 }
@@ -156,8 +158,8 @@ export function defineProjectProfile<TProfile extends ProjectProfileDefinition>(
  * types. Pass the result straight to `registerCommand`, or export it so the
  * command can be invoked in tests via `runRegisteredCommandForTest`.
  */
-export function defineCommand<TDefinition extends CommandDefinition>(
-  definition: TDefinition,
+export function defineCommand<const TDefinition extends CommandDefinition>(
+  definition: ExactDefinition<TDefinition, CommandDefinition>,
 ): TDefinition {
   return definition;
 }
@@ -170,7 +172,7 @@ export function defineCommand<TDefinition extends CommandDefinition>(
  * per-flag contract checking — `value_type`, `list`, and `default` included —
  * instead of validating a loosely-typed literal array all at once.
  */
-export function defineFlag<TFlag extends FlagAuthoringDefinition>(
+export function defineFlag<const TFlag extends FlagAuthoringDefinition>(
   flag: ExactDefinition<TFlag, FlagAuthoringDefinition>,
 ): TFlag {
   return flag;
@@ -182,7 +184,7 @@ export function defineFlag<TFlag extends FlagAuthoringDefinition>(
  * Preserves the literal `name`/`folder`/`aliases` so a project archetype's
  * domain types stay strongly typed where the definition is declared and reused.
  */
-export function defineItemType<TType extends ItemTypeAuthoringDefinition>(
+export function defineItemType<const TType extends ItemTypeAuthoringDefinition>(
   type: ExactDefinition<TType, ItemTypeAuthoringDefinition>,
 ): TType {
   return type;
@@ -192,10 +194,9 @@ export function defineItemType<TType extends ItemTypeAuthoringDefinition>(
  * Type a custom item-metadata field definition for `api.registerItemFields([...])`.
  *
  * Checks `name`/`type`/`optional` against {@link SchemaFieldDefinition} while
- * keeping the field's extra metadata (the contract carries an index signature)
- * intact.
+ * preserving literal names and supported default/value metadata.
  */
-export function defineItemField<TField extends ItemFieldAuthoringDefinition>(
+export function defineItemField<const TField extends ItemFieldAuthoringDefinition>(
   field: ExactDefinition<TField, ItemFieldAuthoringDefinition>,
 ): TField {
   return field;
@@ -208,7 +209,7 @@ export function defineItemField<TField extends ItemFieldAuthoringDefinition>(
  * runner's context, so the same definition can be registered and later exercised
  * through `runRegisteredMigrationForTest`.
  */
-export function defineMigration<TMigration extends MigrationAuthoringDefinition>(
+export function defineMigration<const TMigration extends MigrationAuthoringDefinition>(
   migration: ExactDefinition<TMigration, MigrationAuthoringDefinition>,
 ): TMigration {
   return migration;
@@ -222,7 +223,7 @@ export function defineMigration<TMigration extends MigrationAuthoringDefinition>
  * reusable in `runRegisteredSearchProviderForTest`.
  */
 export function defineSearchProvider<
-  TProvider extends SearchProviderAuthoringDefinition,
+  const TProvider extends SearchProviderAuthoringDefinition,
 >(
   provider: ExactDefinition<TProvider, SearchProviderAuthoringDefinition>,
 ): TProvider {
@@ -237,7 +238,7 @@ export function defineSearchProvider<
  * definition it can drive through `runRegisteredVectorStoreAdapterForTest`.
  */
 export function defineVectorStoreAdapter<
-  TAdapter extends VectorStoreAdapterAuthoringDefinition,
+  const TAdapter extends VectorStoreAdapterAuthoringDefinition,
 >(
   adapter: ExactDefinition<TAdapter, VectorStoreAdapterAuthoringDefinition>,
 ): TAdapter {
@@ -279,7 +280,7 @@ export function definePreflightOverride(
 ): PreflightOverride;
 /** Type a scoped preflight definition while preserving literal command ownership. */
 export function definePreflightOverride<
-  TDefinition extends ScopedPreflightOverrideDefinition,
+  const TDefinition extends ScopedPreflightOverrideDefinition,
 >(override: ExactDefinition<TDefinition, ScopedPreflightOverrideDefinition>): TDefinition;
 /** Implement the preflight authoring identity for callbacks and scoped definitions. */
 export function definePreflightOverride(
@@ -327,7 +328,7 @@ export function defineRendererOverride(
  * ownership literals for declarative composition and static introspection.
  */
 export function defineRendererOverride<
-  TDefinition extends ScopedRendererOverrideDefinition,
+  const TDefinition extends ScopedRendererOverrideDefinition,
 >(renderer: ExactDefinition<TDefinition, ScopedRendererOverrideDefinition>): TDefinition;
 /** Implement the renderer authoring identity for callback and scoped definitions. */
 export function defineRendererOverride(

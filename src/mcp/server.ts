@@ -22,6 +22,8 @@ import {
   isMutationAction,
   pathExists,
   readSettings,
+  readRuntimeFieldOptionValue,
+  resolveRuntimeFieldRegistry,
   runWithHarnessDetectionSignals,
   runWithWorkspaceHarnessSignalDescriptors,
   type AgentClientInfo,
@@ -506,6 +508,7 @@ function detectUnexpectedOptionKeys(
   toolName: string,
   action: string | undefined,
   args: Record<string, unknown>,
+  schema?: Awaited<ReturnType<typeof readSettings>>["schema"],
 ): string[] {
   const options = args.options;
   if (
@@ -521,9 +524,11 @@ function detectUnexpectedOptionKeys(
     return [];
   }
   const declaredSet = new Set(declared);
+  const workspaceFields = schema && (action === "create" || action === "update")
+    ? resolveRuntimeFieldRegistry(schema).command_to_fields.get(action) ?? [] : [];
   const warnings: string[] = [];
   for (const key of Object.keys(options)) {
-    if (declaredSet.has(key)) {
+    if (declaredSet.has(key) || workspaceFields.some((field) => readRuntimeFieldOptionValue({ [key]: true }, field) === true)) {
       continue;
     }
     const suggestion = nearestDeclaredKey(key, declared);
@@ -714,9 +719,9 @@ async function handleToolCall(
         cwd,
         typeof args.path === "string" ? args.path : undefined,
       );
-      const workspaceIdentity = (await pathExists(getSettingsPath(pmRoot)))
-        ? (await readSettings(pmRoot)).agent_identity
-        : undefined;
+      const workspaceSettings = (await pathExists(getSettingsPath(pmRoot)))
+        ? await readSettings(pmRoot) : undefined;
+      const workspaceIdentity = workspaceSettings?.agent_identity;
       return runWithHarnessDetectionSignals(
         {
           env: { ...process.env, PM_PATH: pmRoot },
@@ -734,7 +739,7 @@ async function handleToolCall(
               const action = resolveInvokedAction(name, args);
               const warnings = [
                 ...detectUnexpectedTopLevelKeys(name, args, declaredToolKeys()),
-                ...detectUnexpectedOptionKeys(name, action, args),
+                ...detectUnexpectedOptionKeys(name, action, args, workspaceSettings?.schema),
                 ...(await collectMutationGuardWarnings(name, action, args)),
               ];
               for (const warning of warnings) {

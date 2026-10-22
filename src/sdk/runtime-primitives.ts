@@ -235,6 +235,7 @@ export {
 export {
   collectRuntimeCreateFieldValues,
   collectRuntimeUpdateFieldValues,
+  readRuntimeFieldOptionValue,
 } from "../core/schema/runtime-field-values.js";
 export {
   type RuntimeFieldCommand,

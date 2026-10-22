@@ -2,11 +2,13 @@ id: pm-gh1538
 title: "GH-1538: refuse or honor supplied MCP update fields before reporting success"
 description: "Reported against published2026.10.21: pm_update with priority/status beside options:{} returns changed_field_count:0 and warnings while nested options mutate correctly. Source report https://github.com/unbraind/pm-cli/issues/1538 provides a sandboxed stdio reproduction and costs. Existing closed warning-only work deliberately preserves success; this report requests a stronger mutation-outcome contract. Current code still contains warning-only unexpected-option handling. Fresh public protocol and persistence reproduction is required before choosing flat-field support or pre-dispatch refusal."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,github-report,sdk
 created_at: "2026-10-21T21:28:02.196Z"
-updated_at: "2026-10-21T21:28:04.144Z"
+updated_at: "2026-10-22T01:31:07.844Z"
+closed_at: "2026-10-22T01:06:43.106Z"
+completed_at: "2026-10-22T01:06:43.106Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Prove advertised schema-to-dispatch persistence through the public MCP entrypoint; Honor supported supplied mutation fields or refuse with precise nesting recovery before execution; Preserve documented precedence and extension passthrough compatibility; Demonstrate unchanged tracker bytes/history on refusal
@@ -14,12 +16,82 @@ parent: pm-5k4v
 risk: medium
 confidence: 80
 severity: medium
-expected_result: Publicly advertised authoring and mutation contracts produce verifiable outcomes or precise pre-execution refusals.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "MCP create/update dispatch uses canonical SDK mutation contracts, nested alias precedence and typed no-loss preflight; valid project-defined fields retain their native lookup semantics."
+expected_result: "Advertised MCP update fields persist or refuse atomically; nested options win, custom fields work and native SDK update admission stays strict."
+actual_result: "Modern discovered flat priority/status persist with changed_field_count 2; nested precedence, tags, estimate, comments, file links and literal body pass. Malformed scalar/list/container/force requests refuse before changes and preserve exact item/history bytes. Full coverage and packed consumers pass."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-upi0,discovered_from,"2026-10-21T21:28:02.196Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-12tj,related,"2026-10-22T00:14:24.587Z","harness:codex","cli:update:dep",detected
+  pm-gh1539,related,"2026-10-22T00:14:24.587Z","harness:codex","cli:update:dep",detected
+  pm-wb25c1,related,"2026-10-22T00:14:24.587Z","harness:codex","cli:update:dep",detected
+comments[10]{created_at,author,text}:
   "2026-10-21T21:28:02.196Z","harness:codex","Duplicate check: fresh keyword searches and the complete all-status corpus found the completed original builder and warning-only MCP controls, but no owner for this newly filed report. Full live metadata/comments/history were read for the prior lineage. Preserve those closed outcomes and create only this distinct reported contract gap. Intake only: status open, unclaimed; no implementation or independent reproduction is claimed."
-files[1]{path,scope}:
-  src/mcp/server.ts,project
+  "2026-10-21T22:33:52.499Z","harness:codex","Selected with pm-gh1539 for one reviewed contract-safety delivery. Live intake: all 3053 tracker records loaded with strict-read, full projection, no unreadable records or omission; 2775 closed, 205 open, 59 draft, 14 canceled, zero in progress before these claims. Reviewed the completed pm-upi0 and pm-12tj lineage and current GitHub reports; all 24 open GitHub issues have PM-link comments, no open PRs and no Dependabot/CodeQL/secret alerts. Scope: public schema-to-persistence MCP update behavior and exact literal-preserving SDK builders. Prior completed outcomes remain intact."
+  "2026-10-21T22:40:53.170Z","harness:codex","Regression evidence: the new modern negotiated discovery-to-update test fails before the production change at changed_field_count 0 instead of 2, after proving priority/status are advertised. The SDK now hoists canonical update parameters only for MCP-marked requests; native generic SDK update admission stays strict. Existing nested options and equivalent aliases win, custom workspace fields remain handled by the existing adapter, and repeatable/scalar aliases normalize through the shared Commander contracts. The test checks persisted priority/status/title, tags, estimate, comments, file links, literal body and byte-identical item/history after invalid priority."
+  "2026-10-21T22:42:40.509Z","harness:codex","Independent operational intake: published2026.10.21 verification passes public npm/GitHub metadata and npm/Bun/npx/bunx executor/MCP journeys. This artifact predates this branch. Current Sentry CLI lists no unresolved issues; full registry+OSV advisory evidence passes568 locked packages. Latest compatible lint/token/review releases remain within seven-day cooldown under pm-wb25c1; major migrations reuse their existing owners. No dependency or vulnerability claim is inferred from package age alone."
+  "2026-10-21T22:47:03.403Z","harness:codex","Required live Sentry/telemetry gate passes: zero critical/high recent Sentry blockers and no unresolved Sentry issues. Fresh remote telemetry shows paired get/list starts and finishes with no unpaired sessions in the probe window; client queue drains to zero and the live broker queue is empty. Existing historical Release Reliability and earlier nightly failures remain explicitly separate; no suppressed gate, changed threshold or historical rewrite."
+  "2026-10-21T22:51:56.779Z","harness:codex","Fresh explicit-consent tracing probes are visible as three pm.command Sentry spans for two get actions and one list action, with measured durations approximately397ms,83ms and188ms. Required observability receipt passes with zero recent Sentry blockers,3.34 percent seven-day finish error rate and zero failures missing error codes. No test fixture sends production telemetry; these are real read-only CLI actions with tracing enabled only for their processes."
+  "2026-10-21T23:05:35.894Z","harness:codex","Manual stateless stdio follow-up found a related normalization escape: priority=false was discarded while a sibling title persisted with changed_field_count1. An isolated candidate regression fails before the added preflight and compares item/history bytes for malformed scalar, repeated-list, force and options-container inputs. The candidate refuses lost typed values before dispatch with invalid_argument_value, invalid_mutation_option_value and changed=false; force must be a boolean so string false cannot become a truthy override. Existing domain refusals remain distinct from the new preflight receipt."
+  "2026-10-21T23:27:38.616Z","harness:codex","Independent qualification after the initial full run: all20 focused mutation/native SDK/MCP compatibility tests now pass with strict unknown-option reporting. The packed continuation test passes on Node and Bun after exposing the installed npm module via the local NODE_PATH. The refusal-closure keeper passes alone with its original360-second deadline (about134seconds); no timeout, assertion, source denominator or quality threshold was changed. The new mutation test is in the existing SDK integration folder to retain the120-file directory cap."
+  "2026-10-22T01:06:42.213Z","harness:codex","Final verification: the packed public SDK passes strict TypeScript 5.9.3 declarations, deliberately degraded literal/exactness control, restored declarations, and Node/Bun activation and runtime identity. Maintained packed npm/npx/Bun/bunx smoke passes. All linked tests pass and the complete repository coverage run passes with 100 percent statements, branches, functions and lines. No coverage denominator, timeout, assertion or quality threshold was reduced. Source-level static checks, import costs and transport floors passed; the graph gate identified new prose references and was repaired through explicit related edges instead of a limit change. The final full static pipeline, terminal defect evidence and generated changelog are required before push."
+  "2026-10-22T01:31:07.844Z","harness:codex","Final delivery verification: the complete pnpm quality:static command now exits0 on the final source and tracker state, including unchanged performance budgets, graph and context assurance, record integrity and mutation testing. Full coverage passes10982 tests with3 skips and exact100/100/100/100 over70245 statements,54014 branches,14475 functions and66566 lines. Terminal defect evidence has zero findings; latest pm-changelog2026.10.21 generates exactly the three implementation entries and checks unchanged. All three grouped leaves are closed/released and no items are in progress. The separate executable-help intake remains open/unclaimed with its issue link and complete planning metadata."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T23:08:10.400Z","harness:codex","MCP schema-to-dispatch proof must check durable values and immutable history, plus malformed sibling fields. Normalization can silently discard a bad value or coerce a string force flag into truth; preflight must refuse the entire request before execution. Preserve nested aliases, custom schema fields and native SDK admission as separate compatibility controls."
+files[7]:
+  - path: src/mcp/server.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-schema.ts
+    scope: project
+    note: Compose valid nested mutation aliases from registration contracts
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+    note: Generated typed refusal producer contract
+  - path: src/sdk/runtime-input.ts
+    scope: project
+    note: SDK-owned MCP mutation normalization
+  - path: src/sdk/runtime-primitives.ts
+    scope: project
+    note: Public runtime-field alias lookup for MCP and embedded hosts
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+    note: Generated canonical MCP and error contract snapshot
+  - path: tests/integration/sdk/mcp-mutation-contract.integration.spec.ts
+    scope: project
+    note: Schema to durable create/update outcomes and atomic typed refusals
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,project,600,"harness:codex","2026-10-22T00:14:36.851Z",local_mutation,fix/sdk-authoring-mcp-mutation-contracts
+test_runs[2]:
+  - run_id: test-local-mvip8xz9-rmpvhf
+    kind: test
+    status: passed
+    started_at: "2026-10-21T22:43:57.730Z"
+    finished_at: "2026-10-21T22:44:21.381Z"
+    recorded_at: "2026-10-21T22:44:21.381Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/mcp-update-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvisnhm9-2sswmz
+    kind: test
+    status: passed
+    started_at: "2026-10-22T00:19:22.364Z"
+    finished_at: "2026-10-22T00:19:38.865Z"
+    recorded_at: "2026-10-22T00:19:38.865Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MCP_OPTION_CONFORMANCE.md,project,MCP update fields nested precedence and persistence contract
+close_reason: Implemented and verified public SDK and MCP contract corrections; included with related leaves in the reviewed delivery.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mcp-schema-to-persistence-mutation-admission
+  owner: unbraind
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts -t \"persists discovered flat fields\"; before the fix advertised flat priority/status returned changed_field_count 0 instead of 2, and priority=false allowed a sibling title write. The regression requires persisted outcomes and identical item/history bytes on malformed requests."
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts,node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts
+  hosted_checks[4]: Gates (typecheck),Gates (static),Gates (coverage),Gates (smokes)
 body: ""
