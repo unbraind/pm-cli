@@ -16,14 +16,16 @@ export function nightlyFamilies(source) {
   if (document.errors.length) throw new Error("Invalid nightly workflow.");
   const workflow = document.toJS();
   const matrix = workflow?.jobs?.nightly?.strategy?.matrix?.include;
-  const quality = workflow?.jobs?.quality?.name;
   if (!Array.isArray(matrix)) throw new Error("Missing nightly family population.");
   const families = matrix.map((entry) => {
     if (entry.label !== undefined) return entry.label;
     if (typeof entry.os !== "string" || !/^\d+$/u.test(String(entry.node))) throw new Error("Invalid legacy nightly family identity.");
     return `Nightly (${entry.os}, Node ${entry.node})`;
   });
-  if (quality !== undefined) families.push(quality);
+  for (const key of ["quality", "coverage"]) {
+    const job = workflow.jobs[key];
+    if (job) families.push(job.name);
+  }
   if (families.length === 0 || families.some((family) => typeof family !== "string" || !family.startsWith("Nightly ")) || new Set(families).size !== families.length) throw new Error("Invalid nightly family identity.");
   return families;
 }

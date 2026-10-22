@@ -82,6 +82,7 @@ describe("nightly recurrence collector", () => {
   });
 
   it.each([
+    ["Nightly Validation failed: windows-latest / Node 24 shard 4/4", "Nightly (windows-latest, Node 24, shard 4/4)"],
     ["Nightly Validation failed: windows-latest / Node 24 shard 1/2", "Nightly (windows-latest, Node 24, shard 1/2)"],
     ["Nightly Validation failed: macos-latest / Node 24 shard 2/2", "Nightly (macos-latest, Node 24, shard 2/2)"],
     ["Nightly Validation failed: ubuntu-latest / Node 24 quality", "Nightly quality (ubuntu-latest, Node 24)"],
@@ -157,9 +158,27 @@ describe("nightly recurrence collector", () => {
     expect(read).not.toHaveBeenCalled();
   });
 
+  it("keeps a missing coverage aggregate pending after successful native partitions", () => {
+    const aggregate = "Nightly (ubuntu-latest, Node 24)";
+    const workflow = JSON.stringify({ jobs: {
+      nightly: { strategy: { matrix: { include: [{ label: family }] } } },
+      coverage: { name: aggregate },
+    } });
+    const report = collectNightlyReliability("owner/repo", policy, now, [family, aggregate], reader({ workflow, jobs: pages("jobs", [{ ...job, conclusion: "success" }]) }));
+    expect(report.families.find((row: { family: string }) => row.family === aggregate)).toMatchObject({ completed: 0, pending: 1, ok: false });
+    expect(nightlyFamilies(workflow)).toEqual([family, aggregate]);
+    for (const name of [1, family, "invalid"]) {
+      expect(() => nightlyFamilies(JSON.stringify({ jobs: {
+        nightly: { strategy: { matrix: { include: [{ label: family }] } } }, coverage: { name },
+      } }))).toThrow("Invalid nightly family identity");
+    }
+  });
+
   it("derives the declared population and rejects malformed workflow matrices", () => {
     const declared = nightlyFamilies(readFileSync(".github/workflows/nightly.yml", "utf8"));
-    expect(declared).toHaveLength(8);
+    expect(declared).toHaveLength(16);
+    expect(declared).toContain("Nightly (ubuntu-latest, Node 24)");
+    expect(declared).toContain("Nightly (windows-latest, Node 24, shard 4/4)");
     expect(declared).toContain("Nightly (macos-latest, Node 24, shard 1/2)");
     expect(declared).toContain("Nightly (macos-latest, Node 24, shard 2/2)");
     expect(nightlyFamilies(originalWorkflow)).toEqual([family]);
@@ -191,6 +210,6 @@ describe("nightly recurrence collector", () => {
     expect(steps.find((step) => step.name === "Preserve nightly reliability report")?.if).toBe("always()");
     expect(source).toContain("process.exitCode = report.ok ? 0 : 1");
     expect(source).toContain("persist-credentials: false");
-    expect(readFileSync(".github/workflows/nightly.yml", "utf8").match(/Recurrence owner: \[pm-2zjs0g\]/gu)).toHaveLength(2);
+    expect(readFileSync(".github/workflows/nightly.yml", "utf8").match(/Recurrence owner: \[pm-2zjs0g\]/gu)).toHaveLength(3);
   });
 });

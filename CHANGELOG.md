@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- PR1548: preserve rollback diagnostic provenance and reject non-directory ancestry ([pm-4vymxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4vymxc.toon))
+- Bound complete nightly validation and exact coverage within existing job deadlines ([pm-gxq0dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gxq0dt.toon))
+- Resolve aliased workspace paths before publishing tracker cache exclusions ([pm-p8s5k7e6lhda](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p8s5k7e6lhda.toon))
+- GH-1546: keep disabled package compatibility findings advisory ([pm-5xn8we1wue0m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5xn8we1wue0m.toon))
+- GH-1545: preserve working package replacements through activation verification ([pm-c9wz5ef4ulnv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-c9wz5ef4ulnv.toon))
 - GH-1540: MCP binaries ignore help and version probes before transport startup ([pm-gh1540](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1540.toon))
 
 ### Other

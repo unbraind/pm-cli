@@ -295,23 +295,39 @@ describe("GitHub workflow contract", () => {
     }
   });
 
-  it("enforces coverage shard admission before required report merging", async () => {
-    const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
-    const shards = workflow.jobs["coverage-shards"];
+  it.each([
+    { file: "ci.yml", dependency: "coverage-shards", name: "Gates (coverage)" },
+    { file: "nightly.yml", dependency: "nightly", name: "Nightly (ubuntu-latest, Node 24)" },
+  ])("enforces $file coverage shard admission before required report merging", async ({ file, dependency, name }) => {
+    const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows", file), "utf8"));
+    const shards = workflow.jobs[dependency];
     const aggregate = workflow.jobs.coverage;
-    expect(aggregate.name).toBe("Gates (coverage)");
-    expect(aggregate.needs).toBe("coverage-shards");
+    expect(aggregate.name).toBe(name);
+    expect(aggregate.needs).toBe(dependency);
     expect(aggregate.if).toBe("always()");
     expect(aggregate["continue-on-error"]).toBeUndefined();
     expect(shards["continue-on-error"]).toBeUndefined();
     const admission = aggregate.steps[0];
     expect(admission.id).toBe("shard_admission");
-    expect(admission.env.SHARD_RESULT).toBe("${{ needs.coverage-shards.result }}");
+    expect(admission.env.SHARD_RESULT).toBe("${{ needs." + dependency + ".result }}");
     const bash = process.platform === "win32" ? path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Git", "bin", "bash.exe") : "bash";
     for (const result of ["success", "failure", "cancelled", "skipped", ""]) {
       const execute = () => execFileSync(bash, ["-c", admission.run], { env: { ...process.env, SHARD_RESULT: result }, stdio: "pipe" });
       if (result === "success") expect(execute).not.toThrow();
       else expect(execute).toThrow();
+    }
+    expect(aggregate.steps.some((step: { run?: string }) => step.run?.includes("pnpm exec vitest --merge-reports=.vitest-reports --coverage") && step.run.includes("node scripts/release/coverage-threshold-gate.mjs"))).toBe(true);
+    if (file === "nightly.yml") {
+      const alert = aggregate.steps.find((step: { name?: string }) => step.name === "Alert on scheduled nightly failure");
+      for (const outcome of ["success", "failure", "cancelled", "skipped"]) {
+        for (const event of ["schedule", "workflow_dispatch"]) {
+          expect(runInNewContext(alert.if, {
+            failure: () => true, github: { event_name: event },
+            steps: { shard_admission: { outcome } },
+          })).toBe(outcome === "success" && event === "schedule");
+        }
+      }
+      return;
     }
     const artifact = aggregate.steps.find((step: { name?: string }) => step.name === "Upload coverage artifact");
     const verifier = aggregate.steps.find((step: { id?: string }) => step.id === "codecov_cli");
@@ -864,13 +880,6 @@ describe("GitHub workflow contract", () => {
       "concurrency:",
       "cancel-in-progress: true",
       "matrix:",
-      'os: ubuntu-latest, node: 22, label: "Nightly (ubuntu-latest, Node 22)"',
-      'os: ubuntu-latest, node: 24, label: "Nightly (ubuntu-latest, Node 24)"',
-      'os: ubuntu-latest, node: 25, label: "Nightly (ubuntu-latest, Node 25)"',
-      'os: macos-latest, node: 24, shard: 1, label: "Nightly (macos-latest, Node 24, shard 1/2)"',
-      'os: macos-latest, node: 24, shard: 2, label: "Nightly (macos-latest, Node 24, shard 2/2)"',
-      'os: windows-latest, node: 24, shard: 1, label: "Nightly (windows-latest, Node 24, shard 1/2)"',
-      'os: windows-latest, node: 24, shard: 2, label: "Nightly (windows-latest, Node 24, shard 2/2)"',
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
       PINNED_PNPM_VERSION,
@@ -890,12 +899,12 @@ describe("GitHub workflow contract", () => {
       "name: Prepare tracker clone invariants",
       "node dist/cli.js merge install --no-extensions",
       "git diff --exit-code -- .gitattributes",
-      "if: matrix.os == 'ubuntu-latest' && matrix.node == 24",
-      "run: pnpm test:coverage",
+      "if: matrix.coverage",
+      "node scripts/run-tests.mjs coverage-shard --",
       "run: pnpm quality:static",
       "run: node scripts/release/compatibility-check.mjs --json",
-      "if: matrix.os != 'ubuntu-latest' || matrix.node != 24",
-      "run: pnpm test ${{ matrix.shard && format('-- --shard={0}/2', matrix.shard) || '' }}",
+      "if: ${{ !matrix.coverage }}",
+      "run: pnpm test -- --shard=${{ matrix.shard }}/${{ matrix.shards }}",
       "name: Alert on scheduled nightly failure",
       "if: failure() && github.event_name == 'schedule'",
       "GH_TOKEN: ${{ github.token }}",
@@ -909,15 +918,38 @@ describe("GitHub workflow contract", () => {
     );
     expectExactValidationCacheSteps(nightlyWorkflow, 2);
     const declared = parse(nightlyWorkflow).jobs.nightly;
-    const macos = declared.strategy.matrix.include.filter(
-      (entry: { os: string }) => entry.os === "macos-latest",
-    );
-    expect(macos.map((entry: { node: number; shard: number }) => [entry.node, entry.shard]))
-      .toEqual([[24, 1], [24, 2]]);
+    const matrix = declared.strategy.matrix.include as Array<{ os: string; node: number; shard: number; shards: number; label: string; coverage?: boolean }>;
+    expect(matrix).toHaveLength(14);
+    for (const [os, node, count] of [
+      ["ubuntu-latest", 22, 2], ["ubuntu-latest", 24, 4], ["ubuntu-latest", 25, 2],
+      ["macos-latest", 24, 2], ["windows-latest", 24, 4],
+    ] as const) {
+      const partitions = matrix.filter((row) => row.os === os && row.node === node);
+      expect(partitions.map((row) => row.shard).sort()).toEqual(Array.from({ length: count }, (_, i) => i + 1));
+      for (const row of partitions) {
+        expect(row.shards).toBe(count);
+        expect(row.label).toBe(`Nightly (${os}, Node ${node}, shard ${row.shard}/${count})`);
+        expect(Boolean(row.coverage)).toBe(os === "ubuntu-latest" && node === 24);
+      }
+    }
+    const coverageRun = declared.steps.find((step: { name?: string }) => step.name === "Test with coverage gate");
+    expect(coverageRun.run).toContain("--shard=${{ matrix.shard }}/${{ matrix.shards }}");
+    expect(coverageRun.run).toContain("--reporter=blob");
+    for (const measure of ["lines", "branches", "functions", "statements"]) {
+      expect(coverageRun.run).toContain(`--coverage.thresholds.${measure}=0`);
+    }
+    const upload = declared.steps.find((step: { name?: string }) => step.name === "Upload coverage shard report");
+    expect(upload.if).toBe("always() && matrix.coverage");
+    expect(upload.with["if-no-files-found"]).toBe("error");
+    expect(upload.with.name).toBe("nightly-coverage-blob-${{ matrix.shard }}");
+    expect(upload.with.path).toBe(".vitest-reports/blob-${{ matrix.shard }}.json");
+    const aggregate = parse(nightlyWorkflow).jobs.coverage;
+    const download = aggregate.steps.find((step: { name?: string }) => step.name === "Download coverage shard reports");
+    expect(download.with).toMatchObject({ pattern: "nightly-coverage-blob-*", "merge-multiple": true, path: ".vitest-reports" });
     expect(declared["timeout-minutes"]).toBe(20);
     expectContainsAll(platformJob, [
       "timeout-minutes: 20",
-      "run: pnpm test:coverage",
+      "node scripts/run-tests.mjs coverage-shard --",
       "run: pnpm test",
     ]);
     expectContainsNone(platformJob, [
@@ -944,7 +976,7 @@ describe("GitHub workflow contract", () => {
     ).toHaveLength(1);
     expect(
       nightlyWorkflow.match(/name: Alert on scheduled nightly failure/g),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
     expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);

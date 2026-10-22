@@ -4,6 +4,9 @@ Tracked by [pm-ig5cfe](../.agents/pm/issues/pm-ig5cfe.toon),
 [pm-495lkc](../.agents/pm/issues/pm-495lkc.toon), and
 [pm-miy5k6](../.agents/pm/issues/pm-miy5k6.toon).
 Static inventory is tracked by [pm-lhhnx9](../.agents/pm/issues/pm-lhhnx9.toon).
+Verified replacements and disabled compatibility findings are tracked by
+[pm-c9wz5ef4ulnv](../.agents/pm/issues/pm-c9wz5ef4ulnv.toon) and
+[pm-5xn8we1wue0m](../.agents/pm/issues/pm-5xn8we1wue0m.toon).
 
 ## Read-only configured inventory
 
@@ -31,6 +34,45 @@ an `ambiguous` indicator, every matching candidate, and an explicit command for
 each. Use `pm install npm:<package>` to force npm identity or the reported bare
 alias command to force the bundled package. Install-all results carry the same
 receipt on every package row.
+
+## Verified replacements
+
+`pm package install` and the SDK's `runExtension(source, { install: true }, global)`
+retain the previous installation through fresh-module runtime verification and
+contribution persistence. When a copied replacement fails to load or activate,
+pm restores the previous package tree and exact managed/settings content. A
+settings restoration appends a compensating workspace-history event.
+
+The failed attempt still returns `ok: false` and its candidate diagnostics, with
+`previous_state_preserved: true`, `overwritten: false`, and
+`rollback.status: "restored"`. The previous command remains available in a new
+process. Multi-target and install-all receipts retain these fields per package.
+SDK `ExtensionCommandResult` / `PackageCommandResult` consumers can narrow
+`details.rollback.status` to access typed recovery arguments on failed restoration.
+These two diagnostic keys are now reserved typed fields. Code constructing
+lifecycle result objects or test doubles must use the boolean and rollback
+shapes, or rename custom metadata stored under those keys. Ordinary result
+readers remain compatible; the runtime implementation is unchanged by this
+declaration refinement.
+
+If restoration fails, `previous_state_preserved` is false. The retained backup
+and executable `rollback.recovery_args` / `rollback.recovery_command` identify a
+source for reinstalling the previous package. Resolve the reported filesystem
+failure first. Fresh installations and installations whose source is already
+the destination retain failed code for diagnosis and report
+`previous_state_preserved: false`; they have no earlier package version to
+recover. Package code can have external side effects during activation; this
+snapshot protects the installation and its managed/settings content.
+
+## Disabled package compatibility
+
+An explicitly disabled package remains visible in inventory and discovery.
+Its host-version warnings use `extension_disabled_pm_*` codes and are advisory
+in health, including `--strict-exit`. Each finding identifies the package,
+required bound and scoped activation command to use after satisfying that
+bound. Enabled packages retain the ordinary `extension_pm_*` compatibility
+checks and blocking policy. Deactivation does not permit incompatible code to
+load or suppress malformed-manifest, missing-entry or other unrelated findings.
 
 ## Durable Extension Migrations
 
@@ -62,3 +104,8 @@ compose without warnings, and runtime invokes only the matching owner. Empty or
 omitted command ownership retains the legacy global behavior and collides with
 every other override. Activation summaries and persisted contribution
 inventories expose `preflight_ownership` for static doctor and tooling output.
+
+Rollback failures retain the initial error as their cause and expose an original
+typed refusal as `context.original_code`, while keeping the rollback code and
+exit policy. This diagnostic boundary is tracked by
+[pm-4vymxc](../.agents/pm/issues/pm-4vymxc.toon).

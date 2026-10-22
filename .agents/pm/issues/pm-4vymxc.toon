@@ -1,0 +1,123 @@
+id: pm-4vymxc
+title: "PR1548: preserve rollback diagnostic provenance and reject non-directory ancestry"
+description: "CodeRabbit full review of PR1548 identified two additional SDK boundary defects: physical initialization ancestry treats ENOTDIR as absence and can publish rules for an impossible tracker; a failed rollback wrapper discards the original typed refusal code and cause. Preserve the final rollback code and exit policy while retaining diagnostic provenance, and require ENOENT-only ancestry climbing. Delivery also corrects the reviewed recovery corpus typo and stale hosted-check metadata through the CLI."
+type: Issue
+status: closed
+priority: 1
+tags[3]: bug,review,sdk
+created_at: "2026-10-22T12:58:46.665Z"
+updated_at: "2026-10-22T14:45:58.047Z"
+closed_at: "2026-10-22T14:45:56.751Z"
+completed_at: "2026-10-22T14:45:56.751Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Real regular-file ancestry rejects without writing rules; Typed and untyped original rollback errors retain cause and only typed errors expose original code; Original recovery command and retained backup still execute; Source and metadata findings are resolved in the same reviewed PR
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Retained original rollback failure cause and optional typed original_code without changing generic exit behavior, rejected real non-directory ancestors across platforms, regenerated the emitted ENOTDIR SDK receipt, and corrected review-discovered alert and PM command/check evidence."
+expected_result: "Failed rollback exposes recovery plus original failure provenance, while invalid file ancestry refuses before ignore writes on every supported platform; public SDK types and generated receipts agree."
+actual_result: "Linked59 focused cases, public SDK type fixtures and native full acceptance pass. Windows direct-file and nested-file refusals preserve ignore bytes; Nightly39795091164 reports11035 passing cases and exact100/100/100/100. Five actionable review findings have concrete fixes and resolved threads, with subsequent full source review reporting none."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-c9wz5ef4ulnv,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+  pm-f05lsg,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+  pm-gxq0dt,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+  pm-p8s5k7e6lhda,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+comments[8]:
+  - created_at: "2026-10-22T12:58:46.665Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete all-status intake plus current open/in-progress lists and rollback ancestry provenance review keyword search find no exact open owner. The three original source items have complete live closure evidence and remain closed. This is a distinct review_caught_late leaf for newly validated refusal boundaries rather than a duplicate implementation item or forced claim on terminal work. CodeRabbit inline findings4348548828 and4348548842 are assessed against current source; exact thread IDs and tests are recorded below."
+    edited_at: "2026-10-22T13:01:06.054Z"
+  - created_at: "2026-10-22T13:07:07.485Z"
+    author: "harness:codex"
+    text: "All five CodeRabbit findings are accepted and implemented: real ENOTDIR ancestry refusal before ignore writes, preserved original rollback cause and typed context.original_code with unchanged wrapper code/generic exit, aggregate alerts admitted only after native success, correct current Windows hosted-check names through pm update, and the corrected legal recovery example through pm comments --edit plus actual execution. SDK surface conservatively classifies the optional context-field interface change; explicit acknowledgement covers both new original_code and the earlier reserved typed receipt migration. Ordinary consumers remain compatible; exhaustive key consumers must admit the new context key. The cause is non-enumerable like native Error cause."
+  - created_at: "2026-10-22T13:08:38.063Z"
+    author: "harness:codex"
+    text: "Final identical review regression suite against the pre-review f43c10c45 worktree reports6 intended failures and57 passing controls, with successful collection and the final test layout. Fixed SDK linked tests pass40 cases; workflow/reliability/registry tests pass67 cases including8 aggregate alert admission outcomes. Four TypeScript projects pass and focused ESLint passes without raising limits. No new test seam or public runtime helper was introduced. All five accepted findings have concrete fixes; full revised-head hosted coverage and native execution remain mandatory."
+  - created_at: "2026-10-22T13:37:57.849Z"
+    author: "harness:codex"
+    text: "Native217eece7c Nightly39784574377 completes with14 successful jobs but two real regular-file ancestry assertions fail on Windows shard2/4; strict coverage aggregation correctly refuses admission. No tests are skipped or weakened. Narrowing absence to ENOENT is insufficient when the platform permits climbing to a regular file. Extend the same active review fix to verify that resolved existing ancestry is a directory, preserve native ENOTDIR failures, and cover direct file roots as well as file descendants. All other native partitions and quality pass; the old overall run remains failed evidence."
+  - created_at: "2026-10-22T13:43:22.918Z"
+    author: "harness:codex"
+    text: "Existing resolved ancestors now require stat.isDirectory before a missing suffix is reattached. A structural ENOTDIR refusal is preserved on platforms that otherwise report a file descendant as missing. Direct-file negative controls fail2/33 assertions on217eece7c with31 controls passing; fixed linked SDK acceptance passes42/42, including both direct-file and nested-file cases and unchanged ignore bytes. Four TypeScript projects, focused ESLint and all generated contract checks pass. The real Windows failures remain the native negative receipt; a new complete native run must prove this correction."
+  - created_at: "2026-10-22T14:05:22.525Z"
+    author: "harness:codex"
+    text: "Native68499c070 confirms the new real directory-type guard passes on Windows. Its hosted checks expose a generated receipt omission: sdk/public-surface.json must include the newly emitted native ENOTDIR value in its error vocabulary. I missed regenerating that after the guard addition. The configured SDK generator now records exactly one additive emitted-error change; no compatibility acknowledgement, threshold or vocabulary filter is weakened. Add the SDK surface script suite to linked acceptance before the next push."
+  - created_at: "2026-10-22T14:16:15.991Z"
+    author: "harness:codex"
+    text: "The complete full CodeRabbit review at68499c070 finishes with no actionable comments after all five earlier findings were resolved. Its two generated-source exclusions remain disclosed; generated contracts are checked separately. Current local linked acceptance passes42 SDK cases plus17 SDK surface script cases, and sdk:surface:check reports0 classified changes after the configured generator adds ENOTDIR. The remaining change is the generated vocabulary receipt and CLI-authored evidence, with runtime source unchanged from the reviewed directory guard."
+  - created_at: "2026-10-22T14:45:55.498Z"
+    author: "harness:codex"
+    text: "Final current-source native acceptance: Nightly39795091164 on744a4c95a passes every platform partition and strict global100-percent coverage with11035 passing cases. This includes Windows direct-file and descendant ancestry refusals and unchanged ignore-byte controls. The generated SDK emitted-error vocabulary now contains ENOTDIR and surface checking has zero unclassified changes. Local linked acceptance passes42 replacement/workspace cases plus17 SDK-snapshot controls; four TypeScript projects and public receipt/context type fixtures pass. All five original review threads are fixed and resolved; the full68499c070 CodeRabbit review had no actionable findings. Latest metadata/generated-receipt review remains part of pre-merge acceptance."
+learnings[1]{created_at,author,text}:
+  "2026-10-22T14:16:16.842Z","harness:codex",Filesystem absence does not prove that the nearest existing ancestor is a directory on every platform. Check directory type before reattaching missing suffixes. A newly emitted native errno also changes the SDK emitted-error vocabulary even when no declaration changes; run SDK surface verification as well as command contracts before pushing.
+files[7]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/shared/errors.ts,project
+  src/sdk/extension/install-snapshot.ts,project
+  src/sdk/workspace.ts,project
+  tests/types/package-install-receipts.test-d.ts,project
+  tests/unit/core/workspace/gitignore.spec.ts,project
+  tests/unit/extensions/extension-verified-replacement.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,project,300,"harness:codex","2026-10-22T13:01:07.712Z",local_mutation,fix/package-and-workspace-lifecycle
+  node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,300,"harness:codex","2026-10-22T14:05:23.146Z",local_mutation,fix/package-and-workspace-lifecycle
+test_runs[4]:
+  - run_id: test-local-mvjjxyp8-yyiscm
+    kind: test
+    status: passed
+    started_at: "2026-10-22T13:03:08.110Z"
+    finished_at: "2026-10-22T13:03:37.196Z"
+    recorded_at: "2026-10-22T13:03:37.196Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvjk1kri-17ek80
+    kind: test
+    status: passed
+    started_at: "2026-10-22T13:06:09.930Z"
+    finished_at: "2026-10-22T13:06:25.758Z"
+    recorded_at: "2026-10-22T13:06:25.758Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvjl7u4p-wqbo9e
+    kind: test
+    status: passed
+    started_at: "2026-10-22T13:39:03.158Z"
+    finished_at: "2026-10-22T13:39:17.449Z"
+    recorded_at: "2026-10-22T13:39:17.449Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvjm63gz-ki9otg
+    kind: test
+    status: passed
+    started_at: "2026-10-22T14:05:24.653Z"
+    finished_at: "2026-10-22T14:05:55.859Z"
+    recorded_at: "2026-10-22T14:05:55.859Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/EXTENSION_LIFECYCLE.md,project
+close_reason: Rollback provenance and physical directory ancestry validated on all native platforms
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-4vymxc
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts tests/integration/ci-workflow-contract.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[3]: Gates (coverage),Gates (static),Nightly Validation
+body: ""

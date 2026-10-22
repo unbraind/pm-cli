@@ -97,6 +97,8 @@ export interface PmCliErrorContext {
   changed?: false;
   /** Value that configures or reports code for this contract. */
   code?: string;
+  /** Original typed diagnostic retained when recovery also fails. */
+  original_code?: string;
   /** Canonical existing item identity returned by a refused create operation. */
   id?: string;
   /** Actual persisted existing-item path returned by a refused create operation. */

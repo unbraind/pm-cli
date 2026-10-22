@@ -1018,6 +1018,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "extension_install_rollback_failed",
+    meaning: "Extension install rollback failed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/extension/install-snapshot.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "extension_install_rollback_failed",
+    aliases: [],
+  },
+  {
     code: "extension_install_soft_failed",
     meaning: "Extension install soft failed condition.",
     stability: "stable",

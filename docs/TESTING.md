@@ -270,13 +270,17 @@ original assertions, deadlines and retry policy. This allocation is tracked by
 [pm-89297t](../.agents/pm/tasks/pm-89297t.toon); it does not classify or erase
 historical failed attempts.
 
-The complete macOS Node 24 and Windows Node 24 nightly suites each use two
-Vitest shards. Both halves must pass within the existing 20-minute job limit;
-sharding retains the same complete file population, serial phase, assertions,
-per-test deadlines and retry policy. The recurrence collector retains the old
-unsharded platform families alongside both current shard identities, so changing
-the matrix does not erase earlier failures. macOS allocation is tracked by
-[pm-qrirz8](../.agents/pm/tasks/pm-qrirz8.toon).
+The complete nightly suites use two Vitest shards on Linux Node 22/25 and
+macOS Node 24, and four shards on Windows Node 24 and Linux Node 24 coverage.
+Every partition must pass within the existing 20-minute job limit. Sharding
+retains the complete file population, serial phase, assertions, per-test
+deadlines and retry policy. Linux coverage blobs merge only after all native
+partitions succeed; the aggregate retains exact 100% lines, branches, functions
+and statements. Missing, canceled, skipped or failed partitions refuse admission.
+The recurrence collector retains retired families alongside current partitions
+and the coverage aggregate, preserving original failed attempts. This allocation
+is tracked by [pm-gxq0dt](../.agents/pm/issues/pm-gxq0dt.toon); the prior macOS
+allocation remains completed in [pm-qrirz8](../.agents/pm/tasks/pm-qrirz8.toon).
 
 Vitest's GitHub reporter emits annotations and retry evidence. The repository
 reliability reporter additionally writes

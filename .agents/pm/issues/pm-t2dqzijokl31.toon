@@ -1,0 +1,22 @@
+id: pm-t2dqzijokl31
+title: "GH-1547: correct linked-resource positional misuse in refusal recovery"
+description: GitHub #1547 reports natural positional files/docs/test usage that currently repeats the failed invocation without a legal retry. Provide exact corrected argument-vector recovery while preserving explicit collection mutation semantics.
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,"gh:1547",recovery
+created_at: "2026-10-22T10:16:11.674Z"
+updated_at: "2026-10-22T11:22:55.622Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: files/docs positional misuse supplies a corrected --add invocation; test metadata misuse names command and timeout syntax; recovery is executable without extra help; no unintended mutation
+parent: pm-f05lsg
+risk: low
+confidence: medium
+expected_result: "Collection positional misuse yields a legal corrected files/docs/test invocation in its refusal, without unintended mutation or a separate help lookup."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rncuf7,related,"2026-10-22T11:22:55.200Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-22T10:16:11.674Z","harness:codex","Duplicate check: strict full all-status read of 3058 items completed with zero unreadable records and no omissions. Request-specific search and full live canonical history reads found completed adjacent work but no owner for this newly reported boundary. Reuse the existing capability lineage and retain prior closures."
+escape_class: production_defect
+body: ""

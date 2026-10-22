@@ -22515,6 +22515,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "extension_install_rollback_failed",
+      "class": "generic_failure",
+      "code": "extension_install_rollback_failed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Extension install rollback failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/install-snapshot.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "extension_install_soft_failed",
       "class": "generic_failure",
       "code": "extension_install_soft_failed",

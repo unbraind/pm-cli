@@ -596,6 +596,7 @@
         "ci.yml#windows-regression",
         "ci.yml#windows-regression-cohorts",
         "nightly.yml#nightly",
+        "nightly.yml#coverage",
         "release.yml#release"
       ],
       "failure_taxonomy": [

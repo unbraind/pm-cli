@@ -1,0 +1,74 @@
+id: pm-c9wz5ef4ulnv
+title: "GH-1545: preserve working package replacements through activation verification"
+description: "GitHub #1545: a replacement whose activation fails overwrites the usable prior tree and managed metadata. Extend the existing install snapshot through runtime verification, restore prior state on replacement failure, and expose truthful preservation/recovery receipts across SDK and CLI."
+type: Issue
+status: closed
+priority: 1
+tags[3]: "area:packages","area:sdk","gh:1545"
+created_at: "2026-10-22T10:16:01.200Z"
+updated_at: "2026-10-22T12:46:49.819Z"
+closed_at: "2026-10-22T12:46:49.005Z"
+completed_at: "2026-10-22T12:46:49.005Z"
+author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: Failed replacement restores prior files and exact managed/settings bytes; prior commands work in a fresh process; failures report previous_state_preserved and actionable recovery; successful and fresh installs retain their contracts
+parent: pm-ugqx
+risk: medium
+confidence: high
+resolution: "Keep a recoverable snapshot through persistence and runtime verification; restore rejected copied replacements, preserve audited settings history, retain concrete recovery sources on rollback failure, propagate receipts and expose typed public SDK diagnostics."
+expected_result: "A rejected replacement preserves the prior code settings and managed bytes, old commands remain usable, and failures disclose truthful preservation and executable recovery evidence."
+actual_result: "All147 linked replacement and existing extension/discovery cases pass, public root/runtime consumer type fixtures and four TypeScript projects pass, identical unchanged-main negative controls reject the original behavior, and all14 native partitions plus exact100/100/100/100 aggregate pass in Nightly39776721982. Typed reserved-field migration is documented and explicitly acknowledged. Delivery is reviewed in PR1548; this does not claim a new registry publication."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3wsi,recurs_from,"2026-10-22T10:16:01.200Z","harness:codex","cli:create:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-10-22T10:16:01.200Z","harness:codex","Duplicate check: strict full all-status read of 3058 items completed with zero unreadable records and no omissions. Request-specific search and full live canonical history reads found completed adjacent work but no owner for this newly reported boundary. Reuse the existing capability lineage and retain prior closures."
+  "2026-10-22T10:23:18.105Z","harness:codex","Regression sensitivity on unchanged main ec2e9db8f in an isolated worktree: all four replacement keepers fail, including activation, load and disabled-host rejection plus rollback failure recovery. Prior persistence snapshot ended before runtime probing. Extend the same install lock and snapshot through probing and contribution persistence, preserving the fresh-install diagnostic contract. Exact tree/settings/managed bytes and fresh-process prior-command execution are acceptance."
+  "2026-10-22T10:58:19.916Z","harness:codex","Full local execution: 11016 tests passed and four checks failed (test directory fan-out, 451-line docs limit, additive SDK error-code snapshot drift, and this host npm module discovery). Corrected the new test placement, retained the focused lifecycle documentation, refreshed the additive public error catalog snapshot, and reran the packed fixture with the installed npm package exposed through NODE_PATH. No coverage threshold or source denominator changed. The failed run emitted no coverage summary; final exact coverage still requires authoritative hosted proof."
+  "2026-10-22T11:09:36.073Z","harness:codex",The final public result preserves both thrown persistence failures and returned verification failures. Recovery backups are retained only when restoration fails and remain under ignored runtime storage; the executable recovery command is exercised. Exact original enablement is restored through an audited workspace-history compensation and verified by the history-state checker. In-place failures explicitly decline to claim an earlier recoverable version. Public SDK and CLI error catalogs are regenerated for extension_install_rollback_failed.
+  "2026-10-22T11:34:15.376Z","harness:codex","Frozen candidatec7010bb2e is pushed and Nightly Validation39771151475 is running its full native matrix. All linked commands passed (147 package/replacement cases,183 compatibility/health cases,41 alias/Git cases). Static policy components, graph composition and record integrity pass after meaningful intake risk/confidence/estimate/expected-result enrichment; the bounded mutation gate reports345 killed,7 equivalent and no failures. Latest pm-changelog2026.10.21 checks CHANGELOG.md unchanged, with activation verified. Upstream pm-changelog intake found3 existing feature/closeout PRs265/266/267, no open issues or security alerts; no consumed-generator defect was reproduced here."
+  "2026-10-22T11:39:21.751Z","harness:codex","Final keeper sensitivity uses the identical final55-case suite in an isolated unchanged-main worktree:23 assertions fail at the intended package/health/alias boundaries and32 existing controls pass. The pushed candidate passes all55. Backup retention wording clarification: rollback failure intentionally retains its recovery source; cleanup is best effort, so an unavailable cleanup can also leave an ignored backup without overturning an otherwise successful install."
+  "2026-10-22T11:47:49.826Z","harness:codex",The public result now reserves typed previous_state_preserved and a discriminated rollback receipt in ExtensionCommandResult/PackageCommandResult. Public-entrypoint compile proofs require executable recovery fields when status=failed and reject textual boolean labels. This declaration refinement preserves the runtime implementation being exercised by candidatec7010bb2e; final reviewed-head typechecks and runtime checks remain required.
+  "2026-10-22T11:55:55.639Z","harness:codex",Public-entrypoint type fixtures first failed against the prior built declarations because both receipt fields were unknown. After building the refined declarations they compile. The SDK surface gate correctly requires explicit acknowledgement for narrowing two formerly generic result keys; the checked-in acknowledgement and lifecycle migration text reserve only those optional keys. TypeScript emits identical executable module text before/after this declaration-only refinement (SHA256 faec296053e170d493955195d3fe3e0f05841cabfb545249fd34a4640424e646 with comments removed). The native candidate remains runtime-equivalent; final-head checks must certify the published type declarations.
+learnings[1]{created_at,author,text}:
+  "2026-10-22T11:39:19.192Z","harness:codex",An install persistence snapshot must survive executable activation and contribution persistence. A returned verification failure needs compensation just as a thrown write failure does. Preserve installed bytes and use audited compensation for singleton settings.
+files[13]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  config/defect-recurrence-policy.json,project
+  sdk/public-surface.json,project
+  src/cli/register-setup.ts,project
+  src/sdk/extension.ts,project
+  src/sdk/extension/install-receipts.ts,project
+  src/sdk/extension/install-snapshot.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/package-command-discovery.integration.spec.ts,project
+  tests/types/package-install-receipts.test-d.ts,project
+  tests/unit/extensions/extension-command.spec.ts,project
+  tests/unit/extensions/extension-verified-replacement.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/extensions/extension-command.spec.ts tests/integration/package-command-discovery.integration.spec.ts,project,240,"harness:codex","2026-10-22T10:32:37.715Z",local_mutation,fix/package-and-workspace-lifecycle
+test_runs[1]:
+  - run_id: test-local-mvjgf7qo-lo8tmg
+    kind: test
+    status: passed
+    started_at: "2026-10-22T11:24:20.832Z"
+    finished_at: "2026-10-22T11:25:03.600Z"
+    recorded_at: "2026-10-22T11:25:03.600Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/extensions/extension-command.spec.ts tests/integration/package-command-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/EXTENSION_LIFECYCLE.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+close_reason: Verified failed package replacements preserve the prior installation with audited recovery evidence.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  owner: pm-c9wz5ef4ulnv
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/extensions/extension-command.spec.ts tests/integration/package-command-discovery.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/extensions/extension-command.spec.ts tests/integration/package-command-discovery.integration.spec.ts,pnpm typecheck
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

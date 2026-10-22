@@ -2,8 +2,25 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 
 describe("package command discovery integration", () => {
+  it("preserves replacement recovery receipts through multi-target CLI installs", async () => {
+    await withTempPmPath(async (context) => {
+      const source = path.join(context.tempRoot, "original-package");
+      await writeTestExtension({ root: source, name: "stable-package", entrySource: "export function activate(api) { api.registerCommand({ name: 'stable ping', run: () => ({ marker: 'stable' }) }); }\n" });
+      expect(context.runCli(["install", source, "--json"], { expectJson: true }).code).toBe(0);
+      const replacement = path.join(context.tempRoot, "rejected-package");
+      await writeTestExtension({ root: replacement, name: "stable-package", manifestOverrides: { version: "2.0.0" }, entrySource: "export function activate() { throw new Error('replacement rejected'); }\n" });
+      const other = path.join(context.tempRoot, "other-package");
+      await writeTestExtension({ root: other, name: "other-package" });
+      const installed = context.runCli(["install", other, replacement, "--json"], { expectJson: true });
+      expect(installed.code).toBe(1);
+      expect(installed.json).toMatchObject({ ok: false, targets: [{ ok: true }, { ok: false, previous_state_preserved: true, rollback: { status: "restored" } }] });
+      expect(context.runCli(["stable", "ping", "--json"], { expectJson: true }).json).toMatchObject({ marker: "stable" });
+    });
+  });
+
   it("reports exported command paths after fresh package install and invokes them immediately", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "sample-package");

@@ -25,6 +25,8 @@ export function buildBundledInstallReceipt(
         destination_path: details.destination_path,
         activated: details.activated,
         settings_changed: details.settings_changed,
+        previous_state_preserved: details.previous_state_preserved,
+        rollback: details.rollback,
         command_paths: details.command_paths,
         action_paths: details.action_paths,
         command_discovery: details.command_discovery,
