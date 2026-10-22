@@ -390,6 +390,7 @@ function serializeExtensionInstallError(
   };
 }
 
+/** Install targets sequentially, preserving each verification/rollback receipt and aggregating warnings and failure exit codes. */
 async function runMultiTargetExtensionInstalls(
   targets: string[],
   options: Record<string, unknown>,

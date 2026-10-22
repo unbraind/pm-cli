@@ -510,6 +510,7 @@ function collectScannedExtensionWarnings(
   return extensionWarnings;
 }
 
+/** Parse one manifest, validate physical entry containment and host-version bounds, and report diagnostics separately from candidate load eligibility. */
 async function scanExtensionDirectory(
   layer: ExtensionLayer,
   extensionsRoot: string,

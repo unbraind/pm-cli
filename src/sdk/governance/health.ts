@@ -1121,6 +1121,7 @@ function summarizeMigrationStatuses(
   };
 }
 
+/** Deduplicate extension warnings, summarize load/migration/update coverage, and select actionable remedies without enabling disabled packages. */
 function buildExtensionHealthTriageSummary(
   warnings: string[],
   loadFailureCount: number,
