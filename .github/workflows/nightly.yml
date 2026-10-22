@@ -213,7 +213,7 @@ jobs:
           node scripts/release/coverage-threshold-gate.mjs
 
       - name: Alert on scheduled nightly failure
-        if: failure() && github.event_name == 'schedule'
+        if: failure() && github.event_name == 'schedule' && steps.shard_admission.outcome == 'success'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

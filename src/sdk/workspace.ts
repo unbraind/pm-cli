@@ -3,7 +3,7 @@
  *
  * Maintains repository-scaffold contracts shared by the public SDK and CLI.
  */
-import { isFileAbsentError, isFileMissingError } from "../core/fs/fs-utils.js";
+import { isFileMissingError } from "../core/fs/fs-utils.js";
 import { readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EXIT_CODE } from "../core/shared/constants.js";
@@ -25,7 +25,7 @@ async function physicalInitPath(input: string): Promise<string> {
     try {
       return path.join(await realpath(ancestor), ...missing);
     } catch (error: unknown) {
-      if (!isFileAbsentError(error) || path.dirname(ancestor) === ancestor) throw error;
+      if (!isFileMissingError(error) || path.dirname(ancestor) === ancestor) throw error;
       missing.unshift(path.basename(ancestor));
       ancestor = path.dirname(ancestor);
     }

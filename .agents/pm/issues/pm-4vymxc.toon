@@ -1,0 +1,78 @@
+id: pm-4vymxc
+title: "PR1548: preserve rollback diagnostic provenance and reject non-directory ancestry"
+description: "CodeRabbit full review of PR1548 identified two additional SDK boundary defects: physical initialization ancestry treats ENOTDIR as absence and can publish rules for an impossible tracker; a failed rollback wrapper discards the original typed refusal code and cause. Preserve the final rollback code and exit policy while retaining diagnostic provenance, and require ENOENT-only ancestry climbing. Delivery also corrects the reviewed recovery corpus typo and stale hosted-check metadata through the CLI."
+type: Issue
+status: in_progress
+priority: 1
+tags[3]: bug,review,sdk
+created_at: "2026-10-22T12:58:46.665Z"
+updated_at: "2026-10-22T13:08:38.063Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Real regular-file ancestry rejects without writing rules; Typed and untyped original rollback errors retain cause and only typed errors expose original code; Original recovery command and retained backup still execute; Source and metadata findings are resolved in the same reviewed PR
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: Non-directory ancestry rejects before .gitignore mutation; rollback failure retains the original cause and typed code without changing the wrapper code or exit status.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-c9wz5ef4ulnv,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+  pm-f05lsg,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+  pm-gxq0dt,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+  pm-p8s5k7e6lhda,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
+comments[3]:
+  - created_at: "2026-10-22T12:58:46.665Z"
+    author: "harness:codex"
+    text: "Duplicate check: complete all-status intake plus current open/in-progress lists and rollback ancestry provenance review keyword search find no exact open owner. The three original source items have complete live closure evidence and remain closed. This is a distinct review_caught_late leaf for newly validated refusal boundaries rather than a duplicate implementation item or forced claim on terminal work. CodeRabbit inline findings4348548828 and4348548842 are assessed against current source; exact thread IDs and tests are recorded below."
+    edited_at: "2026-10-22T13:01:06.054Z"
+  - created_at: "2026-10-22T13:07:07.485Z"
+    author: "harness:codex"
+    text: "All five CodeRabbit findings are accepted and implemented: real ENOTDIR ancestry refusal before ignore writes, preserved original rollback cause and typed context.original_code with unchanged wrapper code/generic exit, aggregate alerts admitted only after native success, correct current Windows hosted-check names through pm update, and the corrected legal recovery example through pm comments --edit plus actual execution. SDK surface conservatively classifies the optional context-field interface change; explicit acknowledgement covers both new original_code and the earlier reserved typed receipt migration. Ordinary consumers remain compatible; exhaustive key consumers must admit the new context key. The cause is non-enumerable like native Error cause."
+  - created_at: "2026-10-22T13:08:38.063Z"
+    author: "harness:codex"
+    text: "Final identical review regression suite against the pre-review f43c10c45 worktree reports6 intended failures and57 passing controls, with successful collection and the final test layout. Fixed SDK linked tests pass40 cases; workflow/reliability/registry tests pass67 cases including8 aggregate alert admission outcomes. Four TypeScript projects pass and focused ESLint passes without raising limits. No new test seam or public runtime helper was introduced. All five accepted findings have concrete fixes; full revised-head hosted coverage and native execution remain mandatory."
+files[7]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/shared/errors.ts,project
+  src/sdk/extension/install-snapshot.ts,project
+  src/sdk/workspace.ts,project
+  tests/types/package-install-receipts.test-d.ts,project
+  tests/unit/core/workspace/gitignore.spec.ts,project
+  tests/unit/extensions/extension-verified-replacement.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,project,300,"harness:codex","2026-10-22T13:01:07.712Z",local_mutation,fix/package-and-workspace-lifecycle
+test_runs[2]:
+  - run_id: test-local-mvjjxyp8-yyiscm
+    kind: test
+    status: passed
+    started_at: "2026-10-22T13:03:08.110Z"
+    finished_at: "2026-10-22T13:03:37.196Z"
+    recorded_at: "2026-10-22T13:03:37.196Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvjk1kri-17ek80
+    kind: test
+    status: passed
+    started_at: "2026-10-22T13:06:09.930Z"
+    finished_at: "2026-10-22T13:06:25.758Z"
+    recorded_at: "2026-10-22T13:06:25.758Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/EXTENSION_LIFECYCLE.md,project
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-4vymxc
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts tests/integration/ci-workflow-contract.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts tests/integration/ci-workflow-contract.spec.ts
+  hosted_checks[3]: Gates (coverage),Gates (static),Nightly Validation
+body: ""

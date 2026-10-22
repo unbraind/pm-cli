@@ -104,3 +104,8 @@ compose without warnings, and runtime invokes only the matching owner. Empty or
 omitted command ownership retains the legacy global behavior and collides with
 every other override. Activation summaries and persisted contribution
 inventories expose `preflight_ownership` for static doctor and tooling output.
+
+Rollback failures retain the initial error as their cause and expose an original
+typed refusal as `context.original_code`, while keeping the rollback code and
+exit policy. This diagnostic boundary is tracked by
+[pm-4vymxc](../.agents/pm/issues/pm-4vymxc.toon).

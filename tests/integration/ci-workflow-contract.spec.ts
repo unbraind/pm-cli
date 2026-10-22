@@ -317,7 +317,18 @@ describe("GitHub workflow contract", () => {
       else expect(execute).toThrow();
     }
     expect(aggregate.steps.some((step: { run?: string }) => step.run?.includes("pnpm exec vitest --merge-reports=.vitest-reports --coverage") && step.run.includes("node scripts/release/coverage-threshold-gate.mjs"))).toBe(true);
-    if (file === "nightly.yml") return;
+    if (file === "nightly.yml") {
+      const alert = aggregate.steps.find((step: { name?: string }) => step.name === "Alert on scheduled nightly failure");
+      for (const outcome of ["success", "failure", "cancelled", "skipped"]) {
+        for (const event of ["schedule", "workflow_dispatch"]) {
+          expect(runInNewContext(alert.if, {
+            failure: () => true, github: { event_name: event },
+            steps: { shard_admission: { outcome } },
+          })).toBe(outcome === "success" && event === "schedule");
+        }
+      }
+      return;
+    }
     const artifact = aggregate.steps.find((step: { name?: string }) => step.name === "Upload coverage artifact");
     const verifier = aggregate.steps.find((step: { id?: string }) => step.id === "codecov_cli");
     expect(artifact.if).toContain("steps.shard_admission.outcome == 'success'");

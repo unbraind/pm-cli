@@ -142,12 +142,15 @@ export async function withVerifiedExtensionInstall<T extends { ok: boolean; deta
         await restoreExtensionInstallSnapshot(snapshot);
       } catch (rollbackError: unknown) {
         retainBackup = true;
-        throw new PmCliError(`Extension install failed: ${String(error)}; rollback failed: ${String(rollbackError)}`, EXIT_CODE.GENERIC_FAILURE, {
+        const wrapped = new PmCliError(`Extension install failed: ${String(error)}; rollback failed: ${String(rollbackError)}`, EXIT_CODE.GENERIC_FAILURE, {
           code: "extension_install_rollback_failed",
+          original_code: error instanceof PmCliError ? error.code : undefined,
           required: "Restore the previous package before retrying the replacement. Previous state was not preserved.",
           nextSteps: [destinationExists ? recoveryCommand : "Repair the reported metadata write failure, then retry the original install."],
           ...(destinationExists ? { recovery: { suggested_retry: recoveryCommand, suggested_retry_args: recoveryArgs } } : {}),
         });
+        Object.defineProperty(wrapped, "cause", { value: error, configurable: true, writable: true });
+        throw wrapped;
       }
       throw error;
     }

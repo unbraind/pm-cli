@@ -5,6 +5,7 @@ import { runExtension } from "../../../src/sdk/extension.js";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { inspectWorkspaceHistoryState } from "../../../src/core/history/workspace-history.js";
+import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { execFileSync, spawnSync } from "node:child_process";
 
@@ -55,7 +56,7 @@ describe("verified package replacement", () => {
     });
   });
 
-  it.each(["verification", "persistence"])("retains a recovery source and a concrete command when restoring a %s failure fails", async (phase) => {
+  it.each(["verification", "persistence", "persistence-typed", "persistence-untyped-pm"])("retains a recovery source and a concrete command when restoring a %s failure fails", async (phase) => {
     await withTempPmPath(async (context) => {
       const gitEnv = { ...process.env };
       for (const key of Object.keys(gitEnv)) if (key.startsWith("GIT_")) delete gitEnv[key];
@@ -68,10 +69,15 @@ describe("verified package replacement", () => {
       const copy = fs.cp;
       const write = fs.writeFile;
       let rejectedWrite = false;
+      const original = phase === "persistence-typed"
+        ? new PmCliError("managed state rejected", EXIT_CODE.USAGE, { code: "original_install_refusal" })
+        : phase === "persistence-untyped-pm"
+          ? new PmCliError("managed state rejected", EXIT_CODE.USAGE)
+          : new Error("managed state rejected");
       const writeSpy = vi.spyOn(fs, "writeFile").mockImplementation(async (file, data, options) => {
-        if (phase === "persistence" && !rejectedWrite && String(file) === path.join(context.pmPath, "extensions", ".managed-extensions.json")) {
+        if (phase.startsWith("persistence") && !rejectedWrite && String(file) === path.join(context.pmPath, "extensions", ".managed-extensions.json")) {
           rejectedWrite = true;
-          throw new Error("managed state rejected");
+          throw original;
         }
         return write(file, data, options);
       });
@@ -92,6 +98,9 @@ describe("verified package replacement", () => {
       let rollback: { backup_directory: string; recovery_args: string[] };
       if (result! instanceof PmCliError) {
         expect(result).toMatchObject({ code: "extension_install_rollback_failed", context: { required: expect.stringContaining("not preserved"), recovery: { suggested_retry: expect.stringContaining("pm package install") } } });
+        expect(result.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+        expect(result.cause).toBe(original);
+        expect(result.context.original_code).toBe(phase === "persistence-typed" ? "original_install_refusal" : undefined);
         const args = result.context.recovery!.suggested_retry_args!;
         rollback = { backup_directory: args[2], recovery_args: args };
       } else {

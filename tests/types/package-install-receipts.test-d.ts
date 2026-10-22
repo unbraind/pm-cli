@@ -1,4 +1,5 @@
 /** Compile the installation preservation contract through both public package entrypoints. */
+import { PmCliError } from "@unbrained/pm-cli/sdk";
 import type { ExtensionCommandResult } from "@unbrained/pm-cli/sdk";
 import type { PackageCommandResult } from "@unbrained/pm-cli/sdk/runtime";
 
@@ -21,3 +22,7 @@ void preserved;
 void restored;
 void incomplete;
 void mislabeled;
+
+const diagnostic = new PmCliError("rollback failed", 1, { original_code: "original_refusal" });
+const originalCode: string | undefined = diagnostic.context.original_code;
+void originalCode;
