@@ -35,6 +35,9 @@ export async function acquireHierarchyMutationLock(
         false,
         false,
         options.waitMs,
+        // Many concurrent parented creates queue on this lock; wait while it
+        // keeps changing hands instead of failing at a fixed deadline.
+        { waitPolicy: "progress" },
       )
     : async () => {};
   let released = false;

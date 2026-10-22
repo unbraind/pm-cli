@@ -519,6 +519,16 @@ function createLockWaitTracker(waitBudgetMs: number, totalCeilingMs: number) {
   };
 }
 
+/** Total wait ceiling: progress waits extend to LOCK_PROGRESS_MAX_WAIT_MS unless capped. */
+function resolveLockWaitCeilingMs(
+  waitBudgetMs: number,
+  maxWaitMs: number | undefined,
+  waitPolicy: AcquireLockOptions["waitPolicy"],
+): number {
+  if (waitPolicy !== "progress" || maxWaitMs !== undefined) return waitBudgetMs;
+  return Math.max(waitBudgetMs, LOCK_PROGRESS_MAX_WAIT_MS);
+}
+
 /** Identity of one lock generation; a change proves another writer made progress. */
 function lockGenerationKey(info: LockInfo | null): string {
   if (info === null) return "released";
@@ -941,6 +951,12 @@ type AcquireLockOptions = {
   createParentDirectories?: boolean;
   /** Ceiling on the effective retry budget, including PM_LOCK_WAIT_MS. */
   maxWaitMs?: number;
+  /**
+   * How the wait budget is spent. "total" (default) refuses once the budget
+   * elapses. "progress" treats it as a no-progress window that every observed
+   * owner handoff restarts, bounded by maxWaitMs or LOCK_PROGRESS_MAX_WAIT_MS.
+   */
+  waitPolicy?: "total" | "progress";
 };
 
 /**
@@ -977,11 +993,12 @@ export async function acquireLock(
 }
 
 /**
- * Acquire a lock as a fenceable lease. The wait budget is a no-progress window:
- * every observed owner handoff restarts it, so a queue of live writers drains
- * instead of failing at a fixed deadline, while a stalled owner still refuses
- * after the configured budget. Without an explicit maxWaitMs the total wait is
- * bounded by LOCK_PROGRESS_MAX_WAIT_MS (or the budget itself when larger).
+ * Acquire a lock as a fenceable lease. With `waitPolicy: "progress"` the wait
+ * budget is a no-progress window: every observed owner handoff restarts it, so a
+ * queue of live writers drains instead of failing at a fixed deadline, while a
+ * stalled owner still refuses after the configured budget. Without an explicit
+ * maxWaitMs such a wait is bounded by LOCK_PROGRESS_MAX_WAIT_MS (or the budget
+ * itself when larger). The default "total" policy keeps a fixed total budget.
  */
 export async function acquireLockLease(
   pmRoot: string,
@@ -1022,10 +1039,11 @@ export async function acquireLockLease(
 
   const lockPath = getLockPath(pmRoot, id);
   const waitBudgetMs = cappedLockWaitMs(waitMs, maxWaitMs);
-  const totalCeilingMs =
-    maxWaitMs === undefined
-      ? Math.max(waitBudgetMs, LOCK_PROGRESS_MAX_WAIT_MS)
-      : waitBudgetMs;
+  const totalCeilingMs = resolveLockWaitCeilingMs(
+    waitBudgetMs,
+    maxWaitMs,
+    options.waitPolicy,
+  );
   const waitTracker = createLockWaitTracker(waitBudgetMs, totalCeilingMs);
   const startedAtMs = waitTracker.startedAtMs;
   let staleRemovals = 0;

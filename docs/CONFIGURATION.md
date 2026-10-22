@@ -115,9 +115,11 @@ receipt before removal; it records the original owner and is an attempted
 recovery audit, not proof that a later mutation committed. Keep these local
 runtime receipts out of version control.
 
-The wait budget measures stalls, not queue length: while other writers keep
-acquiring and releasing the lock, a waiter keeps waiting (up to 120 s total), so
-many concurrent agents on one tracker queue instead of failing. A lock held by
+For item mutations, restore and parented creates the wait budget measures
+stalls, not queue length: while other writers keep acquiring and releasing the
+lock, a waiter keeps waiting (up to 120 s total), so many concurrent agents on
+one tracker queue instead of failing. Internal short-lived locks keep a fixed
+total budget. A lock held by
 the same owner for the whole budget still refuses with `lock_conflict`, whose
 recovery reports `waited_ms` and `owner_handoffs`. A writer whose lease expired
 and was taken over refuses its commit with `lock_lost` instead of overwriting

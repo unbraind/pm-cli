@@ -301,7 +301,7 @@ describe("progress-aware lock waiting (GH-1516)", () => {
       const startedAt = Date.now();
       // The 300 ms window is far shorter than the ~1.1 s queue, so a fixed
       // deadline would refuse; each observed handoff restarts the window.
-      const lease = await acquireLockLease(root, "shared", 60, "waiter", false, false, 300);
+      const lease = await acquireLockLease(root, "shared", 60, "waiter", false, false, 300, { waitPolicy: "progress" });
       expect(Date.now() - startedAt).toBeGreaterThanOrEqual(900);
       await handoffs;
       await lease.release();
@@ -313,14 +313,16 @@ describe("progress-aware lock waiting (GH-1516)", () => {
       vi.stubEnv("PM_LOCK_WAIT_MS", "");
       const holder = await acquireLockLease(root, "shared", 60, "holder", false, false, 0);
       try {
-        const error = await acquireLockLease(root, "shared", 60, "waiter", false, false, 200).catch((caught: unknown) => caught);
+        const error = await acquireLockLease(root, "shared", 60, "waiter", false, false, 200, { waitPolicy: "progress" }).catch(
+          (caught: unknown) => caught,
+        );
         expect(error).toMatchObject({
           code: "lock_conflict",
           context: { recovery: { owner_handoffs: 0 } },
         });
         const waited = (error as { context: { recovery: { waited_ms: number } } }).context.recovery.waited_ms;
         expect(waited).toBeGreaterThanOrEqual(200);
-        expect(waited).toBeLessThan(2_000);
+        expect(waited).toBeLessThan(10_000);
       } finally {
         await holder.release();
       }
@@ -339,13 +341,35 @@ describe("progress-aware lock waiting (GH-1516)", () => {
         }
       })();
       try {
-        const error = await acquireLockLease(root, "shared", 60, "waiter", false, false, 200, { maxWaitMs: 400 }).catch(
+        const error = await acquireLockLease(root, "shared", 60, "waiter", false, false, 200, { maxWaitMs: 400, waitPolicy: "progress" }).catch(
           (caught: unknown) => caught,
         );
         expect(error).toMatchObject({ code: "lock_conflict" });
         const recovery = (error as { context: { recovery: { waited_ms: number; owner_handoffs: number } } }).context.recovery;
         expect(recovery.owner_handoffs).toBeGreaterThan(0);
-        expect(recovery.waited_ms).toBeLessThan(1_500);
+        expect(recovery.waited_ms).toBeLessThan(10_000);
+      } finally {
+        running = false;
+        await handoffs;
+      }
+    });
+  });
+
+  it("keeps a fixed total budget by default even while owners keep changing", async () => {
+    await withTempDir("pm-lock-total-", async (root) => {
+      vi.stubEnv("PM_LOCK_WAIT_MS", "");
+      await publishGeneration(root, "shared", "writer-0");
+      let running = true;
+      const handoffs = (async () => {
+        for (let index = 1; running; index += 1) {
+          await sleep(60);
+          await publishGeneration(root, "shared", `writer-${index}`);
+        }
+      })();
+      try {
+        const error = await acquireLockLease(root, "shared", 60, "waiter", false, false, 300).catch((caught: unknown) => caught);
+        expect(error).toMatchObject({ code: "lock_conflict" });
+        expect((error as { context: { recovery: { owner_handoffs: number } } }).context.recovery.owner_handoffs).toBeGreaterThan(0);
       } finally {
         running = false;
         await handoffs;

@@ -353,6 +353,7 @@ export async function runRestore(
     Boolean(options.force),
     settings.governance.force_required_for_stale_lock,
     settings.locks.wait_ms,
+    { waitPolicy: "progress" },
   );
   const releaseLock = lease.release;
 

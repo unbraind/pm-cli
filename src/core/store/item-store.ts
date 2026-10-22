@@ -517,6 +517,7 @@ async function prepareLockedItem(params: {
     Boolean(params.force),
     params.settings.governance.force_required_for_stale_lock,
     params.settings.locks.wait_ms,
+    { waitPolicy: "progress" },
   );
   const releaseLock = lease.release;
 

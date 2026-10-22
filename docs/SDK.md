@@ -245,10 +245,12 @@ The built-in provider automatically recovers a provably dead original Linux
 owner before TTL. Unknown owners retain the existing lease policy. Conflicts
 expose the lock identity, observed process state, `waited_ms`, observed
 `owner_handoffs` and wait advice through `PmCliError.context`. The wait budget
-is a no-progress window: each observed owner handoff restarts it, so a queue of
-live writers drains while a stalled owner still refuses after the budget.
-Without an explicit `maxWaitMs` the total wait is capped at 120 seconds (or the
-budget, when larger). Force does not bypass an unexpired lock whose owner is
+is a fixed total by default. Pass `{ waitPolicy: "progress" }` in the options
+object to treat it as a no-progress window instead: each observed owner handoff
+restarts it, so a queue of live writers drains while a stalled owner still
+refuses after the budget. Without an explicit `maxWaitMs` such a wait is capped
+at 120 seconds (or the budget, when larger). Item mutations, restore and the
+hierarchy lock use the progress policy. Force does not bypass an unexpired lock whose owner is
 alive or unverifiable. TTL expiry permits removal regardless of owner liveness.
 
 An expired holder can keep running, so fence the protected write with

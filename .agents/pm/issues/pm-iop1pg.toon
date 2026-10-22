@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: bug,concurrency,locks,multi-agent,sdk
 created_at: "2026-10-22T18:10:30.531Z"
-updated_at: "2026-10-22T19:45:38.667Z"
+updated_at: "2026-10-22T21:16:40.842Z"
 closed_at: "2026-10-22T19:15:15.063Z"
 completed_at: "2026-10-22T19:15:15.063Z"
 author: "harness:claude-code"
@@ -23,6 +23,8 @@ actual_result: All 20 concurrent writers committed in the conformance test; stal
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1549,related,"2026-10-22T18:10:30.531Z","harness:claude-code","cli:create:dep",detected
   pm-lvyd,implements,"2026-10-22T18:10:30.531Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-10-22T21:16:40.841Z","harness:claude-code","Review follow-up (PR #1550): the handoff-restarted window is now OPT-IN via acquireLock/acquireLockLease options { waitPolicy: 'progress' }. Default stays a fixed total budget so short-budget internal locks (foreground telemetry 250 ms, context usage ledger, derived-index lock) and public acquireLock callers keep their exact latency contract, and PM_LOCK_WAIT_MS can still raise them (capping them with maxWaitMs would have removed that escape hatch). Enabled on the item-store lease, restore and the hierarchy-integrity lock, which are the GH-1516 contention paths."
 files[3]{path,scope}:
   docs/CONFIGURATION.md,project
   src/core/lock/lock.ts,project
