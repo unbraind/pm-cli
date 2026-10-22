@@ -2,26 +2,28 @@ id: pm-gxq0dt
 title: Bound complete nightly validation and exact coverage within existing job deadlines
 description: "Candidate Nightly39771151475 at c7010bb2 has no persistent test assertion failure before Ubuntu24 coverage and Windows24 shard1 are canceled by their existing20-minute maximum. Linux22 completes in19m30s and Linux25 in16m23s. Partition the complete native workload with Vitest execution sharding and merge all coverage blobs only after successful shard admission, preserving every assertion, exact100% thresholds, supported platforms, free standard runners and original first-attempt history."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: bug,ci,testing
 created_at: "2026-10-22T12:08:55.456Z"
-updated_at: "2026-10-22T14:22:18.686Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
+updated_at: "2026-10-22T14:45:52.740Z"
+closed_at: "2026-10-22T14:45:51.987Z"
+completed_at: "2026-10-22T14:45:51.987Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Full suite partitioned without omissions or duplicates; Exact global coverage remains100 percent in all four measures with unsuccessful shard refusal; Original scheduled reliability history preserved and every required recurrence check updated; Complete hosted nightly succeeds on candidate
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: Every complete native partition and the exact global coverage aggregate succeed under the unchanged20-minute job bound; retired and new families remain in historical reliability.
+resolution: "Partitioned the complete native corpus across14 explicit platform jobs, retained exact global coverage admission and100-percent thresholds, prevented duplicate aggregate alerts, registered the recurrence family and pipeline, and preserved historical populations and failures."
+expected_result: Every native partition completes within the existing20-minute bound; aggregate coverage admits only a fully successful matrix and enforces exact100/100/100/100 with zero uncovered counts.
+actual_result: "Nightly39795091164 on744a4c95a succeeds:14 native partitions, quality and strict aggregate pass;11035 tests pass with3 existing skips across852 files, and exact global coverage is100/100/100/100. Local67 workflow/reliability/registry cases and complete partition-membership controls pass."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-bj7rq0,related,"2026-10-22T12:08:55.456Z","harness:codex","cli:create:dep",detected
   pm-qrirz8,recurs_from,"2026-10-22T12:08:55.456Z","harness:codex","cli:create:dep",detected
   pm-ul9rye,related,"2026-10-22T12:43:17.107Z","harness:codex","cli:update:dep",detected
   pm-gh1485,related,"2026-10-22T13:29:37.833Z","harness:codex","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-10-22T12:08:55.456Z","harness:codex","Duplicate check: full3058-item all-status corpus plus current open/in-progress lists and nightly timeout shard keyword search find no exact open allocation owner. Full live closed pm-qrirz8 and pm-ul9rye confirm completed prior allocation fixes; pm-bj7rq0 remains open for broader product startup performance. Job119798730778 and119798730969 annotations explicitly report maximum execution time20m0s; retain canceled evidence rather than recast it as green. GitHub official workflow syntax and contexts documentation supports needs.result admission and always aggregate execution: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax and https://docs.github.com/en/actions/reference/workflows-and-actions/contexts ."
   "2026-10-22T12:11:51.082Z","harness:codex","Allocation retains the20-minute bound and uses14 complete native partitions: Linux22 and25 two each, Linux24 coverage four, macOS24 two, Windows24 four. Global coverage runs only after every native partition succeeds, using all four blobs and unchanged exact100% thresholds. Reliability derives the aggregate family too, so missing aggregate evidence remains pending. Existing recurrence families now require all four Windows partitions. No assertion, per-test deadline, retry, coverage denominator or original failure is weakened."
   "2026-10-22T12:13:52.723Z","harness:codex","Local acceptance passes67 workflow/reliability/registry tests and all four TypeScript projects. Final identical tests against unchanged main fail five assertions while53 controls pass, including unsuccessful aggregate admission and missing aggregate population. An earlier negative run also had a test interpolation syntax error; that was corrected before this final receipt. Installed public Vitest BaseSequencer.shard partitions the current852 project/file identities into426+426 and213+213+213+213, with zero missing/duplicate identities. Gate-registry controls caught the new aggregate pipeline registration omission and passed after explicit registration. Hosted execution remains required; no global100% claim is made yet."
@@ -36,6 +38,7 @@ comments[14]{created_at,author,text}:
   "2026-10-22T13:37:58.598Z","harness:codex","Additional provider census from the GitHub checks API: Cubic is neutral because its monthly review allowance is exhausted,40405 of40000 lines, resuming November1. Source217 full CodeRabbit review was requested once and explicitly rate-limited until the next included review around13:38UTC; each of the five prior inline findings has a concrete reply and resolved thread, with CodeRabbit confirmations. Sourcery quota and Greptile trial unavailability remain limitations, not approvals. No paid provider, runner, quota override or review-pattern relaxation is used."
   "2026-10-22T13:43:24.340Z","harness:codex","The one unchanged failed-jobs retry of CI39784395996 is successful at attempt2 on217eece7c. The initial suspended-reader append-guard failure remains retained, with no source,1500ms bound or retry-policy change. This is successful same-head retry evidence, not proof of its cause or a repair to historical reader contention. The separately reproduced Windows file-ancestor defect has an explicit SDK directory check and remains active under its review leaf."
   "2026-10-22T14:22:18.686Z","harness:codex","Read-only watcher liveness audit: GitHub jobs API still reports Packed first run Windows24 job119861968189 in_progress with completed_at null, but every step is completed successfully through14:11:27UTC. Chrome confirms the same exact68499c070 job succeeded in17m36s, including15m09s full npm/npx/Bun/bunx acceptance. The overall old CI run remains failed on the known stale SDK vocabulary receipt. Stop only the stale read-only watcher, preserve all run outcomes, and replace this superseded source head with the generated receipt correction. This is an API-state inconsistency, not missing packed consumer execution."
+  "2026-10-22T14:45:51.181Z","harness:codex","Current-source acceptance: Nightly Validation39795091164 at744a4c95ae579326cf3c7fde2b2dd749d32a86f5 completes successfully. All14 native partitions and quality satisfy the unchanged20-minute limits, and the admitted aggregate reports851 passed files plus1 existing skip,11035 passed tests plus3 existing skips, and exact100/100/100/100 with zero uncovered counts. Full logs retain every original failure and the strict refusal controls. This proves the bounded complete allocator; it does not erase historical Release Reliability failures or qualified local CLI startup misses, which remain separately tracked. Required PR acceptance and the final metadata review still must complete before merge."
 learnings[1]{created_at,author,text}:
   "2026-10-22T12:13:53.661Z","harness:codex","When introducing coverage aggregation, register the new pipeline in the executable gate inventory and derive its expected reliability family from each original workflow. Successful test partitions cannot imply a successful or present aggregate. Prove membership with Vitest execution sequencing rather than filesOnly listing, which does not itself shard."
 files[6]{path,scope}:
@@ -62,6 +65,7 @@ test_runs[1]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/TESTING.md,project
+close_reason: Complete native validation and exact global coverage pass within existing deadlines
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

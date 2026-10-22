@@ -2,26 +2,28 @@ id: pm-4vymxc
 title: "PR1548: preserve rollback diagnostic provenance and reject non-directory ancestry"
 description: "CodeRabbit full review of PR1548 identified two additional SDK boundary defects: physical initialization ancestry treats ENOTDIR as absence and can publish rules for an impossible tracker; a failed rollback wrapper discards the original typed refusal code and cause. Preserve the final rollback code and exit policy while retaining diagnostic provenance, and require ENOENT-only ancestry climbing. Delivery also corrects the reviewed recovery corpus typo and stale hosted-check metadata through the CLI."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: bug,review,sdk
 created_at: "2026-10-22T12:58:46.665Z"
-updated_at: "2026-10-22T14:16:16.842Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
+updated_at: "2026-10-22T14:45:58.047Z"
+closed_at: "2026-10-22T14:45:56.751Z"
+completed_at: "2026-10-22T14:45:56.751Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: Real regular-file ancestry rejects without writing rules; Typed and untyped original rollback errors retain cause and only typed errors expose original code; Original recovery command and retained backup still execute; Source and metadata findings are resolved in the same reviewed PR
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: Non-directory ancestry rejects before .gitignore mutation; rollback failure retains the original cause and typed code without changing the wrapper code or exit status.
+resolution: "Retained original rollback failure cause and optional typed original_code without changing generic exit behavior, rejected real non-directory ancestors across platforms, regenerated the emitted ENOTDIR SDK receipt, and corrected review-discovered alert and PM command/check evidence."
+expected_result: "Failed rollback exposes recovery plus original failure provenance, while invalid file ancestry refuses before ignore writes on every supported platform; public SDK types and generated receipts agree."
+actual_result: "Linked59 focused cases, public SDK type fixtures and native full acceptance pass. Windows direct-file and nested-file refusals preserve ignore bytes; Nightly39795091164 reports11035 passing cases and exact100/100/100/100. Five actionable review findings have concrete fixes and resolved threads, with subsequent full source review reporting none."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-c9wz5ef4ulnv,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
   pm-f05lsg,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
   pm-gxq0dt,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
   pm-p8s5k7e6lhda,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
-comments[7]:
+comments[8]:
   - created_at: "2026-10-22T12:58:46.665Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status intake plus current open/in-progress lists and rollback ancestry provenance review keyword search find no exact open owner. The three original source items have complete live closure evidence and remain closed. This is a distinct review_caught_late leaf for newly validated refusal boundaries rather than a duplicate implementation item or forced claim on terminal work. CodeRabbit inline findings4348548828 and4348548842 are assessed against current source; exact thread IDs and tests are recorded below."
@@ -44,6 +46,9 @@ comments[7]:
   - created_at: "2026-10-22T14:16:15.991Z"
     author: "harness:codex"
     text: "The complete full CodeRabbit review at68499c070 finishes with no actionable comments after all five earlier findings were resolved. Its two generated-source exclusions remain disclosed; generated contracts are checked separately. Current local linked acceptance passes42 SDK cases plus17 SDK surface script cases, and sdk:surface:check reports0 classified changes after the configured generator adds ENOTDIR. The remaining change is the generated vocabulary receipt and CLI-authored evidence, with runtime source unchanged from the reviewed directory guard."
+  - created_at: "2026-10-22T14:45:55.498Z"
+    author: "harness:codex"
+    text: "Final current-source native acceptance: Nightly39795091164 on744a4c95a passes every platform partition and strict global100-percent coverage with11035 passing cases. This includes Windows direct-file and descendant ancestry refusals and unchanged ignore-byte controls. The generated SDK emitted-error vocabulary now contains ENOTDIR and surface checking has zero unclassified changes. Local linked acceptance passes42 replacement/workspace cases plus17 SDK-snapshot controls; four TypeScript projects and public receipt/context type fixtures pass. All five original review threads are fixed and resolved; the full68499c070 CodeRabbit review had no actionable findings. Latest metadata/generated-receipt review remains part of pre-merge acceptance."
 learnings[1]{created_at,author,text}:
   "2026-10-22T14:16:16.842Z","harness:codex",Filesystem absence does not prove that the nearest existing ancestor is a directory on every platform. Check directory type before reattaching missing suffixes. A newly emitted native errno also changes the SDK emitted-error vocabulary even when no declaration changes; run SDK surface verification as well as command contracts before pushing.
 files[7]{path,scope}:
@@ -103,8 +108,10 @@ test_runs[4]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/EXTENSION_LIFECYCLE.md,project
+close_reason: Rollback provenance and physical directory ancestry validated on all native platforms
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

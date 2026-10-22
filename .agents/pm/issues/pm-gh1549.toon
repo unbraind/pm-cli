@@ -1,0 +1,29 @@
+id: pm-gh1549
+title: "GH-1549: fence item commits after an expired mutation lease is taken over"
+description: "A newly received GitHub report demonstrates a stale SDK mutateItem callback silently overwriting a newer committed CLI update after TTL takeover. Independently reproduced through the public SDK entrypoint on current744a4c95a in a disposable non-Git tracker, with only locks.ttl_seconds changed to1. The peer commits successfully, the stale SDK writer is not refused, and the final title is Stale overwrite. This is small-N correctness, separate from large-N lock throughput and checkpoint claim-generation fencing."
+type: Issue
+status: open
+priority: 1
+tags[4]: bug,concurrency,data-integrity,sdk
+created_at: "2026-10-22T14:40:08.187Z"
+updated_at: "2026-10-22T14:40:08.187Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Deterministic cross-process and same-process controls preserve a newer write after lease takeover; Stale commits return a typed conflict with bounded ownership/generation evidence and no item/history write; Preserve dead-owner recovery and explicit stale-lock policy without unsafe force advice; Audit other SDK mutation paths and document the lease/fencing contract
+parent: pm-dj98
+risk: high
+confidence: high
+severity: high
+expected_result: "After another writer takes over and commits, the stale mutation refuses before overwriting item or authoritative history state; the newer committed value remains unchanged. Preserve supported stale takeover and proven-dead-owner recovery policies."
+actual_result: "Isolated public-SDK plus CLI reproduction: ttl1, newerCommitted=true, staleWriterRefused=false, finalTitle=Stale overwrite. Current source remains affected; no production tracker was used or modified."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-02z97f,related,"2026-10-22T14:40:08.187Z","harness:codex","cli:create:dep",detected
+  pm-gh1359,related,"2026-10-22T14:40:08.187Z","harness:codex","cli:create:dep",detected
+  pm-lvyd,related,"2026-10-22T14:40:08.187Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-22T14:40:08.187Z","harness:codex","Duplicate check: initial complete strict3058-item all-status corpus plus fresh exact GH1549 and fencing/TTL/lost-writer searches and current open/in-progress lists found no exact mutation-lease fence owner. Full live pm-02z97f is completed dead-owner recovery and explicitly preserves expired-lease policy with caller fencing guidance; pm-gh1359 owns checkpoint claim generations and pm-lvyd owns large-N throughput. This separate integrity boundary is reproduced on the current source through the published public SDK import surface. The focused package/workspace delivery remains under active review; this intake stays open and unclaimed rather than implying an implemented fence."
+files[2]{path,scope}:
+  src/core/lock/lock.ts,project
+  src/core/store/item-store.ts,project
+escape_class: production_defect
+body: ""
