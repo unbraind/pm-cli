@@ -2645,7 +2645,8 @@ import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
 
 ## Authoring Builders
 
-Tracked: [pm-12tj](../.agents/pm/features/pm-12tj.toon) (design rationale: ADR [pm-3mph](../.agents/pm/decisions/pm-3mph.toon)).
+Tracked: [pm-12tj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-12tj.toon) (design rationale: ADR [pm-3mph](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-3mph.toon)); exactness and literal inference: [pm-gh1539](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1539.toon).
+These repository-only tracking records are excluded from npm.
 
 The `define*` builders are the authoring half of the `author → register → test`
 loop: they type a registration definition where you write it, before it ever
@@ -2688,7 +2689,8 @@ export function activate(api: ExtensionApi): void {
 
 Object-definition builders (`defineExtensionManifest`, `defineCommand`,
 `defineFlag`, `defineItemType`, `defineItemField`, `defineMigration`,
-`defineSearchProvider`, `defineVectorStoreAdapter`) preserve the narrow literal
+`defineSearchProvider`, `defineVectorStoreAdapter`, `defineProjectProfile`) use
+const type parameters to preserve the narrow literal
 type. `defineExtensionManifest` additionally contract-checks the in-module
 manifest mirror where it is authored and pairs with `deriveExtensionCapabilities`
 (see [Declarative Authoring](#declarative-authoring)). Function-definition
@@ -2701,11 +2703,16 @@ parameter is contextually typed instead of falling back to `any`. The
 [`assertRegistered*`](#testing-helpers) helpers below verify these same
 definitions once registered.
 
-The object builders reject unknown keys at the call site, including
-`defineFlag`, item type/field, migration, search-provider, and vector-adapter
-definitions. This catches misspellings without weakening the runtime registry's
-forward-compatible storage boundary. Schema builders explicitly include their
-supported `default`/`values` and item-type description/default-status fields.
+The object builders reject unknown top-level keys, including command, manifest,
+and profile definitions and separately authored variables. This catches
+misspellings without changing the runtime registry's storage boundary. Keep
+package-specific annotations beside the registration definition. Existing values
+already typed as a registration contract remain usable; a builder cannot recover
+literal information that was widened before the call. Flag builders support
+`repeatable` and `value_validation`; schema builders include their supported
+`default`/`values` and item-type description/default-status fields. Scoped renderer
+and preflight object builders also retain literal command ownership while
+contextually typing their callbacks.
 
 ## Declarative Authoring
 
@@ -3371,6 +3378,13 @@ remain accepted. Workspace schema option identities remain available through
 MCP retains its existing transport-specific admission contract. The no-change
 receipt applies to these preflight refusals; an executed operation's outcome
 and evidence must be assessed separately.
+
+MCP create/update normalize their advertised mutation fields through the SDK and
+refuse malformed values atomically; see [MCP option conformance](MCP_OPTION_CONFORMANCE.md).
+Embedded hosts can use `readRuntimeFieldOptionValue(options, definition)` with
+definitions from `resolveRuntimeFieldRegistry(settings.schema)` to recognize the
+same project-field aliases as persistence. These helpers are exported from the
+aggregate SDK, so hosts can preserve customization without copying key mappings.
 
 1. Read `PM_TOOL_ACTIONS` or `PM_TOOL_PARAMETERS_SCHEMA` for baseline static validation.
 2. Load runtime contracts with `getContracts(pmRoot, { runtimeOnly: true })` or run `pm contracts --runtime-only --json` inside the target project.

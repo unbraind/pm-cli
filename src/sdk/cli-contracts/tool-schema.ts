@@ -33,6 +33,7 @@ import {
   withFlagAliasMetadata,
 } from "./flag-contracts.js";
 import { resolveReadOutputSurface } from "../read-output-contracts.js";
+import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "./commander-mutation-options.js";
 
 /** MCP proof transport carries JSON data and explicitly forbids local output paths. */
 const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: typeof BASE_ACTION_SCOPED_PARAMETER_PROPERTIES = {
@@ -285,9 +286,6 @@ function toSchemaKeyList(values: string[]): string[] {
 const CREATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_CREATE_OPTION_CONTRACTS.map((entry) => entry.param),
   ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
-  "assignee",
-  "closeReason",
-  "completedAt",
 ]);
 
 const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
@@ -1751,8 +1749,11 @@ export function pmToolActionNestedOptionKeys(
 ): string[] | undefined {
   const parameterKeys = pmToolActionParameterKeys(action);
   if (parameterKeys === undefined) return undefined;
+  const mutationContracts = action === "create" ? CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS
+    : action === "update" ? UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS : [];
   return toSchemaKeyList([
     ...parameterKeys,
+    ...mutationContracts.flatMap(({ keys, target }) => [target, ...keys]),
     ...(PM_TOOL_ACTION_NESTED_OPTION_COMPATIBILITY_KEYS[action] ?? []),
   ]);
 }

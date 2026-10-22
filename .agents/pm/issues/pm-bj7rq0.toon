@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-21T18:14:48.446Z"
+updated_at: "2026-10-22T04:50:03.999Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[79]:
+comments[83]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -262,6 +262,18 @@ comments[79]:
   - created_at: "2026-10-21T18:14:48.446Z"
     author: "harness:codex"
     text: "PR1536 first-head25d8b6f CodSpeed report marks encodeQueryCursor211.7 to214.8microseconds (-1.43percent), decodeQueryCursor368.8 to244.8 (+50.64percent), and9 cases untouched. Chrome inspection confirms global threshold1percent and CPU Simulation; baseline AMD EPYC9V74 and head Intel Xeon Platinum8573C differ. The encoder source, benchmark fixture and dependency lockfile are unchanged. The system-call warning belongs to createQueryFingerprint, not the encoder. Causality remains unproven; no regression acknowledgement, threshold change or speedup claim is made. Assess the revised exact-head comparison separately."
+  - created_at: "2026-10-22T03:15:40.521Z"
+    author: "harness:codex"
+    text: "PR1541 head5c3a0b5 versus mainf5750e0 CodSpeed report marks encodeQueryCursor211.7 to330.5 microseconds (-35.94 percent), with10 untouched benchmarks. Chrome inspection confirms the unchanged1 percent threshold and CPU Simulation profile dominated by regular-expression code (94.89 percent). The separate system-call warning belongs to createQueryFingerprint and does not explain or dismiss this encoder report. The encoder source, benchmark fixture and dependency lockfile have no diff between these exact commits. Causality remains unproven; no regression acknowledgement, benchmark or threshold change is made. Reassess the revised exact-head result before merge."
+  - created_at: "2026-10-22T04:41:06.920Z"
+    author: "harness:codex"
+    text: "Final PR1541 measurement investigation: both5c3a0b5 and5b1f231 repeat an encoder-only CodSpeed CPU Simulation report around330.3us versus immutable mainf5750e0 at211.7us. GitHub job logs verify both base/head use Node24.22.0, Ubuntu22.04 image20261018.327.1 and the same pinned action/lockfile; there is no encoder, benchmark or transitive query-path source change. Chrome shows regex work dominating both profiles (base91.91percent, head94.88percent), while the syscall warning belongs to createQueryFingerprint. Source identity is insufficient to discard the measurement. Run one unchanged-base benchmark replay to test whether that baseline independently reproduces the reported cost; retain both original and replay results without changing thresholds, acknowledging the regression or repeating until green."
+  - created_at: "2026-10-22T04:46:09.730Z"
+    author: "harness:codex"
+    text: "The single immutable-base Actions rerun39686671708 attempt2 completed and uploaded all11 measurements, but the CodSpeed run page and GitHub analysis still expose the original run values and timestamp, so that replay currently supplies no independent published numeric control. Do not infer a pass or change the baseline from it. Use the workflow's existing dispatch entrypoint once for a distinct main/f5750e0 run identity, verify its source SHA, and await its terminal result. An AST walk also confirms zero changed files across the benchmark's82 relative runtime-source imports; this is corroborating scope evidence, not performance acceptance."
+  - created_at: "2026-10-22T04:50:02.447Z"
+    author: "harness:codex"
+    text: "Distinct unchanged-base control39724223047 completed at f5750e07f866a2a0a45af5bac2a951d0ea62e856. CodSpeed exposes run6ad9958b31a7a89d0aca6e1e with encodeQueryCursor211.6us; it does not reproduce the candidate's330.3us. Keep the candidate report and original attempts as unresolved measurement evidence. The complete benchmark runtime-import closure has82 files and zero changed members, but source identity does not prove a timing pass or identify the cause. No encoder/fixture/dependency/performance-budget change or regression acknowledgement was made. This bounded investigation is handed back open and unclaimed; inspect the necessary final documentation revision's exact-head comparison as a separate acceptance result."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

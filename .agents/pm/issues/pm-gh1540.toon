@@ -1,0 +1,25 @@
+id: pm-gh1540
+title: "GH-1540: MCP binaries ignore help and version probes before transport startup"
+description: "External report https://github.com/unbraind/pm-cli/issues/1540 against published 2026.10.21: pm-mcp --help exits silently and pm-mcp-http --help starts a listener instead of exiting. Source entry guards currently start each transport directly without parsing help. Report requests help/version before stdin reads or port binding, documented configuration and supported protocol versions, and npm/Bun executable acceptance. Intake records the source/report evidence; independent packaged reproduction and implementation remain to be done."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-22T00:16:00.958Z"
+updated_at: "2026-10-22T01:18:51.337Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Handle --help and -h plus --version before transport startup; Describe supported configuration and protocol versions with a client example; Prove npm and Bun executable probes return promptly without side effects; Preserve normal stdio and HTTP startup behavior
+parent: pm-5k4v
+risk: medium
+confidence: 90
+expected_result: "Both MCP executable help and version probes return promptly without reading stdin or binding a listener, and report the supported transport configuration."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-qtbc,discovered_from,"2026-10-22T00:16:00.958Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-22T00:16:00.958Z","harness:codex","Duplicate check: fresh keyword search plus complete 3054-item all-status strict/full corpus with no omissions found no owner for MCP executable help. Read the completed npm-bin symlink lineage live; that fix remains closed and distinct. The new report arrived during the current grouped mutation and authoring delivery. Keep this intake item open and unclaimed until implementation begins."
+files[2]{path,scope}:
+  src/mcp/server.ts,project
+  src/mcp/http-server.ts,project
+escape_class: production_defect
+body: ""

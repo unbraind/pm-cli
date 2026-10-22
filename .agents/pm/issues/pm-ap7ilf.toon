@@ -1,0 +1,134 @@
+id: pm-ap7ilf
+title: MCP create drops advertised metadata outside its small top-level allowlist
+description: "Independent stateless stdio reproduction while addressing pm-gh1538: pm_create advertises deadline but ignores a top-level deadline=2026-11-01 with title/type and options.createMode=progressive, returns success and creates an item with no deadline. The same shared SDK hoist path also omits explicit create id and other canonical metadata. Extend canonical parameter normalization and atomic malformed-value preflight to create while preserving native SDK input admission, custom fields, nested aliases and template/type resolution."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-21T23:10:30.182Z"
+updated_at: "2026-10-22T04:40:10.312Z"
+closed_at: "2026-10-22T04:40:09.546Z"
+completed_at: "2026-10-22T04:40:09.546Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Persist schema-advertised create metadata including explicit id and deadline; Explicit nested values and equivalent aliases retain precedence; Malformed typed fields refuse before creating any item or history; Public MCP and SDK compatibility plus packed npm and Bun consumers pass
+parent: pm-5k4v
+risk: medium
+confidence: 95
+severity: medium
+resolution: "Create uses canonical SDK metadata contracts, refuses malformed inputs atomically, retains nested/custom/false/completion metadata and exposes a documented runtime-field option lookup helper."
+expected_result: "Persist declared create metadata, refuse malformed values before durable writes, and document the public helper contract and precedence for package authors."
+actual_result: "Durable integration tests preserve id, deadline, custom fields, regression=false and supplied completion metadata; invalid requests leave item/history bytes identical. Full coverage passes10982 tests at100percent; packed Node/Bun consumers and complete static gates pass. The final TSDoc-only correction passes build,33 focused tests, docstring/export/public-surface and documentation-link checks with zero signature changes."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1538,discovered_from,"2026-10-21T23:10:30.182Z","harness:codex","cli:create:dep",detected
+  pm-gh1539,related,"2026-10-22T00:14:25.553Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-10-21T23:10:30.182Z","harness:codex","Duplicate check: fresh request-specific search, open/in-progress inventories and the complete all-status corpus found closed numeric-priority and metadata-surface work but no owner for advertised top-level create values being dropped. This is distinct from the active update-only report. Confirmed through the current built public stdio entrypoint in an isolated non-git tracker with production telemetry disabled. Bundle this matching SDK normalization fix with pm-gh1538 and pm-gh1539 in one reviewed delivery."
+  "2026-10-21T23:22:07.163Z","harness:codex","Implementation and focused evidence: modern MCP create now persists explicit id, deadline, estimate and a declared custom delivery_channel field; nested id and estimatedMinutes beat flat aliases. Malformed priority/type/list/container values refuse with changed=false and all task/history bytes unchanged. A nested false allow_missing_parent also wins over flat true. Strict MCP warning reporting exposed false warnings for valid runtime aliases and declared custom fields; shared SDK alias contracts and the public field lookup now prevent those false diagnostics without allowlisting them. The20 focused mutation/native-admission/MCP compatibility tests pass."
+  "2026-10-21T23:46:52.065Z","harness:codex","A final contract census compared every advertised create/update parameter with the SDK normalization sources. Update has no unmapped mutation parameters; create still declares closeReason and completedAt as ad hoc extras outside TOOL_CREATE_OPTION_CONTRACT_SOURCE. Their CLI registration and domain options already exist. Add them to the canonical option source, remove the duplicate schema extras, and prove persisted imported-terminal metadata before final packing. This avoids leaving two advertised fields on the old no-op path."
+  "2026-10-22T00:00:36.053Z","harness:codex","The imported-terminal control failed before the canonical tuple correction: the supplied completedAt was replaced by the current creation time. Adding closeReason/completedAt to the shared source makes the same isolated test preserve the requested ISO completion time and verify history. The supported regression=false case also exposed a lossy scalar conversion; explicit false now uses the declared booleanish metadata contract while true retains flag-presence semantics. The main fixture covers both plus harmless false controls."
+  "2026-10-22T00:43:49.045Z","harness:codex","Full-suite follow-up: 10980 tests passed and two existing fixed-count assertions still expected43 canonical create parameters. Correct their explicit census to45 for the added completion fields, preserving independent literal counts and the full parity checks. This changes no production code or gate threshold. Rerun both focused census suites before the complete coverage run."
+  "2026-10-22T01:06:52.715Z","harness:codex","Final verification: the packed public SDK passes strict TypeScript 5.9.3 declarations, deliberately degraded literal/exactness control, restored declarations, and Node/Bun activation and runtime identity. Maintained packed npm/npx/Bun/bunx smoke passes. All linked tests pass and the complete repository coverage run passes with 100 percent statements, branches, functions and lines. No coverage denominator, timeout, assertion or quality threshold was reduced. Source-level static checks, import costs and transport floors passed; the graph gate identified new prose references and was repaired through explicit related edges instead of a limit change. The final full static pipeline, terminal defect evidence and generated changelog are required before push."
+  "2026-10-22T04:34:33.651Z","harness:codex","Final review follow-up: CodeRabbit reviewed commit 5b1f2319c5bf294a32a86a63e195e338c1e54534 and confirmed the mutation concern is resolved. The remaining actionable comment requests non-module TSDoc on readRuntimeFieldOptionValue. Add only documentation of its existing first-defined-own-value lookup, configured aliases and explicit false/null preservation; no runtime behavior changes. Reuse this canonical item rather than creating a duplicate. Prior functional and packed-consumer evidence remains valid; rerun build and focused source/documentation contracts, then require final-head hosted CI and renewed reviews."
+  "2026-10-22T04:40:08.704Z","harness:codex","Final documentation correction verified: the public export now documents lookup order, own/defined-value semantics, explicit false/null preservation and undefined fallback. Build, export/dead-code checks, docstring ratchet, public-surface snapshot (zero signature changes), and documentation links pass. All three linked commands pass, including33 focused integration/contract tests and the build/documentation gate. The earlier typo in an ad hoc link-check command invoked a nonexistent script and produced no pass; the maintained docs-skills-gate links-only command subsequently passed and is the linked evidence. Runtime code is unchanged from the10982-test100-percent coverage and complete static pass."
+files[8]:
+  - path: src/mcp/server.ts
+    scope: project
+    note: Recognize declared custom fields in mutation diagnostics
+  - path: src/sdk/cli-contracts/tool-option-contracts.ts
+    scope: project
+    note: Canonical create completion metadata source rather than schema-only extras
+  - path: src/sdk/cli-contracts/tool-schema.ts
+    scope: project
+    note: Prevent false warnings for runtime-consumed create aliases
+  - path: src/sdk/runtime-input.ts
+    scope: project
+    note: SDK canonical create metadata and malformed-input preflight
+  - path: src/sdk/runtime-primitives.ts
+    scope: project
+  - path: tests/integration/sdk/mcp-mutation-contract.integration.spec.ts
+    scope: project
+    note: Durable create metadata nested alias precedence and atomic malformed input regressions
+  - path: tests/unit/scripts/release/command-grammar-gate.spec.ts
+    scope: project
+    note: Retain exhaustive live CLI spelling census after adding completion metadata
+  - path: tests/unit/sdk/tool-option-contracts.spec.ts
+    scope: project
+    note: Pin the complete 45-parameter create contract census
+tests[3]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-22T00:14:39.100Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-authoring-mcp-mutation-contracts
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-22T00:44:03.378Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-authoring-mcp-mutation-contracts
+  - command: "pnpm build && pnpm quality:docstrings && node scripts/sdk-surface-snapshot.mjs --check && node scripts/release/docs-skills-gate.mjs --links-only --json"
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-22T04:37:56.216Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-authoring-mcp-mutation-contracts
+test_runs[3]:
+  - run_id: test-local-mvisp5yl-w7l6m2
+    kind: test
+    status: passed
+    started_at: "2026-10-22T00:20:40.407Z"
+    finished_at: "2026-10-22T00:20:57.069Z"
+    recorded_at: "2026-10-22T00:20:57.069Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvitjs4h-ak10or
+    kind: test
+    status: passed
+    started_at: "2026-10-22T00:44:04.062Z"
+    finished_at: "2026-10-22T00:44:45.473Z"
+    recorded_at: "2026-10-22T00:44:45.473Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvj1x2n1-66jlm6
+    kind: test
+    status: passed
+    started_at: "2026-10-22T04:37:56.967Z"
+    finished_at: "2026-10-22T04:39:02.557Z"
+    recorded_at: "2026-10-22T04:39:02.557Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+      "pnpm build && pnpm quality:docstrings && node scripts/sdk-surface-snapshot.mjs --check && node scripts/release/docs-skills-gate.mjs --links-only --json",schema,schema,source,local_source_ref
+docs[2]:
+  - path: docs/MCP_OPTION_CONFORMANCE.md
+    scope: project
+    note: Canonical create and update transport contract
+  - path: src/sdk/runtime-primitives.ts
+    scope: project
+close_reason: Implemented metadata admission and completed public SDK helper documentation requested in final review.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mcp-create-canonical-metadata-admission
+  owner: unbraind
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts -t \"honors create metadata\"; before the fix a public stdio create dropped deadline and explicit id, imported completedAt became creation time, and regression=false was lost. The committed regression checks stored metadata and unchanged task/history snapshots on malformed input."
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts,"pnpm smoke:npx"
+  hosted_checks[4]: Gates (typecheck),Gates (static),Gates (coverage),Gates (smokes)
+body: ""

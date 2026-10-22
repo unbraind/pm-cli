@@ -236,6 +236,12 @@ export {
   collectRuntimeCreateFieldValues,
   collectRuntimeUpdateFieldValues,
 } from "../core/schema/runtime-field-values.js";
+/**
+ * Reads the first defined own option value for a runtime field, checking its
+ * configured target, camelized key, CLI flag and aliases in that order.
+ * Preserves explicit false and null values; returns undefined when none match.
+ */
+export { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 export {
   type RuntimeFieldCommand,
   type RuntimeFieldRegistry,

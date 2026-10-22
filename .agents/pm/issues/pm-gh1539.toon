@@ -2,11 +2,13 @@ id: pm-gh1539
 title: "GH-1539: enforce command builder keys and preserve literal types"
 description: "Reported against published2026.10.21: defineCommand accepts descripton/read_ouput and widens name to string under strict TypeScript5.9. Source https://github.com/unbraind/pm-cli/issues/1539 includes a public-package reproduction. Current src/sdk/define.ts still uses an ordinary generic identity builder while its docs promise literal preservation. The closed original feature shipped the builder and remains completed; this is a new exactness/literal-contract report requiring public type and contextual-handler checks."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,github-report,sdk
 created_at: "2026-10-21T21:28:05.779Z"
-updated_at: "2026-10-21T21:28:09.791Z"
+updated_at: "2026-10-22T01:06:49.364Z"
+closed_at: "2026-10-22T01:06:48.428Z"
+completed_at: "2026-10-22T01:06:48.428Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reject misspelled keys in fresh public command definitions; Preserve literal name/action plus contextual handler inference; Audit sibling object builders under the same advertised contract; Verify public package declarations and legitimate customization compatibility
@@ -14,12 +16,65 @@ parent: pm-ugqx
 risk: medium
 confidence: 80
 severity: medium
-expected_result: Publicly advertised authoring and mutation contracts produce verifiable outcomes or precise pre-execution refusals.
+resolution: "All object and scoped-object authoring builders use const generic inference; command, manifest and profile definitions enforce exact top-level keys. Flag builders expose supported repeatable and value_validation metadata while callbacks keep contextual typing."
+expected_result: "Public builders preserve literal names/actions and callback inference, reject misspelled keys, and support documented registration metadata with unchanged runtime identity."
+actual_result: "Public aggregate and authoring compile fixtures cover all object/scoped builders, fresh and separately authored typo inputs, supported flag metadata and callback argument typing. Packed TypeScript 5.9.3 passes, degraded installed declarations fail as intended, restoration passes, and Node/Bun runtime identity and activation pass. Full coverage is 100 percent."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-12tj,discovered_from,"2026-10-21T21:28:05.779Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-21T21:28:05.779Z","harness:codex","Duplicate check: fresh keyword searches and the complete all-status corpus found the completed original builder and warning-only MCP controls, but no owner for this newly filed report. Full live metadata/comments/history were read for the prior lineage. Preserve those closed outcomes and create only this distinct reported contract gap. Intake only: status open, unclaimed; no implementation or independent reproduction is claimed."
-files[1]{path,scope}:
-  src/sdk/define.ts,project
+  "2026-10-21T22:33:53.878Z","harness:codex","Grouped with pm-gh1538 under one PR. Source inspection confirms ordinary generic command/manifest/profile builders and sibling literal widening. Plan compile-time failing-before controls, contextual callback checks, supported customization compatibility, and packed public entrypoint verification before closure."
+  "2026-10-21T22:40:56.257Z","harness:codex","Regression evidence: public aggregate/authoring compile fixture fails on baseline with widened command name/action/examples and sibling builder literals, unused expected-error directives for command/manifest/profile typos, and rejection of supported repeatable/value_validation flag metadata. Const generic exact-key builders now pass the same compile fixture with contextual callbacks. Existing reference-identity tests pass; no runtime validation or private consumer imports were introduced."
+  "2026-10-21T22:49:35.117Z","harness:codex","Public SDK snapshot regenerated from emitted declarations, recording22 signature changes across aggregate and authoring entrypoints with an explicit source-compatibility acknowledgement for documented exact keys and const literal inference. All object/scoped-object builder definitions retain zero-cost identity, and supported repeatable/value_validation flag metadata now reaches authoring without a cast. Package doctor reports clean activation and latest available pm-changelog installation succeeds. Public docs describe widened pre-existing variables and keeping package annotations outside registration objects."
+  "2026-10-22T01:06:46.338Z","harness:codex","Final verification: the packed public SDK passes strict TypeScript 5.9.3 declarations, deliberately degraded literal/exactness control, restored declarations, and Node/Bun activation and runtime identity. Maintained packed npm/npx/Bun/bunx smoke passes. All linked tests pass and the complete repository coverage run passes with 100 percent statements, branches, functions and lines. No coverage denominator, timeout, assertion or quality threshold was reduced. Source-level static checks, import costs and transport floors passed; the graph gate identified new prose references and was repaired through explicit related edges instead of a limit change. The final full static pipeline, terminal defect evidence and generated changelog are required before push."
+learnings[1]{created_at,author,text}:
+  "2026-10-21T23:08:11.664Z","harness:codex","An ordinary constrained generic does not enforce excess properties or preserve string literals. Object authoring builders need const type parameters and exact-key constraints; function callbacks should retain contextual typing, and compile fixtures must use the public aggregate and narrow entrypoints. Audit supported flag keys against the registration interface when tightening builders."
+files[3]:
+  - path: sdk/public-surface.json
+    scope: project
+    note: Reviewed emitted public SDK signatures and compatibility acknowledgement
+  - path: src/sdk/define.ts
+    scope: project
+  - path: tests/types/authoring-builders.test-d.ts
+    scope: project
+    note: Public builder contract for all sibling object definitions and runtime field lookup declarations
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm typecheck,project,600,"harness:codex","2026-10-21T22:39:46.992Z",local_mutation,fix/sdk-authoring-mcp-mutation-contracts
+  node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-define.spec.ts,project,600,"harness:codex","2026-10-21T22:39:46.992Z",local_mutation,fix/sdk-authoring-mcp-mutation-contracts
+test_runs[2]:
+  - run_id: test-local-mvipanpe-5x0jw5
+    kind: test
+    status: passed
+    started_at: "2026-10-21T22:44:22.934Z"
+    finished_at: "2026-10-21T22:45:41.378Z"
+    recorded_at: "2026-10-21T22:45:41.378Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-define.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvisoskx-bu3aa9
+    kind: test
+    status: passed
+    started_at: "2026-10-22T00:19:39.539Z"
+    finished_at: "2026-10-22T00:20:39.729Z"
+    recorded_at: "2026-10-22T00:20:39.729Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-define.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,Exact literal-preserving object-builder contract and supported flags
+close_reason: Implemented and verified public SDK and MCP contract corrections; included with related leaves in the reviewed delivery.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: public-sdk-authoring-builder-declarations
+  owner: unbraind
+  negative_control: "pnpm typecheck; the public authoring-builders fixture fails on the prior generic declarations with TS2322 literal widening and unused TS2578 typo controls. Independently degrading the installed packed declarations reproduces both failures, and restoring them passes."
+  local_checks[2]: pnpm typecheck,node scripts/run-tests.mjs test -- tests/unit/sdk/sdk-define.spec.ts
+  hosted_checks[4]: Gates (typecheck),Gates (static),Gates (coverage),Gates (smokes)
 body: ""

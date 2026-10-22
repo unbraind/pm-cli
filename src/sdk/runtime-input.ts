@@ -10,11 +10,14 @@ import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import {
   normalizeListOptions,
+  normalizeCreateOptions,
   normalizeUpdateOptions,
 } from "./cli-contracts/registration-helpers.js";
 import type { CloseManyCommandOptions } from "./lifecycle/close-many.js";
 import type { UpdateManyCommandOptions } from "./lifecycle/update-many.js";
-import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
+import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, CREATE_COMMANDER_STRING_OPTION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
+import { TOOL_CREATE_OPTION_CONTRACTS, TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS, TOOL_UPDATE_OPTION_CONTRACTS } from "./cli-contracts/tool-option-contracts.js";
+import { PM_TOOL_PARAMETER_PROPERTIES } from "./cli-contracts/tool-parameter-tables.js";
 import type { GraphCommandOptions } from "./graph/run.js";
 import type { ListOptions } from "./query/list.js";
 import {
@@ -28,6 +31,12 @@ import {
 } from "../core/item/parse.js";
 
 const MCP_MUTATION_TRANSPORT = Symbol("pm.mcp-mutation-transport");
+
+const MCP_MUTATION_OPTION_CONTRACTS = {
+  create: { parameters: TOOL_CREATE_OPTION_CONTRACTS, aliases: CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, strings: CREATE_COMMANDER_STRING_OPTION_CONTRACTS, repeatables: CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS },
+  update: { parameters: TOOL_UPDATE_OPTION_CONTRACTS, aliases: UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, strings: UPDATE_COMMANDER_STRING_OPTION_CONTRACTS, repeatables: UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS },
+};
+type McpMutationAction = keyof typeof MCP_MUTATION_OPTION_CONTRACTS;
 
 const WORKSPACE_CONTRACTS_CACHE_PRESERVING_ACTIONS = new Set([
   "activity",
@@ -407,6 +416,94 @@ function withResolvedAuthor(
     : options;
 }
 
+/** Select canonical and compatibility MCP mutation fields without overriding nested aliases. */
+function hoistedMcpMutationOptions(
+  action: McpMutationAction,
+  args: Record<string, unknown>,
+  nested: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  const contracts = MCP_MUTATION_OPTION_CONTRACTS[action];
+  const parameters = new Set([
+    ...contracts.parameters.map(({ param }) => param),
+    ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map(({ param }) => param),
+    ...HOISTED_ACTION_OPTION_KEYS[action]!, ...UNIVERSAL_READ_OUTPUT_OPTION_KEYS, "force",
+  ]);
+  for (const param of parameters) {
+    const keys = contracts.aliases.find((contract) => contract.keys.includes(param))?.keys ?? [param];
+    if (args[param] === undefined || keys.some((key) => nested[key] !== undefined)) continue;
+    result[param] = args[param];
+  }
+  return result;
+}
+
+/** Refuse discarded mutation values without reflecting caller data or writing state. */
+function refuseMcpMutationValue(action: McpMutationAction, field: string): never {
+  throw new PmCliError(`Invalid MCP ${action} value for "${field}". No changes were made.`, EXIT_CODE.USAGE, {
+    code: "invalid_argument_value", reason: "invalid_mutation_option_value", changed: false, field,
+    required: `Provide valid ${action} field values and an options object; inspect the pm_${action} input schema for supported types.`,
+  });
+}
+
+/** Validate declared action booleans and transport receipt controls without constraining custom fields. */
+function assertMcpMutationBooleans(
+  action: McpMutationAction,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): void {
+  const contracts = MCP_MUTATION_OPTION_CONTRACTS[action];
+  const parameters = [...contracts.parameters, ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS, { param: "force" }];
+  for (const { param } of parameters) {
+    if (asRecordClone(PM_TOOL_PARAMETER_PROPERTIES[param]).type !== "boolean") continue;
+    const keys = contracts.aliases.find((contract) => contract.keys.includes(param))?.keys ?? [param];
+    const invalid = keys.find((key) => options[key] !== undefined && typeof options[key] !== "boolean");
+    if (invalid !== undefined) refuseMcpMutationValue(action, invalid);
+  }
+  for (const key of ["idOnly", "fullChangedFields"]) {
+    if (args[key] !== undefined && typeof args[key] !== "boolean") refuseMcpMutationValue(action, key);
+  }
+}
+
+/** Keep malformed fields from disappearing during typed mutation normalization. */
+function checkedMcpMutationOptions(
+  action: McpMutationAction,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  if (args.options !== undefined && !isRuntimeRecord(args.options)) refuseMcpMutationValue(action, "options");
+  assertMcpMutationBooleans(action, args, options);
+  for (const key of ARRAY_TO_CSV_FIELDS) {
+    const value = options[key];
+    if (Array.isArray(value) && value.some((entry) => typeof entry !== "string")) refuseMcpMutationValue(action, key);
+  }
+  const normalized = normalizeMcpMutationOptions(options, action);
+  const contracts = MCP_MUTATION_OPTION_CONTRACTS[action];
+  for (const { keys, target } of contracts.strings) {
+    if (keys.some((key) => options[key] !== undefined) && normalized[target] === undefined) refuseMcpMutationValue(action, target);
+  }
+  const invalidRepeatable = contracts.repeatables.flatMap(({ keys }) => keys).find((key) => {
+    const value = options[key];
+    return value !== undefined && typeof value !== "string" && (!Array.isArray(value) || value.some((entry) => typeof entry !== "string"));
+  });
+  if (invalidRepeatable !== undefined) refuseMcpMutationValue(action, invalidRepeatable);
+  return normalized;
+}
+
+/** Normalize MCP mutation aliases after merging explicit nested values over flat fields. */
+function normalizedActionOptions(
+  args: Record<string, unknown>,
+  action: string | undefined,
+  hoisted: Record<string, unknown>,
+  nested: Record<string, unknown>,
+): Record<string, unknown> {
+  const mcpMutation = (action === "create" || action === "update") && isMcpMutationTransportInput(args);
+  const options = {
+    ...(mcpMutation ? hoistedMcpMutationOptions(action, args, nested) : hoisted),
+    ...nested,
+  };
+  return mcpMutation ? checkedMcpMutationOptions(action, args, options) : normalizeMcpOptionsArrays(options, action);
+}
+
 /** Merge hoisted top-level action arguments and author aliases into options. */
 export function optionsWithAuthor(
   args: Record<string, unknown>,
@@ -432,10 +529,7 @@ export function optionsWithAuthor(
   if (action !== undefined && isMcpMutationTransportInput(args)) {
     assertMcpAnnotationFileUnavailable(action, baseOptions);
   }
-  const options = normalizeMcpOptionsArrays(
-    { ...hoistedTopLevel, ...baseOptions },
-    action,
-  );
+  const options = normalizedActionOptions(args, action, hoistedTopLevel, baseOptions);
   if (action === "history-attest" && isMcpMutationTransportInput(args)) {
     if (options.output !== undefined || typeof options.verify === "string") {
       throw new PmCliError(
@@ -750,19 +844,35 @@ export function updateManyUpdateOptionsFromFlat(
 export function normalizeMcpUpdateOptions(
   options: Record<string, unknown>,
 ): Record<string, unknown> {
-  const normalizedInput: Record<string, unknown> = normalizeMcpOptionsArrays(
-    options,
-    "update-many",
-  );
-  for (const contract of UPDATE_COMMANDER_STRING_OPTION_CONTRACTS) {
+  return normalizeMcpMutationOptions(options, "update");
+}
+
+/** Coerce supported mutation aliases without dropping project-defined metadata. */
+function normalizeMcpMutationOptions(
+  options: Record<string, unknown>,
+  action: McpMutationAction,
+): Record<string, unknown> {
+  const normalizedInput = normalizeMcpOptionsArrays(options, action);
+  const contracts = MCP_MUTATION_OPTION_CONTRACTS[action];
+  const booleanishKeys = new Set([...contracts.parameters, ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS]
+    .filter(({ booleanish }) => booleanish === true).map(({ param }) => param));
+  for (const { keys } of contracts.repeatables) {
+    for (const key of keys) {
+      if (typeof normalizedInput[key] === "string") normalizedInput[key] = [normalizedInput[key]];
+    }
+  }
+  for (const contract of contracts.strings) {
     for (const key of contract.keys) {
       const value = normalizedInput[key];
-      if (typeof value === "number" && Number.isFinite(value)) {
+      // Preserve explicit false for value-bearing boolean metadata; true retains flag-presence semantics.
+      if ((typeof value === "number" && Number.isFinite(value)) || (value === false && booleanishKeys.has(key))) {
         normalizedInput[key] = String(value);
       }
     }
   }
-  return normalizeUpdateOptions(normalizedInput);
+  return action === "create"
+    ? { ...normalizeCreateOptions(normalizedInput, { requireType: false }) }
+    : normalizeUpdateOptions(normalizedInput);
 }
 
 /** Build update-many command options from one flat MCP parameter payload. */
