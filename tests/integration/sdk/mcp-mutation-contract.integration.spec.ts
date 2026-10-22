@@ -35,7 +35,9 @@ describe("MCP mutation advertised fields", () => {
       const mixed = await call("pm_run", { action: "update", id, priority: 3, title: "flat title", options: { priority: 2 } });
       expect(mixed?.isError).toBeUndefined();
       expect(get()).toMatchObject({ item: { priority: 2, title: "flat title" } });
-      expect((await call("pm_update", { id, options: { force: false, clearComments: false, comment: [] } }))?.isError).toBeUndefined();
+      expect((await call("pm_update", { id, options: { force: false, clearComments: false, comment: [], tags: [] } }))?.isError).toBeUndefined();
+      expect((await call("pm_update", { id, tags: ["ignored", 4], options: { tags: ["nested"] } }))?.isError).toBeUndefined();
+      expect(get()).toMatchObject({ item: { tags: ["nested"] } });
       // Public parameter aliases and scalar/list normalization must reach the same persistence path.
       await call("pm_update", { id, options: {}, estimate: 17, tags: ["first", "second"], linkedFile: "path=src/example.ts", comment: "flat evidence", body: "-" });
       expect(get()).toMatchObject({ item: { estimated_minutes: 17, tags: ["first", "second"], body: "-", files: [expect.objectContaining({ path: "src/example.ts" })], comments: [expect.objectContaining({ text: "flat evidence" })] } });
@@ -47,6 +49,7 @@ describe("MCP mutation advertised fields", () => {
       const before = await bytes();
       for (const malformed of [
         { priority: false }, { title: false }, { status: [] },
+        { tags: ["valid", 4] }, { options: { tags: [null] } },
         { linkedFile: 4 }, { linkedFile: ["path=src/partial.ts", 4] }, { force: "false" },
         { options: null }, { options: [] },
         { options: { priority: false, title: "must not persist" } },
@@ -68,9 +71,9 @@ describe("MCP mutation advertised fields", () => {
       expect(created?.structuredContent).toMatchObject({ result: { id: "pm-mcpflat" } });
       const get = (id: string) => context.runCli(["get", id, "--full", "--json"], { expectJson: true }).json;
       expect(get("pm-mcpflat")).toMatchObject({ item: { deadline: expect.stringContaining("2026-11-01"), estimated_minutes: 17, priority: 2, regression: false, delivery_channel: "email", files: [expect.objectContaining({ path: "src/create.ts" })] } });
-      const nested = await create({ id: "pm-unused", title: "Nested creation metadata", estimate: 99, options: { createMode: "progressive", id: "pm-mcpnested", estimatedMinutes: "23" } });
+      const nested = await create({ id: "pm-unused", title: "Nested creation metadata", estimate: 99, tags: ["ignored", 4], options: { createMode: "progressive", id: "pm-mcpnested", estimatedMinutes: "23", tags: ["nested-create"] } });
       expect(nested?.structuredContent).toMatchObject({ result: { id: "pm-mcpnested" } });
-      expect(get("pm-mcpnested")).toMatchObject({ item: { estimated_minutes: 23 } });
+      expect(get("pm-mcpnested")).toMatchObject({ item: { estimated_minutes: 23, tags: ["nested-create"] } });
       await create({ id: "pm-imported", title: "Imported terminal work", status: "closed", closeReason: "Imported completion", completedAt: "2026-10-01T12:00:00Z", options: { createMode: "progressive", resolution: "Imported completion", expectedResult: "Imported", actualResult: "Imported" } });
       expect(get("pm-imported")).toMatchObject({ item: { status: "closed", close_reason: "Imported completion", completed_at: "2026-10-01T12:00:00.000Z" } });
       expect(context.runCli(["history", "pm-imported", "--verify", "--strict-exit", "--json"]).code).toBe(0);
@@ -78,7 +81,7 @@ describe("MCP mutation advertised fields", () => {
         .filter((entry) => /^(?:tasks|history)[\\/].+\.(?:toon|jsonl)$/u.test(entry)).sort()
         .map(async (entry) => [entry, await readFile(path.join(context.pmPath, entry))]));
       const before = await snapshot();
-      for (const invalid of [{ priority: false }, { type: false }, { comment: ["partial", 4] }, { options: null }]) {
+      for (const invalid of [{ priority: false }, { type: false }, { tags: ["valid", 4] }, { options: { createMode: "progressive", tags: ["valid", false] } }, { comment: ["partial", 4] }, { options: null }]) {
         await expect(create({ id: "pm-invalid", title: "Refused creation", ...invalid })).rejects.toMatchObject({ exitCode: 2, context: { changed: false } });
         expect(await snapshot()).toEqual(before);
       }

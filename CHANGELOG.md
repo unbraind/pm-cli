@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Reject mixed-type MCP mutation arrays before CSV normalization ([pm-gllxud](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gllxud.toon))
 - MCP create drops advertised metadata outside its small top-level allowlist ([pm-ap7ilf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ap7ilf.toon))
 - GH-1539: enforce command builder keys and preserve literal types ([pm-gh1539](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1539.toon))
 - GH-1538: refuse or honor supplied MCP update fields before reporting success ([pm-gh1538](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1538.toon))

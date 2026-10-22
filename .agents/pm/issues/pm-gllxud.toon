@@ -1,0 +1,57 @@
+id: pm-gllxud
+title: Reject mixed-type MCP mutation arrays before CSV normalization
+description: "PR1541 inline review4343775875 identified an atomic-admission gap in the new MCP preflight: normalizeMcpOptionsArrays joins tags arrays before typed validation. Independent modern public stdio reproduction against ccd22de confirms tags=[valid,4] with a sibling title returns changed_field_count2 and persists tags=[4,valid] plus title=partial. Validate declared array-to-CSV mutation inputs before conversion, preserving valid string arrays and nested precedence. This review-remediation child continues the closed implementation lineage without changing its completed source changes."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-22T02:08:02.092Z"
+updated_at: "2026-10-22T02:46:47.853Z"
+closed_at: "2026-10-22T02:46:46.905Z"
+completed_at: "2026-10-22T02:46:46.905Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Reproduce mixed tags through public MCP before the fix; Reject malformed arrays for create and update before CSV conversion with exact unchanged durable snapshots; Preserve valid string arrays and nested option precedence; Retrigger all configured reviewers after the revised push and retain strict CI coverage gates
+parent: pm-gh1538
+risk: medium
+confidence: 100
+severity: medium
+resolution: Validate merged MCP create/update CSV-array values before conversion; reject non-string entries atomically while preserving nested precedence and valid empty/string arrays.
+expected_result: "Mixed-type mutation arrays refuse before any item/history write, while valid string arrays and explicit nested replacements retain their semantics."
+actual_result: "Both committed regressions fail before the guard and pass afterward. Malformed flat/nested create and update arrays preserve exact durable snapshots; nested valid arrays replace malformed flat values, and empty arrays remain valid. The public stdio control returns changed=false and retains original values. All nine linked tests and the full 10,982-test coverage run pass at 100/100/100/100; fresh hosted security/static checks and review are required for merge."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-klqo,related,"2026-10-22T02:08:02.092Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-22T02:08:02.092Z","harness:codex","Duplicate check: fresh request search and open/in-progress inventories plus complete3055-item strict all-status/full corpus with no omissions found no owner for mixed-type MCP array coercion. The prior CLI JSON-tag parsing item is closed with a verified string-array fix and remains intact. This distinct case was independently reproduced on the reviewed head and belongs in the same grouped PR."
+  "2026-10-22T02:13:29.853Z","harness:codex","The public stdio control reproduced the reported write on the reviewed head: mixed tags persisted as strings and the sibling title changed. Both committed create/update regressions failed before the guard. The revised SDK validates merged CSV-array inputs before conversion; valid nested string arrays still replace malformed flat values, and empty arrays remain valid. All nine linked mutation/native-admission tests pass. The independent stdio probe now returns invalid_argument_value with changed=false and preserves the original title and tags. Registry audit reports zero advisories; the first static attempt correctly refused unavailable OSV evidence, without bypass or feed-success inference."
+  "2026-10-22T02:46:45.192Z","harness:codex","Final local regression evidence: all 10,982 tests pass with 3 skips; exact coverage is 100/100/100/100 over 70,250 statements, 54,018 branches, 14,476 functions and 66,569 lines. The focused nine tests and ESLint pass, and public stdio refuses the mixed tags request with changed=false while retaining original item values. Both malformed create/update cases failed before the guard; valid nested replacement and empty arrays pass. The revised local static rerun correctly refuses registry transport failure (pnpm audit eventually reports fetch failed); OSV independently completes all 568 versions with no findings. No feed, timeout or threshold is bypassed. Required hosted static, coverage and security checks remain the final merge condition."
+  "2026-10-22T02:46:46.051Z","harness:codex","Review triage: the initial CodeRabbit review posted one actionable mixed-array finding, now independently reproduced and fixed. Its top-level scope warning requests removing the dependency/release checkpoint and separate executable-help intake records; retain those because the user explicitly requested GitHub/security/dependency/release intake and detailed CLI evidence in the grouped delivery. Initial Sourcery and Cubic reviews are unavailable due free-plan quotas and Greptile reports an ended trial; these notices are not approvals. Request all configured reviewers again after the revised push and inspect the exact final head before merging."
+files[2]{path,scope}:
+  src/sdk/runtime-input.ts,project
+  tests/integration/sdk/mcp-mutation-contract.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,project,600,"harness:codex","2026-10-22T02:09:08.630Z",local_mutation,fix/sdk-authoring-mcp-mutation-contracts
+test_runs[1]:
+  - run_id: test-local-mviwmcf6-w5ulmx
+    kind: test
+    status: passed
+    started_at: "2026-10-22T02:10:26.590Z"
+    finished_at: "2026-10-22T02:10:43.938Z"
+    recorded_at: "2026-10-22T02:10:43.938Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MCP_OPTION_CONFORMANCE.md,project,Pre-normalization typed array refusal contract
+close_reason: Implemented and locally verified the mixed-array review correction; final hosted gates and rereview remain required before merge.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mcp-mutation-array-preflight
+  owner: unbraind
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts; both create and update tests fail on ccd22de because mixed tags arrays succeed and write durable state. The independent public stdio probe also reports changed_field_count=2 and converted numeric tags before the guard.
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,pnpm exec eslint src/sdk/runtime-input.ts tests/integration/sdk/mcp-mutation-contract.integration.spec.ts --max-warnings=0
+  hosted_checks[4]: Gates (static),Gates (coverage),Gates (smokes),Analyze (javascript-typescript)
+body: ""

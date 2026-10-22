@@ -452,6 +452,10 @@ function checkedMcpMutationOptions(
 ): Record<string, unknown> {
   if (args.options !== undefined && !isRuntimeRecord(args.options)) refuseMcpMutationValue(action, "options");
   if (options.force !== undefined && typeof options.force !== "boolean") refuseMcpMutationValue(action, "force");
+  for (const key of ARRAY_TO_CSV_FIELDS) {
+    const value = options[key];
+    if (Array.isArray(value) && value.some((entry) => typeof entry !== "string")) refuseMcpMutationValue(action, key);
+  }
   const normalized = normalizeMcpMutationOptions(options, action);
   const contracts = MCP_MUTATION_OPTION_CONTRACTS[action];
   for (const { keys, target } of contracts.strings) {
@@ -473,11 +477,11 @@ function normalizedActionOptions(
   nested: Record<string, unknown>,
 ): Record<string, unknown> {
   const mcpMutation = (action === "create" || action === "update") && isMcpMutationTransportInput(args);
-  const options = normalizeMcpOptionsArrays({
+  const options = {
     ...(mcpMutation ? hoistedMcpMutationOptions(action, args, nested) : hoisted),
     ...nested,
-  }, action);
-  return mcpMutation ? checkedMcpMutationOptions(action, args, options) : options;
+  };
+  return mcpMutation ? checkedMcpMutationOptions(action, args, options) : normalizeMcpOptionsArrays(options, action);
 }
 
 /** Merge hoisted top-level action arguments and author aliases into options. */

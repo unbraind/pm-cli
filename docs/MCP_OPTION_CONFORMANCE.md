@@ -21,6 +21,9 @@ entries refuse before execution with `invalid_argument_value` and
 `changed: false`. `force` must be a boolean. These checks preserve project-defined
 custom fields and template-based type resolution while preventing a bad field
 from disappearing as a sibling field is written.
+Array values that become CLI CSV inputs, such as `tags`, must contain only
+strings and are checked before conversion. Validation follows nested precedence:
+an explicit valid nested value replaces a flat value before either is normalized.
 
 For example, `{ "id": "pm-one", "options": {}, "priority": 4 }` changes priority;
 with `"options": { "priority": 2 }`, priority becomes `2`. Create also honors its
