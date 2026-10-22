@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: bug,concurrency,locks,multi-agent,sdk
 created_at: "2026-10-22T18:10:30.531Z"
-updated_at: "2026-10-22T21:16:40.842Z"
+updated_at: "2026-10-22T22:26:51.383Z"
 closed_at: "2026-10-22T19:15:15.063Z"
 completed_at: "2026-10-22T19:15:15.063Z"
 author: "harness:claude-code"
@@ -25,10 +25,16 @@ dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-lvyd,implements,"2026-10-22T18:10:30.531Z","harness:claude-code","cli:create:dep",detected
 notes[1]{created_at,author,text}:
   "2026-10-22T21:16:40.841Z","harness:claude-code","Review follow-up (PR #1550): the handoff-restarted window is now OPT-IN via acquireLock/acquireLockLease options { waitPolicy: 'progress' }. Default stays a fixed total budget so short-budget internal locks (foreground telemetry 250 ms, context usage ledger, derived-index lock) and public acquireLock callers keep their exact latency contract, and PM_LOCK_WAIT_MS can still raise them (capping them with maxWaitMs would have removed that escape hatch). Enabled on the item-store lease, restore and the hierarchy-integrity lock, which are the GH-1516 contention paths."
-files[3]{path,scope}:
-  docs/CONFIGURATION.md,project
-  src/core/lock/lock.ts,project
-  tests/unit/core/lock/lock-lease-fencing.spec.ts,project
+files[4]:
+  - path: docs/CONFIGURATION.md
+    scope: project
+  - path: src/core/lock/lock.ts
+    scope: project
+  - path: tests/unit/cli/lock-diagnostics-projection.spec.ts
+    scope: project
+    note: CLI projection of lock_conflict waited_ms and owner_handoffs
+  - path: tests/unit/core/lock/lock-lease-fencing.spec.ts
+    scope: project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,project,"harness:claude-code","2026-10-22T18:29:38.324Z",local_mutation,fix/lock-lease-fencing-and-progress-wait
 close_reason: "Shipped progress-aware lock waiting: the lock wait budget is a no-progress window that restarts on every observed owner handoff, capped at 120 s total; explicit maxWaitMs ceilings and wait 0 fail-fast are unchanged; lock_conflict recovery reports waited_ms and owner_handoffs."

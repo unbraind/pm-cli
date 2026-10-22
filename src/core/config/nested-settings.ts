@@ -333,7 +333,7 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     kind: "integer",
     min: 0,
     summary:
-      "No-progress wait window in milliseconds before a contended item mutation fails with lock_conflict; each observed owner handoff restarts it (120 s total cap); 0 fails fast. PM_LOCK_WAIT_MS overrides per invocation.",
+      "Wait budget in milliseconds before a contended lock fails with lock_conflict; item-store mutations, restore and the hierarchy lock treat it as a no-progress window that each observed owner handoff restarts (120 s total cap), other locks as a fixed total; 0 fails fast. PM_LOCK_WAIT_MS overrides per invocation.",
   },
   {
     key: "ids_token_length",

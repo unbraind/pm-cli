@@ -291,7 +291,7 @@ describe("progress-aware lock waiting (GH-1516)", () => {
       vi.stubEnv("PM_LOCK_WAIT_MS", "");
       await publishGeneration(root, "shared", "writer-0");
       const handoffs = (async () => {
-        for (let index = 1; index <= 8; index += 1) {
+        for (let index = 1; index <= 16; index += 1) {
           await sleep(120);
           await publishGeneration(root, "shared", `writer-${index}`);
         }
@@ -299,10 +299,11 @@ describe("progress-aware lock waiting (GH-1516)", () => {
         await fs.rm(getLockPath(root, "shared"));
       })();
       const startedAt = Date.now();
-      // The 300 ms window is far shorter than the ~1.1 s queue, so a fixed
-      // deadline would refuse; each observed handoff restarts the window.
-      const lease = await acquireLockLease(root, "shared", 60, "waiter", false, false, 300, { waitPolicy: "progress" });
-      expect(Date.now() - startedAt).toBeGreaterThanOrEqual(900);
+      // The 1 s window tolerates event-loop stalls between handoffs yet is far
+      // shorter than the ~2 s queue, so a fixed deadline would refuse; each
+      // observed handoff restarts the window.
+      const lease = await acquireLockLease(root, "shared", 60, "waiter", false, false, 1_000, { waitPolicy: "progress" });
+      expect(Date.now() - startedAt).toBeGreaterThanOrEqual(1_800);
       await handoffs;
       await lease.release();
     });
