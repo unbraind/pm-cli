@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: "area:packages","area:sdk","gh:1546"
 created_at: "2026-10-22T10:16:05.457Z"
-updated_at: "2026-10-22T11:25:44.417Z"
+updated_at: "2026-10-22T11:39:20.147Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
 author: "harness:codex"
@@ -21,6 +21,8 @@ dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
 comments[2]{created_at,author,text}:
   "2026-10-22T10:16:05.457Z","harness:codex","Duplicate check: strict full all-status read of 3058 items completed with zero unreadable records and no omissions. Request-specific search and full live canonical history reads found completed adjacent work but no owner for this newly reported boundary. Reuse the existing capability lineage and retain prior closures."
   "2026-10-22T10:29:34.729Z","harness:codex","Failing-before proof: both min/max disabled-package keepers fail on unchanged main because strict health remains false after deactivation. The repaired SDK/CLI journey passes: warnings are retained with disabled compatibility codes and concrete scoped remediation; enabled packages still fail closed. This preserves diagnostics rather than skipping disabled manifests."
+learnings[1]{created_at,author,text}:
+  "2026-10-22T11:39:20.147Z","harness:codex","Package enablement is part of diagnostic severity. Retain version evidence for disabled packages with a scoped next action, while enabled incompatibility and unrelated malformed package findings remain blocking."
 files[5]{path,scope}:
   src/core/extensions/loader.ts,project
   src/core/extensions/version-diagnostics.ts,project

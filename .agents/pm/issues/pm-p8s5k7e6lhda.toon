@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: "area:sdk","gh:1544",gitignore,init,nightly
 created_at: "2026-10-22T10:16:14.746Z"
-updated_at: "2026-10-22T11:27:24.124Z"
+updated_at: "2026-10-22T11:39:21.010Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
 author: "harness:codex"
@@ -25,6 +25,8 @@ comments[4]{created_at,author,text}:
   "2026-10-22T10:16:36.725Z","harness:codex","Live intake: baseline main ec2e9db8f has no open PRs and zero Dependabot, CodeQL and secret-scanning alerts. Strict all-status corpus receipt: 3058/3058 records, complete with zero unreadable entries and no omissions, zero in-progress items. Prior cache fixes and recurrence measurement have completed resolutions. The alias boundary is new. Batch preview refused existing non-regular tracker storage; ordinary atomic commit succeeded without changing storage or overriding policy."
   "2026-10-22T10:29:35.557Z","harness:codex","Failing-before proof in an isolated unchanged-main worktree: 9 alias/cache cases failed while 30 controls passed. After canonical physical containment, all 39 SDK and real CLI/Git cases pass, including both init orders, repeated initialization, literal names, curated eval-query exceptions, sibling merge attributes and external-symlink no-ops. Hosted Windows/macOS legs remain a separate required verification claim."
   "2026-10-22T11:05:56.675Z","harness:codex","Final focused run passes55 cases across public SDK containment, real CLI/Git scopes, verified replacement receipts and disabled health. Added refusal controls for inaccessible/missing physical ancestry, preserving the fail-closed boundary without lexical fallback. Retained backups now live under ignored runtime storage, verified by actual git check-ignore, and both hard persistence rollback failures and soft verification rollback failures carry executable recovery."
+learnings[1]{created_at,author,text}:
+  "2026-10-22T11:39:21.009Z","harness:codex","Compare physical ancestry for both workspace and tracker, retaining uncreated suffixes. Mixed lexical spellings can falsely look external; actual external symlink targets must remain outside the ignore-write boundary."
 files[4]:
   - path: config/defect-recurrence-policy.json
     scope: project

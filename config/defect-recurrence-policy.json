@@ -44,7 +44,7 @@
     },
     {
       "id": "workspace-cache-tracker-scope",
-      "version": 3,
+      "version": 4,
       "title": "Tracker cache exclusions and merge patterns preserve literal repository scopes",
       "owner_item_id": "pm-nl60tbxzkjwp",
       "escape_class": "production_defect",
@@ -69,7 +69,10 @@
           "CI / Gates (coverage)",
           "CI / Gates (static)",
           "CodeQL / Analyze (javascript-typescript)",
-          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 3/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 4/4)",
           "Nightly Validation / Nightly (macos-latest, Node 24, shard 2/2)"
         ]
       },
@@ -220,7 +223,7 @@
     },
     {
       "id": "boundary-format-drift",
-      "version": 4,
+      "version": 5,
       "title": "Externally produced path, slug, payload, and invocation format drift",
       "owner_item_id": "pm-0pzgit",
       "escape_class": "production_defect",
@@ -240,8 +243,10 @@
         ],
         "hosted": [
           "CI / Gates (static)",
-          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/2)",
-          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 3/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 4/4)",
           "Nightly Validation / Nightly (macos-latest, Node 24, shard 1/2)",
           "Nightly Validation / Nightly (macos-latest, Node 24, shard 2/2)"
         ]
@@ -257,7 +262,7 @@
     },
     {
       "id": "cross-platform-nightly-regression",
-      "version": 4,
+      "version": 5,
       "title": "Platform-specific runtime and filesystem regressions",
       "owner_item_id": "pm-2zjs0g",
       "escape_class": "nightly_regression",
@@ -275,8 +280,10 @@
       "checks": {
         "local": ["node scripts/run-tests.mjs test -- tests/unit/scripts"],
         "hosted": [
-          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/2)",
-          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 3/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 4/4)",
           "Nightly Validation / Nightly (macos-latest, Node 24, shard 1/2)",
           "Nightly Validation / Nightly (macos-latest, Node 24, shard 2/2)"
         ]

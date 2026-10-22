@@ -2643,6 +2643,14 @@
       ],
       "package_version": "2026.10.21",
       "reason": "pm-ap7ilf adds the already-advertised closeReason and completedAt to the canonical create option tuple; consumers exhaustively enumerating its keys must accept both terminal-import fields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionCommandResult",
+        "signature ./sdk/runtime:ExtensionCommandResult"
+      ],
+      "package_version": "2026.10.22",
+      "reason": "Reserve optional package-install preservation and rollback diagnostic keys with boolean/discriminated types. Consumers constructing lifecycle result objects must conform to these shapes or rename custom metadata under these keys; ordinary readers and runtime behavior remain compatible."
     }
   ],
   "entrypoints": {
@@ -7951,7 +7959,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandResult",
-          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan; }; }"
+          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan; previous_state_preserved?: boolean; rollback?: { status: \"restored\"; } | { status: \"failed\"; error: string; backup_directory: string; recovery_command: string; recovery_args: string[]; }; }; }"
         },
         {
           "classification": "supported",
@@ -33373,7 +33381,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ExtensionCommandResult",
-          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan; }; }"
+          "signature": "export interface ExtensionCommandResult { ok: boolean; action: ExtensionCommandAction; scope: ExtensionScope; roots: { project: string; global: string; selected: string; settings_root: string; }; warnings: string[]; details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan; previous_state_preserved?: boolean; rollback?: { status: \"restored\"; } | { status: \"failed\"; error: string; backup_directory: string; recovery_command: string; recovery_args: string[]; }; }; }"
         },
         {
           "classification": "advanced_export",

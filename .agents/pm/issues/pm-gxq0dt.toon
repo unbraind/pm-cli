@@ -1,0 +1,59 @@
+id: pm-gxq0dt
+title: Bound complete nightly validation and exact coverage within existing job deadlines
+description: "Candidate Nightly39771151475 at c7010bb2 has no persistent test assertion failure before Ubuntu24 coverage and Windows24 shard1 are canceled by their existing20-minute maximum. Linux22 completes in19m30s and Linux25 in16m23s. Partition the complete native workload with Vitest execution sharding and merge all coverage blobs only after successful shard admission, preserving every assertion, exact100% thresholds, supported platforms, free standard runners and original first-attempt history."
+type: Issue
+status: in_progress
+priority: 1
+tags[3]: bug,ci,testing
+created_at: "2026-10-22T12:08:55.456Z"
+updated_at: "2026-10-22T12:13:53.662Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Full suite partitioned without omissions or duplicates; Exact global coverage remains100 percent in all four measures with unsuccessful shard refusal; Original scheduled reliability history preserved and every required recurrence check updated; Complete hosted nightly succeeds on candidate
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: Every complete native partition and the exact global coverage aggregate succeed under the unchanged20-minute job bound; retired and new families remain in historical reliability.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bj7rq0,related,"2026-10-22T12:08:55.456Z","harness:codex","cli:create:dep",detected
+  pm-qrirz8,recurs_from,"2026-10-22T12:08:55.456Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-22T12:08:55.456Z","harness:codex","Duplicate check: full3058-item all-status corpus plus current open/in-progress lists and nightly timeout shard keyword search find no exact open allocation owner. Full live closed pm-qrirz8 and pm-ul9rye confirm completed prior allocation fixes; pm-bj7rq0 remains open for broader product startup performance. Job119798730778 and119798730969 annotations explicitly report maximum execution time20m0s; retain canceled evidence rather than recast it as green. GitHub official workflow syntax and contexts documentation supports needs.result admission and always aggregate execution: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax and https://docs.github.com/en/actions/reference/workflows-and-actions/contexts ."
+  "2026-10-22T12:11:51.082Z","harness:codex","Allocation retains the20-minute bound and uses14 complete native partitions: Linux22 and25 two each, Linux24 coverage four, macOS24 two, Windows24 four. Global coverage runs only after every native partition succeeds, using all four blobs and unchanged exact100% thresholds. Reliability derives the aggregate family too, so missing aggregate evidence remains pending. Existing recurrence families now require all four Windows partitions. No assertion, per-test deadline, retry, coverage denominator or original failure is weakened."
+  "2026-10-22T12:13:52.723Z","harness:codex","Local acceptance passes67 workflow/reliability/registry tests and all four TypeScript projects. Final identical tests against unchanged main fail five assertions while53 controls pass, including unsuccessful aggregate admission and missing aggregate population. An earlier negative run also had a test interpolation syntax error; that was corrected before this final receipt. Installed public Vitest BaseSequencer.shard partitions the current852 project/file identities into426+426 and213+213+213+213, with zero missing/duplicate identities. Gate-registry controls caught the new aggregate pipeline registration omission and passed after explicit registration. Hosted execution remains required; no global100% claim is made yet."
+learnings[1]{created_at,author,text}:
+  "2026-10-22T12:13:53.661Z","harness:codex","When introducing coverage aggregation, register the new pipeline in the executable gate inventory and derive its expected reliability family from each original workflow. Successful test partitions cannot imply a successful or present aggregate. Prove membership with Vitest execution sequencing rather than filesOnly listing, which does not itself shard."
+files[6]{path,scope}:
+  .github/workflows/nightly.yml,project
+  config/defect-recurrence-policy.json,project
+  scripts/release/collect-nightly-reliability.mjs,project
+  scripts/release/gate-registry.json,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/unit/scripts/release/collect-nightly-reliability.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,project,"harness:codex","2026-10-22T12:10:03.963Z",local_mutation,fix/package-and-workspace-lifecycle
+test_runs[1]:
+  - run_id: test-local-mvji4x3q-pc45od
+    kind: test
+    status: passed
+    started_at: "2026-10-22T12:12:43.092Z"
+    finished_at: "2026-10-22T12:13:02.486Z"
+    recorded_at: "2026-10-22T12:13:02.486Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-gxq0dt
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/gate-registry.spec.ts
+  hosted_checks[2]: Gates (coverage),Nightly Validation
+body: ""

@@ -340,7 +340,21 @@ export interface ExtensionCommandResult {
   /** Value that configures or reports warnings for this contract. */
   warnings: string[];
   /** Value that configures or reports details for this contract. */
-  details: Record<string, unknown> & { install_plan?: ExtensionInstallPlan };
+  details: Record<string, unknown> & {
+    install_plan?: ExtensionInstallPlan;
+    /** Whether a rejected install restored the installation it replaced. */
+    previous_state_preserved?: boolean;
+    /** Compensation outcome; failed restoration retains an executable recovery source. */
+    rollback?:
+      | { status: "restored" }
+      | {
+          status: "failed";
+          error: string;
+          backup_directory: string;
+          recovery_command: string;
+          recovery_args: string[];
+        };
+  };
 }
 
 const NATIVE_OUTPUT_MARKER = "__pm_native_output";

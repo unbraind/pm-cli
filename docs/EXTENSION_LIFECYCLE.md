@@ -47,6 +47,13 @@ The failed attempt still returns `ok: false` and its candidate diagnostics, with
 `previous_state_preserved: true`, `overwritten: false`, and
 `rollback.status: "restored"`. The previous command remains available in a new
 process. Multi-target and install-all receipts retain these fields per package.
+SDK `ExtensionCommandResult` / `PackageCommandResult` consumers can narrow
+`details.rollback.status` to access typed recovery arguments on failed restoration.
+These two diagnostic keys are now reserved typed fields. Code constructing
+lifecycle result objects or test doubles must use the boolean and rollback
+shapes, or rename custom metadata stored under those keys. Ordinary result
+readers remain compatible; the runtime implementation is unchanged by this
+declaration refinement.
 
 If restoration fails, `previous_state_preserved` is false. The retained backup
 and executable `rollback.recovery_args` / `rollback.recovery_command` identify a
