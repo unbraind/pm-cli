@@ -4,7 +4,7 @@
  * Maintains repository-scaffold contracts shared by the public SDK and CLI.
  */
 import { isFileMissingError } from "../core/fs/fs-utils.js";
-import { readFile, realpath, writeFile } from "node:fs/promises";
+import { readFile, realpath, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -23,7 +23,11 @@ async function physicalInitPath(input: string): Promise<string> {
   const missing: string[] = [];
   for (;;) {
     try {
-      return path.join(await realpath(ancestor), ...missing);
+      const physical = await realpath(ancestor);
+      if (!(await stat(physical)).isDirectory()) {
+        throw Object.assign(new Error("Initialization path ancestry must be a directory."), { code: "ENOTDIR" });
+      }
+      return path.join(physical, ...missing);
     } catch (error: unknown) {
       if (!isFileMissingError(error) || path.dirname(ancestor) === ancestor) throw error;
       missing.unshift(path.basename(ancestor));

@@ -30,13 +30,13 @@ describe("ensurePmGitignore", () => {
     }
   });
 
-  it.each([false, true])("rejects regular-file ancestry without changing existing ignore rules: %s", async (existing) => {
+  it.each([false, true].flatMap((existing) => [["file"], ["file", "tracker"]].map((parts) => ({ existing, parts }))))("rejects regular-file ancestry $parts without changing existing ignore rules: $existing", async ({ existing, parts }) => {
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-file-ancestor-"));
     const ignore = path.join(root, ".gitignore");
     try {
       await writeFile(path.join(root, "file"), "ordinary file");
       if (existing) await writeFile(ignore, "keep-existing\n");
-      await expect(ensurePmGitignore(root, { pmRoot: path.join(root, "file", "tracker") })).rejects.toMatchObject({ code: "ENOTDIR" });
+      await expect(ensurePmGitignore(root, { pmRoot: path.join(root, ...parts) })).rejects.toMatchObject({ code: "ENOTDIR" });
       if (existing) expect(await readFile(ignore, "utf8")).toBe("keep-existing\n");
       else await expect(readFile(ignore)).rejects.toMatchObject({ code: "ENOENT" });
     } finally { await rm(root, { recursive: true, force: true }); }

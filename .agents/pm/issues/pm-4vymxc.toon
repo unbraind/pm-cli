@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: bug,review,sdk
 created_at: "2026-10-22T12:58:46.665Z"
-updated_at: "2026-10-22T13:08:38.063Z"
+updated_at: "2026-10-22T13:43:22.918Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
 author: "harness:codex"
@@ -21,7 +21,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-f05lsg,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
   pm-gxq0dt,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
   pm-p8s5k7e6lhda,related,"2026-10-22T12:58:46.665Z","harness:codex","cli:create:dep",detected
-comments[3]:
+comments[5]:
   - created_at: "2026-10-22T12:58:46.665Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status intake plus current open/in-progress lists and rollback ancestry provenance review keyword search find no exact open owner. The three original source items have complete live closure evidence and remain closed. This is a distinct review_caught_late leaf for newly validated refusal boundaries rather than a duplicate implementation item or forced claim on terminal work. CodeRabbit inline findings4348548828 and4348548842 are assessed against current source; exact thread IDs and tests are recorded below."
@@ -32,6 +32,12 @@ comments[3]:
   - created_at: "2026-10-22T13:08:38.063Z"
     author: "harness:codex"
     text: "Final identical review regression suite against the pre-review f43c10c45 worktree reports6 intended failures and57 passing controls, with successful collection and the final test layout. Fixed SDK linked tests pass40 cases; workflow/reliability/registry tests pass67 cases including8 aggregate alert admission outcomes. Four TypeScript projects pass and focused ESLint passes without raising limits. No new test seam or public runtime helper was introduced. All five accepted findings have concrete fixes; full revised-head hosted coverage and native execution remain mandatory."
+  - created_at: "2026-10-22T13:37:57.849Z"
+    author: "harness:codex"
+    text: "Native217eece7c Nightly39784574377 completes with14 successful jobs but two real regular-file ancestry assertions fail on Windows shard2/4; strict coverage aggregation correctly refuses admission. No tests are skipped or weakened. Narrowing absence to ENOENT is insufficient when the platform permits climbing to a regular file. Extend the same active review fix to verify that resolved existing ancestry is a directory, preserve native ENOTDIR failures, and cover direct file roots as well as file descendants. All other native partitions and quality pass; the old overall run remains failed evidence."
+  - created_at: "2026-10-22T13:43:22.918Z"
+    author: "harness:codex"
+    text: "Existing resolved ancestors now require stat.isDirectory before a missing suffix is reattached. A structural ENOTDIR refusal is preserved on platforms that otherwise report a file descendant as missing. Direct-file negative controls fail2/33 assertions on217eece7c with31 controls passing; fixed linked SDK acceptance passes42/42, including both direct-file and nested-file cases and unchanged ignore bytes. Four TypeScript projects, focused ESLint and all generated contract checks pass. The real Windows failures remain the native negative receipt; a new complete native run must prove this correction."
 files[7]{path,scope}:
   sdk/public-surface.json,project
   src/core/shared/errors.ts,project
@@ -42,7 +48,7 @@ files[7]{path,scope}:
   tests/unit/extensions/extension-verified-replacement.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,project,300,"harness:codex","2026-10-22T13:01:07.712Z",local_mutation,fix/package-and-workspace-lifecycle
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvjjxyp8-yyiscm
     kind: test
     status: passed
@@ -60,6 +66,17 @@ test_runs[2]:
     started_at: "2026-10-22T13:06:09.930Z"
     finished_at: "2026-10-22T13:06:25.758Z"
     recorded_at: "2026-10-22T13:06:25.758Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/core/workspace/gitignore.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvjl7u4p-wqbo9e
+    kind: test
+    status: passed
+    started_at: "2026-10-22T13:39:03.158Z"
+    finished_at: "2026-10-22T13:39:17.449Z"
+    recorded_at: "2026-10-22T13:39:17.449Z"
     passed: 1
     failed: 0
     skipped: 0
