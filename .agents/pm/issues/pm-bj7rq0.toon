@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-22T12:34:02.014Z"
+updated_at: "2026-10-22T12:45:16.168Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[88]:
+comments[90]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -289,6 +289,12 @@ comments[88]:
   - created_at: "2026-10-22T12:34:02.014Z"
     author: "harness:codex"
     text: "PR1548 candidate local static run reaches all assurance and SDK surface checks, passes all10 SDK entrypoint budgets, then refuses native CLI-floor admission on October22 at12:32UTC: get best363ms against362ms and create best425ms against398ms. Runner is qualified with controls57ms/51ms below106ms; retain this as a product-budget refusal, not an unqualified-runner waiver. Original full report remains local in pm-cli-final-static.log. No budget or assertion is changed. Hosted exact-head checks remain independent; this broader performance item stays open and unclaimed."
+  - created_at: "2026-10-22T12:39:32.481Z"
+    author: "harness:codex"
+    text: "One bounded unchanged isolated CLI-floor retry at12:37UTC improves get to355ms but still refuses create at412ms against398ms, with qualified controls46ms/53ms below106ms. Both original refusal receipts are retained, no override is used, and repeated local reruns stop here. This does not establish a source regression or clear the broader canonical performance problem. Final required hosted static checks must independently pass."
+  - created_at: "2026-10-22T12:45:16.167Z"
+    author: "harness:codex"
+    text: "Chrome direct acceptance of CodSpeed PR1548 report for6899ce0 againstec2e9db confirms the decoder comparison changes Node24.22.0 to24.22.1 and V8 13.6.233.17-node.57 to.node.58. The expanded unchanged environment sections show the same AMD EPYC7763 CPU,102 unchanged flags, Ubuntu22.04,2cores and16GB memory. Thus the actual visible confound is runtime version drift; do not import the earlier PR1543 hardware mismatch into this report. The syscall warning belongs to createQueryFingerprint. The branch page explicitly says this is not the latest e9c9f76 report. No causal performance-improvement claim or paid runner request is made."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

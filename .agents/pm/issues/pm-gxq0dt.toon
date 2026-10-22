@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: bug,ci,testing
 created_at: "2026-10-22T12:08:55.456Z"
-updated_at: "2026-10-22T12:36:39.817Z"
+updated_at: "2026-10-22T12:56:40.512Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
 author: "harness:codex"
@@ -16,10 +16,11 @@ parent: pm-u9d0
 risk: medium
 confidence: high
 expected_result: Every complete native partition and the exact global coverage aggregate succeed under the unchanged20-minute job bound; retired and new families remain in historical reliability.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-bj7rq0,related,"2026-10-22T12:08:55.456Z","harness:codex","cli:create:dep",detected
   pm-qrirz8,recurs_from,"2026-10-22T12:08:55.456Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+  pm-ul9rye,related,"2026-10-22T12:43:17.107Z","harness:codex","cli:update:dep",detected
+comments[9]{created_at,author,text}:
   "2026-10-22T12:08:55.456Z","harness:codex","Duplicate check: full3058-item all-status corpus plus current open/in-progress lists and nightly timeout shard keyword search find no exact open allocation owner. Full live closed pm-qrirz8 and pm-ul9rye confirm completed prior allocation fixes; pm-bj7rq0 remains open for broader product startup performance. Job119798730778 and119798730969 annotations explicitly report maximum execution time20m0s; retain canceled evidence rather than recast it as green. GitHub official workflow syntax and contexts documentation supports needs.result admission and always aggregate execution: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax and https://docs.github.com/en/actions/reference/workflows-and-actions/contexts ."
   "2026-10-22T12:11:51.082Z","harness:codex","Allocation retains the20-minute bound and uses14 complete native partitions: Linux22 and25 two each, Linux24 coverage four, macOS24 two, Windows24 four. Global coverage runs only after every native partition succeeds, using all four blobs and unchanged exact100% thresholds. Reliability derives the aggregate family too, so missing aggregate evidence remains pending. Existing recurrence families now require all four Windows partitions. No assertion, per-test deadline, retry, coverage denominator or original failure is weakened."
   "2026-10-22T12:13:52.723Z","harness:codex","Local acceptance passes67 workflow/reliability/registry tests and all four TypeScript projects. Final identical tests against unchanged main fail five assertions while53 controls pass, including unsuccessful aggregate admission and missing aggregate population. An earlier negative run also had a test interpolation syntax error; that was corrected before this final receipt. Installed public Vitest BaseSequencer.shard partitions the current852 project/file identities into426+426 and213+213+213+213, with zero missing/duplicate identities. Gate-registry controls caught the new aggregate pipeline registration omission and passed after explicit registration. Hosted execution remains required; no global100% claim is made yet."
@@ -27,6 +28,8 @@ comments[7]{created_at,author,text}:
   "2026-10-22T12:15:20.566Z","harness:codex","Final corrected unchanged-main negative run now reports exactly5 intended failures and53 passing controls after aligning the copied health-test placement. All58 assertions collected successfully, with no syntax or directory-layout failure. Current positive acceptance remains67/67. The partition proof covers852 identities without omissions or duplicates. Candidate6899ce03d is executing the complete revised native workflow in https://github.com/unbraind/pm-cli/actions/runs/39776721982 ."
   "2026-10-22T12:20:07.648Z","harness:codex","Static quality correctly refused the new recurs_from lineage because pm-gxq0dt and completed predecessor pm-qrirz8 lacked explicit recurrence-family membership. Add a precise bounded-complete-nightly-execution family with both canonical IDs, the unchanged-main executable negative controls, all native partition checks and strict aggregate. Preserve broad platform families, budgets and original failures. This is the captured static finding, not a product assertion failure or an exemption."
   "2026-10-22T12:36:39.817Z","harness:codex","Initial PR1548 review census: CodeRabbit full-review request received an explicit20m36s hourly chat limit; Sourcery review budget unavailable for1d16h, while its generated guide is available and assessed separately; Greptile trial ended. No purchase or paid runner is introduced. A necessary post-push full-review trigger will run after the CodeRabbit cooldown. Current CodSpeed headline51.15% improvement carries explicit different-runner and syscall warnings, so it is not treated as proven performance improvement or as evidence clearing the separate qualified local startup refusal."
+  "2026-10-22T12:46:46.861Z","harness:codex","Hosted bounded allocation acceptance at6899ce03d in Nightly39776721982: all14 native partitions succeed, longest12m32s under unchanged20-minute bounds. The independent global aggregate succeeds with exact100/100/100/100 and zero uncovered counts after all native admission. The sole failed job is old-head quality, whose missing recurrence-lineage registration is fixed in e9c9f76 and whose later prose gap was resolved by recording the real relationship to completed prior allocation owner. Local evidence/registry17 checks, graph9 assertions, record integrity and bounded mutation all pass; the qualified local CLI-floor refusal remains separately recorded without a bypass. A complete revised-head nightly is still required before this item closes."
+  "2026-10-22T12:56:40.511Z","harness:codex","Full maintained packed-consumer smoke now passes on the candidate with npm/npx and Bun/bunx across9 package workflows: node scripts/smoke-npx-from-pack.mjs, version2026.10.22. Test subprocess observability was explicitly disabled; real production acceptance remains a separate opt-in probe. Three SDK/workspace items are now closed with immutable structured evidence and released ownership; only this still-active full-nightly/review validation item remains in progress. Latest npm pm-changelog2026.10.21 generated and verified the three actual change entries through its configured package-owned flow."
 learnings[1]{created_at,author,text}:
   "2026-10-22T12:13:53.661Z","harness:codex","When introducing coverage aggregation, register the new pipeline in the executable gate inventory and derive its expected reliability family from each original workflow. Successful test partitions cannot imply a successful or present aggregate. Prove membership with Vitest execution sequencing rather than filesOnly listing, which does not itself shard."
 files[6]{path,scope}:
@@ -50,7 +53,8 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/gate-registry.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/TESTING.md,project
 escape_class: nightly_regression
 gate_evidence:

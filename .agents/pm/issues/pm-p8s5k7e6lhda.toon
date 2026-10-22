@@ -2,20 +2,22 @@ id: pm-p8s5k7e6lhda
 title: Resolve aliased workspace paths before publishing tracker cache exclusions
 description: "GH #1544 and #1477: hosted cache-ignore-scopes failures plus independent published-artifact Linux symlink reproduction expose lexical-vs-physical root mismatch. Canonicalize equivalent existing paths without treating real external roots as internal. Preserve user bytes, sibling tracker scopes and literal names through both init orders/repeats."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:sdk","gh:1544",gitignore,init,nightly
 created_at: "2026-10-22T10:16:14.746Z"
-updated_at: "2026-10-22T12:36:39.068Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
+updated_at: "2026-10-22T12:46:55.682Z"
+closed_at: "2026-10-22T12:46:54.926Z"
+completed_at: "2026-10-22T12:46:54.926Z"
 author: "harness:codex"
 estimated_minutes: 100
 acceptance_criteria: Public SDK protects alias-addressed internal trackers and missing descendants; external symlinks remain no-ops; actual CLI/Git checks cover both init orders and literal names; hosted Windows and macOS regression legs pass
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "Physical and aliased paths for an internal tracker publish identical literal cache exclusions across repeated init, while real external roots and unrelated user rules remain protected."
+resolution: "Resolve the nearest existing physical ancestry of workspace and tracker paths while retaining missing suffixes, publish literal contained tracker rules, and propagate unexpected ancestry failures without a lexical fallback."
+expected_result: Physical and aliased workspace/tracker roots publish the same literal cache exclusions; external symlink targets remain outside repository policy and resolution failures refuse mutation.
+actual_result: "All41 linked unit/integration cases pass across aliases both operation orders metacharacter roots missing descendants external targets and unexpected/root resolution failures. Both macOS shards and all four Windows shards pass in Nightly39776721982, with all14 native partitions and exact global100/100/100/100 aggregate successful. GH1544 and latest GH1477 cache-ignore failures are addressed; historical unrelated failures remain evidence."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,related,"2026-10-22T10:16:14.746Z","harness:codex","cli:create:dep",detected
   pm-47wuv8awpqvj,recurs_from,"2026-10-22T10:16:14.746Z","harness:codex","cli:create:dep",detected
@@ -54,6 +56,7 @@ test_runs[1]:
       node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
+close_reason: Verified tracker cache exclusions use physical workspace ancestry through path aliases.
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened
