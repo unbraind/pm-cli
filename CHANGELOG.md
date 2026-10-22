@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1540: MCP binaries ignore help and version probes before transport startup ([pm-gh1540](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1540.toon))
+
+### Other
+
+- Retain original dependency advisory receipts on release workflow failures ([pm-z20n3s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z20n3s.toon))
+
 ## 2026.10.22 - 2026-10-22
 
 ### Fixed
