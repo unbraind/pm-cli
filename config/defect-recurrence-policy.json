@@ -3,6 +3,62 @@
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
   "families": [
     {
+      "id": "bounded-complete-nightly-execution",
+      "version": 1,
+      "title": "Complete native partitions and coverage aggregation retain bounded execution and original failure evidence",
+      "owner_item_id": "pm-gxq0dt",
+      "escape_class": "nightly_regression",
+      "triggers": {
+        "file_patterns": [
+          ".github/workflows/nightly.yml",
+          "scripts/release/collect-nightly-reliability.mjs",
+          "tests/integration/ci-workflow-contract.spec.ts",
+          "tests/unit/scripts/release/collect-nightly-reliability.spec.ts"
+        ],
+        "item_ids": [
+          "pm-gxq0dt",
+          "pm-qrirz8"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/collect-nightly-reliability.spec.ts tests/unit/scripts/release/gate-registry.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (static)",
+          "CI / Gates (coverage)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 24)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 22, shard 1/2)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 22, shard 2/2)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 24, shard 1/4)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 24, shard 2/4)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 24, shard 3/4)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 24, shard 4/4)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 25, shard 1/2)",
+          "Nightly Validation / Nightly (ubuntu-latest, Node 25, shard 2/2)",
+          "Nightly Validation / Nightly (macos-latest, Node 24, shard 1/2)",
+          "Nightly Validation / Nightly (macos-latest, Node 24, shard 2/2)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 1/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 3/4)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 4/4)"
+        ]
+      },
+      "negative_control": {
+        "files": [
+          ".github/workflows/nightly.yml",
+          "scripts/release/collect-nightly-reliability.mjs"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-qrirz8"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.03
+      }
+    },
+    {
       "id": "verified-package-lifecycle",
       "version": 1,
       "title": "Package replacement and compatibility health preserve usable configured state",
