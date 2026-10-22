@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bug,concurrency,data-integrity,sdk
 created_at: "2026-10-22T14:40:08.187Z"
-updated_at: "2026-10-22T19:15:05.608Z"
+updated_at: "2026-10-22T19:45:37.467Z"
 closed_at: "2026-10-22T19:15:05.583Z"
 completed_at: "2026-10-22T19:15:05.583Z"
 claim_principal: "harness:claude-code#f93f297a00e60b66e8815dbe"
@@ -38,4 +38,11 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,project,"harness:claude-code","2026-10-22T18:29:25.035Z",local_mutation,fix/lock-lease-fencing-and-progress-wait
 close_reason: "Shipped commit-time lease fencing: acquireLockLease(...).fence(commit) verifies the lease token under the per-lock cleanup gate shared with stale takeover; mutateItem, deleteItem and restore fence their writes; item mutations also refuse stale_revision when the stored bytes changed after the read."
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: test-coverage
+  owner: pm-gh1549
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

@@ -4,8 +4,13 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  clearActiveExtensionHooks,
+  setActiveExtensionServices,
+} from "../../../../src/core/extensions/index.js";
+import {
   _testOnly as lockTestOnly,
   acquireLockLease,
+  captureProcessIdentity,
 } from "../../../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { getHistoryPath, getLockPath } from "../../../../src/core/store/paths.js";
@@ -17,6 +22,7 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import type { TempPmContext } from "../../../helpers/withTempPmPath.js";
 
 afterEach(() => {
+  clearActiveExtensionHooks();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
 });
@@ -80,6 +86,67 @@ describe("lock lease fencing (GH-1549)", () => {
         code: "lock_lost",
         context: { reason: "lease_released", current_owner: null },
       });
+    });
+  });
+
+  it("waits for a contended commit gate and then commits", async () => {
+    await withTempDir("pm-lease-gate-wait-", async (root) => {
+      const lease = await acquireLockLease(root, "shared", 60, "writer", false, false, 0);
+      const gatePath = `${getLockPath(root, "shared")}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      setTimeout(() => void fs.rm(gatePath, { recursive: true, force: true }), 150);
+      await expect(lease.fence(async () => "written")).resolves.toBe("written");
+      await lease.release();
+    });
+  });
+
+  it("refuses with fence_gate_unavailable when the commit gate never frees", async () => {
+    await withTempDir("pm-lease-gate-stuck-", async (root) => {
+      const lease = await acquireLockLease(root, "shared", 60, "writer", false, false, 0);
+      const gatePath = `${getLockPath(root, "shared")}.stale-cleanup`;
+      await fs.mkdir(gatePath);
+      // A live owner keeps the gate from being reclaimed as expired.
+      await fs.writeFile(
+        path.join(gatePath, "owner.json"),
+        `${JSON.stringify({ ...(await captureProcessIdentity()), token: "live-gate-owner" })}\n`,
+        "utf8",
+      );
+      const realNow = Date.now.bind(Date);
+      let calls = 0;
+      // Jump past the bounded gate wait after the first observation.
+      vi.spyOn(Date, "now").mockImplementation(() => realNow() + (calls++ === 0 ? 0 : 60_000));
+      const commit = vi.fn(async () => "written");
+      await expect(lease.fence(commit)).rejects.toMatchObject({
+        code: "lock_lost",
+        context: { reason: "fence_gate_unavailable", current_owner: { owner: "writer" } },
+      });
+      expect(commit).not.toHaveBeenCalled();
+      vi.restoreAllMocks();
+      await fs.rm(gatePath, { recursive: true, force: true });
+      await lease.release();
+    });
+  });
+
+  it("runs the commit unfenced when an extension owns the lock lifecycle", async () => {
+    await withTempDir("pm-lease-override-", async (root) => {
+      let released = false;
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "lock-acquire-override",
+            service: "lock_acquire",
+            run: () => () => {
+              released = true;
+            },
+          },
+        ],
+      });
+      const lease = await acquireLockLease(root, "shared", 60, "writer", false, false, 0);
+      await expect(lease.fence(async () => "written")).resolves.toBe("written");
+      await lease.release();
+      expect(released).toBe(true);
+      await expect(fs.stat(getLockPath(root, "shared"))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

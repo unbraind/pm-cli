@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: bug,concurrency,locks,multi-agent,sdk
 created_at: "2026-10-22T18:10:30.531Z"
-updated_at: "2026-10-22T19:15:15.086Z"
+updated_at: "2026-10-22T19:45:38.667Z"
 closed_at: "2026-10-22T19:15:15.063Z"
 completed_at: "2026-10-22T19:15:15.063Z"
 author: "harness:claude-code"
@@ -30,4 +30,12 @@ files[3]{path,scope}:
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,project,"harness:claude-code","2026-10-22T18:29:38.324Z",local_mutation,fix/lock-lease-fencing-and-progress-wait
 close_reason: "Shipped progress-aware lock waiting: the lock wait budget is a no-progress window that restarts on every observed owner handoff, capped at 120 s total; explicit maxWaitMs ceilings and wait 0 fail-fast are unchanged; lock_conflict recovery reports waited_ms and owner_handoffs."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: test-coverage
+  owner: pm-iop1pg
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

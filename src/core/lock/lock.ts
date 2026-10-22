@@ -530,14 +530,13 @@ function describeLease(lease: {
   acquiredAt: string;
   ttlSeconds: number;
 }): NonNullable<PmCliErrorContext["lease"]> {
-  const acquiredMs = Date.parse(lease.acquiredAt);
+  // acquiredAt is the lock payload's own nowIso() stamp, so it always parses.
+  const expiresAtMs = Date.parse(lease.acquiredAt) + lease.ttlSeconds * 1000;
   return {
     owner: lease.owner,
     acquired_at: lease.acquiredAt,
     ttl_seconds: lease.ttlSeconds,
-    expires_at: Number.isFinite(acquiredMs)
-      ? new Date(acquiredMs + lease.ttlSeconds * 1000).toISOString()
-      : null,
+    expires_at: new Date(expiresAtMs).toISOString(),
   };
 }
 

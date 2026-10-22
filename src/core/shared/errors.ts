@@ -259,8 +259,8 @@ export interface PmCliErrorContext {
     acquired_at: string;
     /** Stale-lock lifetime the lease was acquired under. */
     ttl_seconds: number;
-    /** When the lease became reclaimable by TTL, or null for an unparseable start. */
-    expires_at: string | null;
+    /** When the lease became reclaimable by TTL. */
+    expires_at: string;
   };
   /** Lock generation observed at a refused `lock_lost` commit, or null when no lock exists. */
   current_owner?: {
