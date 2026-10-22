@@ -46,11 +46,18 @@ async function readItemRaw(pmRoot: string, id: string): Promise<string> {
   return fs.readFile(located.itemPath, "utf8");
 }
 
-/** Publish a fresh lock generation for `id` without going through acquisition. */
+/**
+ * Publish a fresh lock generation for `id` without going through acquisition.
+ * Rename keeps the swap atomic, so a waiter never reads an empty lock file and
+ * mistakes it for a reclaimable stale lock.
+ */
 async function publishGeneration(pmRoot: string, id: string, owner: string): Promise<void> {
   const payload = await lockTestOnly.buildLockPayload(id, owner, 60);
-  await fs.mkdir(path.dirname(getLockPath(pmRoot, id)), { recursive: true });
-  await fs.writeFile(getLockPath(pmRoot, id), `${JSON.stringify(payload)}\n`, "utf8");
+  const lockPath = getLockPath(pmRoot, id);
+  await fs.mkdir(path.dirname(lockPath), { recursive: true });
+  const tempPath = `${lockPath}.${payload.token}.tmp`;
+  await fs.writeFile(tempPath, `${JSON.stringify(payload)}\n`, "utf8");
+  await fs.rename(tempPath, lockPath);
 }
 
 describe("lock lease fencing (GH-1549)", () => {

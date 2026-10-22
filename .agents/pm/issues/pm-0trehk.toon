@@ -6,10 +6,10 @@ status: open
 priority: 2
 tags[5]: ci,monitoring,nightly,recurrence,reliability
 created_at: "2026-10-22T18:29:04.661Z"
-updated_at: "2026-10-22T18:43:55.581Z"
+updated_at: "2026-10-22T20:10:59.395Z"
 author: "harness:claude-code"
 estimated_minutes: 300
-acceptance_criteria: "A declared family lineage (successor legs name the family they replace) lets the evaluator report predecessor evidence for a renamed or re-sharded leg instead of 0/0; Warm-up (insufficient attempts on a leg younger than the window) is reported as a distinct non-failing state with its expiry date, while a real failure_rate violation on any leg still fails; The step summary separates coverage warm-up, failure-rate and dispatch findings with their owners; A negative control proves an undeclared rename (no lineage) still fails coverage; The SDK reliability window (src/sdk/governance/reliability.ts) owns the lineage and warm-up semantics, the collector only declares data"
+acceptance_criteria: "The SDK reliability window policy accepts family declarations as objects {name, introduced_at (ISO instant the leg first ran under this name), replaces?: string[] (predecessor family names)}, while plain strings stay valid and mean no lineage and no warm-up; The collector derives introduced_at and replaces from declared workflow data only and evaluation stays in src/sdk/governance/reliability.ts; A leg whose introduced_at is inside the window and whose own completed attempts are below min_completed_attempts is reported warm_up (non-failing) with warm_up_expires_at = introduced_at + window length, including the zero-attempt case; Declared predecessor attempts inside the window are reported as lineage evidence and count toward failure_rate but never toward the leg's own coverage; Any failure_rate violation on a leg or its predecessors still fails, and after warm_up_expires_at insufficient attempts fail coverage again; The step summary separates warm-up, coverage, failure-rate and dispatch findings with their owners; Negative controls prove an undeclared rename (no lineage, no introduced_at) still fails coverage and an expired warm-up fails"
 parent: pm-u9d0
 risk: medium
 confidence: high

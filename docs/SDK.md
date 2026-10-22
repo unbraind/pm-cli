@@ -252,13 +252,19 @@ budget, when larger). Force does not bypass an unexpired lock whose owner is
 alive or unverifiable. TTL expiry permits removal regardless of owner liveness.
 
 An expired holder can keep running, so fence the protected write with
-`acquireLockLease`. Its `fence(commit)` runs `commit` only while this lease
-still owns its lock generation; after a TTL or forced takeover it refuses with
-`lock_lost` (exit 4, `context.lease` and `context.current_owner`) and never
-runs `commit`. Takeover and fencing share one per-lock gate, so a takeover
-cannot interleave with a fenced commit. Item mutations (`mutateItem`, delete,
-restore) fence their commits this way and also refuse with `stale_revision`
-when the stored item changed after the mutation read it:
+`acquireLockLease`. With the built-in lock provider, `fence(commit)` runs
+`commit` only while this lease still owns its lock generation; after a TTL or
+forced takeover it refuses with `lock_lost` (exit 4, `context.lease` and
+`context.current_owner`) and never runs `commit`. Takeover and fencing share one
+per-lock gate, so a takeover cannot interleave with a fenced commit. When an
+extension `lock_acquire` override handles the acquisition, the extension owns
+the lock lifecycle and `fence(commit)` runs `commit` unfenced: such packages must
+fence in their provider or compare the protected resource's revision before
+writing. `mutateItem` and `deleteItem` fence their commits and also refuse with
+`stale_revision` when the stored item bytes changed after the locked read, which
+covers override-held locks too. `restore` fences its write with the lease
+(`lock_lost`) and re-verifies item and history under its lock, refusing with its
+own "changed while waiting for lock" conflict rather than `stale_revision`:
 
 ```ts
 import { acquireLockLease } from "@unbrained/pm-cli/sdk";
