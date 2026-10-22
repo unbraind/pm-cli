@@ -17,6 +17,7 @@ import type { CloseManyCommandOptions } from "./lifecycle/close-many.js";
 import type { UpdateManyCommandOptions } from "./lifecycle/update-many.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, CREATE_COMMANDER_STRING_OPTION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import { TOOL_CREATE_OPTION_CONTRACTS, TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS, TOOL_UPDATE_OPTION_CONTRACTS } from "./cli-contracts/tool-option-contracts.js";
+import { PM_TOOL_PARAMETER_PROPERTIES } from "./cli-contracts/tool-parameter-tables.js";
 import type { GraphCommandOptions } from "./graph/run.js";
 import type { ListOptions } from "./query/list.js";
 import {
@@ -444,6 +445,25 @@ function refuseMcpMutationValue(action: McpMutationAction, field: string): never
   });
 }
 
+/** Validate declared action booleans and transport receipt controls without constraining custom fields. */
+function assertMcpMutationBooleans(
+  action: McpMutationAction,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): void {
+  const contracts = MCP_MUTATION_OPTION_CONTRACTS[action];
+  const parameters = [...contracts.parameters, ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS, { param: "force" }];
+  for (const { param } of parameters) {
+    if (asRecordClone(PM_TOOL_PARAMETER_PROPERTIES[param]).type !== "boolean") continue;
+    const keys = contracts.aliases.find((contract) => contract.keys.includes(param))?.keys ?? [param];
+    const invalid = keys.find((key) => options[key] !== undefined && typeof options[key] !== "boolean");
+    if (invalid !== undefined) refuseMcpMutationValue(action, invalid);
+  }
+  for (const key of ["idOnly", "fullChangedFields"]) {
+    if (args[key] !== undefined && typeof args[key] !== "boolean") refuseMcpMutationValue(action, key);
+  }
+}
+
 /** Keep malformed fields from disappearing during typed mutation normalization. */
 function checkedMcpMutationOptions(
   action: McpMutationAction,
@@ -451,7 +471,7 @@ function checkedMcpMutationOptions(
   options: Record<string, unknown>,
 ): Record<string, unknown> {
   if (args.options !== undefined && !isRuntimeRecord(args.options)) refuseMcpMutationValue(action, "options");
-  if (options.force !== undefined && typeof options.force !== "boolean") refuseMcpMutationValue(action, "force");
+  assertMcpMutationBooleans(action, args, options);
   for (const key of ARRAY_TO_CSV_FIELDS) {
     const value = options[key];
     if (Array.isArray(value) && value.some((entry) => typeof entry !== "string")) refuseMcpMutationValue(action, key);

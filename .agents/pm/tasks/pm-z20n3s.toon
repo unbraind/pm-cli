@@ -1,0 +1,24 @@
+id: pm-z20n3s
+title: Retain original dependency advisory receipts on release workflow failures
+description: "Auto Release run39713092159 fails at the dependency advisory collector, but its only retained artifact is release-observation-1 (317 bytes). The original per-feed receipt is unavailable, so the failure cannot be independently classified as a positive advisory versus an unavailable feed. CI receipt retention is already completed and works: artifact12398397190 for the matching PR failure proves registry unavailable and OSV complete across568 versions with zero findings. Extend that successful scoped evidence pattern to every release path that can call the advisory gate; preserve all gate outcomes and privacy boundaries. See https://github.com/unbraind/pm-cli/issues/1542."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-22T04:11:22.309Z"
+updated_at: "2026-10-22T04:11:22.309Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Retain the exact public dependency receipt when an applicable release gate succeeds or fails; Bound hidden-file upload to that single inspected receipt and distinguish run attempts; Keep raw stderr credentials telemetry and unrelated caches excluded; Demonstrate positive unavailable and clean outcomes retain their original strict gate verdicts
+parent: pm-ciadvisoryreceipt
+risk: medium
+confidence: 100
+expected_result: Operators can inspect the exact original registry and OSV result for a failed release attempt without inferring it from another run or a later clean scan.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-prrlce,related,"2026-10-22T04:11:22.309Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-22T04:11:22.309Z","harness:codex","Duplicate check: request-specific search plus fresh open/in-progress inventories and complete3057-item strict all-status/full corpus found completed CI-only receipt retention and the broad release-observation owner, with no owner for original per-feed release-workflow evidence. Read the completed CI item live and verify that this failed Auto Release exposes only its small observation artifact. Queue this extension open and unclaimed; no workflow change is included in the current SDK contract delivery."
+files[2]{path,scope}:
+  .github/workflows/auto-release.yml,project
+  .github/workflows/release.yml,project
+body: ""

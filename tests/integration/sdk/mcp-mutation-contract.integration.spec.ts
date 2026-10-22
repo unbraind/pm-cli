@@ -41,6 +41,11 @@ describe("MCP mutation advertised fields", () => {
       // Public parameter aliases and scalar/list normalization must reach the same persistence path.
       await call("pm_update", { id, options: {}, estimate: 17, tags: ["first", "second"], linkedFile: "path=src/example.ts", comment: "flat evidence", body: "-" });
       expect(get()).toMatchObject({ item: { estimated_minutes: 17, tags: ["first", "second"], body: "-", files: [expect.objectContaining({ path: "src/example.ts" })], comments: [expect.objectContaining({ text: "flat evidence" })] } });
+      await call("pm_update", { id, idOnly: false, fullChangedFields: false, options: { clearComments: false, clearFiles: false, replaceDocs: false } });
+      expect(get()).toMatchObject({ item: { files: [expect.objectContaining({ path: "src/example.ts" })], comments: [expect.objectContaining({ text: "flat evidence" })] } });
+      await call("pm_update", { id, options: { clearComments: true } });
+      expect(get()).toMatchObject({ item: { comments: [] } });
+      await call("pm_update", { id, options: { comment: "restored evidence" } });
 
       const bytes = () => Promise.all([
         readFile(path.join(context.pmPath, "tasks", `${id}.toon`)),
@@ -50,6 +55,8 @@ describe("MCP mutation advertised fields", () => {
       for (const malformed of [
         { priority: false }, { title: false }, { status: [] },
         { tags: ["valid", 4] }, { options: { tags: [null] } },
+        { clearComments: 42 }, { options: { clearFiles: "false" } }, { replaceDocs: [] },
+        { options: { allow_missing_parent: 42 } }, { idOnly: "true" }, { fullChangedFields: 1 },
         { linkedFile: 4 }, { linkedFile: ["path=src/partial.ts", 4] }, { force: "false" },
         { options: null }, { options: [] },
         { options: { priority: false, title: "must not persist" } },
@@ -66,14 +73,15 @@ describe("MCP mutation advertised fields", () => {
   it("honors create metadata, nested aliases and custom fields before recording any writes", async () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["schema", "add-field", "delivery_channel", "--type", "string", "--commands", "create,update", "--json"]).code).toBe(0);
+      expect(context.runCli(["schema", "add-field", "offline", "--type", "string", "--commands", "create,update", "--json"]).code).toBe(0);
       const create = (args: Record<string, unknown>) => mcpCall(context.pmPath, "pm_create", { title: "Canonical creation", type: "Task", options: { createMode: "progressive" }, ...args });
       const created = await create({ id: "pm-mcpflat", deadline: "2026-11-01", estimate: 17, priority: 4, regression: false, allowDuplicate: false, deliveryChannel: "email", linkedFile: "path=src/create.ts", options: { createMode: "progressive", priority: 2 } });
       expect(created?.structuredContent).toMatchObject({ result: { id: "pm-mcpflat" } });
       const get = (id: string) => context.runCli(["get", id, "--full", "--json"], { expectJson: true }).json;
       expect(get("pm-mcpflat")).toMatchObject({ item: { deadline: expect.stringContaining("2026-11-01"), estimated_minutes: 17, priority: 2, regression: false, delivery_channel: "email", files: [expect.objectContaining({ path: "src/create.ts" })] } });
-      const nested = await create({ id: "pm-unused", title: "Nested creation metadata", estimate: 99, tags: ["ignored", 4], options: { createMode: "progressive", id: "pm-mcpnested", estimatedMinutes: "23", tags: ["nested-create"] } });
+      const nested = await create({ id: "pm-unused", title: "Nested creation metadata", estimate: 99, tags: ["ignored", 4], options: { createMode: "progressive", id: "pm-mcpnested", estimatedMinutes: "23", tags: ["nested-create"], regression: 0, offline: "queued" } });
       expect(nested?.structuredContent).toMatchObject({ result: { id: "pm-mcpnested" } });
-      expect(get("pm-mcpnested")).toMatchObject({ item: { estimated_minutes: 23, tags: ["nested-create"] } });
+      expect(get("pm-mcpnested")).toMatchObject({ item: { estimated_minutes: 23, tags: ["nested-create"], regression: false, offline: "queued" } });
       await create({ id: "pm-imported", title: "Imported terminal work", status: "closed", closeReason: "Imported completion", completedAt: "2026-10-01T12:00:00Z", options: { createMode: "progressive", resolution: "Imported completion", expectedResult: "Imported", actualResult: "Imported" } });
       expect(get("pm-imported")).toMatchObject({ item: { status: "closed", close_reason: "Imported completion", completed_at: "2026-10-01T12:00:00.000Z" } });
       expect(context.runCli(["history", "pm-imported", "--verify", "--strict-exit", "--json"]).code).toBe(0);
@@ -81,7 +89,7 @@ describe("MCP mutation advertised fields", () => {
         .filter((entry) => /^(?:tasks|history)[\\/].+\.(?:toon|jsonl)$/u.test(entry)).sort()
         .map(async (entry) => [entry, await readFile(path.join(context.pmPath, entry))]));
       const before = await snapshot();
-      for (const invalid of [{ priority: false }, { type: false }, { tags: ["valid", 4] }, { options: { createMode: "progressive", tags: ["valid", false] } }, { comment: ["partial", 4] }, { options: null }]) {
+      for (const invalid of [{ priority: false }, { type: false }, { tags: ["valid", 4] }, { options: { createMode: "progressive", tags: ["valid", false] } }, { clearComments: 42 }, { allowDuplicate: 1 }, { options: { createMode: "progressive", allow_unresolved_deps: "false" } }, { comment: ["partial", 4] }, { options: null }]) {
         await expect(create({ id: "pm-invalid", title: "Refused creation", ...invalid })).rejects.toMatchObject({ exitCode: 2, context: { changed: false } });
         expect(await snapshot()).toEqual(before);
       }

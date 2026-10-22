@@ -1,0 +1,71 @@
+id: pm-7qg4jz
+title: Validate declared MCP boolean options before mutation normalization
+description: "PR1541 inline review4344126276 identifies boolean mutation values discarded by optionTrue before persistence. Independent current public stdio reproduction with options.clearComments=42 and a sibling title returns changed_field_count1 and writes the title. Derive strict boolean admission from canonical action parameter schemas and aliases, preserve valid false values and supported polymorphic metadata such as regression, and refuse malformed values before item/history writes. Keep custom project fields outside unrelated action parameter types."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-22T03:13:46.009Z"
+updated_at: "2026-10-22T04:13:13.798Z"
+closed_at: "2026-10-22T04:13:12.705Z"
+completed_at: "2026-10-22T04:13:12.705Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: Reproduce malformed clearComments through the public MCP entrypoint before the fix; Validate all declared action boolean parameters and equivalent aliases before normalization; Preserve valid true/false options and nested precedence without constraining custom fields by unrelated parameter types; Cover create and update atomic refusals with exact durable snapshots and strict hosted gates
+parent: pm-gh1538
+risk: medium
+confidence: 100
+severity: medium
+resolution: "Derive strict boolean checks from canonical action parameter schemas and registration aliases before normalization, including force and top-level receipt controls, while preserving custom fields and polymorphic metadata."
+expected_result: "Malformed declared boolean options refuse with changed=false before any item/history write; valid true/false values, aliases, nested precedence and project-defined fields retain their semantics."
+actual_result: "Both create/update regressions fail before the guard and pass afterward. Malformed clear/replace/exception/duplicate and receipt flags preserve exact item/history snapshots; true clearing and false preservation work, regression=0 stays supported, and custom offline string metadata persists. Public stdio refuses clearComments=42 without changing the item. All linked tests, packed npm/Bun executors, the full 10,982-test suite and complete static command pass; exact coverage is 100/100/100/100."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gllxud,related,"2026-10-22T03:13:46.009Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-22T03:13:46.009Z","harness:codex","Duplicate check: fresh request search, open/in-progress inventories and complete3056-item strict all-status/full corpus with no omissions found no owner for malformed MCP boolean flags. Read the completed scalar and array admission lineage live. This distinct review finding is independently reproduced on the revised PR head and stays in the same grouped delivery."
+  "2026-10-22T03:20:11.562Z","harness:codex","The new create/update regressions both fail on the revised published PR head before this correction. The SDK now derives strict boolean admission from canonical action parameter schemas and registration aliases before normalization. Valid false flags and a real true clear operation pass; receipt controls reject non-booleans, polymorphic regression metadata still accepts zero, and a custom offline string field is preserved despite an unrelated global parameter of that name. All nine linked tests pass. The independent public stdio control now refuses clearComments=42 with changed=false and retains the original title."
+  "2026-10-22T04:13:11.784Z","harness:codex","Final local verification: all 10,982 tests pass with 3 skips. Exact coverage is 100/100/100/100 over 70,263 statements, 54,026 branches, 14,479 functions and 66,578 lines, with zero uncovered counts. The complete static command now passes, including both independent advisory feeds across all 568 locked versions with zero findings, import-cost and transport budgets, graph/context/record assurance and mutation testing. Both linked commands pass: the nine focused regressions plus maintained packed npm/npx/Bun/bunx smoke over nine packages. Valid true/false flags, aliases, receipt controls, polymorphic regression metadata and an unrelated-name custom field retain behavior. Required exact-head hosted checks and rereview still precede merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-22T03:20:12.184Z","harness:codex","Boolean flag readers often reduce any non-true value to an absent option. Validate declared types before coercion and scope shared parameter metadata to the actual action, so custom fields do not inherit unrelated command types. Include valid false, true side effects, aliases and polymorphic metadata as compatibility controls."
+files[2]{path,scope}:
+  src/sdk/runtime-input.ts,project
+  tests/integration/sdk/mcp-mutation-contract.integration.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,project,600,"harness:codex","2026-10-22T03:16:08.902Z",local_mutation,fix/sdk-authoring-mcp-mutation-contracts
+  "pnpm smoke:npx",project,1200,"harness:codex","2026-10-22T03:59:18.235Z",local_mutation,fix/sdk-authoring-mcp-mutation-contracts
+test_runs[2]:
+  - run_id: test-local-mviz1v2z-ijzv73
+    kind: test
+    status: passed
+    started_at: "2026-10-22T03:18:28.164Z"
+    finished_at: "2026-10-22T03:18:47.195Z"
+    recorded_at: "2026-10-22T03:18:47.195Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvj0mg9m-huix6n
+    kind: test
+    status: passed
+    started_at: "2026-10-22T03:59:19.055Z"
+    finished_at: "2026-10-22T04:02:47.385Z"
+    recorded_at: "2026-10-22T04:02:47.385Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,schema,schema,source,local_source_ref
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MCP_OPTION_CONFORMANCE.md,project,Strict declared boolean admission before mutation normalization
+close_reason: Implemented and locally verified complete declared-boolean preflight; include the correction and closure in the same reviewed delivery.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mcp-declared-boolean-admission
+  owner: unbraind
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts; both create/update regressions fail on 5c3a0b5 because malformed boolean flags succeed and permit sibling writes. Public stdio clearComments=42 returns changed_field_count=1 and changes the title before this guard.
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/integration/sdk/mcp-mutation-contract.integration.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts,node scripts/run-tests.mjs coverage -- --maxWorkers=4,"pnpm quality:static","pnpm smoke:npx"
+  hosted_checks[4]: Gates (static),Gates (coverage),Gates (smokes),Analyze (javascript-typescript)
+body: ""

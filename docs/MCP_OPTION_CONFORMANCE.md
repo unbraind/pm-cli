@@ -18,7 +18,9 @@ callers continue to put update fields inside `options`.
 
 Malformed option containers, values discarded from known scalar fields, and malformed repeatable
 entries refuse before execution with `invalid_argument_value` and
-`changed: false`. `force` must be a boolean. These checks preserve project-defined
+`changed: false`. Declared boolean mutation fields, their aliases, and receipt
+controls must be booleans, including `false`; this covers clear/replace flags,
+parent/dependency exceptions, duplicate allowance, and `force`. These checks preserve project-defined
 custom fields and template-based type resolution while preventing a bad field
 from disappearing as a sibling field is written.
 Array values that become CLI CSV inputs, such as `tags`, must contain only
