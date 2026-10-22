@@ -8,6 +8,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getSettingsPath } from "../../core/store/paths.js";
 import { isErrnoCode } from "./install-runtime.js";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import { PmCliError } from "../../core/shared/errors.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { renderPmCommand } from "../command-line.js";
+import { areDirectoriesEquivalent } from "./install-sources.js";
+import { writeWorkspaceJsonWithHistory } from "../../core/history/workspace-history.js";
+import { readSettings } from "../../core/store/settings.js";
+import { clearSettingsReadCache } from "../../core/store/settings-read-cache.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import { resolveManagedExtensionStatePath } from "./managed-state.js";
 
 /** Exact filesystem and metadata state captured before an extension install. */
@@ -85,9 +94,75 @@ export const restoreExtensionInstallSnapshot = async (
   ] as const) {
     if (contents === null) {
       await fs.rm(filePath, { force: true });
+    } else if (filePath === snapshot.settingsPath) {
+      const settingsRoot = path.dirname(snapshot.settingsPath);
+      const settings = await readSettings(settingsRoot);
+      try {
+        await writeWorkspaceJsonWithHistory({
+          pmRoot: settingsRoot,
+          filePath,
+          raw: contents.toString("utf8"),
+          op: "extension:install:rollback",
+          author: resolveAuthor(undefined, settings.author_default),
+          lockTtlSeconds: settings.locks.ttl_seconds,
+          lockWaitMs: settings.locks.wait_ms,
+        });
+      } finally {
+        clearSettingsReadCache(settingsRoot);
+      }
     } else {
       await fs.mkdir(path.dirname(filePath), { recursive: true });
       await fs.writeFile(filePath, contents);
     }
   }
 });
+
+/** Retain the previous installation until both persistence and runtime verification settle. */
+export async function withVerifiedExtensionInstall<T extends { ok: boolean; details: Record<string, unknown> }>(
+  options: { selectedRoot: string; settingsRoot: string; destinationDirectory: string; sourceDirectory: string; scope: "project" | "global" },
+  install: () => Promise<T>,
+): Promise<T> {
+  const destinationExists = await pathExists(options.destinationDirectory);
+  const inPlace = await areDirectoriesEquivalent(options.sourceDirectory, options.destinationDirectory);
+  await fs.mkdir(options.selectedRoot, { recursive: true });
+  const backupParent = path.join(path.dirname(options.selectedRoot), "runtime", "extension-installs");
+  await fs.mkdir(backupParent, { recursive: true });
+  const backupRoot = await fs.mkdtemp(path.join(backupParent, ".pm-extension-install-backup-"));
+  const backupDirectory = path.join(backupRoot, "destination");
+  const recoveryArgs = ["package", "install", backupDirectory, `--${options.scope}`];
+  const recoveryCommand = renderPmCommand(recoveryArgs);
+  let retainBackup = false;
+  try {
+    const snapshot = await captureExtensionInstallSnapshot(options.selectedRoot, options.settingsRoot, options.destinationDirectory, destinationExists, backupDirectory);
+    let result: T;
+    try {
+      result = await install();
+    } catch (error: unknown) {
+      try {
+        await restoreExtensionInstallSnapshot(snapshot);
+      } catch (rollbackError: unknown) {
+        retainBackup = true;
+        throw new PmCliError(`Extension install failed: ${String(error)}; rollback failed: ${String(rollbackError)}`, EXIT_CODE.GENERIC_FAILURE, {
+          code: "extension_install_rollback_failed",
+          required: "Restore the previous package before retrying the replacement. Previous state was not preserved.",
+          nextSteps: [destinationExists ? recoveryCommand : "Repair the reported metadata write failure, then retry the original install."],
+          ...(destinationExists ? { recovery: { suggested_retry: recoveryCommand, suggested_retry_args: recoveryArgs } } : {}),
+        });
+      }
+      throw error;
+    }
+    if (result.ok) return result;
+    // Fresh and in-place failures retain their diagnostic installation. There
+    // is no earlier working source to restore in either case.
+    if (!destinationExists || inPlace) return { ...result, details: { ...result.details, previous_state_preserved: false } };
+    try {
+      await restoreExtensionInstallSnapshot(snapshot);
+    } catch (error: unknown) {
+      retainBackup = true;
+      return { ...result, details: { ...result.details, previous_state_preserved: false, rollback: { status: "failed", error: String(error), backup_directory: backupDirectory, recovery_command: recoveryCommand, recovery_args: recoveryArgs } } };
+    }
+    return { ...result, details: { ...result.details, overwritten: false, settings_changed: false, previous_state_preserved: true, rollback: { status: "restored" } } };
+  } finally {
+    if (!retainBackup) await fs.rm(backupRoot, { recursive: true, force: true }).catch(() => undefined);
+  }
+}

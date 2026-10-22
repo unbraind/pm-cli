@@ -3,8 +3,8 @@
  *
  * Maintains repository-scaffold contracts shared by the public SDK and CLI.
  */
-import { isFileMissingError } from "../core/fs/fs-utils.js";
-import { readFile, writeFile } from "node:fs/promises";
+import { isFileAbsentError, isFileMissingError } from "../core/fs/fs-utils.js";
+import { readFile, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -16,6 +16,21 @@ export const PM_GITIGNORE_END = "# pm-cli:runtime-cache:end";
 
 /** Default workspace-relative tracker root used when no custom root is resolved. */
 export const PM_GITIGNORE_DEFAULT_TRACKER_ROOT = ".agents/pm";
+
+/** Resolve existing physical ancestry while retaining an uncreated initialization suffix. */
+async function physicalInitPath(input: string): Promise<string> {
+  let ancestor = path.resolve(input);
+  const missing: string[] = [];
+  for (;;) {
+    try {
+      return path.join(await realpath(ancestor), ...missing);
+    } catch (error: unknown) {
+      if (!isFileAbsentError(error) || path.dirname(ancestor) === ancestor) throw error;
+      missing.unshift(path.basename(ancestor));
+      ancestor = path.dirname(ancestor);
+    }
+  }
+}
 
 /**
  * Tracker-relative directories that hold per-clone runtime state (caches,
@@ -201,7 +216,7 @@ export async function ensurePmGitignore(
   let trackerRelativeRoot = PM_GITIGNORE_DEFAULT_TRACKER_ROOT;
   if (options.pmRoot !== undefined) {
     const relative = normalizeTrackerRelativeRoot(
-      path.relative(path.resolve(workspaceRoot), path.resolve(options.pmRoot)),
+      path.relative(await physicalInitPath(workspaceRoot), await physicalInitPath(options.pmRoot)),
     );
     if (isPathOutsideRoot(relative)) {
       return { path: gitignorePath, changed: false };

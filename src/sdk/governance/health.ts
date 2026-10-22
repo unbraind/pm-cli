@@ -14,6 +14,7 @@ import {
   summarizeStringList,
 } from "./health/projection.js";
 import { runInitAgentGuidance } from "../init-agent-guidance.js";
+import { extensionVersionRemediation } from "../../core/extensions/version-diagnostics.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveTelemetryEnvironmentPolicy } from "../../core/telemetry/policy.js";
@@ -354,6 +355,7 @@ function isAdvisoryHealthWarning(
   return (
     warning.startsWith("agent_guidance_") ||
     warning.startsWith("telemetry_") ||
+    warning.startsWith("extension_disabled_pm_") ||
     warning.startsWith("history_stream_over_compact_threshold:") ||
     warning.startsWith("integrity_legacy_hierarchy_") ||
     warning.startsWith("stale_in_progress_items:") ||
@@ -1141,7 +1143,7 @@ function buildExtensionHealthTriageSummary(
   ).length;
   const updateHealthPartial = unmanagedActionRequiredExtensions.length > 0;
   const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
-  const remediation: string[] = [];
+  const remediation = normalizedWarnings.map(extensionVersionRemediation).filter((guidance): guidance is string => guidance !== undefined);
   const registrationCollisionRemediation =
     buildRegistrationCollisionRemediation(normalizedWarnings, {
       deactivate: "pm extension --deactivate <name> --project/--global",
@@ -2779,9 +2781,9 @@ function buildHealthFindings(params: {
       details.remediation_map !== null
         ? (details.remediation_map as Record<string, unknown>)
         : {};
-    const remediation = code === "agent_guidance_outdated" ? "pm init --agent-guidance add"
+    const remediation = extensionVersionRemediation(warning) ?? (code === "agent_guidance_outdated" ? "pm init --agent-guidance add"
       : code === "agent_guidance_unreadable" ? "Check AGENTS.md and CLAUDE.md read permissions and file types, then retry pm health."
-        : remediationMap[code];
+        : remediationMap[code]);
     const severity = isAdvisoryHealthWarning(
       warning,
       params.requireMergeDrivers,

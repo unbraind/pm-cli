@@ -18,6 +18,7 @@ import {
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
+import { extensionVersionRemediation } from "../../core/extensions/version-diagnostics.js";
 import type {
   ExtensionCollisionPlan,
   ExtensionCommandOptions,
@@ -661,7 +662,7 @@ function buildExtensionTriageRemediation(params: {
     skippedNonGithubTotal,
     updateAvailableTotal,
   } = params;
-  const remediation: string[] = [];
+  const remediation = normalizedWarnings.map(extensionVersionRemediation).filter((guidance): guidance is string => guidance !== undefined);
   const ctx: TriageRemediationContext = {
     options,
     scope,

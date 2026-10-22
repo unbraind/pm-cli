@@ -4,6 +4,9 @@ Tracked by [pm-ig5cfe](../.agents/pm/issues/pm-ig5cfe.toon),
 [pm-495lkc](../.agents/pm/issues/pm-495lkc.toon), and
 [pm-miy5k6](../.agents/pm/issues/pm-miy5k6.toon).
 Static inventory is tracked by [pm-lhhnx9](../.agents/pm/issues/pm-lhhnx9.toon).
+Verified replacements and disabled compatibility findings are tracked by
+[pm-c9wz5ef4ulnv](../.agents/pm/issues/pm-c9wz5ef4ulnv.toon) and
+[pm-5xn8we1wue0m](../.agents/pm/issues/pm-5xn8we1wue0m.toon).
 
 ## Read-only configured inventory
 
@@ -31,6 +34,38 @@ an `ambiguous` indicator, every matching candidate, and an explicit command for
 each. Use `pm install npm:<package>` to force npm identity or the reported bare
 alias command to force the bundled package. Install-all results carry the same
 receipt on every package row.
+
+## Verified replacements
+
+`pm package install` and the SDK's `runExtension(source, { install: true }, global)`
+retain the previous installation through fresh-module runtime verification and
+contribution persistence. When a copied replacement fails to load or activate,
+pm restores the previous package tree and exact managed/settings content. A
+settings restoration appends a compensating workspace-history event.
+
+The failed attempt still returns `ok: false` and its candidate diagnostics, with
+`previous_state_preserved: true`, `overwritten: false`, and
+`rollback.status: "restored"`. The previous command remains available in a new
+process. Multi-target and install-all receipts retain these fields per package.
+
+If restoration fails, `previous_state_preserved` is false. The retained backup
+and executable `rollback.recovery_args` / `rollback.recovery_command` identify a
+source for reinstalling the previous package. Resolve the reported filesystem
+failure first. Fresh installations and installations whose source is already
+the destination retain failed code for diagnosis and report
+`previous_state_preserved: false`; they have no earlier package version to
+recover. Package code can have external side effects during activation; this
+snapshot protects the installation and its managed/settings content.
+
+## Disabled package compatibility
+
+An explicitly disabled package remains visible in inventory and discovery.
+Its host-version warnings use `extension_disabled_pm_*` codes and are advisory
+in health, including `--strict-exit`. Each finding identifies the package,
+required bound and scoped activation command to use after satisfying that
+bound. Enabled packages retain the ordinary `extension_pm_*` compatibility
+checks and blocking policy. Deactivation does not permit incompatible code to
+load or suppress malformed-manifest, missing-entry or other unrelated findings.
 
 ## Durable Extension Migrations
 

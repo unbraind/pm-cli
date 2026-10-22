@@ -36553,6 +36553,7 @@
     "extension_dependency_version_unsafe",
     "extension_flag_value_invalid",
     "extension_install_incomplete_source_scan",
+    "extension_install_rollback_failed",
     "extension_install_soft_failed",
     "extension_install_source_contains_destination",
     "extension_item_field_reserved",

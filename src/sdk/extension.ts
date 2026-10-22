@@ -101,9 +101,8 @@ import {
   type ExtensionInstallSourceResolution,
 } from "./extension/source-resolution.js";
 import {
-  captureExtensionInstallSnapshot,
   readOptionalMetadataFile,
-  restoreExtensionInstallSnapshot,
+  withVerifiedExtensionInstall,
 } from "./extension/install-snapshot.js";
 // Re-export the public surface that lives in sibling modules but was previously
 // exported from this file (used by sdk barrels, upgrade.ts, and tests).
@@ -2170,96 +2169,59 @@ const persistExtensionInstall = async (
     destinationDirectory,
   );
   await fs.mkdir(resolvedRoots.selected_root, { recursive: true });
-  const backupRoot = await fs.mkdtemp(
-    path.join(resolvedRoots.selected_root, ".pm-extension-install-backup-"),
+  const sourceRecord = buildInstallManagedSource(
+    input.bundledAliasName,
+    input.bundledPackageName,
+    input.installSource,
+    input.resolvedSource,
   );
-  const backupDirectory = path.join(backupRoot, "destination");
-  try {
-    const snapshot = await captureExtensionInstallSnapshot(
-      resolvedRoots.selected_root,
-      resolvedRoots.settings_root,
+  const existingManagedEntry = managedStateRead.state.entries.find(
+    (entry) =>
+      normalizeExtensionNameForMatch(entry.name) ===
+      normalizeExtensionNameForMatch(validated.manifest.name),
+  );
+  const timestamps = resolveManagedInstallTimestamps(
+    existingManagedEntry,
+    validated.manifest.version,
+    sourceRecord,
+    nowIso(),
+  );
+  const managedState = upsertManagedEntry(managedStateRead.state, {
+    name: validated.manifest.name,
+    directory: destinationDirectoryName,
+    scope,
+    manifest_version: validated.manifest.version,
+    manifest_entry: validated.manifest.entry,
+    capabilities: [...validated.manifest.capabilities],
+    contributions: validated.manifest.contributions,
+    ...timestamps,
+    source: sourceRecord,
+  });
+  const activationChanged = ensureActivated(
+    settings,
+    validated.manifest.name,
+  );
+  if (!installInPlace) {
+    await copyExtensionDirectoryForInstall(
+      validated.directory,
       destinationDirectory,
-      destinationExists,
-      backupDirectory,
     );
-    const sourceRecord = buildInstallManagedSource(
-      input.bundledAliasName,
-      input.bundledPackageName,
-      input.installSource,
-      input.resolvedSource,
-    );
-    const existingManagedEntry = managedStateRead.state.entries.find(
-      (entry) =>
-        normalizeExtensionNameForMatch(entry.name) ===
-        normalizeExtensionNameForMatch(validated.manifest.name),
-    );
-    const timestamps = resolveManagedInstallTimestamps(
-      existingManagedEntry,
-      validated.manifest.version,
-      sourceRecord,
-      nowIso(),
-    );
-    const managedState = upsertManagedEntry(managedStateRead.state, {
-      name: validated.manifest.name,
-      directory: destinationDirectoryName,
-      scope,
-      manifest_version: validated.manifest.version,
-      manifest_entry: validated.manifest.entry,
-      capabilities: [...validated.manifest.capabilities],
-      contributions: validated.manifest.contributions,
-      ...timestamps,
-      source: sourceRecord,
-    });
-    const activationChanged = ensureActivated(
-      settings,
-      validated.manifest.name,
-    );
-    try {
-      if (!installInPlace) {
-        await copyExtensionDirectoryForInstall(
-          validated.directory,
-          destinationDirectory,
-        );
-      }
-      await ensureExtensionModuleTypeMarker(destinationDirectory);
-      await ensureInstalledExtensionSdkLink(destinationDirectory);
-      await writeManagedExtensionState(
-        resolvedRoots.selected_root,
-        managedState,
-      );
-      if (activationChanged) {
-        await writeSettings(
-          resolvedRoots.settings_root,
-          settings,
-          "settings:write",
-        );
-      }
-    } catch (error: unknown) {
-      try {
-        await restoreExtensionInstallSnapshot(snapshot);
-      } catch (rollbackError: unknown) {
-        throw new AggregateError(
-          [error, rollbackError],
-          `Extension install failed: ${String(error)}; rollback failed: ${String(rollbackError)}`,
-          { cause: rollbackError },
-        );
-      }
-      throw error;
-    }
-    return {
-      settings,
-      managedState,
-      sourceRecord,
-      destinationDirectory,
-      destinationExists,
-      installInPlace,
-      activationChanged,
-    };
-  } finally {
-    await fs
-      .rm(backupRoot, { recursive: true, force: true })
-      .catch(() => undefined);
   }
+  await ensureExtensionModuleTypeMarker(destinationDirectory);
+  await ensureInstalledExtensionSdkLink(destinationDirectory);
+  await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
+  if (activationChanged) {
+    await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
+  }
+  return {
+    settings,
+    managedState,
+    sourceRecord,
+    destinationDirectory,
+    destinationExists,
+    installInPlace,
+    activationChanged,
+  };
 };
 
 /** Scaffold project folders contributed by item types from the installed extension. */
@@ -2351,99 +2313,107 @@ const performExtensionInstallUnderLock = async (
 ): Promise<ExtensionCommandResult> => {
   const { scope, resolvedRoots, warnings, global, withResult } = ctx;
   const { validated, destinationDirectoryName } = input;
-  const persisted = await persistExtensionInstall(ctx, input);
-  const refreshedInstalled = await listInstalledExtensions(
-    resolvedRoots.selected_root,
+  return withVerifiedExtensionInstall({
+    selectedRoot: resolvedRoots.selected_root,
+    settingsRoot: resolvedRoots.settings_root,
+    destinationDirectory: path.join(resolvedRoots.selected_root, destinationDirectoryName),
+    sourceDirectory: validated.directory,
     scope,
-    persisted.settings,
-    persisted.managedState,
-  );
-  warnings.push(...refreshedInstalled.warnings);
-  const runtimeProbe = await probeRuntimeCommandPathsForInstall(
-    resolvedRoots.pm_root,
-    path.dirname(resolvedRoots.selected_root),
-    persisted.settings,
-    refreshedInstalled.extensions,
-    global,
-  );
-  warnings.push(...runtimeProbe.warnings);
-  // Scaffold the folders for any item types the installed package contributes
-  // so the tracker is immediately healthy — matching `pm schema add-type` and
-  // `pm profile apply`, the other paths that register a type. Without this a
-  // freshly-installed schema package leaves a `missing_directory` health
-  // warning until the first item of its type is created. Scoped to project
-  // installs, where `pm_root` is unambiguously the tracker the type folders
-  // belong to; a global install is not tied to one tracker, so its folders are
-  // created lazily on first use in each project.
-  const installedItemTypeDefinitions =
-    await scaffoldInstalledExtensionItemTypes(
+  }, async () => {
+    const persisted = await persistExtensionInstall(ctx, input);
+    const refreshedInstalled = await listInstalledExtensions(
+      resolvedRoots.selected_root,
+      scope,
+      persisted.settings,
+      persisted.managedState,
+    );
+    warnings.push(...refreshedInstalled.warnings);
+    const runtimeProbe = await probeRuntimeCommandPathsForInstall(
+      resolvedRoots.pm_root,
+      path.dirname(resolvedRoots.selected_root),
+      persisted.settings,
+      refreshedInstalled.extensions,
+      global,
+    );
+    warnings.push(...runtimeProbe.warnings);
+    // Scaffold the folders for any item types the installed package contributes
+    // so the tracker is immediately healthy — matching `pm schema add-type` and
+    // `pm profile apply`, the other paths that register a type. Without this a
+    // freshly-installed schema package leaves a `missing_directory` health
+    // warning until the first item of its type is created. Scoped to project
+    // installs, where `pm_root` is unambiguously the tracker the type folders
+    // belong to; a global install is not tied to one tracker, so its folders are
+    // created lazily on first use in each project.
+    const installedItemTypeDefinitions =
+      await scaffoldInstalledExtensionItemTypes(
+        ctx,
+        validated.manifest.name,
+        runtimeProbe.item_type_registrations,
+      );
+    const commandSummary = summarizeRuntimeCommandPathsForExtension(
+      validated.manifest.name,
+      runtimeProbe.installed,
+    );
+    const activation = buildInstalledExtensionActivation(
       ctx,
       validated.manifest.name,
-      runtimeProbe.item_type_registrations,
+      runtimeProbe,
+      commandSummary,
+      installedItemTypeDefinitions,
     );
-  const commandSummary = summarizeRuntimeCommandPathsForExtension(
-    validated.manifest.name,
-    runtimeProbe.installed,
-  );
-  const activation = buildInstalledExtensionActivation(
-    ctx,
-    validated.manifest.name,
-    runtimeProbe,
-    commandSummary,
-    installedItemTypeDefinitions,
-  );
-  const contributionInventory =
-    runtimeProbe.contribution_inventories[
-      normalizeExtensionNameForMatch(validated.manifest.name)
-    ];
-  if (contributionInventory) {
-    persisted.managedState = await persistManagedContributionInventory(
-      resolvedRoots.selected_root,
-      persisted.managedState,
-      validated.manifest.name,
-      contributionInventory,
-    );
-  }
-
-  return withResult(
-    {
-      extension: {
-        name: validated.manifest.name,
-        version: validated.manifest.version,
-        entry: validated.manifest.entry,
-        capabilities: validated.manifest.capabilities,
-        directory: destinationDirectoryName,
-      },
-      source: persisted.sourceRecord,
-      source_resolution: input.sourceResolution,
-      ...(input.installPlan ? { install_plan: input.installPlan } : {}),
-      destination_path: persisted.destinationDirectory,
-      overwritten: [
-        persisted.destinationExists,
-        !persisted.installInPlace,
-      ].every(Boolean),
-      installed_in_place: persisted.installInPlace,
-      activated: activation.activated,
-      settings_changed: persisted.activationChanged,
-      runtime_activation_status: activation.status,
-      command_paths: commandSummary.command_paths,
-      action_paths: commandSummary.action_paths,
-      contributions: contributionInventory,
-      command_discovery: buildInstallCommandDiscovery(
+    const contributionInventory =
+      runtimeProbe.contribution_inventories[
+        normalizeExtensionNameForMatch(validated.manifest.name)
+      ];
+    if (contributionInventory) {
+      persisted.managedState = await persistManagedContributionInventory(
+        resolvedRoots.selected_root,
+        persisted.managedState,
         validated.manifest.name,
-        persisted.sourceRecord,
-        commandSummary,
-        activation.failure,
-      ),
-      verification: activation.verification,
-      activation_diagnostics: {
-        failed_count: runtimeProbe.activation_failures.length,
-        failed: runtimeProbe.activation_failures,
-        installed_extension_failed: activation.failure ?? null,
+        contributionInventory,
+      );
+    }
+
+    return withResult(
+      {
+        extension: {
+          name: validated.manifest.name,
+          version: validated.manifest.version,
+          entry: validated.manifest.entry,
+          capabilities: validated.manifest.capabilities,
+          directory: destinationDirectoryName,
+        },
+        source: persisted.sourceRecord,
+        source_resolution: input.sourceResolution,
+        ...(input.installPlan ? { install_plan: input.installPlan } : {}),
+        destination_path: persisted.destinationDirectory,
+        overwritten: [
+          persisted.destinationExists,
+          !persisted.installInPlace,
+        ].every(Boolean),
+        installed_in_place: persisted.installInPlace,
+        activated: activation.activated,
+        settings_changed: persisted.activationChanged,
+        runtime_activation_status: activation.status,
+        command_paths: commandSummary.command_paths,
+        action_paths: commandSummary.action_paths,
+        contributions: contributionInventory,
+        command_discovery: buildInstallCommandDiscovery(
+          validated.manifest.name,
+          persisted.sourceRecord,
+          commandSummary,
+          activation.failure,
+        ),
+        verification: activation.verification,
+        activation_diagnostics: {
+          failed_count: runtimeProbe.activation_failures.length,
+          failed: runtimeProbe.activation_failures,
+          installed_extension_failed: activation.failure ?? null,
+        },
       },
-    },
-    activation.activated,
-  );
+      activation.activated,
+    );
+  });
 };
 
 /** Install every bundled first-party package alias and aggregate verification. */

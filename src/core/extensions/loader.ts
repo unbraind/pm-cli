@@ -468,6 +468,7 @@ function collectScannedExtensionWarnings(
   entryExists: boolean,
   pmVersionCompatibility: { allowed: boolean; warning?: string },
   pmMaxVersionCompatibility: { allowed: boolean; warning?: string },
+  enabledForLoad: boolean,
 ): string[] {
   const extensionWarnings = formatExtensionManifestSchemaWarnings(
     layer,
@@ -501,10 +502,10 @@ function collectScannedExtensionWarnings(
     extensionWarnings.push(`extension_entry_missing:${layer}:${manifest.name}`);
   }
   if (pmVersionCompatibility.warning) {
-    extensionWarnings.push(pmVersionCompatibility.warning);
+    extensionWarnings.push(enabledForLoad ? pmVersionCompatibility.warning : pmVersionCompatibility.warning.replace("extension_pm_", "extension_disabled_pm_"));
   }
   if (pmMaxVersionCompatibility.warning) {
-    extensionWarnings.push(pmMaxVersionCompatibility.warning);
+    extensionWarnings.push(enabledForLoad ? pmMaxVersionCompatibility.warning : pmMaxVersionCompatibility.warning.replace("extension_pm_", "extension_disabled_pm_"));
   }
   return extensionWarnings;
 }
@@ -581,6 +582,7 @@ async function scanExtensionDirectory(
     entryExists,
     pmVersionCompatibility,
     pmMaxVersionCompatibility,
+    enabledForLoad,
   );
   const extensionReady =
     entryWithinDirectory &&

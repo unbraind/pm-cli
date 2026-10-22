@@ -1,18 +1,21 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 import { runDirectDistCli } from "../../helpers/cliRunner.js";
 
-it.each([
-  { nestedFirst: false, trackerRoot: "sub/t[1]" },
-  { nestedFirst: true, trackerRoot: "sub/t[1]" },
-  { nestedFirst: false, trackerRoot: "!tracker" },
-  { nestedFirst: true, trackerRoot: "!tracker" },
-])("preserves Git cache and merge protection for $trackerRoot (nested first: $nestedFirst)", async ({ nestedFirst, trackerRoot }) => {
-  const root = await mkdtemp(path.join(os.tmpdir(), "pm-init-cache-scopes-"));
+it.each([false, true].flatMap((aliased) => [false, true].flatMap((nestedFirst) =>
+  ["sub/t", "sub/t[1]", "!tracker"].map((trackerRoot) => ({ aliased, nestedFirst, trackerRoot })),
+)))("preserves Git cache and merge protection for $trackerRoot (nested first: $nestedFirst, alias: $aliased)", async ({ aliased, nestedFirst, trackerRoot }) => {
+  const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-cache-scopes-"));
   try {
+    const physicalRoot = await realpath(tempRoot);
+    const workspace = path.join(physicalRoot, "workspace");
+    const alias = path.join(physicalRoot, "alias");
+    await mkdir(workspace);
+    if (aliased) await symlink(workspace, alias, process.platform === "win32" ? "junction" : "dir");
+    const root = aliased ? alias : workspace;
     const env = { ...process.env, PM_PATH: path.join(root, ".agents", "pm"), PM_GLOBAL_PATH: path.join(root, "global"), GIT_CONFIG_GLOBAL: path.join(root, "gitconfig"), GIT_CONFIG_NOSYSTEM: "1" };
     for (const key of Object.keys(env)) if (key.startsWith("GIT_") && !["GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM"].includes(key)) delete env[key as keyof typeof env];
     execFileSync("git", ["init", "--quiet"], { cwd: root, env });
@@ -38,6 +41,6 @@ it.each([
     expect(spawnSync("git", ["check-ignore", "--no-index", "--", `${unrelated}/runtime/cache`], { cwd: root, env }).status).toBe(1);
     expect(execFileSync("git", ["check-attr", "merge", "--", `${unrelated}/tasks/example.toon`], { cwd: root, env, encoding: "utf8" })).toContain(": merge: unspecified");
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await rm(tempRoot, { recursive: true, force: true });
   }
 }, 30_000);

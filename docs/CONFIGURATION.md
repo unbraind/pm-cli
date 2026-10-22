@@ -180,6 +180,11 @@ that look like workspace roots are rejected unless `--force` is provided.
 Initialization maintains the repository's runtime-cache `.gitignore` fence for
 every tracker sharing that repository. Initializing or reinitializing a nested
 tracker preserves the enclosing tracker's exclusions and unrelated user rules.
+Equivalent physical and symlink-addressed paths share the same containment
+check, including tracker directories that initialization has not created yet.
+A symlink leading outside the repository remains an external tracker and does
+not add rules here. This boundary is tracked by
+[pm-p8s5k7e6lhda](../.agents/pm/issues/pm-p8s5k7e6lhda.toon).
 Custom tracker paths are literal Git paths, including spaces and wildcard
 characters. An intentional root-layout tracker uses repository-root exclusions.
 Paths containing line breaks are refused because `.gitignore` cannot safely

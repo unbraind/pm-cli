@@ -5237,18 +5237,23 @@ describe("extension command runtime", () => {
           rejectedManagedStateWrite = true;
           throw new Error("fresh managed state persistence failed");
         }
-        if (rejectedManagedStateWrite && !rejectedRollbackWrite && String(file) === settingsPath) {
-          rejectedRollbackWrite = true;
-          throw new Error("rollback settings restoration failed");
-        }
         return originalWriteFile(file, data, options);
+      });
+      const originalRm = fsPromises.rm;
+      const rmSpy = vi.spyOn(fsPromises, "rm").mockImplementation(async (file, options) => {
+        if (rejectedManagedStateWrite && !rejectedRollbackWrite && String(file) === managedStatePath) {
+          rejectedRollbackWrite = true;
+          throw new Error("rollback metadata restoration failed");
+        }
+        return originalRm(file, options);
       });
       try {
         await expect(runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath })).rejects.toThrow(
-          "Extension install failed: Error: fresh managed state persistence failed; rollback failed: Error: rollback settings restoration failed",
+          "Extension install failed: Error: fresh managed state persistence failed; rollback failed: Error: rollback metadata restoration failed",
         );
       } finally {
         writeFileSpy.mockRestore();
+        rmSpy.mockRestore();
       }
       expect(rejectedRollbackWrite).toBe(true);
       await expect(readFile(path.join(context.pmPath, "extensions", "fresh-rollback-ext", "index.js"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });

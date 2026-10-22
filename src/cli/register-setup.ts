@@ -421,6 +421,8 @@ async function runMultiTargetExtensionInstalls(
         destination_path: details.destination_path,
         activated: details.activated,
         settings_changed: details.settings_changed,
+        previous_state_preserved: details.previous_state_preserved,
+        rollback: details.rollback,
         command_paths: details.command_paths,
         action_paths: details.action_paths,
         runtime_activation_status: details.runtime_activation_status,

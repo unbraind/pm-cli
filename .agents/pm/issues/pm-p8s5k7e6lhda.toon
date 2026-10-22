@@ -1,0 +1,62 @@
+id: pm-p8s5k7e6lhda
+title: Resolve aliased workspace paths before publishing tracker cache exclusions
+description: "GH #1544 and #1477: hosted cache-ignore-scopes failures plus independent published-artifact Linux symlink reproduction expose lexical-vs-physical root mismatch. Canonicalize equivalent existing paths without treating real external roots as internal. Preserve user bytes, sibling tracker scopes and literal names through both init orders/repeats."
+type: Issue
+status: in_progress
+priority: 1
+tags[5]: "area:sdk","gh:1544",gitignore,init,nightly
+created_at: "2026-10-22T10:16:14.746Z"
+updated_at: "2026-10-22T11:27:24.124Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#f6beeceeb3fb6ff7c9919162"
+author: "harness:codex"
+estimated_minutes: 100
+acceptance_criteria: Public SDK protects alias-addressed internal trackers and missing descendants; external symlinks remain no-ops; actual CLI/Git checks cover both init orders and literal names; hosted Windows and macOS regression legs pass
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: "Physical and aliased paths for an internal tracker publish identical literal cache exclusions across repeated init, while real external roots and unrelated user rules remain protected."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,related,"2026-10-22T10:16:14.746Z","harness:codex","cli:create:dep",detected
+  pm-47wuv8awpqvj,recurs_from,"2026-10-22T10:16:14.746Z","harness:codex","cli:create:dep",detected
+  pm-nl60tbxzkjwp,recurs_from,"2026-10-22T10:16:14.746Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-22T10:16:14.746Z","harness:codex","Duplicate check: strict full all-status read of 3058 items completed with zero unreadable records and no omissions. Request-specific search and full live canonical history reads found completed adjacent work but no owner for this newly reported boundary. Reuse the existing capability lineage and retain prior closures."
+  "2026-10-22T10:16:36.725Z","harness:codex","Live intake: baseline main ec2e9db8f has no open PRs and zero Dependabot, CodeQL and secret-scanning alerts. Strict all-status corpus receipt: 3058/3058 records, complete with zero unreadable entries and no omissions, zero in-progress items. Prior cache fixes and recurrence measurement have completed resolutions. The alias boundary is new. Batch preview refused existing non-regular tracker storage; ordinary atomic commit succeeded without changing storage or overriding policy."
+  "2026-10-22T10:29:35.557Z","harness:codex","Failing-before proof in an isolated unchanged-main worktree: 9 alias/cache cases failed while 30 controls passed. After canonical physical containment, all 39 SDK and real CLI/Git cases pass, including both init orders, repeated initialization, literal names, curated eval-query exceptions, sibling merge attributes and external-symlink no-ops. Hosted Windows/macOS legs remain a separate required verification claim."
+  "2026-10-22T11:05:56.675Z","harness:codex","Final focused run passes55 cases across public SDK containment, real CLI/Git scopes, verified replacement receipts and disabled health. Added refusal controls for inaccessible/missing physical ancestry, preserving the fail-closed boundary without lexical fallback. Retained backups now live under ignored runtime storage, verified by actual git check-ignore, and both hard persistence rollback failures and soft verification rollback failures carry executable recovery."
+files[4]:
+  - path: config/defect-recurrence-policy.json
+    scope: project
+  - path: src/sdk/workspace.ts
+    scope: project
+    note: Canonical containment for managed ignore publication
+  - path: tests/integration/workspace/cache-ignore-scopes.integration.spec.ts
+    scope: project
+  - path: tests/unit/core/workspace/gitignore.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,project,240,"harness:codex","2026-10-22T10:32:42.743Z",local_mutation,fix/package-and-workspace-lifecycle
+test_runs[1]:
+  - run_id: test-local-mvjgi846-1ruwwb
+    kind: test
+    status: passed
+    started_at: "2026-10-22T11:25:45.463Z"
+    finished_at: "2026-10-22T11:27:24.054Z"
+    recorded_at: "2026-10-22T11:27:24.054Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-static-quality
+  owner: pm-p8s5k7e6lhda
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/workspace/gitignore.spec.ts tests/integration/workspace/cache-ignore-scopes.integration.spec.ts,pnpm typecheck
+  hosted_checks[4]: CI / Gates (static),CI / Gates (coverage),"Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)","Nightly Validation / Nightly (macos-latest, Node 24, shard 2/2)"
+body: ""

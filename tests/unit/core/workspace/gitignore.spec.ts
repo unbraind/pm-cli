@@ -1,8 +1,8 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {
@@ -10,7 +10,52 @@ import {
   getPmGitignoreBlock,
 } from "../../../../src/sdk/workspace.js";
 
+vi.mock("node:fs/promises", async () => {
+  const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  return { ...actual, realpath: vi.fn(actual.realpath) };
+});
+
 describe("ensurePmGitignore", () => {
+  it.each(["EACCES", "ENOENT"])("refuses %s physical ancestry failures without writing lexical fallback rules", async (code) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-physical-error-"));
+    const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+    const failure = Object.assign(new Error("physical ancestry unavailable"), { code });
+    vi.mocked(realpath).mockRejectedValue(failure);
+    try {
+      await expect(ensurePmGitignore(root, { pmRoot: path.join(root, "tracker") })).rejects.toBe(failure);
+      await expect(readFile(path.join(root, ".gitignore"))).rejects.toMatchObject({ code: "ENOENT" });
+    } finally {
+      vi.mocked(realpath).mockImplementation(actual.realpath);
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["workspace", "tracker", "missing-tracker"])("resolves physical containment through a %s alias", async (mode) => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-gitignore-alias-"));
+    try {
+      const physicalRoot = await realpath(root);
+      const workspace = path.join(physicalRoot, "workspace");
+      const alias = path.join(physicalRoot, "alias");
+      await mkdir(workspace);
+      await symlink(workspace, alias, process.platform === "win32" ? "junction" : "dir");
+      const tracker = "sub/t[1]";
+      if (mode !== "missing-tracker") await mkdir(path.join(workspace, tracker), { recursive: true });
+      const workspacePath = mode === "workspace" ? alias : workspace;
+      const trackerPath = path.join(mode === "workspace" ? workspace : alias, tracker);
+      expect((await ensurePmGitignore(workspacePath, { pmRoot: trackerPath })).changed).toBe(true);
+      expect(await readFile(path.join(workspace, ".gitignore"), "utf8")).toBe(`${getPmGitignoreBlock(tracker)}\n`);
+      expect((await ensurePmGitignore(workspacePath, { pmRoot: trackerPath })).changed).toBe(false);
+
+      const external = path.join(physicalRoot, "external");
+      await mkdir(external);
+      await symlink(external, path.join(workspace, "outside"), process.platform === "win32" ? "junction" : "dir");
+      expect((await ensurePmGitignore(workspacePath, { pmRoot: path.join(workspacePath, "outside", "tracker") })).changed).toBe(false);
+      expect(await readFile(path.join(workspace, ".gitignore"), "utf8")).toBe(`${getPmGitignoreBlock(tracker)}\n`);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it.each([["./custom///", "custom"], ["/", ""]])("normalizes renderer root %j without changing its scope", (input, expected) => {
     expect(getPmGitignoreBlock(input)).toBe(getPmGitignoreBlock(expected));
   });

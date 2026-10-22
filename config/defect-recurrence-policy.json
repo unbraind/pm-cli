@@ -3,8 +3,48 @@
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
   "families": [
     {
+      "id": "verified-package-lifecycle",
+      "version": 1,
+      "title": "Package replacement and compatibility health preserve usable configured state",
+      "owner_item_id": "pm-c9wz5ef4ulnv",
+      "escape_class": "production_defect",
+      "triggers": {
+        "file_patterns": [
+          "src/sdk/extension/install-snapshot.ts",
+          "src/core/extensions/version-diagnostics.ts",
+          "tests/unit/extensions/extension-verified-replacement.spec.ts",
+          "tests/unit/sdk/governance/health-disabled-package.spec.ts"
+        ],
+        "item_ids": [
+          "pm-c9wz5ef4ulnv",
+          "pm-5xn8we1wue0m"
+        ]
+      },
+      "checks": {
+        "local": [
+          "node scripts/run-tests.mjs test -- tests/unit/extensions/extension-verified-replacement.spec.ts tests/unit/sdk/governance/health-disabled-package.spec.ts tests/integration/package-command-discovery.integration.spec.ts"
+        ],
+        "hosted": [
+          "CI / Gates (static)",
+          "CI / Gates (coverage)"
+        ]
+      },
+      "negative_control": {
+        "files": [
+          "src/sdk/extension/install-snapshot.ts"
+        ]
+      },
+      "historical_item_ids": [
+        "pm-3wsi"
+      ],
+      "budget": {
+        "max_escape_rate": 0,
+        "max_false_positive_rate": 0.03
+      }
+    },
+    {
       "id": "workspace-cache-tracker-scope",
-      "version": 2,
+      "version": 3,
       "title": "Tracker cache exclusions and merge patterns preserve literal repository scopes",
       "owner_item_id": "pm-nl60tbxzkjwp",
       "escape_class": "production_defect",
@@ -28,7 +68,9 @@
         "hosted": [
           "CI / Gates (coverage)",
           "CI / Gates (static)",
-          "CodeQL / Analyze (javascript-typescript)"
+          "CodeQL / Analyze (javascript-typescript)",
+          "Nightly Validation / Nightly (windows-latest, Node 24, shard 2/2)",
+          "Nightly Validation / Nightly (macos-latest, Node 24, shard 2/2)"
         ]
       },
       "negative_control": {
