@@ -218,6 +218,66 @@ describe("lock lease fencing (GH-1549)", () => {
   });
 });
 
+describe("item commit revision fence", () => {
+  it("refuses with item_removed when the item file disappeared under the lease", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Baseline");
+      const settings = await readSettings(context.pmPath);
+      const located = await locateItem(context.pmPath, id, "pm-", "toon");
+      if (!located) throw new Error("missing fixture");
+      await expect(
+        mutateItem({
+          pmRoot: context.pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "writer",
+          async mutate(document) {
+            await fs.rm(located.itemPath);
+            document.metadata.title = "Resurrected";
+            return { changedFields: ["title"] };
+          },
+        }),
+      ).rejects.toMatchObject({ code: "stale_revision", context: { reason: "item_removed" } });
+      await expect(fs.stat(located.itemPath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("propagates an unreadable item at commit time without writing", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Baseline");
+      const settings = await readSettings(context.pmPath);
+      const located = await locateItem(context.pmPath, id, "pm-", "toon");
+      if (!located) throw new Error("missing fixture");
+      const before = await fs.readFile(located.itemPath, "utf8");
+      const realReadFile = fs.readFile.bind(fs);
+      let armed = false;
+      vi.spyOn(fs, "readFile").mockImplementation((async (...args: Parameters<typeof fs.readFile>) => {
+        if (armed && args[0] === located.itemPath) {
+          throw Object.assign(new Error("permission denied"), { code: "EACCES" });
+        }
+        return realReadFile(...args);
+      }) as typeof fs.readFile);
+      await expect(
+        mutateItem({
+          pmRoot: context.pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "writer",
+          mutate(document) {
+            armed = true;
+            document.metadata.title = "Unwritten";
+            return { changedFields: ["title"] };
+          },
+        }),
+      ).rejects.toMatchObject({ code: "EACCES" });
+      vi.restoreAllMocks();
+      expect(await fs.readFile(located.itemPath, "utf8")).toBe(before);
+    });
+  });
+});
+
 describe("progress-aware lock waiting (GH-1516)", () => {
   it("keeps waiting while the lock changes hands and acquires once it is free", async () => {
     await withTempDir("pm-lock-progress-", async (root) => {
