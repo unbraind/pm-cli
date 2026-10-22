@@ -21,6 +21,8 @@ import {
   type PmMcpProtectedResourceMetadata,
 } from "../sdk/mcp/authorization.js";
 import { validateMcpHttpRequestHeaders } from "../sdk/mcp/transport.js";
+import { resolvePmCliVersion } from "../sdk/runtime-primitives.js";
+import { resolvePmMcpExecutableInvocation } from "../sdk/mcp/executable.js";
 import {
   buildMcpToolCallErrorResult,
   closeMcpSubscription,
@@ -630,7 +632,12 @@ export const _testOnly = {
 
 /* c8 ignore start -- executable guard and process lifecycle are integration-tested */
 if (isInvokedAsMcpMainModule(process.argv[1], import.meta.url)) {
-  startPmMcpHttpServer(resolvePmMcpHttpServerOptionsFromEnvironment()).catch(
+  const invocation = resolvePmMcpExecutableInvocation(process.argv.slice(2), "http", resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0");
+  if (invocation.kind === "exit") {
+    process.stdout.write(invocation.stdout);
+    process.stderr.write(invocation.stderr);
+    process.exitCode = invocation.exitCode;
+  } else startPmMcpHttpServer(resolvePmMcpHttpServerOptionsFromEnvironment()).catch(
     (error) => {
       console.error(error instanceof Error ? error.message : String(error));
       process.exit(1);

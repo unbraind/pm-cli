@@ -115,6 +115,27 @@ function assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version) {
   );
 }
 
+/** Verify installed MCP probes through both executors before any transport configuration. */
+function assertPackedMcpProbes(npx, bunx, consumerRoot, version, commandOptions) {
+  const options = {
+    ...commandOptions,
+    cwd: consumerRoot,
+    timeout: 15_000,
+    env: { ...commandOptions.env, PM_MCP_HTTP_PORT: "invalid", TMPDIR: path.dirname(consumerRoot) },
+  };
+  for (const runner of [
+    { command: npx, prefix: ["--prefix", consumerRoot, "--no", "--"] },
+    { command: bunx, prefix: ["--silent", "--bun"] },
+  ]) {
+    for (const binary of ["pm-mcp", "pm-mcp-http"]) {
+      const invoke = (flag) => runSmokeCommand(runner.command, [...runner.prefix, binary, flag], options);
+      assertEqualOutput(`${binary} version probe`, invoke("--version"), version, "version output");
+      const help = invoke("--help");
+      if (!help.includes(`Usage: ${binary}`)) throw new Error(`${binary} probe returned invalid help.`);
+    }
+  }
+}
+
 /** Install the packed artifact once for multi-command workflow and type checks. */
 function installPackedConsumer(npm, tarballPath, tempRoot) {
   const consumerRoot = path.join(tempRoot, "consumer");
@@ -330,6 +351,7 @@ function run() {
     );
     assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version);
     const { commandOptions } = createPackedSmokeProject(tempRoot);
+    assertPackedMcpProbes(npx, bunx, consumerRoot, version, commandOptions);
     const packages = assertPackedPackageWorkflows(runPackedPm, commandOptions);
     verifyInstalledAgentRecovery(
       npx,

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-22T04:50:03.999Z"
+updated_at: "2026-10-22T09:00:08.724Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[83]:
+comments[87]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -274,6 +274,18 @@ comments[83]:
   - created_at: "2026-10-22T04:50:02.447Z"
     author: "harness:codex"
     text: "Distinct unchanged-base control39724223047 completed at f5750e07f866a2a0a45af5bac2a951d0ea62e856. CodSpeed exposes run6ad9958b31a7a89d0aca6e1e with encodeQueryCursor211.6us; it does not reproduce the candidate's330.3us. Keep the candidate report and original attempts as unresolved measurement evidence. The complete benchmark runtime-import closure has82 files and zero changed members, but source identity does not prove a timing pass or identify the cause. No encoder/fixture/dependency/performance-budget change or regression acknowledgement was made. This bounded investigation is handed back open and unclaimed; inspect the necessary final documentation revision's exact-head comparison as a separate acceptance result."
+  - created_at: "2026-10-22T08:06:31.531Z"
+    author: "harness:codex"
+    text: "October22 candidate diagnostic delivery reaches the unchanged SDK import gate after passing dependency, source, package, grammar, flag, recovery, context and SDK contract gates. It refuses authoring median257ms against164ms, with bracketed bare medians52/44ms qualifying under106ms. Preserve the actual qualified product refusal and complete report. Host load is7.1-8.47 across8 available CPUs; this is context, not a causal explanation. Prepare one unchanged published2026.10.22 artifact comparison using the maintained five-sample method and exact same budgets. A kernel process wait defers both artifact measurements until the full coverage process exits, avoiding an intentional competing test load. No budget, qualification threshold, benchmark implementation or product source is changed."
+  - created_at: "2026-10-22T08:27:07.758Z"
+    author: "harness:codex"
+    text: "Controlled October22 comparison after the full test process exits: unchanged published2026.10.22 artifact fails authoring median230/164ms with qualified bare controls55ms; candidate then passes all10 import budgets, authoring105ms and contracts137ms with qualified controls46ms. Complete five-sample reports retain both original artifacts and host snapshots. This reproduces a qualified overrun on the unchanged public artifact and does not establish historical causation or erase the original candidate257ms refusal. No source, budget or qualification override is introduced. Require exact-head hosted admission and hand this broader diagnosis back open/unclaimed."
+  - created_at: "2026-10-22T08:30:09.837Z"
+    author: "harness:codex"
+    text: "Remaining native CLI-floor admission on the same candidate also retains a qualified refusal: get best419/362ms, with bare medians76/47ms qualifying under106ms; the other five operations pass. Preserve this separate native transport receipt without changing budgets or attributing its cause from source identity. The SDK comparison passed all candidate imports after reproducing the authoring miss on the unchanged public artifact. This diagnostic remains open/unclaimed; exact-head hosted static acceptance is still required."
+  - created_at: "2026-10-22T09:00:08.724Z"
+    author: "harness:codex"
+    text: "PR1543 initial head8b9c33517 has a separate CodSpeed CPU Simulation decoder warning:244.7 to368.6us at the unchanged1% threshold. Chrome confirms the explicit environment mismatch: base Intel Xeon Platinum8573C with AVX512 flags versus head AMD EPYC7763. The syscall warning belongs to createQueryFingerprint, not this decoder. A TypeScript AST walk resolves82 local runtime-source files from benchmarks/pagination.bench.ts with zero changed members; fixture and lockfile are also unchanged. This is corroborating scope evidence plus a verified comparison confound, not proof that the decoder passed or that hardware caused the difference. Retain the neutral report without acknowledgement or a budget change, and inspect the necessary closure revision's exact-head comparison independently."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

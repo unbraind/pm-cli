@@ -2,23 +2,72 @@ id: pm-z20n3s
 title: Retain original dependency advisory receipts on release workflow failures
 description: "Auto Release run39713092159 fails at the dependency advisory collector, but its only retained artifact is release-observation-1 (317 bytes). The original per-feed receipt is unavailable, so the failure cannot be independently classified as a positive advisory versus an unavailable feed. CI receipt retention is already completed and works: artifact12398397190 for the matching PR failure proves registry unavailable and OSV complete across568 versions with zero findings. Extend that successful scoped evidence pattern to every release path that can call the advisory gate; preserve all gate outcomes and privacy boundaries. See https://github.com/unbraind/pm-cli/issues/1542."
 type: Task
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-22T04:11:22.309Z"
-updated_at: "2026-10-22T04:11:22.309Z"
+updated_at: "2026-10-22T09:02:53.151Z"
+closed_at: "2026-10-22T09:02:52.356Z"
+completed_at: "2026-10-22T09:02:52.356Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: Retain the exact public dependency receipt when an applicable release gate succeeds or fails; Bound hidden-file upload to that single inspected receipt and distinguish run attempts; Keep raw stderr credentials telemetry and unrelated caches excluded; Demonstrate positive unavailable and clean outcomes retain their original strict gate verdicts
 parent: pm-ciadvisoryreceipt
 risk: medium
 confidence: 100
-expected_result: Operators can inspect the exact original registry and OSV result for a failed release attempt without inferring it from another run or a later clean scan.
+resolution: "Auto Release and Release always upload only the original public dependency receipt after the applicable gate, with explicit hidden-file inclusion, run/attempt identity, seven-day retention and warning-only missing-file handling."
+expected_result: "Successful and refused release gates retain the exact public registry/OSV evidence without exposing raw stderr, credentials, telemetry or sibling caches and without weakening security admission."
+actual_result: "Both new workflow contracts fail before the change and pass afterward; strict clean/positive/unavailable feed controls and all26 required checks pass on8b9c33517, with11001 hosted tests and exact100/100/100/100 coverage. Final closure-head review and admission remain required before merge."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-prrlce,related,"2026-10-22T04:11:22.309Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-22T04:11:22.309Z","harness:codex","Duplicate check: request-specific search plus fresh open/in-progress inventories and complete3057-item strict all-status/full corpus found completed CI-only receipt retention and the broad release-observation owner, with no owner for original per-feed release-workflow evidence. Read the completed CI item live and verify that this failed Auto Release exposes only its small observation artifact. Queue this extension open and unclaimed; no workflow change is included in the current SDK contract delivery."
-files[2]{path,scope}:
+  "2026-10-22T07:23:58.464Z","harness:codex","Implementation scope: extend the completed CI-only receipt-retention contract to Auto Release and exact-tag Release. Preserve the exact public registry/OSV receipt on every applicable gate outcome, scope hidden-file upload to that one file, distinguish attempts, and keep the strict security verdict. Live GitHub intake has zero open PRs, Dependabot, CodeQL, or secret-scanning alerts. Today v2026.10.22 published successfully; rolling Release Reliability remains separately failing and is not represented as healthy by this change."
+  "2026-10-22T07:33:59.397Z","harness:codex","Regression evidence: the new parsed-YAML contracts failed before the change because each release workflow had zero matching receipt uploads. Both now pass and require the upload immediately after its gate, always(), exact receipt path, explicit hidden-file inclusion, attempt-qualified immutable action,7-day retention, and no gate continue-on-error. The existing58 dependency-feed controls also pass, preserving strict clean, positive, and unavailable verdicts. Workflow least-privilege validation passes."
+  "2026-10-22T07:39:50.965Z","harness:codex","Independent operational evidence: today's only production tag isv2026.10.22, npm latest matches, downstream Release39731094541 and recovered Auto Release39728833469 succeeded. Rolling report39735376923 remains red with6/30 original scheduled failures plus dispatch_window and missing_scheduled_run; nightly windows also retain Windows/macOS failure-rate and insufficient-sample findings. Do not reinterpret those historical results as green. Required current Sentry/telemetry gate passes with zero critical/high issues,3.45% finish error rate and no missing error-code rows. Fresh get/list/telemetry probes appear remotely with one start and one finish each; local flush drains to zero and broker queue is0 ready/0 unacknowledged."
+  "2026-10-22T07:53:03.656Z","harness:codex","Today's maintained published-release verifier completes successfully for 2026.10.22, independently exercising npm/npx and Bun/bunx, packaged MCP journeys and GitHub release evidence. This published artifact predates the diagnostic patch; the new MCP probes are proved separately against the locally packed changed artifact. Current package doctor loads latest pm-changelog2026.10.21 successfully, its generated changelog check is unchanged before closure, tracker health has zero warnings, and all 3058 history streams show zero drift. Validation retains170 pre-existing historical resolution-field warnings."
+  "2026-10-22T08:39:02.655Z","harness:codex","Reviewed delivery: https://github.com/unbraind/pm-cli/pull/1543 at initial head8b9c33517d9e6bc61447444b9f8fcbb23cfc5bc3. Both release workflows and parsed retention contracts are included with security verdicts preserved. Record review findings and terminal evidence here, close/release on this branch, and include generated changelog plus all known pre-merge evidence in the same PR."
+  "2026-10-22T09:02:49.761Z","harness:codex","Initial implementation head8b9c33517 passes all26 required PR checks and strict hosted analyzer admission. CI39749165964 passes11001 tests with exact100/100/100/100 coverage, including both parsed release-workflow retention controls and strict clean/positive/unavailable feed controls. Original failed release receipts remain historically unavailable; the reviewed workflow change preserves future original receipts instead of reconstructing them from a later scan. No actionable inline review finding is present; optional provider availability and mixed-hardware CodSpeed evidence remain explicitly recorded and will be rechecked on the closure head."
+notes[1]{created_at,author,text}:
+  "2026-10-22T07:45:15.630Z","harness:codex","Retain the collector's exact receipt rather than regenerate it after failure: a later clean feed query cannot identify which original source was unavailable or positive. Scope hidden-file inclusion to the one inspected public JSON and never to the enclosing cache."
+files[3]{path,scope}:
   .github/workflows/auto-release.yml,project
   .github/workflows/release.yml,project
+  tests/integration/release/advisory-retention.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/release/advisory-retention.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/scripts/release/dependency-advisories,project,300,"harness:codex","2026-10-22T07:47:39.721Z",local_mutation,fix/mcp-and-release-diagnostics
+test_runs[2]:
+  - run_id: test-local-mvj87obg-t0c4ry
+    kind: test
+    status: passed
+    started_at: "2026-10-22T07:34:55.395Z"
+    finished_at: "2026-10-22T07:35:14.908Z"
+    recorded_at: "2026-10-22T07:35:14.908Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release-advisory-retention.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/scripts/release/dependency-advisories,schema,schema,source,local_source_ref
+  - run_id: test-local-mvj8vlyc-bcmn4w
+    kind: test
+    status: passed
+    started_at: "2026-10-22T07:53:29.995Z"
+    finished_at: "2026-10-22T07:53:51.588Z"
+    recorded_at: "2026-10-22T07:53:51.588Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release/advisory-retention.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/scripts/release/dependency-advisories,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/RELEASING.md,project
+close_reason: Retain exact dependency advisory receipts on both release paths with strict verdicts preserved in PR1543.
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: release-advisory-receipt-retention
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/release/advisory-retention.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/release/advisory-retention.spec.ts tests/unit/scripts/release/dependency-advisories
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-z20n3s
 body: ""

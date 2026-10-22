@@ -299,6 +299,17 @@ jobs:
       - name: Static quality gate
         run: pnpm quality:static
 
+      # pm-z20n3s: never upload sibling caches, raw stderr, or telemetry.
+      - name: Retain dependency advisory evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: dependency-advisory-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .cache/dependency-security/receipt.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Pre-release assurance trigger
         run: node scripts/release/repository-assurance.mjs repository-static-quality --trigger pre-release --json
 

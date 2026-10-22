@@ -68,6 +68,7 @@ interface ExecResponses {
   /** Override direct (`npx <spec>`) responses. */
   directResponse?: (args: string[]) => string;
   aliasResponse?: (args: string[]) => string;
+  mcpResponse?: (binary: string, flag: string) => string;
 }
 
 /** Supply canonical successful outputs for packed CLI workflow commands. */
@@ -167,6 +168,8 @@ function runExecFileSyncMock(
       filename: (responses.packOutput ?? "pm-cli-2026.6.14.tgz").trim(),
     });
   const cmd = baseCommand(command);
+  const mcpBinary = args.find((argument) => argument === "pm-mcp" || argument === "pm-mcp-http");
+  if (mcpBinary) return responses.mcpResponse?.(mcpBinary, args.at(-1)!) ?? (args.includes("--help") ? `Usage: ${mcpBinary}\n` : "2026.6.14\n");
   if (cmd === "npm" && args[0] === "pack") {
     return responses.packOutput ?? "pm-cli-2026.6.14.tgz\n";
   }
@@ -265,7 +268,7 @@ describe("smoke-npx-from-pack", () => {
     await harness.importModule(SCRIPT);
 
     for (const [command, args, options] of execFileSync.mock.calls) {
-      expect(options?.timeout).toBe(600_000);
+      expect(options?.timeout).toBe(args.includes("pm-mcp") || args.includes("pm-mcp-http") ? 15_000 : 600_000);
       const normalizedCommand = baseCommand(command);
       if (
         normalizedCommand === "npx" ||
@@ -306,6 +309,16 @@ describe("smoke-npx-from-pack", () => {
     await expect(harness.importModule(SCRIPT)).rejects.toThrow(
       "npm pack did not produce a tarball name",
     );
+  });
+
+  it.each(["--version", "--help"])("rejects invalid MCP %s from the packed consumer", async (flag) => {
+    vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: vi.fn() }));
+    mockFs();
+    vi.doMock("node:child_process", () => ({
+      execFileSync: buildExecFileSync({ mcpResponse: (binary, probe) => probe === flag ? "invalid" : probe === "--version" ? "2026.6.14\n" : `Usage: ${binary}\n` }),
+    }));
+    process.argv = ["node", SCRIPT_ABS];
+    await expect(harness.importModule(SCRIPT)).rejects.toThrow(flag === "--version" ? /version probe returned/ : /invalid help/);
   });
 
   it("throws when the installed packed binary produces empty version output", async () => {

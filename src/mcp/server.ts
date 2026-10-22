@@ -109,6 +109,7 @@ import {
   runWithMcpTraceContext,
 } from "../sdk/mcp/authorization.js";
 import { LegacyMcpAdapter } from "./legacy-adapter.js";
+import { resolvePmMcpExecutableInvocation } from "../sdk/mcp/executable.js";
 import {
   PM_MCP_APP_CONTRACTS,
   PM_MCP_APP_MIME_TYPE,
@@ -1816,6 +1817,12 @@ export const _testOnly = {
 
 /* c8 ignore start */
 if (isInvokedAsMcpMainModule(process.argv[1], import.meta.url)) {
-  startMcpServer();
+  const invocation = resolvePmMcpExecutableInvocation(process.argv.slice(2), "stdio", PM_MCP_SERVER_VERSION);
+  if (invocation.kind === "serve") startMcpServer();
+  else {
+    process.stdout.write(invocation.stdout);
+    process.stderr.write(invocation.stderr);
+    process.exitCode = invocation.exitCode;
+  }
 }
 /* c8 ignore stop */

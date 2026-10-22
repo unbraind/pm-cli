@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2004,
+    "covered_symbols": 2007,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2005
+    "required_symbols": 2008
   },
   "breaking_acknowledgements": [
     {
@@ -14182,6 +14182,18 @@
           "signature": "export interface PmMcpDiscoverResult extends PmMcpResultEnvelope { supportedVersions: string[]; capabilities: PmMcpServerCapabilities; ttlMs: number; cacheScope: \"public\"; instructions?: string; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmMcpExecutableInvocation",
+          "signature": "export type PmMcpExecutableInvocation = { kind: \"serve\"; } | { kind: \"exit\"; exitCode: 0 | 64; stdout: string; stderr: string; };"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmMcpExecutableTransport",
+          "signature": "export type PmMcpExecutableTransport = \"stdio\" | \"http\";"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmMcpHeaderAnnotation",
@@ -17570,6 +17582,12 @@
           "kind": "function",
           "name": "resolvePmHistoryOperation",
           "signature": "(command: string) => string | calls: (command: string) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmMcpExecutableInvocation",
+          "signature": "(argv: readonly string[], transport: PmMcpExecutableTransport, version: string) => PmMcpExecutableInvocation | calls: (argv: readonly string[], transport: PmMcpExecutableTransport, version: string) => PmMcpExecutableInvocation"
         },
         {
           "classification": "advanced_export",
@@ -24786,6 +24804,18 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmMcpExecutableInvocation",
+          "signature": "export type PmMcpExecutableInvocation = { kind: \"serve\"; } | { kind: \"exit\"; exitCode: 0 | 64; stdout: string; stderr: string; };"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmMcpExecutableTransport",
+          "signature": "export type PmMcpExecutableTransport = \"stdio\" | \"http\";"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmMutationAttributionOptions",
           "signature": "export type PmMutationAttributionOptions = { author?: string; message?: string; force?: boolean; };"
         },
@@ -25274,6 +25304,12 @@
           "kind": "function",
           "name": "resolvePmHistoryOperation",
           "signature": "(command: string) => string | calls: (command: string) => string"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "resolvePmMcpExecutableInvocation",
+          "signature": "(argv: readonly string[], transport: PmMcpExecutableTransport, version: string) => PmMcpExecutableInvocation | calls: (argv: readonly string[], transport: PmMcpExecutableTransport, version: string) => PmMcpExecutableInvocation"
         },
         {
           "classification": "contract_data",
