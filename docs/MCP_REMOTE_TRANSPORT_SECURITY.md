@@ -3,7 +3,8 @@
 Tracker references: [pm-3g3f8z](../.agents/pm/features/pm-3g3f8z.toon),
 [pm-v7e337](../.agents/pm/features/pm-v7e337.toon),
 [pm-3zh9s4](../.agents/pm/features/pm-3zh9s4.toon), and
-[pm-vzcisw](../.agents/pm/chores/pm-vzcisw.toon).
+[pm-vzcisw](../.agents/pm/chores/pm-vzcisw.toon), and executable probes
+[pm-gh1540](../.agents/pm/issues/pm-gh1540.toon).
 
 pm exposes the same MCP 2026-07-28 dispatcher through two adapters:
 
@@ -19,6 +20,20 @@ credentials, bearer enforcement, and trace-context isolation. Adapters remain
 thin bindings over those contracts.
 
 ## Run the HTTP adapter
+
+Both executables accept `--help` / `-h` and `--version` / `-V`. These probes
+return before reading transport settings, opening stdin, or binding a listener,
+including when server configuration is invalid. Help includes configuration,
+supported protocol revisions, and a version-pinned client or launch example.
+No arguments starts the selected transport. Unsupported arguments return usage
+exit code 64 with a help command. Server configuration uses environment variables.
+
+Embedded launchers can import `resolvePmMcpExecutableInvocation` and its
+`PmMcpExecutableTransport` / `PmMcpExecutableInvocation` types from
+`@unbrained/pm-cli/sdk/contracts` or the aggregate SDK. This pure function takes
+the argument vector, transport, and package version, and returns either a
+`serve` decision or an `exit` decision with stdout, stderr, and exit code.
+It does not read the environment, workspace, or process streams.
 
 The safe default binds only `127.0.0.1:3000`:
 

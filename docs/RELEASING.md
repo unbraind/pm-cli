@@ -171,6 +171,15 @@ configuration belong in private operator documentation.
   result before candidate provenance, proves publication, and exits without
   evaluating the generated release commit as a new candidate
 
+Dependency advisory diagnostics are tracked by
+[pm-z20n3s](../.agents/pm/tasks/pm-z20n3s.toon). Both Auto Release and Release
+retain the original `.cache/dependency-security/receipt.json` after the gate,
+including failures, as `dependency-advisory-<run-id>-<attempt>` for seven days.
+Only that public receipt is uploaded, with explicit hidden-file inclusion.
+It records registry and OSV findings or unavailable evidence without raw
+stderr, credentials, telemetry, or sibling caches. Missing receipts warn rather
+than masking the original failure. Retention never changes the gate verdict.
+
 Pipeline entrypoint:
 
 ```bash

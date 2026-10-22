@@ -2,11 +2,13 @@ id: pm-gh1540
 title: "GH-1540: MCP binaries ignore help and version probes before transport startup"
 description: "External report https://github.com/unbraind/pm-cli/issues/1540 against published 2026.10.21: pm-mcp --help exits silently and pm-mcp-http --help starts a listener instead of exiting. Source entry guards currently start each transport directly without parsing help. Report requests help/version before stdin reads or port binding, documented configuration and supported protocol versions, and npm/Bun executable acceptance. Intake records the source/report evidence; independent packaged reproduction and implementation remain to be done."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-22T00:16:00.958Z"
-updated_at: "2026-10-22T01:18:51.337Z"
+updated_at: "2026-10-22T08:36:35.776Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4e7771821a665b22fd87e494"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Handle --help and -h plus --version before transport startup; Describe supported configuration and protocol versions with a client example; Prove npm and Bun executable probes return promptly without side effects; Preserve normal stdio and HTTP startup behavior
@@ -14,12 +16,66 @@ parent: pm-5k4v
 risk: medium
 confidence: 90
 expected_result: "Both MCP executable help and version probes return promptly without reading stdin or binding a listener, and report the supported transport configuration."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-qtbc,discovered_from,"2026-10-22T00:16:00.958Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-bj7rq0,related,"2026-10-22T08:32:08.000Z","harness:codex","cli:update:dep",detected
+  pm-z20n3s,related,"2026-10-22T08:36:35.403Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-10-22T00:16:00.958Z","harness:codex","Duplicate check: fresh keyword search plus complete 3054-item all-status strict/full corpus with no omissions found no owner for MCP executable help. Read the completed npm-bin symlink lineage live; that fix remains closed and distinct. The new report arrived during the current grouped mutation and authoring delivery. Keep this intake item open and unclaimed until implementation begins."
-files[2]{path,scope}:
-  src/mcp/server.ts,project
+  "2026-10-22T07:23:57.543Z","harness:codex","Implementation scope: live strict/full all-status intake read 3058 items with complete=true and no omissions, including completed symlink-entry lineage pm-qtbc. GitHub #1540 already links this owner. Implement side-effect-free executable help/version probes before either transport starts, with shared SDK-owned metadata and real npm/Bun executable regression proof. Group with pm-z20n3s as one reviewed diagnostic-recovery delivery; leave unrelated programmes unclaimed."
+  "2026-10-22T07:33:58.227Z","harness:codex","Regression evidence: the unchanged new executable tests failed on the pre-fix build for all8 probes: stdio waited on open stdin, while HTTP read invalid port configuration before returning help/version. After SDK-owned routing, all16 first-pass cases pass. Extended validation now passes100 cases across executable SDK decisions, held-stdin subprocesses, packed-smoke controls, release-retention contracts, and original dependency-feed clean/positive/unavailable controls. Public SDK additions are exactly one function and two types in aggregate and contracts entrypoints. Typecheck and focused ESLint pass."
+  "2026-10-22T07:43:16.760Z","harness:codex","Live observability after the build: fresh Sentry span records include pm get at07:37:25UTC and pm list at07:37:26UTC with op=pm.command; the trace listing is empty because command evidence is in the span dataset. Remote telemetry independently pairs each selected get/list invocation with one start and one finish. Local flush reaches zero and the broker has no ready or unacknowledged messages. Keep span delivery, telemetry pairing, and the aggregate reliability threshold as distinct evidence."
+  "2026-10-22T07:44:33.810Z","harness:codex","Packed acceptance caught a harness failure before delivery: the first npx --package <tarball> MCP probe exceeded its15-second budget while resolving/reifying the package, before executable output. Preserve the strict probe budget but reuse the already installed consumer: npx --prefix <consumer> --no -- <bin>, and bunx --bun from that consumer cwd. The separate cold package smoke still proves installation. This separates installer latency from executable startup rather than increasing a timeout or accepting an unexecuted probe. Prepare the scoped harness fix and apply after the current source-owning gate finishes."
+  "2026-10-22T07:53:02.659Z","harness:codex","Final packed acceptance passes: pnpm smoke:npx installs the real tarball, checks bare npx and Bun resolution, then verifies both MCP executables' exact version and meaningful help through installed npx and bunx under the unchanged 15-second probe limit and invalid HTTP port. Package workflows, agent recovery, extension flags, calendar flow and SDK consumers also pass. The focused rerun passes 35 cases after moving the new integrations into domain folders to preserve the existing 120-file directory cap; no cap or gate was relaxed."
+  "2026-10-22T08:30:10.918Z","harness:codex","The complete local coverage invocation records11000 passed tests and one setup refusal in the unchanged GH1371 composed-continuation fixture: createRequire cannot resolve global npm/package.json under Homebrew Node26.9.0. No coverage summary is emitted, so this is not an exact-coverage pass. The fixture explicitly requests NODE_PATH when npm is available outside normal module paths; verify that remedy in isolation and require exact-head hosted full coverage before merge. The independent native performance receipts are retained under open/unclaimed pm-bj7rq0, without a budget change."
+  "2026-10-22T08:31:09.759Z","harness:codex","The unchanged packed-continuation fixture passes with its documented environment remedy, NODE_PATH pointing to the installed npm module directory. It independently validates19 Node and Bun continuation scenarios plus conflict and packed-declaration contracts. The original11000-pass/one-setup-refusal broad run remains retained, with no local exact-coverage claim; hosted current-head full coverage remains a merge prerequisite. All changed-code linked tests and packed acceptance pass."
+learnings[1]{created_at,author,text}:
+  "2026-10-22T07:45:14.683Z","harness:codex",Time executable discovery only after package installation is established. Cold npx/Bun resolution belongs to installation acceptance; a startup probe should hold stdin open or supply invalid transport configuration and reuse installed binaries so it cannot pass by starting the server.
+files[10]{path,scope}:
+  scripts/smoke-npx-from-pack.mjs,project
+  sdk/public-surface.json,project
   src/mcp/http-server.ts,project
+  src/mcp/server.ts,project
+  src/sdk/contracts.ts,project
+  src/sdk/index.ts,project
+  src/sdk/mcp/executable.ts,project
+  tests/integration/mcp/executable-probes.spec.ts,project
+  tests/unit/scripts/smoke-npx-from-pack.spec.ts,project
+  tests/unit/sdk/mcp/executable.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/executable.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/integration/mcp/executable-probes.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-streamable-http.spec.ts,project,300,"harness:codex","2026-10-22T07:47:37.852Z",local_mutation,fix/mcp-and-release-diagnostics
+test_runs[2]:
+  - run_id: test-local-mvj878p1-jm3mbe
+    kind: test
+    status: passed
+    started_at: "2026-10-22T07:34:32.483Z"
+    finished_at: "2026-10-22T07:34:54.661Z"
+    recorded_at: "2026-10-22T07:34:54.661Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/executable.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/integration/mcp-executable-probes.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-streamable-http.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvj8v4oy-xft1rq
+    kind: test
+    status: passed
+    started_at: "2026-10-22T07:53:01.360Z"
+    finished_at: "2026-10-22T07:53:29.218Z"
+    recorded_at: "2026-10-22T07:53:29.218Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/executable.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/integration/mcp/executable-probes.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/mcp-streamable-http.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/MCP_REMOTE_TRANSPORT_SECURITY.md,project
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: mcp-executable-probes
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/mcp/executable-probes.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/mcp/executable.spec.ts tests/integration/mcp/executable-probes.spec.ts,"pnpm smoke:npx"
+  hosted_checks[2]: Gates (coverage),Gates (smokes)
+  owner: pm-gh1540
 body: ""
