@@ -379,6 +379,8 @@ function compactDiagnosticRecovery(
     "missing_required_fields",
     "option_scope",
     "retry_after_ms",
+    "waited_ms",
+    "owner_handoffs",
   ]) {
     const candidate = value[key];
     if (Array.isArray(candidate)) {

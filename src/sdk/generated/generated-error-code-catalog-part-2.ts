@@ -1118,6 +1118,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "stale_revision",
+    meaning: "Stale revision condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/store/item-store.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "stale_revision",
+    aliases: [],
+  },
+  {
     code: "status_duplicate",
     meaning: "Status duplicate condition.",
     stability: "stable",

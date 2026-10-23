@@ -18,7 +18,7 @@ import {
 import path from "node:path";
 import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { appendWorkspaceAuditEvent } from "../core/history/workspace-history.js";
-import { acquireLock } from "../core/lock/lock.js";
+import { acquireLockLease, waitForStaleCleanupGate } from "../core/lock/lock.js";
 import { getLockPath } from "../core/store/paths.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -126,32 +126,47 @@ class WorkspaceLockHeartbeat {
       });
   }
 
-  /** Atomically refresh only the lock still owned by this process and actor. */
+  /**
+   * Atomically refresh only the lock still owned by this process and actor.
+   * The check and the write run under the lock's cleanup gate, which takeover
+   * also holds, so a renewal can never republish a lock another writer took.
+   */
   private async renew(): Promise<void> {
-    const parsed = JSON.parse(await readFile(this.lockPath, "utf8")) as unknown;
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      Array.isArray(parsed)
-    ) {
-      throw new Error("Workspace writer lock has invalid structure");
-    }
-    const lock = parsed as Record<string, unknown>;
-    if (
-      lock.id !== WORKSPACE_WRITER_LOCK_ID ||
-      lock.owner !== this.owner ||
-      lock.pid !== process.pid
-    ) {
-      throw new Error("Workspace writer lock ownership changed");
-    }
-    await writeFileAtomic(
+    const releaseGate = await waitForStaleCleanupGate(
       this.lockPath,
-      `${JSON.stringify(
-        { ...lock, created_at: new Date().toISOString() },
-        null,
-        2,
-      )}\n`,
+      WORKSPACE_WRITER_LOCK_ID,
     );
+    if (releaseGate === null) {
+      throw new Error("Workspace writer lock cleanup gate stayed held");
+    }
+    try {
+      const parsed = JSON.parse(await readFile(this.lockPath, "utf8")) as unknown;
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
+        throw new Error("Workspace writer lock has invalid structure");
+      }
+      const lock = parsed as Record<string, unknown>;
+      if (
+        lock.id !== WORKSPACE_WRITER_LOCK_ID ||
+        lock.owner !== this.owner ||
+        lock.pid !== process.pid
+      ) {
+        throw new Error("Workspace writer lock ownership changed");
+      }
+      await writeFileAtomic(
+        this.lockPath,
+        `${JSON.stringify(
+          { ...lock, created_at: new Date().toISOString() },
+          null,
+          2,
+        )}\n`,
+      );
+    } finally {
+      await releaseGate();
+    }
   }
 }
 
@@ -795,7 +810,7 @@ export async function restoreWorkspaceSnapshotWithRecovery(
   const author = options.author?.trim() || "pm-sdk";
   const lockTtlSeconds = options.lockTtlSeconds ?? 60;
   const lockWaitMs = options.lockWaitMs ?? 5_000;
-  const releaseWorkspaceLock = await acquireLock(
+  const workspaceLease = await acquireLockLease(
     pmRoot,
     WORKSPACE_WRITER_LOCK_ID,
     lockTtlSeconds,
@@ -804,6 +819,7 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     false,
     lockWaitMs,
   );
+  const releaseWorkspaceLock = workspaceLease.release;
   const heartbeat = new WorkspaceLockHeartbeat(
     getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID),
     author,
@@ -859,24 +875,30 @@ export async function restoreWorkspaceSnapshotWithRecovery(
     await heartbeat.stop();
     heartbeatStopped = true;
     const stagedWorkspaceLock = getLockPath(staging, WORKSPACE_WRITER_LOCK_ID);
-    await mkdir(path.dirname(stagedWorkspaceLock), { recursive: true });
-    await writeFile(
-      stagedWorkspaceLock,
-      await readFile(getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID)),
-      { flag: "wx" },
-    );
-    swapStarted = true;
-    await swapWorkspaceSnapshotRootWithActivation(
-      staging,
-      pmRoot,
-      backup,
-      DEFAULT_ATOMIC_OPERATIONS,
-      async () => {
-        heartbeat.start();
-        heartbeatStopped = false;
-        await heartbeat.refreshNow();
-      },
-    );
+    const stagedRoot = staging;
+    // Copying the lock and swapping the root replace the live lock file, so
+    // both run inside the lease fence: a lost lease refuses with lock_lost
+    // instead of republishing stale lock bytes over a newer owner.
+    await workspaceLease.fence(async () => {
+      await mkdir(path.dirname(stagedWorkspaceLock), { recursive: true });
+      await writeFile(
+        stagedWorkspaceLock,
+        await readFile(getLockPath(pmRoot, WORKSPACE_WRITER_LOCK_ID)),
+        { flag: "wx" },
+      );
+      swapStarted = true;
+      await swapWorkspaceSnapshotRootWithActivation(
+        stagedRoot,
+        pmRoot,
+        backup,
+        DEFAULT_ATOMIC_OPERATIONS,
+        async () => {
+          heartbeat.start();
+          heartbeatStopped = false;
+          await heartbeat.refreshNow();
+        },
+      );
+    });
     await heartbeat.stop();
     heartbeatStopped = true;
     return {

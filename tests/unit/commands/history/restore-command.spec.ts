@@ -381,10 +381,10 @@ describe("runRestore", () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Restore Lock Window");
       const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
-      const originalAcquireLock = lockModule.acquireLock;
+      const originalAcquireLock = lockModule.acquireLockLease;
       let mutated = false;
       const lockSpy = vi
-        .spyOn(lockModule, "acquireLock")
+        .spyOn(lockModule, "acquireLockLease")
         .mockImplementation(async (...args) => {
           if (!mutated) {
             mutated = true;
@@ -392,7 +392,7 @@ describe("runRestore", () => {
             await writeFile(historyFile, `${raw}\n`, "utf8");
           }
           return originalAcquireLock(
-            ...(args as Parameters<typeof lockModule.acquireLock>),
+            ...(args as Parameters<typeof lockModule.acquireLockLease>),
           );
         });
 
@@ -422,10 +422,10 @@ describe("runRestore", () => {
       const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
       const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
       const historyRawBefore = await readFile(historyFile, "utf8");
-      const originalAcquireLock = lockModule.acquireLock;
+      const originalAcquireLock = lockModule.acquireLockLease;
       let mutated = false;
       const lockSpy = vi
-        .spyOn(lockModule, "acquireLock")
+        .spyOn(lockModule, "acquireLockLease")
         .mockImplementation(async (...args) => {
           if (!mutated) {
             mutated = true;
@@ -440,7 +440,7 @@ describe("runRestore", () => {
             );
           }
           return originalAcquireLock(
-            ...(args as Parameters<typeof lockModule.acquireLock>),
+            ...(args as Parameters<typeof lockModule.acquireLockLease>),
           );
         });
 

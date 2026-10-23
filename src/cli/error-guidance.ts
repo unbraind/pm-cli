@@ -33,6 +33,10 @@ interface GuidanceMessage {
   /** Bounded tracker-relative preview refusal coordinate. */
   previewStorage?: PmCliErrorContext["preview_storage"];
   tombstone?: PmCliErrorContext["tombstone"];
+  /** Lease a refused lock_lost commit held. */
+  lease?: PmCliErrorContext["lease"];
+  /** Lock generation observed at a refused lock_lost commit. */
+  currentOwner?: PmCliErrorContext["current_owner"];
   code: string;
   type: string;
   title: string;
@@ -81,6 +85,10 @@ export interface JsonErrorEnvelope {
   item_id?: string;
   /** Verified retained deletion and its recoverable version. */
   tombstone?: PmCliErrorContext["tombstone"];
+  /** Lease a refused lock_lost commit held. */
+  lease?: PmCliErrorContext["lease"];
+  /** Lock generation observed at a refused lock_lost commit, or null when none exists. */
+  current_owner?: PmCliErrorContext["current_owner"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -143,6 +151,10 @@ export interface ErrorClassification {
   item_id?: string;
   /** Verified retained deletion and its recoverable version. */
   tombstone?: PmCliErrorContext["tombstone"];
+  /** Lease a refused lock_lost commit held. */
+  lease?: PmCliErrorContext["lease"];
+  /** Lock generation observed at a refused lock_lost commit, or null when none exists. */
+  current_owner?: PmCliErrorContext["current_owner"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -416,6 +428,38 @@ function assignRecoveryTokenBudget(target: PmCliErrorRecoveryPayload, value: unk
   target.token_budget = { requested_tokens, feasible_tokens, minimum_feasible_tokens, minimum_status, basis, reason } as typeof value;
 }
 
+/** Non-negative integer recovery counters, in render order. */
+const RECOVERY_COUNTER_KEYS = [
+  "retry_after_ms",
+  "waited_ms",
+  "owner_handoffs",
+] as const;
+
+/** Render each present recovery counter as one bundle line. */
+function appendRecoveryCounterLines(
+  lines: string[],
+  normalized: PmCliErrorRecoveryPayload,
+): void {
+  for (const key of RECOVERY_COUNTER_KEYS) {
+    if (typeof normalized[key] === "number") {
+      lines.push(`  ${key}: ${normalized[key]}`);
+    }
+  }
+}
+
+/** Copy each recovery counter that is a non-negative safe integer. */
+function assignRecoveryCounters(
+  normalized: PmCliErrorRecoveryPayload,
+  payload: PmCliErrorRecoveryPayload,
+): void {
+  for (const key of RECOVERY_COUNTER_KEYS) {
+    const value = payload[key];
+    if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+      normalized[key] = value;
+    }
+  }
+}
+
 /** Whitelist valid recovery fields before exposing them in public CLI diagnostics. */
 function normalizeRecoveryPayload(
   payload: PmCliErrorRecoveryPayload | undefined,
@@ -492,13 +536,7 @@ function normalizeRecoveryPayload(
     "suggested_retry_args",
     payload.suggested_retry_args,
   );
-  if (
-    typeof payload.retry_after_ms === "number" &&
-    Number.isSafeInteger(payload.retry_after_ms) &&
-    payload.retry_after_ms >= 0
-  ) {
-    normalized.retry_after_ms = payload.retry_after_ms;
-  }
+  assignRecoveryCounters(normalized, payload);
   const fallbackCandidates = normalizeRecoveryCandidates(
     payload.fallback_candidates,
   );
@@ -612,9 +650,7 @@ function renderRecoveryBundle(
   if (normalized.option_scope !== undefined) {
     lines.push(`  option_scope: ${normalized.option_scope}`);
   }
-  if (typeof normalized.retry_after_ms === "number") {
-    lines.push(`  retry_after_ms: ${normalized.retry_after_ms}`);
-  }
+  appendRecoveryCounterLines(lines, normalized);
   appendRecoveryTextLine(
     lines,
     "next_best_command",
@@ -669,6 +705,22 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
   return lines.join("\n");
 }
 
+/** Attach item-scoped tombstone and lost-lease evidence with the item identity. */
+function attachItemDiagnostics(
+  payload: JsonErrorEnvelope | ErrorClassification,
+  message: GuidanceMessage,
+): void {
+  if (message.tombstone !== undefined) {
+    payload.tombstone = message.tombstone;
+    payload.item_id = message.itemId;
+  }
+  if (message.lease !== undefined) {
+    payload.lease = message.lease;
+    payload.current_owner = message.currentOwner ?? null;
+    payload.item_id = message.itemId;
+  }
+}
+
 /** Attach optional actionable fields shared by JSON and classification envelopes. */
 function attachStructuredGuidanceDetails<
   Payload extends JsonErrorEnvelope | ErrorClassification,
@@ -677,10 +729,7 @@ function attachStructuredGuidanceDetails<
   if (message.transactionOperation !== undefined) {
     payload.transaction_operation = message.transactionOperation;
   }
-  if (message.tombstone !== undefined) {
-    payload.tombstone = message.tombstone;
-    payload.item_id = message.itemId;
-  }
+  attachItemDiagnostics(payload, message);
   if (includeWhyInStructuredGuidance(message)) {
     payload.why = message.why;
   }
@@ -1023,6 +1072,8 @@ function applyPmCliErrorContext(
     transactionOperation: context.transaction_operation,
     previewStorage: context.preview_storage,
     tombstone: context.tombstone,
+    lease: context.lease,
+    currentOwner: context.current_owner,
     availableDependencies: context.available_dependencies,
     recovery,
   };

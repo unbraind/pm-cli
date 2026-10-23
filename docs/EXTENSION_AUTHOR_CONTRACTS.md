@@ -76,8 +76,9 @@ Create path:
 `mutateItem` path:
 
 - Used by `pm update`, `pm close`, `pm claim`, `pm release`, `pm restore`, `pm delete`, and other mutations of existing items.
-- Locates the item, acquires the lock, reads the item through the `onRead` hook, enforces ownership and history policy, applies the mutation, consults `item_store_write`, writes the item atomically, appends history, fires `onWrite` for the item and history stream, records the after-command affected-item snapshot, then releases the lock.
+- Locates the item, acquires the lock, reads the item through the `onRead` hook, enforces ownership and history policy, applies the mutation, enters the commit fence, consults `item_store_write`, writes the item atomically, appends history, fires `onWrite` for the item and history stream, records the after-command affected-item snapshot, then releases the lock.
 - `item_store_write` handlers can redirect the target path, replace serialized contents, or skip the physical item write.
+- The commit fence verifies the lock lease and the stored item revision first. When the lease was taken over (`lock_lost`) or the item changed after the read (`stale_revision`), the mutation refuses before `item_store_write` or `item_store_delete` (non-dry-run) runs, so a handler that persists the payload itself never commits a refused write.
 
 Both paths guarantee:
 

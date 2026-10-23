@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2007,
+    "covered_symbols": 2009,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2008
+    "required_symbols": 2010
   },
   "breaking_acknowledgements": [
     {
@@ -2658,6 +2658,23 @@
       ],
       "package_version": "2026.10.22",
       "reason": "Reserve optional package-install preservation and rollback diagnostic keys with boolean/discriminated types; constructed lifecycle results must conform or rename custom keys. Add optional original_code to PmCliErrorContext for retained rollback diagnostics; ordinary constructions and readers remain compatible, while exhaustive context-key consumers must allow the new key. Public consumer type fixtures cover both contracts."
+    },
+    {
+      "changes": [
+        "signature ./sdk:acquireLock",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:PmCliErrorRecoveryPayload",
+        "signature ./sdk/runtime:acquireLock"
+      ],
+      "package_version": "2026.10.22",
+      "reason": "Additive: optional lock_lost lease/current_owner context, waited_ms/owner_handoffs recovery fields, and acquireLock's unchanged options object now named via a shared alias with acquireLockLease (GH-1549, GH-1516)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.10.22",
+      "reason": "lock_lost lease.expires_at is always a timestamp (field introduced in this same unreleased change; never null)"
     }
   ],
   "entrypoints": {
@@ -2812,7 +2829,13 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "acquireLock",
-          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<() => Promise<void>>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "acquireLockLease",
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<LockLease> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<LockLease>"
         },
         {
           "classification": "supported",
@@ -11223,6 +11246,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "LockLease",
+          "signature": "export interface LockLease { release: () => Promise<void>; fence: <T>(commit: () => Promise<T>) => Promise<T>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "LogNote",
           "signature": "export interface LogNote { created_at: string; author: string; text: string; format?: \"json\"; data?: StructuredJsonValue; event_type?: string; }"
         },
@@ -13672,13 +13701,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorRecoveryPayload",
-          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; parsed_positionals?: Array<{ role: string; value: string; }>; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; option_scope?: \"declared_on_path\" | \"declared_elsewhere\" | \"declared_nowhere\"; suggested_retry?: string; suggested_retry_args?: string[]; token_budget?: PmTokenBudgetRecovery; retry_after_ms?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
+          "signature": "export interface PmCliErrorRecoveryPayload { recovery_mode?: \"compact\"; attempted_command?: string; normalized_args?: string[]; parsed_positionals?: Array<{ role: string; value: string; }>; provided_fields?: string[]; missing?: string[]; missing_required_fields?: string[]; suggested_flags?: string[]; allowed_values?: string[]; candidate_commands?: string[]; candidate_commands_total?: number; candidate_commands_truncated?: boolean; option_scope?: \"declared_on_path\" | \"declared_elsewhere\" | \"declared_nowhere\"; suggested_retry?: string; suggested_retry_args?: string[]; token_budget?: PmTokenBudgetRecovery; retry_after_ms?: number; waited_ms?: number; owner_handoffs?: number; fallback_candidates?: Array<{ source: string; command: string; reason: string; }>; next_best_command?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -32794,7 +32823,13 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "acquireLock",
-          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: { createParentDirectories?: boolean; maxWaitMs?: number; }) => Promise<() => Promise<void>>"
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<() => Promise<void>> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<() => Promise<void>>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "acquireLockLease",
+          "signature": "(pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<LockLease> | calls: (pmRoot: string, id: string, ttlSeconds: number, owner: string, force?: boolean, forceRequiredForStaleLock?: boolean, waitMs?: number, options?: AcquireLockOptions) => Promise<LockLease>"
         },
         {
           "classification": "advanced_export",
@@ -33953,6 +33988,12 @@
           "kind": "function",
           "name": "locateItem",
           "signature": "(pmRoot: string, rawId: string, idPrefix?: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>) => Promise<LocatedItem | null> | calls: (pmRoot: string, rawId: string, idPrefix?: string, preferredFormat?: ItemFormat, typeToFolder?: Record<string, string>) => Promise<LocatedItem | null>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LockLease",
+          "signature": "export interface LockLease { release: () => Promise<void>; fence: <T>(commit: () => Promise<T>) => Promise<T>; }"
         },
         {
           "classification": "advanced_export",
@@ -36677,6 +36718,7 @@
     "local_package_archive_unsafe",
     "local_source_not_found_bare_name",
     "lock_conflict",
+    "lock_lost",
     "locks_stale_count",
     "locks_unreadable",
     "malformed_plan_step_evidence",
@@ -36788,6 +36830,7 @@
     "stale_budget",
     "stale_destination",
     "stale_observed_signature",
+    "stale_revision",
     "status_duplicate",
     "status_invalid",
     "status_lifecycle_role_required",

@@ -243,12 +243,46 @@ async function writePackageState(pmRoot: string, write: () => Promise<void>) {
 
 The built-in provider automatically recovers a provably dead original Linux
 owner before TTL. Unknown owners retain the existing lease policy. Conflicts
-expose the lock identity, observed process state and wait advice through
-`PmCliError.context`. Force does not bypass an unexpired lock whose owner is
+expose the lock identity, observed process state, `waited_ms`, observed
+`owner_handoffs` and wait advice through `PmCliError.context`. The wait budget
+is a fixed total by default. Pass `{ waitPolicy: "progress" }` in the options
+object to treat it as a no-progress window instead: each observed owner handoff
+restarts it, so a queue of live writers drains while a stalled owner still
+refuses after the budget. Without an explicit `maxWaitMs` such a wait is capped
+at 120 seconds (or the budget, when larger). Item mutations, restore and the
+hierarchy lock use the progress policy. Force does not bypass an unexpired lock whose owner is
 alive or unverifiable. TTL expiry permits removal regardless of owner liveness.
-An expired holder can continue writing, so mutual exclusion beyond TTL is not
-guaranteed. Choose a TTL longer than the critical section, or fence protected
-resource writes at the caller. See
+
+An expired holder can keep running, so fence the protected write with
+`acquireLockLease`. With the built-in lock provider, `fence(commit)` runs
+`commit` only while this lease still owns its lock generation; after a TTL or
+forced takeover it refuses with `lock_lost` (exit 4, `context.lease` and
+`context.current_owner`) and never runs `commit`. Takeover and fencing share one
+per-lock gate, so a takeover cannot interleave with a fenced commit. When an
+extension `lock_acquire` override handles the acquisition, the extension owns
+the lock lifecycle and `fence(commit)` runs `commit` unfenced: such a provider
+must itself exclude or fence concurrent commits, or perform an atomic
+compare-and-write at the storage boundary. A revision check made before the
+write is not a substitute, because another writer can commit between the check
+and the write. `mutateItem` and `deleteItem` additionally refuse with
+`stale_revision` when the stored item bytes changed after the locked read; that
+narrows, but does not close, the window for an unfenced override-held lock. `restore` fences its write with the lease
+(`lock_lost`) and re-verifies item and history under its lock, refusing with its
+own "changed while waiting for lock" conflict rather than `stale_revision`:
+
+```ts
+import { acquireLockLease } from "@unbrained/pm-cli/sdk";
+
+const lease = await acquireLockLease(pmRoot, "example.state", 3600, "example-package", false, true, 30_000);
+try {
+  const next = await computeNextState(); // may outlive the TTL
+  await lease.fence(() => writeState(next)); // refuses instead of overwriting a newer owner
+} finally {
+  await lease.release();
+}
+```
+
+See
 [Configuration](CONFIGURATION.md#common-settings) for host identity, local
 recovery audit receipts and `PM_LOCK_WAIT_MS` precedence. Extension lock
 providers retain responsibility for their own ownership and recovery policy.

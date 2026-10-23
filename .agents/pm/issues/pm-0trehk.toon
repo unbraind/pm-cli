@@ -1,0 +1,23 @@
+id: pm-0trehk
+title: "Re-sharding the nightly matrix turns the reliability monitor red for weeks: renamed legs start at 0 attempts and fail insufficient_completed_attempts with no lineage to the legs they replaced"
+description: "PR #1548 (e72f82813, 2026-10-22) re-partitioned nightly validation into 14 shard legs. The Release Reliability workflow (workflow_run) evaluates the rolling nightly window against the declared matrix population, so every new leg name (e.g. 'Nightly (ubuntu-latest, Node 24, shard 1/4)') has 0 completed attempts and reports insufficient_completed_attempts; the monitor exits 1 on every run until min_completed_attempts accrue per leg. The predecessor families ('Nightly (ubuntu-latest, Node 24)' 1/30 failed, etc.) still carry 30 attempts of history, but nothing declares that the shard legs REPLACE them. Empty families deliberately fail coverage (reliability.ts: empty families never masquerade as healthy), which is right, yet a red monitor for a known warm-up is indistinguishable from a real degradation and desensitises the alert. The same run also reports scheduled_failure_rate (5/30 original scheduled attempts) and dispatch_window violations for the release series."
+type: Issue
+status: open
+priority: 2
+tags[5]: ci,monitoring,nightly,recurrence,reliability
+created_at: "2026-10-22T18:29:04.661Z"
+updated_at: "2026-10-22T20:10:59.395Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "The SDK reliability window policy accepts family declarations as objects {name, introduced_at (ISO instant the leg first ran under this name), replaces?: string[] (predecessor family names)}, while plain strings stay valid and mean no lineage and no warm-up; The collector derives introduced_at and replaces from declared workflow data only and evaluation stays in src/sdk/governance/reliability.ts; A leg whose introduced_at is inside the window and whose own completed attempts are below min_completed_attempts is reported warm_up (non-failing) with warm_up_expires_at = introduced_at + window length, including the zero-attempt case; Declared predecessor attempts inside the window are reported as lineage evidence and count toward failure_rate but never toward the leg's own coverage; Any failure_rate violation on a leg or its predecessors still fails, and after warm_up_expires_at insufficient attempts fail coverage again; The step summary separates warm-up, coverage, failure-rate and dispatch findings with their owners; Negative controls prove an undeclared rename (no lineage, no introduced_at) still fails coverage and an expired warm-up fails"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: medium
+repro_steps: "GITHUB_REPOSITORY=unbraind/pm-cli node --input-type=module -e 'import {main} from \"./scripts/release/collect-nightly-reliability.mjs\"; const r=main(); console.log(r.ok, r.families.map(f=>[f.family,f.completed,f.violations]))'"
+expected_result: "Re-sharding a matrix keeps the reliability monitor green unless a leg actually fails, and reports warm-up explicitly."
+actual_result: "Release Reliability runs 39817294749 and 39817302614 (2026-10-22) exit 1: 14 renamed nightly legs report insufficient_completed_attempts at 0/0; macOS legs 1/3 failure_rate."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-23lmm5,related,"2026-10-22T18:29:04.661Z","harness:claude-code","cli:create:dep",detected
+  pm-2zjs0g,discovered_from,"2026-10-22T18:29:04.661Z","harness:claude-code","cli:create:dep",detected
+body: ""

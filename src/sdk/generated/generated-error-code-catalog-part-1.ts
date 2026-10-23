@@ -2447,6 +2447,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "lock_lost",
+    meaning: "Lock lost condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/lock/lock.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "lock_lost",
+    aliases: [],
+  },
+  {
     code: "locks_stale_count",
     meaning: "Locks stale count condition.",
     stability: "stable",

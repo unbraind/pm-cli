@@ -218,7 +218,7 @@ export {
   validateTypeOptions,
 } from "../core/item/type-registry.js";
 export { resolveTypeSynonym } from "../core/item/type-synonyms.js";
-export { acquireLock } from "../core/lock/lock.js";
+export { acquireLock, acquireLockLease } from "../core/lock/lock.js";
 export { printError, printResult, writeStderr, writeStdout } from "../core/output/output.js";
 export { renderRowsAsCsv, renderRowsAsTable } from "../core/output/tabular.js";
 export { parseLimit } from "../core/shared/numeric-parsers.js";

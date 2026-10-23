@@ -404,7 +404,7 @@ export { isTerminalStatus,normalizeStatusInput } from "../core/item/status.js";
 
 export { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 
-export { acquireLock } from "../core/lock/lock.js";
+export { acquireLock, acquireLockLease, type LockLease } from "../core/lock/lock.js";
 
 export {
   resolveRuntimeFieldRegistry,

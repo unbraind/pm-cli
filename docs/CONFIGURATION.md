@@ -82,7 +82,7 @@ If the existing project `settings.json` has invalid JSON, a configuration write 
 | `item_format`                              | item storage format (`toon` writes; legacy markdown is read/migrate only)                                                                                                                             |
 | `output.default_format`                    | default renderer, usually `toon`                                                                                                                                                                      |
 | `locks.ttl_seconds`                        | stale lock threshold                                                                                                                                                                                  |
-| `locks.wait_ms`                            | bounded jittered wait budget before a contended item mutation returns `lock_conflict` (default `3000`; set `0` to fail fast)                                                                          |
+| `locks.wait_ms`                            | wait budget before a contended lock returns `lock_conflict`; item-store mutations, restore and the hierarchy lock restart it on each owner handoff (120 s cap), other locks use it as a fixed total (default `3000`; `0` fails fast) |
 | `history.missing_stream`                   | `auto_create` or `strict_error`                                                                                                                                                                       |
 | `history.compact_policy.enabled`           | enable the compaction advisory: `pm health` warns on over-threshold streams (default `false`); when disabled, `max_entries`/`trigger` are inert                                                       |
 | `history.compact_policy.max_entries`       | when the policy is enabled, the entry count above which a stream is flagged by `pm health` and the default `pm history-compact --all-over` threshold (default `500`)                                  |
@@ -115,7 +115,18 @@ receipt before removal; it records the original owner and is an attempted
 recovery audit, not proof that a later mutation committed. Keep these local
 runtime receipts out of version control.
 
-For expected live contention, set `PM_LOCK_WAIT_MS` to a larger bounded
+For item-store mutations (update, close, claim, comments, notes and the other
+item-store writes), restore and the hierarchy-integrity lock (parented creates,
+parent changes and integrity-sensitive dependency additions) the wait budget
+measures stalls, not queue length: while other writers keep acquiring and releasing the
+lock, a waiter keeps waiting (up to 120 s total), so many concurrent agents on
+one tracker queue instead of failing. Other lock users, including package import
+commits and internal short-lived locks, keep a fixed total budget. A lock held by
+the same owner for the whole budget still refuses with `lock_conflict`, whose
+recovery reports `waited_ms` and `owner_handoffs`. A writer whose lease expired
+and was taken over refuses its commit with `lock_lost` instead of overwriting
+the newer write; re-read and apply the change again. For an owner that is
+expected to hold the lock longer, set `PM_LOCK_WAIT_MS` to a larger bounded
 millisecond budget, or configure `locks.wait_ms`, and retry the same operation.
 CLI recovery preserves its normalized arguments and quoted values, including
 whitespace and empty argument strings. Malformed argument vectors are omitted
@@ -167,7 +178,7 @@ underscore aliases remain accepted for compatibility.
 | `PM_AUTHOR`                       | optional explicit session-wide mutation author override                                                                  |
 | `PM_PATH`                         | override project tracker root for tests or sandboxes                                                                     |
 | `PM_GLOBAL_PATH`                  | override global profile root for tests or sandboxes                                                                      |
-| `PM_LOCK_WAIT_MS`                 | per-process override for `locks.wait_ms`; non-negative integer milliseconds, with `0` restoring fail-fast lock conflicts |
+| `PM_LOCK_WAIT_MS`                 | per-process override for the `locks.wait_ms` budget (a no-progress window only where that lock uses the progress policy); non-negative integer milliseconds, with `0` restoring fail-fast lock conflicts |
 | `PM_OLLAMA_MODEL`                 | choose default Ollama embedding model                                                                                    |
 | `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults                                                                                  |
 | `PM_CONTEXT_USAGE_DISABLED`       | set to `1` to disable the derived context/next usage-feedback ledger with zero filesystem reads or writes                |

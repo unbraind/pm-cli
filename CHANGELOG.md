@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-1516: queued writers fail at a fixed lock deadline even while the lock is changing hands ([pm-iop1pg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iop1pg.toon))
+- GH-1549: fence item commits after an expired mutation lease is taken over ([pm-gh1549](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1549.toon))
 - PR1548: preserve rollback diagnostic provenance and reject non-directory ancestry ([pm-4vymxc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4vymxc.toon))
 - Bound complete nightly validation and exact coverage within existing job deadlines ([pm-gxq0dt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gxq0dt.toon))
 - Resolve aliased workspace paths before publishing tracker cache exclusions ([pm-p8s5k7e6lhda](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p8s5k7e6lhda.toon))

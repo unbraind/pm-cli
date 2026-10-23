@@ -24394,6 +24394,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "lock_lost",
+      "class": "conflict",
+      "code": "lock_lost",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Lock lost condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/lock/lock.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "locks_stale_count",
       "class": "generic_failure",
       "code": "locks_stale_count",
@@ -26319,6 +26336,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "stale_revision",
+      "class": "conflict",
+      "code": "stale_revision",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Stale revision condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-store.ts"
       ],
       "stability": "provisional"
     },

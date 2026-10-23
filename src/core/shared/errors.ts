@@ -81,6 +81,10 @@ export interface PmCliErrorRecoveryPayload {
   token_budget?: PmTokenBudgetRecovery;
   /** Elapsed time in milliseconds for retry after. */
   retry_after_ms?: number;
+  /** Milliseconds a refused lock acquisition waited before giving up. */
+  waited_ms?: number;
+  /** Lock generations observed to change hands while the refused acquisition waited. */
+  owner_handoffs?: number;
   /** Value that configures or reports fallback candidates for this contract. */
   fallback_candidates?: Array<{
     source: string;
@@ -247,6 +251,28 @@ export interface PmCliErrorContext {
     /** Latest available history timestamp, or null for an empty stream. */
     last_timestamp: string | null;
   };
+  /** Lease a refused `lock_lost` commit held when it tried to commit. */
+  lease?: {
+    /** Principal recorded as the lease owner. */
+    owner: string;
+    /** When the lease's lock generation was published. */
+    acquired_at: string;
+    /** Stale-lock lifetime the lease was acquired under. */
+    ttl_seconds: number;
+    /** When the lease became reclaimable by TTL. */
+    expires_at: string;
+  };
+  /** Lock generation observed at a refused `lock_lost` commit, or null when no lock exists. */
+  current_owner?: {
+    /** Principal recorded as the current lock owner. */
+    owner: string;
+    /** Process that published the current lock generation. */
+    pid: number;
+    /** When the current lock generation was published. */
+    created_at: string;
+    /** Stale-lock lifetime of the current lock generation. */
+    ttl_seconds: number;
+  } | null;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }

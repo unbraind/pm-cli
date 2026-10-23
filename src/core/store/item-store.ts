@@ -38,8 +38,8 @@ import {
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { effectiveItemFormatVersion, requiredItemFormatVersion } from "../item/item-format-version.js";
 import { assertProjectRuntimeFormatGuard } from "../../sdk/environment/project-runtime-compatibility.js";
-import { acquireLock } from "../lock/lock.js";
-import { writeFileAtomic } from "../fs/fs-utils.js";
+import { acquireLockLease, type LockLease } from "../lock/lock.js";
+import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import { isUtf8 } from "node:buffer";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
 import {
@@ -487,6 +487,7 @@ async function prepareLockedItem(params: {
   document: ItemDocument;
   warnings: string[];
   releaseLock: () => Promise<void>;
+  lease: LockLease;
 }> {
   const typeToFolder =
     params.typeToFolder ??
@@ -508,7 +509,7 @@ async function prepareLockedItem(params: {
     );
   }
 
-  const releaseLock = await acquireLock(
+  const lease = await acquireLockLease(
     params.pmRoot,
     located.id,
     params.settings.locks.ttl_seconds,
@@ -516,7 +517,9 @@ async function prepareLockedItem(params: {
     Boolean(params.force),
     params.settings.governance.force_required_for_stale_lock,
     params.settings.locks.wait_ms,
+    { waitPolicy: "progress" },
   );
+  const releaseLock = lease.release;
 
   try {
     const warnings: string[] = [];
@@ -557,11 +560,50 @@ async function prepareLockedItem(params: {
       document,
       warnings,
       releaseLock,
+      lease,
     };
   } catch (error: unknown) {
     await releaseLock();
     throw error;
   }
+}
+
+/**
+ * Commit a locked item write only while the lease still owns its lock
+ * generation and the stored item still matches the revision the mutation read.
+ * Either mismatch means a newer writer committed (after a TTL takeover, a
+ * forced takeover or an unlocked edit), so the stale writer refuses and writes
+ * nothing instead of silently overwriting that newer value.
+ */
+async function commitLockedItemWrite<T>(
+  lease: LockLease,
+  located: LocatedItem,
+  originalRaw: string,
+  commit: () => Promise<T>,
+): Promise<T> {
+  return lease.fence(async () => {
+    let currentRaw: string | null;
+    try {
+      currentRaw = await fs.readFile(located.itemPath, "utf8");
+    } catch (error: unknown) {
+      if (!isFileMissingError(error)) throw error;
+      currentRaw = null;
+    }
+    if (currentRaw !== originalRaw) {
+      throw new PmCliError(
+        `Item ${located.id} changed after this mutation read it; refusing to overwrite the newer revision. Nothing was written.`,
+        EXIT_CODE.CONFLICT,
+        {
+          code: "stale_revision",
+          item_id: located.id,
+          reason: currentRaw === null ? "item_removed" : "item_revision_changed",
+          required:
+            "Re-read the item and apply the mutation again; the newer stored revision was kept.",
+        },
+      );
+    }
+    return commit();
+  });
 }
 
 function resolveItemStoreWriteOverride(
@@ -600,6 +642,36 @@ function resolveItemStoreWriteOverride(
         ? overrideRecord.contents
         : serializedAfter,
     skipItemWrite: overrideRecord.skip_write === true,
+  };
+}
+
+/** Run the item_store_delete override and resolve its target path and skip flag. */
+async function resolveItemStoreDeleteOverride(payload: {
+  op: "delete";
+  pm_root: string;
+  item_id: string;
+  item_path: string;
+  history_path: string;
+  before: ItemDocument;
+}): Promise<{
+  effectiveItemPath: string;
+  skipDelete: boolean;
+  warnings: string[];
+}> {
+  const override = await runActiveServiceOverride("item_store_delete", payload);
+  const record =
+    override.handled &&
+    typeof override.result === "object" &&
+    override.result !== null
+      ? (override.result as { item_path?: unknown; skip_delete?: unknown })
+      : {};
+  return {
+    effectiveItemPath:
+      typeof record.item_path === "string" && record.item_path.trim().length > 0
+        ? record.item_path
+        : payload.item_path,
+    skipDelete: record.skip_delete === true,
+    warnings: override.warnings,
   };
 }
 
@@ -674,6 +746,7 @@ async function mutateItemWithDeferredHistoryContext(
     document,
     warnings: parseWarnings,
     releaseLock,
+    lease,
   } = prepared;
 
   try {
@@ -743,79 +816,96 @@ async function mutateItemWithDeferredHistoryContext(
       typeToFolder,
     );
     const historyPath = getHistoryPath(params.pmRoot, located.id);
-    const serviceWriteOverride = await runActiveServiceOverride(
-      "item_store_write",
-      {
-        op: params.op,
-        pm_root: params.pmRoot,
-        item_id: located.id,
-        source_item_path: located.itemPath,
-        target_item_path: targetItemPath,
-        history_path: historyPath,
-        item_format: targetItemFormat,
-        before: beforeDocument,
-        after: afterDocument,
-        contents: serializedAfter,
-      },
-    );
-    const { effectiveTargetItemPath, effectiveSerializedAfter, skipItemWrite } =
-      resolveItemStoreWriteOverride(
-        serviceWriteOverride,
-        targetItemPath,
-        serializedAfter,
-      );
-
-    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
-      params.pmRoot,
-      params.author,
-    );
-    let derivedIndexWarnings: string[] = [];
-    try {
-      if (!skipItemWrite) {
-        await writeFileAtomic(
+    // Storage overrides are extension code that may persist the payload, so
+    // they run inside the fence: a refused commit never reaches them.
+    const committed = await commitLockedItemWrite(
+      lease,
+      located,
+      originalRaw,
+      async () => {
+        const serviceWriteOverride = await runActiveServiceOverride(
+          "item_store_write",
+          {
+            op: params.op,
+            pm_root: params.pmRoot,
+            item_id: located.id,
+            source_item_path: located.itemPath,
+            target_item_path: targetItemPath,
+            history_path: historyPath,
+            item_format: targetItemFormat,
+            before: beforeDocument,
+            after: afterDocument,
+            contents: serializedAfter,
+          },
+        );
+        const {
           effectiveTargetItemPath,
           effectiveSerializedAfter,
-        );
-      }
-      if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
-        await fs.rm(located.itemPath);
-      }
-      const entry = createHistoryEntry({
-        nowIso: afterDocument.metadata.updated_at,
-        author: params.author,
-        op: params.op,
-        before: beforeDocument,
-        after: afterDocument,
-        message: params.message,
-        context: workflowPolicy.decisions.length === 0 ? historyContext : {
-          ...historyContext, workflow_policies: workflowPolicy.decisions,
-        },
-      });
-      try {
-        await appendHistoryEntry(historyPath, entry);
-      } catch (error: unknown) {
-        await rollbackMutatedItemWrite({
           skipItemWrite,
+        } = resolveItemStoreWriteOverride(
+          serviceWriteOverride,
+          targetItemPath,
+          serializedAfter,
+        );
+        const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+          params.pmRoot,
+          params.author,
+        );
+        let derivedIndexWarnings: string[] = [];
+        try {
+          if (!skipItemWrite) {
+            await writeFileAtomic(
+              effectiveTargetItemPath,
+              effectiveSerializedAfter,
+            );
+          }
+          if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
+            await fs.rm(located.itemPath);
+          }
+          const entry = createHistoryEntry({
+            nowIso: afterDocument.metadata.updated_at,
+            author: params.author,
+            op: params.op,
+            before: beforeDocument,
+            after: afterDocument,
+            message: params.message,
+            context: workflowPolicy.decisions.length === 0 ? historyContext : {
+              ...historyContext, workflow_policies: workflowPolicy.decisions,
+            },
+          });
+          try {
+            await appendHistoryEntry(historyPath, entry);
+          } catch (error: unknown) {
+            await rollbackMutatedItemWrite({
+              skipItemWrite,
+              effectiveTargetItemPath,
+              originalItemPath: located.itemPath,
+              originalRaw,
+            });
+            throw error;
+          }
+          if (!skipItemWrite) {
+            derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+              pmRoot: params.pmRoot,
+              preferredFormat: params.settings.item_format,
+              typeToFolder,
+              schema: params.settings.schema,
+              itemPath: effectiveTargetItemPath,
+              previousItemPath: located.itemPath,
+              document: afterDocument,
+            });
+          }
+        } finally {
+          await releaseDerivedIndexLock();
+        }
+        return {
+          derivedIndexWarnings,
           effectiveTargetItemPath,
-          originalItemPath: located.itemPath,
-          originalRaw,
-        });
-        throw error;
-      }
-      if (!skipItemWrite) {
-        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
-          pmRoot: params.pmRoot,
-          preferredFormat: params.settings.item_format,
-          typeToFolder,
-          schema: params.settings.schema,
-          itemPath: effectiveTargetItemPath,
-          previousItemPath: located.itemPath,
-          document: afterDocument,
-        });
-      }
-    } finally {
-      await releaseDerivedIndexLock();
-    }
+          overrideWarnings: serviceWriteOverride.warnings,
+        };
+      },
+    );
+    const { derivedIndexWarnings, effectiveTargetItemPath } = committed;
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,
@@ -865,7 +955,7 @@ async function mutateItemWithDeferredHistoryContext(
         ...(mutation.warnings ?? []),
         ...workflowPolicy.warnings,
         ...historyPolicy.warnings,
-        ...serviceWriteOverride.warnings,
+        ...committed.overrideWarnings,
         ...derivedIndexWarnings,
         ...hookWarnings,
       ],
@@ -988,6 +1078,7 @@ export async function deleteItem(params: {
     document,
     warnings: parseWarnings,
     releaseLock,
+    lease,
   } = prepared;
 
   try {
@@ -1031,83 +1122,77 @@ export async function deleteItem(params: {
       context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
     });
     const historyPath = getHistoryPath(params.pmRoot, located.id);
-    const serviceDeleteOverride = await runActiveServiceOverride(
-      "item_store_delete",
-      {
+    const runDeleteOverride = () =>
+      resolveItemStoreDeleteOverride({
         op: "delete",
         pm_root: params.pmRoot,
         item_id: located.id,
         item_path: located.itemPath,
         history_path: historyPath,
         before: beforeDocument,
-      },
-    );
-    let effectiveItemPath = located.itemPath;
-    let skipDelete = false;
-    if (
-      serviceDeleteOverride.handled &&
-      typeof serviceDeleteOverride.result === "object" &&
-      serviceDeleteOverride.result !== null
-    ) {
-      const overrideRecord = serviceDeleteOverride.result as {
-        item_path?: unknown;
-        skip_delete?: unknown;
-      };
-      if (
-        typeof overrideRecord.item_path === "string" &&
-        overrideRecord.item_path.trim().length > 0
-      ) {
-        effectiveItemPath = overrideRecord.item_path;
-      }
-      if (overrideRecord.skip_delete === true) {
-        skipDelete = true;
-      }
-    }
+      });
 
     if (params.dryRun === true) {
+      const preview = await runDeleteOverride();
       return {
         item: beforeDocument.metadata,
         changedFields: ["deleted"],
-        targetPath: effectiveItemPath,
+        targetPath: preview.effectiveItemPath,
         warnings: [
           ...parseWarnings,
           ...workflowPolicy.warnings,
           ...historyPolicy.warnings,
-          ...serviceDeleteOverride.warnings,
+          ...preview.warnings,
         ],
       };
     }
 
-    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
-      params.pmRoot,
-      params.author,
-    );
-    let derivedIndexWarnings: string[] = [];
-    try {
-      if (!skipDelete) {
-        await fs.rm(effectiveItemPath);
-      }
-      try {
-        await appendHistoryEntry(historyPath, historyEntry);
-      } catch (error: unknown) {
-        if (!skipDelete) {
-          await writeFileAtomic(effectiveItemPath, originalRaw);
+    // The delete override may act on storage, so it runs inside the fence.
+    const committed = await commitLockedItemWrite(
+      lease,
+      located,
+      originalRaw,
+      async () => {
+        const { effectiveItemPath, skipDelete, warnings } =
+          await runDeleteOverride();
+        const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
+          params.pmRoot,
+          params.author,
+        );
+        let derivedIndexWarnings: string[] = [];
+        try {
+          if (!skipDelete) {
+            await fs.rm(effectiveItemPath);
+          }
+          try {
+            await appendHistoryEntry(historyPath, historyEntry);
+          } catch (error: unknown) {
+            if (!skipDelete) {
+              await writeFileAtomic(effectiveItemPath, originalRaw);
+            }
+            throw error;
+          }
+          if (!skipDelete) {
+            derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+              pmRoot: params.pmRoot,
+              preferredFormat: params.settings.item_format,
+              typeToFolder: prepared.typeToFolder,
+              schema: params.settings.schema,
+              itemPath: effectiveItemPath,
+              document: null,
+            });
+          }
+        } finally {
+          await releaseDerivedIndexLock();
         }
-        throw error;
-      }
-      if (!skipDelete) {
-        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
-          pmRoot: params.pmRoot,
-          preferredFormat: params.settings.item_format,
-          typeToFolder: prepared.typeToFolder,
-          schema: params.settings.schema,
-          itemPath: effectiveItemPath,
-          document: null,
-        });
-      }
-    } finally {
-      await releaseDerivedIndexLock();
-    }
+        return {
+          derivedIndexWarnings,
+          effectiveItemPath,
+          overrideWarnings: warnings,
+        };
+      },
+    );
+    const { derivedIndexWarnings, effectiveItemPath } = committed;
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
@@ -1151,7 +1236,7 @@ export async function deleteItem(params: {
         ...parseWarnings,
         ...workflowPolicy.warnings,
         ...historyPolicy.warnings,
-        ...serviceDeleteOverride.warnings,
+        ...committed.overrideWarnings,
         ...derivedIndexWarnings,
         ...hookWarnings,
       ],

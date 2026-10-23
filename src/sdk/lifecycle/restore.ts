@@ -25,7 +25,7 @@ import {
   canonicalDocument,
   serializeItemDocument,
   resolveItemTypeRegistry,
-  acquireLock,
+  acquireLockLease,
   EXIT_CODE,
   type GlobalOptions,
   PmCliError,
@@ -345,7 +345,7 @@ export async function runRestore(
   const currentItemRawBeforeLock = loadedItemBeforeLock?.raw ?? null;
 
   const author = resolveAuthor(options.author, settings.author_default);
-  const releaseLock = await acquireLock(
+  const lease = await acquireLockLease(
     pmRoot,
     resolvedId,
     settings.locks.ttl_seconds,
@@ -353,7 +353,9 @@ export async function runRestore(
     Boolean(options.force),
     settings.governance.force_required_for_stale_lock,
     settings.locks.wait_ms,
+    { waitPolicy: "progress" },
   );
+  const releaseLock = lease.release;
 
   try {
     const { loadedItemUnderLock, existingItemPath } =
@@ -413,48 +415,52 @@ export async function runRestore(
       itemFormat,
       typeRegistry.type_to_folder,
     );
-    const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
-      pmRoot,
-      author,
-    );
-    let derivedIndexWarnings: string[] = [];
-    try {
-      await writeFileAtomic(restoredItemPath, serializedRestore);
-      if (existingItemPath && restoredItemPath !== existingItemPath) {
-        await fs.rm(existingItemPath);
-      }
-
-      const historyEntry = createHistoryEntry({
-        nowIso: nowIso(),
-        author,
-        op: "restore",
-        before: currentState.document,
-        after: restoredDocument,
-        message: options.message,
-        context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
-      });
-      try {
-        await appendHistoryEntry(subject.historyPath, historyEntry);
-      } catch (error: unknown) {
-        await restorePreviousItemAfterHistoryFailure({
-          existingItemPath,
-          resolvedOriginalRaw: currentState.originalRaw,
-          restoredItemPath,
-        });
-        throw error;
-      }
-      derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+    // Refuse instead of overwriting a newer write if this lease was taken over.
+    const derivedIndexWarnings = await lease.fence(async () => {
+      const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
         pmRoot,
-        preferredFormat: settings.item_format,
-        typeToFolder: typeRegistry.type_to_folder,
-        schema: settings.schema,
-        itemPath: restoredItemPath,
-        previousItemPath: existingItemPath ?? undefined,
-        document: restoredDocument,
-      });
-    } finally {
-      await releaseDerivedIndexLock();
-    }
+        author,
+      );
+      let derivedIndexWarnings: string[];
+      try {
+        await writeFileAtomic(restoredItemPath, serializedRestore);
+        if (existingItemPath && restoredItemPath !== existingItemPath) {
+          await fs.rm(existingItemPath);
+        }
+
+        const historyEntry = createHistoryEntry({
+          nowIso: nowIso(),
+          author,
+          op: "restore",
+          before: currentState.document,
+          after: restoredDocument,
+          message: options.message,
+          context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
+        });
+        try {
+          await appendHistoryEntry(subject.historyPath, historyEntry);
+        } catch (error: unknown) {
+          await restorePreviousItemAfterHistoryFailure({
+            existingItemPath,
+            resolvedOriginalRaw: currentState.originalRaw,
+            restoredItemPath,
+          });
+          throw error;
+        }
+        derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
+          pmRoot,
+          preferredFormat: settings.item_format,
+          typeToFolder: typeRegistry.type_to_folder,
+          schema: settings.schema,
+          itemPath: restoredItemPath,
+          previousItemPath: existingItemPath ?? undefined,
+          document: restoredDocument,
+        });
+      } finally {
+        await releaseDerivedIndexLock();
+      }
+      return derivedIndexWarnings;
+    });
     const hookWarnings = await runRestoreWriteHooks({
       restoredItemPath,
       historyPath: subject.historyPath,
