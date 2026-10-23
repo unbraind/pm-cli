@@ -70,6 +70,7 @@ describe("lock lease fencing (GH-1549)", () => {
       await expect(stale.fence(commit)).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
         code: "lock_lost",
+        message: expect.stringContaining("is no longer owned by this writer"),
         context: {
           reason: "lease_taken_over",
           lease: { owner: "stale-writer", ttl_seconds: 1 },
@@ -125,7 +126,12 @@ describe("lock lease fencing (GH-1549)", () => {
       const commit = vi.fn(async () => "written");
       await expect(lease.fence(commit)).rejects.toMatchObject({
         code: "lock_lost",
-        context: { reason: "fence_gate_unavailable", current_owner: { owner: "writer" } },
+        message: expect.stringContaining("could not be verified before commit"),
+        context: {
+          reason: "fence_gate_unavailable",
+          current_owner: { owner: "writer" },
+          required: expect.stringContaining("pm gc --scope locks --dry-run"),
+        },
       });
       expect(commit).not.toHaveBeenCalled();
       vi.restoreAllMocks();

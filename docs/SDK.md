@@ -260,11 +260,13 @@ forced takeover it refuses with `lock_lost` (exit 4, `context.lease` and
 `context.current_owner`) and never runs `commit`. Takeover and fencing share one
 per-lock gate, so a takeover cannot interleave with a fenced commit. When an
 extension `lock_acquire` override handles the acquisition, the extension owns
-the lock lifecycle and `fence(commit)` runs `commit` unfenced: such packages must
-fence in their provider or compare the protected resource's revision before
-writing. `mutateItem` and `deleteItem` fence their commits and also refuse with
-`stale_revision` when the stored item bytes changed after the locked read, which
-covers override-held locks too. `restore` fences its write with the lease
+the lock lifecycle and `fence(commit)` runs `commit` unfenced: such a provider
+must itself exclude or fence concurrent commits, or perform an atomic
+compare-and-write at the storage boundary. A revision check made before the
+write is not a substitute, because another writer can commit between the check
+and the write. `mutateItem` and `deleteItem` additionally refuse with
+`stale_revision` when the stored item bytes changed after the locked read; that
+narrows, but does not close, the window for an unfenced override-held lock. `restore` fences its write with the lease
 (`lock_lost`) and re-verifies item and history under its lock, refusing with its
 own "changed while waiting for lock" conflict rather than `stale_revision`:
 

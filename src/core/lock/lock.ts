@@ -550,42 +550,59 @@ function describeLease(lease: {
   };
 }
 
+/** Message and recovery advice for each lock_lost reason. */
+function describeLockLoss(
+  id: string,
+  lease: { acquiredAt: string; ttlSeconds: number },
+  current: LockInfo | null,
+  reason: "lease_taken_over" | "lease_released" | "fence_gate_unavailable",
+): { summary: string; required: string } {
+  const leaseLabel = `the lease acquired at ${lease.acquiredAt} (ttl ${lease.ttlSeconds}s)`;
+  if (reason === "fence_gate_unavailable") {
+    // Ownership was never checked: the lease may still hold the lock.
+    return {
+      summary: `Lock for ${id} could not be verified before commit: ${leaseLabel} could not enter its commit fence because the stale-cleanup gate stayed held.`,
+      required:
+        "Retry the same operation; this writer's change was not committed. Inspect pm gc --scope locks --dry-run if the stale-cleanup gate stays held.",
+    };
+  }
+  const holder =
+    current === null
+      ? "the lock no longer exists"
+      : `it is now held by ${current.owner} since ${current.created_at}`;
+  return {
+    summary: `Lock for ${id} was lost before commit: ${leaseLabel} is no longer owned by this writer, and ${holder}.`,
+    required:
+      "Re-read the item and apply the mutation again; this writer's change was not committed and the newer value was kept. Keep mutation work shorter than locks.ttl_seconds, or raise locks.ttl_seconds for long-running callbacks.",
+  };
+}
+
 function buildLockLostError(
   id: string,
   lease: { owner: string; acquiredAt: string; ttlSeconds: number },
   current: LockInfo | null,
   reason: "lease_taken_over" | "lease_released" | "fence_gate_unavailable",
 ): PmCliError {
-  const holder =
-    reason === "fence_gate_unavailable"
-      ? "its commit fence could not be entered"
-      : current === null
-        ? "the lock no longer exists"
-        : `it is now held by ${current.owner} since ${current.created_at}`;
-  return new PmCliError(
-    `Lock for ${id} was lost before commit: the lease acquired at ${lease.acquiredAt} (ttl ${lease.ttlSeconds}s) is no longer owned by this writer, and ${holder}. Nothing was written.`,
-    EXIT_CODE.CONFLICT,
-    {
-      code: "lock_lost",
-      item_id: id,
-      reason,
-      lease: describeLease(lease),
-      current_owner:
-        current === null
-          ? null
-          : {
-              owner: current.owner,
-              pid: current.pid,
-              created_at: current.created_at,
-              ttl_seconds: current.ttl_seconds,
-            },
-      required:
-        "Re-read the item and apply the mutation again; this writer's change was not committed and the newer value was kept. Keep mutation work shorter than locks.ttl_seconds, or raise locks.ttl_seconds for long-running callbacks.",
-      recovery: {
-        retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
-      },
+  const { summary, required } = describeLockLoss(id, lease, current, reason);
+  return new PmCliError(`${summary} Nothing was written.`, EXIT_CODE.CONFLICT, {
+    code: "lock_lost",
+    item_id: id,
+    reason,
+    lease: describeLease(lease),
+    current_owner:
+      current === null
+        ? null
+        : {
+            owner: current.owner,
+            pid: current.pid,
+            created_at: current.created_at,
+            ttl_seconds: current.ttl_seconds,
+          },
+    required,
+    recovery: {
+      retry_after_ms: LOCK_CONFLICT_RETRY_HINT_MS,
     },
-  );
+  });
 }
 
 /** Wait for the per-lock cleanup gate that every takeover must also hold. */
