@@ -2,28 +2,31 @@ id: pm-gh1551
 title: "GH-1551: expose omission and budget receipts on precise SDK read results"
 description: "Public list, context, search and get first-page types omit runtime omission_receipt and optional default-budget receipts. Preserve precise required fields, option-sensitive whole-result omissions and producer continuations while exposing the shared public receipt contracts."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: context-management,"gh:1551",sdk
 created_at: "2026-10-23T06:27:39.130Z"
-updated_at: "2026-10-23T07:28:35.438Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#6f99bebef8f9d7d8189fed31"
+updated_at: "2026-10-23T07:52:40.720Z"
+closed_at: "2026-10-23T07:52:39.943Z"
+completed_at: "2026-10-23T07:52:39.943Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Root and query entrypoint consumers can inspect omission_receipt on list/context/search/get without casts; Default-budget read_output and output_budget_truncation are optional and typed; Explicit budget/session/cursor omission and sparse producer page narrowing remain sound; Packed declarations compile with the runtime receipt shapes.
 parent: pm-5t33or
 risk: medium
 confidence: high
-expected_result: Typed consumers inspect omission and optional budget receipts directly while required first-page fields and explicit omission/continuation narrowing remain sound.
+resolution: "Expose shared raw-query receipt metadata and required finalized first-page omission receipts across public SDK entrypoints, preserving sparse producer and whole-budget omission types."
+expected_result: Typed list/context/search/get consumers inspect omissions and applicable optional accounting receipts without redeclaring the host contract or losing first-page precision.
+actual_result: "Pre-fix TS2339 controls now compile; packed root/core/query/contracts/runtime declarations, actual Node/Bun consumers and linked tests pass. Source headba0460507 passes all26required checks and exact100/100/100/100 hosted coverage."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-qal1uw,recurs_from,"2026-10-23T07:04:16.357Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-23T06:27:39.130Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1551. Duplicate checks used live request-specific search, open/in_progress lists, and complete all-status strict read of 3067 items (2789 closed, 14 canceled); related delivered lineage remains closed. No matching active item exists. Selected with the companion SDK read-envelope issue for one reviewed PR."
   "2026-10-23T06:33:48.648Z","harness:codex","Pre-fix regression evidence: pnpm exec tsc --noEmit -p tsconfig.typetests.json failed with TS2339 on omission_receipt, read_output and output_budget_truncation across all four root convenience reads and PmClient methods. The existing raw query builders do not finalize receipts, so their common metadata remains optional; finalized SDK first pages require omission_receipt before producer and budget union shaping. Source pnpm typecheck now passes."
   "2026-10-23T06:38:35.784Z","harness:codex","Packed acceptance now passes for the actual npm tarball in both Node26 and Bun: root/core/contracts/runtime/query declarations compile against the public export, first-page receipt access compiles, producer omissions still require narrowing, and amount/budget cursor walks finish without missing or duplicate rows. The unchanged continuation budgets explicitly request outputFormat=json; a separate no-renderer packet proves compact serialized accounting. Full pnpm typecheck passes after snapshot acknowledgement of stronger additive result signatures."
   "2026-10-23T07:07:46.144Z","harness:codex","Sequential linked verification is recorded as passed: packed Node/Bun declaration and continuation acceptance completed31.96s, and pnpm typecheck29.55s. The typed metadata contract retains optional receipts on raw query builders and required omission metadata only on finalized useful first pages. Whole-result omission and sparse producer-page negative type controls remain enforced."
   "2026-10-23T07:28:35.437Z","harness:codex","Repository governance correction: the new session-recovery follow-up now carries the two relationships named in its intake evidence: discovered_from the concrete get probe in this work and related to the closed session contract that owns the unsupported restore literal. This preserves prose-to-edge parity without changing any gate baseline. The local SDK import gate passed on its bounded repeat; its original failure and the qualified3ms CLI floor miss remain preserved under the existing performance owner and require exact-head hosted admission."
+  "2026-10-23T07:52:39.121Z","harness:codex","PR1557 source headba0460507b654e728d53ccd0ab19f8af6468dbc7 passed all26required contexts,40successful checks overall, and exact global100/100/100/100 coverage in CI39918183435. Hosted static and native/packed Node22.18/24 matrices passed, including unchanged performance admission. CodeRabbit completed its full review with one documentation-link finding; retained canonical tracker URLs under the explicit packaged-docs exclusion exception after verifying the actual npm pack contains the docs page but no tracker files, replied once inline and resolved that thread. Sourcery quota and Greptile trial remain unavailable review coverage. Local failed attempts stay recorded."
 notes[1]{created_at,author,text}:
   "2026-10-23T06:49:52.799Z","harness:codex","Verification sequencing: the checkout build lease serializes all producers/consumers. Starting linked acceptance while full coverage held that lease caused a 300s linked timeout before execution; the identical direct packed acceptance had already passed. Rerun linked verification sequentially after the full suite settles, preserving the failed attempt and its diagnosis. The full suite also retains real long-test timing failures for independent triage."
 files[14]:
@@ -91,6 +94,7 @@ docs[2]:
     note: Generated closeout from the current pm-changelog package
   - path: docs/READ_OUTPUT_CONTRACTS.md
     scope: project
+close_reason: Implemented and verified the SDK read-envelope contract in the reviewed PR1557 source head.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

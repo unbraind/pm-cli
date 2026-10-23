@@ -2,20 +2,22 @@ id: pm-gh1552
 title: "GH-1552: charge SDK read budgets using compact JSON envelopes"
 description: "SDK execute path forces resolvedOutputFormat=json and measures pretty CLI output, contradicting the compact JSON SDK contract. Make structured SDK estimates, packing and session debits match complete compact UTF-8 envelopes while keeping actual CLI JSON and TOON rendering exact."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: context-management,"gh:1552",sdk
 created_at: "2026-10-23T06:27:42.713Z"
-updated_at: "2026-10-23T07:19:25.288Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#6f99bebef8f9d7d8189fed31"
+updated_at: "2026-10-23T07:52:42.155Z"
+closed_at: "2026-10-23T07:52:41.491Z"
+completed_at: "2026-10-23T07:52:41.491Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: No-format SDK session estimates equal ceil UTF-8 compact serialized envelope bytes/4; Budget packing uses the same SDK serializer including infeasible envelopes; Explicit rendered host formats remain exact; Existing read/session/type and packed consumer regressions pass.
 parent: pm-5t33or
 risk: medium
 confidence: high
-expected_result: Unformatted SDK packing and session debits match complete compact UTF-8 envelopes; explicitly selected JSON/TOON and actual CLI bytes retain their own exact estimates.
+resolution: "Stop forcing CLI JSON measurement at the SDK boundary; compact complete envelopes now drive unformatted packing and session debits, while explicit JSON/TOON retain renderer-specific accounting."
+expected_result: "SDK estimates and session debits equal ceil UTF-8 compact complete envelope bytes/4 unless a renderer is explicitly selected, with truthful budget omission and continuation behavior."
+actual_result: "The failing-before631-versus462-token session regression now passes for compact and explicit renderers, session next state and infeasible envelopes. Packed Node/Bun, linked accounting/transport and exact source-head CI including full coverage and performance admission pass."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-hid9g1,recurs_from,"2026-10-23T07:04:17.752Z","harness:codex","cli:update:dep",detected
 comments[5]{created_at,author,text}:
@@ -68,6 +70,7 @@ test_runs[2]:
       node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: Implemented and verified the SDK read-envelope contract in the reviewed PR1557 source head.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
