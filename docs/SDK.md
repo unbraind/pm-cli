@@ -2622,6 +2622,8 @@ contains metadata without its actual command, the receipt retains `itemId` and
 and output options while requiring the actual-command placeholder to be filled.
 The adapter can request that command using the receipt. Explicit `command=` or
 `cmd=` entries retain their structured metadata; empty commands receive templates.
+Suggested test retries pass the same command-admission guard as registration;
+assignment/comment-only candidates receive command-required templates.
 Linked tests containing only assignments or shell comments fail with
 `linked_test_command_not_executable` before registration or execution; quoted
 environment assignments and later-line real commands remain supported.

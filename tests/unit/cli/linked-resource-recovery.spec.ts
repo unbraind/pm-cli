@@ -51,7 +51,7 @@ describe("linked-resource positional recovery", () => {
     expect(envelope.examples?.[0]).toContain("--json");
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
   });
-  it.each(["command=", "cmd=", 'command=""', 'cmd=" "', "cmd=,timeout_seconds=90"])("requires an actual command for %s", (value) => {
+  it.each(["command=", "cmd=", 'command=""', 'cmd=" "', "cmd=,timeout_seconds=90", "command=RESULT=passed", "cmd=RESULT=passed,timeout_seconds=90", "command=# note", "# note"])("requires an actual command for %s", (value) => {
     const envelope = formatCommanderErrorForJson("too many arguments", "test", "Task", 2, { normalizedInvocationArgs: ["test", "pm-x", value, "--json"] });
     expect(envelope.required).toContain("command=<actual command>");
     expect(envelope.required).toContain("test pm-x");

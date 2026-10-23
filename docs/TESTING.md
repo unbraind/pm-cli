@@ -808,6 +808,8 @@ an explicit `--add-json` retry. Explicit `command=` or `cmd=` entries retain the
 structured metadata through `--add`. An empty command or metadata alone, such
 as `timeout_seconds=3600`, receives a template requiring the actual command, without a guessed executable
 retry. Refused invocations do not modify the item.
+Assignment/comment-only positional commands also receive templates instead of
+retries that the registration guard would immediately refuse.
 
 For complex linked-test commands, prefer JSON input so shell syntax survives unchanged:
 

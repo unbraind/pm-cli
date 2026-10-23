@@ -4,14 +4,25 @@
  */
 import { findBootstrapCommandTokenIndex, GLOBAL_VALUE_CONSUMING_FLAGS, BOOTSTRAP_BOOLEAN_FLAGS } from "../cli-contracts/bootstrap-command-scanner.js";
 import { findPmNamespacedCommand } from "../cli-contracts/command-aliases.js";
-import { normalizeStructuredLinkedTestEntry, STRUCTURED_LINKED_TEST_KEYS } from "../test/entry.js";
+import { assertLinkedTestCommand, normalizeStructuredLinkedTestEntry, STRUCTURED_LINKED_TEST_KEYS } from "../test/entry.js";
 import { parseCsvKv } from "../../core/item/parse.js";
+
+/** Offer executable retries only for candidates accepted by shared SDK command admission. */
+function hasAdmittedTestCommand(command: string | undefined): boolean {
+  if (!command?.trim()) return false;
+  try {
+    assertLinkedTestCommand(command.trim());
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** Retain structured metadata, or ask for the missing command without replaying an empty identity. */
 function structuredTestReplacement(value: string): string[] | string | undefined {
   try {
     const { command, ...metadata } = normalizeStructuredLinkedTestEntry(parseCsvKv(value, "--add"), "--add");
-    if (command?.trim()) return ["--add", value];
+    if (hasAdmittedTestCommand(command)) return ["--add", value];
     const fields = Object.entries(metadata).map(([key, entry]) => `${key}=${JSON.stringify(entry)}`);
     return ["command=<actual command>", ...fields].join(",");
   } catch {
@@ -70,7 +81,7 @@ function replacementArgs(command: string, value: string): string[] | string | un
       if (["command=", "cmd="].includes(key)) return structuredTestReplacement(value);
       return (STRUCTURED_LINKED_TEST_KEYS as readonly string[]).includes(key.slice(0, -1)) ? `command=<actual command>,${value}` : undefined;
     }
-    return ["--add-json", JSON.stringify({ command: value })];
+    return hasAdmittedTestCommand(value) ? ["--add-json", JSON.stringify({ command: value })] : "command=<actual command>";
   }
   if (key && key !== "path=") return undefined;
   return ["--add", key ? value : `path=${JSON.stringify(value)}`];

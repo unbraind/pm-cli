@@ -119,4 +119,20 @@ describe("linked-resource admission and recovery", () => {
       expect(stored.item.tests).toContainEqual(expect.objectContaining({ command: literal }));
     });
   });
+
+  it("never suggests registering a positional command that SDK admission would refuse", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Admitted recovery only", createMode: "progressive" });
+      const before = await capture(context);
+      for (const value of ["command=RESULT=passed,timeout_seconds=90", "cmd=# note", "# note"]) {
+        const refused = context.runCli(["test", id, value, "--json"]);
+        expect(refused.code).toBe(2);
+        const error = JSON.parse(refused.stderr) as { required: string; recovery: { suggested_retry_args?: string[] } };
+        expect(error.recovery.suggested_retry_args).toBeUndefined();
+        expect(error.required).toContain("command=<actual command>");
+        expect(error.required).toContain(`test ${id}`);
+        expect(await capture(context)).toEqual(before);
+      }
+    });
+  });
 });
