@@ -4,6 +4,7 @@
  * Implements the pm list command surface and its agent-facing runtime behavior.
  */
 import { renderPmCommand } from "../command-line.js";
+import type { PmReadOutputMetadata } from "../read-output-contracts.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   getActiveExtensionRegistrations,
@@ -368,7 +369,7 @@ const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set<string>(
   HEAVY_METADATA_KEYS,
 );
 
-interface ListResultBase {
+interface ListResultBase extends Partial<PmReadOutputMetadata> {
   items: ListResultItem[];
   count: number;
   /** Total rows matched before pagination. Stable on every list envelope. */

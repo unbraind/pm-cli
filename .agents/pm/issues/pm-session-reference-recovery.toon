@@ -1,0 +1,29 @@
+id: pm-session-reference-recovery
+title: Session reference receipts advertise unsupported get --brief recovery
+description: "While verifying live SDK read-envelope observability, the session receipt restore_reference_with command pm get <item-id> --brief was checked against the current CLI. get refuses --brief with unknown_option; its accepted projection spelling is --depth brief. Update the shared SDK session-reference recovery contract and add executable grammar coverage instead of only asserting the recovery string."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,output-budget,recovery,sdk
+created_at: "2026-10-23T06:39:45.840Z"
+updated_at: "2026-10-23T07:28:34.552Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: "Every advertised session-reference restore command is accepted by current CLI contracts; A sandboxed session repeat can be restored using its advertised command; Public receipt literal types, docs and generated surface remain aligned."
+parent: pm-f05lsg
+risk: low
+confidence: high
+expected_result: A repeated session item can be restored by executing the command advertised in its public receipt against the current CLI grammar.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1552,discovered_from,"2026-10-23T07:04:19.210Z","harness:codex","cli:update:dep",detected
+  pm-gh1551,discovered_from,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
+  pm-hid9g1,related,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-23T06:39:45.840Z","harness:codex","Duplicate check: live search session restore reference brief plus the complete all-status strict corpus contained no matching session recovery item; related pm-hid9g1 is already closed and remains closed. Reproduced on October23 using the current build: pm get pm-gh1551 --brief refuses unknown_option, while pm get pm-gh1551 --depth brief succeeds. Intake only; left open and unclaimed while pm-gh1551 and pm-gh1552 are the active delivery."
+files[2]{path,scope,note}:
+  src/sdk/read-output-session.ts,project,Advertised unsupported session reference recovery literal
+  tests/unit/sdk/read-output-contracts.spec.ts,project,Existing session receipt contract owner; extend with executable recovery proof
+docs[1]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+escape_class: production_defect
+body: ""

@@ -85,7 +85,7 @@ describe("SDK context integrity transports", () => {
         description: "withheld description",
       });
       const cli = context.runCli(
-        ["get", id, "--output-include", "id,title", "--json"],
+        ["get", id, "--output-include", "id,title", "--output-format", "json"],
         { expectJson: true },
       );
       expect(cli.code).toBe(0);
@@ -94,6 +94,7 @@ describe("SDK context integrity transports", () => {
         id,
         path: context.pmPath,
         outputInclude: "id,title",
+        outputFormat: "json",
       });
 
       expect(cli.json).toMatchObject({

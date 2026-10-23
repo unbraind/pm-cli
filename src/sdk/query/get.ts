@@ -5,6 +5,7 @@
  */
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import type { PmReadOutputMetadata } from "../read-output-contracts.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
   getActiveExtensionRegistrations,
@@ -118,7 +119,7 @@ type GetItemProjection = {
 };
 
 /** Single-item read with optional derived facets; omission materiality is carried separately from its JSON representation. */
-export interface GetResult {
+export interface GetResult extends Partial<PmReadOutputMetadata> {
   // `body` lives inside `item` (alongside `description`/`acceptance_criteria`)
   // for parity with `pm list --include-body`, so agents reliably find it at
   // `.item.body` in JSON output instead of a top-level sibling.

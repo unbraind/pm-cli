@@ -1,0 +1,79 @@
+id: pm-gh1552
+title: "GH-1552: charge SDK read budgets using compact JSON envelopes"
+description: "SDK execute path forces resolvedOutputFormat=json and measures pretty CLI output, contradicting the compact JSON SDK contract. Make structured SDK estimates, packing and session debits match complete compact UTF-8 envelopes while keeping actual CLI JSON and TOON rendering exact."
+type: Issue
+status: in_progress
+priority: 2
+tags[3]: context-management,"gh:1552",sdk
+created_at: "2026-10-23T06:27:42.713Z"
+updated_at: "2026-10-23T07:19:25.288Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#6f99bebef8f9d7d8189fed31"
+author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: No-format SDK session estimates equal ceil UTF-8 compact serialized envelope bytes/4; Budget packing uses the same SDK serializer including infeasible envelopes; Explicit rendered host formats remain exact; Existing read/session/type and packed consumer regressions pass.
+parent: pm-5t33or
+risk: medium
+confidence: high
+expected_result: Unformatted SDK packing and session debits match complete compact UTF-8 envelopes; explicitly selected JSON/TOON and actual CLI bytes retain their own exact estimates.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-hid9g1,recurs_from,"2026-10-23T07:04:17.752Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-23T06:27:42.713Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1552. Duplicate checks used live request-specific search, open/in_progress lists, and complete all-status strict read of 3067 items (2789 closed, 14 canceled); related delivered lineage remains closed. No matching active item exists. Selected with the companion SDK read-envelope issue for one reviewed PR."
+  "2026-10-23T06:29:23.224Z","harness:codex","Investigation: dispatchAction unconditionally sets resolvedOutputFormat=json before attaching read contracts. The estimator already supports compact JSON when no renderer is supplied; remove the forced host-renderer choice at the structured SDK boundary, retain explicit outputFormat JSON/TOON and conservative default ceilings. Existing docs explicitly distinguish unformatted SDK objects from rendered CLI output."
+  "2026-10-23T06:33:49.583Z","harness:codex","Pre-fix runtime regression: the real temporary-tracker SDK consumer charged 631 tokens while ceil(UTF-8 compact complete envelope/4) was 462. The same test now passes for no format, explicit JSON and explicit TOON, with session debits and infeasible no-session omission envelopes. The first broad focused run passed 67 cases and exposed a host npm resolution configuration issue in packed acceptance; rerunning that maintained harness with NODE_PATH set to the actual installed npm module root. No product workaround was added."
+  "2026-10-23T06:46:52.074Z","harness:codex","Independent operational evidence October23: strict registry+OSV advisory gate passes568 locked versions; GitHub Dependabot, CodeQL and secret-scanning open inventories are empty. Sentry14-day critical/high gate is0/0 with zero unresolved issues; streamed pm.command spans for fresh get/list probes are present (pm get137.32ms, pm list85.16ms), even though legacy transaction trace listing is empty. The telemetry database has recent1:1 command_start/command_finish pairs per session for get/list; physical local event queue and broker queue are empty, and all six Prometheus targets are up. Seven-day telemetry error rate4.54percent has zero missing error-code rows. These are separate current delivery checks, not claims about historical release reliability."
+  "2026-10-23T07:07:46.925Z","harness:codex","All original full-suite timing cases passed in the sequential retry; explicit JSON selector parity now passes with matching canonical encoding provenance on CLI and SDK. Linked accounting/transport tests recorded passed in10.22s. Static quality requested a lower-complexity test callback, so encoding cases are now parameterized without changing assertions, production code, deadlines or thresholds; rerun linked/static gates after that test-only refinement."
+notes[1]{created_at,author,text}:
+  "2026-10-23T07:01:17.983Z","harness:codex","Full-suite review identified one expected transport-accounting assertion change: sdk-context-integrity compares the entire CLI JSON envelope to an SDK call with no selected renderer. Set outputFormat=json on that comparison so it still proves exact rendered parity; the new compact SDK accounting controls remain independent. The initial queued static and linked runs exceeded the exclusive build-lease wait, rather than producing quality verdicts; preserve those attempts and rerun sequentially."
+learnings[1]{created_at,author,text}:
+  "2026-10-23T06:38:37.774Z","harness:codex","Serialization used to enforce context budgets is part of the SDK contract. Keep structured SDK measurement independent from CLI rendering, and verify the complete envelope including read/session receipts and next state from the packed consumer."
+files[5]:
+  - path: config/defect-recurrence-policy.json
+    scope: project
+  - path: src/sdk/runtime.ts
+    scope: project
+    note: Structured SDK accounting boundary
+  - path: tests/fixtures/read-output/packed-continuation-consumer.mjs
+    scope: project
+  - path: tests/integration/sdk-context-integrity.integration.spec.ts
+    scope: project
+    note: Compare explicit JSON renderer receipts across SDK and CLI
+  - path: tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts,project,180,"harness:codex","2026-10-23T06:36:53.812Z",local_mutation,fix/sdk-read-envelope-accounting,Complete SDK session envelope accounting and rendered transport contracts
+test_runs[2]:
+  - run_id: test-local-mvkmlg83-oyndt1
+    kind: test
+    status: passed
+    started_at: "2026-10-23T07:05:28.046Z"
+    finished_at: "2026-10-23T07:05:38.402Z"
+    recorded_at: "2026-10-23T07:05:38.402Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkmohng-g9n6kz
+    kind: test
+    status: passed
+    started_at: "2026-10-23T07:07:49.414Z"
+    finished_at: "2026-10-23T07:08:00.220Z"
+    recorded_at: "2026-10-23T07:08:00.220Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts tests/unit/sdk/read-output-contracts.spec.ts tests/unit/sdk/read-output-transport.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: output-budget-and-continuation
+  negative_control: pnpm exec tsc --noEmit -p tsconfig.typetests.json && node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts
+  local_checks[2]: pnpm typecheck,node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: unbraind
+body: ""

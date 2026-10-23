@@ -1,0 +1,102 @@
+id: pm-gh1551
+title: "GH-1551: expose omission and budget receipts on precise SDK read results"
+description: "Public list, context, search and get first-page types omit runtime omission_receipt and optional default-budget receipts. Preserve precise required fields, option-sensitive whole-result omissions and producer continuations while exposing the shared public receipt contracts."
+type: Issue
+status: in_progress
+priority: 2
+tags[3]: context-management,"gh:1551",sdk
+created_at: "2026-10-23T06:27:39.130Z"
+updated_at: "2026-10-23T07:28:35.438Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#6f99bebef8f9d7d8189fed31"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Root and query entrypoint consumers can inspect omission_receipt on list/context/search/get without casts; Default-budget read_output and output_budget_truncation are optional and typed; Explicit budget/session/cursor omission and sparse producer page narrowing remain sound; Packed declarations compile with the runtime receipt shapes.
+parent: pm-5t33or
+risk: medium
+confidence: high
+expected_result: Typed consumers inspect omission and optional budget receipts directly while required first-page fields and explicit omission/continuation narrowing remain sound.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-qal1uw,recurs_from,"2026-10-23T07:04:16.357Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-23T06:27:39.130Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1551. Duplicate checks used live request-specific search, open/in_progress lists, and complete all-status strict read of 3067 items (2789 closed, 14 canceled); related delivered lineage remains closed. No matching active item exists. Selected with the companion SDK read-envelope issue for one reviewed PR."
+  "2026-10-23T06:33:48.648Z","harness:codex","Pre-fix regression evidence: pnpm exec tsc --noEmit -p tsconfig.typetests.json failed with TS2339 on omission_receipt, read_output and output_budget_truncation across all four root convenience reads and PmClient methods. The existing raw query builders do not finalize receipts, so their common metadata remains optional; finalized SDK first pages require omission_receipt before producer and budget union shaping. Source pnpm typecheck now passes."
+  "2026-10-23T06:38:35.784Z","harness:codex","Packed acceptance now passes for the actual npm tarball in both Node26 and Bun: root/core/contracts/runtime/query declarations compile against the public export, first-page receipt access compiles, producer omissions still require narrowing, and amount/budget cursor walks finish without missing or duplicate rows. The unchanged continuation budgets explicitly request outputFormat=json; a separate no-renderer packet proves compact serialized accounting. Full pnpm typecheck passes after snapshot acknowledgement of stronger additive result signatures."
+  "2026-10-23T07:07:46.144Z","harness:codex","Sequential linked verification is recorded as passed: packed Node/Bun declaration and continuation acceptance completed31.96s, and pnpm typecheck29.55s. The typed metadata contract retains optional receipts on raw query builders and required omission metadata only on finalized useful first pages. Whole-result omission and sparse producer-page negative type controls remain enforced."
+  "2026-10-23T07:28:35.437Z","harness:codex","Repository governance correction: the new session-recovery follow-up now carries the two relationships named in its intake evidence: discovered_from the concrete get probe in this work and related to the closed session contract that owns the unsupported restore literal. This preserves prose-to-edge parity without changing any gate baseline. The local SDK import gate passed on its bounded repeat; its original failure and the qualified3ms CLI floor miss remain preserved under the existing performance owner and require exact-head hosted admission."
+notes[1]{created_at,author,text}:
+  "2026-10-23T06:49:52.799Z","harness:codex","Verification sequencing: the checkout build lease serializes all producers/consumers. Starting linked acceptance while full coverage held that lease caused a 300s linked timeout before execution; the identical direct packed acceptance had already passed. Rerun linked verification sequentially after the full suite settles, preserving the failed attempt and its diagnosis. The full suite also retains real long-test timing failures for independent triage."
+files[14]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Latest pm-changelog activation verified through package-owned generation
+  - path: config/defect-recurrence-policy.json
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/core.ts
+    scope: project
+  - path: src/sdk/query.ts
+    scope: project
+  - path: src/sdk/query/context.ts
+    scope: project
+  - path: src/sdk/query/get.ts
+    scope: project
+  - path: src/sdk/query/list.ts
+    scope: project
+  - path: src/sdk/query/search/types.ts
+    scope: project
+  - path: src/sdk/read-output-contracts.ts
+    scope: project
+    note: Shared public read-envelope metadata
+  - path: src/sdk/runtime.ts
+    scope: project
+    note: Precise finalized SDK read signatures
+  - path: tests/integration/read-output/composed-continuation.integration.spec.ts
+    scope: project
+  - path: tests/types/producer-continuation.test-d.ts
+    scope: project
+  - path: tests/types/read-output-contracts.test-d.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,project,300,"harness:codex","2026-10-23T06:36:52.412Z",local_mutation,fix/sdk-read-envelope-accounting,Packed Node/Bun runtime and public declaration receipt contracts
+  pnpm typecheck,project,300,"harness:codex","2026-10-23T06:49:55.657Z",local_mutation,fix/sdk-read-envelope-accounting,Source declaration consumers and entrypoint typing
+test_runs[2]:
+  - run_id: test-local-mvklv9c4-bn7zu6
+    kind: test
+    status: failed
+    started_at: "2026-10-23T06:40:12.719Z"
+    finished_at: "2026-10-23T06:45:16.420Z"
+    recorded_at: "2026-10-23T06:45:16.420Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkml7pw-t1ozxx
+    kind: test
+    status: passed
+    started_at: "2026-10-23T07:04:25.724Z"
+    finished_at: "2026-10-23T07:05:27.379Z"
+    recorded_at: "2026-10-23T07:05:27.379Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+docs[2]:
+  - path: CHANGELOG.md
+    scope: project
+    note: Generated closeout from the current pm-changelog package
+  - path: docs/READ_OUTPUT_CONTRACTS.md
+    scope: project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: output-budget-and-continuation
+  negative_control: pnpm exec tsc --noEmit -p tsconfig.typetests.json && node scripts/run-tests.mjs test -- tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts
+  local_checks[2]: pnpm typecheck,node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+  owner: unbraind
+body: ""

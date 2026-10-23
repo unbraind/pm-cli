@@ -1,11 +1,33 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { PmClient, runContextEvaluationScenario, type ContextEvaluationReader } from "../../../src/sdk/index.js";
+import { PmClient, isReadOutputBudgetExceeded, runContextEvaluationScenario, type ContextEvaluationReader } from "../../../src/sdk/index.js";
+import { formatBuiltInOutput } from "../../../src/core/output/output.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { expectJsonErrorEnvelope } from "../../helpers/jsonErrorEnvelope.js";
 
 describe("SDK consumer receipts", () => {
+  it.each([undefined, "json", "toon"] as const)("charges the complete SDK envelope with %s rendering", async (outputFormat) => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      await client.create({ title: "Unicode accounting anchor 日本語", type: "Task", createMode: "progressive" });
+        for (const outputBudget of [10_000, 1]) {
+          const page = await client.list({ limit: "3", outputBudget, ...(outputFormat ? { outputFormat } : {}), ...(outputBudget === 1 ? {} : { outputSession: {
+            version: 1 as const, id: "accounting", token_budget: 10_000, spent_tokens: 0, seen_item_ids: [],
+          } }) });
+          const rendered = outputFormat ? formatBuiltInOutput(page, outputFormat) : JSON.stringify(page);
+          const tokens = Math.ceil(Buffer.byteLength(rendered, "utf8") / 4);
+          expect(page.read_output?.estimated_tokens).toBe(tokens);
+          if (outputBudget !== 1) {
+            expect(page.read_session?.spent_this_call_tokens).toBe(tokens);
+            expect(page.read_session?.next_state.spent_tokens).toBe(tokens);
+          }
+          expect(isReadOutputBudgetExceeded(page)).toBe(outputBudget === 1);
+          if (!isReadOutputBudgetExceeded(page)) expect(page.items).toHaveLength(1);
+        }
+    });
+  });
+
   it("evaluates PmClient directly and refuses infeasible independent and shared budgets", async () => {
     await withTempPmPath(async (context) => {
       const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });

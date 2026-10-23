@@ -3,6 +3,7 @@
  *
  * Implements the pm context command surface and its agent-facing runtime behavior.
  */
+import type { PmReadOutputMetadata } from "../read-output-contracts.js";
 import {
   SETTINGS_DEFAULTS,
   EXIT_CODE,
@@ -418,7 +419,7 @@ interface ContextSummary {
 // ---------------------------------------------------------------------------
 
 /** Documents the context result payload exchanged by command, SDK, and package integrations. */
-export interface ContextResult {
+export interface ContextResult extends Partial<PmReadOutputMetadata> {
   /** Value that configures or reports output default for this contract. */
   output_default: "toon";
   /** Value that configures or reports now for this contract. */

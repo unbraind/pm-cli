@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: ci,monitoring,nightly,recurrence,reliability
 created_at: "2026-10-22T18:29:04.661Z"
-updated_at: "2026-10-22T20:10:59.395Z"
+updated_at: "2026-10-23T06:34:13.763Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The SDK reliability window policy accepts family declarations as objects {name, introduced_at (ISO instant the leg first ran under this name), replaces?: string[] (predecessor family names)}, while plain strings stay valid and mean no lineage and no warm-up; The collector derives introduced_at and replaces from declared workflow data only and evaluation stays in src/sdk/governance/reliability.ts; A leg whose introduced_at is inside the window and whose own completed attempts are below min_completed_attempts is reported warm_up (non-failing) with warm_up_expires_at = introduced_at + window length, including the zero-attempt case; Declared predecessor attempts inside the window are reported as lineage evidence and count toward failure_rate but never toward the leg's own coverage; Any failure_rate violation on a leg or its predecessors still fails, and after warm_up_expires_at insufficient attempts fail coverage again; The step summary separates warm-up, coverage, failure-rate and dispatch findings with their owners; Negative controls prove an undeclared rename (no lineage, no introduced_at) still fails coverage and an expired warm-up fails"
@@ -20,4 +20,6 @@ actual_result: "Release Reliability runs 39817294749 and 39817302614 (2026-10-22
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-23lmm5,related,"2026-10-22T18:29:04.661Z","harness:claude-code","cli:create:dep",detected
   pm-2zjs0g,discovered_from,"2026-10-22T18:29:04.661Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-23T06:34:13.763Z","harness:codex","Live Release Reliability39897809658 on October23 still reports new partition families at zero completed attempts and insufficient_completed_attempts, alongside retained historical native family failure rates. Latest required main CI39894565527 passed. Keep warm-up/lineage accounting distinct from product validation and preserve original failures; this read-envelope delivery does not change reliability policy or its population."
 body: ""

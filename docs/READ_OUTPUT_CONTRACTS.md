@@ -87,6 +87,17 @@ apply. `estimated_tokens` measures the emitted envelope;
 
 ## Typed producer pages
 
+Receipt typing is tracked by [pm-gh1551](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1551.toon)
+(repository-only tracker record excluded from npm).
+Finalized `list`, `context`, `search`, and `get` first pages expose the shared
+`PmReadOutputMetadata` contract. Their `omission_receipt` is present; accounting
+receipts `read_output`, `read_session`, and `output_budget_truncation` remain
+optional. The raw query result types expose these receipts optionally because
+`runList`, `runContext`, `runSearch`, and `runGet` return before final projection.
+The metadata type is available from the root, core, query, contracts, and runtime
+entrypoints. Producer continuation pages may reference the initial omission
+receipt, and whole-result budget omissions retain their separate discriminant.
+
 Tracked by [pm-oybmsd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oybmsd.toon),
 [pm-jqgkis](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jqgkis.toon), and
 [pm-qal1uw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qal1uw.toon)
@@ -250,6 +261,10 @@ The estimate is `ceil(utf8_bytes / 4)` for the complete envelope. The CLI uses
 its selected built-in JSON or TOON representation, including indentation and
 the final newline. SDK calls that select `outputFormat` use that representation;
 structured SDK calls without a renderer retain compact JSON measurement.
+The native SDK dispatcher preserves that distinction for packing decisions,
+infeasible-budget receipts, and session debits, including the returned next state
+([pm-gh1552](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1552.toon),
+repository-only tracker record excluded from npm).
 Those unformatted calls keep the conservative workload-class ceiling
 (`default_max_estimated_tokens`, also used as the generated TOON ceiling).
 Selecting JSON explicitly opts into its larger declared rendering allowance;

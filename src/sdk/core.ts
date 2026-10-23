@@ -154,6 +154,7 @@ export type {
   PmReadOutputOptions,
   PmReadOutputProducerContinuation,
   PmReadOutputReceipt,
+  PmReadOutputMetadata,
   PmReadOutputResult,
   PmReadOutputResultFor,
   PmReadOutputSessionResult,
