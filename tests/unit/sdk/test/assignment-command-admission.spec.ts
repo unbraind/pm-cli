@@ -16,4 +16,9 @@ describe("linked-test command admission", () => {
   ])("preserves executable or compound shell input %s", (command) => {
     expect(() => assertLinkedTestCommand(command)).not.toThrow();
   });
+  it("handles long assignment names and repeated assignment words", () => {
+    expect(() => assertLinkedTestCommand("A".repeat(100_000))).not.toThrow();
+    expect(() => assertLinkedTestCommand(`${"A".repeat(100_000)}=1`)).toThrow(expect.objectContaining({ code: "linked_test_command_not_executable" }));
+    expect(() => assertLinkedTestCommand("A=1 ".repeat(10_000))).toThrow(expect.objectContaining({ code: "linked_test_command_not_executable" }));
+  });
 });

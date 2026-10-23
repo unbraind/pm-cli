@@ -64,13 +64,14 @@ function assignmentValueEnd(input: string, start: number): number | undefined {
 /** Recognize only plain assignment words; leave compound shell programs to their runner. */
 function isAssignmentOnlyCommand(command: string): boolean {
   const input = command.trim();
-  const assignment = /[A-Za-z_][A-Za-z0-9_]*=/uy;
   let offset = 0;
   if (input.length === 0) return false;
   while (offset < input.length) {
-    assignment.lastIndex = offset;
-    if (!assignment.exec(input)) return false;
-    const end = assignmentValueEnd(input, assignment.lastIndex);
+    if (!/[A-Za-z_]/u.test(input[offset]!)) return false;
+    let nameEnd = offset + 1;
+    while (nameEnd < input.length && /[A-Za-z0-9_]/u.test(input[nameEnd]!)) nameEnd += 1;
+    if (input[nameEnd] !== "=") return false;
+    const end = assignmentValueEnd(input, nameEnd + 1);
     if (end === undefined) return false;
     offset = end;
     while (offset < input.length && /\s/u.test(input[offset])) offset += 1;

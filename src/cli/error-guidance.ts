@@ -3,8 +3,7 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
-import { isReadProjectionRecoveryFlag, resolveReadOptionRetryArgs } from "../sdk/agent/command-recovery.js";
-import { resolveLinkedResourcePositionalRecovery } from "../sdk/runtime-primitives.js";
+import { isReadProjectionRecoveryFlag, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
 import { isPmTokenBudgetRecovery } from "../sdk/errors.js";
 import {
   type PmCliErrorContext,
