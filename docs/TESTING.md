@@ -792,18 +792,21 @@ pm test <item-id> --add-json '{"command":"pnpm exec vitest run tests/integration
 Command admission and positional recovery are tracked by
 [pm-gh1555](../.agents/pm/issues/pm-gh1555.toon) and
 [pm-t2dqzijokl31](../.agents/pm/issues/pm-t2dqzijokl31.toon).
-Plain assignment-only commands such as `status=passed` or `RESULT=ok` are
+Commands consisting only of assignments or shell comments, such as
+`status=passed` or `RESULT=ok # note`, are
 refused with `linked_test_command_not_executable` before registration or
 execution, including already-stored entries. They do not establish test-pass
 evidence. Remove a legacy entry with `pm test <id> --remove-index <index>`,
 then register the actual command. Environment assignments preceding a real
-command remain supported on shells that accept that syntax.
+command remain supported on shells that accept that syntax, including commands
+on a later line after a comment.
 
 A misplaced positional path on `files` or `docs` is refused with an explicit
 `--add path=...` retry in `recovery.suggested_retry_args`; supplied values and
 presentation options are preserved. A quoted positional test command receives
-an explicit `--add-json` retry. Metadata alone, such as `timeout_seconds=3600`,
-receives a template requiring the actual command, without a guessed executable
+an explicit `--add-json` retry. Explicit `command=` or `cmd=` entries retain their
+structured metadata through `--add`. An empty command or metadata alone, such
+as `timeout_seconds=3600`, receives a template requiring the actual command, without a guessed executable
 retry. Refused invocations do not modify the item.
 
 For complex linked-test commands, prefer JSON input so shell syntax survives unchanged:

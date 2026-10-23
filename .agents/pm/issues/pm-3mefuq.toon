@@ -1,0 +1,109 @@
+id: pm-3mefuq
+title: Preserve structured test recovery and refuse comment-only verification
+description: "Final replay and CodeRabbit review identify three connected boundaries: structured command/cmd metadata must remain intact, empty command identities require a command template, and assignment-only commands with trailing shell comments must not pass as tests. Preserve literal delimiters and commands on later lines."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-23T12:03:56.016Z"
+updated_at: "2026-10-23T12:17:55.742Z"
+closed_at: "2026-10-23T12:17:54.946Z"
+completed_at: "2026-10-23T12:17:54.946Z"
+author: "harness:codex"
+estimated_minutes: 30
+parent: pm-t2dqzijokl31
+risk: low
+confidence: high
+resolution: "Preserved structured command/cmd metadata, rebuilt command-required templates for empty identities, and scanned assignment/comment-only programs without swallowing later-line executables."
+expected_result: "Exact explicit retries preserve test metadata and delimiters, missing commands never receive executable retries, and syntactically empty assignment/comment programs cannot create false pass evidence."
+actual_result: "81 linked regressions pass with durable receipts, including actual CLI retry replay, timeout retention, literal commas, empty-command templates, no-write legacy refusal and later-line execution. Source quality, type checks, lint and generated contracts pass; exact-head hosted checks and review remain merge conditions."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1555,related,"2026-10-23T12:08:20.471Z","harness:codex","cli:update:dep",detected
+  pm-4pzw7i,related,"2026-10-23T12:15:50.886Z","harness:codex","cli:update:dep",detected
+comments[5]:
+  - created_at: "2026-10-23T12:03:56.016Z"
+    author: "harness:codex"
+    text: "text=Duplicate check: request-specific search, live open and in_progress lists, and a fresh strict all-status read of3076 readable items with no omissions found only the completed parent delivery for this newly observed boundary. The SDK probe returns command=node --version with timeout_seconds=90 embedded in the command string; add a real CLI replay regression before changing the recovery primitive."
+  - created_at: "2026-10-23T12:06:36.851Z"
+    author: "harness:codex"
+    text: "Negative control: after requesting full SDK detail in the fixture, the real replay regression fails against the unchanged implementation because the stored command includes the timeout metadata. Preserve explicit command/cmd entries as structured add values; use add-json only for bare shell commands. Add a literal comma-bearing shell command round trip as the contrasting contract."
+  - created_at: "2026-10-23T12:11:55.173Z"
+    author: "harness:codex"
+    text: "CodeRabbit review5627890219 independently confirmed structured metadata loss and added two valid boundaries: empty command identities and assignment-only commands followed by shell comments. Address all three in this active child. Parse explicit structured entries using the existing SDK CSV grammar, retaining non-empty entries exactly and rebuilding command-required templates from the remaining fields. Skip only whitespace/comments after assignments; newline executables remain executable. The prior pushed head completed all emitted checks with no missing/pending required contexts; merge remains blocked on actionable review threads. Optional Sourcery quota and Greptile trial limitations are not approvals."
+    edited_at: "2026-10-23T12:12:22.643Z"
+  - created_at: "2026-10-23T12:15:52.047Z"
+    author: "harness:codex"
+    text: "Full review triage: all three inline CodeRabbit findings are accepted and covered. The non-inline out-of-scope warning is declined: the user explicitly requested latest pm-changelog consumption and multiple related PM items in one PR; pm-4pzw7i owns the observed host SDK census gap and is linked in the PR body. Generator ownership remains upstream. CodeRabbit reported an ESLint install/registry failure; local declared-dependency lint passes and the hosted static check passed on the previous head, so no dependency or bot-configuration workaround is justified."
+  - created_at: "2026-10-23T12:17:51.946Z"
+    author: "harness:codex"
+    text: "Final local verification: the linked recovery/integration command passes39 cases and assignment admission passes42 cases, both with recorded pass receipts. Source/static quality passes with100 percent source/export/member docstrings; type checking, changed-file lint, SDK surface, error catalog and agent capability checks pass. The real replay preserves command and timeout separately for command/cmd, retains bare literal commas, and uses templates for empty commands. Assignment/comment-only registration and legacy execution refuse without durable writes; real commands after comments execute successfully. Exact revised-head hosted coverage and renewed reviews remain merge conditions."
+files[5]{path,scope}:
+  src/sdk/agent/linked-resource-recovery.ts,project
+  src/sdk/test/entry.ts,project
+  tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project
+  tests/unit/cli/linked-resource-recovery.spec.ts,project
+  tests/unit/sdk/test/assignment-command-admission.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project,240,"harness:codex","2026-10-23T12:04:14.416Z",local_mutation,fix/linked-resource-evidence-recovery
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts,project,240,"harness:codex","2026-10-23T12:08:26.295Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[4]:
+  - run_id: test-local-mvkxd3wy-h41697
+    kind: test
+    status: passed
+    started_at: "2026-10-23T12:06:46.706Z"
+    finished_at: "2026-10-23T12:07:04.978Z"
+    recorded_at: "2026-10-23T12:07:04.978Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkxi0e2-scxgnd
+    kind: test
+    status: failed
+    started_at: "2026-10-23T12:10:27.938Z"
+    finished_at: "2026-10-23T12:10:53.690Z"
+    recorded_at: "2026-10-23T12:10:53.690Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkxk524-bpo4r8
+    kind: test
+    status: passed
+    started_at: "2026-10-23T12:12:06.123Z"
+    finished_at: "2026-10-23T12:12:33.052Z"
+    recorded_at: "2026-10-23T12:12:33.052Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkxo8a3-jos6fw
+    kind: test
+    status: passed
+    started_at: "2026-10-23T12:15:17.558Z"
+    finished_at: "2026-10-23T12:15:43.851Z"
+    recorded_at: "2026-10-23T12:15:43.851Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SDK.md,project
+  docs/TESTING.md,project
+close_reason: Closed the remaining reviewed linked-test recovery and comment-admission boundaries
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: structured-linked-test-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts
+  local_checks[2]: pnpm build,pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-3mefuq
+body: ""

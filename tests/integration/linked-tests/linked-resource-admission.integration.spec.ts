@@ -22,6 +22,8 @@ describe("linked-resource admission and recovery", () => {
       const before = await capture(context);
       for (const attempt of [
         () => runTest(id, { add: ["status=passed"], run: true }, { path: context.pmPath }),
+        () => runTest(id, { add: ["command=RESULT=passed # note"], run: true }, { path: context.pmPath }),
+        () => runTest(id, { add: ["command=# note"], run: true }, { path: context.pmPath }),
         () => runTest(id, { addJson: ['{"command":"RESULT=passed"}'] }, { path: context.pmPath }),
         () => client.update(id, { test: ["command=RESULT=passed"] }),
         () => client.create({ title: "Refused create", type: "Task", createMode: "progressive", test: ["command=RESULT=passed"] }),
@@ -43,13 +45,13 @@ describe("linked-resource admission and recovery", () => {
     });
   });
 
-  it("refuses legacy assignment-only execution without recording a pass, but permits removal", async () => {
+  it.each(["status=passed", "RESULT=passed # note"])("refuses legacy assignment-only execution %s without recording a pass, but permits removal", async (command) => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Legacy assignment", createMode: "progressive" });
       await setTestResultTracking(context.pmPath, true);
-      await overwriteTaskTests(context, id, [{ command: "status=passed", scope: "project" }]);
+      await overwriteTaskTests(context, id, [{ command, scope: "project" }]);
       const before = await capture(context);
-      await expect(runLinkedTests([{ command: "RESULT=passed", scope: "project" }], 5)).rejects.toMatchObject({ code: "linked_test_command_not_executable" });
+      await expect(runLinkedTests([{ command, scope: "project" }], 5)).rejects.toMatchObject({ code: "linked_test_command_not_executable" });
       const refused = context.runCli(["test", id, "--run", "--fail-on-empty-test-run", "--json"]);
       expect(refused.code).toBe(2);
       expect(JSON.parse(refused.stderr)).toMatchObject({ code: "linked_test_command_not_executable" });
@@ -59,12 +61,12 @@ describe("linked-resource admission and recovery", () => {
       expect(await capture(context)).toEqual(before);
       const selected = await runTest(id, { add: ["command=node --version"], run: true, onlyLast: true }, { path: context.pmPath });
       expect(selected.run_results).toMatchObject([{ status: "passed" }]);
-      expect(context.runCli(["test", id, "--remove", "command=status=passed", "--json"]).code).toBe(0);
+      expect(context.runCli(["test", id, "--remove", `command=${command}`, "--json"]).code).toBe(0);
     });
   });
 
   it.skipIf(process.platform === "win32")("executes real commands after quoted environment assignments", async () => {
-    const results = await runLinkedTests([{ command: 'VALUE="two words" node -e "console.log(process.env.VALUE)"', scope: "project" }], 5);
+    const results = await runLinkedTests([{ command: 'IGNORED=1 # first line\nVALUE="two words" node -e "console.log(process.env.VALUE)"', scope: "project" }], 5);
     expect(results).toMatchObject([{ status: "passed", stdout: "two words\n" }]);
   });
 
@@ -92,6 +94,29 @@ describe("linked-resource admission and recovery", () => {
       expect(error.required).toContain("timeout_seconds=3600");
       expect(error.recovery.suggested_retry_args).toBeUndefined();
       expect(await capture(context)).toEqual(before);
+    });
+  });
+
+  it("replays explicitly structured test commands without swallowing timeout metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Structured test recovery", createMode: "progressive" });
+      for (const key of ["command", "cmd"]) {
+        const before = await capture(context);
+        const refused = context.runCli(["test", id, `${key}=node --version,timeout_seconds=90`, "--json"]);
+        expect(refused.code).toBe(2);
+        expect(await capture(context)).toEqual(before);
+        const error = JSON.parse(refused.stderr) as { recovery: { suggested_retry_args: string[] } };
+        expect(context.runCli(error.recovery.suggested_retry_args).code).toBe(0);
+        const stored = await new PmClient({ pmRoot: context.pmPath }).get(id, { full: true });
+        expect(stored.item.tests).toContainEqual(expect.objectContaining({ command: "node --version", timeout_seconds: 90 }));
+      }
+      const literal = 'node -e "console.log(1,2)"';
+      const refused = context.runCli(["test", id, literal, "--json"]);
+      expect(refused.code).toBe(2);
+      const error = JSON.parse(refused.stderr) as { recovery: { suggested_retry_args: string[] } };
+      expect(context.runCli(error.recovery.suggested_retry_args).code).toBe(0);
+      const stored = await new PmClient({ pmRoot: context.pmPath }).get(id, { full: true });
+      expect(stored.item.tests).toContainEqual(expect.objectContaining({ command: literal }));
     });
   });
 });

@@ -12,8 +12,10 @@ describe("linked-resource positional recovery", () => {
   it.each([
     ["files", ["files", "pm-x", "src/a.ts", "--json"], ["files", "pm-x", "--add", 'path="src/a.ts"', "--json"]],
     ["docs", ["--pm-path", "docs", "item", "docs", "pm-x", "path=design.md", "--output-budget=500"], ["--pm-path", "docs", "item", "docs", "pm-x", "--add", "path=design.md", "--output-budget=500"]],
-    ["test", ["test", "pm-x", "command=node -e 1", "--output-budget", "500"], ["test", "pm-x", "--add-json", '{"command":"node -e 1"}', "--output-budget", "500"]],
+    ["test", ["test", "pm-x", "command=node -e 1", "--output-budget", "500"], ["test", "pm-x", "--add", "command=node -e 1", "--output-budget", "500"]],
+    ["test", ["test", "pm-x", "cmd=node --version,timeout_seconds=90"], ["test", "pm-x", "--add", "cmd=node --version,timeout_seconds=90"]],
     ["test", ["test", "pm-x", "node --version"], ["test", "pm-x", "--add-json", '{"command":"node --version"}']],
+    ["test", ["test", "pm-x", "node -e 'console.log(1,2)'"], ["test", "pm-x", "--add-json", JSON.stringify({ command: "node -e 'console.log(1,2)'" })]],
   ] as const)("preserves tokens for %s", (command, argv, retry) => {
     expect(resolveLinkedResourcePositionalRecovery(command, argv)?.retryArgs).toEqual(retry);
     const context = { normalizedInvocationArgs: [...argv] };
@@ -48,5 +50,16 @@ describe("linked-resource positional recovery", () => {
     expect(envelope.examples?.[0]).toContain("--pm-path /foreign/.agents/pm item test pm-x --add");
     expect(envelope.examples?.[0]).toContain("--json");
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+  });
+  it.each(["command=", "cmd=", 'command=""', 'cmd=" "', "cmd=,timeout_seconds=90"])("requires an actual command for %s", (value) => {
+    const envelope = formatCommanderErrorForJson("too many arguments", "test", "Task", 2, { normalizedInvocationArgs: ["test", "pm-x", value, "--json"] });
+    expect(envelope.required).toContain("command=<actual command>");
+    expect(envelope.required).toContain("test pm-x");
+    expect(envelope.required).not.toContain("command=<actual command>,command=");
+    expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+    if (value.includes("timeout_seconds")) expect(envelope.required).toContain("timeout_seconds");
+  });
+  it("does not suggest replaying invalid structured fields", () => {
+    expect(resolveLinkedResourcePositionalRecovery("test", ["test", "pm-x", "command=node --version,typo=90"])).toBeUndefined();
   });
 });

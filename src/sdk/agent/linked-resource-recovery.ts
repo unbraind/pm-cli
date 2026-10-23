@@ -4,7 +4,20 @@
  */
 import { findBootstrapCommandTokenIndex, GLOBAL_VALUE_CONSUMING_FLAGS, BOOTSTRAP_BOOLEAN_FLAGS } from "../cli-contracts/bootstrap-command-scanner.js";
 import { findPmNamespacedCommand } from "../cli-contracts/command-aliases.js";
-import { STRUCTURED_LINKED_TEST_KEYS } from "../test/entry.js";
+import { normalizeStructuredLinkedTestEntry, STRUCTURED_LINKED_TEST_KEYS } from "../test/entry.js";
+import { parseCsvKv } from "../../core/item/parse.js";
+
+/** Retain structured metadata, or ask for the missing command without replaying an empty identity. */
+function structuredTestReplacement(value: string): string[] | string | undefined {
+  try {
+    const { command, ...metadata } = normalizeStructuredLinkedTestEntry(parseCsvKv(value, "--add"), "--add");
+    if (command?.trim()) return ["--add", value];
+    const fields = Object.entries(metadata).map(([key, entry]) => `${key}=${JSON.stringify(entry)}`);
+    return ["command=<actual command>", ...fields].join(",");
+  } catch {
+    return undefined;
+  }
+}
 
 /** Recovery retains supplied values; missing test commands never become executable placeholders. */
 export interface LinkedResourcePositionalRecovery {
@@ -50,13 +63,14 @@ function positionalOperands(command: string, argv: readonly string[]): { idIndex
 }
 
 /** Convert only declared entry identities, leaving missing actual commands as templates. */
-function replacementArgs(command: string, value: string): string[] | null | undefined {
+function replacementArgs(command: string, value: string): string[] | string | undefined {
   const key = /^[A-Za-z_][A-Za-z0-9_]*=/u.exec(value)?.[0];
   if (command === "test") {
-    if (key && !["command=", "cmd="].includes(key)) {
-      return (STRUCTURED_LINKED_TEST_KEYS as readonly string[]).includes(key.slice(0, -1)) ? null : undefined;
+    if (key) {
+      if (["command=", "cmd="].includes(key)) return structuredTestReplacement(value);
+      return (STRUCTURED_LINKED_TEST_KEYS as readonly string[]).includes(key.slice(0, -1)) ? `command=<actual command>,${value}` : undefined;
     }
-    return ["--add-json", JSON.stringify({ command: key ? value.slice(key.length) : value })];
+    return ["--add-json", JSON.stringify({ command: value })];
   }
   if (key && key !== "path=") return undefined;
   return ["--add", key ? value : `path=${JSON.stringify(value)}`];
@@ -71,6 +85,6 @@ export function resolveLinkedResourcePositionalRecovery(command: string | undefi
   const itemId = argv[idIndex];
   const replacement = replacementArgs(command, value);
   if (replacement === undefined) return undefined;
-  if (replacement === null) return { itemId, value, templateArgs: [...argv.slice(0, idIndex + 1), "--add", `command=<actual command>,${value}`, ...argv.slice(idIndex + 2)] };
+  if (typeof replacement === "string") return { itemId, value, templateArgs: [...argv.slice(0, idIndex + 1), "--add", replacement, ...argv.slice(idIndex + 2)] };
   return { itemId, value, retryArgs: [...argv.slice(0, idIndex + 1), ...replacement, ...argv.slice(idIndex + 2)] };
 }

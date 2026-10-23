@@ -2620,9 +2620,11 @@ The helper returns `undefined` for ambiguous input. When a positional test value
 contains metadata without its actual command, the receipt retains `itemId` and
 `value` and omits `retryArgs`. Its `templateArgs` retains the selected tracker
 and output options while requiring the actual-command placeholder to be filled.
-The adapter can request that command using the receipt. Plain assignment-only linked tests fail with
+The adapter can request that command using the receipt. Explicit `command=` or
+`cmd=` entries retain their structured metadata; empty commands receive templates.
+Linked tests containing only assignments or shell comments fail with
 `linked_test_command_not_executable` before registration or execution; quoted
-environment assignments followed by real commands remain supported.
+environment assignments and later-line real commands remain supported.
 
 Package commands should throw expected user/action errors with the public SDK shape so the CLI can preserve exit codes and Sentry can filter expected retry failures:
 

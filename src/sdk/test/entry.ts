@@ -61,10 +61,26 @@ function assignmentValueEnd(input: string, start: number): number | undefined {
   return offset === input.length ? offset : undefined;
 }
 
-/** Recognize only plain assignment words; leave compound shell programs to their runner. */
+/** Skip whitespace and shell comments between assignment words without swallowing later commands. */
+function skipAssignmentTrivia(input: string, start: number): number {
+  let offset = start;
+  while (offset < input.length) {
+    if (/\s/u.test(input[offset]!)) {
+      offset += 1;
+      continue;
+    }
+    if (input[offset] !== "#") return offset;
+    const newline = input.indexOf("\n", offset);
+    if (newline < 0) return input.length;
+    offset = newline + 1;
+  }
+  return offset;
+}
+
+/** Recognize assignment/comment-only programs while preserving later-line executables. */
 function isAssignmentOnlyCommand(command: string): boolean {
   const input = command.trim();
-  let offset = 0;
+  let offset = skipAssignmentTrivia(input, 0);
   if (input.length === 0) return false;
   while (offset < input.length) {
     if (!/[A-Za-z_]/u.test(input[offset]!)) return false;
@@ -73,17 +89,16 @@ function isAssignmentOnlyCommand(command: string): boolean {
     if (input[nameEnd] !== "=") return false;
     const end = assignmentValueEnd(input, nameEnd + 1);
     if (end === undefined) return false;
-    offset = end;
-    while (offset < input.length && /\s/u.test(input[offset])) offset += 1;
+    offset = skipAssignmentTrivia(input, end);
   }
   return true;
 }
 
-/** Refuse commands consisting solely of assignments before registration or execution. */
+/** Refuse commands consisting solely of assignments or comments before registration or execution. */
 export function assertLinkedTestCommand(command: string | undefined): void {
   if (command === undefined || !isAssignmentOnlyCommand(command)) return;
   throw new PmCliError(
-    "Linked-test command contains only variable assignments and has no executable command.",
+    "Linked-test command contains only variable assignments or comments and has no executable command.",
     EXIT_CODE.USAGE,
     {
       code: "linked_test_command_not_executable",
