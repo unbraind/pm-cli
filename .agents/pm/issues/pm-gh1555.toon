@@ -2,23 +2,127 @@ id: pm-gh1555
 title: "GH-1555: refuse assignment-only linked-test commands before recording false passes"
 description: "The October23 report shows test --add status=passed being interpreted as a shell assignment, then recorded as passing without executing a test. Investigate strict linked-command admission and typed metadata-typo recovery without restricting legitimate environment-prefixed executable commands."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: context-management,"gh:1555",sdk
 created_at: "2026-10-23T07:34:02.529Z"
-updated_at: "2026-10-23T07:34:02.529Z"
+updated_at: "2026-10-23T11:30:09.447Z"
+closed_at: "2026-10-23T11:30:08.643Z"
+completed_at: "2026-10-23T11:30:08.643Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: A current SDK/CLI regression reproduces assignment-only false pass admission; Refusal or no-executable verdict is typed and actionable before false success is recorded; Environment-prefixed real commands and sandbox/trust controls remain supported.
 parent: pm-gh1469
 risk: medium
 confidence: medium
-expected_result: Assignment-only metadata typos cannot become unqualified durable verification passes; legitimate environment assignments followed by an executable retain their existing behavior.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Shared SDK admission rejects plain assignment-only commands at registration and legacy execution; selected effective entries are checked under the write lock before combined edits persist.
+expected_result: Refuse metadata-only commands without durable writes or false pass receipts while retaining executable environment prefixes and explicit selectors.
+actual_result: Linked suite passes 42 tests; focused regressions and installed npm/npx plus bun/bunx consumers verify refusal without writes and valid execution. Static components pass; GitHub full coverage and required checks remain merge conditions.
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-nc94mk,related,"2026-10-23T07:34:02.529Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-0trehk,related,"2026-10-23T11:16:34.467Z","harness:codex","cli:update:dep",detected
+  pm-gh1556,related,"2026-10-23T11:16:34.467Z","harness:codex","cli:update:dep",detected
+  pm-prrlce,related,"2026-10-23T11:16:34.467Z","harness:codex","cli:update:dep",detected
+  pm-t2dqzijokl31,related,"2026-10-23T11:16:34.467Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
   "2026-10-23T07:34:02.529Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1555. Duplicate checks used request-specific live search and a fresh all-status strict corpus of3071 items with no omissions; related delivered lineage is linked and remains closed. The report is recorded without claiming current reproduction. Intake only, open and unclaimed."
-files[1]{path,scope}:
+  "2026-10-23T09:43:56.416Z","harness:codex","Delivery scope: pair this SDK command-admission defect with pm-t2dqzijokl31 linked-resource refusal recovery in one reviewed PR. Live strict all-status read: 3074 items, complete, zero unreadable records and no omissions; existing related closures retained. GitHub intake currently has no open PRs or security/dependency alerts; latest npm/GitHub release and pm-changelog are 2026.10.23. Regression work will use isolated trackers."
+  "2026-10-23T09:51:26.161Z","harness:codex","Regression sensitivity: the pre-fix owned integration file failed all three cases on the actual false-pass and missing-recovery behavior (after correcting the tracking fixture argument). After implementation, 122 focused tests pass across five files. Shared SDK admission covers test add/add-json, lifecycle create/update, and legacy execution before pass recording. Real quoted environment-prefixed execution succeeds. npm published-release verifier confirms 2026.10.23 distribution; this candidate is not yet published."
+  "2026-10-23T09:54:37.010Z","harness:codex","Operational verification: published2026.10.23 verifier passes. Latest pm-changelog is2026.10.23; upstream repo has no open PRs/issues and project deep package doctor is healthy. Sentry unresolved list is empty; latest24h issue PM-CLI-2G is resolved and already tracked by open pm-gh1556. Required Sentry/telemetry gate passes with0 critical/high issues,4.52% seven-day finish error rate and0 missing error-code rows. Live telemetry DB has recent events and RabbitMQ ready/unacknowledged counts are0. One early local flush made no immediate progress; background delivery subsequently emptied the local event queue. Historical reliability run39923686699 remains independently red (5/30 scheduled failures, dispatch timing, and renamed nightly families); existing pm-prrlce and pm-0trehk preserve those scopes. All open GitHub issues already have canonical PM links, including immutable-commit links on1442 and1399. No agent-browser was used; its discovered temporary Vercel skill copy was removed at the user request."
+  "2026-10-23T10:04:22.608Z","harness:codex","Additional telemetry evidence: among199 current-version2026.10.23 session/command groups in the last30minutes, excluding the newest60seconds, every observed start has a matching finish. Aggregate older-version traffic has unmatched starts, so the gate and this bounded current-version sample do not prove universal historical pairing. Latest package-owned changelog check, dependency advisory/development audit, runtime-lock check, typechecks and version-sync checks pass."
+  "2026-10-23T10:09:45.588Z","harness:codex","The required latest-package install upgraded the managed pm-changelog record from2026.10.21 to2026.10.23, including upstream audit/milestone contributions; keep this substantive package-generated record in the reviewed delivery. Both real-tracker validate(check-resolution,check-history-drift) and health(check-only) pass. No upstream package defect was found."
+  "2026-10-23T10:15:41.078Z","harness:codex","First all-source coverage attempt ran11111 tests:11104 passed,3 skipped,4 failed. Two expected integration updates are now addressed: the public SDK error-code snapshot and the historical assertion accepting assignment-only links. The other failures were local npm/package.json resolution (Homebrew global npm is outside Node default module search) and a tracing subprocess under full load; focused rerun uses the actual global npm package via NODE_PATH without changing dependencies or weakening deadlines. No coverage success is claimed for that failed attempt. Combined-edit legacy refusal is now checked under the item mutation lock before saving valid additions; selectors may explicitly run only a valid newly added command."
+  "2026-10-23T10:22:27.371Z","harness:codex","Parser/refusal hardening now passes57 focused tests after separating quote scanning, assignment-word admission and positional operand validation under existing complexity limits. Actual command substitutions, including quoted substitutions, remain executable shell programs; plain quoted assignment literals are refused. No lint/coverage threshold was lowered. Today has exactly one tag v2026.10.23: morning dispatcher39891272598 and native schedule39920730593 both completed successfully, with later schedule verifying the existing published day rather than creating another tag."
+  "2026-10-23T10:37:07.039Z","harness:codex","Final focused verification:132 tests passed across the assignment-admission, CLI-recovery, linked-resource integration and full existing test-command files. Preserve actual shell command substitutions and selectors; the shared admission wrapper now retains the specific recovery requirement. The later static attempt had both OSV coverage for568 packages and a registry transport gap; a separate immediate registry audit completed with zero advisories at all severities. No missing feed is treated as a successful gate."
+  "2026-10-23T11:16:38.961Z","harness:codex","Fresh complete all-status scan:3075 readable items with no omissions. Checked5023 stored linked-command strings against the new plain-assignment admission rule and found zero existing violations, including terminal-item metadata. Reconciled the five new prose-reference gaps introduced by delivery evidence as genuine related/discovery context links; keep graph policy and its existing ceiling unchanged."
+  "2026-10-23T11:22:32.818Z","harness:codex","All local static components now pass after the exact tracker repairs: graph-composition and record-integrity both verdict pass, followed by bounded mutation verification (352 mutants,345 killed,7 accepted equivalents, no failures). The repository packed smoke passes on2026.10.23 through npx and bunx across9 packages. The additional fresh-install behavioral probe uses quiet npm executor logging so npm notices do not contaminate its JSON channel; this is a validation-harness setting, not a product change."
+notes[1]{created_at,author,text}:
+  "2026-10-23T09:58:16.032Z","harness:codex","Implementation review: preserve pre-write admission for combined edits when the selected list contains a legacy assignment-only entry. Validate only selected entries when a run selector is supplied, and retain the configuration-refusal changed:false receipt rather than admitting link writes before a later runtime refusal."
+learnings[1]{created_at,author,text}:
+  "2026-10-23T10:01:21.645Z","harness:codex",Validate the selected effective test list under the mutation lock before persisting combined edits. A shell exit status of zero is not verification when the command is only assignments; guard registration and legacy execution at the shared SDK boundary.
+files[14]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  sdk/public-surface.json,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/index.ts,project
+  src/sdk/runtime-primitives.ts,project
+  src/sdk/test/entry.ts,project
+  src/sdk/test/execution.ts,project
   src/sdk/test/parsers.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project
+  tests/unit/commands/test/linked-test-entry.spec.ts,project
+  tests/unit/commands/test/test-command.spec.ts,project
+  tests/unit/sdk/test/assignment-command-admission.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts tests/unit/commands/test/linked-test-entry.spec.ts,project,240,"harness:codex","2026-10-23T11:03:15.043Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[5]:
+  - run_id: test-local-mvktm5d1-qoeini
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:21:47.647Z"
+    finished_at: "2026-10-23T10:22:08.293Z"
+    recorded_at: "2026-10-23T10:22:08.293Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvktuzmb-lzzeoi
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:28:40.192Z"
+    finished_at: "2026-10-23T10:29:00.755Z"
+    recorded_at: "2026-10-23T10:29:00.755Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkudfpo-gghlpe
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:43:02.076Z"
+    finished_at: "2026-10-23T10:43:21.420Z"
+    recorded_at: "2026-10-23T10:43:21.420Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkuxjc3-thhbsx
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:58:32.154Z"
+    finished_at: "2026-10-23T10:58:59.234Z"
+    recorded_at: "2026-10-23T10:58:59.234Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkv3jb1-q95oj8
+    kind: test
+    status: passed
+    started_at: "2026-10-23T11:03:15.128Z"
+    finished_at: "2026-10-23T11:03:39.133Z"
+    recorded_at: "2026-10-23T11:03:39.133Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts tests/unit/commands/test/linked-test-entry.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SDK.md,project
+  docs/TESTING.md,project
+close_reason: Prevented assignment-only linked tests from producing false verification passes
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-test-request-admission
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+  owner: pm-gh1555
 body: ""

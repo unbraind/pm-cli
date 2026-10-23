@@ -7,6 +7,8 @@ import {
   runTestAll,
 } from "../../../../src/cli/commands/test/test-all.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { PmCliError } from "../../../../src/sdk/index.js";
+import * as linkedTestEntry from "../../../../src/sdk/test/entry.js";
 import * as itemTestRunTracking from "../../../../src/core/test/item-test-run-tracking.js";
 import {
   loadTaskMetadata,
@@ -111,6 +113,49 @@ function createTaskWithTests(
 }
 
 describe("runTestAll", () => {
+  it("retains complete ordered results and tracking around refused legacy commands", async () => {
+    await withTempPmPath(async (context) => {
+      const ids = ["Before", "All invalid", "Mixed", "After"].map((title) => createTaskWithTests(context, { title, status: "open", testEntries: [] })).sort();
+      const [beforeId, invalidId, mixedId, afterId] = ids;
+      const shared = { command: 'node -e "console.log(\'shared\')"', scope: "project" as const };
+      const invalid = { command: "status=passed", scope: "project" as const };
+      const comment = { command: "# note", scope: "project" as const };
+      await overwriteTaskTests(context, beforeId, [shared]);
+      await overwriteTaskTests(context, invalidId, [invalid, comment]);
+      await overwriteTaskTests(context, mixedId, [invalid, { command: 'node -e "console.log(\'middle-a\')"', scope: "project" }, comment, shared, { command: 'node -e "console.log(\'middle-b\')"', scope: "project" }]);
+      await overwriteTaskTests(context, afterId, [invalid, { command: 'node -e "console.log(\'after\')"', scope: "project" }]);
+      await setTestResultTracking(context.pmPath, true);
+
+      const result = await runTestAll({ status: "open", timeout: "30" }, { path: context.pmPath });
+      expect(result).toMatchObject({ ok: false, passed: 4, failed: 5, skipped: 1, totals: { items: 4, linked_tests: 10, failure_categories: { config_refusal: 5 } } });
+      expect(result.warnings).toBeUndefined();
+      expect(result.results.map((entry) => entry.id)).toEqual(ids);
+      expect(result.results[0]).toMatchObject({ passed: 1, failed: 0 });
+      expect(result.results[1]).toMatchObject({ passed: 0, failed: 2 });
+      expect(result.results[2].run_results.map((entry) => entry.status)).toEqual(["refused", "passed", "refused", "skipped", "passed"]);
+      expect(result.results[2].run_results[1].stdout).toBe("middle-a\n");
+      expect(result.results[2].run_results[4].stdout).toBe("middle-b\n");
+      expect(result.results[3].run_results[1]).toMatchObject({ status: "passed", stdout: "after\n" });
+      for (const item of result.results) {
+        for (const refusal of item.run_results.filter((entry) => entry.status === "refused")) {
+          expect(refusal).toMatchObject({ failure_category: "config_refusal", exit_code: null });
+          expect(refusal.error).toContain(item.id);
+          expect(refusal.execution_context).toBeUndefined();
+        }
+        const metadata = await loadTaskMetadata(context, item.id);
+        expect(metadata.test_runs).toContainEqual(expect.objectContaining({ kind: "test-all", passed: item.passed, failed: item.failed, skipped: item.skipped, status: item.failed > 0 ? "failed" : "passed" }));
+      }
+    });
+  });
+
+  it.each([new Error("unexpected guard failure"), new PmCliError("another refusal", EXIT_CODE.USAGE, { code: "another_refusal" })])("propagates unrelated admission errors: %s", async (error) => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, { title: "Unrelated guard error", status: "open", testEntries: ["command=node --version"] });
+      vi.spyOn(linkedTestEntry, "assertLinkedTestCommand").mockImplementation(() => { throw error; });
+      await expect(runTestAll({}, { path: context.pmPath })).rejects.toBe(error);
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(
       path.join(os.tmpdir(), "pm-test-all-not-init-"),

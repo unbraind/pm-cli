@@ -3,7 +3,7 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
-import { isReadProjectionRecoveryFlag, resolveReadOptionRetryArgs } from "../sdk/agent/command-recovery.js";
+import { isReadProjectionRecoveryFlag, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
 import { isPmTokenBudgetRecovery } from "../sdk/errors.js";
 import {
   type PmCliErrorContext,
@@ -2010,6 +2010,32 @@ const TRANSPOSED_COLLECTION_COMMANDS = new Set([
   "test",
 ]);
 
+/** Correct a misplaced resource value while refusing the original, unrequested mutation. */
+function buildLinkedResourcePositionalGuidance(
+  message: string,
+  commandName: string | undefined,
+  context: CommanderGuidanceContext | undefined,
+): GuidanceMessage | null {
+  if (!/too many arguments/i.test(message)) return null;
+  const recovery = resolveLinkedResourcePositionalRecovery(commandName, context?.normalizedInvocationArgs ?? []);
+  if (!recovery) return null;
+  const retry = recovery.retryArgs ? renderPmCommand(recovery.retryArgs) : undefined;
+  const template = renderPmCommand(recovery.templateArgs ?? ["test", recovery.itemId, "--add", `command=<actual command>,${recovery.value}`]);
+  return makeGuidanceMessage({
+    code: "linked_resource_positional_value",
+    title: "Linked-resource values require an explicit --add option",
+    happened: `The value after the item id is not a positional argument of ${commandName}.`,
+    required: retry
+      ? `Retry the explicit collection mutation: ${retry}`
+      : `Supply the actual command and its metadata together, for example ${template}.`,
+    examples: [retry ?? template],
+    recovery: buildCommanderRecoveryPayload(context, {
+      suggested_retry: retry,
+      suggested_retry_args: recovery.retryArgs,
+    }),
+  });
+}
+
 function buildTransposedCollectionActionGuidance(
   message: string,
   commandName: string | undefined,
@@ -2151,6 +2177,7 @@ function buildCommanderErrorGuidance(
     buildUnknownSubcommandGuidance(context) ??
     buildTransposedCollectionActionGuidance(message, commandName, context) ??
     buildLinkedTestValueNotQuotedGuidance(message, commandName, context) ??
+    buildLinkedResourcePositionalGuidance(message, commandName, context) ??
     buildContextItemArgumentGuidance(message, commandName, context);
   if (guidance) {
     return guidance;

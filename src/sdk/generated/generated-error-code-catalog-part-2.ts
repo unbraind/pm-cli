@@ -8,6 +8,19 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
+    code: "merge_settlement_hook_conflict",
+    meaning: "Merge settlement hook conflict condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/settlement-hook.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_settlement_hook_conflict",
+    aliases: [],
+  },
+  {
     code: "merge_settlement_review_required",
     meaning: "Merge settlement review required condition.",
     stability: "provisional",

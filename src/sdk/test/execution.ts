@@ -10,6 +10,7 @@ import {
 } from "./execution-receipts.js";
 import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { updateLinkedTest, parseLinkedTestUpdateOptions, assertLinkedTestEditUsage } from "./update.js";
+import { admitLinkedTestRequest, assertLinkedTestCommand } from "./entry.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -2886,6 +2887,7 @@ export async function runLinkedTests(
   defaultTimeoutSeconds: number | undefined,
   options?: RunLinkedTestsOptions,
 ): Promise<TestRunResult[]> {
+  for (const test of tests) assertLinkedTestCommand(test.command);
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
   const layout = createLinkedTestSandboxLayout(sandboxRoot);
@@ -3176,7 +3178,7 @@ async function resolveLinkedTestItem(params: {
         removes,
         removeIndexes,
       );
-      admitTestRunOptions(options, mutation.tests);
+      admitLinkedTestRequest(() => resolveTestRunOptions(options, mutation.tests));
       removed = mutation.removed;
       if ((removes.length > 0 || removeIndexes.length > 0) && removed === 0) {
         throw new PmCliError(
@@ -3242,25 +3244,15 @@ function resolveTestRunOptions(
   }
   assertTestRunFlagUsage(options);
   const runSelection = options.run === true ? resolveLinkedTestRunSelection(tests, selectorInput) : undefined;
+  if (runSelection) {
+    for (const test of runSelection.selected) assertLinkedTestCommand(test.command);
+  }
   return {
     defaultTimeoutSeconds,
     pmContextMode,
     runSelection,
     testsToRun: runSelection?.selected ?? tests,
   };
-}
-
-/** Admit execution options against the effective list before any link persistence. */
-function admitTestRunOptions(options: TestCommandOptions, tests: LinkedTest[]): ResolvedTestRunOptions {
-  try {
-    return resolveTestRunOptions(options, tests);
-  } catch (error) {
-    if (!(error instanceof PmCliError) || error.exitCode !== EXIT_CODE.USAGE) throw error;
-    throw new PmCliError(`${error.message} No changes were made.`, EXIT_CODE.USAGE, {
-      ...error.context, code: "invalid_argument_value", reason: "test_option_invalid", changed: false,
-      required: error.message,
-    });
-  }
 }
 
 async function executeSelectedLinkedTests(params: {
@@ -3601,7 +3593,7 @@ export async function runTest(
     removes,
     removeIndexes,
   });
-  const runOptions = admitTestRunOptions(options, item.tests);
+  const runOptions = admitLinkedTestRequest(() => resolveTestRunOptions(options, item.tests));
   const trustAcknowledgement = await maybeAcknowledgeLinkedTests(
     options,
     pmRoot,

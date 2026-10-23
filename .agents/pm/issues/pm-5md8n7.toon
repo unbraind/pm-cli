@@ -1,0 +1,57 @@
+id: pm-5md8n7
+title: "PR1559: keep command admission linear and recovery startup lightweight"
+description: Exact-head CodeQL alert 50 flags the sticky assignment-name expression. Runtime-only CI artifacts fail before version output because error guidance now imports the broad runtime-primitives value graph. Replace assignment-name matching with a character scan and route positional recovery through the existing lightweight SDK recovery seam.
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-23T11:37:48.078Z"
+updated_at: "2026-10-23T11:45:43.891Z"
+closed_at: "2026-10-23T11:45:42.756Z"
+completed_at: "2026-10-23T11:45:42.756Z"
+author: "harness:codex"
+estimated_minutes: 45
+parent: pm-gh1555
+risk: low
+confidence: high
+resolution: Assignment names use a character scan; early CLI guidance consumes the existing lightweight SDK command-recovery seam rather than the broad host-runtime value graph.
+expected_result: "No new CodeQL alert, dependency-free version startup, and preserved SDK/CLI recovery and refusal contracts."
+actual_result: "83 linked regression tests pass including copied-dist version output without node_modules and long scanner inputs. Source/static components, type checking, generated surfaces and refreshed dependency advisory gate pass. Exact-head hosted CodeQL, runtime smoke, full coverage and review remain merge conditions."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-t2dqzijokl31,related,"2026-10-23T11:37:48.078Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-23T11:37:48.078Z","harness:codex","Duplicate check: request-specific PR1559 search plus fresh open and in_progress lists found no review-remediation owner. This is pre-merge feedback on https://github.com/unbraind/pm-cli/pull/1559 and https://github.com/unbraind/pm-cli/security/code-scanning/50. Keep completed implementation items closed and claim only this active review scope."
+  "2026-10-23T11:41:40.016Z","harness:codex","Review remediation: replaced the sticky variable-name expression with a single-character scan and added 100000-character names plus 10000 repeated assignments as negative controls. Re-exported positional recovery through the lightweight command-recovery module already used by early error guidance; no private-import allowlist expansion. Linked suites pass 61 admission/recovery/integration cases plus 22 existing runtime-compatibility cases, including copied-dist version output without node_modules. Fresh required observability gate passes with zero blocking Sentry issues, 4.5 percent seven-day telemetry error rate and no missing error-code rows."
+  "2026-10-23T11:45:38.926Z","harness:codex","The source/architecture, absence-tolerance, token-budget, context-intent calibration, docs/skills and defect-evidence components pass. Repository assurance initially refused a stale or invalid advisory receipt; the standalone dependency advisory gate now completes successfully with current feed evidence. No thresholds, allowlists or receipt validation were relaxed. Type checking and generated SDK/capability checks pass."
+files[5]{path,scope}:
+  src/cli/error-guidance.ts,project
+  src/sdk/agent/command-recovery.ts,project
+  src/sdk/test/entry.ts,project
+  tests/unit/cli/runtime-compatibility-boundary.spec.ts,project
+  tests/unit/sdk/test/assignment-command-admission.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project,240,"harness:codex","2026-10-23T11:38:07.059Z",local_mutation,fix/linked-resource-evidence-recovery
+  node scripts/run-tests.mjs test -- tests/unit/cli/runtime-compatibility-boundary.spec.ts,project,240,"harness:codex","2026-10-23T11:38:56.269Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mvkwdq5u-sa4vnz
+    kind: test
+    status: passed
+    started_at: "2026-10-23T11:39:06.717Z"
+    finished_at: "2026-10-23T11:39:34.194Z"
+    recorded_at: "2026-10-23T11:39:34.194Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/runtime-compatibility-boundary.spec.ts,schema,schema,source,local_source_ref
+close_reason: Removed the review-reported regex and restored dependency-free CLI startup
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-resource-bootstrap-review
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts
+  local_checks[2]: pnpm build,"pnpm quality:static"
+  hosted_checks[3]: Analyze (javascript-typescript),"Runtime smoke (ubuntu-latest, Node 22)","Runtime smoke (macos-latest, Node 24)"
+  owner: pm-5md8n7
+body: ""

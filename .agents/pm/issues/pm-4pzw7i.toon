@@ -1,0 +1,66 @@
+id: pm-4pzw7i
+title: Declare current pm-changelog commands in the SDK grammar census
+description: "Latest published pm-changelog2026.10.23 correctly registers changelog audit and changelog milestone create, but the pm-cli-owned destination/positional census still knows only export and generate. The real command-grammar gate reports two missing_destination and two stale_observed_signature findings after the required latest-package install. Keep generator code upstream unchanged and update the host SDK inventory from the observed package contracts."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-23T10:53:00.389Z"
+updated_at: "2026-10-23T11:30:13.483Z"
+closed_at: "2026-10-23T11:30:12.395Z"
+completed_at: "2026-10-23T11:30:12.395Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Current package command destinations are declared as package-owned; Milestone creation retains its required name positional; The real latest-package grammar gate passes without changing grammar budgets or excluding commands
+goal: Keep every installed first-party command discoverable through the SDK grammar.
+objective: Synchronize the host census with the current published pm-changelog command and positional declarations.
+value: A valid latest-package install must not make repository grammar validation reject healthy command registrations.
+why_now: The required latest pm-changelog install exposed two newly registered commands during this delivery.
+parent: pm-1kxs
+risk: low
+confidence: high
+resolution: Installed pm-changelog 2026.10.23 and declared package-owned audit and milestone-create destinations with the required milestone name operand in the host SDK census; upstream generator remains unchanged.
+expected_result: All latest-package positional declarations match observed registrations without raising grammar budgets.
+actual_result: "Linked suite passes 37 tests. Real installed grammar matches 235 declared and observed signatures, with 20 shapes within the existing 21-shape budget and zero findings. Graph and integrity checks pass."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-kki6bf,related,"2026-10-23T10:53:00.389Z","harness:codex","cli:create:dep",detected
+  pm-gh1555,discovered_from,"2026-10-23T11:12:09.633Z","harness:codex","cli:update:dep",detected
+  pm-t2dqzijokl31,related,"2026-10-23T11:16:35.716Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-23T10:53:00.389Z","harness:codex","Duplicate check: request-specific live search plus fresh open/in_progress lists and the complete3074-item all-status snapshot found no existing owner for these new package commands. Read the closed calendar grammar precedent and live grammar parent in full. The failure is the host SDK census; both latest-package commands register and expose valid help, and changelog generation/check/audit already work. Pair this integration repair with pm-gh1555 and pm-t2dqzijokl31 in the same PR."
+  "2026-10-23T10:57:01.067Z","harness:codex","Negative control: the unchanged latest-package runtime produced missing_destination for changelog audit and changelog milestone create plus stale_observed_signature for both. The published package already declares audit with no positional operands and milestone create with required name. Add only host-owned package destinations and that exact required-name slot; retain package generation code, activation contracts, grammar budgets and inactive-package semantics."
+  "2026-10-23T11:12:12.021Z","harness:codex","Current live grammar conformance passes:235 declared and235 observed positional signatures,20 shapes within the unchanged21-shape budget, no findings. The complete local static sequence passed code, architecture, dependency feeds, package/SDK boundary, grammar and conformance stages, then identified this new item missing expected_result at the final graph stage. Corrected that metadata and recorded its genuine discovered_from link to the latest-package upgrade in pm-gh1555; rerun graph/integrity and remaining mutation gates rather than weaken policy."
+  "2026-10-23T11:22:34.866Z","harness:codex",Linked command passed37 tests with a durable pass receipt. Independent installed-package command grammar has235 matching positional declarations/observations with no findings and unchanged shape budget. Final graph and record-integrity verdicts pass after expected_result and actual discovery/context relationships were recorded. The latest package remains upstream-owned and unchanged.
+learnings[1]{created_at,author,text}:
+  "2026-10-23T11:12:11.028Z","harness:codex","Install and inspect the latest first-party package before declaring its integration healthy. The host SDK destination and positional census is a separate contract from successful package activation. Populate expected_result when creating active work, before running the repository graph-assurance gate."
+files[3]{path,scope}:
+  src/sdk/cli-contracts/grammar-contracts.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,project,240,"harness:codex","2026-10-23T10:57:00.093Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mvkuwxjq-pq5oog
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:58:02.535Z"
+    finished_at: "2026-10-23T10:58:30.998Z"
+    recorded_at: "2026-10-23T10:58:30.998Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/EXTENSIONS.md,project
+  docs/SDK.md,project
+close_reason: Aligned host SDK grammar with current published changelog commands
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: command-grammar
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts
+  local_checks[2]: "pnpm quality:static",node scripts/release/command-grammar-gate.mjs
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+  owner: pm-4pzw7i
+body: ""

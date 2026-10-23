@@ -789,6 +789,34 @@ pm test <item-id> --run --pm-context auto --check-context --auto-pm-context
 pm test <item-id> --add-json '{"command":"pnpm exec vitest run tests/integration/linked-test-context-trust.integration.spec.ts","pm_context_mode":"none","workspace_context_mode":"snapshot"}'
 ```
 
+Command admission and positional recovery are tracked by
+[pm-gh1555](../.agents/pm/issues/pm-gh1555.toon) and
+[pm-t2dqzijokl31](../.agents/pm/issues/pm-t2dqzijokl31.toon).
+Commands consisting only of assignments or shell comments, such as
+`status=passed`, `RESULT=ok # note` or `RESULT=ok;`, are
+refused with `linked_test_command_not_executable` before registration or
+execution, including already-stored entries. They do not establish test-pass
+evidence. Remove a legacy entry with `pm test <id> --remove-index <index>`,
+then register the actual command. Environment assignments preceding a real
+command remain supported on shells that accept that syntax, including commands
+on a later line after a comment.
+Assignment-only lists separated by `;`, `&&`, `||`, `|` or `&` also fail
+admission. Quoted or escaped separators remain part of their assignment value;
+the guard preserves lists containing an actual executable command.
+
+A misplaced positional path on `files` or `docs` is refused with an explicit
+`--add path=...` retry in `recovery.suggested_retry_args`; supplied values and
+presentation options are preserved. A quoted positional test command receives
+an explicit `--add-json` retry. Explicit `command=` or `cmd=` entries retain their
+structured metadata through `--add`. An empty command or metadata alone, such
+as `timeout_seconds=3600`, receives a template requiring the actual command, without a guessed executable
+retry. Refused invocations do not modify the item.
+Assignment/comment-only positional commands also receive templates instead of
+retries that the registration guard would immediately refuse.
+For legacy entries, `test-all` reports each refusal in its owning item's ordered
+`run_results` with `failure_category: "config_refusal"`. Valid tests and later
+items continue; refusals count as failures in aggregate and persisted summaries.
+
 For complex linked-test commands, prefer JSON input so shell syntax survives unchanged:
 
 ```bash

@@ -1,0 +1,57 @@
+id: pm-s32gcz
+title: Keep aggregate test execution complete when legacy commands are refused
+description: "The assignment/comment-only preflight correctly throws before execution, but test-all batches currently propagate that exception and discard earlier item results. Convert these legacy entries into per-test config_refusal results, execute the remaining tests, and preserve result ordering, deduplication, totals and durable per-item tracking."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-23T14:05:57.718Z"
+updated_at: "2026-10-23T14:16:34.422Z"
+closed_at: "2026-10-23T14:16:33.178Z"
+completed_at: "2026-10-23T14:16:33.178Z"
+author: "harness:codex"
+estimated_minutes: 45
+parent: pm-gh1555
+risk: medium
+confidence: high
+resolution: "Convert known assignment/comment-only entries into owner-specific config_refusal results before scheduling or deduplication; retain their result positions, run the remaining commands, and preserve aggregate totals and per-item tracking."
+expected_result: "A legacy invalid entry cannot pass or abort test-all, valid tests and later items execute, and refused rows and tracking accurately identify each affected item."
+actual_result: "83 linked tests pass. A four-item10-link regression preserves4 passes,5 refusals and1 skip with correct per-item tracking; the real CLI returns complete dependency-failed JSON and no default data writes. Unrelated errors propagate. Type, lint, source quality, generated contracts and docs links pass. Exact revised-head hosted checks and renewed reviews remain merge conditions."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mcxr,related,"2026-10-23T14:05:57.718Z","harness:codex","cli:create:dep",detected
+  pm-v6e,related,"2026-10-23T14:05:57.718Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-23T14:05:57.718Z","harness:codex","text=Duplicate check: request-specific live search, open/in_progress lists, a fresh complete3078-item all-status snapshot and full delivered dedupe/liveness lineage reads found no active owner for this new guard-consumer regression. Source: https://github.com/unbraind/pm-cli/pull/1559#discussion_r4360363229. Retain shared fail-closed command admission and adapt the aggregate consumer."
+  "2026-10-23T14:10:42.609Z","harness:codex","Negative controls: the unchanged SDK batch throws linked_test_command_not_executable after the earlier valid item, and the real CLI returns a usage refusal instead of a complete dependency-failed result. Both new regressions fail on the intended behavior. Filter known command-admission refusals before scheduling or deduplication, retain their original result positions and owner IDs, and propagate unrelated errors unchanged. Validate invalid-only and mixed items, repeated invalid entries, valid duplicates, later execution and persisted per-item summaries."
+  "2026-10-23T14:16:26.935Z","harness:codex","Final local evidence:83 linked tests pass with a durable receipt. The complete four-item SDK control has10 links and returns4 real passes,5 config refusals and1 valid duplicate skip; invalid-only and mixed items retain ordered results, later commands execute, and every item records the correct pass/fail summary. The CLI control returns a complete dependency-failed JSON result and leaves item/history bytes unchanged with tracking disabled. Unrelated guard errors propagate. Type, lint, source quality, generated SDK/error/capability and documentation-link checks pass. All three in-repository runLinkedTests definition/call locations were inspected; the direct runner guard remains in place."
+files[3]{path,scope}:
+  src/sdk/test/batch.ts,project
+  tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project
+  tests/unit/commands/test/test-all-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/test/test-all-command.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,project,240,"harness:codex","2026-10-23T14:06:38.824Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mvl1ts1k-a7dcvl
+    kind: test
+    status: passed
+    started_at: "2026-10-23T14:10:57.199Z"
+    finished_at: "2026-10-23T14:12:01.207Z"
+    recorded_at: "2026-10-23T14:12:01.207Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/test/test-all-command.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SDK.md,project
+  docs/TESTING.md,project
+close_reason: Preserved complete aggregate results around legacy command refusals
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: aggregate-linked-command-refusals
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-all-command.spec.ts
+  local_checks[2]: pnpm build,pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-s32gcz
+body: ""

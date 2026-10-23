@@ -1,0 +1,57 @@
+id: pm-qi7v2j
+title: Reuse SDK command admission before offering positional test retries
+description: The completed free CodeRabbit re-review of e71cf1ff5 identifies positional command=RESULT=passed and comment-only values receiving executable retries that the SDK immediately refuses. Apply the shared command admission primitive when deriving retry arguments and retain command-required templates with structured metadata instead.
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-23T12:59:17.974Z"
+updated_at: "2026-10-23T13:03:50.829Z"
+closed_at: "2026-10-23T13:03:49.774Z"
+completed_at: "2026-10-23T13:03:49.774Z"
+author: "harness:codex"
+estimated_minutes: 25
+parent: pm-3mefuq
+risk: low
+confidence: high
+resolution: Validate trimmed structured and bare test-command candidates with assertLinkedTestCommand before offering retryArgs; non-executable candidates receive command-required templates retaining their scope and structured metadata.
+expected_result: Offered test retries satisfy the same syntactic admission as registration and never repeat a known assignment/comment-only refusal.
+actual_result: "All86 linked regressions pass, including five previously failing recovery controls, real CLI no-write assertions and valid metadata replay. Type, lint, source quality and generated contracts pass. Revised-head hosted checks and renewed review remain merge conditions."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1555,related,"2026-10-23T12:59:17.974Z","harness:codex","cli:create:dep",detected
+  pm-t2dqzijokl31,related,"2026-10-23T12:59:17.974Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-23T12:59:17.974Z","harness:codex","Duplicate check: request-specific live search plus fresh open/in_progress lists and the complete3077-item corpus found only the completed parent for this newly reviewed composition gap. Source: https://github.com/unbraind/pm-cli/pull/1559#discussion_r4359748681. Reuse the existing SDK guard rather than add a second command classifier."
+  "2026-10-23T13:01:49.125Z","harness:codex","Negative control: the unchanged candidate fails five regressions across the real CLI integration and public SDK recovery tests. The returned retries preserve non-executable assignment/comment commands instead of requesting an actual command. Reuse assertLinkedTestCommand on trimmed candidates in both structured and bare command branches; valid structured metadata remains in the command-required template."
+  "2026-10-23T13:03:45.659Z","harness:codex","Final local verification:86 linked tests pass with a durable execution receipt. The five negative controls now receive command-required templates and no executable retry; valid structured metadata and literal bare-command bytes retain their previous recovery. Source/static quality,100 percent docstring gates, type checking, changed-file lint and generated SDK/error/capability checks pass. The completed free full review produced this single actionable finding, which is addressed by reusing the shared guard rather than extending a separate classifier."
+files[3]{path,scope}:
+  src/sdk/agent/linked-resource-recovery.ts,project
+  tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project
+  tests/unit/cli/linked-resource-recovery.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,project,240,"harness:codex","2026-10-23T13:00:50.180Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mvkzc3a3-je8vnn
+    kind: test
+    status: passed
+    started_at: "2026-10-23T13:01:59.569Z"
+    finished_at: "2026-10-23T13:02:16.731Z"
+    recorded_at: "2026-10-23T13:02:16.731Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/sdk/test/assignment-command-admission.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SDK.md,project
+  docs/TESTING.md,project
+close_reason: Aligned positional retry generation with shared SDK test admission
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: admitted-linked-resource-retries
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/linked-resource-recovery.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts
+  local_checks[2]: pnpm build,pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-qi7v2j
+body: ""

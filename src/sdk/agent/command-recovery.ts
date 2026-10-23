@@ -6,6 +6,7 @@
  * supplied arguments are preserved byte-for-token.
  */
 import { renderPmCommand } from "../command-line.js";
+export { resolveLinkedResourcePositionalRecovery } from "./linked-resource-recovery.js";
 import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
 import { parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
 import { READ_OUTPUT_DIMENSION_FLAGS, READ_OUTPUT_COMPOSITION_FLAGS } from "../read-output/options.js";

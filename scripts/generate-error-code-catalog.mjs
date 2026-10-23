@@ -35,6 +35,7 @@ const FALLBACK_EXIT_CODES_BY_CODE = new Map([
   ["unknown_error", 1],
   ["manifest_unknown_key", 1],
   ["collection_transposed_subcommand", 2],
+  ["linked_resource_positional_value", 2],
   ["history_author_acknowledge_selector_conflict", 2],
   ["history_author_acknowledge_target_not_actionable", 2],
   ["history_author_acknowledge_target_unreadable", 2],

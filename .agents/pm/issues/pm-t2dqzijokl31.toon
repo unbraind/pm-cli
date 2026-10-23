@@ -2,21 +2,118 @@ id: pm-t2dqzijokl31
 title: "GH-1547: correct linked-resource positional misuse in refusal recovery"
 description: GitHub #1547 reports natural positional files/docs/test usage that currently repeats the failed invocation without a legal retry. Provide exact corrected argument-vector recovery while preserving explicit collection mutation semantics.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,"gh:1547",recovery
 created_at: "2026-10-22T10:16:11.674Z"
-updated_at: "2026-10-22T11:22:55.622Z"
+updated_at: "2026-10-23T11:30:11.565Z"
+closed_at: "2026-10-23T11:30:10.520Z"
+completed_at: "2026-10-23T11:30:10.520Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: files/docs positional misuse supplies a corrected --add invocation; test metadata misuse names command and timeout syntax; recovery is executable without extra help; no unintended mutation
 parent: pm-f05lsg
 risk: low
 confidence: medium
-expected_result: "Collection positional misuse yields a legal corrected files/docs/test invocation in its refusal, without unintended mutation or a separate help lookup."
+resolution: "Public SDK recovery preserves tracker, alias, item, literal path bytes and presentation options in explicit retries; metadata-only tests receive a same-context template requiring the actual command."
+expected_result: "Positional files, docs and test misuse yields actionable legal recovery without unintended mutation or invented verification."
+actual_result: "Final linked suite passes 29 tests, including tracker-preserving metadata templates and literal path round trips. Fresh npm/npx and bun/bunx consumers pass; generated contracts and type checking pass. Required hosted checks remain merge conditions."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-rncuf7,related,"2026-10-22T11:22:55.200Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-22T10:16:11.674Z","harness:codex","Duplicate check: strict full all-status read of 3058 items completed with zero unreadable records and no omissions. Request-specific search and full live canonical history reads found completed adjacent work but no owner for this newly reported boundary. Reuse the existing capability lineage and retain prior closures."
+  "2026-10-23T09:43:57.463Z","harness:codex","Active implementation paired with pm-gh1555: exact argv recovery for misplaced files/docs/test values, preserving refusal and no-mutation semantics. Apply pm-test-audit to regression authoring and verify complete current-head review before merge."
+  "2026-10-23T09:51:27.265Z","harness:codex","Focused integration proves refused positional files/docs requests preserve item/history bytes, return exact normalized argv including quoted path bytes and presentation flags, and execute successfully only when that retry is explicitly invoked. Test metadata-only misuse requests the actual command without inventing executable argv. Five-file focused suite: 122 passed."
+  "2026-10-23T10:15:42.371Z","harness:codex","Recovery hardening now serializes bare paths as quoted structured values, preserving literal commas and double quotes through --add parsing, with exact persisted-path assertions. SDK vocabulary gates metadata-only templates so an unknown key is not copied into an invalid retry. All changes stay in the existing two-item delivery."
+  "2026-10-23T10:37:07.794Z","harness:codex","Final refusal metadata retains the actual item ID in command-missing templates and aligns linked_resource_positional_value catalog class/exit with CLI usage exit2. Generated catalog, public SDK snapshot, command fixture and refusal census are regenerated from owners. A catalog/CLI agreement regression is included."
+  "2026-10-23T10:40:34.591Z","harness:codex","Architecture gate remediation: export resolveLinkedResourcePositionalRecovery and its typed receipt through the public SDK and host primitive facade; the CLI consumes that supported seam, and a public-root import drives its regression test. Do not extend private-import allowlists. Related request-admission normalization was moved out of the large execution module without increasing its file-length ceiling."
+  "2026-10-23T11:22:33.862Z","harness:codex","Final linked run passed28 tests with recorded execution evidence, and public SDK import/typechecks pass. Code/static/conformance checks passed on the source revision; final graph/integrity checks were rerun after completing canonical metadata relationships and now pass. Package runtime acceptance through npx/bunx passes."
+  "2026-10-23T11:29:43.209Z","harness:codex","Final scope check: metadata-only test templates retain the explicit tracker, item alias and presentation options without inventing an executable retry. The linked recovery suite passes 29 tests. A fresh packed artifact (SHA-256 522744a13dad96296b33c87c5ae7edd0b7a79f93190abd3197d8a67022fcf035) passes npm/npx and bun/bunx consumer checks for CLI/SDK assignment refusal without item/history writes, literal quoted/comma path recovery, and strict history verification. Type checking, generated-contract checks and changed-source lint pass."
+notes[2]{created_at,author,text}:
+  "2026-10-23T09:58:18.290Z","harness:codex","Recovery review: bare paths containing commas or quotes require structured-value quoting in addition to shell-safe argv rendering. A missing actual test command must remain a non-executable template, and unrelated/multiple mutations must never be silently combined."
+  "2026-10-23T10:22:28.660Z","harness:codex","Latest-package changelog audit is available in2026.10.23. Final generation must follow item closure so reviewed Unreleased notes are based on the delivered fix, not merely registration or validation activity."
+learnings[1]{created_at,author,text}:
+  "2026-10-23T10:01:23.893Z","harness:codex","A copyable recovery requires both shell-safe argv and the target option grammar. Quote literal path delimiters for structured --add parsing, and never supply an executable placeholder when the actual test command is missing."
+files[10]{path,scope}:
+  scripts/generate-error-code-catalog.mjs,project
+  sdk/public-surface.json,project
+  src/cli/error-guidance.ts,project
+  src/sdk/agent/linked-resource-recovery.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/index.ts,project
+  src/sdk/runtime-primitives.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project
+  tests/unit/cli/linked-resource-recovery.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts,project,240,"harness:codex","2026-10-23T09:51:25.159Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[5]:
+  - run_id: test-local-mvktmv5j-9ioift
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:22:09.354Z"
+    finished_at: "2026-10-23T10:22:41.718Z"
+    recorded_at: "2026-10-23T10:22:41.718Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvktvmvx-cvxisr
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:29:01.986Z"
+    finished_at: "2026-10-23T10:29:30.909Z"
+    recorded_at: "2026-10-23T10:29:30.909Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkue1cs-68yof2
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:43:22.696Z"
+    finished_at: "2026-10-23T10:43:49.468Z"
+    recorded_at: "2026-10-23T10:43:49.468Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkuy0qd-edpvm1
+    kind: test
+    status: passed
+    started_at: "2026-10-23T10:59:00.294Z"
+    finished_at: "2026-10-23T10:59:21.781Z"
+    recorded_at: "2026-10-23T10:59:21.781Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvkw11kc-ujfssp
+    kind: test
+    status: passed
+    started_at: "2026-10-23T11:29:25.655Z"
+    finished_at: "2026-10-23T11:29:42.444Z"
+    recorded_at: "2026-10-23T11:29:42.444Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/SDK.md,project
+  docs/TESTING.md,project
+close_reason: Added exact SDK-backed linked-resource positional recovery
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-resource-positional-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
+  owner: pm-t2dqzijokl31
 body: ""
