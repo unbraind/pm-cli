@@ -23663,7 +23663,6 @@
         "sdk/runtime-input.ts",
         "sdk/runtime/mutation-admission.ts",
         "sdk/runtime/schema-preview.ts",
-        "sdk/test/execution.ts",
         "sdk/workspace.ts"
       ],
       "stability": "stable"
@@ -24234,6 +24233,40 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/linked-artifacts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "linked_resource_positional_value",
+      "class": "usage",
+      "code": "linked_resource_positional_value",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked resource positional value condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "cli/error-guidance.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "linked_test_command_not_executable",
+      "class": "usage",
+      "code": "linked_test_command_not_executable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked test command not executable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/entry.ts"
       ],
       "stability": "provisional"
     },
@@ -29962,6 +29995,14 @@
         "target": "package"
       },
       {
+        "command": "changelog audit",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "changelog export",
         "disposition": "package_owned",
         "noun": "package",
@@ -29971,6 +30012,14 @@
       },
       {
         "command": "changelog generate",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
+        "command": "changelog milestone create",
         "disposition": "package_owned",
         "noun": "package",
         "owner": "package:pm-changelog",
@@ -32193,6 +32242,10 @@
         ]
       },
       {
+        "command": "changelog audit",
+        "slots": []
+      },
+      {
         "command": "changelog export",
         "slots": [
           {
@@ -32207,6 +32260,18 @@
       {
         "command": "changelog generate",
         "slots": []
+      },
+      {
+        "command": "changelog milestone create",
+        "slots": [
+          {
+            "name": "name",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
       },
       {
         "command": "cal",

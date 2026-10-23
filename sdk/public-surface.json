@@ -10807,6 +10807,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "LinkedResourcePositionalRecovery",
+          "signature": "export interface LinkedResourcePositionalRecovery { itemId: string; value: string; retryArgs?: string[]; templateArgs?: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "LinkedTest",
           "signature": "export interface LinkedTest { command?: string; path?: string; scope: LinkScope; timeout_seconds?: number; pm_context_mode?: \"schema\" | \"tracker\" | \"auto\" | \"none\"; workspace_context_mode?: \"source\" | \"isolated\" | \"snapshot\"; provenance?: LinkedTestProvenance; provenance_invalid?: true; updated_by?: string; updated_at?: string; env_set?: Record<string, string>; env_clear?: string[]; shared_host_safe?: boolean; assert_stdout_contains?: string[]; assert_stdout_regex?: string[]; assert_stderr_contains?: string[]; assert_stderr_regex?: string[]; assert_stdout_min_lines?: number; assert_json_field_equals?: Record<string, string>; assert_json_field_gte?: Record<string, number>; note?: string; }"
         },
@@ -17499,6 +17505,12 @@
           "kind": "function",
           "name": "resolveItemTypesFilePath",
           "signature": "(pmRoot: string, schema: RuntimeSchemaSettings) => string | calls: (pmRoot: string, schema: RuntimeSchemaSettings) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveLinkedResourcePositionalRecovery",
+          "signature": "(command: string | undefined, argv: readonly string[]) => LinkedResourcePositionalRecovery | undefined | calls: (command: string | undefined, argv: readonly string[]) => LinkedResourcePositionalRecovery | undefined"
         },
         {
           "classification": "advanced_export",
@@ -36768,6 +36780,8 @@
     "item_not_found",
     "likely_duplicate",
     "linked_artifact_mutation_conflict",
+    "linked_resource_positional_value",
+    "linked_test_command_not_executable",
     "linked_test_context_invalid",
     "linked_test_remove_no_match",
     "linked_test_update_ambiguous",

@@ -1,10 +1,26 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
-import { assertLinkedTestContext, normalizeStructuredLinkedTestEntry } from "../../../../src/sdk/test/entry.js";
+import { admitLinkedTestRequest, assertLinkedTestContext, normalizeStructuredLinkedTestEntry } from "../../../../src/sdk/test/entry.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 
 describe("linked-test context recovery", () => {
+  it("preserves fatal failures and normalizes only pre-write usage refusals", () => {
+    const receipt = { selected: [1] };
+    expect(admitLinkedTestRequest(() => receipt)).toBe(receipt);
+    for (const original of [new Error("unexpected failure"), new PmCliError("execution failure", 5)]) {
+      try {
+        admitLinkedTestRequest(() => { throw original; });
+        expect.unreachable("Fatal failures must propagate");
+      } catch (error) {
+        expect(error).toBe(original);
+        expect(error).not.toHaveProperty("context.changed");
+      }
+    }
+    expect(() => admitLinkedTestRequest(() => { throw new PmCliError("invalid value", 2); })).toThrow(expect.objectContaining({
+      code: "invalid_argument_value", context: expect.objectContaining({ changed: false, required: "invalid value" }),
+    }));
+  });
   it.skipIf(process.platform === "win32").each([
     "node --version",
     "node -e 'console.log(\"quoted\", \"$HOME\", \"$(printf changed)\", \"`printf changed`\")'",

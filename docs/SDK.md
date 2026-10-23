@@ -63,6 +63,10 @@ Terminal recurrence and executable recovery are tracked by
 [pm-surv](../.agents/pm/issues/pm-surv.toon); see
 [Recurrence and Executable Recovery Contracts](RECURRENCE_RECOVERY_CONTRACTS.md).
 
+Linked-resource argument recovery and assignment-only test admission are tracked
+by [pm-t2dqzijokl31](../.agents/pm/issues/pm-t2dqzijokl31.toon) and
+[pm-gh1555](../.agents/pm/issues/pm-gh1555.toon).
+
 Use it for extension authoring, package authoring, command/action contract discovery, and deterministic app or CI automation. Do not import private `src/core/...` modules from external integrations or packages.
 
 MCP hosts can build on the public stateless protocol, MRTR, cache/schema, and
@@ -2598,6 +2602,27 @@ A typo fails activation with a did-you-mean hint (e.g. `type: "strnig"` →
 time.
 
 ## Expected CLI Errors
+
+Packages and adapters can derive explicit retries for misplaced linked-resource
+values with the public SDK:
+
+```ts
+import { resolveLinkedResourcePositionalRecovery } from "@unbrained/pm-cli/sdk";
+
+const recovery = resolveLinkedResourcePositionalRecovery("docs", [
+  "docs", "pm-example", "design, notes.md", "--json",
+]);
+// recovery.retryArgs retains the item and presentation flags, with an explicit
+// --add value that preserves the literal comma through structured parsing.
+```
+
+The helper returns `undefined` for ambiguous input. When a positional test value
+contains metadata without its actual command, the receipt retains `itemId` and
+`value` and omits `retryArgs`. Its `templateArgs` retains the selected tracker
+and output options while requiring the actual-command placeholder to be filled.
+The adapter can request that command using the receipt. Plain assignment-only linked tests fail with
+`linked_test_command_not_executable` before registration or execution; quoted
+environment assignments followed by real commands remain supported.
 
 Package commands should throw expected user/action errors with the public SDK shape so the CLI can preserve exit codes and Sentry can filter expected retry failures:
 

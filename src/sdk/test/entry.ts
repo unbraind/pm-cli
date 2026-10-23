@@ -9,8 +9,93 @@ import { looksLikeStructuredKeyValueEntry } from "../../core/item/parse.js";
 import type { LinkedTest } from "../../types/index.js";
 import { renderPmCommand } from "../command-line.js";
 
-/** Refuse an unbound tracker context before a linked-test mutation can persist it. */
+/** Preserve actionable usage refusals while certifying admission failed before linked-test writes. */
+export function admitLinkedTestRequest<T>(validate: () => T): T {
+  try {
+    return validate();
+  } catch (error) {
+    if (!(error instanceof PmCliError) || error.exitCode !== EXIT_CODE.USAGE) throw error;
+    throw new PmCliError(`${error.message} No changes were made.`, EXIT_CODE.USAGE, {
+      ...error.context, code: error.code === "linked_test_command_not_executable" ? error.code : "invalid_argument_value", reason: "test_option_invalid", changed: false,
+      required: error.context.required ?? error.message,
+    });
+  }
+}
+
+/** Skip one quoted literal, declining command substitutions that may execute a real test. */
+function quotedAssignmentValueEnd(input: string, start: number): number | undefined {
+  if (input[start] === "'") {
+    const closing = input.indexOf("'", start + 1);
+    return closing < 0 ? undefined : closing + 1;
+  }
+  for (let offset = start + 1; offset < input.length; offset += 1) {
+    if (input[offset] === '"') return offset + 1;
+    if (input[offset] === "\\") {
+      offset += 1;
+      continue;
+    }
+    if (input[offset] === "`" || input.startsWith("$(", offset)) return undefined;
+  }
+  return undefined;
+}
+
+/** Scan one assignment value without expanding it or interpreting compound shell programs. */
+function assignmentValueEnd(input: string, start: number): number | undefined {
+  let offset = start;
+  while (offset < input.length) {
+    const character = input[offset];
+    if (/\s/u.test(character)) return offset;
+    if (character === "\\") {
+      offset += 2;
+      continue;
+    }
+    if (character === "'" || character === '"') {
+      const end = quotedAssignmentValueEnd(input, offset);
+      if (end === undefined) return undefined;
+      offset = end;
+      continue;
+    }
+    if (";&|<>()`".includes(character)) return undefined;
+    offset += 1;
+  }
+  return offset === input.length ? offset : undefined;
+}
+
+/** Recognize only plain assignment words; leave compound shell programs to their runner. */
+function isAssignmentOnlyCommand(command: string): boolean {
+  const input = command.trim();
+  const assignment = /[A-Za-z_][A-Za-z0-9_]*=/uy;
+  let offset = 0;
+  if (input.length === 0) return false;
+  while (offset < input.length) {
+    assignment.lastIndex = offset;
+    if (!assignment.exec(input)) return false;
+    const end = assignmentValueEnd(input, assignment.lastIndex);
+    if (end === undefined) return false;
+    offset = end;
+    while (offset < input.length && /\s/u.test(input[offset])) offset += 1;
+  }
+  return true;
+}
+
+/** Refuse commands consisting solely of assignments before registration or execution. */
+export function assertLinkedTestCommand(command: string | undefined): void {
+  if (command === undefined || !isAssignmentOnlyCommand(command)) return;
+  throw new PmCliError(
+    "Linked-test command contains only variable assignments and has no executable command.",
+    EXIT_CODE.USAGE,
+    {
+      code: "linked_test_command_not_executable",
+      required: 'Supply an actual test command with --add "command=<actual command>" or --add-json. Environment assignments may precede that command.',
+      examples: ['pm test <id> --add "command=node --version"'],
+      nextSteps: ["Remove any already-stored assignment-only entry with --remove-index, then register the actual test command."],
+    },
+  );
+}
+
+/** Refuse invalid command or tracker context before a linked-test mutation can persist it. */
 export function assertLinkedTestContext(test: LinkedTest): void {
+  assertLinkedTestCommand(test.command);
   if (test.pm_context_mode !== "none" ||
       test.workspace_context_mode === "isolated" ||
       test.workspace_context_mode === "snapshot") return;

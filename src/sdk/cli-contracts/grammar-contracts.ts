@@ -503,6 +503,7 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ["cal", [positionalSlot("view", "string", false, { polymorphic: true })]],
   ["calendar", [positionalSlot("view", "string", false, { polymorphic: true })]],
   ["changelog export", [positionalSlot("file", "string", false)]],
+  ["changelog milestone create", [positionalSlot("name", "string", true)]],
   ["claim", [OPTIONAL_ITEM_ID]],
   ["close", [ITEM_ID, OPTIONAL_TEXT]],
   ["close-task", [ITEM_ID, positionalSlot("reason", "string", false)]],
@@ -914,7 +915,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "package",
       "package_owned",
       "package:pm-changelog",
-      ["changelog export", "changelog generate"],
+      ["changelog audit", "changelog export", "changelog generate", "changelog milestone create"],
     ),
     ...destinationRows(
       "package",

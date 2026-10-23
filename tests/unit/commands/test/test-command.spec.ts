@@ -1922,16 +1922,13 @@ describe("runTest", () => {
       );
       expect(nonRunnerCommand.count).toBe(19);
 
-      const envOnlyCommand = await runTest(
-        id,
-        {
-          add: [
-            "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global,scope=project",
-          ],
-        },
-        { path: context.pmPath },
-      );
-      expect(envOnlyCommand.count).toBe(20);
+      await expect(runTest(id, {
+        add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global,scope=project"],
+      }, { path: context.pmPath })).rejects.toMatchObject({ code: "linked_test_command_not_executable" });
+      const envCommand = await runTest(id, {
+        add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global node --version,scope=project"],
+      }, { path: context.pmPath });
+      expect(envCommand.count).toBe(20);
 
       const npxFlagOnlyCommand = await runTest(
         id,

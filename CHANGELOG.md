@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Declare current pm-changelog commands in the SDK grammar census ([pm-4pzw7i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4pzw7i.toon))
+- GH-1547: correct linked-resource positional misuse in refusal recovery ([pm-t2dqzijokl31](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-t2dqzijokl31.toon))
+- GH-1555: refuse assignment-only linked-test commands before recording false passes ([pm-gh1555](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1555.toon))
 - GH-1552: charge SDK read budgets using compact JSON envelopes ([pm-gh1552](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1552.toon))
 - GH-1551: expose omission and budget receipts on precise SDK read results ([pm-gh1551](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1551.toon))
 
