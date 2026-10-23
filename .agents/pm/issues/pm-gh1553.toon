@@ -1,0 +1,20 @@
+id: pm-gh1553
+title: "GH-1553: investigate history union scalar replay refusal on concurrent appends"
+description: "External report from pm-web using pm-cli 2026.10.19: history merge refuses scalar rebase when main closes an item and a branch appends comments/field edits. Reproduce on current SDK before changing the fail-closed replay contract; a manually unioned stream passing health alone is not proof that event semantics are lossless."
+type: Issue
+status: open
+priority: 2
+tags[3]: context-management,"gh:1553",sdk
+created_at: "2026-10-23T06:27:49.281Z"
+updated_at: "2026-10-23T07:19:26.075Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Current-version fixture reproduces or disproves the reported event sequence; Each scalar transition and retained event is checked against strict replay; Any safe correction preserves hash/replay integrity and provides actionable refusal evidence.
+parent: pm-o2kc
+risk: medium
+confidence: medium
+expected_result: A current-version fixture establishes scalar replay semantics for the reported merge before any correction; safe unions retain every event and unsafe transitions refuse with actionable coordinates.
+comments[1]{created_at,author,text}:
+  "2026-10-23T06:27:49.281Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1553. Duplicate checks used live request-specific search, open/in_progress lists, and complete all-status strict read of 3067 items (2789 closed, 14 canceled); related delivered lineage remains closed. No matching active item exists. Intake only, left open and unclaimed."
+escape_class: production_defect
+body: ""

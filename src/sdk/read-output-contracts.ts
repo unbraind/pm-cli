@@ -62,6 +62,7 @@ import {
 import { decodeQueryCursorEnvelope, encodeQueryCursor } from "./pagination.js";
 import type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
 import type { PmReadOutputSessionResult } from "./read-output/session-result.js";
+import type { OutputOmissionReceipt } from "./output-projection.js";
 export type { PmReadOutputSessionResult } from "./read-output/session-result.js";
 export type { PmReadOutputProducerContinuation } from "./context-intent-contracts.js";
 import {
@@ -308,12 +309,20 @@ export interface PmReadOutputBudgetExceeded {
   read_output: PmReadOutputReceipt;
 }
 
+/** Shared receipts on finalized first-page reads; raw query builders may not have attached them yet. */
+export interface PmReadOutputMetadata {
+  /** Field groups withheld by the active projection and how to restore them. */
+  omission_receipt: OutputOmissionReceipt;
+  /** Optional accounting when output shaping or a default ceiling requires a receipt. */
+  read_output?: PmReadOutputReceipt;
+  /** Optional caller-carried session accounting. */
+  read_session?: PmReadOutputSessionReceipt;
+  /** Optional recovery when a budget withholds rows. */
+  output_budget_truncation?: PmReadOutputTruncationDisclosure;
+}
+
 type ReadOutputEnvelope<Result> =
-  | (Result & {
-      read_output?: PmReadOutputReceipt;
-      read_session?: PmReadOutputSessionReceipt;
-      output_budget_truncation?: PmReadOutputTruncationDisclosure;
-    })
+  | (Result & Partial<PmReadOutputMetadata>)
   | (PmReadOutputBudgetExceeded & {
       read_session?: PmReadOutputSessionReceipt;
     });

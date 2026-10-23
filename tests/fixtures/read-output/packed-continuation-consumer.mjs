@@ -8,6 +8,14 @@ const client = new PmClient({ pmRoot, noExtensions: true });
 const emptyClient = new PmClient({ pmRoot: emptyRoot, noExtensions: true });
 const blockedClient = new PmClient({ pmRoot: blockedRoot, noExtensions: true });
 
+const compactPacket = await client.list({ limit: "3", outputSession: {
+  version: 1, id: "packed-accounting", token_budget: 10000, spent_tokens: 0, seen_item_ids: [],
+} });
+const compactTokens = Math.ceil(Buffer.byteLength(JSON.stringify(compactPacket), "utf8") / 4);
+assert.equal(compactPacket.read_output.estimated_tokens, compactTokens);
+assert.equal(compactPacket.read_session.spent_this_call_tokens, compactTokens);
+assert.equal(compactPacket.read_session.next_state.spent_tokens, compactTokens);
+
 /** Check only advertised SDK counters, including compact focus summaries. */
 function deliveredRows(page, blocked) {
   const sections = page.items ? { items: page.items } : {
@@ -78,7 +86,7 @@ for (const [name, reader, options] of [
   ["list", (options) => client.list(options), { all: true }],
   ["search", (options) => client.search("Matrix", options), { mode: "keyword", status: "all" }],
 ]) {
-  const base = { ...options, tag: "matrix", limit: 25, json: true };
+  const base = { ...options, tag: "matrix", limit: 25, outputFormat: "json" };
   const full = await reader({ ...base, limit: 100, outputBudget: "unbounded" });
   for (const outputInclude of ["id", "title"]) for (const outputBudget of ["unbounded", 100000]) {
     const orderedValues = full.items.map((row) => row[outputInclude]);
@@ -117,7 +125,7 @@ for (const limit of [1, 25]) {
     ["search", (options) => client.search("Matrix", options), { mode: "keyword", status: "all", outputBudget: 1500 }, 30],
     ["context", (options) => client.context(options), { outputBudget: 1500 }, 26],
   ]) {
-    const result = await collect(reader, { ...options, limit, tag: "matrix", json: true }, expected);
+    const result = await collect(reader, { ...options, limit, tag: "matrix", outputFormat: "json" }, expected);
     assert(result.producerTransitions > 0);
     if (limit === 25) assert(result.budgetTransitions > 0, "Large producer pages must compose output-budget continuation");
     results.push({ name, limit, ...result });
@@ -127,8 +135,8 @@ for (const [name, reader] of [
   ["list", (options) => emptyClient.list(options)],
   ["search", (options) => emptyClient.search("Matrix", options)],
   ["context", (options) => emptyClient.context(options)],
-]) results.push({ name, empty: true, ...await collect(reader, { limit: 1, outputBudget: 1500, json: true }, 0) });
-const blockedOptions = { limit: 12, tokenBudget: 100000, tag: "blocked-matrix", json: true };
+]) results.push({ name, empty: true, ...await collect(reader, { limit: 1, outputBudget: 1500, outputFormat: "json" }, 0) });
+const blockedOptions = { limit: 12, tokenBudget: 100000, tag: "blocked-matrix", outputFormat: "json" };
 results.push({ name: "context", blocked: true, ...await collect((options) => blockedClient.context(options), { ...blockedOptions, outputBudget: 2000 }, 12, true) });
 const boundedBlocked = JSON.parse(JSON.stringify(await blockedClient.context({ ...blockedOptions, outputBudget: 1500 })));
 const boundedRows = deliveredRows(boundedBlocked, true);

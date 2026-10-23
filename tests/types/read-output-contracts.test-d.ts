@@ -18,6 +18,9 @@ import {
   type PmReadOutputSessionReceipt,
   type ContextEvaluationReader,
   runContextEvaluationScenario,
+  list, context, search, get,
+  type OutputOmissionReceipt, type PmReadOutputReceipt, type PmReadOutputTruncationDisclosure,
+  type PmReadOutputMetadata,
 } from "../../src/sdk/index.js";
 import type {
   PmReadOutputOptions as CoreReadOutputOptions,
@@ -35,6 +38,14 @@ import type {
   PmReadOutputSurfaceContract,
   PmReadOutputSessionState as RuntimeReadOutputSessionState,
 } from "../../src/sdk/runtime.js";
+import type { PmReadOutputMetadata as QueryReadMetadata, ListResult as QueryListResult } from "../../src/sdk/query.js";
+
+declare const rawQuery: QueryListResult;
+const rawOmissions: OutputOmissionReceipt | undefined = rawQuery.omission_receipt;
+const rawBudget: PmReadOutputReceipt | undefined = rawQuery.read_output;
+declare const projectedMetadata: PmReadOutputMetadata & QueryReadMetadata;
+const projectedOmissions: boolean = projectedMetadata.omission_receipt.has_omissions;
+void [rawOmissions, rawBudget, projectedOmissions];
 
 const options = {
   outputInclude: "id,title",
@@ -129,3 +140,17 @@ void ordinaryClientRead;
 void budgetedClientRead;
 void sessionClientRead;
 void cursorClientRead;
+
+/** Finalized first pages expose shared receipts while preserving their required query fields. */
+async function consumeReadReceipts(): Promise<void> {
+  const pages = [await list(), await context(), await search("anchor"), await get("pm-anchor")];
+  const clientPages = [await client.list(), await client.context(), await client.search("anchor"), await client.get("pm-anchor")];
+  for (const page of [...pages, ...clientPages]) {
+    const omissions: OutputOmissionReceipt = page.omission_receipt;
+    const budget: PmReadOutputReceipt | undefined = page.read_output;
+    const truncation: PmReadOutputTruncationDisclosure | undefined = page.output_budget_truncation;
+    const omitted: boolean = page.omission_receipt.has_omissions;
+    void [omissions, budget, truncation, omitted];
+  }
+}
+void consumeReadReceipts;

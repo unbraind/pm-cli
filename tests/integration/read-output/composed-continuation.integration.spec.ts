@@ -154,15 +154,19 @@ function verifyPackedEvidence(raw: string): void {
 
 /** Compile independent source contracts against the actual packed declarations. */
 async function verifyPackedDeclarations(consumer: string, repository: string, env: NodeJS.ProcessEnv): Promise<void> {
-  const declarationConsumer = path.join(consumer, "declarations.mts");
-  for (const fixture of ["producer-continuation", "read-session-results"]) {
+  const declarationConsumers: string[] = [];
+  for (const fixture of ["producer-continuation", "read-session-results", "read-output-contracts"]) {
+    const declarationConsumer = path.join(consumer, `${fixture}.mts`);
+    declarationConsumers.push(declarationConsumer);
     const typeFixture = await readFile(new URL(`../../types/${fixture}.test-d.ts`, import.meta.url), "utf8");
     await writeFile(declarationConsumer, typeFixture
       .replaceAll("../../src/sdk/index.js", "@unbrained/pm-cli/sdk")
       .replaceAll("../../src/sdk/core.js", "@unbrained/pm-cli/sdk/core")
+      .replaceAll("../../src/sdk/query.js", "@unbrained/pm-cli/sdk/query")
+      .replaceAll("../../src/sdk/runtime.js", "@unbrained/pm-cli/sdk/runtime")
       .replaceAll("../../src/sdk/contracts.js", "@unbrained/pm-cli/sdk/contracts"));
-    execFileSync(process.execPath, [path.join(repository, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck", "--module", "nodenext", "--target", "ES2022", declarationConsumer], { cwd: consumer, env, encoding: "utf8", timeout: 60_000 });
   }
+  execFileSync(process.execPath, [path.join(repository, "node_modules/typescript/bin/tsc"), "--noEmit", "--strict", "--skipLibCheck", "--module", "nodenext", "--target", "ES2022", ...declarationConsumers], { cwd: consumer, env, encoding: "utf8", timeout: 60_000 });
 }
 
 /** Reuse each producer's real ordering for ID and title projections under both nonbinding token ceilings. */

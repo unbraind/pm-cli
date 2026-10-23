@@ -2,6 +2,7 @@
  * @module sdk/query/search/types
  * Shared search result and pipeline state contracts; no runtime dependencies.
  */
+import type { PmReadOutputMetadata } from "../../read-output-contracts.js";
 import {
   type QueryExpansionConfig,
   type RerankConfig
@@ -67,7 +68,7 @@ export interface SearchHitHighlight {
 /** Restricts search result item values accepted by command, SDK, and storage contracts. */
 export type SearchResultItem = SearchHit | Record<string, unknown>;
 
-interface SearchResultBase {
+interface SearchResultBase extends Partial<PmReadOutputMetadata> {
   query: string;
   mode: SearchMode;
   /** Which layer chose `mode` before any runtime fallback: the caller, `search.default_mode`, or the workspace-state default. */

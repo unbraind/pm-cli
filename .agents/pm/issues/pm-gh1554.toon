@@ -1,0 +1,24 @@
+id: pm-gh1554
+title: "GH-1554: resume bounded activity reads from a stable event window"
+description: The October23 report shows activity limit truncation without a cursor or fixed-window recovery under concurrent writers. Reproduce current producer semantics and implement a stable bounded continuation or explicit fixed-window consistency recovery. Include the since-to-from flag recovery papercut.
+type: Issue
+status: open
+priority: 2
+tags[3]: context-management,"gh:1554",sdk
+created_at: "2026-10-23T07:33:56.767Z"
+updated_at: "2026-10-23T07:33:56.767Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: A current temporary-tracker regression proves the omitted event set under concurrent writes; Continuation or fixed-window recovery is bounded and stable for timestamp ties; SDK CLI and MCP share the same completeness contract and since misuse points to from.
+parent: pm-5t33or
+risk: medium
+confidence: medium
+expected_result: An agent can fetch every omitted activity event once under a fixed window while new writers continue; any unsupported consistency guarantee and exact recovery are explicit.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8nev0o,related,"2026-10-23T07:33:56.767Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-23T07:33:56.767Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1554. Duplicate checks used request-specific live search and a fresh all-status strict corpus of3071 items with no omissions; related delivered lineage is linked and remains closed. The report is recorded without claiming current reproduction. Intake only, open and unclaimed."
+files[1]{path,scope}:
+  src/sdk/query/activity.ts,project
+escape_class: production_defect
+body: ""

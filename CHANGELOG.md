@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1552: charge SDK read budgets using compact JSON envelopes ([pm-gh1552](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1552.toon))
+- GH-1551: expose omission and budget receipts on precise SDK read results ([pm-gh1551](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1551.toon))
+
 ## 2026.10.23 - 2026-10-23
 
 ### Fixed

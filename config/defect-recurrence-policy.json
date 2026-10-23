@@ -446,7 +446,7 @@
     },
     {
       "id": "output-budget-and-continuation",
-      "version": 5,
+      "version": 6,
       "title": "Token-budget, omission, and continuation contract regressions",
       "owner_item_id": "pm-1qkivy",
       "escape_class": "production_defect",
@@ -466,14 +466,17 @@
         ],
         "item_ids": [
           "pm-gh1534",
-          "pm-gh1535"
+          "pm-gh1535",
+          "pm-gh1551",
+          "pm-gh1552"
         ]
       },
       "checks": {
         "local": [
           "pnpm quality:token-surface",
           "node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts",
-          "node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts"
+          "node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts",
+          "pnpm typecheck"
         ],
         "hosted": [
           "CI / Gates (static)",

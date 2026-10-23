@@ -53,6 +53,8 @@ async function checkProducerPages(): Promise<void> {
   void page.projection.fields;
   // @ts-expect-error continuation pages do not guarantee a completeness certificate
   void page.completeness.status;
+  // @ts-expect-error producer continuation pages reference the initial omission receipt
+  void page.omission_receipt.has_omissions;
   if ("continuation_contract" in page) {
     const metadata: "reference" = page.continuation_contract.metadata;
     const restore: "omit --after" = page.continuation_contract.restore_with;

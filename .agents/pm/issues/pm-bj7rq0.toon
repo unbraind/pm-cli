@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-22T14:50:35.549Z"
+updated_at: "2026-10-23T07:29:15.113Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[92]:
+comments[95]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -301,6 +301,15 @@ comments[92]:
   - created_at: "2026-10-22T14:50:35.549Z"
     author: "harness:codex"
     text: "The same retained CI39795098726 also times out the unchanged agent-evidence-consistency-control.spec.ts negative_control=true case at240000ms, then correctly reports an empty verdict log rather than the expected injected negative verdict. The test and driver are byte-identical to baseline main in this delivery. Full nightly on the identical source passes the complete corpus. Record this second failure explicitly; do not call it a fixed test or attribute it to host load without evidence. Final metadata delivery will receive fresh required CI without changing this deadline or assertion."
+  - created_at: "2026-10-23T07:01:59.271Z"
+    author: "harness:codex"
+    text: "October23 local full coverage completed854 files /11060 tests in1379.94s:11052 passed,5 failed,3 platform skips. Four failed cases were timing: two scale-benchmark cases at30s, extension-startup own-command activation at37.2s, and packed continuation at121.8s. The fifth was an expected renderer parity assertion after the compact SDK accounting correction and is fixed in the active read-envelope tranche. The packed harness now compiles all three declaration fixtures in one tsc invocation, preserving every fixture and deadline. Retain this attempt; retry affected cases sequentially and require hosted shard/global coverage proof before merge. No deadline or coverage threshold was increased."
+  - created_at: "2026-10-23T07:25:24.787Z"
+    author: "harness:codex"
+    text: "October23 follow-up admission: one qualified SDK import sample failed sdk/merge median258ms against226ms; the bounded repeat of the unchanged gate then passed all10 entrypoints. The subsequent qualified CLI floor sample failed get best365ms against362ms (3ms). Preserve both product-admission failures as failures; no threshold, budget, runner qualification or code was changed to admit them. An alternating comparison with the immutable published2026.10.23 SDK merge entrypoint is being collected, and exact-head hosted import/transport gates remain mandatory before merge."
+  - created_at: "2026-10-23T07:29:15.113Z"
+    author: "harness:codex"
+    text: "Alternating7-run import diagnostic against the immutable published2026.10.23 artifact: sdk/merge base min204ms/median311ms/p95676ms; checkout min210ms/median260ms/p95368ms. Both diagnostic medians exceed the existing226ms ceiling, so this is retained as comparative evidence rather than an admission pass. The unchanged full10-entrypoint import gate separately passed; CLI transport admission still retains the3ms get overrun. Exact-head hosted gates are required and no local result is relabeled."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

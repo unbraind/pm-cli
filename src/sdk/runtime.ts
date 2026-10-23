@@ -171,6 +171,7 @@ import {
 import {
   normalizeReadOutputIncludeModeOptions,validateReadOutputOptions,
   type PmReadOutputOptions,
+  type PmReadOutputMetadata,
   type PmReadOutputResultFor,
 } from "./read-output-contracts.js";
 import { SDK_ACTION_ALIASES } from "./runtime-action-aliases.js";
@@ -273,7 +274,7 @@ export type {
 } from "./workspace-contracts.js";
 
 export type {
-  PmReadOutputBudgetExceeded,
+  PmReadOutputBudgetExceeded, PmReadOutputMetadata,
   PmReadOutputOptions,
   PmReadOutputProducerContinuation,
   PmReadOutputResult,
@@ -742,7 +743,7 @@ export class PmClient {
   /** Return the same context snapshot produced by `pm context`. */
   context<Options extends ReadOptions<ContextOptions> = InitialReadOptions>(
     options: Options = {} as Options,
-  ): ReadPromise<ContextResult, Options> {
+  ): ReadPromise<ContextResult & PmReadOutputMetadata, Options> {
     return this.runTyped("context", { options });
   }
 
@@ -754,7 +755,7 @@ export class PmClient {
   /** List items with the MCP/agent compact defaults. */
   list<Options extends ReadOptions<ListOptions> = InitialReadOptions>(
     options: Options = {} as Options,
-  ): ReadPromise<ListResult, Options> {
+  ): ReadPromise<ListResult & PmReadOutputMetadata, Options> {
     return this.runTyped("list", { options });
   }
 
@@ -765,7 +766,7 @@ export class PmClient {
   search<Options extends ReadOptions<SearchOptions> = InitialReadOptions>(
     query: string,
     options: Options = {} as Options,
-  ): ReadPromise<SearchResult, Options> {
+  ): ReadPromise<SearchResult & PmReadOutputMetadata, Options> {
     return this.runTyped("search", { query, options });
   }
 
@@ -773,7 +774,7 @@ export class PmClient {
   get<Options extends ReadOptions<GetOptions> = GetOptions>(
     id: string,
     options: Options = {} as Options,
-  ): ReadPromise<GetResult, Options> {
+  ): ReadPromise<GetResult & PmReadOutputMetadata, Options> {
     return this.runTyped("get", { id, options });
   }
 
@@ -1723,7 +1724,7 @@ export function context<
 >(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): ReadPromise<ContextResult, Options> {
+): ReadPromise<ContextResult & PmReadOutputMetadata, Options> {
   return new PmClient(clientOptions).context(options);
 }
 
@@ -1731,7 +1732,7 @@ export function context<
 export function list<Options extends ReadOptions<ListOptions> = InitialReadOptions>(
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): ReadPromise<ListResult, Options> {
+): ReadPromise<ListResult & PmReadOutputMetadata, Options> {
   return new PmClient(clientOptions).list(options);
 }
 
@@ -1745,7 +1746,7 @@ export function search<
   query: string,
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): ReadPromise<SearchResult, Options> {
+): ReadPromise<SearchResult & PmReadOutputMetadata, Options> {
   return new PmClient(clientOptions).search(query, options);
 }
 
@@ -1754,7 +1755,7 @@ export function get<Options extends ReadOptions<GetOptions> = GetOptions>(
   id: string,
   options: Options = {} as Options,
   clientOptions: PmClientOptions = {},
-): ReadPromise<GetResult, Options> {
+): ReadPromise<GetResult & PmReadOutputMetadata, Options> {
   return new PmClient(clientOptions).get(id, options);
 }
 
@@ -2962,7 +2963,6 @@ async function dispatchAction(
   if (action === "history-attest") {
     return result;
   } else {
-    options.resolvedOutputFormat = "json";
     const projected = attachReadOutputContracts(readCommand, options, result);
     await finalizeContextUsageEgress(resolvePmRoot(process.cwd(), global.path), projected);
     return projected;
