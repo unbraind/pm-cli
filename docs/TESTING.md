@@ -810,6 +810,9 @@ as `timeout_seconds=3600`, receives a template requiring the actual command, wit
 retry. Refused invocations do not modify the item.
 Assignment/comment-only positional commands also receive templates instead of
 retries that the registration guard would immediately refuse.
+For legacy entries, `test-all` reports each refusal in its owning item's ordered
+`run_results` with `failure_category: "config_refusal"`. Valid tests and later
+items continue; refusals count as failures in aggregate and persisted summaries.
 
 For complex linked-test commands, prefer JSON input so shell syntax survives unchanged:
 

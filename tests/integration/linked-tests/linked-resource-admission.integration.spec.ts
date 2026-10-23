@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { PmClient } from "../../../src/sdk/index.js";
+import { EXIT_CODE, PmClient } from "../../../src/sdk/index.js";
 import { runLinkedTests, runTest } from "../../../src/sdk/test/execution.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { overwriteTaskTests, setTestResultTracking } from "../../helpers/pmWorkspace.js";
@@ -133,6 +133,25 @@ describe("linked-resource admission and recovery", () => {
         expect(error.required).toContain(`test ${id}`);
         expect(await capture(context)).toEqual(before);
       }
+    });
+  });
+
+  it("returns a complete CLI batch with legacy configuration refusals and later successes", async () => {
+    await withTempPmPath(async (context) => {
+      const ids = ["Before", "Mixed", "After"].map((title) => createTestItemId(context, { title, createMode: "progressive" })).sort();
+      await overwriteTaskTests(context, ids[0], [{ command: "node --version", scope: "project" }]);
+      await overwriteTaskTests(context, ids[1], [{ command: "RESULT=passed # note", scope: "project" }, { command: 'node -e "console.log(\'middle\')"', scope: "project" }]);
+      await overwriteTaskTests(context, ids[2], [{ command: 'node -e "console.log(\'last\')"', scope: "project" }]);
+      await setTestResultTracking(context.pmPath, false);
+      const before = await capture(context);
+      const batch = context.runCli(["test-all", "--json"]);
+      expect(batch.code).toBe(EXIT_CODE.DEPENDENCY_FAILED);
+      const result = JSON.parse(batch.stdout);
+      expect(result).toMatchObject({ ok: false, passed: 3, failed: 1, skipped: 0, totals: { items: 3, linked_tests: 4, failure_categories: { config_refusal: 1 } } });
+      expect(result.results.map((entry: { id: string }) => entry.id)).toEqual(ids);
+      expect(result.results[1].run_results).toMatchObject([{ status: "refused", failure_category: "config_refusal", exit_code: null }, { status: "passed", stdout: "middle\n" }]);
+      expect(result.results[2].run_results).toMatchObject([{ status: "passed", stdout: "last\n" }]);
+      expect(await capture(context)).toEqual(before);
     });
   });
 });

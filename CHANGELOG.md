@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Keep aggregate test execution complete when legacy commands are refused ([pm-s32gcz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s32gcz.toon))
 - Reuse SDK command admission before offering positional test retries ([pm-qi7v2j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qi7v2j.toon))
 - Preserve structured test recovery and refuse comment-only verification ([pm-3mefuq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3mefuq.toon))
 - PR1559: keep command admission linear and recovery startup lightweight ([pm-5md8n7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5md8n7.toon))

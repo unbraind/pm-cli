@@ -4,6 +4,7 @@
  * Implements the pm test all command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { assertLinkedTestCommand } from "./entry.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
@@ -470,6 +471,18 @@ const buildEffectiveTimeoutByKey = (
   return effectiveTimeoutByKey;
 };
 
+/** Retain an owning-item refusal while allowing unrelated aggregate tests to execute. */
+function resolveTestAllCommandRefusal(test: LinkedTest, itemId: string): TestRunResult | undefined {
+  try {
+    assertLinkedTestCommand(test.command);
+    return undefined;
+  } catch (error) {
+    if (!(error instanceof PmCliError) || error.code !== "linked_test_command_not_executable") throw error;
+    return { command: test.command, path: test.path, status: "refused", exit_code: null,
+      failure_category: "config_refusal", error: `Linked test refused for ${itemId}: ${error.message}` };
+  }
+}
+
 const runTestAllItem = async (
   entry: TestAllItemTests,
   context: TestAllItemRunContext,
@@ -477,6 +490,8 @@ const runTestAllItem = async (
   const testsToRun: LinkedTest[] = [];
   const keyedTests = entry.tests.map((test) => {
     const key = buildLinkedTestKey(test);
+    const refusal = resolveTestAllCommandRefusal(test, entry.item.id);
+    if (refusal) return { test, key, duplicate: false, refusal };
     const duplicate = context.seenTestKeys.has(key);
     if (!duplicate) {
       context.seenTestKeys.add(key);
@@ -487,7 +502,7 @@ const runTestAllItem = async (
           : { ...test, timeout_seconds: effectiveTimeoutSeconds },
       );
     }
-    return { test, key, duplicate };
+    return { test, key, duplicate, refusal };
   });
 
   const executedResults =
@@ -515,7 +530,8 @@ const runTestAllItem = async (
         })
       : [];
   let executedIndex = 0;
-  const runResults = keyedTests.map(({ test, key, duplicate }) => {
+  const runResults = keyedTests.map(({ test, key, duplicate, refusal }) => {
+    if (refusal) return refusal;
     if (!duplicate) {
       const executed = executedResults[executedIndex];
       executedIndex += 1;
