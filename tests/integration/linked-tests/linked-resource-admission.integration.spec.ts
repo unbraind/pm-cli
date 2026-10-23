@@ -24,6 +24,7 @@ describe("linked-resource admission and recovery", () => {
         () => runTest(id, { add: ["status=passed"], run: true }, { path: context.pmPath }),
         () => runTest(id, { add: ["command=RESULT=passed # note"], run: true }, { path: context.pmPath }),
         () => runTest(id, { add: ["command=# note"], run: true }, { path: context.pmPath }),
+        () => runTest(id, { add: ["command=RESULT=passed;"], run: true }, { path: context.pmPath }),
         () => runTest(id, { addJson: ['{"command":"RESULT=passed"}'] }, { path: context.pmPath }),
         () => client.update(id, { test: ["command=RESULT=passed"] }),
         () => client.create({ title: "Refused create", type: "Task", createMode: "progressive", test: ["command=RESULT=passed"] }),
@@ -34,6 +35,7 @@ describe("linked-resource admission and recovery", () => {
       for (const args of [
         ["test", id, "--add", "status=passed"],
         ["test", id, "--add", "command=RESULT=passed"],
+        ["test", id, "--add-json", '{"command":"RESULT=passed; # note"}'],
         ["test", id, "--add-json", '{"command":"RESULT=passed"}'],
         ["update", id, "--test", "command=RESULT=passed"],
       ]) {
@@ -45,7 +47,7 @@ describe("linked-resource admission and recovery", () => {
     });
   });
 
-  it.each(["status=passed", "RESULT=passed # note"])("refuses legacy assignment-only execution %s without recording a pass, but permits removal", async (command) => {
+  it.each(["status=passed", "RESULT=passed # note", "RESULT=passed;"])("refuses legacy assignment-only execution %s without recording a pass, but permits removal", async (command) => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Legacy assignment", createMode: "progressive" });
       await setTestResultTracking(context.pmPath, true);
@@ -66,7 +68,7 @@ describe("linked-resource admission and recovery", () => {
   });
 
   it.skipIf(process.platform === "win32")("executes real commands after quoted environment assignments", async () => {
-    const results = await runLinkedTests([{ command: 'IGNORED=1 # first line\nVALUE="two words" node -e "console.log(process.env.VALUE)"', scope: "project" }], 5);
+    const results = await runLinkedTests([{ command: 'IGNORED=1;# first line\nVALUE="two words" node -e "console.log(process.env.VALUE)";', scope: "project" }], 5);
     expect(results).toMatchObject([{ status: "passed", stdout: "two words\n" }]);
   });
 
@@ -124,7 +126,7 @@ describe("linked-resource admission and recovery", () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Admitted recovery only", createMode: "progressive" });
       const before = await capture(context);
-      for (const value of ["command=RESULT=passed,timeout_seconds=90", "cmd=# note", "# note"]) {
+      for (const value of ["command=RESULT=passed,timeout_seconds=90", "cmd=# note", "# note", "command=RESULT=passed;"]) {
         const refused = context.runCli(["test", id, value, "--json"]);
         expect(refused.code).toBe(2);
         const error = JSON.parse(refused.stderr) as { required: string; recovery: { suggested_retry_args?: string[] } };

@@ -793,13 +793,16 @@ Command admission and positional recovery are tracked by
 [pm-gh1555](../.agents/pm/issues/pm-gh1555.toon) and
 [pm-t2dqzijokl31](../.agents/pm/issues/pm-t2dqzijokl31.toon).
 Commands consisting only of assignments or shell comments, such as
-`status=passed` or `RESULT=ok # note`, are
+`status=passed`, `RESULT=ok # note` or `RESULT=ok;`, are
 refused with `linked_test_command_not_executable` before registration or
 execution, including already-stored entries. They do not establish test-pass
 evidence. Remove a legacy entry with `pm test <id> --remove-index <index>`,
 then register the actual command. Environment assignments preceding a real
 command remain supported on shells that accept that syntax, including commands
 on a later line after a comment.
+Assignment-only lists separated by `;`, `&&`, `||`, `|` or `&` also fail
+admission. Quoted or escaped separators remain part of their assignment value;
+the guard preserves lists containing an actual executable command.
 
 A misplaced positional path on `files` or `docs` is refused with an explicit
 `--add path=...` retry in `recovery.suggested_retry_args`; supplied values and

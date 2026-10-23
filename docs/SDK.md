@@ -2629,7 +2629,10 @@ and continues valid tests and later items. Refused entries retain their owning
 item and result position; aggregate and per-item tracking still report failure.
 Linked tests containing only assignments or shell comments fail with
 `linked_test_command_not_executable` before registration or execution; quoted
-environment assignments and later-line real commands remain supported.
+environment assignments and later-line real commands remain supported. The
+guard also recognizes assignment-only lists separated by `;`, `&&`, `||`, `|`
+or `&`, including a trailing semicolon. Quoted and escaped separators stay
+inside assignment values; lists containing executable commands remain supported.
 
 Package commands should throw expected user/action errors with the public SDK shape so the CLI can preserve exit codes and Sentry can filter expected retry failures:
 

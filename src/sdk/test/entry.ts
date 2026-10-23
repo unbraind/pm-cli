@@ -44,7 +44,7 @@ function assignmentValueEnd(input: string, start: number): number | undefined {
   let offset = start;
   while (offset < input.length) {
     const character = input[offset];
-    if (/\s/u.test(character)) return offset;
+    if (/\s/u.test(character) || ";&|".includes(character)) return offset;
     if (character === "\\") {
       offset += 2;
       continue;
@@ -55,7 +55,7 @@ function assignmentValueEnd(input: string, start: number): number | undefined {
       offset = end;
       continue;
     }
-    if (";&|<>()`".includes(character)) return undefined;
+    if ("<>()`".includes(character)) return undefined;
     offset += 1;
   }
   return offset === input.length ? offset : undefined;
@@ -77,7 +77,17 @@ function skipAssignmentTrivia(input: string, start: number): number {
   return offset;
 }
 
-/** Recognize assignment/comment-only programs while preserving later-line executables. */
+/** Skip one shell list separator after trivia without consuming any executable word. */
+function assignmentListNextOffset(input: string, start: number): number {
+  let offset = skipAssignmentTrivia(input, start);
+  const separator = input[offset];
+  if (separator === undefined || !";&|".includes(separator)) return offset;
+  offset += 1;
+  if (separator !== ";" && input[offset] === separator) offset += 1;
+  return skipAssignmentTrivia(input, offset);
+}
+
+/** Recognize assignment/comment-only lists while preserving later executable commands. */
 function isAssignmentOnlyCommand(command: string): boolean {
   const input = command.trim();
   let offset = skipAssignmentTrivia(input, 0);
@@ -89,7 +99,7 @@ function isAssignmentOnlyCommand(command: string): boolean {
     if (input[nameEnd] !== "=") return false;
     const end = assignmentValueEnd(input, nameEnd + 1);
     if (end === undefined) return false;
-    offset = skipAssignmentTrivia(input, end);
+    offset = assignmentListNextOffset(input, end);
   }
   return true;
 }

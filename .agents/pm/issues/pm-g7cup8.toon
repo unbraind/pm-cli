@@ -1,0 +1,57 @@
+id: pm-g7cup8
+title: Refuse assignment-only shell lists and command terminators
+description: "PR1559 full review found that RESULT=passed; bypasses the assignment scanner and can be recorded as a successful test. The same gap covers assignment-only lists separated by semicolon, and/or, pipeline or background operators. Recognize these lists while retaining quoted or escaped operators, substitutions and actual executable commands."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-23T15:09:05.447Z"
+updated_at: "2026-10-23T15:17:51.402Z"
+closed_at: "2026-10-23T15:17:50.432Z"
+completed_at: "2026-10-23T15:17:50.432Z"
+author: "harness:codex"
+estimated_minutes: 30
+parent: pm-gh1555
+risk: low
+confidence: high
+resolution: "Recognize unquoted shell list separators at the shared SDK command-admission boundary while preserving quoted/escaped values, substitutions and real executables; registration, legacy execution and recovery share this refusal."
+expected_result: Assignment-only shell lists cannot create false pass evidence or mutate registration/history; actual executable lists continue to run.
+actual_result: "138 linked regressions pass, including semicolon no-write controls and real later-command execution. Fresh npm/npx and Bun/bunx installs pass admission, recovery and SDK checks. Type, lint, docs links, generated surfaces, refreshed advisory feeds and all seven source-quality assurance assertions pass. Current-head hosted checks and review remain merge conditions."
+comments[6]{created_at,author,text}:
+  "2026-10-23T15:09:05.447Z","harness:codex","Duplicate check: live search and open/in_progress reads plus complete3079-item strict all-status corpus found no active owner for this terminator defect. Full live parent metadata/comments and verified history were inspected; completed parents remain terminal. Source https://github.com/unbraind/pm-cli/pull/1559#discussion_r4360996939."
+  "2026-10-23T15:09:58.380Z","harness:codex","Negative control: all six added semicolon cases fail on the previous scanner with no expected refusal;46 existing/preservation controls pass. The same lexical boundary permits assignment-only and/or, pipeline and background lists, so this child covers shell list separators together. Keep parsing linear, preserve quoted/escaped operators and decline interpreting substitutions or redirections."
+  "2026-10-23T15:14:10.201Z","harness:codex","Verification:138 linked regressions pass across command admission, real CLI/SDK no-write refusal and recovery, and aggregate execution. Fresh packed consumers installed independently with npm and Bun pass semicolon, conditional, pipeline and background refusal through npx and bunx, with unchanged item/history bytes; structured recovery, literal paths and public SDK rejection also pass. Artifact SHA-256 f949e201c124641c3d2e3046bb8094463f679ce1a392560633633a8dce66a90f. Type checking, ESLint, public SDK/error snapshots, documentation links and100% docstring coverage pass. Repository source-quality assurance is still running; current-head hosted gates and renewed review remain merge conditions."
+  "2026-10-23T15:14:18.162Z","harness:codex","Correction to the immediately preceding evidence comment: the actual packed artifact SHA-256 is 28813c9f7f1bdf36a996554aba24c84e68e217a84c3017383c205faf4e8e40c5; the prior digest was a transcription error. The install/behavior receipts pass for this actual artifact. Docstring-quality command passes; precise coverage percentages will be taken from the pending source-quality assurance result."
+  "2026-10-23T15:15:09.739Z","harness:codex","Source-quality assurance passed its source, absence-tolerance, token-budget, context-intent, documentation and defect-evidence assertions, but the combined gate refused because the advisory receipt aged out during the extended review cycle. Refreshing both advisory feeds and rerunning the same assurance; no freshness or quality policy is relaxed."
+  "2026-10-23T15:17:47.440Z","harness:codex","Final local gate evidence: fresh registry and OSV advisory collection passes for568 lockfile packages; the unchanged combined repository-static-quality assurance now passes all seven assertions.138 linked tests and fresh installed npm/npx and Bun/bunx acceptance pass. No deadlines, coverage thresholds, quality budgets or feed freshness requirements changed. Exact pushed-head CI, full coverage and renewed reviewer inventory remain merge conditions."
+files[3]{path,scope}:
+  src/sdk/test/entry.ts,project
+  tests/integration/linked-tests/linked-resource-admission.integration.spec.ts,project
+  tests/unit/sdk/test/assignment-command-admission.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts tests/unit/commands/test/test-all-command.spec.ts,project,240,"harness:codex","2026-10-23T15:09:09.254Z",local_mutation,fix/linked-resource-evidence-recovery
+test_runs[1]:
+  - run_id: test-local-mvl3xbyy-fsn8vf
+    kind: test
+    status: passed
+    started_at: "2026-10-23T15:10:08.421Z"
+    finished_at: "2026-10-23T15:10:46.234Z"
+    recorded_at: "2026-10-23T15:10:46.234Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts tests/integration/linked-tests/linked-resource-admission.integration.spec.ts tests/unit/cli/linked-resource-recovery.spec.ts tests/unit/commands/test/test-all-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/SDK.md,project
+  docs/TESTING.md,project
+close_reason: Prevented shell terminators and assignment-only lists from producing false test passes
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: assignment-only-shell-terminators
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/test/assignment-command-admission.spec.ts
+  local_checks[2]: pnpm build,pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Gates (static)
+  owner: pm-g7cup8
+body: ""
