@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: bug,concurrency,data-integrity,sdk
 created_at: "2026-10-22T14:40:08.187Z"
-updated_at: "2026-10-22T22:26:52.049Z"
+updated_at: "2026-10-23T01:30:46.548Z"
 closed_at: "2026-10-22T19:15:05.583Z"
 completed_at: "2026-10-22T19:15:05.583Z"
 claim_principal: "harness:claude-code#f93f297a00e60b66e8815dbe"
@@ -28,7 +28,7 @@ comments[1]{created_at,author,text}:
   "2026-10-22T14:40:08.187Z","harness:codex","Duplicate check: initial complete strict3058-item all-status corpus plus fresh exact GH1549 and fencing/TTL/lost-writer searches and current open/in-progress lists found no exact mutation-lease fence owner. Full live pm-02z97f is completed dead-owner recovery and explicitly preserves expired-lease policy with caller fencing guidance; pm-gh1359 owns checkpoint claim generations and pm-lvyd owns large-N throughput. This separate integrity boundary is reproduced on the current source through the published public SDK import surface. The focused package/workspace delivery remains under active review; this intake stays open and unclaimed rather than implying an implemented fence."
 notes[1]{created_at,author,text}:
   "2026-10-22T18:29:20.995Z","harness:claude-code","Design: acquireLockLease returns {release, fence}. fence(commit) waits for the per-lock stale-cleanup gate (the same gate stale removal and lock publication hold), verifies the lease token under it, then runs the commit while still holding it, so a TTL/forced takeover cannot interleave with a fenced commit. mutateItem/deleteItem additionally compare the stored item bytes with the bytes read under the lock (stale_revision) to catch unlocked edits and extension-lock overrides, which have no file lease to verify. restore fences its write with the lease only (it already re-verifies item/history under the lock). acquireLock is now a thin wrapper over acquireLockLease, so every other caller keeps its exact contract. Heartbeat renewal deliberately NOT added: renewing created_at rewrites the lock file and races takeover; refusing at commit is the safe primitive, and callers can bound work with lease.expires_at from the refusal."
-files[7]:
+files[8]:
   - path: docs/SDK.md
     scope: project
   - path: src/cli/error-guidance.ts
@@ -40,6 +40,9 @@ files[7]:
     scope: project
   - path: src/sdk/lifecycle/restore.ts
     scope: project
+  - path: src/sdk/workspace-snapshot.ts
+    scope: project
+    note: snapshot activation and heartbeat renewal fenced by the workspace lease
   - path: tests/unit/cli/lock-diagnostics-projection.spec.ts
     scope: project
     note: CLI JSON/text/compact projection of lock_lost lease and current_owner

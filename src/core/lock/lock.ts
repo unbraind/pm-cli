@@ -605,8 +605,8 @@ function buildLockLostError(
   });
 }
 
-/** Wait for the per-lock cleanup gate that every takeover must also hold. */
-async function waitForStaleCleanupGate(
+/** Wait (bounded) for the per-lock cleanup gate that every takeover must also hold; null when it stays held. */
+export async function waitForStaleCleanupGate(
   lockPath: string,
   id: string,
 ): Promise<(() => Promise<void>) | null> {

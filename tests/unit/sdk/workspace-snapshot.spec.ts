@@ -24,6 +24,7 @@ import {
   publishWorkspaceSnapshotObject,
   swapWorkspaceSnapshotRoot,
 } from "../../../src/sdk/workspace-snapshot.js";
+import * as lockModule from "../../../src/core/lock/lock.js";
 import { acquireLock } from "../../../src/core/lock/lock.js";
 import { getLockPath } from "../../../src/core/store/paths.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
@@ -100,6 +101,60 @@ describe("workspace snapshots", () => {
       expect(listed.references).toEqual([
         { name: "baseline", fingerprint: first.manifest.fingerprint },
       ]);
+    });
+  });
+
+  it("refuses activation with lock_lost when the workspace lease was taken over", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settingsPath = path.join(pmPath, "settings.json");
+      await createWorkspaceSnapshot(pmPath, { name: "clean" });
+      await writeFile(settingsPath, '{"changed":true}\n', "utf8");
+      const realAcquire = lockModule.acquireLockLease;
+      const spy = vi.spyOn(lockModule, "acquireLockLease").mockImplementation(async (...args) => {
+        const lease = await realAcquire(...args);
+        if (args[1] !== "sdk-workspace-transaction") return lease;
+        return {
+          ...lease,
+          fence: async (commit) => {
+            // Another writer took over the expired lease just before activation.
+            const lockPath = getLockPath(pmPath, String(args[1]));
+            const intruder = await lockModule._testOnly.buildLockPayload(String(args[1]), "intruder", 60);
+            await writeFile(lockPath, `${JSON.stringify(intruder)}\n`, "utf8");
+            return lease.fence(commit);
+          },
+        };
+      });
+      try {
+        await expect(
+          restoreWorkspaceSnapshotWithRecovery(pmPath, "clean", { force: true, author: "snapshot-test" }),
+        ).rejects.toMatchObject({ code: "lock_lost", context: { current_owner: { owner: "intruder" } } });
+      } finally {
+        spy.mockRestore();
+      }
+      expect(await readFile(settingsPath, "utf8")).toBe('{"changed":true}\n');
+    });
+  });
+
+  it("fails a heartbeat renewal that cannot enter the lock's cleanup gate", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const lockPath = getLockPath(pmPath, "sdk-workspace-transaction");
+      const gatePath = `${lockPath}.stale-cleanup`;
+      await mkdir(gatePath, { recursive: true });
+      await writeFile(
+        path.join(gatePath, "owner.json"),
+        `${JSON.stringify({ ...(await lockModule.captureProcessIdentity()), token: "held-gate" })}\n`,
+        "utf8",
+      );
+      const heartbeat = new _testOnlyWorkspaceSnapshot.WorkspaceLockHeartbeat(lockPath, "heartbeat-owner", 60);
+      const realNow = Date.now.bind(Date);
+      let calls = 0;
+      // Jump past the bounded gate wait after the first observation.
+      const clock = vi.spyOn(Date, "now").mockImplementation(() => realNow() + (calls++ === 0 ? 0 : 60_000));
+      try {
+        await expect(heartbeat.refreshNow()).rejects.toThrow("lost its writer lock");
+      } finally {
+        clock.mockRestore();
+      }
     });
   });
 
