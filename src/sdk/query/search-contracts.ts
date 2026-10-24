@@ -3,6 +3,8 @@
  *
  * Owns search input parsing, output projection contracts, and tuning defaults.
  */
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { coerceNumberInRange } from "../../core/shared/primitives.js";
 import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
@@ -197,10 +199,10 @@ export function validateSearchProjectionFields(
 ): void {
   if (projection.mode !== "fields") return;
   const allowedValues = listSearchProjectionFields(
-    runtimeFieldRegistry.definitions.flatMap((field) => [
-      field.key,
-      field.metadata_key,
-    ]),
+    [
+      ...runtimeFieldRegistry.definitions.flatMap((field) => [field.key, field.metadata_key]),
+      ...collectRegisteredItemFieldNames(getActiveExtensionRegistrations()),
+    ],
   );
   const allowed = new Set(allowedValues);
   const unknown = projection.fields.filter((field) => {

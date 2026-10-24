@@ -1,0 +1,35 @@
+id: pm-gh1573
+title: "GH-1573: await telemetry producers before Sentry fixture cleanup"
+description: "Ubuntu Node22 nightly run40079265521 failed the intentional scope and parameter privacy tracing case during owned-root deletion (ENOTEMPTY under global/locks). The fixture deliberately clears test signals and therefore permits normal detached telemetry delivery. Establish producer lifetime and await delivery before cleanup while retaining consent/privacy/native-test controls. Source: https://github.com/unbraind/pm-cli/issues/1573"
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: github,nightly-regression,telemetry,testing
+created_at: "2026-10-24T09:44:39.464Z"
+updated_at: "2026-10-24T09:50:04.279Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Retain intentional loopback tracing and all privacy and consent assertions; Bind fixture delivery to foreground completion before deleting owned roots; Pass the affected telemetry suite and hosted Ubuntu Node22 shard without deleting or suppressing existing regression coverage
+parent: pm-5oj5
+risk: medium
+confidence: 75
+expected_result: "Fixture command completion also settles its telemetry producer, preserving real delivery and deterministic cleanup."
+comments[3]{created_at,author,text}:
+  "2026-10-24T09:44:39.464Z","harness:codex","Duplicate check: full strict corpus3094 items has no implementation owner for GH1573. Live open/in_progress and Sentry tracing cleanup search read; pm-2zjs0g is the closed measurement owner and pm-gh1484 is the completed native-test inference repair. Neither owns this intentional-delivery fixture lifetime. Retain original failure as historical evidence."
+  "2026-10-24T09:48:24.638Z","harness:codex","Confirmed lifetime mechanism: clearing VITEST/NODE_ENV in the intentional tracing child selects the ordinary scheduleTelemetryFlush detached-spawn branch. The existing custom-harness opt-in PM_TELEMETRY_INLINE_FLUSH=1 selects serialized awaited delivery before finishTelemetryCommand returns. The fixture now uses that contract, routes loopback event batches separately from Sentry envelopes, asserts ordered command_start/command_finish and an empty physical event queue, and retains all consent/privacy/native-test controls. Focused 18-case telemetry suite passes; no production inference or cleanup retry was introduced."
+  "2026-10-24T09:50:04.279Z","harness:codex","Independent negative control in a detached temporary checkout: the unchanged strengthened scope/privacy test with PM_TELEMETRY_INLINE_FLUSH=0 fails because no command_start/command_finish reaches the collector before child completion (expected pair, observed empty array). Setting only the explicit inline-delivery option to1 passes the same assertions in the main checkout. This demonstrates lifetime sensitivity without changing consent/privacy checks, sleeping, polling, or retrying recursive deletion."
+files[1]{path,scope}:
+  tests/integration/telemetry/sentry-command-tracing.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts,project,240,"harness:codex","2026-10-24T09:47:16.734Z",local_mutation,fix/sdk-extension-read-contracts
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1573
+  gate_id: sentry-fixture-producer-lifetime
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),Nightly Validation / ubuntu-latest / Node 22 shard 2/2
+body: ""

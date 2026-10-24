@@ -109,6 +109,7 @@ describe("core/store/settings", () => {
       await writeLegacySettings(pmRoot);
       await readSettings(pmRoot);
       const statusesPath = path.join(pmRoot, "schema", "statuses.json");
+      await fs.mkdir(path.dirname(statusesPath), { recursive: true });
       await fs.writeFile(statusesPath, JSON.stringify({ statuses: [...DEFAULT_STATUS_DEFINITIONS, { id: "reviewed", roles: ["active"] }] }));
       expect((await readSettings(pmRoot)).schema.statuses.map((status) => status.id)).toContain("reviewed");
       const originalSettings = await fs.readFile(getSettingsPath(pmRoot), "utf8");
@@ -128,7 +129,8 @@ describe("core/store/settings", () => {
       expect(other.schema.statuses.length).toBeGreaterThan(0);
       expect(reads).not.toContain(getSettingsPath(pmRoot));
       expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(originalSettings);
-      expect(await fs.stat(path.join(otherRoot, "schema", "statuses.json"))).toBeDefined();
+      await expect(fs.stat(path.join(otherRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+      expect(getSettingsReadCacheEntry(otherRoot)).toBeDefined();
       await expect(runWithConfigurationOnlySettings(pmRoot, async () => { await readSettings(pmRoot); throw new Error("Preview callback failed"); })).rejects.toThrow("Preview callback failed");
       expect((await readSettings(pmRoot)).schema.statuses.map((status) => status.id)).toContain("reviewed");
       expect(reads).toContain(getSettingsPath(pmRoot));
@@ -146,7 +148,8 @@ describe("core/store/settings", () => {
       });
       await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
       await readSettings(selected);
-      expect(await fs.stat(path.join(pmRoot, "schema", "statuses.json"))).toBeDefined();
+      await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+      expect(getSettingsReadCacheEntry(selected)).toBeDefined();
     });
   });
 
@@ -163,7 +166,8 @@ describe("core/store/settings", () => {
             await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
             enabled = false;
             await readSettings(pmRoot);
-            expect(await fs.stat(path.join(pmRoot, "schema", "statuses.json"))).toBeDefined();
+            await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+            expect(getSettingsReadCacheEntry(pmRoot)).toBeDefined();
             await runWithConfigurationOnlySettings(parentRoot, () => readSettings(parentRoot), () => false);
             await expect(fs.stat(path.join(parentRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
           }, () => enabled),
@@ -174,7 +178,8 @@ describe("core/store/settings", () => {
         ]);
       });
       await readSettings(parentRoot);
-      expect(await fs.stat(path.join(parentRoot, "schema", "statuses.json"))).toBeDefined();
+      await expect(fs.stat(path.join(parentRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
+      expect(getSettingsReadCacheEntry(parentRoot)).toBeDefined();
     });
   });
 
@@ -571,9 +576,10 @@ describe("core/store/settings", () => {
       // Legacy fixture omits schema/item_type blocks from persisted JSON.
       await writeLegacySettings(pmRoot, { workflow: { definition_of_done: [] } });
 
-      // Initial read scaffolds schema files and attaches read-time persist source.
+      // Initial read attaches the persist source without materializing optional files.
       await readSettings(pmRoot);
       const statusesPath = path.join(pmRoot, "schema", "statuses.json");
+      await fs.mkdir(path.dirname(statusesPath), { recursive: true });
       const seededStatuses = [...structuredClone(DEFAULT_STATUS_DEFINITIONS), { id: "qa_ready", roles: ["active"] as const }];
       await fs.writeFile(statusesPath, `${JSON.stringify({ statuses: seededStatuses }, null, 2)}\n`, "utf8");
 
@@ -731,6 +737,7 @@ describe("core/store/settings", () => {
       expect(events).toEqual(["read:settings.json", "read:settings.json"]);
 
       const statusesPath = path.join(pmRoot, "schema", "statuses.json");
+      await fs.mkdir(path.dirname(statusesPath), { recursive: true });
       const statusesWithExtra = [...structuredClone(DEFAULT_STATUS_DEFINITIONS), { id: "qa_ready", roles: ["active"] as const }];
       await fs.writeFile(statusesPath, `${JSON.stringify({ statuses: statusesWithExtra }, null, 2)}\n`, "utf8");
 
@@ -789,13 +796,13 @@ describe("core/store/settings", () => {
       await writeSettings(pmRoot, settings);
 
       const schemaBlockerPath = path.join(pmRoot, "schema-blocker");
-      await fs.writeFile(schemaBlockerPath, "blocked\n", "utf8");
+      const blockedFile = path.join(schemaBlockerPath, "statuses.json");
+      await fs.mkdir(blockedFile, { recursive: true });
 
       const firstRead = await readSettingsWithMetadata(pmRoot);
       expect(firstRead.warnings).toContain("settings_read_merge_failed");
 
-      await fs.rm(schemaBlockerPath, { force: true });
-      await fs.mkdir(schemaBlockerPath, { recursive: true });
+      await fs.rm(blockedFile, { recursive: true });
       await fs.writeFile(
         path.join(schemaBlockerPath, "statuses.json"),
         `${JSON.stringify({ statuses: structuredClone(DEFAULT_STATUS_DEFINITIONS) }, null, 2)}\n`,

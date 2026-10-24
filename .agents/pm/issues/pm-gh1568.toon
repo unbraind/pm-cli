@@ -2,11 +2,13 @@ id: pm-gh1568
 title: "GH-1568: keep read-only commands from recreating missing workflow schema files"
 description: "External report: https://github.com/unbraind/pm-cli/issues/1568. Revalidate the reported 2026.10.23 behavior against the checkout before implementation."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[2]: github-intake,sdk
 created_at: "2026-10-23T23:21:44.507Z"
-updated_at: "2026-10-24T00:11:34.378Z"
+updated_at: "2026-10-24T09:49:02.667Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce missing workflows.json with list/get/context/search; keep reads free of persistent schema writes; retain explicit initialization and mutation repairs; prove file bytes and absence through public SDK and CLI
@@ -16,6 +18,24 @@ confidence: 75
 expected_result: Ordinary list/get/context/search reads preserve the absence of workflows.json; explicit initialization or mutation remains the auditable repair boundary.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-f4r1,related,"2026-10-24T00:11:33.990Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-23T23:21:44.507Z","harness:codex","Duplicate check 2026-10-24: canonical orientation, request-specific SDK/rollback search, fresh open and in_progress lists, and complete strict all-status read of 3083 items including 2799 closed and 14 canceled; no omissions or unreadable files. Exact GitHub issue and title checks found no existing owner for this delta. Closed SDK/bulk foundations were read live and remain completed. Source report retained in full; intake is not reproduction proof."
+  "2026-10-24T09:41:59.524Z","harness:codex","Implementation scope: remove schema materialization from shared settings reads while retaining explicit init scaffolding. Prove absence and byte preservation across SDK and CLI reads, including refused reads, and preserve custom workflow loading. Related completed read-only fixes remain terminal; this is the independently reported missing-file delta."
+  "2026-10-24T09:48:23.845Z","harness:codex","Regression evidence: the same isolated fixture failed before the fix because the first SDK get recreated workflows.json. Removing read-time scaffold from settings hydration preserves absence for get/list/context/search and refused get in SDK and CLI, plus existing schema bytes. Explicit init repairs missing workflow seeds, and reads tolerate a wholly absent optional schema directory. Cache, hook and malformed-schema tests are updated to assert pure reads and explicit owned fixture setup."
+files[3]{path,scope}:
+  src/core/store/settings.ts,project
+  tests/integration/sdk-read-extension-context.integration.spec.ts,project
+  tests/unit/core/store/settings-store.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/sdk-read-extension-context.integration.spec.ts tests/unit/core/store/settings-store.spec.ts tests/unit/core/store/settings-internal.spec.ts,project,240,"harness:codex","2026-10-24T09:47:15.911Z",local_mutation,fix/sdk-extension-read-contracts
+docs[1]{path,scope}:
+  docs/SDK.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1568
+  gate_id: pure-optional-schema-reads
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/sdk-read-extension-context.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/sdk-read-extension-context.integration.spec.ts tests/unit/core/store/settings-store.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: "**Version:** 2026.10.23 (global npm install).\n\nRead-only commands write to the tracker when `schema/workflows.json` is missing: they recreate the file before (or while) serving the read. A tracker that an agent opens only to inspect — a read-only mount, a snapshot under review, a scratch rehearsal that must prove the source is untouched — is mutated by `pm list`.\n\n### Reproduction\n\n```bash\nmkdir wf && cd wf\npm init --defaults\npm create --type Task --title x\nrm .agents/pm/schema/workflows.json\npm list --limit 1        # or: get <id>, context --limit 1, search x --limit 1\nls .agents/pm/schema/    # workflows.json is back\n```\n\nMeasured on 2026.10.23: `pm list`, `pm get` (even for a missing id), `pm context` and `pm search` each recreate the file; `pm --version` does not. The same write happens through the SDK when an extension command runs against the active tracker, so an extension cannot check isolation before the host has already written (found while reviewing a migration-rehearsal extension that must report `source_unchanged`).\n\n### Expected\n\nRead paths never write. A missing optional schema file resolves to the built-in defaults in memory, optionally with a warning (`schema_file_missing`, remedy `pm schema init` / `pm health --fix`). Materialising defaults stays an explicit mutation (`pm init`, `pm health --fix`, or the first real write), and a read-only filesystem keeps working for reads.\n\nRelated, closed: #265 (unknown schema subcommand mutated types.json), #1392 (read-only extension manage rewrote a tracked file), #928 (health read-only)."
