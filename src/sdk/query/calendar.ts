@@ -1521,6 +1521,7 @@ interface CalendarExecutionInputs {
   eventsOnlyCapApplied: boolean;
 }
 
+/** Resolve relative ranges and recurrence limits against the first-page clock. */
 function resolveCalendarExecutionInputs(
   options: CalendarOptions,
 ): CalendarExecutionInputs {

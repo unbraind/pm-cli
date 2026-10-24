@@ -373,6 +373,7 @@ function resolveActivityLimit(
   return DEFAULT_FULL_ACTIVITY_LIMIT;
 }
 
+/** Normalize filters and default bounds against the recovered first-page clock. */
 function resolveActivityFilters(
   options: ActivityCommandOptions,
   projectionMode: ActivityProjectionMode,
@@ -609,6 +610,7 @@ function activityOperationCounts(
   return Object.fromEntries(visible);
 }
 
+/** Bind continuation to matching content before emitting digest or per-event rows. */
 function projectActivityRows(
   projectionMode: ActivityProjectionMode,
   matchingActivity: ActivityEntry[],

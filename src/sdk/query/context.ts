@@ -2402,6 +2402,7 @@ function shouldPageContextFocus(
   );
 }
 
+/** Build the calendar agenda independently of the context focus continuation cursor. */
 async function buildContextAgenda(
   global: GlobalOptions,
   runtime: ContextRuntime,
