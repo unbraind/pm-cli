@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: extensions,github,projection,sdk
 created_at: "2026-10-24T07:04:53.631Z"
-updated_at: "2026-10-24T09:54:58.084Z"
+updated_at: "2026-10-24T10:09:31.074Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
 author: "harness:codex"
@@ -26,22 +26,23 @@ customer_impact: Extension packages must fetch full rows to recover requested do
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-cxr0jb,related,"2026-10-24T07:04:53.631Z","harness:codex","cli:create:dep",detected
   pm-qvdj,related,"2026-10-24T07:04:53.631Z","harness:codex","cli:create:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-24T07:04:53.631Z","harness:codex","Duplicate check: complete all-status strict export read 3093 of 3093 items with no unreadables or omissions. Searched registerItemFields and custom field projection plus the live open and in-progress lists. Closed custom-field setters and closed intent projections cover adjacent completed work; neither covers selecting active extension-defined fields. No open exact duplicate found. Intake remains open and unclaimed; this records the new GitHub report without claiming a reproduced defect or an implemented fix."
   "2026-10-24T07:07:17.502Z","harness:codex","Intake validation: build passed. Tracker context quality has zero blocking findings with the existing graph-degree advisory; graph composition and append-only record integrity pass. The latest installed external pm-changelog generator check passes with no changelog change because this issue is open. Reporter source, expected and observed results, runtime versions, acceptance criteria, estimate, and semantic lineage are recorded. No production fix or independent reproduction is claimed. The item remains open and unclaimed."
   "2026-10-24T07:23:02.161Z","harness:codex","PR1572 CodeRabbit review correction: checked the original reporter source and distinguished the SDK get message (Unknown get --fields value(s): probe_score) from the CLI get/list/search structured unknown_field_projection refusal. The source body remains intact. This is an intake accuracy fix only; the issue stays open and unclaimed."
   "2026-10-24T09:41:58.932Z","harness:codex","Implementation scope: reuse canonical SDK and package-platform lineage; inspect active extension item_fields separately from runtime schema fields, then extend shared projection validation without importing query runtimes into contract-only modules. Preserve value types, unknown-field refusal, and activation isolation. Full all-status strict corpus read: 3094 items, 2806 closed, no omissions or unreadables. Current GitHub has no open PRs or dependency/security alerts; every open issue already has a PM-link comment."
   "2026-10-24T09:48:23.250Z","harness:codex","Regression evidence: the new isolated SDK/CLI fixture failed before the fix with unknown_field_projection for all six declared custom types, after a full get proved they were stored. After using the existing canonical collectRegisteredItemFieldNames helper in all three SDK validators, typed zero/false/empty/container values and prefixed selectors pass SDK, CLI and native action dispatch. Unknown-field recovery retains valid custom selectors and disabled-extension reads refuse without registration leakage."
   "2026-10-24T09:54:58.084Z","harness:codex","Latest package acceptance: installed pm-changelog2026.10.24 from the public npm registry, matching the latest exact published version. Package doctor has zero activation failures or blocking findings, and the package-owned changelog check passes before closure. Its managed contribution inventory now includes changelog contracts, so the real version/contribution change is retained as generated metadata. No changelog generator code is added or patched in pm-cli; upstream pm-changelog currently has no open issues or PRs."
+  "2026-10-24T10:09:31.074Z","harness:codex","Fresh observability evidence: required Sentry/telemetry gate passes with zero recent critical/high/unresolved error issues,4.74percent seven-day finish error rate and zero missing-code rows. Explicit real get/list probes each produced a fresh successful Sentry span and exactly one remotely ingested start/finish pair per process. Physical local telemetry queue and broker queue are empty after settlement. This targeted delivery proof is distinct from a global all-user-action completeness claim. Independent published npm/Bun sessions and npx/bunx/MCP acceptance pass for today's earlier artifact."
 files[5]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   src/sdk/query/get.ts,project
   src/sdk/query/list.ts,project
   src/sdk/query/search-contracts.ts,project
-  tests/integration/sdk-read-extension-context.integration.spec.ts,project
+  tests/integration/read-output/sdk-extension-context.integration.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/integration/sdk-read-extension-context.integration.spec.ts tests/unit/commands/query/get-append-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/commands/query/search-command.spec.ts,project,240,"harness:codex","2026-10-24T09:47:14.406Z",local_mutation,fix/sdk-extension-read-contracts
-test_runs[1]:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/sdk-extension-context.integration.spec.ts tests/unit/commands/query/get-append-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/commands/query/search-command.spec.ts,project,240,"harness:codex","2026-10-24T10:08:31.195Z",local_mutation,fix/sdk-extension-read-contracts
+test_runs[2]:
   - run_id: test-local-mvm81w9y-ehqhib
     kind: test
     status: failed
@@ -53,6 +54,17 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/sdk-read-extension-context.integration.spec.ts tests/unit/commands/query/get-append-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/commands/query/search-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvm8lcsf-eriwyv
+    kind: test
+    status: passed
+    started_at: "2026-10-24T10:08:56.584Z"
+    finished_at: "2026-10-24T10:09:11.678Z"
+    recorded_at: "2026-10-24T10:09:11.678Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/sdk-extension-context.integration.spec.ts tests/unit/commands/query/get-append-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/commands/query/search-command.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/EXTENSIONS.md,project
   docs/SDK.md,project
@@ -61,7 +73,7 @@ gate_evidence:
   disposition: gate_strengthened
   owner: pm-gh1571
   gate_id: active-extension-read-projection
-  negative_control: node scripts/run-tests.mjs test -- tests/integration/sdk-read-extension-context.integration.spec.ts
-  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/sdk-read-extension-context.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/sdk-extension-context.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/sdk-extension-context.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
   hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: "Source: https://github.com/unbraind/pm-cli/issues/1571\n\nIntake only: reporter reproduction below has not yet been independently run against main. The item remains open and unclaimed. This report arrived after PR #1570 merged and is distinct from its flag-default discovery fixes.\n\n## Summary\n\nFields registered by an extension through `registerItemFields` are persisted and returned by full reads, but `get`/`list`/`search` field projection refuses them as unknown. An agent that needs one custom value must make a refused call and then a full read, which pulls the whole item into context.\n\n## Reproduction (pm 2026.10.24, plain directory, no git)\n\n```ts\nimport { PmClient } from '@unbrained/pm-cli';\nimport { mkdir, writeFile } from 'node:fs/promises';\nimport { resolve } from 'node:path';\nconst cwd = resolve('custom-repro'); const ext = resolve('custom-repro/ext');\nawait mkdir(ext, { recursive: true });\nawait writeFile(ext + '/package.json', JSON.stringify({ name: 'probe-field', version: '0.1.0', type: 'module' }));\nawait writeFile(ext + '/manifest.json', JSON.stringify({ name: 'probe-field', version: '0.1.0', manifest_version: 2, entry: './index.ts', capabilities: ['schema'] }));\nawait writeFile(ext + '/index.ts', `import {defineExtension} from '@unbrained/pm-cli/sdk/authoring';\nexport default defineExtension({activate(api){api.registerItemFields([{name:'probe_score',type:'number',optional:true}]);}});`);\nconst c = new PmClient({ cwd, pmRoot: cwd + '/.agents/pm', author: 'probe' });\nawait c.init(undefined, { defaults: true, agentGuidance: 'skip' });\nawait c.packageInstall(ext);\nconst id = (await c.create({ type: 'Task', title: 'Probe', field: ['probe_score=3'] })).item.id;\nconsole.log(JSON.stringify(await c.get(id, { full: true })).includes('\"probe_score\":3')); // true\nawait c.get(id, { fields: 'id,probe_score' }); // throws\n```\n\n## Observed\n\n- The full read contains `probe_score: 3`.\n- `get(id, { fields: 'id,probe_score' })` throws `PmCliError: Unknown get --fields value(s): probe_score`. The CLI form (`pm get <id> --fields id,probe_score`) and projected `list`/`search` refuse the same way (`unknown_field_projection`, exit 2).\n- The suggested recovery drops the requested field. The retried query is valid but cannot answer the question.\n\n## Expected\n\nThe set of projectable fields includes the active runtime custom-field registry, the same way in the SDK and the CLI, and keeps the key, type and value. If projecting custom fields is deliberately unsupported, the refusal should say so and point to a read that actually returns the value.\n\n## Cost\n\nRecovering one numeric field takes two calls and about 6.5 KB of output (a 5.1 KB refusal plus a 1.4 KB full read), about 1,600 tokens. Projected `list` and `search` refusals are 4.7 KB and 6.2 KB. Any package that stores typed data in custom fields (pm-rl scores, pm-jev decisions, pm-evidence fingerprints) forces full reads into agent context.\n\n## Duplicate check\n\nSearched `registerItemFields`, `custom field projection`, `unknown_field_projection` and `fields custom registered` (all states). #97 and #839 (setting and typing custom fields) are fixed. #156, #1364 and #1386 cover context depth and projection recovery for built-in fields, not runtime-registered ones."

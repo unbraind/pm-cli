@@ -897,6 +897,7 @@ describe("schema evolution migration execution", () => {
           { path: context.pmPath },
         ),
       ).rejects.toThrow("is not a custom definition");
+      await expect(readFile(path.join(context.pmPath, "schema", "types.json"))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 

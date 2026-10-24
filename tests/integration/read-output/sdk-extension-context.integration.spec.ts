@@ -2,9 +2,9 @@ import { existsSync } from "node:fs";
 import { readFile, readdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { PmClient } from "../../src/sdk/runtime.js";
-import { writeTestExtension } from "../helpers/extensions.js";
-import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { PmClient } from "../../../src/sdk/runtime.js";
+import { writeTestExtension } from "../../helpers/extensions.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 const values = {
   probe_score: 0,
@@ -16,7 +16,7 @@ const values = {
 };
 
 describe("SDK read context for customizable trackers", () => {
-  it("projects active package metadata through SDK, CLI and MCP action adapters without leaking registrations", async () => {
+  it("projects active package metadata through SDK, CLI and native action dispatch without leaking registrations", async () => {
     await withTempPmPath(async (context) => {
       await writeTestExtension({
         root: context.pmPath, placement: "projectRoot", directory: "projection-fields",

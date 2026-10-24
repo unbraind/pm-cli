@@ -417,13 +417,8 @@ describe("runConfig", () => {
         settings_path: getSettingsPath(pmRoot),
         changed: false,
       });
-      expect(result.warnings).toBeDefined();
-      expect(result.warnings).toHaveLength(4);
-      expect(
-        (result.warnings ?? []).every((warning) =>
-          warning.startsWith("runtime_schema_bootstrap_created:"),
-        ),
-      ).toBe(true);
+      expect(result.warnings ?? []).toEqual([]);
+      await expect(fs.stat(path.join(pmRoot, "schema"))).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 
