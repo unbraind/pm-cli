@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: github,nightly-regression,telemetry,testing
 created_at: "2026-10-24T09:44:39.464Z"
-updated_at: "2026-10-24T09:50:04.279Z"
+updated_at: "2026-10-24T10:10:03.038Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
 author: "harness:codex"
@@ -24,6 +24,18 @@ files[1]{path,scope}:
   tests/integration/telemetry/sentry-command-tracing.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts,project,240,"harness:codex","2026-10-24T09:47:16.734Z",local_mutation,fix/sdk-extension-read-contracts
+test_runs[1]:
+  - run_id: test-local-mvm8mgeu-2s9z6j
+    kind: test
+    status: passed
+    started_at: "2026-10-24T10:09:45.403Z"
+    finished_at: "2026-10-24T10:10:03.030Z"
+    recorded_at: "2026-10-24T10:10:03.030Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts,schema,schema,source,local_source_ref
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

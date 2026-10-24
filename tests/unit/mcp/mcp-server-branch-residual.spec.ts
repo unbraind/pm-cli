@@ -912,12 +912,14 @@ describe("mcp server branch residual coverage", () => {
       });
 
       commandMocks.runValidate
-        .mockRejectedValueOnce(
-          server._testOnly.createMcpInputRequiredError({
+        .mockImplementationOnce(async () => {
+          // Exceed the former nominal 500ms attempt budget without changing task semantics.
+          await new Promise<void>((resolve) => setTimeout(resolve, 1000));
+          throw server._testOnly.createMcpInputRequiredError({
             inputRequests: inputRequest,
             requestState: "task-state",
-          }),
-        )
+          });
+        })
         .mockResolvedValueOnce({ ok: true });
       const taskCapabilities = {
         elicitation: {},
@@ -934,20 +936,19 @@ describe("mcp server branch residual coverage", () => {
       });
       const taskId = String(created?.taskId);
 
-      const poll = async (pollTaskId: string, status: string) => {
-        for (let attempt = 0; attempt < 100; attempt += 1) {
+      let taskReadId = 203;
+      const waitForTaskStatus = (expectedTaskId: string, status: string) =>
+        vi.waitFor(async () => {
           const result = await server.handleRequest({
             jsonrpc: "2.0",
-            id: 203 + attempt,
+            id: taskReadId++,
             method: "tasks/get",
-            params: modernParams(taskCapabilities, { taskId: pollTaskId }),
+            params: modernParams(taskCapabilities, { taskId: expectedTaskId }),
           });
-          if (result?.status === status) return result;
-          await new Promise<void>((resolve) => setTimeout(resolve, 5));
-        }
-        throw new Error(`task did not reach ${status}`);
-      };
-      await expect(poll(taskId, "input_required")).resolves.toMatchObject({
+          expect(result).toMatchObject({ status });
+          return result;
+        }, { timeout: 10_000, interval: 25 });
+      await expect(waitForTaskStatus(taskId, "input_required")).resolves.toMatchObject({
         inputRequests: { approval: { method: "elicitation/create" } },
       });
       await server.handleRequest({
@@ -959,12 +960,12 @@ describe("mcp server branch residual coverage", () => {
           inputResponses: { approval: { action: "accept" } },
         }),
       });
-      await expect(poll(taskId, "completed")).resolves.toMatchObject({
+      await expect(waitForTaskStatus(taskId, "completed")).resolves.toMatchObject({
         result: { resultType: "complete" },
       });
       // Durable status can precede the detached executor's final cleanup.
       await new Promise<void>((resolve) => setImmediate(resolve));
-      await expect(poll(taskId, "completed")).resolves.toMatchObject({
+      await expect(waitForTaskStatus(taskId, "completed")).resolves.toMatchObject({
         result: { resultType: "complete" },
       });
 
@@ -984,7 +985,7 @@ describe("mcp server branch residual coverage", () => {
         }),
       });
       const failedTaskId = String(failedCreated?.taskId);
-      await expect(poll(failedTaskId, "failed")).resolves.toMatchObject({
+      await expect(waitForTaskStatus(failedTaskId, "failed")).resolves.toMatchObject({
         status: "failed",
         error: { code: -32602, message: "task protocol failure" },
       });
