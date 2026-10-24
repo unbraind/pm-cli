@@ -1239,6 +1239,7 @@ function toExtensionFlagContract(
     definition.repeatable === true,
   );
   assignExtensionFlagBoolean(contract, "list", definition.list === true);
+  if (definition.default !== undefined) contract.default = definition.default;
   const description = toOptionalTrimmedString(definition.description);
   if (description) {
     contract.description = description;
@@ -1499,6 +1500,7 @@ function buildExtensionFlagSchema(
   return {
     type: acceptsMultipleValues ? "array" : schemaType,
     ...(acceptsMultipleValues ? { items: { type: schemaType } } : {}),
+    ...(flag.default !== undefined ? { default: flag.default } : {}),
     description:
       flag.description ??
       `Extension option '${flag.flag}' for action '${action}'.`,

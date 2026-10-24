@@ -2,23 +2,79 @@ id: pm-gh1561
 title: "GH-1561: normalize numeric template-save priority and publish supported options"
 description: "Reported on2026.10.23: public runTemplatesSave accepts numeric priority0 via Record<string, unknown> but silently omits it, so a later templated item receives priority2. The string0 control and direct numeric create work. Investigate typed save options and pre-write normalization/refusal."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1561",sdk
 created_at: "2026-10-23T15:20:45.143Z"
-updated_at: "2026-10-23T16:30:41.726Z"
+updated_at: "2026-10-24T05:19:43.974Z"
+closed_at: "2026-10-24T05:16:10.725Z"
+completed_at: "2026-10-24T05:16:10.725Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: The public template-save option type documents supported priority input; saving numeric priority0 preserves priority0 when creating from the template; the existing string-priority and direct-create controls remain correct; invalid unsupported values receive actionable pre-write refusal; sandboxed SDK regressions prove stored values and mutation safety.
 parent: pm-780f
 risk: medium
 confidence: medium
-expected_result: Supported numeric template priorities survive save/create or unsupported inputs are rejected actionably before saving; the public SDK option type documents accepted values.
+resolution: "Export TemplatesSaveOptions from SDK aggregate/runtime and first-party package wrapper; normalize numeric, string and named priority with the shared parser before writes and reject invalid priority values."
+expected_result: "Numeric priority0 survives save/show/create; invalid inputs preserve template and history bytes, and explicit create overrides still win."
+actual_result: "26 linked tests pass with numeric0/4, string/named priorities, stored JSON, show/create, explicit override and byte-preserving invalid-input controls; public typecheck rejects boolean/array priority inputs. Pre-fix numeric/invalid controls fail as intended."
 affected_version: 2026.10.23
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-l6rz,related,"2026-10-23T16:29:26.230Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-23T15:20:45.143Z","harness:codex","Intake source: https://github.com/unbraind/pm-cli/issues/1561. Duplicate checks: request-specific live PM search, fresh open/in_progress lists and complete3080-item strict all-status read, with no omissions; full live parent comments/closure and verified complete history were inspected. The report is distinct from the delivered parent scope. Intake only: not independently reproduced in this delivery, open and unclaimed; preserve completed parent history."
   "2026-10-23T16:30:41.726Z","harness:codex","Save-boundary criteria now cover numeric0 persistence, public types, compatibility controls and pre-write refusal. The unchanged tracker-context-quality gate now exits0 across47 assertions with0 blocking findings and one retained graph advisory elsewhere. Original missing-criteria failure: https://github.com/unbraind/pm-cli/actions/runs/39980422540/job/120507900145. Existing context lineage is linked, and this intake remains open and unclaimed; no product implementation is asserted."
+  "2026-10-24T04:51:32.081Z","harness:codex","Implementation scope: publish template-save priority inputs, normalize numeric priority before storage and refuse invalid values before any write, with save/show/create persistence controls. Grouped with pm-gh1560 for SDK default fidelity; canonical completed template application lineage remains untouched."
+  "2026-10-24T04:55:10.288Z","harness:codex","Regression evidence: isolated pre-fix run loses numeric0 and accepts an invalid priority overwrite. The fixed focused suite passes87 tests. Added stored-template bytes, workspace-history bytes, show/create results, string/named priorities, explicit override and invalid-value controls, plus public SDK type tests. Published2026.10.24 verification independently passes npm/npx, Bun/bunx and MCP transports; these fixes are later changes, awaiting the next eligible daily release."
+  "2026-10-24T05:07:11.090Z","harness:codex","Execution note: both linked-test attempts reached their240second deadlines while waiting behind the full coverage invocation. No assertion outcome was produced by those queued attempts. Retain those failure receipts; rerun both linked tests sequentially after the coverage owner finishes. The earlier direct87-test focused result passed. Current remote probes have four starts each paired with exactly one finish, including one handled usage refusal; physical telemetry queue is0bytes and broker ready/unacknowledged counts are0."
+  "2026-10-24T05:14:33.996Z","harness:codex","Final sequential linked-test rerun passes with stored template and _workspace history bytes unchanged on every invalid priority. Public typecheck passes, including rejection of boolean/array priority inputs. Full-suite result and setup failures are recorded on pm-gh1560; targeted unchanged reruns use explicit npm module visibility and the finalized snapshot."
+  "2026-10-24T05:19:43.974Z","harness:codex","Post-closure evidence: defect gate passes with zero findings, latest package-owned changelog generation/check includes this fix in Unreleased, and both setup-failed full-run cases pass unchanged in their18-test rerun. No second current-day automatic release is requested; the existing public2026.10.24 predates these fixes."
+notes[1]{created_at,author,text}:
+  "2026-10-24T05:01:11.226Z","harness:codex","Keep existing dynamic extension option keys compatible. Publish the priority member explicitly and validate it at runtime, while retaining the existing string/string-array normalization for other template options."
+learnings[1]{created_at,author,text}:
+  "2026-10-24T05:00:43.480Z","harness:codex",Normalize SDK numeric priority at template-save admission using the shared create priority parser before any template or history write; storage remains a numeric string.
+files[7]{path,scope}:
+  packages/pm-templates/extensions/templates/runtime.ts,project
+  sdk/public-surface.json,project
+  src/sdk/index.ts,project
+  src/sdk/runtime.ts,project
+  src/sdk/templates.ts,project
+  tests/types/templates-save-options.test-d.ts,project
+  tests/unit/commands/workspace/templates-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/templates-command.spec.ts tests/unit/packages/templates-runtime.spec.ts,project,240,"harness:codex","2026-10-24T04:55:08.623Z",local_mutation,fix/sdk-declared-defaults
+test_runs[2]:
+  - run_id: test-local-mvlxo35q-k5g0ya
+    kind: test
+    status: failed
+    started_at: "2026-10-24T04:59:22.798Z"
+    finished_at: "2026-10-24T05:03:23.389Z"
+    recorded_at: "2026-10-24T05:03:23.389Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/templates-command.spec.ts tests/unit/packages/templates-runtime.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvly1vgn-v1iv8d
+    kind: test
+    status: passed
+    started_at: "2026-10-24T05:13:52.996Z"
+    finished_at: "2026-10-24T05:14:06.599Z"
+    recorded_at: "2026-10-24T05:14:06.599Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/templates-command.spec.ts tests/unit/packages/templates-runtime.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Implemented typed template-save priority admission and persistence with passing linked regressions; included in the combined reviewed delivery.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: template-priority-fidelity
+  negative_control: "At unchanged 1d176a81b, run the added templates-command priority controls: numeric0 disappears and invalid priority overwrite resolves rather than refusing."
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/templates-command.spec.ts,pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+  owner: pm-gh1561
 body: "**Version:** 2026.10.23. **Scope:** core exported runTemplatesSave and option typing. Medium correctness / extension-author UX.\n\nRun via npx -y tsx in a fresh scratch npm project containing the pinned SDK. The current directory must be a fresh scratch workspace; use an ESM filename such as repro.mts:\n\n~~~ts\nimport { PmClient, runTemplatesSave } from '@unbrained/pm-cli';\nconst c = new PmClient({ cwd: process.cwd(), author: 'codex-agent' });\nawait c.init(undefined, { defaults: true, agentGuidance: 'skip' });\nawait c.packageInstall('templates');\nconst g = { path: process.cwd() + '/.agents/pm', author: 'codex-agent' };\nconst direct = await c.create({ type: 'Task', title: 'Direct', priority: 0 });\nconst saved = await runTemplatesSave('numeric', { type: 'Task', priority: 0 }, g);\nconst item = await c.create({ template: 'numeric', title: 'From numeric' });\nawait runTemplatesSave('string', { type: 'Task', priority: '0' }, g);\nconst control = await c.create({ template: 'string', title: 'From string' });\nconsole.log(direct.item.priority, saved.options, item.item.priority,\n  control.item.priority);\n~~~\n\n**Observed:** strict TypeScript accepts numeric priority because save takes Record<string, unknown>. Output is **0, {type:'Task'}, 2, 0**. Direct numeric creation works; saving removes priority without warning/rejection; template creation receives default priority 2; string-priority control works. The independent tiny tracker agrees with the larger fixture. A misspelled prority key is also accepted/persisted, an ancillary typing observation.\n\n**Expected:** publish supported template-save option types and normalize valid numeric priority, or reject unsupported values before saving with an actionable error. If this API intentionally accepts strings only, constrain its signature accordingly. Accepting unknown inputs and silently deleting values is the narrow defect; arbitrary unknown objects need not be preserved.\n\n**Measured cost:** compact SDK save receipt **197 bytes / 49.25 tokens**, with priority already absent and no diagnostic. Wrong-priority create receipt **448 bytes / 112 tokens**. Save+create uses **two calls / 161.25 tokens**, still without a mismatch diagnostic. The five-call direct/numeric/string controls cost **443.5 compact SDK tokens**. Workaround: stringify priority explicitly.\n\n**Duplicate searches**, same all-state limit-20 command:\n\n- \"templates\" \"SDK\"\n- \"templates\" \"priority\"\n- \"templates\" \"unknown\"\n- \"runTemplatesSave\"\n- template numeric priority\n- template number dropped\n\n#497 was read: it concerns applying stored tags/custom type-option fields during create, where stored built-in priority applied. This draft concerns discarding a numeric built-in value at the public save boundary before storage. #439 is the broad execution surface. No matching save-boundary report found.\n\n\n\n---\nFound by an agent-UX probe of 2026.10.23 (agent seat and extension-author seat) and re-verified by the maintainer orchestrator against the globally installed 2026.10.23 before filing."

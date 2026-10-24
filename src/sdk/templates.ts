@@ -16,6 +16,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
+import { resolvePriority } from "../core/item/priority.js";
 import {resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS } from "./cli-contracts.js";
@@ -35,6 +36,11 @@ const TEMPLATE_OPTION_REPEATABLE_KEY_SET = new Set<string>(
 type TemplateOptionValue = string | string[];
 /** Restricts create template options values accepted by command, SDK, and storage contracts. */
 export type CreateTemplateOptions = Record<string, TemplateOptionValue>;
+/** Template save inputs retain extension-defined string options and normalize priority before storage. */
+export interface TemplatesSaveOptions extends Record<string, unknown> {
+  /** Integer 0..4, numeric string, or named priority accepted by create. Stored as a numeric string. */
+  priority?: string | number;
+}
 /** Restricts template source values accepted by command, SDK, and storage contracts. */
 export type TemplateSource = "builtin" | "user";
 
@@ -178,6 +184,10 @@ function extractTemplateOptions(
   const next: CreateTemplateOptions = {};
   for (const [key, value] of Object.entries(rawOptions)) {
     if (value === undefined) {
+      continue;
+    }
+    if (key === "priority") {
+      next[key] = String(resolvePriority(value as string | number));
       continue;
     }
     if (TEMPLATE_OPTION_REPEATABLE_KEY_SET.has(key)) {
@@ -354,7 +364,7 @@ export async function loadCreateTemplateOptions(
 /** Implements run templates save for the public runtime surface of this module. */
 export async function runTemplatesSave(
   rawTemplateName: string,
-  options: Record<string, unknown>,
+  options: TemplatesSaveOptions,
   global: GlobalOptions,
 ): Promise<TemplatesSaveResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);

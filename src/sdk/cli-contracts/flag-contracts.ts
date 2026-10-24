@@ -35,6 +35,8 @@ export interface CliFlagContract {
   value_name?: string;
   /** Schema type that determines the shape and validation rules for this value. */
   value_type?: "string" | "number" | "boolean";
+  /** Declared omitted-flag default, preserving scalar and list value types. */
+  default?: string | number | boolean | Array<string | number | boolean>;
   /** Explicit argv value-token grammar. When absent, legacy core vocabulary inference applies. */
   value_arity?: "none" | "required" | "optional";
   /** Marks a presentation-only flag that may change paging or rendering without invalidating continuation. Omission means the flag is query-semantic. */

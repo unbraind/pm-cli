@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2010,
+    "covered_symbols": 2011,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2011
+    "required_symbols": 2012
   },
   "breaking_acknowledgements": [
     {
@@ -2712,6 +2712,16 @@
       ],
       "package_version": "2026.10.23",
       "reason": "pm-gh1564: rollback booleans never selected recovery; require the executable checkpoint ID string contract. Exhaustive rollback row consumers must also handle skipped no-effect rows."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CliFlagContract",
+        "signature ./sdk:runTemplatesSave",
+        "signature ./sdk/contracts:CliFlagContract",
+        "signature ./sdk/runtime:runTemplatesSave"
+      ],
+      "package_version": "2026.10.24",
+      "reason": "Declare optional typed extension defaults and template-save priority inputs; runtime normalization preserves valid existing inputs and refuses invalid priorities before writes."
     }
   ],
   "entrypoints": {
@@ -4972,7 +4982,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagContract",
-          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
+          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; default?: string | number | boolean | Array<string | number | boolean>; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
         },
         {
           "classification": "contract_data",
@@ -18736,7 +18746,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runTemplatesSave",
-          "signature": "(rawTemplateName: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<TemplatesSaveResult> | calls: (rawTemplateName: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<TemplatesSaveResult>"
+          "signature": "(rawTemplateName: string, options: TemplatesSaveOptions, global: GlobalOptions) => Promise<TemplatesSaveResult> | calls: (rawTemplateName: string, options: TemplatesSaveOptions, global: GlobalOptions) => Promise<TemplatesSaveResult>"
         },
         {
           "classification": "advanced_export",
@@ -20351,6 +20361,12 @@
           "kind": "type",
           "name": "TemplateSource",
           "signature": "export type TemplateSource = \"builtin\" | \"user\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TemplatesSaveOptions",
+          "signature": "export interface TemplatesSaveOptions extends Record<string, unknown> { priority?: string | number; }"
         },
         {
           "classification": "advanced_export",
@@ -23416,7 +23432,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagContract",
-          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
+          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; default?: string | number | boolean | Array<string | number | boolean>; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
         },
         {
           "classification": "contract_data",
@@ -35110,7 +35126,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runTemplatesSave",
-          "signature": "(rawTemplateName: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<TemplatesSaveResult> | calls: (rawTemplateName: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<TemplatesSaveResult>"
+          "signature": "(rawTemplateName: string, options: TemplatesSaveOptions, global: GlobalOptions) => Promise<TemplatesSaveResult> | calls: (rawTemplateName: string, options: TemplatesSaveOptions, global: GlobalOptions) => Promise<TemplatesSaveResult>"
         },
         {
           "classification": "advanced_export",
@@ -35579,6 +35595,12 @@
           "kind": "interface",
           "name": "TemplatesListResult",
           "signature": "export interface TemplatesListResult { templates: string[]; count: number; builtin_templates: string[]; user_templates: string[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "TemplatesSaveOptions",
+          "signature": "export interface TemplatesSaveOptions extends Record<string, unknown> { priority?: string | number; }"
         },
         {
           "classification": "advanced_export",
