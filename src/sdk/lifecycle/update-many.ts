@@ -4,10 +4,12 @@
  * Implements the pm update many command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
+import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
+import { rollbackMutationCheckpoint } from "./checkpoint-rollback.js";
 import {
   createCheckpointId,
   loadMutationCheckpoint,
-  restoreCheckpointItems,
   writeMutationCheckpoint,
   type MutationCheckpointItem,
   toItemRecord,
@@ -51,7 +53,6 @@ import {
   type ListOptions,
   type ListedItem,
 } from "../query/list.js";
-import { runRestore } from "./restore.js";
 import {
   assertUpdateMutationOptionCombinations,
   parseDependencyAdditions,
@@ -64,7 +65,7 @@ import {
   type PmCommandEffectReceipt,
 } from "../cli-contracts/command-exit-contracts.js";
 
-const UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION = 1;
+const UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION = 2;
 const UPDATE_MANY_CHECKPOINT_SUBDIR = "update-many";
 
 const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<PropertyKey>([
@@ -273,6 +274,7 @@ const UNSET_FIELD_ALIASES: Record<string, string> = {
 
 interface UpdateManyCheckpoint {
   schema_version: number;
+  rollback_strategy: "guarded_inverse";
   id: string;
   created_at: string;
   author: string;
@@ -323,7 +325,7 @@ interface UpdateManyApplyResultRow {
 
 interface UpdateManyRollbackResultRow {
   id: string;
-  status: "restored" | "failed";
+  status: "restored" | "failed" | "skipped";
   changed_fields?: string[];
   warnings?: string[];
   error?: string;
@@ -844,24 +846,16 @@ const runUpdateManyRollback = async (params: {
   const restoreMessage =
     params.options.update?.message ??
     `Rollback update-many checkpoint ${checkpoint.id}`;
-  const rollback = await restoreCheckpointItems(
-    checkpoint.items,
-    (id, targetUpdatedAt) =>
-      runRestore(
-        id,
-        targetUpdatedAt,
-        {
-          author: params.options.update?.author,
-          message: restoreMessage,
-          force: params.options.update?.force ?? true,
-        },
-        params.global,
-      ),
-  );
+  const rollback = await rollbackMutationCheckpoint(params.pmRoot, checkpoint, {
+    author: params.options.update?.author,
+    message: restoreMessage,
+    force: params.options.update?.force,
+  });
+  const skipped = rollback.rows.filter((row) => row.status === "skipped").length;
   return {
     ...derivePmBulkMutationEffect({
       applied: rollback.restored_ids.length,
-      skipped: 0,
+      skipped,
       failed: rollback.failed_count,
       unmatched: 0,
     }),
@@ -876,6 +870,7 @@ const runUpdateManyRollback = async (params: {
       rollback_command: `pm update-many --rollback ${checkpoint.id}`,
     },
     restored_count: rollback.restored_ids.length,
+    skipped_count: skipped,
     failed_count: rollback.failed_count,
     rows: rollback.rows,
     ids: rollback.restored_ids,
@@ -895,6 +890,7 @@ const writeUpdateManyCheckpoint = async (params: {
 }): Promise<UpdateManyResult["checkpoint"]> => {
   const checkpointPayload: UpdateManyCheckpoint = {
     schema_version: UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
+    rollback_strategy: "guarded_inverse",
     id: params.checkpointId,
     created_at: params.nowValue,
     author: resolveAuthor(params.options.update?.author, "unknown"),
@@ -1119,6 +1115,7 @@ const buildUpdateManyNoopResult = (plan: UpdateManyPlan): UpdateManyResult => ({
 
 /** Applies planned item updates independently while preserving per-row failures. */
 const applyUpdateManyRows = async (params: {
+  pmRoot: string;
   items: ListedItem[];
   plans: PlannedItemDiff[];
   options: UpdateManyCommandOptions;
@@ -1146,7 +1143,9 @@ const applyUpdateManyRows = async (params: {
         message: updateMessage,
         runtimeFieldCommands: ["update_many" as const],
       });
-      const result = await runUpdate(item.id, rowUpdateOptions, params.global);
+      const result = await withCheckpointMutation({
+        pmRoot: params.pmRoot, itemId: item.id, checkpointId: params.checkpointId,
+      }, () => runUpdate(item.id, rowUpdateOptions, params.global));
       rows.push({
         id: item.id,
         status: "updated",
@@ -1198,6 +1197,7 @@ const applyUpdateManyPlan = async (params: {
           checkpointItems,
         });
   const applied = await applyUpdateManyRows({
+    pmRoot: params.runtime.pmRoot,
     items: params.plan.listed.items,
     plans: params.plan.planned,
     options: params.options,
@@ -1237,9 +1237,8 @@ export const runUpdateMany = async (
   options: UpdateManyCommandOptions,
   global: GlobalOptions,
 ): Promise<UpdateManyResult> => {
+  const rollbackId = resolveCheckpointRollbackId(options.rollback);
   const runtime = await loadUpdateManyRuntimeContext(global);
-  const rollbackId =
-    typeof options.rollback === "string" ? options.rollback : undefined;
   if (rollbackId === undefined) {
     options = {
       ...options,

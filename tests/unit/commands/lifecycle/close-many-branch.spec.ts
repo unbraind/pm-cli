@@ -61,7 +61,8 @@ describe("close-many branch coverage", () => {
         filters: { ids: "pm-1" },
       })),
     }));
-    vi.doMock("../../../../src/core/checkpoint/mutation-checkpoint.js", () => ({
+    vi.doMock("../../../../src/core/checkpoint/mutation-checkpoint.js", async (importOriginal) => ({
+      ...await importOriginal<typeof import("../../../../src/core/checkpoint/mutation-checkpoint.js")>(),
       createCheckpointId: vi.fn(() => "checkpoint-1"),
       loadMutationCheckpoint: vi.fn(),
       restoreCheckpointItems: vi.fn(),

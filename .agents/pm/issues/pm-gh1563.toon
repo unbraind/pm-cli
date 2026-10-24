@@ -1,0 +1,81 @@
+id: pm-gh1563
+title: "GH-1563: preserve later peer edits during bulk checkpoint rollback"
+description: "External report: https://github.com/unbraind/pm-cli/issues/1563. Revalidate the reported 2026.10.23 behavior against the checkout before implementation."
+type: Issue
+status: closed
+priority: 1
+tags[2]: github-intake,sdk
+created_at: "2026-10-23T23:21:32.081Z"
+updated_at: "2026-10-24T00:15:24.332Z"
+closed_at: "2026-10-24T00:15:23.577Z"
+completed_at: "2026-10-24T00:15:23.577Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Rollback reverses only successful batch effects; unrelated peer metadata and annotations remain; drift on batch-modified fields refuses without writes; failed forward rows are never restored; close-many uses the same protection
+parent: pm-lf6s
+risk: high
+confidence: 95
+resolution: "Checkpoint schema2 binds committed target-item writes to immutable history; rollback verifies the live item and field postimages under the normal fenced mutation lock, reverses only those effects, preserves unrelated peer context, skips absent or already-reversed effects, and refuses legacy or drifted recovery without implicit force."
+expected_result: Undo successful bulk effects while preserving later peer edits and truthful conflict/no-effect receipts across SDK and CLI.
+actual_result: "Three pre-fix controls failed at the intended loss/false-success boundaries. Final focused144 tests, linked20 tests, packed npm/Bun acceptance and strict typecheck pass. Full local coverage failures were repaired and rechecked; final hosted coverage remains mandatory before merge."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-usfg,related,"2026-10-24T00:11:29.564Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-23T23:21:32.081Z","harness:codex","Duplicate check 2026-10-24: canonical orientation, request-specific SDK/rollback search, fresh open and in_progress lists, and complete strict all-status read of 3083 items including 2799 closed and 14 canceled; no omissions or unreadable files. Exact GitHub issue and title checks found no existing owner for this delta. Closed SDK/bulk foundations were read live and remain completed. Source report retained in full; intake is not reproduction proof."
+  "2026-10-23T23:23:04.124Z","harness:codex","Implementation plan: replace timestamp-wide restoration with guarded inverse effects proven by checkpoint-attributed immutable history. Scope attribution to the physical tracker and target item, capture it at the shared locked item writer, and check inverse-field postimages under that same lock. Failed/no-effect rows and repeated rollback must not fabricate restores. Legacy checkpoints without attribution will refuse safely and retain explicit manual history/restore recovery."
+  "2026-10-23T23:33:26.955Z","harness:codex","Regression evidence: all3 initial behavior checks failed before the fix at the intended peer-title loss and false-success boundaries. The revised public SDK controls pass for both bulk commands; the focused5-file suite passes70 tests including field drift with byte-identical item/history preservation, failed-row skipping, collection/body/absent-field reversal, corrupt history, legacy refusal, direct input admission and repeat no-op. Full coverage and expanded nested-effect controls are running before closeout."
+  "2026-10-23T23:47:51.772Z","harness:codex","Observability acceptance: the required recent-window Sentry/telemetry gate passes with0 critical/high unresolved issues. Four explicitly consented tracing probes produced fresh pm get/list/telemetry/contracts spans. Remote ingestion shows current command actions with paired starts/finishes for the inspected families and the physical client queue is empty. Gate aggregates; exact probe pairing; broker queue state; and rolling historical reliability are retained as separate claims."
+  "2026-10-23T23:59:39.635Z","harness:codex","Full local run evidence: 11186 tests passed and4 failed across859 files. The new integration file exceeded the120-file root directory cap, so it moved into lifecycle/. Two existing tests required the standardized blank-checkpoint wording and a partial checkpoint mock. The remaining packed continuation fixture required this host npm module path; the exact NODE_PATH remedy resolves npm/package.json without source or policy changes. Focused reruns cover all four failures. Shared admission now rejects invalid rollback values before tracker/config reads and redundant unreachable blank validation was removed."
+  "2026-10-24T00:11:37.462Z","harness:codex","Compatibility hardening: newly written checkpoints now use schema2. A reader expecting schema1 refuses them before any restoration; new readers also refuse legacy timestamp-only artifacts with explicit history/restore review guidance. Separate controls cover current-schema checkpoints that lack attributed recovery semantics. This prevents an older CLI from silently using its destructive rollback on a new guarded checkpoint."
+  "2026-10-24T00:15:22.121Z","harness:codex","Final local behavior evidence: the schema2 focused suite passes144 tests across the changed checkpoint and lifecycle boundaries; all four initial full-run failures pass in the119-test repair rerun; the final linked recovery/context suite passes20 tests. Full local coverage previously stopped on those now-resolved failures; final hosted full-source coverage remains a required merge gate. Tracker-context-quality now exits0 across47 assertions with no blocking findings and one retained advisory. No thresholds or source populations were reduced."
+files[11]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/checkpoint/mutation-checkpoint.ts,project
+  src/core/checkpoint/mutation-context.ts,project
+  src/core/store/item-store.ts,project
+  src/sdk/lifecycle/checkpoint-rollback.ts,project
+  src/sdk/lifecycle/close-many.ts,project
+  src/sdk/lifecycle/update-many.ts,project
+  tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts,project
+  tests/unit/commands/lifecycle/close-command.spec.ts,project
+  tests/unit/commands/lifecycle/close-many-branch.spec.ts,project
+  tests/unit/core/checkpoint/mutation-context.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts tests/unit/core/checkpoint/mutation-context.spec.ts,project,240,"harness:codex","2026-10-23T23:59:37.675Z",local_mutation,fix/bulk-rollback-peer-preservation
+test_runs[2]:
+  - run_id: test-local-mvlmuqdb-v5td38
+    kind: test
+    status: passed
+    started_at: "2026-10-24T00:00:21.880Z"
+    finished_at: "2026-10-24T00:00:37.631Z"
+    recorded_at: "2026-10-24T00:00:37.631Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts tests/unit/core/checkpoint/mutation-context.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvln9erz-nduhos
+    kind: test
+    status: passed
+    started_at: "2026-10-24T00:11:48.833Z"
+    finished_at: "2026-10-24T00:12:02.446Z"
+    recorded_at: "2026-10-24T00:12:02.446Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts tests/unit/core/checkpoint/mutation-context.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: Implemented guarded bulk rollback with peer-context preservation and versioned recovery evidence
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: guarded-bulk-checkpoint-recovery
+  negative_control: The three original public-SDK preservation/conflict cases failed against the pre-fix source with peer-title loss and false rollback success; rerun node scripts/run-tests.mjs test -- tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts against that source to reproduce.
+  local_checks[2]: node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+  owner: pm-gh1563
+body: "**Version:** 2026.10.23. **Scope:** core CLI `update many --rollback` and exported `runUpdateMany`. **Severity:** high collaborative recovery risk. Live item evidence is removed; original events remain recoverable in append-only history. No permanent audit-log deletion is claimed.\n\nRun this 17-line TypeScript reproduction in a fresh scratch npm package containing the pinned dependency, using `npx -y tsx repro.ts` with ESM enabled:\n\n```ts\nimport { PmClient, runUpdateMany } from '@unbrained/pm-cli';\nconst c = new PmClient({ cwd: process.cwd(), author: 'codex-agent' });\nawait c.init(undefined, { defaults: true, agentGuidance: 'skip' });\nconst id = (await c.create({ type: 'Task', title: 'Original', priority: 2 })).item.id;\nconst g = { path: '.agents/pm', author: 'codex-agent' };\nconst batch = await runUpdateMany({ list: { ids: id },\n  update: { priority: 0 } }, g);\nconst peer = new PmClient({ cwd: process.cwd(), author: 'peer-agent' });\nawait peer.comments(id, { add: 'New peer evidence after the batch' });\nawait peer.update(id, { title: 'Peer continued implementation', priority: 1 });\nconst before = await c.get(id, { full: true });\nif (!batch.checkpoint) throw new Error('Missing checkpoint');\nconst rollback = await runUpdateMany({ list: {}, update: {},\n  rollback: batch.checkpoint.id }, g);\nconst after = await c.get(id, { full: true });\nconsole.log(before.item.title, before.item.comments, rollback);\nconsole.log(after.item.title, after.item.priority, after.item.comments);\n```\n\n**Observed:** after rollback the title is `Original`, priority is 2 and comments are empty. Rollback returns effect/exit 0 with no warnings. Its changed_fields includes comments/title even though the original batch changed only priority. A separate two-item CLI reproduction agrees: priority-only apply → peer comment → peer title update → actual rollback removes the later title/comment. `--dry-run --rollback` is refused, so there is no successful rollback preview to warn about these losses.\n\nThe per-item failure control additionally showed that the checkpoint includes an item whose forward update failed. Rollback restores that item too and removes its subsequent comment, despite the batch never having changed that row successfully.\n\n**Expected:** undo only the successful batch effects. Preserve unrelated later fields and annotations; use an inverse patch guarded by the batch's postimage/fingerprint. When a changed field itself has drifted, return a conflict with an explicit resolution path. If whole-item restoration is intentional, require explicit acknowledgement and expose the affected later edits before overwriting them. Failed rows should not be restored as if their forward mutation succeeded.\n\n**Measured cost:** actual CLI rollback receipt **964 bytes / 241 tokens**, 30.538 seconds, followed by a **1,260-byte / 315-token** projected state read, 24.348 seconds: **two calls / 556 tokens** to execute and discover the unrelated losses. The response reports restored rows and empty warnings, not the post-checkpoint edits it discards. The independent SDK control observes the same state change. These timings are host observations, not intrinsic operation latency.\n\n**Duplicate searches:** each used `gh issue list -R unbraind/pm-cli --state all --search '<query>' --limit 20`:\n\n- `\"rollback\" \"comment\"`\n- `\"update-many\" \"rollback\"`\n- `\"rollback\" \"drift\"`\n- `\"rollback\" \"concurrent\"`\n- `\"bulk\" \"rollback\" \"drift\"`\n- `\"close-many\" \"rollback\"`\n- `\"rollback\" \"overwrite\"`\n\nNo matching per-item bulk rollback report found. **#812** was read: it concerns whole-workspace snapshot restore truncating histories and removing items; this reproduction never invokes workspace restore and retains history. **#613** is the general atomic item-mutation helper, **#1370/#256** concern preview semantic validation, and **#1545** concerns failed package replacement. None describes this rollback overwriting unrelated later item edits. Searches of probes 5/6 and the named excluded issues found no overlapping draft.\n\n\n\nRe-verified independently by the orchestrator on 2026.10.23 with the TypeScript reproduction above: after rollback the item reads `Original 2 []` (peer title, priority and comment lost)."

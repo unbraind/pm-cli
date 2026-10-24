@@ -466,8 +466,8 @@ pm update many --filter-tag wave:7 --reviewer maintainer-review
 pm update many --filter-status open --filter-type Task --filter-estimates-missing --estimate 60 --dry-run
 
 # Audited bulk close: routes EACH match through full `pm close` semantics
-# (close validation, active-child orphan checks, blocked-edge cleanup) — unlike
-# `update-many --status closed`, which bypasses them. A shared --reason is required
+# (close validation, active-child orphan checks, blocked-edge cleanup).
+# A shared --reason is required
 # and at least one filter is required so it never matches every item.
 pm close many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met" --dry-run
 pm close many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met"
@@ -475,6 +475,25 @@ pm close many --rollback close-many-20260604-abc123   # restore the batch
 ```
 
 `close many` skips already-terminal matches by default (pass `--force` to re-close), accepts `--completed-at <timestamp>` to preserve one shared actual-completion time across the batch, reports a per-item plan (`close`/`skip`, plus `active_child_ids` for parents that would be orphaned) under `--dry-run`, and writes a checkpoint by default (`--no-checkpoint` to disable). Checkpoints for both commands live under `.agents/pm/checkpoints/<command>/` and are restored with `--rollback <checkpoint-id>`.
+
+Rollback safety is tracked by [pm-gh1563](../.agents/pm/issues/pm-gh1563.toon)
+and the public checkpoint option by [pm-gh1564](../.agents/pm/issues/pm-gh1564.toon).
+Rollback reverses only committed effects attributed to that batch. It preserves
+later edits to unrelated fields, including peer comments, notes and links. If a
+batch-modified field has since changed, that row fails without changing any of
+its fields; inspect `get` and `history` and reconcile the conflict explicitly.
+Collections are guarded as complete fields, so a later edit to a collection the
+batch changed also conflicts. Other rows can recover independently.
+
+Rows with no committed effect, and rows already rolled back, report `skipped`
+and do not append history. The result includes `restored_count`, `skipped_count`
+and `failed_count`; a repeated completed rollback returns the normal no-effect
+exit. Checkpoints from older versions without attributed effects refuse rather
+than overwrite later context. Inspect their history before choosing an explicit
+point-in-time `restore`. Rollback respects current ownership and mutation policy;
+it does not implicitly force an ownership or lock override.
+New checkpoints use schema version 2 so older CLI versions also refuse them
+instead of applying their former whole-item restoration behavior.
 
 When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`). Unknown-command guidance ranks agent verb synonyms first, bounded edit distance second, and substring matches last; `pm log` therefore points to `history`, `comments`, and `notes`, never a `catalog` command.
 

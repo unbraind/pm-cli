@@ -15,9 +15,8 @@ import { nowIso } from "../shared/time.js";
 // Shared checkpoint + rollback machinery for bulk-mutation commands
 // (`update-many`, `close-many`). Each command owns its own checkpoint payload
 // shape (the extra fields it records) but reuses the common id/path/validation
-// helpers and the restore loop so the durable rollback contract — capture each
-// matched item's pre-mutation updated_at, then restore-to-timestamp on
-// rollback — stays identical across commands and is not duplicated.
+// helpers and row accounting. Guarded inverse recovery is owned by the SDK;
+// timestamps in historical checkpoints never authorize whole-item overwrites.
 
 /** Documents the mutation checkpoint item payload exchanged by command, SDK, and package integrations. */
 export interface MutationCheckpointItem {
@@ -48,7 +47,7 @@ export interface CheckpointRollbackRow {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Lifecycle state reported for status. */
-  status: "restored" | "failed";
+  status: "restored" | "failed" | "skipped";
   /** Value that configures or reports changed fields for this contract. */
   changed_fields?: string[];
   /** Value that configures or reports warnings for this contract. */
@@ -67,11 +66,20 @@ export interface CheckpointRollbackResult {
   failed_count: number;
 }
 
-/** Restore a single item to its captured pre-mutation timestamp. */
+/** Recover one checkpointed item, or disclose that it has no remaining effect. */
 export type CheckpointRestoreFn = (
   id: string,
   targetUpdatedAt: string,
-) => Promise<{ changed_fields?: string[]; warnings?: string[] }>;
+) => Promise<{ changed_fields?: string[]; warnings?: string[]; skipped?: boolean }>;
+
+/** Admit only a concrete checkpoint ID; invalid untyped values must never fall through to forward mutation. */
+export function resolveCheckpointRollbackId(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") {
+    throw new PmCliError("--rollback requires a non-empty checkpoint ID string", EXIT_CODE.USAGE);
+  }
+  return normalizeCheckpointId(value);
+}
 
 /** Implements normalize checkpoint id for the public runtime surface of this module. */
 export function normalizeCheckpointId(raw: string): string {
@@ -210,7 +218,7 @@ export async function loadMutationCheckpoint(
   const record = parsed as Record<string, unknown>;
   if (record.schema_version !== schemaVersion) {
     throw new PmCliError(
-      `Checkpoint ${normalizedId} has unsupported schema version`,
+      `Checkpoint ${normalizedId} has unsupported schema version. Inspect pm history and use an explicit pm restore only after reviewing later edits.`,
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
@@ -228,7 +236,7 @@ export async function loadMutationCheckpoint(
   };
 }
 
-/** Restore every checkpointed item to its captured pre-mutation timestamp, collecting per-item rows. A single item's failure is recorded and does not abort the remaining restores. */
+/** Collect independent recovery results without allowing one row's refusal to hide other rows. */
 export async function restoreCheckpointItems(
   items: MutationCheckpointItem[],
   restore: CheckpointRestoreFn,
@@ -240,11 +248,11 @@ export async function restoreCheckpointItems(
       const restored = await restore(entry.id, entry.target_updated_at);
       rows.push({
         id: entry.id,
-        status: "restored",
+        status: restored.skipped ? "skipped" : "restored",
         changed_fields: restored.changed_fields,
         warnings: restored.warnings,
       });
-      restoredIds.push(entry.id);
+      if (!restored.skipped) restoredIds.push(entry.id);
     } catch (error: unknown) {
       rows.push({
         id: entry.id,

@@ -8,6 +8,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
+import { resolveCheckpointRollbackId } from "../core/checkpoint/mutation-checkpoint.js";
 import {
   normalizeListOptions,
   normalizeCreateOptions,
@@ -785,7 +786,7 @@ export function closeManyOptionsFromFlat(
     force: options.force === true ? true : undefined,
     dryRun:
       options.dryRun === true || options.dry_run === true ? true : undefined,
-    rollback: readRuntimeString(options, "rollback"),
+    rollback: resolveCheckpointRollbackId(options.rollback),
     checkpoint:
       options.checkpoint === false ||
       options.noCheckpoint === true ||
@@ -898,7 +899,7 @@ export function updateManyOptionsFromFlat(
       ) as never,
       dryRun:
         options.dryRun === true || options.dry_run === true ? true : undefined,
-      rollback: readRuntimeString(options, "rollback"),
+      rollback: resolveCheckpointRollbackId(options.rollback),
       checkpoint:
         options.checkpoint === false ||
         options.noCheckpoint === true ||
@@ -916,7 +917,7 @@ export function updateManyOptionsFromFlat(
     ) as never,
     dryRun:
       options.dryRun === true || options.dry_run === true ? true : undefined,
-    rollback: readRuntimeString(options, "rollback"),
+    rollback: resolveCheckpointRollbackId(options.rollback),
     checkpoint:
       options.checkpoint === false ||
       options.noCheckpoint === true ||

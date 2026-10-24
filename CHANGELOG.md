@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-1564: align SDK bulk rollback checkpoint types and runtime admission ([pm-gh1564](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1564.toon))
+- GH-1563: preserve later peer edits during bulk checkpoint rollback ([pm-gh1563](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1563.toon))
 - Refuse assignment-only shell lists and command terminators ([pm-g7cup8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g7cup8.toon))
 - Keep aggregate test execution complete when legacy commands are refused ([pm-s32gcz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-s32gcz.toon))
 - Reuse SDK command admission before offering positional test retries ([pm-qi7v2j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qi7v2j.toon))
@@ -14,6 +16,10 @@
 - GH-1555: refuse assignment-only linked-test commands before recording false passes ([pm-gh1555](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1555.toon))
 - GH-1552: charge SDK read budgets using compact JSON envelopes ([pm-gh1552](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1552.toon))
 - GH-1551: expose omission and budget receipts on precise SDK read results ([pm-gh1551](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1551.toon))
+
+### Security
+
+- Remediate independent-feed development dependency advisories ([pm-zod466](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zod466.toon))
 
 ## 2026.10.23 - 2026-10-23
 

@@ -9,6 +9,7 @@ import { normalizeHistoryOperationForWrite } from "../history/operation-contract
 import { enforceWorkflowMutation } from "../policy/workflow-policy-store.js";
 import { recordItemMetadataEnumeration } from "./item-metadata-read-work.js";
 import { assertItemMutationPreconditions } from "./item-mutation-precondition.js";
+import { checkpointMutationHistoryContext } from "../checkpoint/mutation-context.js";
 import path from "node:path";
 import {
   getActiveExtensionRegistrations,
@@ -768,7 +769,10 @@ async function mutateItemWithDeferredHistoryContext(
         warnings: [...parseWarnings, ...(mutation.warnings ?? [])],
       };
     }
-    const historyContext = params.resolveHistoryContext?.();
+    const historyContext = {
+      ...params.resolveHistoryContext?.(),
+      ...checkpointMutationHistoryContext(params.pmRoot, located.id),
+    };
     const requiredFormat = Math.max(requiredItemFormatVersion(beforeDocument.metadata), requiredItemFormatVersion(mutableDocument.metadata));
     assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(params.pmRoot), requiredFormat);
     if (requiredFormat > effectiveItemFormatVersion(mutableDocument.metadata)) {
@@ -869,7 +873,7 @@ async function mutateItemWithDeferredHistoryContext(
             before: beforeDocument,
             after: afterDocument,
             message: params.message,
-            context: workflowPolicy.decisions.length === 0 ? historyContext : {
+            context: workflowPolicy.decisions.length === 0 ? (Object.keys(historyContext).length === 0 ? undefined : historyContext) : {
               ...historyContext, workflow_policies: workflowPolicy.decisions,
             },
           });

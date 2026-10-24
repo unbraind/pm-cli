@@ -116,9 +116,15 @@ const closeManyOptions: PmCloseManyActionOptions = {
   ids: ["pm-a", "pm-b"],
   reason: "batch closure",
   resolution: "fixed",
-  rollback: false,
+  rollback: "close-many-checkpoint",
 };
 void closeManyOptions;
+
+const updateRollback: PmUpdateManyActionOptions = { rollback: "update-many-checkpoint" };
+void updateRollback;
+// @ts-expect-error a boolean cannot identify the checkpoint to recover
+const invalidRollback: PmCloseManyActionOptions = { rollback: true };
+void invalidRollback;
 
 const numericCloseManyOptions: PmCloseManyActionOptions = { ids: 123 };
 void numericCloseManyOptions;

@@ -12,6 +12,13 @@ import {
 } from "../../../../src/core/item/parse.js";
 
 describe("bulk runtime input normalization", () => {
+  it.each([updateManyOptionsFromFlat, closeManyOptionsFromFlat])("requires a checkpoint string without falling back to forward execution", (normalize) => {
+    expect(normalize({ rollback: " checkpoint-1 " })).toMatchObject({ rollback: "checkpoint-1" });
+    expect(normalize({ list: {}, update: {}, rollback: "checkpoint-1" })).toMatchObject({ rollback: "checkpoint-1" });
+    for (const rollback of [true, false, null, 123, {}, [], " ", "../outside"]) {
+      expect(() => normalize({ rollback })).toThrow(/rollback/);
+    }
+  });
   it("accepts transport-native ID arrays and preserves scalar compatibility", () => {
     expect(
       normalizeMcpOptionsArrays(

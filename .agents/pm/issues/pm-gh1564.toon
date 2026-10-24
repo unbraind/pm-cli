@@ -1,0 +1,96 @@
+id: pm-gh1564
+title: "GH-1564: align SDK bulk rollback checkpoint types and runtime admission"
+description: "External report: https://github.com/unbraind/pm-cli/issues/1564. Revalidate the reported 2026.10.23 behavior against the checkout before implementation."
+type: Issue
+pm_format_version: 2
+status: closed
+priority: 2
+tags[2]: github-intake,sdk
+created_at: "2026-10-23T23:21:34.372Z"
+updated_at: "2026-10-24T00:15:26.051Z"
+closed_at: "2026-10-24T00:15:25.107Z"
+completed_at: "2026-10-24T00:15:25.107Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Public update-many and close-many action options accept string checkpoint IDs and reject booleans; invalid untyped rollback inputs fail before ordinary forward execution; packed consumer type and runtime proof pass
+parent: pm-usfg
+risk: medium
+confidence: 95
+resolution: "The shared flat action control derives rollback from the executable string checkpoint contract; flat, nested and direct SDK paths reject boolean or malformed IDs before forward execution. Published SDK and docs describe checkpoint strings and skipped rollback rows."
+expected_result: Actual checkpoint strings compile and recover through the SDK; invalid boolean options cannot fall through to an ordinary batch operation.
+actual_result: Strict source and installed-package consumer controls pass for both bulk action types; flat/nested and direct invalid-input tests pass; final npm/npx and Bun/bunx packed workflows exit0. The compatible public-surface correction and migration are explicitly recorded.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1563,related,"2026-10-24T00:11:30.373Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-23T23:21:34.372Z","harness:codex","Duplicate check 2026-10-24: canonical orientation, request-specific SDK/rollback search, fresh open and in_progress lists, and complete strict all-status read of 3083 items including 2799 closed and 14 canceled; no omissions or unreadable files. Exact GitHub issue and title checks found no existing owner for this delta. Closed SDK/bulk foundations were read live and remain completed. Source report retained in full; intake is not reproduction proof."
+  "2026-10-23T23:23:04.825Z","harness:codex","Implementation plan: derive the shared rollback option from the executable string checkpoint contract, reject boolean and other invalid untyped inputs at flat normalization and direct SDK entrypoints, and verify positive/negative strict consumer types plus generic action dispatch in the same grouped PR."
+  "2026-10-23T23:46:03.618Z","harness:codex","Validation recovery: the linked packed-consumer check reached its600-second limit while package-distribution waited on the full coverage runner exclusive build lease. No packed scenario had executed and no product result is inferred. Preserved the failed test record and updated its timeout metadata to1200 seconds without replacing provenance; rerun after the coverage lease releases. Public strict typecheck already passes and the source type fixture accepts string checkpoint IDs while rejecting booleans."
+  "2026-10-24T00:15:22.827Z","harness:codex","Final installed-consumer evidence: the final schema2 packed acceptance exits0 for npm/npx and Bun/bunx across9 installed package workflows; strict installed-SDK compilation accepts checkpoint-ID strings for both bulk action types and rejects a boolean. The prior build-lease timeout remains in history and the successful retry does not erase it. The explicit SDK signature acknowledgement documents correction of the unusable boolean contract; ordinary forward calls omit rollback."
+files[6]{path,scope}:
+  scripts/smoke-npx-from-pack.mjs,project
+  sdk/public-surface.json,project
+  src/sdk/cli-contracts/typed-action-inputs.ts,project
+  src/sdk/runtime-input.ts,project
+  tests/types/typed-action-inputs.test-d.ts,project
+  tests/unit/sdk/runtime/runtime-input-bulk.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},updated_by,updated_at,note}:
+  "pnpm smoke:npx",project,1200,"harness:codex","2026-10-23T23:33:23.809Z",local_mutation,fix/bulk-rollback-peer-preservation,"harness:codex","2026-10-23T23:46:02.330Z",Packed acceptance needs an exclusive build lease; allow the documented20-minute validation ceiling.
+test_runs[4]:
+  - run_id: test-local-mvlm9sb1-7jrsya
+    kind: test
+    status: failed
+    started_at: "2026-10-23T23:34:19.515Z"
+    finished_at: "2026-10-23T23:44:20.364Z"
+    recorded_at: "2026-10-23T23:44:20.364Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+  - run_id: test-local-mvlmr97p-a046el
+    kind: test
+    status: passed
+    started_at: "2026-10-23T23:55:33.012Z"
+    finished_at: "2026-10-23T23:57:55.428Z"
+    recorded_at: "2026-10-23T23:57:55.428Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+  - run_id: test-local-mvln0zke-zdhb8i
+    kind: test
+    status: passed
+    started_at: "2026-10-24T00:02:44.119Z"
+    finished_at: "2026-10-24T00:05:29.486Z"
+    recorded_at: "2026-10-24T00:05:29.486Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+  - run_id: test-local-mvlnd0ze-807qyo
+    kind: test
+    status: passed
+    started_at: "2026-10-24T00:12:03.094Z"
+    finished_at: "2026-10-24T00:14:51.194Z"
+    recorded_at: "2026-10-24T00:14:51.194Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm smoke:npx",schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: Aligned public bulk rollback types and runtime admission with checkpoint identities
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: packed-bulk-rollback-option-contract
+  negative_control: "The original published SDK rejects rollback checkpoint strings and accepts useless booleans; pnpm smoke:npx now compiles positive checkpoint-ID and negative boolean assignments through the installed package."
+  local_checks[3]: pnpm typecheck,"pnpm smoke:npx",node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/runtime-input-bulk.spec.ts
+  hosted_checks[2]: Gates (coverage),Release readiness
+  owner: pm-gh1564
+body: "**Version:** 2026.10.23. **Scope:** core exported `PmBulkMutationControlOptions`, `PmUpdateManyActionOptions` and `PmCloseManyActionOptions`. **Severity:** low SDK correctness / recovery authoring friction.\n\nIn the scratch package, compile this file:\n\n```ts\nimport type { PmUpdateManyActionOptions,\n  PmCloseManyActionOptions } from '@unbrained/pm-cli';\nconst update: PmUpdateManyActionOptions = { rollback: 'update-many-checkpoint' };\nconst close: PmCloseManyActionOptions = { rollback: 'close-many-checkpoint' };\nconsole.log(update, close);\n```\n\nCommand: `npx tsc --noEmit --strict --skipLibCheck --module nodenext --target es2023 --types node bulk-types.ts`.\n\n**Observed:** two TS2322 errors: string is not assignable to boolean or undefined. Replacing strings with true compiles, but passing those option bags to `PmClient.run('update-many', { options })` / `run('close-many', { options })` does not request rollback. The former reports no mutation flags; the latter reports missing close filters. The boolean does not name a checkpoint and is dropped from rollback dispatch.\n\nCLI help correctly declares `--rollback <value>`, and the lower-level `runUpdateMany`/`runCloseMany` structured option declarations correctly use string. Those working APIs provide a workaround; the defect is the exported flat bulk action types, not absence of SDK recovery.\n\n**Expected:** type rollback as a checkpoint ID string, sharing the runtime contract. Reject boolean inputs with a rollback-specific diagnostic instead of dispatching as an ordinary forward bulk operation. Add a packed-consumer type check accepting actual checkpoint IDs for both action types.\n\n**Measured cost:** the two compiler diagnostics occupy **196 bytes / 49 estimated tokens**. The accepted-boolean runtime control required two dispatcher calls and returned refusal strings rather than performing recovery: its compact serialized error objects total **737 bytes / 184.25 estimated tokens**. Compilation failure is not a successful restore. No state loss occurred in this control.\n\n**Duplicate searches**, same all-state limit-20 command:\n\n- `\"rollback\" \"boolean\"`\n- `\"PmBulkMutationControlOptions\"`\n- `\"PmUpdateManyActionOptions\"`\n- `\"PmCloseManyActionOptions\"`\n- `\"rollback\" \"SDK\"`\n- `\"rollback\" \"type\"`\n- `\"rollback\" \"checkpoint\" \"typing\"`\n\nNo matching exported-rollback-type report found. Results include broad SDK/preview and workspace restore reports, not this boolean/string declaration mismatch. This draft is distinct from Draft 1's actual rollback state semantics."

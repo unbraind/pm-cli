@@ -1,0 +1,60 @@
+id: pm-zod466
+title: Remediate independent-feed development dependency advisories
+description: Fresh independent registry/OSV security checks on 2026-10-24 identify GHSA-mrhx-c7xc-m3w5 in Zod and additional fast-uri and Undici findings that the registry alone misses. Consolidate compatible security floors at the existing workspace override boundary; retain all feed evidence and require zero findings across the complete locked dependency population. No public runtime exploit path is asserted.
+type: Issue
+status: closed
+priority: 1
+tags[3]: dependencies,sdk,security
+created_at: "2026-10-23T23:28:44.884Z"
+updated_at: "2026-10-24T00:15:27.559Z"
+closed_at: "2026-10-24T00:15:26.937Z"
+completed_at: "2026-10-24T00:15:26.937Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: No installed or locked Zod copy is below4.6.6; public-registry audit and maintained dependency gates pass; typecheck and functional or mutation controls preserve development-tool and SDK behavior
+parent: pm-u9d0
+risk: medium
+confidence: 90
+resolution: "Compatible workspace security floors consolidate Zod4.6.7, fast-uri3.1.9 and Undici6.29.1 across all active lockfile paths. Registry and OSV checks remain mandatory. Unused ext-apps embedded parser bytes are excluded from the CLI runtime/distribution and retained as a separate future-adoption constraint in pm-extapps-vendor-zod."
+expected_result: "All active dependency versions clear both feeds without breaking supported APIs, engines or development tools; unshipped vendor bytes are not misrepresented as patched."
+actual_result: "The unchanged567-package all-dependency gate passes with zero registry and OSV findings; frozen install, strict typecheck, Knip/development-bundle checks and valid constrained-collection controls pass. Security review found no further reachable candidate regression. The unused upstream vendor-bundle limitation remains open and unclaimed."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4ydh,related,"2026-10-24T00:11:34.950Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-23T23:28:44.884Z","harness:codex","Duplicate check: canonical orientation and current open/in_progress lists plus complete strict3083-item all-status corpus including closed history were read. Exact GHSA search found no match. Closed pm-4ydh covers a different Zod advisory and remains completed. This new report is validated by fresh registry audit and upstream advisory; no production exploit reachability is asserted."
+  "2026-10-23T23:31:01.613Z","harness:codex","Independent boundary review: all Zod callers accept4.6.6+ within4.x and the override resolves4.6.7. Current MCP ext-apps usage in pm source is type-only; production exploit reachability is not established. Upstream patch bounds constrained collections before element traversal and does not cap arbitrary unbounded arrays. A second complete OSV feed reports four fast-uri3.1.8 advisories and two Undici6.28.1 advisories, while registry counts are zero. The unchanged fail-closed gate blocked correctly; inspect compatible security floors for those copies before continuing."
+  "2026-10-23T23:33:27.641Z","harness:codex","Dependency fix evidence: compatible workspace floors now resolve Zod4.6.7; fast-uri3.1.9; Undici6.29.1. Parent semver ranges and Node engine floors remain satisfied. The unchanged all-lockfile advisory gate exits0 across567 packages: registry all-severity counts0 and OSV findings0. Original independent-feed failure is retained locally; no provider was suppressed and no security policy was weakened."
+  "2026-10-23T23:40:32.610Z","harness:codex","Adversarial review limitation: ext-apps2.0.3 is the latest upstream release but embeds Zod4.3.5 in its app-with-deps and react-with-deps development bundles. A bounded direct probe confirms the first bundle still visits oversized-array elements. pm-cli imports ext-apps/server only as a TypeScript type; these development-only bundles have no application runtime import and are absent from the runtime dependency manifest and npm packlist. The patched lockfile and dual-feed result certify active dependency resolution; they do not certify that all installed vendor bytes are patched. Retain this upstream limitation and verify future adoption without rewriting unused third-party bundles."
+  "2026-10-24T00:03:49.435Z","harness:codex","Dependency update inventory is preserved separately from security admission: GitHub has no open dependency PRs or vulnerability alerts. The registry also lists elective toolchain updates and major migrations; existing pm-do5b, pm-ksr40d and pm-t3jxjj retain the TypeScript7, npm-package-arg14 and Sentry11 compatibility work. This PR adopts only compatible security floors and does not bypass the seven-day updater cooldown, the supported Node floor or the CodSpeed artifact policy."
+learnings[1]{created_at,author,text}:
+  "2026-10-23T23:41:23.370Z","harness:codex",An independent all-lockfile registry/OSV audit cannot inspect code embedded inside another dependency bundle. Keep resolved versions; installed bundle bytes; application reachability; and published-artifact inclusion as separate security claims.
+files[2]{path,scope}:
+  pnpm-lock.yaml,project
+  pnpm-workspace.yaml,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/dependency-advisories/gate.mjs,project,240,"harness:codex","2026-10-23T23:33:26.322Z",local_mutation,fix/bulk-rollback-peer-preservation
+test_runs[1]:
+  - run_id: test-local-mvlmuvjy-08tuls
+    kind: test
+    status: passed
+    started_at: "2026-10-24T00:00:38.405Z"
+    finished_at: "2026-10-24T00:00:44.349Z"
+    recorded_at: "2026-10-24T00:00:44.349Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/dependency-advisories/gate.mjs,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+close_reason: Patched every vulnerable active dependency resolution found by the independent feeds
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: dependency-advisory-evidence
+  negative_control: The real pre-patch registry audit found vulnerable Zod; the independent OSV receipt additionally found four fast-uri and two Undici advisories while the registry reported zero. The unchanged all-lockfile gate refused that graph.
+  local_checks[3]: node scripts/release/dependency-advisories/gate.mjs,"pnpm quality:dependencies",pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Trivy
+  owner: pm-zod466
+body: ""

@@ -1,0 +1,21 @@
+id: pm-gh1567
+title: "GH-1567: fit whole SDK envelopes using the selected serializer and token budget"
+description: "External report: https://github.com/unbraind/pm-cli/issues/1567. Revalidate the reported 2026.10.23 behavior against the checkout before implementation."
+type: Issue
+status: open
+priority: 2
+tags[2]: github-intake,sdk
+created_at: "2026-10-23T23:21:42.845Z"
+updated_at: "2026-10-24T00:11:33.270Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Inspect existing read-output packing before adding a generic primitive; preserve mandatory envelope metadata and serializer-specific complete packet accounting; validate infeasible budgets and omission receipts
+parent: pm-5t33or
+risk: medium
+confidence: 70
+expected_result: A serializer-aware SDK primitive fits the complete packet within its declared token budget while retaining mandatory metadata and actionable infeasibility or omission receipts.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1552,related,"2026-10-24T00:11:32.955Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-23T23:21:42.845Z","harness:codex","Duplicate check 2026-10-24: canonical orientation, request-specific SDK/rollback search, fresh open and in_progress lists, and complete strict all-status read of 3083 items including 2799 closed and 14 canceled; no omissions or unreadable files. Exact GitHub issue and title checks found no existing owner for this delta. Closed SDK/bulk foundations were read live and remain completed. Source report retained in full; intake is not reproduction proof."
+body: "Evidence: [src/core.ts:87](https://github.com/unbraind/pm-memory/blob/1dc5b66ee84cf89b68c5f007eb88e215372b766d/src/core.ts#L87), [src/core.ts:23](https://github.com/unbraind/pm-evidence/blob/3dfeaae8d43d16f8e34f0aaecc404d1724ed2c51/src/core.ts#L23), [index.ts:1710](https://github.com/unbraind/pm-brief/blob/cdcd1e3f5e59db8b53cdfa5397e6d1ec18ef080d/index.ts#L1710) / [disclosure.ts:108](https://github.com/unbraind/pm-brief/blob/cdcd1e3f5e59db8b53cdfa5397e6d1ec18ef080d/disclosure.ts#L108).\n\nProblem: these packages repeatedly serialize their complete packet, stabilize a self-accounting field, fit rows under a budget and retain an omission receipt. Existing estimatePmOutputTokens, attachOutputTokenAccounting, packContextCandidates and universal read-output bounding cover related pieces, but none is a public generic fixed-point fitter for a caller-defined JSON/TOON envelope that must satisfy the larger rendering including its own receipt and newline. The SDK packer charges candidate projections, not arbitrary envelope bytes; token accounting intentionally measures pre-receipt bytes and discloses receipt overhead separately. Draft API: accept ordered candidates, renderers, a receipt/envelope builder, a deterministic prefix-or-skip policy and a minimum-envelope refusal policy; bound fitting work and report it. Acceptance: Unicode, differing JSON/TOON size order, digit-boundary self-accounting growth, a budget too small for the receipt, no split rows, and monotone deterministic omissions. Preserve domain-specific relevance and stronger one-token-per-byte limits rather than silently relaxing them.\n\n\nSource: a read-only audit of 30 fleet extensions against the exported SDK of @unbrained/pm-cli 2026.10.23 (3,188 exported names); each of the three cited packages re-implements this primitive today.\n\nRelated: #1401 (CLI `pm context` envelope accounting); this asks for the generic SDK primitive extensions can call."
