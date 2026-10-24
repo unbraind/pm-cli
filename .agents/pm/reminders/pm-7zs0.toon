@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-24T21:19:36.873Z"
+updated_at: "2026-10-24T21:55:42.533Z"
 reminders[1]{at,text}:
   "2026-10-25T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1574
 author: maintainer-agent
@@ -815,7 +815,8 @@ comments[241]:
     text: "October24 continuation refresh: current npm latest and GitHub release are2026.10.24; verify-published-release.mjs --version2026.10.24 exits0 across public package/npx/bunx/MCP checks. This artifact predates the active merge fixes. Downloaded exact Release Reliability40126857187 artifacts: scheduled_failure_rate and dispatch_window remain failures; nightly recurrence retains original failures and insufficient-completed-attempt findings. Required Sentry/telemetry gate currently passes (zero unresolved/critical/high issues,4.86 percent weighted finish-error rate, zero missing-code rows). Keep the standing reminder open/unclaimed; do not interpret this release as publication of the pending PR."
   - created_at: "2026-10-24T21:19:36.873Z"
     author: "harness:codex"
-    text: "Clean-candidate release dry run at21:20UTC returned ok=true, skipped=true, reason=release_already_cut_today, tags_today=[v2026.10.24]. Exactly one current UTC-day production tag is present and no release mutation occurred. The published artifact still predates this merge implementation; keep the next eligible release acceptance separate."
+    text: "Clean-candidate release dry run returned ok=true, skipped=true, reason=release_already_cut_today, tags_today=[v2026.10.24]. Exactly one current UTC-day production tag is present and no release mutation occurred. The published artifact still predates this merge implementation; keep the next eligible release acceptance separate."
+    edited_at: "2026-10-24T21:55:42.533Z"
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

@@ -52,6 +52,19 @@ describe("history scalar intent rebasing", () => {
     expect(reanchorHistoryEntries(entries).finalDocument.metadata).not.toHaveProperty("claim_principal");
   });
 
+  it("retains collection intent when every scalar removal is already satisfied", () => {
+    const base = seedDocument(); const released = structuredClone(base);
+    delete released.metadata.assignee; delete released.metadata.claim_principal;
+    const peerReleased = structuredClone(released);
+    peerReleased.metadata.comments = [{ author: "peer", created_at: "2026-10-01T00:02:00.000Z", text: "Preserve alongside release" }];
+    const seed = event({ metadata: {} as ItemDocument["metadata"], body: "" }, base, "create", 0);
+    const raw = historyEntriesToRaw;
+    const result = mergeHistoryStreams(raw([seed]), raw([seed, event(base, released, "release", 1)]), raw([seed, event(base, peerReleased, "release", 2)]));
+    const entries = result.merged.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+    expect(entries).toHaveLength(3); expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
+    expect(reanchorHistoryEntries(entries).finalDocument.metadata.comments).toEqual(peerReleased.metadata.comments);
+  });
+
   it.each(["/metadata/", "/front_matter/"])("decodes escaped whole-field pointers from %s", (root) => {
     const base = seedDocument();
     (base.metadata as unknown as Record<string, unknown>)["review/~state"] = "before";

@@ -5,6 +5,7 @@
  */
 import type { PmSettings } from "../../types/index.js";
 import path from "node:path";
+import { realpath } from "node:fs/promises";
 import { inspectIgnoredMergeArtifacts } from "../merge/ignored-artifacts.js";
 import {
   auditMergeAttributeFence,
@@ -14,7 +15,7 @@ import {
 /** Detect legacy receipt-directory ignores even before any receipt file has been created. */
 export async function resolveMergeArtifactIgnoreHealthEvidence(pmRoot: string, gitWorkspaceRoot: string | null) {
   const rules = gitWorkspaceRoot === null ? [] : await inspectIgnoredMergeArtifacts(gitWorkspaceRoot, [
-    path.relative(gitWorkspaceRoot, path.join(pmRoot, "merge-receipts", "00000000-0000-4000-8000-000000000000.json")).replaceAll("\\", "/"),
+    path.relative(gitWorkspaceRoot, path.join(await realpath(pmRoot), "merge-receipts", "00000000-0000-4000-8000-000000000000.json")).replaceAll("\\", "/"),
   ]);
   return { rules, warnings: rules.length > 0 ? [`merge_artifacts_ignored:${rules.length}`] : [] };
 }

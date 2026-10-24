@@ -12,7 +12,7 @@ export function rebaseHistoryScalarPatch(current: ReplayDocument, patch: History
 }): ReplayDocument {
   const direct = tryApplyReplayPatch(current, patch);
   if (direct.ok) return direct.document;
-  let next = current;
+  let next = structuredClone(current);
   for (const [index, operation] of patch.entries()) {
     const field = /^\/metadata\/([^/]*)$/u.exec(operation.path)?.[1];
     const missingField = field !== undefined && !Object.hasOwn(next.metadata, field.replaceAll("~1", "/").replaceAll("~0", "~"));
