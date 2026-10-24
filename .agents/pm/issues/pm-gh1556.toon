@@ -6,21 +6,21 @@ status: closed
 priority: 2
 tags[3]: context-management,"gh:1556",sdk
 created_at: "2026-10-23T07:34:10.262Z"
-updated_at: "2026-10-24T22:04:30.922Z"
-closed_at: "2026-10-24T22:04:29.834Z"
-completed_at: "2026-10-24T22:04:29.834Z"
+updated_at: "2026-10-24T22:30:59.228Z"
+closed_at: "2026-10-24T22:30:57.794Z"
+completed_at: "2026-10-24T22:30:57.794Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: A real Git fixture reproduces ignored receipt staging without source tracker access; Refusal names the ignore rule and safe remedy before ambiguous partial staging; Health/upgrade guidance reflects committed receipt requirements and normal settlement remains idempotent.
 parent: pm-o2kc
 risk: medium
 confidence: medium
-resolution: "Check effective Git ignore policy before any settlement index/audit write, report owning rule and recovery, warn proactively in health, canonicalize tracker aliases, and roll back partial receipt preparation."
-expected_result: "Ignored reconciliation proof is refused without changing index/history/receipts, ordinary and alias tracker health remain usable, and unrelated staged work is preserved."
-actual_result: "LF/CRLF portability fixtures, Git NUL/negation/error cases and partial-preparation rollback pass. The tracker-junction negative control failed before physical-path normalization and all 46 merge/health tests passed afterward. Corrected packed npm/npx/Bun/bunx smoke, Node22 first-run merge/MCP/telemetry, typecheck, lint, docs links and final linked item tests pass. Final-head hosted cross-platform gates remain mandatory for PR1578."
+resolution: "Check effective Git ignore policy before settlement writes, report owning rules, proactively warn in health, normalize tracker aliases and safely roll back prepared receipts; test ignore preservation independently from indexed-proof rollback."
+expected_result: "Ignore-policy refusal preserves index and audit files, ordinary and aliased trackers remain usable, and each complete Windows scenario meets the unchanged per-test deadline."
+actual_result: "The new ignore scenario and existing indexed-proof/rollback/settlement assertions run in separate real-Git fixtures: all 10 LF/CRLF cases and final linked tests pass locally, ESLint passes, and no timeout or acceptance assertion changed. Runtime matches e3c354623, with hosted exact coverage, static, typecheck, compatibility, smokes and six packed first-run checks green. Final revised-head native acceptance is required."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1475,related,"2026-10-23T07:34:10.262Z","harness:codex","cli:create:dep",detected
-comments[9]:
+comments[11]:
   - created_at: "2026-10-23T07:34:10.262Z"
     author: "harness:codex"
     text: "Intake: https://github.com/unbraind/pm-cli/issues/1556. Duplicate checks used request-specific live search and a fresh all-status strict corpus of3071 items with no omissions; related delivered lineage is linked and remains closed. The report is recorded without claiming current reproduction. Intake only, open and unclaimed."
@@ -49,6 +49,12 @@ comments[9]:
   - created_at: "2026-10-24T22:04:28.905Z"
     author: "harness:codex"
     text: "Review closeout: CodeRabbit actionable finding is addressed by an isolated fallback replay document with a failing-before/passing-after mixed release-plus-comment regression. The separate physical-path health correction also has a failing-before/passing-after junction regression. All final linked tests pass; packed consumers, typecheck, lint and documentation checks pass. Keep the initial full 100-percent coverage receipt distinct from the final-head hosted coverage/Windows acceptance required before merging PR1578."
+  - created_at: "2026-10-24T22:26:03.950Z"
+    author: "harness:codex"
+    text: "Final-head e3c354623 hosted coverage and all six packed first-run checks passed. Native Windows LF and CRLF portability cases timed out at the unchanged 30-second per-test limit after combining existing indexed-proof/rollback/settlement work with the new ignore preflight and health scenarios. Reopened only this item for scoped test decomposition: move ignore-policy preservation assertions into a separate real-Git case sharing fixture setup, preserve all assertions and limits, then rerun hosted native acceptance. No timeout increase or blind retry."
+  - created_at: "2026-10-24T22:30:56.711Z"
+    author: "harness:codex"
+    text: "Native acceptance follow-up: all 10 decomposed real-Git LF/CRLF portability cases and the final linked item tests pass locally, with ESLint clean. Every ignore-policy, artifact preservation, rollback and settlement assertion is retained and the 30-second per-test limit is unchanged. Production runtime is unchanged from e3c354623, whose hosted static, exact coverage, typecheck, compatibility, smoke and all six packed consumer checks passed; native timeout cases were the only functional acceptance gap. Revised-head native checks remain mandatory before merge."
 learnings[2]{created_at,author,text}:
   "2026-10-24T20:23:10.569Z","harness:codex","Portable merge receipts depend on effective Git policy from project, nested, clone-local and global ignore sources. Check effective rules with Git's NUL stdin/output protocol before staging or audit writes; preserve native negations and tracked-file semantics, and rollback newly prepared index entries on partial preparation failure."
   "2026-10-24T21:54:42.969Z","harness:codex","Compare physical paths on both sides of a Git workspace boundary: findGitWorkspaceRoot realpaths its root, so health probes must also realpath the tracker before computing repository-relative receipt paths. An in-workspace tracker junction/symlink is a portable regression fixture for Git path-beyond-symlink refusals."
@@ -78,7 +84,7 @@ files[11]:
     scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,project,600,"harness:codex","2026-10-24T20:09:37.605Z",local_mutation,fix/sdk-merge-history-settlement
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mvmuasy2-ink22r
     kind: test
     status: passed
@@ -112,11 +118,22 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmz28a8-7sotcl
+    kind: test
+    status: passed
+    started_at: "2026-10-24T22:28:08.785Z"
+    finished_at: "2026-10-24T22:30:09.008Z"
+    recorded_at: "2026-10-24T22:30:09.008Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   CHANGELOG.md,project
   docs/MERGE_SAFETY.md,project
   docs/SDK.md,project
-close_reason: Implemented and locally verified with executable regression evidence; reviewed delivery is PR1578.
+close_reason: Implemented and locally verified; decomposed native acceptance remains gated by PR1578.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
