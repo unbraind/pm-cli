@@ -67,20 +67,21 @@ export function registerHistoryActivityCommand(command: Command): void {
     .option("--author <value>", "Filter by history author")
     .option(
       "--from <value>",
-      "Lower timestamp bound (ISO/date string or relative)",
+      "Inclusive lower time bound (ISO or relative)",
     )
     .option(
       "--to <value>",
-      "Upper timestamp bound (ISO/date string or relative)",
+      "Exclusive upper time bound (ISO or relative)",
     )
-    .option("--limit <n>", "Return only the latest n activity entries")
+    .option("--limit <n>", "Maximum activity rows")
+    .option("--after <cursor>", "Continue a fixed-window page")
     .option(
       "--unbounded",
-      "Explicitly return every matching activity entry (disables the default bound)",
+      "Return every matching row",
     )
     .option(
       "--compact",
-      "Condensed output: show only id, op, ts, author, msg per entry",
+      "Show compact event rows",
     )
     .option(
       "--raw",
@@ -93,26 +94,26 @@ export function registerHistoryActivityCommand(command: Command): void {
     )
     .option(
       "--provenance-summary",
-      "Include bounded provenance completeness counts",
+      "Include provenance counts",
     )
     .option(
       "--harness <value>",
-      "Filter by recorded or vocabulary-resolved harness (repeatable)",
+      "Filter by harness (repeatable)",
       collect,
     )
     .option(
       "--agent-instance <value>",
-      "Filter by privacy-safe agent instance (repeatable)",
+      "Filter by agent instance (repeatable)",
       collect,
     )
     .option(
       "--provenance-filter <dimension=value>",
-      "Filter by an exact declared provenance value (repeatable)",
+      "Filter exact provenance values (repeatable)",
       collect,
     )
     .option(
       "--stream [mode]",
-      "Emit line-delimited JSON rows (requires --json). Optional mode: rows|ndjson|jsonl",
+      "Emit line-delimited JSON rows (requires --json): rows|ndjson|jsonl",
     )
     .description("Show recent activity across items.")
     .action(runActivityAction);

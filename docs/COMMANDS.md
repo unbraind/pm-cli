@@ -1041,6 +1041,14 @@ MCP tool via `options.fields`.
 `pm context --format ndjson` concatenates the bounded high-level, low-level, and blocked-fallback focus rows in deterministic ranking order. Like list/search NDJSON, it emits no wrapper and no trailing count object. SDK and MCP callers retain the structured arrays; package authors can use the exported `serializeNdjsonRows` primitive when their transport needs line framing.
 
 `calendar` defaults to markdown for human and agent readability. Other commands default to TOON unless configured otherwise.
+Calendar results publish matching `total_count`, returned `count`, zero-based
+`page_start`, remaining `omitted_count`, and `has_more`. `summary_scope` is
+`returned_rows`: summaries and day buckets cover this page. Repeat the original
+query with `--after <next_cursor>` to recover subsequent bounded pages; changing
+`--limit` is allowed. Relative bounds keep the first page's clock. Changed
+matching content refuses the cursor; restart without `--after`. With `--limit 0`,
+counts remain available; use `--limit 1` or larger to retrieve rows.
+
 For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, or `--occurrence-limit`, recurring expansion is intentionally capped to a bounded default window and emits a warning with retry hints for broader windows.
 
 ## Validation and Maintenance
@@ -1219,7 +1227,17 @@ as its compatibility spelling, `--full` for events with patch payloads, or
 `--provenance` for patch-free provenance rows. Every mode reports total and
 omitted row counts plus the applied bound. Use `--limit` for a deliberate cap,
 or `--unbounded` for an explicitly unlimited read; the two flags are mutually
-exclusive.
+exclusive. Continue a limited result by repeating the same query with
+`--after <next_cursor>`; `page_start` gives the page offset and `omitted_count`
+counts rows remaining after that page. `window` publishes the original anchor,
+inclusive lower bound, and exclusive upper bound. Bounded reads pin an omitted
+upper bound to the first page's clock. Later writes outside that window are
+excluded. Changed filters, projection, workspace, or matching content refuse
+continuation; restart without `--after`. Digest rows join current metadata, so
+metadata changes may also require a restart. Continuation does not retain a
+persisted or atomic cross-file snapshot. Use `--from` for a starting timestamp;
+`--since` refusals suggest that correction. Use an envelope (for example `--json`
+without `--stream`) when paging: stream mode emits rows without cursor metadata.
 Workspace-scoped mutations to settings, schema, profiles, init state, and
 extension/package activation are recorded in
 `.agents/pm/history/_workspace.jsonl` using the same patch/hash format.

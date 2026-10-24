@@ -1008,6 +1008,8 @@ export interface NormalizedActivityOptions {
   to?: string;
   /** Maximum projected row count encoded as Commander text. */
   limit?: string;
+  /** Opaque cursor for a fixed-window query page. */
+  after?: string;
   /** Select the compact raw-event projection. */
   compact?: boolean;
   /** Select a raw event projection instead of the item digest. */
@@ -1045,6 +1047,7 @@ export function normalizeActivityOptions(
     from: readActivityString("from"),
     to: readActivityString("to"),
     limit: readActivityString("limit"),
+    after: readActivityString("after"),
     compact:
       options.full === true || options.provenance === true
         ? false

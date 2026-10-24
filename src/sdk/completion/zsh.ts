@@ -897,6 +897,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--author[Filter by history author]:author' \\
             '--from[Lower timestamp bound (ISO/date string or relative)]:date' \\
             '--to[Upper timestamp bound (ISO/date string or relative)]:date' \\
+            '--after[Continue a fixed-window activity page]:cursor' \\\\
             '--limit[Max entries]:number' \\
             '--unbounded[Return every matching activity entry]' \\
             '--compact[Condensed activity projection]' \\

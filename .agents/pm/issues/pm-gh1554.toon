@@ -2,23 +2,109 @@ id: pm-gh1554
 title: "GH-1554: resume bounded activity reads from a stable event window"
 description: The October23 report shows activity limit truncation without a cursor or fixed-window recovery under concurrent writers. Reproduce current producer semantics and implement a stable bounded continuation or explicit fixed-window consistency recovery. Include the since-to-from flag recovery papercut.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: context-management,"gh:1554",sdk
 created_at: "2026-10-23T07:33:56.767Z"
-updated_at: "2026-10-23T07:33:56.767Z"
+updated_at: "2026-10-24T12:38:38.222Z"
+closed_at: "2026-10-24T12:38:36.866Z"
+completed_at: "2026-10-24T12:38:36.866Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: A current temporary-tracker regression proves the omitted event set under concurrent writes; Continuation or fixed-window recovery is bounded and stable for timestamp ties; SDK CLI and MCP share the same completeness contract and since misuse points to from.
 parent: pm-5t33or
 risk: medium
 confidence: medium
-expected_result: An agent can fetch every omitted activity event once under a fixed window while new writers continue; any unsupported consistency guarantee and exact recovery are explicit.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Added opaque after cursors bound to a frozen query clock, workspace, projection/filter semantics and unchanged matching content. Preserve tied events by position, expose page/window metadata, refuse changed matching sets, isolate nested calendar cursors, align shell completion and preserve since-to-from intent."
+expected_result: Recover every omitted matching event exactly once in bounded pages while later out-of-window writes continue; disclose and safely refuse unsupported matching-set changes.
+actual_result: "All four activity projections recover complete tied-event sets; later writers remain outside the pinned window, backdated matching writes refuse stale cursors, CLI/MCP parity and malformed-cursor controls pass. The linked activity suite passes53 tests, calendar peer suite38, and five identical pre-fix completeness cases fail as expected. Full coverage/static and hosted review remain pending merge gates."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8nev0o,related,"2026-10-23T07:33:56.767Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-gh1562,related,"2026-10-24T12:31:17.343Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
   "2026-10-23T07:33:56.767Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1554. Duplicate checks used request-specific live search and a fresh all-status strict corpus of3071 items with no omissions; related delivered lineage is linked and remains closed. The report is recorded without claiming current reproduction. Intake only, open and unclaimed."
-files[1]{path,scope}:
-  src/sdk/query/activity.ts,project
+  "2026-10-24T12:00:38.149Z","harness:codex","Implementation scope: combine GH1554 and GH1562 in one SDK-first delivery. Bootstrap passed; complete strict all-status read covers 3098 items with no omissions and no prior in_progress items. Full live metadata and verified histories confirm these canonical owners are open, while delivered pm-8nev0o, pm-qh3p and pm-kglq remain closed. Plan: bounded query continuation binds the original clock, normalized query and exact matching rows; later events outside the pinned activity window remain excluded, while changed matching content fails closed with fresh-query guidance. Add CLI/MCP parity, timestamp-tie controls and since-to-from recovery."
+  "2026-10-24T12:13:47.772Z","harness:codex","Regression evidence: the same new integration suite ran against isolated pre-fix main ef143cc49 with sandboxed PM roots. All four activity projection cases fail because next_cursor is absent; the calendar case fails because completeness/page fields are absent (5 expected failures, 3 unrelated tests skipped). Current implementation passes all 8 new direct-SDK/CLI/MCP/package cases. Typecheck and focused ESLint pass. Complete repository coverage is running. New queries bind workspace, projection/filter semantics, full matching content and the frozen clock; changed matching content refuses rather than silently restarting or skipping tied rows."
+  "2026-10-24T12:15:38.115Z","harness:codex","Operational verification: required Sentry/telemetry gate passes with zero unresolved/critical/high issues in the14-day Sentry window; telemetry4.77 percent error rate versus6 percent policy and zero missing error-code rows. Independent latest50 production command finishes all match their command_start by installation/session/command/started_at, newest finish8seconds old. Physical queue has0ready/0unacked/0total messages. These are bounded current probes, not proof of all historical actions. Private host/query details remain in ignored local evidence."
+  "2026-10-24T12:20:31.698Z","harness:codex","Additional bounded observability check: sentry issue list is:unresolved returns a complete empty result; sentry trace list default window also returns no rows. This does not establish recent trace ingestion. Production telemetry freshness and50/50 lifecycle pairing are independently verified; retain trace-ingestion as a distinct observation, without manufacturing a Sentry error to produce data."
+  "2026-10-24T12:31:19.657Z","harness:codex","First full run completed:11189 passed and16 failures across11 files, with no coverage certificate because tests failed. Failures reduce to coupled contracts: context forwarded its focus after cursor into the nested calendar call; shell completion omitted after; flag inventory needed exactly one new declared producer flag; projection parity compared independent evaluation clocks; key-order/summary fixtures needed the additive fields. Fixes preserve the shrinking behavior baseline and original411-token help ceiling: activity help is shortened instead of raising the help budget, canonical flag maximum rises only35to36 for the implemented after capability, and existing context continuation tests retain exact recovery. A focused all-failure sweep precedes another full run."
+  "2026-10-24T12:35:57.561Z","harness:codex","The coupled regression sweep is repaired:10 of12 affected files passed first, then the remaining release-readiness and packed continuation files pass34/34 tests after exact help/key-order updates and exposing the existing host npm module through NODE_PATH. Both linked PM test commands pass independently (activity53 tests; calendar38). Context focus cursors no longer leak into the nested calendar producer. New public after discovery, SDK/MCP normalization and Bash/Zsh/Fish completion retain existing flags; full source coverage and full static quality are rerunning without relaxed thresholds."
+learnings[1]{created_at,author,text}:
+  "2026-10-24T12:14:30.188Z","harness:codex",A bounded continuation needs both a stable evaluation clock and an identity for the complete matching content. Freezing only timestamps does not protect against backdated writes; an exact matching-set fingerprint must refuse stale pages. Preserve duplicate events using positional identity within the unchanged set.
+files[22]:
+  - path: sdk/public-surface.json
+    scope: project
+    note: Reviewed SDK signature snapshot and migration rationale
+  - path: src/cli/error-guidance.ts
+    scope: project
+  - path: src/cli/register-history-activity.ts
+    scope: project
+  - path: src/sdk/agent/command-recovery.ts
+    scope: project
+  - path: src/sdk/cli-contracts/commander-types.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-lexicon-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/registration-helpers.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-option-contracts.ts
+    scope: project
+  - path: src/sdk/completion/fish.ts
+    scope: project
+  - path: src/sdk/completion/zsh.ts
+    scope: project
+  - path: src/sdk/generated/generated-error-code-catalog-part-1.ts
+    scope: project
+  - path: src/sdk/query/activity.ts
+    scope: project
+    note: Fixed-window activity query continuation
+  - path: src/sdk/query/context.ts
+    scope: project
+    note: Keep focus cursor out of nested calendar query
+  - path: src/sdk/query/window-pagination.ts
+    scope: project
+    note: Shared checked continuation primitive
+  - path: src/sdk/read-output-contracts.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/integration/read-output/window-continuation.integration.spec.ts
+    scope: project
+  - path: tests/integration/sdk-cli-contract-integrity.integration.spec.ts
+    scope: project
+  - path: tests/unit/commands/history/history-activity-command.spec.ts
+    scope: project
+  - path: tests/unit/commands/workspace/contracts-command.spec.ts
+    scope: project
+  - path: tests/unit/sdk/read-output-migration-hints.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/history/history-activity-command.spec.ts,project,240,"harness:codex","2026-10-24T12:12:33.051Z",local_mutation,fix/sdk-window-continuation
+test_runs[1]:
+  - run_id: test-local-mvmdpp0v-4dd95o
+    kind: test
+    status: passed
+    started_at: "2026-10-24T12:32:17.859Z"
+    finished_at: "2026-10-24T12:32:32.239Z"
+    recorded_at: "2026-10-24T12:32:32.239Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/history/history-activity-command.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  docs/SDK.md,project
+close_reason: Implemented fixed-window activity continuation with shared SDK/CLI/MCP contracts and independent regression proof
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1554
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: ""

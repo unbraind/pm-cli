@@ -2414,6 +2414,8 @@ async function buildContextAgenda(
 }> {
   const calendarOptions: CalendarOptions = {
     ...runtime.baseListOptions,
+    // The context cursor addresses focus rows, never the nested calendar producer.
+    after: undefined,
     view: "agenda",
     include: "all",
     limit:

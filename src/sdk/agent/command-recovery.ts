@@ -15,8 +15,17 @@ import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 const READ_PROJECTION_FLAGS = new Set<string>([...Object.values(READ_OUTPUT_DIMENSION_FLAGS), ...READ_OUTPUT_COMPOSITION_FLAGS, "--full", "--brief", "--compact", "--summary", "--fields", "--section", "--token-budget"]);
 const MUTATION_RECEIPT_FLAGS = new Set(["--full-changed-fields", "--no-changed-fields", "--id-only"]);
 
+/** Preserve the lower time bound when activity receives the event-stream spelling. */
+function activitySinceCorrection(token: string, next: string | undefined): { consumed: number; replacement: string[]; conflicts: string[] } | undefined {
+  const inline = token.includes("=");
+  const value = inline ? token.slice(token.indexOf("=") + 1) : next;
+  if (!value || value.startsWith("--")) return undefined;
+  return { consumed: inline ? 1 : 2, replacement: ["--from", value], conflicts: ["--from"] };
+}
+
 /** Keep completeness corrections distinct from detail-depth and encoding controls. */
 function readOptionCorrection(command: string, flag: string, token: string, next: string | undefined): { consumed: number; replacement: string[]; conflicts: string[] } | undefined {
+  if (flag === "--since" && command === "activity") return activitySinceCorrection(token, next);
   if (flag === "--full" && command === "context" && token === flag) {
     return { consumed: 1, replacement: ["--depth", "full"], conflicts: ["--depth", "--output-include", "--fields", "--section", "--for"] };
   }
@@ -34,7 +43,7 @@ function readOptionCorrection(command: string, flag: string, token: string, next
 /** Derive a same-command read retry for known completeness and encoding mistakes without discarding intent. */
 export function resolveReadOptionRetryArgs(commandName: string, invocationArgv: readonly string[], unknownOption: string): string[] | undefined {
   const command = commandName === "ctx" ? "context" : resolvePmCommandOperation(commandName);
-  if (!["context", "list", "search", "get"].includes(command) || invocationArgv.includes("--")) return undefined;
+  if (!["context", "list", "search", "get", "activity"].includes(command) || invocationArgv.includes("--")) return undefined;
   const invoked = parseBootstrapCommandName(invocationArgv);
   if ((invoked === "ctx" ? "context" : invoked) !== command) return undefined;
   const flag = unknownOption.split("=", 1)[0]!;

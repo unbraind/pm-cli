@@ -2722,6 +2722,22 @@
       ],
       "package_version": "2026.10.24",
       "reason": "Declare optional typed extension defaults and template-save priority inputs; runtime normalization preserves valid existing inputs and refuses invalid priorities before writes."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ActivityCommandOptions",
+        "signature ./sdk:ActivityResult",
+        "signature ./sdk:CalendarOptions",
+        "signature ./sdk:CalendarResult",
+        "signature ./sdk/query:ActivityCommandOptions",
+        "signature ./sdk/query:ActivityResult",
+        "signature ./sdk/query:CalendarOptions",
+        "signature ./sdk/query:CalendarResult",
+        "signature ./sdk/runtime:CalendarOptions",
+        "signature ./sdk/runtime:CalendarResult"
+      ],
+      "package_version": "2026.10.24",
+      "reason": "Bounded activity and calendar reads now expose fixed-window continuation, remaining-row counts and page-local calendar summary scope. Activity bounded defaults pin the upper timestamp; callers requiring future or unlimited history must provide to or unbounded. See docs/SDK.md."
     }
   ],
   "entrypoints": {
@@ -2966,7 +2982,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityCommandOptions",
-          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; raw?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
+          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; after?: string; compact?: boolean; raw?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -2978,7 +2994,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityResult",
-          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; page_start: number; window: { anchor: string; from: string | null; to: string | null; }; next_cursor?: string; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
         },
         {
           "classification": "advanced_export",
@@ -4778,7 +4794,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CalendarOptions",
-          "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
+          "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; after?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -4790,7 +4806,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CalendarResult",
-          "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
+          "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; total_count: number; count: number; page_start: number; omitted_count: number; has_more: boolean; next_cursor?: string; summary_scope: \"returned_rows\"; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -31058,7 +31074,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityCommandOptions",
-          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; compact?: boolean; raw?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
+          "signature": "export interface ActivityCommandOptions { id?: string; op?: string; author?: string; from?: string; to?: string; limit?: string; after?: string; compact?: boolean; raw?: boolean; unbounded?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -31070,7 +31086,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityResult",
-          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; page_start: number; window: { anchor: string; from: string | null; to: string | null; }; next_cursor?: string; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
         },
         {
           "classification": "supported",
@@ -31208,7 +31224,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CalendarOptions",
-          "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
+          "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; after?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -31220,7 +31236,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CalendarResult",
-          "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
+          "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; total_count: number; count: number; page_start: number; omitted_count: number; has_more: boolean; next_cursor?: string; summary_scope: \"returned_rows\"; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
         },
         {
           "classification": "supported",
@@ -33032,13 +33048,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CalendarOptions",
-          "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
+          "signature": "export interface CalendarOptions { view?: string; date?: string; from?: string; to?: string; past?: boolean; fullPeriod?: boolean; limit?: string; after?: string; type?: string; tag?: string; priority?: string; status?: string; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; include?: string; recurrenceLookaheadDays?: string; recurrenceLookbackDays?: string; occurrenceLimit?: string; format?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "CalendarResult",
-          "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
+          "signature": "export interface CalendarResult { view: CalendarView; output_default: \"markdown\"; now: string; anchor: string; range: { start: string | null; end: string | null; period_start: string | null; period_end: string | null; full_period: boolean; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; status: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; runtime_filters?: Record<string, unknown>; limit: string | null; include: string | null; full_period: string | null; recurrence_lookahead_days: string | null; recurrence_lookback_days: string | null; occurrence_limit: string | null; }; summary: { events: number; items: number; deadlines: number; reminders: number; scheduled: number; by_kind: { deadline: number; reminder: number; event: number; }; by_type: Record<string, number>; by_status: Record<string, number>; recurring_events: number; }; total_count: number; count: number; page_start: number; omitted_count: number; has_more: boolean; next_cursor?: string; summary_scope: \"returned_rows\"; events: CalendarRow[]; days: CalendarDayBucket[]; warnings?: string[]; }"
         },
         {
           "classification": "supported",

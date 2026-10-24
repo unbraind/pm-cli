@@ -435,7 +435,7 @@ const LEGACY_FLAGS_BY_COMMAND: Readonly<
   },
   activity: {
     include: ["--compact", "--full"],
-    amount: ["--limit", "--unbounded"],
+    amount: ["--limit", "--unbounded", "--after"],
     encoding: ["--stream"],
   },
   validate: { include: ["--counts", "--full"] },

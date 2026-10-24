@@ -1997,6 +1997,8 @@ describe("runHistory and runActivity", () => {
         total_count: 0,
         limit: 5,
         omitted_count: 0,
+        page_start: 0,
+        window: { anchor: expect.any(String), from: null, to: expect.any(String) },
         has_more: false,
         applied_bound: { kind: "limit", source: "default", value: 5 },
       });

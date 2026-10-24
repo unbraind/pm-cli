@@ -1606,6 +1606,7 @@ export const CALENDAR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--recurrence-lookback-days" },
   { flag: "--occurrence-limit" },
   { flag: "--limit" },
+  { flag: "--after", cursor_semantics: "presentation" },
   { flag: "--format" },
 ];
 
@@ -1617,6 +1618,7 @@ export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--from" },
   { flag: "--to" },
   { flag: "--limit" },
+  { flag: "--after", cursor_semantics: "presentation" },
   { flag: "--unbounded" },
   { flag: "--compact" },
   { flag: "--raw" },
