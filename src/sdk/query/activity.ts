@@ -23,7 +23,7 @@ import {
 } from "../runtime-primitives.js";
 import { readHistoryEntries } from "../history-read.js";
 import { parseLimit } from "./parsers.js";
-import { paginateWindowQuery, resolveWindowQueryClock } from "./window-pagination.js";
+import { fingerprintWindowRows, paginateWindowQuery, resolveWindowQueryClock } from "./window-pagination.js";
 import type { HistoryEntry } from "../../types/index.js";
 import {
   resolveModePairedOutputOmissionReceipt,
@@ -677,7 +677,7 @@ export async function runActivity(
     matchingActivity,
     {
       command: "activity", after: options.after, clock, limit: filters.limit,
-      query: { pmRoot: context.pmRoot, projectionMode, filters: { ...filters, limit: undefined, limitSource: undefined }, matchingActivity: projectionMode === "digest" ? matchingActivity : undefined, vocabulary, provenanceDimensions },
+      query: { pmRoot: context.pmRoot, projectionMode, filters: { ...filters, limit: undefined, limitSource: undefined }, matching_activity_digest: projectionMode === "digest" ? fingerprintWindowRows(matchingActivity) : undefined, vocabulary, provenanceDimensions },
     },
     prepared.itemsById,
     (entry) =>

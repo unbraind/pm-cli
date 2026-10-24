@@ -662,6 +662,11 @@ atomic cross-file read. Backdated writes within the window and current metadata
 changes affecting digest rows can require a restart. `unbounded: true`
 intentionally removes the row bound and cannot be combined with a limit.
 
+Queries collect the matching rows and scan them on each page to detect changes.
+Content fingerprints hash canonical rows incrementally, bounding additional
+serialization storage to the largest row. Digest activity also hashes its full
+source events incrementally so hidden patch changes still invalidate a cursor.
+
 `runCalendar` uses the same `after` contract and frozen clock. `total_count`
 counts matching expanded rows within the selected window and recurrence caps;
 `count`, `page_start`, `omitted_count`, `has_more`, and `next_cursor` describe
@@ -670,8 +675,9 @@ page-local. Exact-full and empty results have `has_more: false`. A zero limit
 returns counts without rows or a new cursor; repeat with `limit: "1"` or larger
 to fetch rows. Existing recurrence expansion limits remain separate from
 pagination, and calendar mutations affecting matching rows require a restart.
-Tracked by [pm-gh1554](../.agents/pm/issues/pm-gh1554.toon) and
-[pm-gh1562](../.agents/pm/issues/pm-gh1562.toon).
+Repository tracking (PM records are excluded from the npm package):
+[pm-gh1554](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1554.toon)
+and [pm-gh1562](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1562.toon).
 
 The required `quality:token-budget` gate keeps discovery and answer cost
 separate. Help and contract discovery surfaces use ratcheted baselines;

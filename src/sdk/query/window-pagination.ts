@@ -3,13 +3,21 @@
  *
  * Keeps time-relative query pages on one clock and refuses changed matching rows.
  */
-import { nowIso, EXIT_CODE, PmCliError } from "../runtime-primitives.js";
+import { createHash } from "node:crypto";
+import { nowIso, EXIT_CODE, PmCliError, stableStringify } from "../runtime-primitives.js";
 import {
   createQueryFingerprint,
   decodeQueryCursorEnvelope,
   decodeQueryCursorState,
   paginateQueryRows,
 } from "../pagination.js";
+
+/** Hash ordered canonical rows while retaining only one row's serialization at a time. */
+export function fingerprintWindowRows(rows: readonly unknown[]): string {
+  const digest = createHash("sha256").update("[");
+  for (const row of rows) digest.update(stableStringify(row)).update("\0");
+  return digest.update("]").digest("hex");
+}
 
 /** Recover the original evaluation clock from a producer-specific query cursor. */
 export function resolveWindowQueryClock(command: string, after?: string): string {
@@ -32,7 +40,7 @@ export function paginateWindowQuery<T>(
   options: { command: string; after?: string; clock: string; query: unknown; limit?: number },
 ): { rows: T[]; count: number; total_count: number; page_start: number; omitted_count: number; has_more: boolean; next_cursor?: string } {
   const indexed = rows.map((row, index) => ({ row, index }));
-  const fingerprint = createQueryFingerprint(options.command, { query: options.query, rows });
+  const fingerprint = createQueryFingerprint(options.command, { query: options.query, rows_digest: fingerprintWindowRows(rows) });
   const state = options.after === undefined ? undefined : decodeQueryCursorState(options.after, fingerprint);
   if (state && (state.after_index === undefined || state.after_id !== String(state.after_index) || state.after_index >= rows.length)) {
     throw new PmCliError("Query cursor position is outside the matching window.", EXIT_CODE.USAGE, {

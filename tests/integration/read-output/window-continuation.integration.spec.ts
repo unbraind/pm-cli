@@ -1,4 +1,6 @@
-import { appendFile, writeFile } from "node:fs/promises";
+import { appendFile, readFile, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runActivity, type ActivityCommandOptions } from "../../../src/sdk/query/activity.js";
@@ -7,6 +9,7 @@ import { decodeQueryCursorEnvelope, encodeQueryCursor } from "../../../src/sdk/p
 import { resolveReadOptionRetryArgs } from "../../../src/sdk/agent/command-recovery.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 import { handleRequest } from "../../../src/mcp/server.js";
+import { fingerprintWindowRows, paginateWindowQuery } from "../../../src/sdk/query/window-pagination.js";
 
 const FROM = "2026-01-01T00:00:00.000Z";
 const TO = "2099-01-01T00:00:00.000Z";
@@ -24,6 +27,27 @@ function event(message: string, ts = FROM): string {
 }
 
 describe("fixed-window producer continuation", () => {
+  it("binds canonical row content and ordering without ambiguous row boundaries", () => {
+    const first = [{ id: "same", patch: [{ op: "replace", path: "/body", value: { b: 2, a: 1 } }] }, { id: "next" }];
+    const reorderedKeys = [{ patch: [{ value: { a: 1, b: 2 }, path: "/body", op: "replace" }], id: "same" }, { id: "next" }];
+    const options = { command: "activity", clock: FROM, query: { filter: "same" }, limit: 1 };
+    const page = paginateWindowQuery(first, options);
+    expect(paginateWindowQuery(reorderedKeys, { ...options, after: page.next_cursor }).rows).toEqual([{ id: "next" }]);
+    expect(fingerprintWindowRows([1, 23])).not.toBe(fingerprintWindowRows([12, 3]));
+    expect(fingerprintWindowRows([])).not.toBe(fingerprintWindowRows([undefined]));
+    expect(() => paginateWindowQuery([...first].reverse(), { ...options, after: page.next_cursor })).toThrow(expect.objectContaining({ code: "invalid_query_cursor" }));
+  });
+
+  it("continues over 384 MiB of logical patch content under a 192 MiB old-generation limit", () => {
+    const result = spawnSync(process.execPath, [
+      "--max-old-space-size=192",
+      fileURLToPath(new URL("../../fixtures/window-pagination/heap-process.mjs", import.meta.url)),
+      new URL("../../../dist/sdk/query/window-pagination.js", import.meta.url).href,
+    ], { encoding: "utf8", timeout: 60_000 });
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({ first: 0, second: 1, total: 1536, remaining: 1534 });
+  }, 60_000);
+
   it.each([
     { raw: true }, { raw: true, compact: false }, { provenance: true }, {},
   ] satisfies ActivityCommandOptions[])("recovers activity pages under later writes: %j", async (mode) => {
@@ -48,6 +72,13 @@ describe("fixed-window producer continuation", () => {
       expect(rows).toEqual(expected[key]);
       expect(page.has_more).toBe(false);
       expect(page.next_cursor).toBeUndefined();
+      const historyPath = path.join(context.pmPath, "history", `${ids[0]}.jsonl`);
+      const original = await readFile(historyPath, "utf8");
+      const lines = original.trimEnd().split("\n");
+      lines[0] = JSON.stringify({ ...JSON.parse(lines[0]!), patch: [{ op: "replace", path: "/body", value: "hidden patch change" }] });
+      await writeFile(historyPath, lines.join("\n") + "\n");
+      await expect(runActivity({ ...query, after: first.next_cursor }, global)).rejects.toMatchObject({ code: "invalid_query_cursor" });
+      await writeFile(historyPath, original);
       await appendFile(path.join(context.pmPath, "history", `${ids[0]}.jsonl`), event("backdated writer"));
       await expect(runActivity({ ...query, after: first.next_cursor }, global)).rejects.toMatchObject({ code: "invalid_query_cursor" });
       await expect(runActivity({ ...query, op: "update", after: first.next_cursor }, global)).rejects.toMatchObject({ code: "invalid_query_cursor" });
