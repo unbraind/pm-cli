@@ -1,0 +1,42 @@
+id: pm-pr1570-review
+title: "PR1570: verify reusable default-help metadata and close hosted review"
+description: "The first PR1570 head passed all functional tests but exact hosted branch coverage exposed three unobserved declared-default branches in the reusable help formatting, summary and merge helpers. Add direct consumer proof for falsy/array metadata and preservation of existing help objects, then complete current-head CI and requested bot review."
+type: Task
+status: in_progress
+priority: 2
+tags[3]: changelog-exclude,ci,review
+created_at: "2026-10-24T05:43:27.612Z"
+updated_at: "2026-10-24T05:46:37.799Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#e22e962c57db3775644e8f9e"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Reusable help metadata exposes declared defaults without mutating existing host summaries; exact hosted full-source coverage returns to100percent with no exclusions or threshold changes; all required checks and actionable reviews are resolved on the final head
+parent: pm-u9d0
+risk: low
+confidence: high
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1560,verifies,"2026-10-24T05:43:27.612Z","harness:codex","cli:create:dep",detected
+  pm-gh1561,related,"2026-10-24T05:43:27.612Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-24T05:43:27.612Z","harness:codex","created_at=now,text=Duplicate check: live exact PR1570 search returned zero; open and in_progress lists refreshed with zero active claims; complete3092-item all-status baseline and both closed implementation histories inspected. This task owns the distinct hosted coverage/review closeout, not a duplicate product fix. Evidence: https://github.com/unbraind/pm-cli/actions/runs/40066396797/job/120792490066 reports54317/54320branches; all lines/statements/functions and11194functional tests passed."
+  "2026-10-24T05:46:37.038Z","harness:codex","Added a direct reusable-helper contract: declared scalar, falsy and list defaults merge into host-owned summaries without mutating the source objects or overwriting their descriptions, and text help retains each declaration. This covers the three branches absent from the hosted report while the existing installed-extension test retains dispatch and parsing proof. Ten linked tests, focused ESLint and full typecheck pass. The new contract fails against unchanged1d176a81b (one failure, seven existing passes). No production code, coverage exclusions or thresholds changed. Awaiting corrected-head hosted coverage and explicit CodeRabbit review."
+files[1]{path,scope}:
+  tests/unit/cli/extension-command-help.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts tests/integration/help-extension-discovery.integration.spec.ts,project,240,"harness:codex","2026-10-24T05:44:12.135Z",local_mutation,fix/sdk-declared-defaults
+test_runs[1]:
+  - run_id: test-local-mvlz59j3-1a52go
+    kind: test
+    status: passed
+    started_at: "2026-10-24T05:44:13.761Z"
+    finished_at: "2026-10-24T05:44:44.415Z"
+    recorded_at: "2026-10-24T05:44:44.415Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts tests/integration/help-extension-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+body: ""
