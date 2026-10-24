@@ -2704,6 +2704,14 @@
       ],
       "package_version": "2026.10.23",
       "reason": "Expose shared optional raw-query receipts and required finalized first-page omission metadata; preserve option-sensitive budget omissions, session rows and sparse producer pages."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmBulkMutationControlOptions",
+        "signature ./sdk/contracts:PmBulkMutationControlOptions"
+      ],
+      "package_version": "2026.10.23",
+      "reason": "pm-gh1564: rollback booleans never selected recovery; require the executable checkpoint ID string contract. Exhaustive rollback row consumers must also handle skipped no-effect rows."
     }
   ],
   "entrypoints": {
@@ -13676,7 +13684,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationControlOptions",
-          "signature": "export type PmBulkMutationControlOptions = { dryRun?: boolean; rollback?: boolean; noCheckpoint?: boolean; };"
+          "signature": "export type PmBulkMutationControlOptions = { dryRun?: boolean; rollback?: UpdateManyCommandOptions[\"rollback\"]; noCheckpoint?: boolean; };"
         },
         {
           "classification": "contract_data",
@@ -24572,7 +24580,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmBulkMutationControlOptions",
-          "signature": "export type PmBulkMutationControlOptions = { dryRun?: boolean; rollback?: boolean; noCheckpoint?: boolean; };"
+          "signature": "export type PmBulkMutationControlOptions = { dryRun?: boolean; rollback?: UpdateManyCommandOptions[\"rollback\"]; noCheckpoint?: boolean; };"
         },
         {
           "classification": "contract_data",

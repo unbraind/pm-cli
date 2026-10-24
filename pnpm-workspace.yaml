@@ -22,14 +22,16 @@ overrides:
   brace-expansion: '>=5.0.12 <6.0.0'
   esbuild: '>=0.28.2 <0.29.0'
   follow-redirects: '>=1.16.1 <2.0.0'
+  fast-uri: '>=3.1.9 <4.0.0'
   hono: '>=4.13.5 <5.0.0'
   nanoid: '>=3.3.18 <4.0.0'
   postcss: '>=8.5.23 <9.0.0'
   qs: '>=6.16.0 <7.0.0'
   rollup: '>=4.59.0 <5.0.0'
   source-map-js: '>=1.2.2 <2.0.0'
-  undici: '>=6.27.0 <7.0.0'
+  undici: '>=6.29.1 <7.0.0'
   vite: '>=7.3.7 <8.0.0'
+  zod: '>=4.6.6 <5.0.0'
 
 patchedDependencies:
   '@codspeed/core@5.7.1': patches/@codspeed__core@5.7.1.patch

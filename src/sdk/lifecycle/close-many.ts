@@ -4,10 +4,12 @@
  * Implements the pm close many command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
+import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
+import { rollbackMutationCheckpoint } from "./checkpoint-rollback.js";
 import {
   createCheckpointId,
   loadMutationCheckpoint,
-  restoreCheckpointItems,
   writeMutationCheckpoint,
   type MutationCheckpointItem,
   getActiveExtensionRegistrations,
@@ -27,13 +29,12 @@ import {
 import { runClose, type CloseCommandOptions } from "./close.js";
 import { hasListFilters } from "../query/list-filter-shared.js";
 import { runList, type ListOptions, type ListedItem } from "../query/list.js";
-import { runRestore } from "./restore.js";
 import {
   derivePmBulkMutationEffect,
   type PmCommandEffectReceipt,
 } from "../cli-contracts/command-exit-contracts.js";
 
-const CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION = 1;
+const CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION = 2;
 const CLOSE_MANY_CHECKPOINT_SUBDIR = "close-many";
 
 const CLOSE_MANY_FILTER_GUIDANCE = [
@@ -153,7 +154,7 @@ export interface CloseManyResult extends PmCommandEffectReceipt {
     | CloseManyApplyRow[]
     | Array<{
         id: string;
-        status: "restored" | "failed";
+        status: "restored" | "failed" | "skipped";
         changed_fields?: string[];
         warnings?: string[];
         error?: string;
@@ -319,6 +320,7 @@ function hierarchyDepth(
   return depth;
 }
 
+/** Recover checkpointed targets through the shared inverse writer, retaining independent skips and conflicts. */
 async function runCloseManyRollback(params: {
   pmRoot: string;
   rollbackId: string;
@@ -333,20 +335,14 @@ async function runCloseManyRollback(params: {
   );
   const restoreMessage =
     params.options.message ?? `Rollback close-many checkpoint ${checkpoint.id}`;
-  const rollback = await restoreCheckpointItems(
-    checkpoint.items,
-    (id, targetUpdatedAt) =>
-      runRestore(
-        id,
-        targetUpdatedAt,
-        { author: params.options.author, message: restoreMessage, force: true },
-        params.global,
-      ),
-  );
+  const rollback = await rollbackMutationCheckpoint(params.pmRoot, checkpoint, {
+    author: params.options.author, message: restoreMessage, force: params.options.force,
+  });
+  const skipped = rollback.rows.filter((row) => row.status === "skipped").length;
   return {
     ...derivePmBulkMutationEffect({
       applied: rollback.restored_ids.length,
-      skipped: 0,
+      skipped,
       failed: rollback.failed_count,
       unmatched: 0,
     }),
@@ -361,6 +357,7 @@ async function runCloseManyRollback(params: {
       rollback_command: `pm close-many --rollback ${checkpoint.id}`,
     },
     restored_count: rollback.restored_ids.length,
+    skipped_count: skipped,
     failed_count: rollback.failed_count,
     rows: rollback.rows,
     ids: rollback.restored_ids,
@@ -392,6 +389,7 @@ function planCloseManyRows(
   });
 }
 
+/** Publish the immutable schema-2 recovery record before any planned target is closed. */
 async function writeCloseManyCheckpoint(params: {
   pmRoot: string;
   checkpointId: string;
@@ -407,6 +405,7 @@ async function writeCloseManyCheckpoint(params: {
     params.checkpointId,
     {
       schema_version: CLOSE_MANY_CHECKPOINT_SCHEMA_VERSION,
+      rollback_strategy: "guarded_inverse",
       id: params.checkpointId,
       created_at: params.nowValue,
       author: resolveAuthor(params.options.author, "unknown"),
@@ -423,7 +422,10 @@ async function writeCloseManyCheckpoint(params: {
   };
 }
 
+/** Close each planned target in its own checkpoint scope while retaining per-row failures. */
 async function applyCloseManyRows(params: {
+  pmRoot: string;
+  checkpointId: string;
   matched: ListedItem[];
   closableIds: Set<string>;
   reason: string | undefined;
@@ -442,12 +444,14 @@ async function applyCloseManyRows(params: {
       continue;
     }
     try {
-      const result = await runClose(
+      const result = await withCheckpointMutation({
+        pmRoot: params.pmRoot, itemId: item.id, checkpointId: params.checkpointId,
+      }, () => runClose(
         item.id,
         params.reason,
         params.closeOptions,
         params.global,
-      );
+      ));
       rows.push({
         id: item.id,
         status: "closed",
@@ -468,22 +472,17 @@ async function applyCloseManyRows(params: {
   return { rows, closedIds };
 }
 
+/** Validate checkpoint identity before tracker reads or forward planning. */
 function resolveCloseManyRollbackId(
   options: CloseManyCommandOptions,
 ): string | undefined {
-  return typeof options.rollback === "string" ? options.rollback : undefined;
+  return resolveCheckpointRollbackId(options.rollback);
 }
 
+/** Refuse preview and filter combinations that would make checkpoint recovery ambiguous. */
 function validateCloseManyRollbackOptions(
   options: CloseManyCommandOptions,
-  rollbackId: string,
 ): void {
-  if (rollbackId.trim().length === 0) {
-    throw new PmCliError(
-      "--rollback requires a checkpoint id",
-      EXIT_CODE.USAGE,
-    );
-  }
   if (options.dryRun === true) {
     throw new PmCliError(
       "--dry-run cannot be combined with --rollback",
@@ -672,16 +671,16 @@ export async function runCloseMany(
   options: CloseManyCommandOptions,
   global: GlobalOptions,
 ): Promise<CloseManyResult> {
+  const rollbackId = resolveCloseManyRollbackId(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
 
   const dryRun = options.dryRun === true;
-  const rollbackId = resolveCloseManyRollbackId(options);
   rejectBlankIdsFilter(options.list);
 
   if (rollbackId !== undefined) {
-    validateCloseManyRollbackOptions(options, rollbackId);
+    validateCloseManyRollbackOptions(options);
     return runCloseManyRollback({ pmRoot, rollbackId, options, global });
   }
 
@@ -726,6 +725,8 @@ export async function runCloseMany(
   };
 
   const { rows, closedIds } = await applyCloseManyRows({
+    pmRoot,
+    checkpointId,
     matched: context.matched,
     closableIds,
     reason: context.reason,

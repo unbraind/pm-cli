@@ -227,6 +227,16 @@ follow the migration guidance for changed unions or error codes. The shared
 [primitive inventory](SDK_PRIMITIVE_INVENTORY.md) records CLI/MCP ownership:
 presentation modules import the SDK and have zero private-core edges.
 
+Bulk recovery is tracked by [pm-gh1563](../.agents/pm/issues/pm-gh1563.toon)
+and [pm-gh1564](../.agents/pm/issues/pm-gh1564.toon). `PmUpdateManyActionOptions`
+and `PmCloseManyActionOptions` accept `rollback: "checkpoint-id"`; boolean
+values are refused before dispatch. The shared SDK inverse writer verifies
+attributed history and current field postimages under the item lock, preserving
+unrelated peer context. Rollback rows can now be `skipped` when no committed
+effect remains. Exhaustive consumers should handle that additional row state.
+See [bulk operations](COMMANDS.md#bulk-operations) for conflict, collection,
+legacy-checkpoint and ownership semantics.
+
 ### Lock ownership and recovery
 
 Use the public `acquireLock` primitive when a package must serialize its own

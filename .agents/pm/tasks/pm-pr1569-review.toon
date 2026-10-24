@@ -1,0 +1,49 @@
+id: pm-pr1569-review
+title: "PR1569: prove invalid rollback refuses without mutating a matching item"
+description: "CodeRabbit review comment4365313003 on PR1569 identifies a test-coverage gap rather than a runtime defect. The current validator is early, but the fixture has no matching row and only checks rejection. Strengthen the observable acceptance without adding a production test seam. Add concise safety-contract documentation to touched private writers and retain the user-authorized grouped SDK/security scope."
+type: Task
+status: closed
+priority: 2
+tags[3]: changelog-exclude,review,tests
+created_at: "2026-10-24T00:34:12.671Z"
+updated_at: "2026-10-24T00:37:00.704Z"
+closed_at: "2026-10-24T00:37:00.088Z"
+completed_at: "2026-10-24T00:37:00.088Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Create a matching item for each invalid rollback input; supply valid forward update and close options; verify full item equality and exact history bytes after each rejection; keep canonical source and hosted checks green
+parent: pm-gh1564
+risk: low
+confidence: 95
+resolution: Invalid direct rollback cases now create a matching item and supply valid forward update and close inputs; after each rejection they compare the full item and exact immutable history bytes. Touched private mutation and recovery writers have concise safety-contract docs. Existing security triage ownership prose is represented by related edges.
+expected_result: A future validation-order regression cannot mutate a matching item or history while still passing the invalid-input test.
+actual_result: "The focused and linked20-test suites pass with the stronger state/history controls; canonical docstring validation passes. First-head hosted coverage and all native/packed/security checks passed; the sole static failure was the now-corrected three-edge graph assertion. The unchanged graph, record-integrity and bounded mutation gates pass."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1563,related,"2026-10-24T00:34:12.671Z","harness:codex","cli:create:dep",detected
+  pm-zod466,related,"2026-10-24T00:35:49.411Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-24T00:34:12.671Z","harness:codex","Duplicate check: live PR1569 search returned0 and current open/in_progress lists were read after the complete strict3091-item corpus. Original owners pm-gh1563 and pm-gh1564 are closed with full metadata and verified history; this distinct review-test delta is a child of the canonical SDK option owner. Source: https://github.com/unbraind/pm-cli/pull/1569#discussion_r4365313003. No runtime regression is asserted."
+  "2026-10-24T00:35:50.216Z","harness:codex","Review assessment: accepted the concrete test gap and now create a real matching item with valid forward selectors and close reason. Each invalid input must preserve the complete item and exact history after both rejections. Added concise safety-contract docstrings to six touched private writers. The grouped dependency remediation remains required by the user request and existing zero-advisory gate; splitting it is not adopted. Sourcery quota and expired Greptile review access are provider limitations rather than approval. The missing deferred-toolchain graph edges are recorded through PM and the unchanged graph/record-integrity providers and bounded mutation gate pass."
+files[3]{path,scope}:
+  src/core/store/item-store.ts,project
+  src/sdk/lifecycle/close-many.ts,project
+  tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts tests/unit/core/checkpoint/mutation-context.spec.ts,project,240,"harness:codex","2026-10-24T00:35:48.716Z",local_mutation,fix/bulk-rollback-peer-preservation
+test_runs[1]:
+  - run_id: test-local-mvlo4b13-rzj7dt
+    kind: test
+    status: passed
+    started_at: "2026-10-24T00:35:50.861Z"
+    finished_at: "2026-10-24T00:36:03.927Z"
+    recorded_at: "2026-10-24T00:36:03.927Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/lifecycle/bulk-rollback-preservation.integration.spec.ts tests/unit/core/checkpoint/mutation-context.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: Strengthened rollback refusal regression evidence and completed review remediation
+body: ""

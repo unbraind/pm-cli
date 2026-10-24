@@ -1,0 +1,21 @@
+id: pm-extapps-vendor-zod
+title: Track upstream ext-apps bundled Zod refresh before adopting its runtime bundles
+description: Latest upstream ext-apps2.0.3 embeds Zod4.3.5 in app-with-deps and react-with-deps. A workspace override updates normal dependency imports but cannot rewrite these unused bundles. pm-cli uses only ext-apps/server types and excludes the package from its runtime dependency manifest and published artifact. Track upstream bundle refresh before any future runtime adoption; do not describe dual-feed lockfile success as proof that every vendor byte is patched.
+type: Task
+status: open
+priority: 3
+tags[4]: changelog-exclude,dependencies,security,upstream
+created_at: "2026-10-23T23:41:18.091Z"
+updated_at: "2026-10-24T00:11:36.875Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Verify a future upstream release replaces the embedded affected parser in both bundles; preserve the current type-only and artifact-exclusion boundary until that evidence exists; exercise bounded constrained-collection controls before runtime adoption
+parent: pm-zod466
+risk: low
+confidence: 95
+expected_result: Future ext-apps runtime adoption requires a verified upstream bundle refresh and constrained-collection controls; current type-only and distribution-exclusion safeguards remain explicit.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-r61juc,related,"2026-10-24T00:11:36.628Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-23T23:41:18.091Z","harness:codex","Duplicate check: exact all-state ext-apps bundled Zod search returned0 after the complete strict corpus read; current open/in_progress lists were refreshed. Independent security review and a bounded direct probe found the unused vendor copy; current latest registry package remains2.0.3. This is a forward adoption constraint with no demonstrated public CLI exploit path. Left open and unclaimed because this PR does not rewrite upstream bundles."
+body: ""

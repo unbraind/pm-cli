@@ -14,6 +14,7 @@ import type { ToolOptionFlagContract } from "./flag-contracts.js";
 import type { CloseCommandOptions } from "../lifecycle/close.js";
 import type { CreateCommandOptions } from "../lifecycle/create.js";
 import type { UpdateCommandOptions } from "../lifecycle/update.js";
+import type { UpdateManyCommandOptions } from "../lifecycle/update-many.js";
 import type { TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE } from "./tool-option-contracts.js";
 
 /** JSON-compatible scalar the SDK option-normalization layer accepts for one flag value (CLI flags arrive as strings; MCP and SDK callers may pass native numbers and booleans). */
@@ -89,8 +90,8 @@ export type PmBulkMutationFilterOptions = Omit<
 export type PmBulkMutationControlOptions = {
   /** Preview the bulk mutation without writing changes. */
   dryRun?: boolean;
-  /** Roll back a previously checkpointed bulk mutation. */
-  rollback?: boolean;
+  /** ID of the checkpoint whose committed bulk effects should be reversed. */
+  rollback?: UpdateManyCommandOptions["rollback"];
   /** Skip writing the crash-recovery checkpoint for this bulk mutation. */
   noCheckpoint?: boolean;
 };

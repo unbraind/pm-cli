@@ -2418,7 +2418,7 @@ describe("runCloseMany via CLI", () => {
         runCloseMany({ rollback: "   ", list: {} }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: "--rollback requires a checkpoint id",
+        message: "--rollback requires a non-empty checkpoint ID",
       });
     });
   });

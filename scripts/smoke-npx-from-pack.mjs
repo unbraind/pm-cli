@@ -261,6 +261,13 @@ function assertPackedTypescriptConsumer(consumerRoot) {
     path.join(consumerRoot, "consumer.ts"),
     [
       'import { assertTestMeasurementRun, quoteCommandArg, PmClient, runContextEvaluationScenario, type ContextEvaluationReader } from "@unbrained/pm-cli/sdk";',
+      'import type { PmUpdateManyActionOptions, PmCloseManyActionOptions } from "@unbrained/pm-cli/sdk";',
+      'const updateRollback: PmUpdateManyActionOptions = { rollback: "update-many-checkpoint" };',
+      'const closeRollback: PmCloseManyActionOptions = { rollback: "close-many-checkpoint" };',
+      'void [updateRollback, closeRollback];',
+      '// @ts-expect-error a boolean does not identify a rollback checkpoint',
+      'const invalidRollback: PmUpdateManyActionOptions = { rollback: true };',
+      'void invalidRollback;',
       'const reader: ContextEvaluationReader = new PmClient({ noExtensions: true });',
       'void runContextEvaluationScenario({ id: "packed-reader", surface: "context", judgments: {}, token_budget: 1000, rationale: "Public client reader composition requires no casts." }, reader);',
       'export const quoted: string = quoteCommandArg("pack-smoke", "linux");',
