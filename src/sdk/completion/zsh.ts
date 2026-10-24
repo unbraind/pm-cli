@@ -635,6 +635,7 @@ ${zshCalendarRuntimeFieldFlags}            '--include[Include event sources]:(al
             '--recurrence-lookahead-days[Bound open-ended recurrence lookahead]:days' \\
             '--recurrence-lookback-days[Bound open-ended recurrence lookback]:days' \\
             '--occurrence-limit[Cap occurrences per recurring event]:number' \\
+            '--after[Continue a fixed-window calendar page]:cursor' \\
             '--limit[Limit returned events]:number' \\
             '--format[Output override]:(markdown toon json)' \\
             '--json[Output JSON]' \\

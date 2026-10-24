@@ -601,6 +601,7 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l include   -d 'In
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookahead-days -d 'Bound open-ended recurrence lookahead' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookback-days -d 'Bound open-ended recurrence lookback' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l occurrence-limit -d 'Cap occurrences per recurring event' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l after     -d 'Continue a fixed-window calendar page' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l limit     -d 'Limit returned events' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l format    -d 'Output override' -r -a 'markdown toon json'
 ${fishCalendarRuntimeFieldFlags}

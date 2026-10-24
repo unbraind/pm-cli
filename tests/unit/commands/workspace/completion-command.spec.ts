@@ -894,6 +894,11 @@ describe("generateZshScript", () => {
   it("includes zsh calendar and reminder flags", () => {
     const script = generateZshScript();
     expect(script).toContain("calendar|cal");
+    const calendar = script.match(/calendar\|cal\)[\s\S]*?;;/u)![0];
+    const afterLine = calendar.split("\n").find((line) => line.includes("'--after["))!;
+    expect(afterLine).toContain("]:cursor");
+    expect(afterLine.trimEnd().match(/\\+$/u)?.[0]).toBe("\\");
+    expect(afterLine.match(/'--/gu)).toHaveLength(1);
     expect(script).toContain("--view");
     expect(script).toContain("--past");
     expect(script).toContain("--full-period");
@@ -1246,6 +1251,8 @@ describe("generateFishScript", () => {
   it("includes fish calendar completions", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from calendar cal");
+    const afterLine = script.split("\n").find((line) => line.includes("calendar cal' -l after "))!;
+    expect(afterLine).toMatch(/ -r$/u);
     expect(script).toContain("-l view");
     expect(script).toContain("-l past");
     expect(script).toContain("-l full-period");
