@@ -205,6 +205,7 @@ export function resolveExtensionFlagArity(
   };
 }
 
+/** Render a visible long flag using the shared declaration metadata description. */
 function formatDynamicExtensionFlagHelpLine(
   definition: FlagDefinition,
 ): string | null {
@@ -547,6 +548,7 @@ function formatDynamicExtensionParseOptionFlags(
   return formatDynamicExtensionOptionFlags(definition);
 }
 
+/** Describe required/disabled markers and raw defaults without seeding the parser. */
 function formatDynamicExtensionOptionDescription(
   definition: FlagDefinition,
 ): string {

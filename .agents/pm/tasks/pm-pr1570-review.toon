@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[3]: changelog-exclude,ci,review
 created_at: "2026-10-24T05:43:27.612Z"
-updated_at: "2026-10-24T05:46:37.799Z"
+updated_at: "2026-10-24T06:08:57.017Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#e22e962c57db3775644e8f9e"
 author: "harness:codex"
@@ -15,23 +15,46 @@ acceptance_criteria: Reusable help metadata exposes declared defaults without mu
 parent: pm-u9d0
 risk: low
 confidence: high
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+expected_result: "Reusable help consumers retain typed declared defaults and host metadata; the exact final PR head passes full100percent coverage, required CI checks and actionable review resolution without lowering any gate."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1560,verifies,"2026-10-24T05:43:27.612Z","harness:codex","cli:create:dep",detected
   pm-gh1561,related,"2026-10-24T05:43:27.612Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-wb25c1,verifies,"2026-10-24T06:06:01.228Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
   "2026-10-24T05:43:27.612Z","harness:codex","created_at=now,text=Duplicate check: live exact PR1570 search returned zero; open and in_progress lists refreshed with zero active claims; complete3092-item all-status baseline and both closed implementation histories inspected. This task owns the distinct hosted coverage/review closeout, not a duplicate product fix. Evidence: https://github.com/unbraind/pm-cli/actions/runs/40066396797/job/120792490066 reports54317/54320branches; all lines/statements/functions and11194functional tests passed."
   "2026-10-24T05:46:37.038Z","harness:codex","Added a direct reusable-helper contract: declared scalar, falsy and list defaults merge into host-owned summaries without mutating the source objects or overwriting their descriptions, and text help retains each declaration. This covers the three branches absent from the hosted report while the existing installed-extension test retains dispatch and parsing proof. Ten linked tests, focused ESLint and full typecheck pass. The new contract fails against unchanged1d176a81b (one failure, seven existing passes). No production code, coverage exclusions or thresholds changed. Awaiting corrected-head hosted coverage and explicit CodeRabbit review."
-files[1]{path,scope}:
+  "2026-10-24T06:00:30.172Z","harness:codex","Second-head static CI refused this task's missing expected_result field (https://github.com/unbraind/pm-cli/actions/runs/40067691762/job/120794561543). Added the explicit expected outcome through pm. The production code remains unchanged. Run the full tracker-context-quality composition after new intake, not only graph composition, before the next push. CodeRabbit's requested full review is still processing this code head, so the metadata correction will be bundled with any actionable feedback."
+  "2026-10-24T06:06:02.653Z","harness:codex","CodeRabbit's full d3dbabc50 review completed with one actionable record finding: the October24 dependency audit omitted tracked gpt-tokenizer4.1.0. Fresh npm publication metadata confirms2026-10-18T05:43:37.485Z, still under seven days on October24; updated the existing audit comment through pm without changing the other statuses. Hosted d3dbabc50 coverage is100/100/100/100. The sole remaining required failure on that head is this task's missing expected_result, now corrected locally. Sourcery review budget, Cubic monthly line quota and Greptile ended trial remain unavailable-provider evidence, not approvals."
+  "2026-10-24T06:08:38.216Z","harness:codex",Reviewed CodeRabbit's summary heuristics as well as its inline finding. The broader dependency/analyzer audit is expressly requested by the user and stays in this single delivery under existing canonical owners. The repository docstring gate already passes; added precise documentation to five touched private helpers rather than adding filler to anonymous test callbacks. No production behavior changed. CodeRabbit reports its included one-review-per-hour allowance is now exhausted; request the next-head review once and preserve any quota refusal as a limitation.
+learnings[1]{created_at,author,text}:
+  "2026-10-24T06:00:30.789Z","harness:codex","After creating an active review or CI task, run the complete tracker-context-quality gate before pushing: graph composition alone does not cover required expected_result metadata."
+files[6]{path,scope}:
+  .agents/pm/chores/pm-wb25c1.toon,project
+  .agents/pm/history/pm-wb25c1.jsonl,project
+  src/cli/extension-command-help.ts,project
+  src/sdk/cli-contracts/runtime-contracts.ts,project
+  src/sdk/templates.ts,project
   tests/unit/cli/extension-command-help.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts tests/integration/help-extension-discovery.integration.spec.ts,project,240,"harness:codex","2026-10-24T05:44:12.135Z",local_mutation,fix/sdk-declared-defaults
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvlz59j3-1a52go
     kind: test
     status: passed
     started_at: "2026-10-24T05:44:13.761Z"
     finished_at: "2026-10-24T05:44:44.415Z"
     recorded_at: "2026-10-24T05:44:44.415Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/extension-command-help.spec.ts tests/integration/help-extension-discovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvm00ecp-1im5m2
+    kind: test
+    status: passed
+    started_at: "2026-10-24T06:08:38.847Z"
+    finished_at: "2026-10-24T06:08:57.001Z"
+    recorded_at: "2026-10-24T06:08:57.001Z"
     passed: 1
     failed: 0
     skipped: 0

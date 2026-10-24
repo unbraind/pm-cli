@@ -1215,6 +1215,7 @@ function normalizeExtensionFlagName(
     : null;
 }
 
+/** Project an extension declaration into runtime discovery, retaining omitted-flag defaults. */
 function toExtensionFlagContract(
   definition: FlagDefinition,
 ): CliFlagContract | null {
@@ -1485,6 +1486,7 @@ function buildExtensionArgumentSchema(
   };
 }
 
+/** Describe an option's accepted structured values and declared omitted-flag default. */
 function buildExtensionFlagSchema(
   flag: CliFlagContract,
   action: string,

@@ -178,6 +178,7 @@ function sortTemplateOptions(
   ) as CreateTemplateOptions;
 }
 
+/** Normalize core priority and collect compatible string/list options before any persistence. */
 function extractTemplateOptions(
   rawOptions: Record<string, unknown>,
 ): CreateTemplateOptions {

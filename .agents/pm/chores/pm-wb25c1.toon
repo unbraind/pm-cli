@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: dependencies,maintenance
 created_at: "2026-10-20T07:06:03.433Z"
-updated_at: "2026-10-24T05:25:34.713Z"
+updated_at: "2026-10-24T06:06:00.738Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "existing strict static, token, review-tool and coverage gates pass; Adopt eligible eslint, gpt-tokenizer, greptile, knip, typescript-eslint and jscpd after seven-day cooldown"
@@ -59,6 +59,6 @@ comments[13]:
     text: "Major-version census is also covered by live canonical owners: @sentry/node11.8.0 under pm-t3jxjj; TypeScript7.0.2 under pm-do5b; npm-package-arg14.0.0 under pm-ksr40d; Vitest/coverage-v8 5.0.5 and companion CodSpeed6.1.0 under pm-fokyhh. The first four latest publications are older than seven days; CodSpeed6.1.0 is still6.66days. Preserve the separate compatibility/runtime-floor/peer admission work rather than treating a registry latest tag as safe migration proof. No new dependency item is needed."
   - created_at: "2026-10-24T05:01:09.972Z"
     author: "harness:codex"
-    text: "October24 registry audit: no open dependency PR or GitHub vulnerability alert. eslint10.13.0 (October16 publication) is now release-age eligible; the remaining routine latest releases are still under seven days (@sentry/cli3.8.2 October22, jscpd5.4.2 October20, Greptile3.7.0 October18, knip6.42.1 and typescript-eslint8.72.0 October19). Major migrations retain canonical owners pm-t3jxjj, pm-do5b, pm-ksr40d and pm-fokyhh. TypeScript-eslint latest still requires TypeScript below6.1; npm-package-arg14 and Vitest5 raise runtime floors. This audit does not claim any of those upgrades implemented. This audit made no dependency version changes."
-    edited_at: "2026-10-24T05:25:34.713Z"
+    text: "October24 registry audit: no open dependency PR or GitHub vulnerability alert. eslint10.13.0 (October16 publication) is now release-age eligible; the remaining routine latest releases are still under seven days (@sentry/cli3.8.2 October22, jscpd5.4.2 October20, gpt-tokenizer4.1.0 October18, Greptile3.7.0 October18, knip6.42.1 and typescript-eslint8.72.0 October19). Major migrations retain canonical owners pm-t3jxjj, pm-do5b, pm-ksr40d and pm-fokyhh. TypeScript-eslint latest still requires TypeScript below6.1; npm-package-arg14 and Vitest5 raise runtime floors. This audit does not claim any of those upgrades implemented. This audit made no dependency version changes."
+    edited_at: "2026-10-24T06:06:00.738Z"
 body: ""
