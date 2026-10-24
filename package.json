@@ -248,7 +248,7 @@
     "@vitest/coverage-v8": "^4.1.12",
     "cross-spawn": "7.0.6",
     "esbuild": "0.28.2",
-    "eslint": "^10.13.0",
+    "eslint": "10.13.0",
     "eslint-plugin-sonarjs": "^4.2.2",
     "eslint-plugin-unicorn": "78.0.0",
     "fast-check": "^4.10.2",

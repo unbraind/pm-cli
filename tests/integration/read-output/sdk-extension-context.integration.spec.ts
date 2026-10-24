@@ -21,7 +21,7 @@ describe("SDK read context for customizable trackers", () => {
       await writeTestExtension({
         root: context.pmPath, placement: "projectRoot", directory: "projection-fields",
         manifestOverrides: { capabilities: ["schema"] },
-        entrySource: `export function activate(api) { api.registerItemFields(${JSON.stringify([
+        entrySource: `export function activate(api) { api.registerItemFields([
           { name: "probe_score", type: "number" },
           { name: "probe_ready", type: "boolean" },
           { name: "probe_label", type: "string" },
@@ -29,7 +29,7 @@ describe("SDK read context for customizable trackers", () => {
           { name: "probe_array", type: "array" },
           { name: "probe_object", type: "object" },
           { name: "probe_optional", type: "number", optional: true },
-        ])}); }`,
+        ]); }`,
       });
       const client = new PmClient({ cwd: context.tempRoot, pmRoot: context.pmPath });
       const created = await client.create({ title: "Projection sentinel", type: "Task", createMode: "progressive", field: [

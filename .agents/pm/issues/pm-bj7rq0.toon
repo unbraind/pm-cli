@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-24T10:36:54.495Z"
+updated_at: "2026-10-24T11:15:58.860Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[97]:
+comments[98]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -316,6 +316,9 @@ comments[97]:
   - created_at: "2026-10-24T10:36:54.494Z"
     author: "harness:codex"
     text: "Settled follow-up: after the owned package/negative-control validators completed, the unchanged CLI transport-floor command passes all6 operation budgets on the same local Node26 runtime. Preserve both the earlier qualified700/759ms misses and this passing receipt. No ceiling, qualification, baseline, test membership or timeout changed; no universal host-vs-product causal claim is inferred."
+  - created_at: "2026-10-24T11:15:58.860Z"
+    author: "harness:codex"
+    text: "PR1574 CodSpeed comparison at eb940fedd reports encodeQueryCursor208.7us to212.1us(-1.6percent), while createQueryFingerprint improves2.93percent. The report explicitly compares different runner types and flags significant unmeasured system calls; its check is neutral, not a demonstrated equivalent-runner regression. The pagination benchmark and implementation are unchanged in this PR. Required hosted transport/static checks pass. Preserve the report and qualification limits under this existing performance owner; no baselines, ceilings or code are altered to acknowledge the result."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project
