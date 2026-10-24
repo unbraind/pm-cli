@@ -3,6 +3,7 @@
  *
  * Implements the pm list command surface and its agent-facing runtime behavior.
  */
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { renderPmCommand } from "../command-line.js";
 import type { PmReadOutputMetadata } from "../read-output-contracts.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
@@ -1597,7 +1598,7 @@ function runtimeMetadataKeysForProjection(
   for (const field of definitions) {
     keys.push(field.metadata_key);
   }
-  return keys;
+  return [...keys, ...collectRegisteredItemFieldNames(getActiveExtensionRegistrations())];
 }
 
 interface ListRuntimeContext {

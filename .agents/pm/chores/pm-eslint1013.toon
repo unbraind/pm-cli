@@ -1,0 +1,47 @@
+id: pm-eslint1013
+title: Adopt release-age eligible ESLint 10.13.0
+description: "Ship the exact eligible ESLint10.13.0 update separately from the parent queue of still-ineligible minor tools. Registry publication October16 14:24UTC meets the seven-day minimum and the engine includes the supported Node22.18 floor. Retain10.12.0 as rollback."
+type: Chore
+status: closed
+priority: 2
+tags[3]: changed,dependencies,quality
+created_at: "2026-10-24T10:11:13.747Z"
+updated_at: "2026-10-24T11:16:22.970Z"
+closed_at: "2026-10-24T11:16:22.403Z"
+completed_at: "2026-10-24T11:16:22.403Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: Use exact ESLint10.13.0 and its resolved lockfile; Pass typechecking and ESLint without relaxing static or coverage contracts; Keep the remaining cooldown and major-migration owners queued and unclaimed
+parent: pm-wb25c1
+risk: low
+confidence: 90
+resolution: Adopted ESLint10.13.0 after the seven-day age boundary and pinned both manifest and lockfile importer to the exact accepted version; all resolved dependencies remain unchanged by review remediation.
+expected_result: "Only the accepted ESLint10.13.0 is selected on lockfile regeneration, with strict lint and runtime compatibility retained."
+actual_result: "Exact manifest/importer match confirmed; frozen lockfile supply-chain validation passes567 entries, zero-warning lint and all four typechecking projects pass. The remaining cooldown and major migrations retain existing open/unclaimed owners."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-quzx,related,"2026-10-24T10:41:46.808Z","harness:codex","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-24T10:11:13.747Z","harness:codex","Duplicate check: current exact-version PM search plus fresh open/in_progress lists and the complete all-status corpus found only the broad pm-wb25c1 queue and historical census notes for10.13.0, no shipped implementation leaf. The dependency edit was actively owned under pm-wb25c1; this child captures that implemented slice for immutable close evidence and package-owned changelog attribution while preserving the incomplete parent queue."
+  "2026-10-24T10:12:07.197Z","harness:codex","Duplicate-check clarification: the exact live version search also returned pm-quzx as a comment-only policy mention; it is the broad external-package dependency-range owner, not an ESLint implementation leaf. The full corpus and current active list contain no competing version-specific implementation owner. The parent queue remains open/unclaimed while this child carries the implemented version and verification."
+  "2026-10-24T10:18:29.299Z","harness:codex","Verification: source typechecking and ESLint10.13.0 lint pass with the existing zero-warning policy. The full dependency advisory gate passes567 locked packages, and GitHub has no open security alerts. Initial full-source verification exposed only schema-read fixture expectations, a missing npm module path on this host, and the separate host command-census gap for the latest package; none is an ESLint rule waiver. Keep the parent cooldown queue open and unclaimed."
+  "2026-10-24T11:13:45.500Z","harness:codex","Review remediation: exact resolved10.13.0 was already locked, but package.json retained a caret range. Pin both manifest and importer specifier to10.13.0; preserve the entire dependency resolution and seven-day acceptance evidence."
+  "2026-10-24T11:16:21.602Z","harness:codex","Review validation: package.json and the lockfile importer now both pin10.13.0; the resolved dependency graph is unchanged. Zero-warning ESLint and all four typechecking projects pass. Frozen lockfile validation passes567 entries under unchanged supply-chain policies."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "pnpm lint:eslint",project,240,"harness:codex","2026-10-24T10:11:18.404Z",local_mutation,fix/sdk-extension-read-contracts
+test_runs[1]:
+  - run_id: test-local-mvm93mts-iynfdt
+    kind: test
+    status: passed
+    started_at: "2026-10-24T10:22:43.110Z"
+    finished_at: "2026-10-24T10:23:24.496Z"
+    recorded_at: "2026-10-24T10:23:24.496Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "pnpm lint:eslint",schema,schema,source,local_source_ref
+close_reason: Pinned the exact eligible ESLint10.13.0 manifest and lockfile specifier.
+body: ""

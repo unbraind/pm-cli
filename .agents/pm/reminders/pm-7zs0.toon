@@ -6,17 +6,17 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-21T16:39:18.912Z"
+updated_at: "2026-10-24T11:13:47.800Z"
 reminders[1]{at,text}:
-  "2026-10-22T06:00:00.000Z",Verify the next eligible daily release and all supported consumers
+  "2026-10-25T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1574
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "Every eligible UTC day publishes once through reviewed producer and tag-driven acceptance; verify actual public registry, consumers and observability while preserving historical failures."
-actual_result: "Verified public 2026.10.21: morning dispatcher 39534744458, native schedule 39565612674 and tag-driven Release 39538035696 succeeded with one immutable daily tag. Public npm/Bun/npx/bunx and MCP verifiers and installed consumer sessions passed. Required Sentry/telemetry checks passed with four fresh command spans, four paired lifecycle probes and drained queues. This publication predates the cache-scope fixes. Historical reliability and local startup-budget failures remain separately tracked. Next one-shot verification: October 22 at 06:00 UTC."
+expected_result: "Verify the next eligible daily release once on October25 at06:00UTC; confirm immutable tag, npm latest, npm/Bun/npx/bunx consumers and observability separately."
+actual_result: "October24 scheduled publication and all supported consumers passed; historical rolling reliability remains red separately. Re-armed the one-shot reminder for October25 at06:00UTC through PM update."
 dependencies[14]:
   - id: pm-7n5a
     kind: related
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[237]:
+comments[239]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -804,6 +804,12 @@ comments[237]:
   - created_at: "2026-10-21T16:39:18.911Z"
     author: "harness:codex"
     text: "Live October21 current-day acceptance rerun: verify-published-release.mjs --version2026.10.21 --npm-attempts1 --executor-attempts1 and verify-installed-agent-session.mjs --version2026.10.21 --json both exit0. Public artifacts, independent npm/Bun installed consumers, npx/bunx declared executors and MCP sessions pass. This published artifact predates the current context-evidence changes. Physical local telemetry queue drains to0 after consent-aware flush. Historical Release Reliability remains independently failed."
+  - created_at: "2026-10-24T09:54:59.974Z"
+    author: "harness:codex"
+    text: "October24 live release-health acceptance: native scheduled Auto Release40074616609 succeeded and published immutable v2026.10.24 at04:03UTC; npm latest is2026.10.24. verify-published-release with one metadata attempt passes package, npx/bunx and MCP acceptance. Independent verify-installed-agent-session succeeds for local npm and Bun consumers,13 steps per manager including authoring, claim, evidence, close, validation and SDK reads. This artifact predates the current SDK read/fixture repair and is not publication proof for it. Live Release Reliability40080539414 remains red for scheduled_failure_rate and dispatch_window; original nightly failures and insufficient shard samples remain historical evidence."
+  - created_at: "2026-10-24T11:13:46.951Z"
+    author: "harness:codex"
+    text: "PR1574 review remediation: the prior October22 one-shot reminder was stale. Set the next occurrence to October25 at06:00UTC through the PM CLI; immutable history retains the old occurrence. This item remains open as the standing release-health owner. Updating the occurrence schedules PM metadata; it does not itself execute an external automation."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

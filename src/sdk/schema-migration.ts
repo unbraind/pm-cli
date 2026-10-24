@@ -1195,7 +1195,7 @@ export async function runSchemaEvolutionMigration(
     };
   }
   const schemaPath = schemaPathFor(pmRoot, settings, request);
-  const schemaBefore = await fs.readFile(schemaPath, "utf8");
+  const schemaBefore = (await readFileIfExists(schemaPath)) ?? "";
   if (!resolvedPlan.stored) {
     await validateAndStoreMigrationPlan({
       pmRoot,

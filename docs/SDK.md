@@ -1753,6 +1753,23 @@ the SDK search engine directly. Package authors can import these functions and
 their typed result contracts from `@unbrained/pm-cli/sdk` without importing CLI
 implementation modules.
 
+Read projections also accept metadata names registered by active extensions with
+`registerItemFields`, including `item.<name>` selectors. For example,
+`client.get(id, { fields: "id,probe_score" })` returns the declared numeric value
+without requiring a full item read. `list` and `search` use the same active field
+vocabulary; search retains the requested selector spelling in its row keys.
+Disabling the extension removes its selectors from validation and recovery.
+Unknown names still refuse, and recovery retains valid requested custom fields.
+Tracked by [pm-gh1571](../.agents/pm/issues/pm-gh1571.toon).
+
+Settings reads load optional schema files without creating missing files. Missing
+sections use configured or built-in defaults in memory, and later file creation
+invalidates the settings cache. Explicit `pm init --defaults` scaffolds missing
+sections while preserving existing schema definitions. This applies to shared
+SDK settings reads and CLI read commands; derived query caches and normal
+observability retain their own policies. Tracked by
+[pm-gh1568](../.agents/pm/issues/pm-gh1568.toon).
+
 The shared query cursor contract treats every published list, context, and
 search flag as query-semantic by default: it changes the matched or ordered
 result and therefore invalidates a cursor. Only page-size and rendering flags

@@ -1873,7 +1873,7 @@ describe("core/telemetry/runtime", () => {
       await flushTelemetryQueueNow(globalRoot);
 
       expect((await readSettings(globalRoot)).telemetry.installation_id).not.toBe("");
-      expect((await fs.stat(schemaPath)).isFile()).toBe(true);
+      await expect(fs.stat(schemaPath)).rejects.toMatchObject({ code: "ENOENT" });
       expect(await fs.readFile(historyPath, "utf8")).not.toBe(before[1]);
     });
   });

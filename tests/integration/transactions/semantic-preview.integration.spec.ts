@@ -148,7 +148,7 @@ describe("semantic transaction previews (GH-1370)", () => {
     });
   }
 
-  it("hydrates captured custom statuses during CLI preview and restores ordinary schema bootstrap afterward", async () => {
+  it("hydrates captured custom statuses during CLI preview and retains pure ordinary reads afterward", async () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["create", "task", "Custom lifecycle target", "--id", "custom-status", "--json"]).code).toBe(0);
       const settingsPath = path.join(context.pmPath, "settings.json");
@@ -167,7 +167,7 @@ describe("semantic transaction previews (GH-1370)", () => {
       expect((await runInProcessDistCli(["item", "complete", "pm-custom-status", "Staged closure", "--transaction-id", "restore-bootstrap", "--dry-run", "--json"], { env: context.env, expectJson: true }, runPmCli)).code).toBe(0);
       await expect(readFile(settings.schema.files.statuses)).rejects.toMatchObject({ code: "ENOENT" });
       expect((await runInProcessDistCli(["get", "pm-custom-status", "--json"], { env: context.env, expectJson: true }, runPmCli)).code).toBe(0);
-      expect(await readFile(settings.schema.files.statuses, "utf8")).toContain("statuses");
+      await expect(readFile(settings.schema.files.statuses)).rejects.toMatchObject({ code: "ENOENT" });
     });
   });
 
@@ -232,7 +232,7 @@ describe("semantic transaction previews (GH-1370)", () => {
       } else {
         expect(result.json).toMatchObject({ status: "committed" });
         expect((JSON.parse(await readFile(path.join(globalRoot, "settings.json"), "utf8")) as PmSettings).telemetry.installation_id.length).toBeGreaterThan(0);
-        expect(await readFile(schemaPath, "utf8")).toContain("statuses");
+        await expect(readFile(schemaPath)).rejects.toMatchObject({ code: "ENOENT" });
         expect(JSON.parse(await readFile(resolveExtensionMigrationStatePath(context.pmPath), "utf8"))).toMatchObject({ entries: [expect.objectContaining({ id: "registered-parser", status: "applied" })] });
       }
       expect(context.runCli(["get", "pm-parser-preview", "--json"], { expectJson: true }).json).toMatchObject({ item: { status: preview ? "open" : "reviewed" } });
@@ -309,7 +309,7 @@ describe("semantic transaction previews (GH-1370)", () => {
       const applied = await runInProcessDistCli(["item", "complete", "pm-telemetry-preview", "Delivered", "--transaction-id", "ordinary-telemetry", "--json", "--no-extensions", "--validate-close", "off"], { env, expectJson: true }, runPmCli);
       expect(applied.code).toBe(0);
       await waitForPendingFlush();
-      expect(await readFile(schemaPath, "utf8")).toContain("statuses");
+      await expect(readFile(schemaPath)).rejects.toMatchObject({ code: "ENOENT" });
       expect((await readSettings(globalRoot)).telemetry.installation_id.length).toBeGreaterThan(0);
     });
   });

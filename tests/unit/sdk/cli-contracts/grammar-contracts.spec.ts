@@ -19,10 +19,11 @@ import {
 import { WORKSPACE_SNAPSHOT_ACTIONS } from "../../../../src/sdk/workspace-snapshot.js";
 
 describe("CLI noun-verb grammar contracts", () => {
-  it("retains the published pm-changelog audit and milestone command contracts", () => {
-    // Public package 2026.10.23 registers audit without positionals and milestone create with a required name.
+  it("retains the published pm-changelog package command contracts", () => {
+    // Public package 2026.10.24 registers audit/contracts without positionals and milestone create with a required name.
     for (const [command, slots] of [
       ["changelog audit", []],
+      ["changelog contracts", []],
       ["changelog milestone create", [{ name: "name", value_kind: "string", required: true }]],
     ] as const) {
       expect(PM_COMMAND_DESTINATION_CONTRACTS.find((row) => row.command === command)).toMatchObject({ disposition: "package_owned", owner: "package:pm-changelog" });

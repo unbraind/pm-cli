@@ -30003,6 +30003,14 @@
         "target": "package"
       },
       {
+        "command": "changelog contracts",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "changelog export",
         "disposition": "package_owned",
         "noun": "package",
@@ -32243,6 +32251,10 @@
       },
       {
         "command": "changelog audit",
+        "slots": []
+      },
+      {
+        "command": "changelog contracts",
         "slots": []
       },
       {

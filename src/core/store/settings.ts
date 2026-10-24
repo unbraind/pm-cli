@@ -24,7 +24,6 @@ import { mutateWorkspaceJsonWithHistory } from "../history/workspace-history.js"
 import { reconcileSettingsSnapshot } from "./settings-concurrency.js";
 import {
   DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
-  ensureRuntimeSchemaFileScaffold,
   filePathForSchemaSection,
   loadRuntimeSchemaFromOptionalFiles,
   normalizeRuntimeSchemaSettings,
@@ -2029,10 +2028,6 @@ export async function readSettingsWithMetadata(
     trackedPathsForFailure = trackedPaths;
     const signaturesBeforeSchemaLoad =
       await collectSettingsReadCacheSignatures(trackedPaths);
-    const schemaScaffold = await ensureRuntimeSchemaFileScaffold(
-      pmRoot,
-      mergedSettings.schema,
-    );
     const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(
       pmRoot,
       mergedSettings.schema,
@@ -2064,30 +2059,22 @@ export async function readSettingsWithMetadata(
         ...(validated.data.item_format === "json_markdown"
           ? ["settings_item_format_legacy_json_markdown_coerced_to_toon"]
           : []),
-        ...schemaScaffold.created_paths.map(
-          (createdPath) => `runtime_schema_bootstrap_created:${createdPath}`,
-        ),
         ...loadedSchemaSections.warnings,
       ],
     };
-    if (schemaScaffold.created_paths.length === 0) {
-      if (
-        !settingsReadCacheSignaturesEqual(
-          signaturesBeforeSchemaLoad,
-          signaturesAfterSchemaLoad,
-        )
-      ) {
-        clearSettingsReadCache(pmRoot);
-      } else {
-        setSettingsReadCacheEntry(pmRoot, {
-          tracked_paths: trackedPaths,
-          signatures: signaturesAfterSchemaLoad,
-          value: cloneSettingsReadResult(result),
-        });
-      }
-    } else {
-      // Bootstrap warnings are intentionally one-shot and should not be replayed from cache.
+    if (
+      !settingsReadCacheSignaturesEqual(
+        signaturesBeforeSchemaLoad,
+        signaturesAfterSchemaLoad,
+      )
+    ) {
       clearSettingsReadCache(pmRoot);
+    } else {
+      setSettingsReadCacheEntry(pmRoot, {
+        tracked_paths: trackedPaths,
+        signatures: signaturesAfterSchemaLoad,
+        value: cloneSettingsReadResult(result),
+      });
     }
     return result;
   } catch {

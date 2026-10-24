@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -39,11 +39,14 @@ it.each([
 ] as const)("exports successful CLI spans only with %s tracing", async (_name, overrides, enabled, expected, preinitialized, removeOptIn) => {
   const root = await mkdtemp(path.join(tmpdir(), "pm-sentry-command-"));
   const envelopes: string[] = [];
+  const telemetryEvents: Array<{ event_type: string }> = [];
   const server = createServer(async (request, response) => {
     const chunks: Buffer[] = [];
     for await (const chunk of request) chunks.push(Buffer.from(chunk));
     const body = Buffer.concat(chunks);
-    envelopes.push((request.headers["content-encoding"] === "gzip" ? gunzipSync(body) : body).toString());
+    const decoded = (request.headers["content-encoding"] === "gzip" ? gunzipSync(body) : body).toString();
+    if (request.url === "/events") telemetryEvents.push(...JSON.parse(decoded).events);
+    else envelopes.push(decoded);
     response.writeHead(200).end("{}");
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -57,6 +60,9 @@ it.each([
     for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_ENV", "PM_SENTRY_DISABLED", "PM_TELEMETRY_DISABLED", "PM_NO_TELEMETRY", "DO_NOT_TRACK", "PM_SENTRY_TRACE_COMMANDS"]) delete env[key];
     Object.assign(env, {
       PM_PATH: path.join(root, "project"), PM_GLOBAL_PATH: globalPath,
+      // This custom harness removes native test signals to exercise real tracing.
+      // Explicit foreground delivery binds producer completion to the awaited child.
+      PM_TELEMETRY_INLINE_FLUSH: "1",
       PM_TELEMETRY_PROMPT: "0", SENTRY_TRACES_SAMPLE_RATE: "1",
       SENTRY_DSN: `http://public@127.0.0.1:${address.port}/1`,
     }, overrides);
@@ -85,6 +91,8 @@ it.each([
       }) })]);
     }
     if (expected) {
+      expect(telemetryEvents.map((event) => event.event_type)).toEqual(["command_start", "command_finish"]);
+      expect(await readFile(path.join(globalPath, "runtime", "telemetry", "events.jsonl"), "utf8")).toBe("");
       const spans = sentryEnvelopes.filter((envelope) => envelope.includes('"type":"span"')).flatMap((envelope) => envelope.split("\n").map((line) => JSON.parse(line))).filter((payload) => payload.version === 2).flatMap((payload) => payload.items);
       expect(spans).toEqual([expect.objectContaining({
         name: "pm contracts", status: "ok",

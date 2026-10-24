@@ -3,6 +3,7 @@
  *
  * Implements the SDK-owned item query shared by every surface.
  */
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import type { PmReadOutputMetadata } from "../read-output-contracts.js";
@@ -623,9 +624,10 @@ function validateGetProjectionFields(
   historical: boolean,
   id: string,
 ): void {
-  const runtimeMetadataKeys = resolveRuntimeFieldRegistry(
-    settings.schema,
-  ).definitions.map((field) => field.metadata_key);
+  const runtimeMetadataKeys = [
+    ...resolveRuntimeFieldRegistry(settings.schema).definitions.map((field) => field.metadata_key),
+    ...collectRegisteredItemFieldNames(getActiveExtensionRegistrations()),
+  ];
   validateGetFields(fields, runtimeMetadataKeys, id);
   if (historical && fieldsIncludeRoot(fields ?? [], "children")) {
     throw new PmCliError(
