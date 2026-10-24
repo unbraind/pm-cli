@@ -2095,7 +2095,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
     sources: ["sdk/pagination.ts", "sdk/query/window-pagination.ts"],
-    emitting_commands: ["*", "window-pagination"],
+    emitting_commands: ["*"],
     canonical_code: "invalid_query_cursor",
     aliases: [],
   },

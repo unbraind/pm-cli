@@ -64,6 +64,9 @@ describe("history namespace completion and item addressing", () => {
     const fish = generateFishScript().split("\n").filter((line) => line.includes("__pm_history_operation activity activity"));
     for (const contract of ACTIVITY_FLAG_CONTRACTS) {
       expect(activity).toContain(`${contract.flag}[`);
+      const line = activity.split("\n").find((entry) => entry.includes(`${contract.flag}[`))!;
+      expect(line.trimEnd().match(/\\+$/u)?.[0]).toBe("\\");
+      expect(line.match(/'\*?--/gu)).toHaveLength(1);
       expect(fish.some((line) => line.includes(`-l ${contract.flag.slice(2)} `))).toBe(true);
     }
     expect(activity.split("\n").find((line) => line.includes("--stream["))).toContain("]::mode");

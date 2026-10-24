@@ -71,9 +71,12 @@ describe("fixed-window producer continuation", () => {
       expect(last.days.flatMap(({ events }) => events)).toEqual(last.events);
       const empty = await runCalendar({ ...query, include: "events" }, global);
       expect(empty).toMatchObject({ total_count: 0, count: 0, has_more: false });
+      expect(renderCalendarMarkdown(empty)).toContain("No calendar events matched the selected filters.");
       const zero = await runCalendar({ ...query, limit: "0" }, global);
       expect(zero).toMatchObject({ total_count: 4, count: 0, omitted_count: 4, has_more: true });
       expect(zero.next_cursor).toBeUndefined();
+      expect(renderCalendarMarkdown(zero)).toContain("--limit 1 or greater");
+      expect(renderCalendarMarkdown(zero)).not.toContain("No calendar events matched");
       const zeroContinuation = await runCalendar({ ...query, limit: "0", after: first.next_cursor }, global);
       expect(zeroContinuation).toMatchObject({ page_start: 2, count: 0, omitted_count: 2, has_more: true });
       createSeed(context, "calendar inserted");
@@ -113,6 +116,10 @@ describe("fixed-window producer continuation", () => {
       const refusal = context.runCli(["activity", "--since", FROM, "--json"], { expectJson: true });
       expect(refusal.code).not.toBe(0);
       expect((refusal.stderr + refusal.stdout)).toContain(`--from ${FROM}`);
+      const conflicting = context.runCli(["activity", "--since", FROM, "--from", FROM, "--json"], { expectJson: true });
+      expect(conflicting.code).toBe(2);
+      expect(conflicting.stderr + conflicting.stdout).toContain("--since");
+      expect(conflicting.stderr + conflicting.stdout).not.toContain("Replay with suggested correction:");
     });
     expect(resolveReadOptionRetryArgs("context", ["context", "--since", FROM], "--since")).toBeUndefined();
     expect(resolveReadOptionRetryArgs("activity", ["activity", `--since=${FROM}`, "--raw"], "--since")).toEqual(["activity", "--from", FROM, "--raw"]);

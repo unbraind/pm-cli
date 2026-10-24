@@ -17399,7 +17399,6 @@
       "flags": [
         "--limit",
         "--after",
-        "--compact",
         "--full"
       ],
       "intent": "Read activity.",
@@ -18138,7 +18137,6 @@
       "flags": [
         "--limit",
         "--after",
-        "--compact",
         "--full"
       ],
       "intent": "Read activity.",
@@ -23954,7 +23952,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/pagination.ts"
+        "sdk/pagination.ts",
+        "sdk/query/window-pagination.ts"
       ],
       "stability": "stable"
     },

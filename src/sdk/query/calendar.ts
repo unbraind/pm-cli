@@ -1467,7 +1467,9 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
   lines.push("");
 
   if (result.events.length === 0) {
-    lines.push("No calendar events matched the selected filters.");
+    lines.push(result.total_count === 0
+      ? "No calendar events matched the selected filters."
+      : "No calendar events returned on this page. Repeat the same query with --limit 1 or greater to retrieve matching events.");
     return lines.join("\n");
   }
 

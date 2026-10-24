@@ -47,6 +47,8 @@ const ADDITIONAL_EMITTING_COMMANDS_BY_CODE = new Map([
 
 const QUERY_EMITTING_COMMAND_BY_MODULE = new Map([
   ["search-contracts", "search"],
+  // Shared cursor validation is cross-cutting, not an executable command.
+  ["window-pagination", "*"],
 ]);
 
 const LIFECYCLE_EMITTING_COMMAND_BY_MODULE = new Map([
