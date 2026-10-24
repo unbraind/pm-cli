@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: dependencies,sdk,security
 created_at: "2026-10-23T23:28:44.884Z"
-updated_at: "2026-10-24T00:15:27.559Z"
+updated_at: "2026-10-24T00:28:57.626Z"
 closed_at: "2026-10-24T00:15:26.937Z"
 completed_at: "2026-10-24T00:15:26.937Z"
 author: "harness:codex"
@@ -18,8 +18,11 @@ confidence: 90
 resolution: "Compatible workspace security floors consolidate Zod4.6.7, fast-uri3.1.9 and Undici6.29.1 across all active lockfile paths. Registry and OSV checks remain mandatory. Unused ext-apps embedded parser bytes are excluded from the CLI runtime/distribution and retained as a separate future-adoption constraint in pm-extapps-vendor-zod."
 expected_result: "All active dependency versions clear both feeds without breaking supported APIs, engines or development tools; unshipped vendor bytes are not misrepresented as patched."
 actual_result: "The unchanged567-package all-dependency gate passes with zero registry and OSV findings; frozen install, strict typecheck, Knip/development-bundle checks and valid constrained-collection controls pass. Security review found no further reachable candidate regression. The unused upstream vendor-bundle limitation remains open and unclaimed."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4ydh,related,"2026-10-24T00:11:34.950Z","harness:codex","cli:update:dep",detected
+  pm-do5b,related,"2026-10-24T00:28:57.390Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-24T00:28:57.390Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-24T00:28:57.390Z","harness:codex","cli:update:dep",detected
 comments[5]{created_at,author,text}:
   "2026-10-23T23:28:44.884Z","harness:codex","Duplicate check: canonical orientation and current open/in_progress lists plus complete strict3083-item all-status corpus including closed history were read. Exact GHSA search found no match. Closed pm-4ydh covers a different Zod advisory and remains completed. This new report is validated by fresh registry audit and upstream advisory; no production exploit reachability is asserted."
   "2026-10-23T23:31:01.613Z","harness:codex","Independent boundary review: all Zod callers accept4.6.6+ within4.x and the override resolves4.6.7. Current MCP ext-apps usage in pm source is type-only; production exploit reachability is not established. Upstream patch bounds constrained collections before element traversal and does not cap arbitrary unbounded arrays. A second complete OSV feed reports four fast-uri3.1.8 advisories and two Undici6.28.1 advisories, while registry counts are zero. The unchanged fail-closed gate blocked correctly; inspect compatible security floors for those copies before continuing."

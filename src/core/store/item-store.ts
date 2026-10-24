@@ -725,6 +725,7 @@ type DeferredItemMutationParams = Omit<ItemMutationParams, "historyContext"> & {
   resolveHistoryContext?: () => Record<string, unknown> | undefined;
 };
 
+/** Commit a locked item mutation and seal deferred policy and checkpoint context into its immutable event. */
 async function mutateItemWithDeferredHistoryContext(
   params: DeferredItemMutationParams,
 ): Promise<ItemMutationResult> {

@@ -170,8 +170,17 @@ describe("guarded bulk checkpoint rollback (pm-gh1563, pm-gh1564)", () => {
 
   it.each([true, false, 123, null, " ", "../outside"])("rejects invalid direct-SDK rollback %j before any forward operation", async (rollback) => {
     await withTempPmPath(async ({ pmPath }) => {
-      await expect(runUpdateMany({ list: {}, update: { title: "Never apply" }, rollback: rollback as never }, { path: pmPath })).rejects.toThrow(/rollback/);
-      await expect(runCloseMany({ rollback: rollback as never }, { path: pmPath })).rejects.toThrow(/rollback/);
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const id = (await client.create({ type: "Task", title: "Preserved", priority: 2 })).item.id;
+      const before = (await client.get(id, { full: true })).item;
+      const historyPath = path.join(pmPath, "history", `${id}.jsonl`);
+      const history = await readFile(historyPath, "utf8");
+      await expect(runUpdateMany({ list: { ids: id }, update: { title: "Never apply" }, rollback: rollback as never }, { path: pmPath })).rejects.toThrow(/rollback/);
+      expect((await client.get(id, { full: true })).item).toEqual(before);
+      expect(await readFile(historyPath, "utf8")).toBe(history);
+      await expect(runCloseMany({ list: { ids: id }, reason: "Never close", rollback: rollback as never }, { path: pmPath })).rejects.toThrow(/rollback/);
+      expect((await client.get(id, { full: true })).item).toEqual(before);
+      expect(await readFile(historyPath, "utf8")).toBe(history);
     });
   });
 });

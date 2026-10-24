@@ -320,6 +320,7 @@ function hierarchyDepth(
   return depth;
 }
 
+/** Recover checkpointed targets through the shared inverse writer, retaining independent skips and conflicts. */
 async function runCloseManyRollback(params: {
   pmRoot: string;
   rollbackId: string;
@@ -388,6 +389,7 @@ function planCloseManyRows(
   });
 }
 
+/** Publish the immutable schema-2 recovery record before any planned target is closed. */
 async function writeCloseManyCheckpoint(params: {
   pmRoot: string;
   checkpointId: string;
@@ -420,6 +422,7 @@ async function writeCloseManyCheckpoint(params: {
   };
 }
 
+/** Close each planned target in its own checkpoint scope while retaining per-row failures. */
 async function applyCloseManyRows(params: {
   pmRoot: string;
   checkpointId: string;
@@ -469,12 +472,14 @@ async function applyCloseManyRows(params: {
   return { rows, closedIds };
 }
 
+/** Validate checkpoint identity before tracker reads or forward planning. */
 function resolveCloseManyRollbackId(
   options: CloseManyCommandOptions,
 ): string | undefined {
   return resolveCheckpointRollbackId(options.rollback);
 }
 
+/** Refuse preview and filter combinations that would make checkpoint recovery ambiguous. */
 function validateCloseManyRollbackOptions(
   options: CloseManyCommandOptions,
 ): void {
