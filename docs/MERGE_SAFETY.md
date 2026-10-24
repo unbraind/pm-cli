@@ -132,12 +132,28 @@ pm merge install --dry-run --json
 
 ## Artifact semantics
 
+History scalar rebasing and ignored settlement artifacts are tracked by
+[pm-gh1553](../.agents/pm/issues/pm-gh1553.toon) and
+[pm-gh1556](../.agents/pm/issues/pm-gh1556.toon).
+
 | Artifact                                                         | Driver                              | Merge behavior                                                                                                                                                                                                                                                                      |
 | ---------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Item `.toon` / `.md`                                             | `pm-item-toon` / `pm-item-markdown` | Three-way field merge; append-like collections use set union, `updated_at` uses the latest timestamp, scalar conflicts select the value from the later document update with stable value order as an equal-timestamp tie-break, and canonical serialization recomputes TOON counts. |
 | `history/*.jsonl`                                                | `pm-history`                        | Preserves the common prefix and both divergent suffixes, orders deterministically, then re-anchors the resulting hash chain.                                                                                                                                                        |
 | tracker `**/*.jsonl` except the later `history/*.jsonl` override | `pm-relationship`                   | Covers default and package-owned custom relationship event paths, unions divergent suffixes by `eventId` (timestamp-ordered, ours-first on ties), and renumbers `sequence` consecutively so the strict-sequence store loader accepts the merged stream.                             |
 | root `settings.json` and nested `**/*.json`                      | `pm-json`                           | Recursively merges objects per key. Arrays compose when both branches preserve the base and add distinct entries, so independent extension installs and evaluation additions merge without weakening edit/removal conflict detection.                                               |
+
+History union validates each event in its original branch before rebasing its
+effects. A whole metadata-field replacement still assigns its exact value when
+another branch removed that field; a repeated whole-field removal keeps its
+event even when absence already satisfies its effect. This covers a branch
+claim following another branch's release without losing closure or comments.
+Nested paths and conditional patches remain strict. An unsafe scalar patch
+refuses with `history_union_rebase_conflict` and SDK `history_merge` coordinates
+(branch, one-based event line, operation, scalar-patch index and JSON pointer).
+CLI diagnostics name those coordinates in the error message. Preserve all three
+inputs and both item snapshots for deliberate recovery;
+verify the resolved history and preview reconciliation before committing.
 
 The `tests` collection has an additional execution-safety rule. Its semantic
 identity excludes provenance so the same command/context does not duplicate
@@ -484,6 +500,18 @@ remain operator decisions and are refused.
 The result's `staged_paths` lists the repository-relative artifacts added.
 Tracker aliases resolve before preview, so proof verification, repair and staging
 use the same physical tracker root.
+
+Both preview and apply check Git's effective ignore rules before any staging or
+audit write. An ignored artifact refuses with `merge_settlement_review_required`,
+`reason: ignored_merge_artifacts`, its relative path, and the owning
+`file:line: pattern`. Remove or narrow that rule, then retry the preview. Older
+workspaces may still ignore `merge-receipts/` from the former clone-local receipt
+policy; current receipt sidecars must travel with the merge commit. `pm health`
+checks a representative receipt path even before a merge exists and reports
+`merge_artifacts_ignored` with the rule coordinates. A file-specific rule is
+also checked against each actual settlement artifact. Git negations and tracked
+files retain their native meaning; pm neither force-adds artifacts nor rewrites
+user ignore rules.
 
 Repositories can explicitly opt into a merge-aware `pre-commit` hook:
 

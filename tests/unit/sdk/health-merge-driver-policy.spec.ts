@@ -1,10 +1,25 @@
 import { execFileSync } from "node:child_process";
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runHealth } from "../../../src/sdk/governance/health.js";
 import { runMergeInstall } from "../../../src/sdk/merge/install.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("health merge-driver policy", () => {
+  it.each([".gitignore", ".git/info/exclude"])("diagnoses legacy ignored receipts before any merge exists (%s)", async (source) => {
+    await withTempPmPath(async (context) => {
+      execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });
+      await writeFile(path.join(context.tempRoot, source), ".agents/pm/merge-receipts/\n");
+      const result = await runHealth({ path: context.pmPath }, { noRefresh: true, skipDrift: true, skipVectors: true });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("merge_artifacts_ignored:1");
+      expect(result.checks.find((check) => check.name === "integrity")?.details).toMatchObject({
+        ignored_merge_artifacts: [{ source, line: 1, pattern: ".agents/pm/merge-receipts/", path: ".agents/pm/merge-receipts/00000000-0000-4000-8000-000000000000.json" }],
+        remediation_map: { merge_artifacts_ignored: "pm health --check-only --full" },
+      });
+    });
+  });
   it("keeps never-installed drivers advisory by default and enforceable on demand", async () => {
     await withTempPmPath(async (context) => {
       execFileSync("git", ["init", "-q"], { cwd: context.tempRoot });

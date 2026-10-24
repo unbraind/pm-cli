@@ -5,7 +5,11 @@ import type { MergeReconcileResult } from "../../../../src/sdk/merge/reconcile.j
 const mocks = vi.hoisted(() => ({ git: vi.fn(), workspace: vi.fn(), realpath: vi.fn() }));
 vi.mock("node:child_process", async (original) => ({
   ...(await original()),
-  execFile: Object.assign(vi.fn(), { [Symbol.for("nodejs.util.promisify.custom")]: mocks.git }),
+  execFile: Object.assign(vi.fn(), { [Symbol.for("nodejs.util.promisify.custom")]: (...args: unknown[]) => {
+    const pending = mocks.git(...args);
+    pending.child = { stdin: { on: vi.fn(), end: vi.fn() } };
+    return pending;
+  } }),
 }));
 vi.mock("../../../../src/sdk/merge/install.js", () => ({ findGitWorkspaceRoot: mocks.workspace }));
 vi.mock("node:fs/promises", async (original) => ({ ...(await original()), realpath: mocks.realpath }));
@@ -121,5 +125,16 @@ describe("lossless reconciliation staging", () => {
     const request = invoke();
     await expect(request.run()).rejects.toMatchObject({ context: { code: "merge_settlement_review_required" } });
     expect(request.apply).not.toHaveBeenCalled();
+  });
+
+  it("reverts new receipt entries even if Git fails during their preparation", async () => {
+    mocks.git.mockImplementation(async (_command, args) => {
+      if (args[0] === "add") throw new Error("partial staging failure");
+      return { stdout: "" };
+    });
+    const request = invoke();
+    await expect(request.run()).rejects.toThrow("partial staging failure");
+    expect(request.apply).not.toHaveBeenCalled();
+    expect(mocks.git).toHaveBeenLastCalledWith("git", ["reset", "--quiet", "--", ":(literal).agents/pm/merge-receipts/receipt.json"], expect.any(Object));
   });
 });

@@ -18,6 +18,7 @@ import {
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import jsonPatch from "fast-json-patch";
+import { rebaseHistoryScalarPatch } from "./history-scalar-rebase.js";
 import {
   canonicalDocument,
   parseItemDocument,
@@ -266,13 +267,14 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
       const [root, field] = operation.path.slice(1).split("/");
       return root !== "metadata" || !unionFields.has(field);
     });
-    const scalar = tryApplyReplayPatch(current, scalarPatch);
-    if (!scalar.ok) {
-      throw new PmCliError("History union cannot rebase a scalar patch onto the merged replay position; leave the file unresolved for manual recovery.", EXIT_CODE.GENERIC_FAILURE);
-    }
+    const oursPosition = oursBranch.positions.get(identity);
+    const next = rebaseHistoryScalarPatch(current, scalarPatch, {
+      branch: oursPosition === undefined ? "theirs" : "ours",
+      line: (oursPosition ?? theirsBranch.positions.get(identity)!) + 1,
+      op: entry.op,
+    });
     const merged = mergeItemMetadataRecords(prefix.metadata, oursState.metadata, theirsState.metadata, "ours", "latest_document_update",
       String(oursState.metadata.updated_at), String(theirsState.metadata.updated_at));
-    const next = scalar.document;
     for (const field of unionFields) {
       if (Object.hasOwn(merged.merged, field)) next.metadata[field] = merged.merged[field];
       else delete next.metadata[field];

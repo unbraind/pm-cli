@@ -136,6 +136,22 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
 
       await writeFile(path.join(context.tempRoot, "preserve.txt"), "Unrelated staged work\n"); git("add", "preserve.txt");
       const priorIndex = git("diff", "--cached", "--raw", "-z");
+      await writeFile(path.join(context.tempRoot, ".gitignore"), ".agents/pm/merge-receipts/\n");
+      for (const dryRun of [true, false]) {
+        await expect(runMergeReconcile({ stage: true, dryRun }, { path: context.pmPath })).rejects.toMatchObject({
+          context: { code: "merge_settlement_review_required", paths: [relative], reason: "ignored_merge_artifacts" },
+          message: expect.stringContaining(".gitignore:1: .agents/pm/merge-receipts/"),
+        });
+        expect(git("diff", "--cached", "--raw", "-z")).toBe(priorIndex);
+        expect(await readFile(historyPath, "utf8")).toBe(before);
+        expect(await readFile(receiptPath, "utf8")).toBe(valid);
+      }
+      const ignoredHealth = await runHealth({ path: context.pmPath }, { checkOnly: true, full: true });
+      expect(ignoredHealth.warnings).toContain("merge_artifacts_ignored:1");
+      expect(ignoredHealth.checks.find((check) => check.name === "integrity")?.details).toMatchObject({
+        ignored_merge_artifacts: [expect.objectContaining({ source: ".gitignore", line: 1, pattern: ".agents/pm/merge-receipts/" })],
+      });
+      await writeFile(path.join(context.tempRoot, ".gitignore"), "");
       await expect(stageLosslessMergeReconciliation({ preview, dryRun: false, global: { path: context.pmPath }, apply: async () => { throw new Error("blocked audit"); } })).rejects.toThrow("blocked audit");
       expect(git("diff", "--cached", "--raw", "-z")).toBe(priorIndex);
       expect(git("ls-files", "--", relative)).toBe("");

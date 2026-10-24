@@ -292,7 +292,7 @@ describe("public merge-safety SDK primitives", () => {
     expect(verifyHistoryChain(entries)).toEqual({ ok: true, errors: [] });
   });
 
-  it.each(["nested", "root"])("refuses scalar rebase failure before positional fallback (%s)", (mode) => {
+  it.each(["nested", "root"])("rebases whole-field intent while refusing unsafe nested patches (%s)", (mode) => {
     const empty: ItemDocument = {
       metadata: {} as ItemDocument["metadata"],
       body: "",
@@ -334,13 +334,22 @@ describe("public merge-safety SDK primitives", () => {
       after: theirsDocument,
     });
 
-    expect(() =>
-      mergeHistoryStreams(
+    const merge = () => mergeHistoryStreams(
         historyEntriesToRaw([create]),
         historyEntriesToRaw([create, ours]),
         historyEntriesToRaw([create, theirs]),
-      ),
-    ).toThrow(/cannot rebase a scalar patch/i);
+      );
+    if (mode === "root") {
+      const entries = merge().merged.trim().split("\n").map((line) => JSON.parse(line));
+      expect(verifyHistoryChain(entries).ok).toBe(true);
+      expect(reanchorHistoryEntries(entries).finalDocument.metadata.review).toBe("later root replacement");
+    } else {
+      expect(merge).toThrow(/cannot rebase a scalar patch/i);
+      expect(merge).toThrow(expect.objectContaining({ context: expect.objectContaining({
+        code: "history_union_rebase_conflict", field: "/metadata/review/detail",
+        history_merge: { branch: "theirs", line: 2, op: "update", patch_index: 0, patch_path: "/metadata/review/detail" },
+      }) }));
+    }
 
     if (mode === "nested") {
       const oursImport = sealHistoryRecord({ ...create, op: "import", author: "ours-import" });

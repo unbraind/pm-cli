@@ -23254,6 +23254,23 @@
       "stability": "provisional"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_union_rebase_conflict",
+      "class": "conflict",
+      "code": "history_union_rebase_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History union rebase conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/merge/history-scalar-rebase.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_unknown_author_events"
       ],
@@ -24672,6 +24689,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "merge_artifacts_ignored",
+      "class": "generic_failure",
+      "code": "merge_artifacts_ignored",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Merge artifacts ignored condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "merge_bun_launcher_unavailable",
       "class": "dependency_failed",
       "code": "merge_bun_launcher_unavailable",
@@ -24941,6 +24975,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
+        "sdk/merge/ignored-artifacts.ts",
         "sdk/merge/reconcile.ts",
         "sdk/merge/stage.ts"
       ],

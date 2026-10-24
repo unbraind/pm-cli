@@ -1,0 +1,30 @@
+id: pm-tlr2dl
+title: Investigate health drift verdicts during concurrent tracker writes
+description: During the October24 merge delivery a long health scan reported history_drift_hash_mismatch for an item receiving normal PM evidence writes. A fresh per-item verifier immediately proved a valid15-event chain and exact current hash equality; a quiet health rerun also passed with no repair. This observation suggests a diagnostic read-consistency gap but does not yet establish a deterministic source-level reproduction. Preserve existing drift detection and distinguish real corruption from a changed revision.
+type: Issue
+status: open
+priority: 2
+tags[4]: context-management,health,"horizon:near",read-consistency
+created_at: "2026-10-24T20:41:50.937Z"
+updated_at: "2026-10-24T21:14:42.616Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: A deterministic isolated fixture reproduces or disproves the observed read/write interleaving; Real drift remains detectable and no diagnostic mutates item or history bytes; Concurrent changes are retried within a bounded budget or reported as an explicit consistency limitation; SDK and CLI acceptance preserve current health and verifier contracts
+goal: project management = context management
+objective: Make concurrent diagnostic reads report only conclusions supported by a coherent item/history revision
+value: Prevent unnecessary history repair and preserve trustworthy context for concurrent agents
+why_now: A live diagnostic disagreed with fresh strict verification while evidence writes were in flight
+parent: pm-5oj5
+risk: medium
+confidence: medium
+expected_result: "Diagnostics either verify a coherent item/history revision or explicitly disclose concurrent change with safe bounded recovery, while still detecting actual drift."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1361,related,"2026-10-24T20:41:50.937Z","harness:codex","cli:create:dep",detected
+  pm-gh1556,discovered_from,"2026-10-24T20:41:50.937Z","harness:codex","cli:create:dep",detected
+  pm-x0vj,related,"2026-10-24T21:14:41.726Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-24T20:41:50.937Z","harness:codex",Duplicate checks used the complete strict3100-item all-status corpus plus fresh keyword health/concurrent and health/snapshot searches and open/in_progress inventories. Read completed drift-diagnostics owner pm-x0vj and open coherent-context owner pm-gh1361. No matching health diagnostic-consistency leaf was found. This intake is an observation requiring reproduction; leave open and unclaimed.
+files[2]{path,scope,note}:
+  src/core/history/drift-scan.ts,project,Initial diagnostic consistency investigation targets; implementation is not yet claimed
+  src/sdk/governance/health.ts,project,Initial diagnostic consistency investigation targets; implementation is not yet claimed
+body: ""

@@ -125,6 +125,7 @@ import {
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import {
   buildMergeReceiptEvidenceWarnings,
+  resolveMergeArtifactIgnoreHealthEvidence,
   resolveMergeFenceHealthEvidence,
 } from "./health-merge-evidence.js";
 import {
@@ -777,6 +778,7 @@ async function buildIntegrityCheck(
   );
   const trackedRuntimeCache = await scanTrackedRuntimeCache(pmRoot);
   const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
+  const ignoredMergeArtifacts = await resolveMergeArtifactIgnoreHealthEvidence(pmRoot, gitWorkspaceRoot);
   const mergeFence = await resolveMergeFenceHealthEvidence(
     pmRoot,
     gitWorkspaceRoot,
@@ -853,6 +855,7 @@ async function buildIntegrityCheck(
         ]
       : []),
     ...mergeFence.warnings,
+    ...ignoredMergeArtifacts.warnings,
     ...(pendingMergeDecisions.length > 0
       ? [`merge_decisions_unreviewed:${pendingMergeDecisions.length}`]
       : []),
@@ -899,6 +902,7 @@ async function buildIntegrityCheck(
               : mergeDriverAudit.missing_keys.length +
                 mergeDriverAudit.drifted_keys.length,
           merge_fence: mergeFence.count,
+          ignored_merge_artifacts: ignoredMergeArtifacts.rules.length,
           pending_merge_decisions: pendingMergeDecisions.length,
           lossless_merge_receipts: losslessMergeReceipts.length,
           invalid_merge_receipt_evidence:
@@ -939,6 +943,7 @@ async function buildIntegrityCheck(
                 required: requireMergeDrivers,
               },
         merge_fence: mergeFence.audit,
+        ignored_merge_artifacts: ignoredMergeArtifacts.rules,
         pending_merge_decision_items: [
           ...new Set(pendingMergeDecisions.map((receipt) => receipt.item_id)),
         ].sort((left, right) => left.localeCompare(right)),
