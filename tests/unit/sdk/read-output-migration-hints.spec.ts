@@ -24,6 +24,7 @@ const RECEIPT_KEYS = new Set([
   "duration_ms",
   "generated_at",
   "now",
+  "anchor", // Invocation clock; time bounds remain compared exactly.
   "output_budget_truncation",
   "read_output",
   "read_session",
@@ -282,7 +283,7 @@ describe("read-output migration hints are executable", () => {
       expect(created.code).toBe(0);
       const itemId = (created.json as { item: { id: string } }).item.id;
       const commandArguments: Readonly<Record<string, readonly string[]>> = {
-        activity: [],
+        activity: ["--from", "2026-01-01T00:00:00.000Z", "--to", "2099-01-01T00:00:00.000Z"],
         contracts: [],
         deps: [itemId],
         events: [],

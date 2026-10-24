@@ -266,7 +266,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   // pm-mj42og: definition, policy id, and audit message for declarative workflows.
   schema: 43,
   profile: 22,
-  activity: 35,
+  // pm-gh1554: one bounded producer continuation flag, without spare allowance.
+  activity: 36,
   restore: 23,
   update: 105,
   "update-many": 146,

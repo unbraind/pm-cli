@@ -20,7 +20,6 @@ import {
   PmCliError,
   levenshteinDistanceWithinLimit,
   compareTimestampStrings,
-  nowIso,
   resolveIsoOrRelative,
   listAllItemMetadataLight,
   resolvePmRoot,
@@ -41,6 +40,8 @@ import {
   RECURRENCE_WEEKDAY_VALUES,
   weekdayOrderIndex,
 } from "../../types/index.js";
+
+import { paginateWindowQuery, resolveWindowQueryClock } from "./window-pagination.js";
 
 const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
 /** Restricts calendar view values accepted by command, SDK, and storage contracts. */
@@ -66,6 +67,8 @@ export interface CalendarOptions {
   fullPeriod?: boolean;
   /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Continue the original calendar query with its opaque producer cursor. */
+  after?: string;
   /** Schema type that determines the shape and validation rules for this value. */
   type?: string;
   /** Value that configures or reports tag for this contract. */
@@ -202,6 +205,20 @@ export interface CalendarResult {
     by_status: Record<string, number>;
     recurring_events: number;
   };
+  /** Matching calendar rows before pagination and within recurrence expansion caps. */
+  total_count: number;
+  /** Rows returned by this page. */
+  count: number;
+  /** Zero-based position of this page in the matching set. */
+  page_start: number;
+  /** Matching rows remaining after this page. */
+  omitted_count: number;
+  /** Whether another bounded page exists. */
+  has_more: boolean;
+  /** Opaque producer cursor accepted by CalendarOptions.after. */
+  next_cursor?: string;
+  /** Summary and day buckets describe only the returned rows. */
+  summary_scope: "returned_rows";
   /** Value that configures or reports events for this contract. */
   events: CalendarRow[];
   /** Value that configures or reports days for this contract. */
@@ -1420,6 +1437,15 @@ function formatEventLine(event: CalendarRow): string {
   return core;
 }
 
+/** Append the same diagnostics after populated and empty calendar content. */
+function appendCalendarMarkdownWarnings(lines: string[], warnings: readonly string[] | undefined): void {
+  if (warnings && warnings.length > 0) {
+    lines.push("### warnings");
+    for (const warning of warnings) lines.push(`- ${warning}`);
+    lines.push("");
+  }
+}
+
 /** Implements render calendar markdown for the public runtime surface of this module. */
 export function renderCalendarMarkdown(result: CalendarResult): string {
   const lines: string[] = [];
@@ -1439,6 +1465,8 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     `- events: ${result.summary.events} (deadlines: ${result.summary.deadlines}, reminders: ${result.summary.reminders}, scheduled: ${result.summary.scheduled})`,
   );
   lines.push(`- items: ${result.summary.items}`);
+  lines.push(`- matching-events: ${result.total_count}; returned: ${result.count}; remaining: ${result.omitted_count} (summary: ${result.summary_scope})`);
+  if (result.next_cursor) lines.push(`- continue: repeat the same query with --after ${result.next_cursor}`);
   lines.push(`- by-kind: ${formatSummaryCountRecord(result.summary.by_kind)}`);
   lines.push(`- by-type: ${formatSummaryCountRecord(result.summary.by_type)}`);
   lines.push(
@@ -1448,10 +1476,13 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
   lines.push("");
 
   if (result.events.length === 0) {
-    lines.push("No calendar events matched the selected filters.");
-    return lines.join("\n");
+    lines.push(result.total_count === 0
+      ? "No calendar events matched the selected filters."
+      : "No calendar events returned on this page. Repeat the same query with --limit 1 or greater to retrieve matching events.");
+    lines.push("");
+    appendCalendarMarkdownWarnings(lines, result.warnings);
+    return trimTrailingNewlines(lines.join("\n"));
   }
-
   for (const day of result.days) {
     lines.push(`## ${day.date} (${day.count})`);
     for (const event of day.events) {
@@ -1459,13 +1490,7 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     }
     lines.push("");
   }
-  if (result.warnings && result.warnings.length > 0) {
-    lines.push("### warnings");
-    for (const warning of result.warnings) {
-      lines.push(`- ${warning}`);
-    }
-    lines.push("");
-  }
+  appendCalendarMarkdownWarnings(lines, result.warnings);
   return trimTrailingNewlines(lines.join("\n"));
 }
 
@@ -1500,10 +1525,11 @@ interface CalendarExecutionInputs {
   eventsOnlyCapApplied: boolean;
 }
 
+/** Resolve relative ranges and recurrence limits against the first-page clock. */
 function resolveCalendarExecutionInputs(
   options: CalendarOptions,
 ): CalendarExecutionInputs {
-  const nowValue = nowIso();
+  const nowValue = resolveWindowQueryClock("calendar", options.after);
   const view = parseView(options.view);
   const rangeBounds = buildRange(view, options, nowValue);
   const limit = parseIntegerLimit(options.limit);
@@ -1663,10 +1689,10 @@ export async function runCalendar(
       inputs.rangeBounds.end,
     ),
   );
-  const limitedEvents =
-    inputs.limit === undefined
-      ? rangedEvents
-      : rangedEvents.slice(0, inputs.limit);
+  const { rows: limitedEvents, ...page } = paginateWindowQuery(rangedEvents, {
+    command: "calendar", after: options.after, clock: inputs.nowValue, limit: inputs.limit,
+    query: { pmRoot, view: inputs.view, range: inputs.rangeBounds, filters: { ...buildCalendarFiltersResult(options, runtimeFieldFilters), limit: undefined }, recurringWindow, occurrenceLimit: inputs.occurrenceLimit },
+  });
   const days = bucketEventsByDay(limitedEvents);
   const warnings = [...new Set(listWarnings)].sort((left, right) =>
     left.localeCompare(right),
@@ -1679,6 +1705,8 @@ export async function runCalendar(
     anchor: inputs.rangeBounds.anchor,
     range: buildCalendarRangeResult(options, inputs.rangeBounds),
     filters: buildCalendarFiltersResult(options, runtimeFieldFilters),
+    ...page,
+    summary_scope: "returned_rows",
     summary: summarize(limitedEvents),
     events: limitedEvents,
     days,

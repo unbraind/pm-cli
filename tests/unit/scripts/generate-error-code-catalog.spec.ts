@@ -61,6 +61,11 @@ describe("generate error code catalog", () => {
       'const listQuery = { code: "list_query_failure" };',
       "utf8",
     );
+    await writeFile(
+      path.join(root, "src", "sdk", "query", "window-pagination.ts"),
+      'const cursor = { code: "invalid_query_cursor" };',
+      "utf8",
+    );
     await mkdir(path.join(root, "scripts"), { recursive: true });
     await writeFile(
       path.join(root, "scripts", "error-code-reachability.json"),
@@ -125,6 +130,11 @@ describe("generate error code catalog", () => {
     )?.[0];
     expect(projectionRecord).toContain('emitting_commands: ["search"]');
     expect(listQueryRecord).toContain('emitting_commands: ["list"]');
+    const windowRecord = output.match(
+      / {2}\{\n {4}code: "invalid_query_cursor",[\s\S]*?\n {2}\},/u,
+    )?.[0];
+    expect(windowRecord).toContain('emitting_commands: ["*"]');
+    expect(output).not.toContain('emitting_commands: ["window-pagination"]');
     expect(output).toContain('canonical_code: "item_not_found"');
     expect(output).toContain("aliases: []");
     expect(output).toContain(

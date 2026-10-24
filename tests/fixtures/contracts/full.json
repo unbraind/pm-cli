@@ -2315,6 +2315,10 @@
           "flag": "--limit"
         },
         {
+          "cursor_semantics": "presentation",
+          "flag": "--after"
+        },
+        {
           "flag": "--unbounded"
         },
         {
@@ -5218,6 +5222,10 @@
         },
         {
           "flag": "--limit"
+        },
+        {
+          "cursor_semantics": "presentation",
+          "flag": "--after"
         },
         {
           "flag": "--unbounded"
@@ -17390,7 +17398,7 @@
       },
       "flags": [
         "--limit",
-        "--compact",
+        "--after",
         "--full"
       ],
       "intent": "Read activity.",
@@ -18128,7 +18136,7 @@
       },
       "flags": [
         "--limit",
-        "--compact",
+        "--after",
         "--full"
       ],
       "intent": "Read activity.",
@@ -19471,6 +19479,12 @@
           "limit"
         ],
         "target": "limit"
+      },
+      {
+        "keys": [
+          "after"
+        ],
+        "target": "after"
       }
     ],
     "calendar_string_options": [
@@ -23938,7 +23952,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/pagination.ts"
+        "sdk/pagination.ts",
+        "sdk/query/window-pagination.ts"
       ],
       "stability": "stable"
     },
@@ -44430,6 +44445,12 @@
               "migration_hint": "--unbounded is a compatibility alias; prefer --output-limit unbounded.",
               "semantics": "behavior_preserving",
               "visibility": "hidden_alias"
+            },
+            {
+              "flag": "--after",
+              "migration_hint": "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
+              "semantics": "behavior_preserving",
+              "visibility": "hidden_alias"
             }
           ]
         },
@@ -55823,6 +55844,13 @@
           "action": {
             "const": "activity",
             "description": "Tool action to execute."
+          },
+          "after": {
+            "description": "Opaque action-specific continuation cursor returned by the preceding bounded query.",
+            "examples": [
+              "pm-x1y2"
+            ],
+            "type": "string"
           },
           "agentInstance": {
             "anyOf": [

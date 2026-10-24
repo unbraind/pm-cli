@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- GH-1562: expose calendar matching totals and bounded continuation ([pm-gh1562](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1562.toon))
+- GH-1554: resume bounded activity reads from a stable event window ([pm-gh1554](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1554.toon))
 - GH-1571: allow projection of active extension item fields across read surfaces ([pm-gh1571](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1571.toon))
 - Use elapsed-time task-state waits in the Windows MRTR regression ([pm-win-task-wait](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-win-task-wait.toon))
 - Align the host grammar census with the latest installed package command ([pm-package-grammar24](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-package-grammar24.toon))

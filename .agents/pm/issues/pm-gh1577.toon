@@ -1,0 +1,24 @@
+id: pm-gh1577
+title: "GH-1577: make SDK create focus inheritance explicit and discoverable"
+description: Reported programmatic create can inherit a saved interactive focus as parent when the caller omitted parent. Inspect the current public receipt and documented unset-parent opt-out before choosing compatibility-safe SDK defaults or explicit inheritance policy.
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"gh:1577",sdk
+created_at: "2026-10-24T16:12:43.896Z"
+updated_at: "2026-10-24T16:12:43.896Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Reproduce public SDK creation in a sandbox with saved focus and explicit/omitted/unset parent controls; Define and document SDK focus inheritance policy without silently changing CLI convenience; Make applied ambient defaults and parent provenance discoverable through types/help/receipt; Verify importer-style Node/Bun consumers and CLI/MCP parity, including templates, tags, assignee and workflow defaults."
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: "Programmatic creation has an explicit, documented and observable hierarchy/default policy."
+affected_version: 2026.10.20
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-72xf,related,"2026-10-24T16:12:43.896Z","harness:codex","cli:create:dep",detected
+  pm-gh1360,related,"2026-10-24T16:12:43.896Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-24T16:12:43.896Z","harness:codex","Intake source: https://github.com/unbraind/pm-cli/issues/1577. Duplicate check: complete strict 3098-item all-status corpus with no omissions plus fresh request-specific searches and current open/in_progress lists; no existing owner matches this distinct acceptance. Full live related lineage was read. Existing delivered lease-fencing/focus behavior remains historically closed. This report is planning evidence; no current independent reproduction or fix is claimed. Queued open and unclaimed under the SDK outcome milestone."
+escape_class: production_defect
+body: "## Summary\n\n`PmClient.create` silently inherits the tracker's saved focus (`pm focus`) as the new item's parent when no parent is given. #161 added this as a CLI convenience for a human or agent working \"under\" a focused item. Through the SDK it turns ambient session state into data: an importer, sync job or hosted service writing into a tracker where someone left a focus set gets unplanned parent links, and the create receipt reports plain success.\n\n## Evidence\n\nA fleet importer (pm-beads dependency-closed transfer) shipped this defect until a read-only review reproduced it. Transferring `{\"id\":\"a\",\"title\":\"A\"}` into a tracker with an active focus created `a` with the focused item as parent and reported success. Tracing the 2026.10.20 SDK, `PmClient.create` calls `runCreate`, which reads saved focus whenever no parent is supplied and `unset` lacks `parent`. Passing `unset: [\"parent\"]` suppresses it. That option is typed, but neither the create typings nor the help mention that it suppresses focus inheritance. The package had to find this out by reading the source.\n\n## Reproduction (plain directory, no git)\n\n```bash\npm init --defaults --agent-guidance skip\np=$(pm create --type Epic --title Parent --json | jq -r .id)\npm focus \"$p\"\n```\n\n```ts\nimport { PmClient } from '@unbrained/pm-cli';\nconst c = new PmClient({ cwd: process.cwd(), author: 'importer' });\nconst { item } = await c.create({ type: 'Task', title: 'Imported row' });\nconsole.log(item.parent); // the focused Epic, though the caller never asked for a parent\n```\n\n## Expected (any of these, in order of preference)\n\n1. SDK creates do not read interactive session state (focus) unless the caller opts in, for example `inheritFocus: true`. The CLI keeps the #161 behavior.\n2. If inheritance stays the default, the receipt says so (`parent_source: \"focus\"`, the focus id) and a warning is emitted, so callers can detect it.\n3. At minimum, document on `create` (typings and help) that `unset: [\"parent\"]` is the opt-out. Also list every other ambient default a programmatic create can pick up (templates, default tags and assignee, workflow defaults), so importers can state them explicitly.\n\n## Why core\n\nEvery SDK consumer that writes items for someone else (importers, sync, hosted pm-web/pm-gpt/MCP, recursive agents creating subtasks in a shared tracker) is exposed. The failure is silent and leaves the hierarchy wrong rather than raising an error."

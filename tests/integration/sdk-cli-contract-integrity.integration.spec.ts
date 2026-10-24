@@ -194,8 +194,8 @@ describe("SDK and CLI contract integrity", () => {
         },
         {
           action: "activity",
-          cli: ["activity", "--json", "--id", id, "--compact"],
-          sdk: { action: "activity", options: { id, compact: true } },
+          cli: ["activity", "--json", "--id", id, "--compact", "--to", "2099-01-01T00:00:00.000Z"],
+          sdk: { action: "activity", options: { id, compact: true, to: "2099-01-01T00:00:00.000Z" } },
         },
       ];
 

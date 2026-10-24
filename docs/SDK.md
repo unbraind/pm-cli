@@ -643,12 +643,41 @@ explicit full projection. Active package commands receive deterministic
 fallback contracts, so extension authors can discover a bounded surface before
 they invoke it.
 
-`pm activity` applies a compact 20-row default bound; direct SDK calls default
-to five full rows. Results disclose `total_count`, `omitted_count`, `has_more`,
-and `applied_bound`. An explicit `limit` remains authoritative, while
-`unbounded: true` (CLI: `--unbounded`) is an intentional opt-out and cannot be
-combined with a limit. The activity flag and tool schemas publish the same
-option for extension and transport consumers.
+`runActivity` defaults to a 15-item digest over the last 24 hours. `raw: true`
+selects compact events (20 by default); `raw: true, compact: false` selects full
+history entries (five by default). CLI equivalents are `--raw` and `--full`.
+Results disclose `total_count`, `count`, `page_start`, `omitted_count`,
+`has_more`, `next_cursor`, and `applied_bound`. Continue with the same options
+and `after: result.next_cursor` (CLI/MCP: `--after` / `after`). Page size may
+change. `omitted_count` counts rows remaining after the current page.
+
+Activity's `window` publishes the original evaluation `anchor`, inclusive
+`from`, and exclusive `to`. Bounded reads without an explicit upper bound pin
+`to` to that anchor. Relative bounds resolve against the same clock on every
+page. Later writes outside the window do not disturb continuation. Query,
+projection, workspace, or matching-content changes refuse the old cursor with
+`invalid_query_cursor`; start the query again without `after`. This is checked
+continuation over an unchanged matching set, not a persisted snapshot or an
+atomic cross-file read. Backdated writes within the window and current metadata
+changes affecting digest rows can require a restart. `unbounded: true`
+intentionally removes the row bound and cannot be combined with a limit.
+
+Queries collect the matching rows and scan them on each page to detect changes.
+Content fingerprints hash canonical rows incrementally, bounding additional
+serialization storage to the largest row. Digest activity also hashes its full
+source events incrementally so hidden patch changes still invalidate a cursor.
+
+`runCalendar` uses the same `after` contract and frozen clock. `total_count`
+counts matching expanded rows within the selected window and recurrence caps;
+`count`, `page_start`, `omitted_count`, `has_more`, and `next_cursor` describe
+the page. `summary_scope: "returned_rows"` labels `summary` and `days` as
+page-local. Exact-full and empty results have `has_more: false`. A zero limit
+returns counts without rows or a new cursor; repeat with `limit: "1"` or larger
+to fetch rows. Existing recurrence expansion limits remain separate from
+pagination, and calendar mutations affecting matching rows require a restart.
+Repository tracking (PM records are excluded from the npm package):
+[pm-gh1554](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1554.toon)
+and [pm-gh1562](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1562.toon).
 
 The required `quality:token-budget` gate keeps discovery and answer cost
 separate. Help and contract discovery surfaces use ratcheted baselines;

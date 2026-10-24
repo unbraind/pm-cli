@@ -2,23 +2,134 @@ id: pm-gh1562
 title: "GH-1562: expose calendar matching totals and bounded continuation"
 description: "Reported on2026.10.23: runCalendar limit2 returns two of three reminders while exposing only post-limit summaries and filters.limit, with no total, omission receipt, has_more or bounded continuation. Investigate core SDK completeness metadata and recoverable bounded reads, without claiming stored data loss."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1562",sdk
 created_at: "2026-10-23T15:20:50.258Z"
-updated_at: "2026-10-23T16:30:42.458Z"
+updated_at: "2026-10-24T19:19:38.193Z"
+closed_at: "2026-10-24T19:19:37.129Z"
+completed_at: "2026-10-24T19:19:37.129Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: A limited calendar result discloses matching versus returned scope and omissions; callers can recover omitted rows through bounded continuation or a concrete bounded recovery with stated consistency limits; public CalendarResult types describe the completeness fields; sandboxed reminder and deadline controls cover exact-full and truncated windows without stored data loss.
 parent: pm-qh3p
 risk: medium
 confidence: medium
-expected_result: "Calendar results distinguish returned rows from matching totals, disclose omissions and offer bounded continuation or a concrete recovery with explicit consistency limits."
+resolution: "Calendar SDK exposes matching, returned and remaining totals with fixed-clock continuation; CLI/package/MCP and shell completion agree, summaries identify returned-row scope, and both empty/count-only and populated Markdown retain recurrence warnings."
+expected_result: "Retrieve bounded calendar pages consistently and disclose completeness, summary scope and recurrence caps through every supported transport."
+actual_result: Linked40calendar/transport plus107completion tests pass with real capped count-only/empty controls and a failing-before missing-warning control; public Node-to-Bun cursor and real shells pass. Prior complete11208-test runtime coverage is exact100percent; current local performance refusals remain separately documented with unchanged budgets and final hosted static/coverage required.
 affected_version: 2026.10.23
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-kglq,related,"2026-10-23T16:29:27.760Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+  pm-bj7rq0,related,"2026-10-24T19:19:33.329Z","harness:codex","cli:update:dep",detected
+comments[13]{created_at,author,text}:
   "2026-10-23T15:20:50.258Z","harness:codex","Intake source: https://github.com/unbraind/pm-cli/issues/1562. Duplicate checks: request-specific live PM search, fresh open/in_progress lists and complete3080-item strict all-status read, with no omissions; full live parent comments/closure and verified complete history were inspected. The report is distinct from the delivered parent scope. Intake only: not independently reproduced in this delivery, open and unclaimed; preserve completed parent history."
   "2026-10-23T16:30:42.458Z","harness:codex","Calendar criteria now cover matching/returned scope, omissions and bounded recovery consistency. The unchanged tracker-context-quality gate now exits0 across47 assertions with0 blocking findings and one retained graph advisory elsewhere. Original missing-criteria failure: https://github.com/unbraind/pm-cli/actions/runs/39980422540/job/120507900145. Existing context lineage is linked, and this intake remains open and unclaimed; no product implementation is asserted."
+  "2026-10-24T12:00:38.863Z","harness:codex","Implementation scope: shared bounded query continuation with pm-gh1554; expose total/count/omitted/has_more and explicit returned-summary scope in core CalendarResult, preserve reminder/deadline/recurrence semantics, and extend optional calendar CLI/MCP presentation. GitHub intake/security sweep: 29 open issues already have canonical PM link comments, 0 open PRs and 0 open Dependabot/code/secret alerts. Latest pm-changelog installed and npm release are both 2026.10.24. Only these two implementation owners are claimed in progress."
+  "2026-10-24T12:13:49.037Z","harness:codex","Current SDK and calendar-package continuation tests pass, including reminder/deadline ties, exact-full and empty sets, zero limits with counts-only recovery, page-size changes, frozen relative bounds, malformed clocks/positions, inserted-row invalidation, CLI and MCP. Pre-fix main fails the identical calendar completeness regression. Calendar total_count describes expanded rows within existing recurrence caps; summary_scope labels only returned rows. Public SDK signature changes carry explicit docs migration guidance and reviewed snapshot acknowledgement."
+  "2026-10-24T12:19:10.053Z","harness:codex","Published-version verification completes successfully for2026.10.24 across public npm/npx and Bun/bunx CLI and MCP surfaces. Separately, the installed-agent verifier returns ok:true for npm and Bun with13 steps per manager. Latest managed pm-changelog is2026.10.24 and package doctor deep/trace succeeds with matching active/loaded project packages. These verify the already-published release, which predates this branch; no claim that the new continuation implementation is published yet."
+  "2026-10-24T12:35:58.245Z","harness:codex","Generated error-catalog regeneration was also required after adding the reused invalid_query_cursor source locations; the canonical generator updated its generated part. The flag lexicon now passes with exactly36 activity flags for the new producer continuation capability. Help prose was shortened to stay under the pre-existing411-token ceiling. Calendar and activity linked suites pass, as do the paired release-readiness/packed Node+Bun consumers. No full-coverage pass is claimed until the rerun completes."
+  "2026-10-24T16:14:56.984Z","harness:codex","Final presentation inspection found a concrete zero-limit contradiction: total_count and omitted_count disclose matching rows, but Markdown still says no events matched because events.length is zero. Reuse this canonical calendar completeness owner for the small rendering correction and extend the existing zero/empty controls. No new duplicate item is needed; this owner is active only while that actual edit is performed."
+  "2026-10-24T16:16:39.691Z","harness:codex","The counts-only Markdown correction is implemented in the SDK renderer: a zero-row page with matching events now explains the page and asks for limit1or greater, while a genuinely empty matching set keeps the no-matches message. The existing integration case checks both distinct outputs. The current linked calendar suite passes38/38tests, including direct SDK, CLI, MCP and optional package transport; focused ESLint passes. Full exact coverage is rerunning for this final rendering delta, and hosted exact-head static/coverage/review remain mandatory merge gates."
+  "2026-10-24T16:43:22.733Z","harness:codex","The revised full CodeRabbit review reports one actionable omission: calendar after registration is present, but the Fish and Zsh static calendar completion lists omit the cursor argument. Verify emitted completion, add the two value-taking entries and strengthen existing calendar completion assertions before the next reviewed push. The previous two findings are confirmed fixed; the static graph correction now passes the full local quality chain."
+  "2026-10-24T16:46:17.972Z","harness:codex","Review2 correction is verified: both linked commands pass (38calendar/transport tests and107completion tests). Existing calendar assertions now scope the cursor to its actual shell case, verify Zsh cursor arity and one continuation slash, and require a Fish argument. A real Zsh capture receives23clean calendar arguments; Fish parses the generated script and an isolated actual completion request offers after. Focused ESLint passes. Full source coverage before these two literal completion entries is100percent all metrics; final exact-head hosted coverage and static are required again. The previous complete local static chain also passed after the three graph links were added."
+  "2026-10-24T18:48:57.182Z","harness:codex","Full review of b162ae0c1 reports one minor calendar presentation omission: empty/count-only Markdown returns before displaying recurrence-cap warnings. Verify with a real events-only capped query, preserve the existing empty/count-only text and normal event layout, and route both branches through the shared warning section. All required hosted checks on the performance revision are green; only this calendar owner is active for the renderer/test edit."
+  "2026-10-24T19:00:41.641Z","harness:codex","The existing real recurrence-control case now checks both matching counts-only and genuinely empty Markdown pages. Against b162ae0c1 it fails exactly because the warnings heading and cap text are absent; after the fix both linked suites pass40calendar/transport tests and107completion tests. Warning rendering is shared by both branches, preserving empty messages and normal event layout. Extracting the shared renderer keeps the existing cognitive-complexity ceiling intact; focused lint passes. The preceding full runtime suite and hosted performance head are100percent covered/green; final exact-head CI will rerun canonical coverage for this narrow presentation change."
+  "2026-10-24T19:19:35.156Z","harness:codex","Final warning delta passes the linked40calendar/transport and107completion tests and focused ESLint, including a real capped events-only query with both matching count-only and truly empty Markdown pages. The identical strengthened existing case fails before the fix because diagnostics are hidden; shared rendering now retains each recurrence-cap warning without changing existing empty messages or populated-day layout. The last complete runtime suite passed11208tests with exact100percent statements/branches/functions/lines, and the prior reviewed performance head passed hosted full static/coverage. Latest local full static is not green: two qualified SDK import-budget refusals and the separately completed qualified CLI-floor refusal are preserved under canonical pm-bj7rq0 without changing budgets or claiming a cause. All preceding static components and separately completed graph/integrity/mutation gates pass. Final exact-head hosted static and canonical coverage remain mandatory before merge.\n"
+learnings[1]{created_at,author,text}:
+  "2026-10-24T12:14:33.286Z","harness:codex","Disclose matching population separately from page-local calendar summaries. Recurrence expansion caps, producer pagination and transport output budgets are separate limits; a total inside the expansion window must not imply that every recurrence was generated."
+files[9]:
+  - path: packages/pm-calendar/extensions/calendar/index.ts
+    scope: project
+  - path: src/sdk/completion/fish.ts
+    scope: project
+  - path: src/sdk/completion/zsh.ts
+    scope: project
+  - path: src/sdk/query/calendar.ts
+    scope: project
+  - path: src/sdk/query/window-pagination.ts
+    scope: project
+  - path: tests/integration/read-output/window-continuation.integration.spec.ts
+    scope: project
+  - path: tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+  - path: tests/unit/commands/query/calendar-command.spec.ts
+    scope: project
+    note: Real recurrence-cap warnings on count-only and genuinely empty Markdown pages
+  - path: tests/unit/commands/workspace/completion-command.spec.ts
+    scope: project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/query/calendar-command.spec.ts tests/unit/commands/query/calendar-toon-renderer.spec.ts,project,240,"harness:codex","2026-10-24T12:12:33.847Z",local_mutation,fix/sdk-window-continuation
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/completion-command.spec.ts,project,240,"harness:codex","2026-10-24T16:43:52.128Z",local_mutation,fix/sdk-window-continuation
+test_runs[5]:
+  - run_id: test-local-mvmdq1g2-2yimne
+    kind: test
+    status: passed
+    started_at: "2026-10-24T12:32:32.862Z"
+    finished_at: "2026-10-24T12:32:48.338Z"
+    recorded_at: "2026-10-24T12:32:48.338Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/query/calendar-command.spec.ts tests/unit/commands/query/calendar-toon-renderer.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmloebc-17dmff
+    kind: test
+    status: passed
+    started_at: "2026-10-24T16:15:12.554Z"
+    finished_at: "2026-10-24T16:15:28.632Z"
+    recorded_at: "2026-10-24T16:15:28.632Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/query/calendar-command.spec.ts tests/unit/commands/query/calendar-toon-renderer.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmmpsc3-fwrhxh
+    kind: test
+    status: passed
+    started_at: "2026-10-24T16:43:52.894Z"
+    finished_at: "2026-10-24T16:44:33.075Z"
+    recorded_at: "2026-10-24T16:44:33.075Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/query/calendar-command.spec.ts tests/unit/commands/query/calendar-toon-renderer.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/completion-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmr8xx3-c9nl40
+    kind: test
+    status: passed
+    started_at: "2026-10-24T18:50:53.607Z"
+    finished_at: "2026-10-24T18:51:25.238Z"
+    recorded_at: "2026-10-24T18:51:25.238Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/query/calendar-command.spec.ts tests/unit/commands/query/calendar-toon-renderer.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/completion-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmres0r-vms60q
+    kind: test
+    status: passed
+    started_at: "2026-10-24T18:55:25.980Z"
+    finished_at: "2026-10-24T18:55:57.531Z"
+    recorded_at: "2026-10-24T18:55:57.531Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts tests/unit/commands/query/calendar-command.spec.ts tests/unit/commands/query/calendar-toon-renderer.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/completion-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: "Calendar completeness, continuation and recurrence-warning review controls are implemented and verified; final hosted gates remain required for delivery."
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1562
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/read-output/window-continuation.integration.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI / Gates (coverage),CI / Gates (static),CI / Gates (smokes)
 body: "**Version:** 2026.10.23. **Scope:** core runCalendar / CalendarResult, also visible through optional calendar presentation. Medium context-completeness UX. No stored data loss claimed.\n\nRun through npx -y tsx repro.mts in a fresh scratch SDK workspace; no calendar package is needed:\n\n~~~ts\nimport { PmClient, runRemind, runCalendar } from '@unbrained/pm-cli';\nconst c = new PmClient({ cwd: process.cwd(), author: 'codex-agent' });\nawait c.init(undefined, { defaults: true, agentGuidance: 'skip' });\nconst g = { path: process.cwd() + '/.agents/pm', author: 'codex-agent' };\nfor (let n = 1; n <= 3; n++) {\n  await runRemind('Reminder ' + n, { at: '+1d' }, g);\n}\nconst limited = await runCalendar({ view: 'agenda', from: 'now',\n  to: '+7d', limit: '2' }, g);\nconst all = await runCalendar({ view: 'agenda', from: 'now', to: '+7d' }, g);\nconsole.log(limited.summary.events, all.summary.events, Object.keys(limited));\n~~~\n\n**Observed:** **2 versus 3**. Limited keys: view, output_default, now, anchor, range, filters, summary, events, days. Summary counts the returned two reminders; filters.limit='2' is the sole limit disclosure. No matching total, omitted count, has_more, omission receipt, continuation or warning. An exactly-full two-row response cannot distinguish two matches from three. CalendarResult types likewise have no completeness coordinate.\n\nThe larger tracker returned two scheduling rows while omitting 30 deadlines and two additional scheduling rows, **34 matches** overall. This reproduces through the core SDK without any fleet package.\n\n**Expected:** expose returned-versus-total scope and has_more/omitted_count in the core result; supply bounded continuation or a concrete recovery with consistency limits. Post-limit summaries may remain, but label their scope. This is not a request for an unbounded default.\n\n**Measured cost:** tiny independent reproduction: compact limited result **646.75 tokens**, unbounded reread **866.5**, total **1,513.25** over two calls with duplicated rows. Large-tracker CLI: limited **948.5 tokens**, unbounded **12,245.75**, total **13,194.25**. No bounded page-2 operation requests only omitted rows. Full due-work recovery therefore exceeds 2,000 tokens in the measured fallback. Rows are also repeated in events/day buckets; no separate duplication draft is proposed.\n\n**Duplicate searches**, same all-state limit-20 command:\n\n- \"calendar\" \"truncation\"\n- \"calendar\" \"limit\"\n- \"calendar\" \"has_more\"\n- \"calendar\" \"omission\"\n- \"agenda\" \"pagination\"\n- agenda summary limit\n\n#595 was read: list envelope stability. #1554 covers activity continuation, whose result already discloses omissions; this calendar result does not. #1401 concerns context budget accounting. No matching core-calendar completeness report found.\n\n\n\n---\nFound by an agent-UX probe of 2026.10.23 (agent seat and extension-author seat) and re-verified by the maintainer orchestrator against the globally installed 2026.10.23 before filing."

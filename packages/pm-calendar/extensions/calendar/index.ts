@@ -38,6 +38,12 @@ export const manifest = {
 
 const calendarFlags = [
   {
+    long: "--after",
+    value_name: "cursor",
+    value_type: "string",
+    description: "Continue the original fixed-window calendar query.",
+  },
+  {
     long: "--view",
     value_name: "value",
     value_type: "string",

@@ -468,6 +468,7 @@ export const TOOL_ACTIVITY_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "from", flag: "--from" },
   { param: "to", flag: "--to" },
   { param: "limit", flag: "--limit" },
+  { param: "after", flag: "--after" },
   { param: "unbounded", flag: "--unbounded" },
   { param: "compact", flag: "--compact" },
   { param: "raw", flag: "--raw" },

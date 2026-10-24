@@ -1726,7 +1726,7 @@ function resolveReadIntentRetry(
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } | undefined {
   const retry = resolveReadOptionRetryArgs(commandName ?? "", context.normalizedInvocationArgs ?? [], optionName);
   if (retry) return { retryCommand: renderPmCommand(retry), suggestedRetryArgs: retry };
-  return ["--full", "--depth", "--toon"].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
+  return ["--full", "--depth", "--toon", ...(commandName === "activity" ? ["--since"] : [])].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
 }
 
 /** Keep unknown-option fallbacks from dropping presentation or preview intent. */

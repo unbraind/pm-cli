@@ -8,6 +8,18 @@ afterEach(() => {
 });
 
 describe("agent command guidance", () => {
+  it("preserves an existing activity lower bound instead of accepting a fallback that drops it", () => {
+    const timestamp = "2026-02-01T00:00:00.000Z";
+    const existingBound = "2026-01-01T00:00:00.000Z";
+    const refusal = formatCommanderErrorForJson("unknown option '--since'", "activity", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["activity", "--since", timestamp, "--from", existingBound, "--raw"],
+      suggestedRetryCommand: `pm activity --from ${timestamp} --raw`,
+    });
+    expect(refusal.code).toBe("unknown_option");
+    expect(refusal.recovery?.suggested_retry).toBeUndefined();
+    expect(refusal.recovery?.suggested_retry_args).toBeUndefined();
+  });
+
   it("preserves explicit JSON intent when TOON conflicts even with a supplied fallback", () => {
     const refusal = formatCommanderErrorForJson("unknown option '--toon'", "get", "Task|Issue", 2, {
       normalizedInvocationArgs: ["get", "pm-one", "--json", "--toon"],

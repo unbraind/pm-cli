@@ -164,6 +164,7 @@ export const ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCon
     { target: "from", keys: ["from"] },
     { target: "to", keys: ["to"] },
     { target: "limit", keys: ["limit"] },
+    { target: "after", keys: ["after"] },
   ];
 
 /** Return the first string-valued alias in declared precedence order, including an explicitly empty string. */

@@ -492,6 +492,8 @@ interface CommandSummarySurface {
 }
 
 const AGENT_BOOTSTRAP_FLAGS = new Map<string, readonly string[]>([
+  // Bootstrap exposes bounded paging; compatibility projections remain in full contracts/help.
+  ["activity", ["--limit", "--after", "--full"]],
   [
     "claim",
     [

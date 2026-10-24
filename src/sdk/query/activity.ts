@@ -16,7 +16,6 @@ import {
   type GlobalOptions,
   PmCliError,
   compareTimestampStrings,
-  nowIso,
   resolveIsoOrRelative,
   listAllItemMetadataLight,
   resolvePmRoot,
@@ -24,6 +23,7 @@ import {
 } from "../runtime-primitives.js";
 import { readHistoryEntries } from "../history-read.js";
 import { parseLimit } from "./parsers.js";
+import { fingerprintWindowRows, paginateWindowQuery, resolveWindowQueryClock } from "./window-pagination.js";
 import type { HistoryEntry } from "../../types/index.js";
 import {
   resolveModePairedOutputOmissionReceipt,
@@ -57,6 +57,8 @@ export interface ActivityCommandOptions {
   to?: string;
   /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Continue the original fixed-window query with its opaque producer cursor. */
+  after?: string;
   /** Value that configures or reports compact for this contract. */
   compact?: boolean;
   /** Return the legacy per-event stream instead of the item-centric digest. */
@@ -161,9 +163,15 @@ export interface ActivityResult {
   total_count: number;
   /** Value that configures or reports limit for this contract. */
   limit: number | null;
-  /** Number of matching rows withheld by the applied bound. */
+  /** Zero-based position of the first returned row in the matching set. */
+  page_start: number;
+  /** Fixed evaluation clock and normalized inclusive/exclusive time bounds. */
+  window: { anchor: string; from: string | null; to: string | null };
+  /** Opaque producer cursor; repeat the same query with after to continue. */
+  next_cursor?: string;
+  /** Number of matching rows remaining after this page. */
   omitted_count: number;
-  /** Whether matching rows remain available through a larger or unbounded request. */
+  /** Whether a subsequent bounded page is available. */
   has_more: boolean;
   /** Describes whether the effective bound came from a default, caller input, or an explicit opt-out. */
   applied_bound: {
@@ -223,8 +231,7 @@ interface ActivityRowsProjection {
     | "activity"
   >;
   compact: boolean;
-  totalRows: number;
-  returnedRows: number;
+  page: Omit<ReturnType<typeof paginateWindowQuery>, "rows">;
 }
 
 const ACTIVITY_ROW_KEY_BY_MODE: Readonly<
@@ -366,14 +373,15 @@ function resolveActivityLimit(
   return DEFAULT_FULL_ACTIVITY_LIMIT;
 }
 
+/** Normalize filters and default bounds against the recovered first-page clock. */
 function resolveActivityFilters(
   options: ActivityCommandOptions,
   projectionMode: ActivityProjectionMode,
+  nowValue: string,
 ): ActivityFilters {
-  const nowValue = nowIso();
   const digest = projectionMode === "digest";
   const to = parseRangeBound(
-    options.to ?? (digest ? nowValue : undefined),
+    options.to ?? (digest || options.unbounded !== true ? nowValue : undefined),
     nowValue,
     "--to",
   );
@@ -602,46 +610,26 @@ function activityOperationCounts(
   return Object.fromEntries(visible);
 }
 
+/** Bind continuation to matching content before emitting digest or per-event rows. */
 function projectActivityRows(
   projectionMode: ActivityProjectionMode,
   matchingActivity: ActivityEntry[],
-  limit: number | undefined,
+  pageOptions: Parameters<typeof paginateWindowQuery>[1],
   itemsById: ReadonlyMap<string, ActivityItemMetadata>,
   projectProvenance: (entry: ActivityEntry) => HistoryProvenanceRow,
 ): ActivityRowsProjection {
   if (projectionMode === "digest") {
-    const matchingDigest = buildActivityDigest(matchingActivity, itemsById);
-    const activityDigest = limitEntries(matchingDigest, limit);
-    return {
-      rows: { activity_digest: activityDigest },
-      compact: false,
-      totalRows: matchingDigest.length,
-      returnedRows: activityDigest.length,
-    };
+    const { rows, ...page } = paginateWindowQuery(buildActivityDigest(matchingActivity, itemsById), pageOptions);
+    return { rows: { activity_digest: rows }, compact: false, page };
   }
-  const activity = limitEntries(matchingActivity, limit);
+  const { rows: activity, ...page } = paginateWindowQuery(matchingActivity, pageOptions);
   if (projectionMode === "compact") {
-    return {
-      rows: { compact_activity: formatCompactActivity(activity) },
-      compact: true,
-      totalRows: matchingActivity.length,
-      returnedRows: activity.length,
-    };
+    return { rows: { compact_activity: formatCompactActivity(activity) }, compact: true, page };
   }
   if (projectionMode === "provenance") {
-    return {
-      rows: { provenance_activity: activity.map(projectProvenance) },
-      compact: false,
-      totalRows: matchingActivity.length,
-      returnedRows: activity.length,
-    };
+    return { rows: { provenance_activity: activity.map(projectProvenance) }, compact: false, page };
   }
-  return {
-    rows: { activity },
-    compact: false,
-    totalRows: matchingActivity.length,
-    returnedRows: activity.length,
-  };
+  return { rows: { activity }, compact: false, page };
 }
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
@@ -665,7 +653,8 @@ export async function runActivity(
 ): Promise<ActivityResult> {
   const context = await resolveActivityRuntimeContext(global);
   const projectionMode = resolveActivityProjectionMode(options);
-  const filters = resolveActivityFilters(options, projectionMode);
+  const clock = resolveWindowQueryClock("activity", options.after);
+  const filters = resolveActivityFilters(options, projectionMode, clock);
   const prepared = await prepareActivityHistoryRead(context);
   const provenanceDimensions = resolveHistoryProvenanceDimensions(
     context.settings.agent_identity!.harness_signals,
@@ -686,12 +675,14 @@ export async function runActivity(
   const projected = projectActivityRows(
     projectionMode,
     matchingActivity,
-    filters.limit,
+    {
+      command: "activity", after: options.after, clock, limit: filters.limit,
+      query: { pmRoot: context.pmRoot, projectionMode, filters: { ...filters, limit: undefined, limitSource: undefined }, matching_activity_digest: projectionMode === "digest" ? fingerprintWindowRows(matchingActivity) : undefined, vocabulary, provenanceDimensions },
+    },
     prepared.itemsById,
     (entry) =>
       projectHistoryProvenance(entry, vocabulary, { itemId: entry.id }),
   );
-  const omittedCount = projected.totalRows - projected.returnedRows;
   return {
     ...projected.rows,
     compact: projected.compact,
@@ -703,17 +694,15 @@ export async function runActivity(
       "activity",
       projectionMode,
     ),
-    count: projected.returnedRows,
-    total_count: projected.totalRows,
+    ...projected.page,
+    window: { anchor: clock, from: filters.from ?? null, to: filters.to ?? null },
     limit: filters.limit ?? null,
-    omitted_count: omittedCount,
-    has_more: omittedCount > 0,
     ...(projectionMode === "digest"
       ? {
           activity_summary: {
             window: { from: filters.from!, to: filters.to! },
             event_count: matchingActivity.length,
-            item_count: projected.totalRows,
+            item_count: projected.page.total_count,
             author_count: new Set(
               matchingActivity.map((entry) => entry.author),
             ).size,

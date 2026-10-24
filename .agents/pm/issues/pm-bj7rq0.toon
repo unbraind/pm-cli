@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-24T11:15:58.860Z"
+updated_at: "2026-10-24T19:19:34.371Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[98]:
+comments[99]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -319,6 +319,9 @@ comments[98]:
   - created_at: "2026-10-24T11:15:58.860Z"
     author: "harness:codex"
     text: "PR1574 CodSpeed comparison at eb940fedd reports encodeQueryCursor208.7us to212.1us(-1.6percent), while createQueryFingerprint improves2.93percent. The report explicitly compares different runner types and flags significant unmeasured system calls; its check is neutral, not a demonstrated equivalent-runner regression. The pagination benchmark and implementation are unchanged in this PR. Required hosted transport/static checks pass. Preserve the report and qualification limits under this existing performance owner; no baselines, ceilings or code are altered to acknowledge the result."
+  - created_at: "2026-10-24T19:19:34.371Z"
+    author: "harness:codex"
+    text: "October24 calendar-warning closeout preserves three unsuccessful local performance admissions on unchanged Node26.12.1 budgets. The complete static chain reached SDK import admission and refused sdk/core median486ms against423ms, with bare controls46/58ms within106ms. One unchanged isolated SDK recheck refused sdk/graph197/172ms while core356ms passed; its controls48/51ms remain qualified. The separately completed CLI-floor census also refused get438/362ms, context437/433ms, next464/440ms, create423/398ms and claim443/415ms with qualified64/60ms controls. These are product-budget failures, not runner-unqualified evidence. Retain original reports static-calendar-warning-final.log, import-cost-warning-recheck.log and warning-tail-transport.log locally; no budgets, qualification policy, tests or deadlines changed. The immediately preceding complete runtime revision passed full static and exact11208-test coverage, but that does not erase these later failures. Source/package/contract gates preceding import admission passed, and separately completed graph composition, record integrity and governed mutation (345killed/7equivalent of352;98.01percent) pass. Historical causation remains unproven. Require the final exact-head hosted full static/coverage checks; this existing broad diagnosis remains open and unclaimed. No duplicate issue is created.\n"
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

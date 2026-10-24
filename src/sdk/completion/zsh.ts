@@ -635,6 +635,7 @@ ${zshCalendarRuntimeFieldFlags}            '--include[Include event sources]:(al
             '--recurrence-lookahead-days[Bound open-ended recurrence lookahead]:days' \\
             '--recurrence-lookback-days[Bound open-ended recurrence lookback]:days' \\
             '--occurrence-limit[Cap occurrences per recurring event]:number' \\
+            '--after[Continue a fixed-window calendar page]:cursor' \\
             '--limit[Limit returned events]:number' \\
             '--format[Output override]:(markdown toon json)' \\
             '--json[Output JSON]' \\
@@ -897,6 +898,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--author[Filter by history author]:author' \\
             '--from[Lower timestamp bound (ISO/date string or relative)]:date' \\
             '--to[Upper timestamp bound (ISO/date string or relative)]:date' \\
+            '--after[Continue a fixed-window activity page]:cursor' \\
             '--limit[Max entries]:number' \\
             '--unbounded[Return every matching activity entry]' \\
             '--compact[Condensed activity projection]' \\

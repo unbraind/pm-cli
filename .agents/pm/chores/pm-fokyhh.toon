@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: codspeed,dependencies,peer-contract,testing
 created_at: "2026-09-04T16:26:03.878Z"
-updated_at: "2026-10-22T07:39:49.928Z"
+updated_at: "2026-10-24T12:19:08.879Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "A current @codspeed/vitest-plugin release accepts Vitest 5; Vitest and coverage-v8 are upgraded as an exact compatible pair; CodSpeed, full exact coverage, cross-platform CI, typecheck, static quality, packed consumers, and vulnerability gates pass."
@@ -19,7 +19,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-yh6t,discovered_from,"2026-09-04T16:26:03.878Z","harness:codex","cli:create:dep",detected
   pm-iktual,related,"2026-10-02T21:10:05.907Z","harness:codex","cli:update:dep",detected
   pm-u9d0,related,"2026-10-04T07:27:09.282Z","harness:codex","cli:update:dep",detected
-comments[24]{created_at,author,text}:
+comments[25]{created_at,author,text}:
   "2026-09-04T16:26:03.878Z","harness:codex","Duplicate-check evidence: complete all-status PM searches for Vitest 5, Vitest major, and CodSpeed peer compatibility found the closed compatible Vitest 4.1.11 refresh pm-n5ysuk and CodSpeed adoption pm-yh6t, but no owner for the 5.0.0 major. Live registry evidence on 2026-09-04: vitest 5.0.0 supports Node ^22.12 || ^24 || >=26, but mandatory @codspeed/vitest-plugin 5.7.1 declares peer vitest ^3.2 || ^4. This item remains open and unclaimed until that external peer contract is compatible."
   "2026-09-05T03:52:26.679Z","harness:codex","Live 2026-09-05 registry verification: latest CodSpeed plugin still accepts Vitest ^3.2 || ^4, excluding available Vitest and coverage-v8 5.0.0. No compatible wanted update exists. Keep the canonical migration open and unclaimed; do not bypass the mandatory performance gate peer contract."
   "2026-09-06T05:33:02.832Z","harness:codex","2026-09-06 registry check: latest @codspeed/vitest-plugin 5.7.1 still requires Vitest ^3.2 or ^4, excluding 5.0.0. Vitest and coverage-v8 major migration remains open and unclaimed."
@@ -44,4 +44,5 @@ comments[24]{created_at,author,text}:
   "2026-10-17T16:55:58.792Z","harness:codex","October17 live registry census: CodSpeed vitest-plugin6.1.0 now declares Vitest5 peers, removing the earlier upstream peer exclusion, but it is only one day old; Vitest/coverage-v8 5.0.5 is two days old. Preserve4.1.11/5.7.1 until the seven-day cooldown and existing packed/runtime/performance acceptance gates can be met. No new duplicate or unreviewed major adoption."
   "2026-10-18T04:14:41.149Z","harness:codex","Fresh npm metadata at 2026-10-18 confirms @codspeed/vitest-plugin6.0.0 declares Vitest5 support, but publication is2026-10-13T15:46:05.308Z, and6.1.0 is2026-10-16T14:50:11.013Z. Both remain inside the unchanged seven-day cooldown; the previous peer-support gap is now a release-age boundary. Keep this canonical migration open and unclaimed until eligible, then verify actual instrument/native patch and runner compatibility before adoption."
   "2026-10-22T07:39:49.928Z","harness:codex","October22 refreshed registry evidence: latest Vitest and coverage-v8 5.0.5 were published October15 around14:28UTC, and CodSpeed6.1.0 on October16 at14:50UTC. Latest versions remain below seven full days at this intake. Keep the current patched4.1.12 pair and5.7.1 plugin while retaining this canonical migration open/unclaimed; adoption still requires actual runner/native-instrumentation and installed-consumer proof."
+  "2026-10-24T12:19:08.879Z","harness:codex","October24 live registry update: Vitest/coverage-v8 5.0.5 (October15) and CodSpeed6.1.0 (October16) now exceed seven days. Latest CodSpeed declares Vitest5 peer support; Vitest5 engine range is ^22.12.0 || ^24.0.0 || >=26.0.0, so Node22.18 itself is admitted. Vite8.3.5 declares ^20.19.0 || >=22.12.0. Release age and these direct engine/peer declarations alone do not prove the repository runner, native instrumentation, coverage and installed-consumer acceptance. Preserve this canonical major migration open/unclaimed; the active SDK continuation delivery makes no toolchain migration claim."
 body: ""
