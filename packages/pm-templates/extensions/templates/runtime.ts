@@ -12,6 +12,7 @@ import {
   type GlobalOptions,
   type TemplatesListResult,
   type TemplatesSaveResult,
+  type TemplatesSaveOptions,
   type TemplatesShowResult,
 } from "@unbrained/pm-cli/sdk";
 
@@ -19,6 +20,7 @@ export type {
   CreateTemplateOptions,
   TemplatesListResult,
   TemplatesSaveResult,
+  TemplatesSaveOptions,
   TemplatesShowResult,
 } from "@unbrained/pm-cli/sdk";
 
@@ -33,7 +35,7 @@ export async function loadCreateTemplateOptions(
 /** Executes the templates save operation through the package runtime. */
 export async function runTemplatesSave(
   rawTemplateName: string,
-  options: Record<string, unknown>,
+  options: TemplatesSaveOptions,
   global: GlobalOptions,
 ): Promise<TemplatesSaveResult> {
   return runSdkTemplatesSave(rawTemplateName, options, global);

@@ -605,6 +605,7 @@ export {
   type CreateTemplateOptions,
   type TemplatesListResult,
   type TemplatesSaveResult,
+  type TemplatesSaveOptions,
   type TemplatesShowResult
 } from "./templates.js";
 

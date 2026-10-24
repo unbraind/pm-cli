@@ -1126,6 +1126,7 @@ export {
   type StatsResult,
   type TemplatesListResult,
   type TemplatesSaveResult,
+  type TemplatesSaveOptions,
   type TemplatesShowResult,
   type TestRunsListCommandOptions,
   type TestRunsLogsCommandOptions,

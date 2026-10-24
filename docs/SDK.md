@@ -1011,6 +1011,18 @@ pm contracts --action calendar --runtime-only --schema-only --json
 pm contracts --command templates --runtime-only --flags-only --json
 ```
 
+The SDK owns template persistence independently of the presentation package.
+`runTemplatesSave(name, options: TemplatesSaveOptions, global)` accepts priority
+as an integer `0..4`, a numeric string, or a named priority such as `critical`.
+It validates priority before writing and stores its normalized numeric string;
+`0` therefore survives save, show, and item creation. Invalid priority values
+refuse with exit code 2 and the accepted forms, preserving the template and
+workspace history. Other template keys retain the existing string/string-array
+storage contract, including extension-defined fields. Import the input type
+and function from `@unbrained/pm-cli/sdk/runtime` or the aggregate SDK.
+Tracked by [pm-gh1561](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1561.toon)
+(repository-only tracker record, excluded from npm).
+
 Use static SDK contracts for baseline validation, then use runtime contracts in the target project before invoking package-provided commands or actions. Embedded SDK consumers can avoid subprocesses:
 
 ```ts
@@ -2510,6 +2522,14 @@ same list/default semantics as core flags:
   `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements. A default
   that would not cleanly coerce under the declared `value_type` (e.g.
   `value_type: "number", default: "abc"`) is rejected at registration.
+  Declared defaults are discoverable without running the command: text help
+  shows `(default: ...)`, JSON help uses `default_value`, and runtime flag
+  contracts and command schemas use `default`, preserving strings, numbers,
+  booleans, empty strings and arrays. These are declaration values; runtime
+  coercion and list flattening still apply during execution. Explicit values
+  replace omitted-flag defaults, including list defaults. Tracked by
+  [pm-gh1560](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1560.toon)
+  (repository-only tracker record, excluded from npm).
 - `value_validation` (`"coerce"` | `"strict"`, tracked by
   [pm-extension-scalar-validation](../.agents/pm/features/pm-extension-scalar-validation.toon))
   decides what happens to a `number`/`boolean` token that does not coerce.

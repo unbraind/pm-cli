@@ -2,23 +2,80 @@ id: pm-gh1560
 title: "GH-1560: retain extension flag defaults in help and runtime contracts"
 description: "Reported on2026.10.23: declared extension flag defaults apply during execution but disappear from text/machine help and runtime contracts/schema, despite the public FlagDefinition promise. Investigate discovery metadata preservation without executing mutating commands to learn defaults."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1560",sdk
 created_at: "2026-10-23T15:20:44.030Z"
-updated_at: "2026-10-23T16:30:41.029Z"
+updated_at: "2026-10-24T05:26:37.713Z"
+closed_at: "2026-10-24T05:16:08.852Z"
+completed_at: "2026-10-24T05:16:08.852Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Text and JSON command help, flag contracts and command-scoped runtime schema disclose declared extension defaults with their original value types; omitted-flag execution returns the same defaults; discovery does not require invoking the extension command; sandboxed regressions cover string, numeric and falsy defaults."
 parent: pm-ltbr
 risk: medium
 confidence: medium
-expected_result: "Declared defaults are discoverable consistently in SDK runtime contracts, command schema and text/machine help; omitted-flag execution retains matching behavior."
+resolution: "Preserve original extension defaults in text help, JSON help default_value, runtime flag contracts and command JSON Schema; keep explicit list parsing unchanged."
+expected_result: "Authors and agents can discover declared defaults without executing the handler, including numeric0, false, empty strings and arrays."
+actual_result: "62 linked tests pass, including installed extension discovery with no handler dispatch and explicit list overrides; typecheck and finalized SDK snapshot checks pass. Pre-fix negative control fails as intended."
 affected_version: 2026.10.23
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4bhw,related,"2026-10-23T16:29:25.178Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+  pm-gh1561,related,"2026-10-24T05:25:33.240Z","harness:codex","cli:update:dep",detected
+comments[9]{created_at,author,text}:
   "2026-10-23T15:20:44.030Z","harness:codex","Intake source: https://github.com/unbraind/pm-cli/issues/1560. Duplicate checks: request-specific live PM search, fresh open/in_progress lists and complete3080-item strict all-status read, with no omissions; full live parent comments/closure and verified complete history were inspected. The report is distinct from the delivered parent scope. Intake only: not independently reproduced in this delivery, open and unclaimed; preserve completed parent history."
   "2026-10-23T16:30:41.029Z","harness:codex","Discovery criteria now cover help, contracts/schema and typed falsy defaults without command execution. The unchanged tracker-context-quality gate now exits0 across47 assertions with0 blocking findings and one retained graph advisory elsewhere. Original missing-criteria failure: https://github.com/unbraind/pm-cli/actions/runs/39980422540/job/120507900145. Existing context lineage is linked, and this intake remains open and unclaimed; no product implementation is asserted."
+  "2026-10-24T04:51:31.491Z","harness:codex","Implementation scope: preserve declared defaults across Commander help, runtime flag contracts and command schema without executing extension handlers. Grouped with pm-gh1561 to make SDK-authored defaults observable and lossless. Intake: complete strict 3092-item all-status receipt, no omitted/unreadable rows; both current histories verify and closed parents remain completed. GitHub audit: zero open PRs and zero Dependabot/code/secret alerts."
+  "2026-10-24T04:55:09.435Z","harness:codex","Regression evidence: isolated pre-fix worktree at 1d176a81b failed the new default-discovery assertion; numeric-template controls also failed as expected (3 targeted failures, 24 existing passes). Fixed checkout passes all87 focused tests across help, contracts, templates and Commander parsing. Defaults remain metadata so explicit list values do not inherit omitted-flag seeds. All32 open GitHub issues already have corresponding PM-link comments; no duplicate comments added."
+  "2026-10-24T05:00:44.802Z","harness:codex","Operational evidence: Sentry/telemetry required gate ok:true, zero unresolved/critical/high issues, telemetry finish error rate4.74percent against6percent policy and zero missing-code rows. Published verifier confirms2026.10.24 consumers. Latest Release Reliability40060850076 remains false on scheduled_failure_rate, dispatch_window and missing_scheduled_run; no reliability fix or second daily release is claimed by this SDK tranche."
+  "2026-10-24T05:09:11.207Z","harness:codex","Current Sentry trace detail: three successful fully sampled get/list/get probes appear as pm.command spans with recent start timestamps and measured durations. The fourth probe was a handled contracts usage refusal and is deliberately not a Sentry incident. All four have exactly one remote command_start and one command_finish. This is separate evidence from the passing14-day Sentry gate and sampled aggregate telemetry rate."
+  "2026-10-24T05:14:31.191Z","harness:codex","Final sequential linked-test rerun passes. Clarification of the full-run failures:11192tests passed, two failed; the actual causes were missing npm/package.json visibility for the Homebrew Node runtime and a surface test that captured the old snapshot before regeneration completed, not the earlier suspected timing failures. The finalized SDK snapshot records the new default and template-priority types. Exact full coverage remains for hosted Gates; no local100percent claim is made."
+  "2026-10-24T05:19:43.334Z","harness:codex","Final local closeout gates: both previously failed full-run cases pass unchanged on rerun (18tests), including packed SDK continuation under Node and Bun. Installed public2026.10.24 npm/Bun13-step sessions pass. Post-closure defect gate passes across435governed terminal defects with zero findings, and latest pm-changelog2026.10.23 generates exactly the two new Unreleased fixes with freshness check unchanged. Local full coverage was not produced by the failed first run; hosted exact coverage remains required before merge."
+  "2026-10-24T05:26:37.713Z","harness:codex",Static graph-composition initially refused three new prose-only pairs. Added the justified related edge between the grouped SDK defects and edited the dependency-audit comment to remove incidental coordination references. The unchanged graph gate now passes all9assertions with prose-edge gaps back at the1233baseline; no threshold was relaxed. All preceding static components passed; record-integrity and bounded mutation are completing as the remaining suffix.
+notes[1]{created_at,author,text}:
+  "2026-10-24T05:01:12.947Z","harness:codex","Help uses default_value for its established machine-help shape; flag contracts and JSON Schema use default. Values describe the original declaration, with runtime list flattening and coercion documented separately."
+learnings[1]{created_at,author,text}:
+  "2026-10-24T05:00:41.916Z","harness:codex","Expose declaration defaults as metadata rather than Commander parser seeds: a list parser would otherwise prepend defaults to explicit values."
+files[5]{path,scope}:
+  sdk/public-surface.json,project
+  src/cli/extension-command-help.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/runtime-contracts.ts,project
+  tests/integration/help-extension-discovery.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,project,240,"harness:codex","2026-10-24T04:55:07.977Z",local_mutation,fix/sdk-declared-defaults
+test_runs[2]:
+  - run_id: test-local-mvlxiuqb-b32nzl
+    kind: test
+    status: failed
+    started_at: "2026-10-24T04:55:18.952Z"
+    finished_at: "2026-10-24T04:59:19.186Z"
+    recorded_at: "2026-10-24T04:59:19.186Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvly1kgw-tskl6d
+    kind: test
+    status: passed
+    started_at: "2026-10-24T05:13:40.238Z"
+    finished_at: "2026-10-24T05:13:52.352Z"
+    recorded_at: "2026-10-24T05:13:52.352Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Implemented declared-default discovery with passing linked regressions and SDK type validation; included in the combined reviewed delivery.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: extension-default-discovery
+  negative_control: "At unchanged 1d176a81b, run the added help-extension-discovery default test: expected default text is absent and test fails before executing its extension handler."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/help-extension-discovery.integration.spec.ts tests/unit/cli/extension-command-help.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+  owner: pm-gh1560
 body: "**Version:** 2026.10.23. **Scope:** core extension discovery. Low/medium agent UX.\n\nIn a dedicated small extension directory, create package.json:\n\n~~~json\n{\"name\":\"ux-probe-six\",\"version\":\"0.1.0\",\"type\":\"module\",\"peerDependencies\":{\"@unbrained/pm-cli\":\"2026.10.23\"}}\n~~~\n\nmanifest.json:\n\n~~~json\n{\"name\":\"ux-probe-six\",\"version\":\"0.1.0\",\"manifest_version\":2,\"entry\":\"./index.ts\",\"capabilities\":[\"commands\",\"schema\"]}\n~~~\n\nindex.ts:\n\n~~~ts\nimport { defineExtension } from '@unbrained/pm-cli/sdk/authoring';\nimport type { ExtensionApi } from '@unbrained/pm-cli/sdk/authoring';\nexport default defineExtension({ activate(api: ExtensionApi) {\n  api.registerCommand({ name: 'uxhello', description: 'Synthetic greeting',\n    flags: [\n      { long: '--name', value_name: 'text', default: 'agent', description: 'Name' },\n      { long: '--count', value_name: 'number', value_type: 'number',\n        value_validation: 'strict', default: 1, description: 'Count' }\n    ],\n    run: c => ({ name: c.options.name, count: c.options.count })\n  });\n}});\n~~~\n\nIn a different initialized scratch tracker, with pm meaning npx -y @unbrained/pm-cli@2026.10.23:\n\n~~~bash\npm install <dedicated-small-extension-dir>\npm uxhello --help\npm help uxhello --json\npm contracts --command uxhello --flags-only --json\npm contracts --command uxhello --runtime-only --schema-only --json\npm uxhello --json\n~~~\n\n**Observed:** omitted flags execute as agent/1. Text and machine help show names/arity/type but no defaults. Flag contracts and command-scoped schema omit defaults too. The published FlagDefinition.default declaration promises values are “Surfaced to runtime contracts and help output.” Strict numeric validation works; the defect is discovery metadata loss.\n\n**Expected:** include defaults in text/machine help and runtime schemas/contracts, so agents can learn omitted-flag behavior without executing a potentially mutating extension command. The tested command is harmless; this probe does not assert all extension commands are safe discovery mechanisms.\n\n**Measured cost:** text help **59.5 tokens**, flags-only contracts **1,733.25**, no-flag execution **13.75**: **three calls / 1,806.5 stdout tokens**, learning defaults only by execution. Additional machine-help/schema probes cost **287 / 827.75** without restoring them. An author can manually repeat defaults in descriptions as a workaround.\n\n**Duplicate searches:** each used gh issue list -R unbraind/pm-cli --state all --search \"<query>\" --limit 20:\n\n- extension flags default help\n- registerCommand default\n- \"extension\" \"default\" \"metadata\"\n- \"flag\" \"defaults\" \"help\"\n- \"registerFlags\" \"default\"\n- \"value_validation\" \"contracts\"\n\nNo matching report found. #719 concerns global-flag collisions; #550/#496 list accumulation; #772 rejected registrations; #1363 broader progressive discovery. None owns the concrete declared-default omission.\n\n\n\n---\nFound by an agent-UX probe of 2026.10.23 (agent seat and extension-author seat) and re-verified by the maintainer orchestrator against the globally installed 2026.10.23 before filing."

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -17,6 +17,40 @@ import {
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 describe("templates command flows", () => {
+  it("preserves numeric priority through save, storage, show and create (pm-gh1561)", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["install", "templates", "--project", "--json"]).code).toBe(0);
+      for (const priority of [0, 4, "0", "critical"]) {
+        const saved = await runTemplatesSave("priority-defaults", { type: "Task", priority }, { path: context.pmPath });
+        const expected = priority === 4 ? "4" : "0";
+        expect(saved.options.priority).toBe(expected);
+        expect(JSON.parse(await readFile(saved.path, "utf8")).options.priority).toBe(expected);
+        expect((await runTemplatesShow("priority-defaults", { path: context.pmPath })).options.priority).toBe(expected);
+        const created = context.runCli(["create", "--template", "priority-defaults", "--title", "Priority control", "--json"], { expectJson: true });
+        expect(created.code).toBe(0);
+        expect((created.json as { item: { priority: number } }).item.priority).toBe(Number(expected));
+      }
+      const explicit = context.runCli(["create", "--template", "priority-defaults", "--title", "Explicit priority", "--priority", "3", "--json"], { expectJson: true });
+      expect((explicit.json as { item: { priority: number } }).item.priority).toBe(3);
+    });
+  });
+
+  it("refuses invalid template priority before replacing template or history bytes", async () => {
+    await withTempPmPath(async (context) => {
+      const saved = await runTemplatesSave("protected", { type: "Task", priority: "1" }, { path: context.pmPath });
+      const before = await readFile(saved.path, "utf8");
+      const historyPath = path.join(context.pmPath, "history", "_workspace.jsonl");
+      const historyBefore = await readFile(historyPath, "utf8");
+      for (const priority of [-1, 5, 1.5, NaN, Infinity, "urgent", "", false, null, {}, []]) {
+        await expect(runTemplatesSave("protected", { type: "Task", priority } as never, { path: context.pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE, message: expect.stringContaining("Invalid priority"),
+        });
+        expect(await readFile(saved.path, "utf8")).toBe(before);
+        expect(await readFile(historyPath, "utf8")).toBe(historyBefore);
+      }
+    });
+  });
+
   it("normalizes template helper edge cases without writing files", () => {
     expect(templatesInternals.normalizeTemplateName(" release.v1 ")).toBe(
       "release.v1",

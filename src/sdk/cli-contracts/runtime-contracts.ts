@@ -1215,6 +1215,7 @@ function normalizeExtensionFlagName(
     : null;
 }
 
+/** Project an extension declaration into runtime discovery, retaining omitted-flag defaults. */
 function toExtensionFlagContract(
   definition: FlagDefinition,
 ): CliFlagContract | null {
@@ -1239,6 +1240,7 @@ function toExtensionFlagContract(
     definition.repeatable === true,
   );
   assignExtensionFlagBoolean(contract, "list", definition.list === true);
+  if (definition.default !== undefined) contract.default = definition.default;
   const description = toOptionalTrimmedString(definition.description);
   if (description) {
     contract.description = description;
@@ -1484,6 +1486,7 @@ function buildExtensionArgumentSchema(
   };
 }
 
+/** Describe an option's accepted structured values and declared omitted-flag default. */
 function buildExtensionFlagSchema(
   flag: CliFlagContract,
   action: string,
@@ -1499,6 +1502,7 @@ function buildExtensionFlagSchema(
   return {
     type: acceptsMultipleValues ? "array" : schemaType,
     ...(acceptsMultipleValues ? { items: { type: schemaType } } : {}),
+    ...(flag.default !== undefined ? { default: flag.default } : {}),
     description:
       flag.description ??
       `Extension option '${flag.flag}' for action '${action}'.`,

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1561: normalize numeric template-save priority and publish supported options ([pm-gh1561](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1561.toon))
+- GH-1560: retain extension flag defaults in help and runtime contracts ([pm-gh1560](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1560.toon))
+
 ## 2026.10.24 - 2026-10-24
 
 ### Fixed

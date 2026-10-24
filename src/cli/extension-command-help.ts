@@ -205,6 +205,7 @@ export function resolveExtensionFlagArity(
   };
 }
 
+/** Render a visible long flag using the shared declaration metadata description. */
 function formatDynamicExtensionFlagHelpLine(
   definition: FlagDefinition,
 ): string | null {
@@ -212,18 +213,7 @@ function formatDynamicExtensionFlagHelpLine(
   if (!longName || !longName.startsWith("--") || longName.length < 3) return null;
   const flags = formatDynamicExtensionOptionFlags(definition);
   if (!flags) return null;
-  const description =
-    toNonEmptyFlagString(definition.description) ??
-    "Extension-provided option.";
-  const markers: string[] = [];
-  if (toOptionalBoolean(definition.required) === true) {
-    markers.push("required");
-  }
-  if (toOptionalBoolean(definition.enabled) === false) {
-    markers.push("disabled");
-  }
-  const markerSuffix = markers.length > 0 ? ` [${markers.join(", ")}]` : "";
-  return `${flags}  ${description}${markerSuffix}`;
+  return `${flags}  ${formatDynamicExtensionOptionDescription(definition)}`;
 }
 
 function buildDynamicExtensionFlagHelp(
@@ -558,6 +548,7 @@ function formatDynamicExtensionParseOptionFlags(
   return formatDynamicExtensionOptionFlags(definition);
 }
 
+/** Describe required/disabled markers and raw defaults without seeding the parser. */
 function formatDynamicExtensionOptionDescription(
   definition: FlagDefinition,
 ): string {
@@ -572,7 +563,12 @@ function formatDynamicExtensionOptionDescription(
     markers.push("disabled");
   }
   const markerSuffix = markers.length > 0 ? ` [${markers.join(", ")}]` : "";
-  return `${description}${markerSuffix}`;
+  // Keep defaults as discovery metadata. Commander defaults would seed its list
+  // accumulator and prepend omitted-flag defaults to explicitly supplied values.
+  const defaultSuffix = definition.default !== undefined
+    ? ` (default: ${JSON.stringify(definition.default)})`
+    : "";
+  return `${description}${markerSuffix}${defaultSuffix}`;
 }
 
 function commandAlreadyHasOption(
@@ -674,6 +670,7 @@ function buildDynamicExtensionHelpOptionSummary(
     required,
     aliases: [],
     alias_for: null,
+    ...(definition.default !== undefined ? { default_value: definition.default } : {}),
   };
 }
 
@@ -705,16 +702,14 @@ export function mergeHelpOptionSummaries(
   if (extension.length === 0) {
     return base;
   }
-  const merged = [...base];
-  const seen = new Set(base.map((entry) => entry.flags));
+  const merged = new Map(base.map((entry) => [entry.flags, entry]));
   for (const entry of extension) {
-    if (seen.has(entry.flags)) {
-      continue;
-    }
-    seen.add(entry.flags);
-    merged.push(entry);
+    const existing = merged.get(entry.flags);
+    merged.set(entry.flags, existing
+      ? { ...existing, ...(entry.default_value !== undefined ? { default_value: entry.default_value } : {}) }
+      : entry);
   }
-  return merged;
+  return [...merged.values()];
 }
 
 /** Implements build dynamic extension command metadata help for the public runtime surface of this module. */

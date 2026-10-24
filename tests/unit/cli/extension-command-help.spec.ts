@@ -3,15 +3,43 @@ import { describe, expect, it } from "vitest";
 import {
   applyDynamicExtensionFlagOptions,
   buildResidualDynamicExtensionFlagHelp,
+  buildDynamicExtensionHelpOptionSummaries,
   buildExtensionCommandCollisionWarning,
+  collectDynamicExtensionFlagHelpByCommand,
+  collectExtensionCommandHelpDescriptors,
   collectSafeExtensionCommandPaths,
   ensureCommandPath,
   findExtensionCommandPathCollision,
   reportExtensionCommandCollision,
+  mergeHelpOptionSummaries,
   resolveExtensionFlagArity,
 } from "../../../src/cli/extension-command-help.js";
+import type { FlagDefinition } from "../../../src/sdk/runtime-primitives.js";
 
 describe("dynamic extension Commander options", () => {
+  it("preserves host help objects while merging typed declared defaults (pm-pr1570-review)", () => {
+    const flags: FlagDefinition[] = [
+      { long: "--name", value_type: "string", default: "agent" },
+      { long: "--count", value_type: "number", default: 0 },
+      { long: "--enabled", value_type: "boolean", default: false },
+      { long: "--label", value_type: "string", default: "" },
+      { long: "--scopes", value_type: "string", list: true, default: ["seed", "other"] },
+    ];
+    const registrations = [{ target_command: "probe", layer: "project" as const, name: "defaults", flags }];
+    const descriptor = collectExtensionCommandHelpDescriptors(["probe"], [], registrations).get("probe");
+    const summaries = buildDynamicExtensionHelpOptionSummaries(descriptor);
+    const base = summaries.map(({ default_value: _default, ...summary }) => ({ ...summary, description: "Host-owned description" }));
+    const before = structuredClone(base);
+    const merged = mergeHelpOptionSummaries(base, summaries);
+    expect(base).toEqual(before);
+    expect(merged).toHaveLength(flags.length);
+    const text = collectDynamicExtensionFlagHelpByCommand(registrations).get("probe");
+    for (const [index, flag] of flags.entries()) {
+      expect(merged[index]).toMatchObject({ long: flag.long, default_value: flag.default, description: "Host-owned description" });
+      expect(text).toContain(`default: ${JSON.stringify(flag.default)}`);
+    }
+  });
+
   it("parses optional inline values with and without a supplied value", async () => {
     for (const [args, expected] of [[[], true], [["example"], "example"]] as const) {
       const program = new Command().exitOverride();
