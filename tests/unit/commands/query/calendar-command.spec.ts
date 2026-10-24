@@ -825,6 +825,15 @@ describe("calendar command module", () => {
           "recurring_events_default_cap_applied:lookback=0d,lookahead=28d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range",
         );
         expect(eventsOnlyDefaultCap.events.map((event) => event.at)).toEqual(["2026-04-10T09:00:00.000Z"]);
+        for (const [tag, total] of [["recurrence-controls", 1], ["no-calendar-match", 0]] as const) {
+          const emptyPage = await runCalendar({ view: "agenda", include: "events", past: true, tag, limit: "0" }, { path: context.pmPath });
+          expect(emptyPage).toMatchObject({ count: 0, total_count: total, events: [] });
+          expect(emptyPage.warnings).toEqual(eventsOnlyDefaultCap.warnings);
+          const markdown = renderCalendarMarkdown(emptyPage);
+          expect(markdown).toContain(total === 0 ? "No calendar events matched" : "No calendar events returned on this page");
+          expect(markdown).toContain("### warnings");
+          for (const warning of emptyPage.warnings!) expect(markdown).toContain(warning);
+        }
       } finally {
         vi.useRealTimers();
       }

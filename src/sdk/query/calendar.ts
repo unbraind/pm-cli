@@ -1437,6 +1437,15 @@ function formatEventLine(event: CalendarRow): string {
   return core;
 }
 
+/** Append the same diagnostics after populated and empty calendar content. */
+function appendCalendarMarkdownWarnings(lines: string[], warnings: readonly string[] | undefined): void {
+  if (warnings && warnings.length > 0) {
+    lines.push("### warnings");
+    for (const warning of warnings) lines.push(`- ${warning}`);
+    lines.push("");
+  }
+}
+
 /** Implements render calendar markdown for the public runtime surface of this module. */
 export function renderCalendarMarkdown(result: CalendarResult): string {
   const lines: string[] = [];
@@ -1470,9 +1479,10 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     lines.push(result.total_count === 0
       ? "No calendar events matched the selected filters."
       : "No calendar events returned on this page. Repeat the same query with --limit 1 or greater to retrieve matching events.");
-    return lines.join("\n");
+    lines.push("");
+    appendCalendarMarkdownWarnings(lines, result.warnings);
+    return trimTrailingNewlines(lines.join("\n"));
   }
-
   for (const day of result.days) {
     lines.push(`## ${day.date} (${day.count})`);
     for (const event of day.events) {
@@ -1480,13 +1490,7 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     }
     lines.push("");
   }
-  if (result.warnings && result.warnings.length > 0) {
-    lines.push("### warnings");
-    for (const warning of result.warnings) {
-      lines.push(`- ${warning}`);
-    }
-    lines.push("");
-  }
+  appendCalendarMarkdownWarnings(lines, result.warnings);
   return trimTrailingNewlines(lines.join("\n"));
 }
 
