@@ -1,14 +1,14 @@
 id: pm-gh1571
 title: "GH-1571: allow projection of active extension item fields across read surfaces"
-description: "Reported on published 2026.10.24: full reads retain typed registerItemFields values, but SDK get rejects them with 'Unknown get --fields value(s)', while CLI get/list/search --fields reject them as unknown_field_projection. Preserve extension-defined context through compact SDK and CLI reads using the active runtime field registry. Intake only; independently reproducing and implementing the fix are future work."
+description: "SDK get/list/search projection validation now includes active extension registerItemFields names alongside runtime schema metadata. Typed scalar/container values and valid custom selectors survive compact SDK, CLI and native action reads, while disabled or unknown fields remain refused. Source report and original intake are preserved in the body and immutable history."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: extensions,github,projection,sdk
 created_at: "2026-10-24T07:04:53.631Z"
-updated_at: "2026-10-24T10:09:31.074Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
+updated_at: "2026-10-24T10:52:29.902Z"
+closed_at: "2026-10-24T10:52:29.201Z"
+completed_at: "2026-10-24T10:52:29.201Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Add a sandbox reproduction against the active runtime registry covering SDK and CLI get/list/search.; Preserve numeric and other supported declared field values and reject truly unknown names without silently dropping requested fields.; Keep CLI and MCP adapters on shared SDK projection contracts and update discovery and recovery where needed.; Prove extension activation isolation and built-in projection compatibility through meaningful regression tests and linked evidence.
@@ -18,15 +18,16 @@ confidence: medium
 severity: medium
 environment: "Reporter: published npm CLI and SDK 2026.10.24 in a plain temporary directory without git; local schema-capability extension registers optional numeric probe_score."
 repro_steps: "Use the attached source reproduction in the item body: init a temporary tracker; activate a local registerItemFields extension; create probe_score=3; compare full get with projected SDK get and CLI get/list/search."
-expected_result: Active extension fields are projectable in SDK and CLI get/list/search with their original names and types. Unknown fields still produce truthful recovery that preserves caller intent.
-actual_result: "Reporter observed probe_score=3 in a full SDK get but selecting id,probe_score is rejected by SDK get and CLI get/list/search. Recovery drops the requested field; not independently reproduced during intake."
+resolution: "Get, list and search accept active registerItemFields selectors alongside runtime metadata, preserve declared values and valid recovery selectors, and isolate disabled registrations."
+expected_result: An extension can select its domain fields without a full item read while truly unknown selectors still refuse.
+actual_result: "All six supported custom types, zero/false/empty values, nested containers, item prefixes, CLI/native action transports and registration isolation pass. The real installed change_facets selector is accepted. Source3ecc13b6a passes all14 hosted platform legs and exact full-source100/100/100/100 coverage in run40086359843."
 affected_version: 2026.10.24
 component: SDK read projection and extension field registry
 customer_impact: Extension packages must fetch full rows to recover requested domain fields; reporter measured two calls and about 1600 tokens to read one scalar.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-cxr0jb,related,"2026-10-24T07:04:53.631Z","harness:codex","cli:create:dep",detected
   pm-qvdj,related,"2026-10-24T07:04:53.631Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-24T07:04:53.631Z","harness:codex","Duplicate check: complete all-status strict export read 3093 of 3093 items with no unreadables or omissions. Searched registerItemFields and custom field projection plus the live open and in-progress lists. Closed custom-field setters and closed intent projections cover adjacent completed work; neither covers selecting active extension-defined fields. No open exact duplicate found. Intake remains open and unclaimed; this records the new GitHub report without claiming a reproduced defect or an implemented fix."
   "2026-10-24T07:07:17.502Z","harness:codex","Intake validation: build passed. Tracker context quality has zero blocking findings with the existing graph-degree advisory; graph composition and append-only record integrity pass. The latest installed external pm-changelog generator check passes with no changelog change because this issue is open. Reporter source, expected and observed results, runtime versions, acceptance criteria, estimate, and semantic lineage are recorded. No production fix or independent reproduction is claimed. The item remains open and unclaimed."
   "2026-10-24T07:23:02.161Z","harness:codex","PR1572 CodeRabbit review correction: checked the original reporter source and distinguished the SDK get message (Unknown get --fields value(s): probe_score) from the CLI get/list/search structured unknown_field_projection refusal. The source body remains intact. This is an intake accuracy fix only; the issue stays open and unclaimed."
@@ -34,6 +35,9 @@ comments[7]{created_at,author,text}:
   "2026-10-24T09:48:23.250Z","harness:codex","Regression evidence: the new isolated SDK/CLI fixture failed before the fix with unknown_field_projection for all six declared custom types, after a full get proved they were stored. After using the existing canonical collectRegisteredItemFieldNames helper in all three SDK validators, typed zero/false/empty/container values and prefixed selectors pass SDK, CLI and native action dispatch. Unknown-field recovery retains valid custom selectors and disabled-extension reads refuse without registration leakage."
   "2026-10-24T09:54:58.084Z","harness:codex","Latest package acceptance: installed pm-changelog2026.10.24 from the public npm registry, matching the latest exact published version. Package doctor has zero activation failures or blocking findings, and the package-owned changelog check passes before closure. Its managed contribution inventory now includes changelog contracts, so the real version/contribution change is retained as generated metadata. No changelog generator code is added or patched in pm-cli; upstream pm-changelog currently has no open issues or PRs."
   "2026-10-24T10:09:31.074Z","harness:codex","Fresh observability evidence: required Sentry/telemetry gate passes with zero recent critical/high/unresolved error issues,4.74percent seven-day finish error rate and zero missing-code rows. Explicit real get/list probes each produced a fresh successful Sentry span and exactly one remotely ingested start/finish pair per process. Physical local telemetry queue and broker queue are empty after settlement. This targeted delivery proof is distinct from a global all-user-action completeness claim. Independent published npm/Bun sessions and npx/bunx/MCP acceptance pass for today's earlier artifact."
+  "2026-10-24T10:52:25.673Z","harness:codex","Hosted source acceptance at3ecc13b6a0171e41cc359818033026f4fcb7d8d1: Nightly run40086359843 passes all14 platform legs, including both Ubuntu22 and all4 Windows24 shards. Its merged coverage job120852281042 reports859 passing files,11197 passing tests,3 existing platform skips and exact100/100/100/100 with zero uncovered counts. The separate quality job stops only at3 new prose-to-edge omissions. Those genuine lineage edges are now recorded through PM, and local graph-composition passes9/9, append-only record integrity passes, the unchanged quiet transport gate passes all6 operations, and the configured mutation gate passes352 mutants with345 killed and7 reviewed equivalents. The final PR must still validate its closed-tracker/changelog head; no whole-workflow-green claim is made for the earlier source run."
+learnings[1]{created_at,author,text}:
+  "2026-10-24T10:49:08.850Z","harness:codex","Extension item fields and runtime schema fields are distinct registries. Projection admission must include both through the existing canonical metadata helpers, while contract-only vocabulary modules remain free of query runtime initialization."
 files[5]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   src/sdk/query/get.ts,project
@@ -65,9 +69,11 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/read-output/sdk-extension-context.integration.spec.ts tests/unit/commands/query/get-append-command.spec.ts tests/unit/commands/query/list-command.spec.ts tests/unit/commands/query/search-command.spec.ts,schema,schema,source,local_source_ref
-docs[2]{path,scope}:
+docs[3]{path,scope}:
+  CHANGELOG.md,project
   docs/EXTENSIONS.md,project
   docs/SDK.md,project
+close_reason: Implemented and verified typed extension metadata projections through shared SDK read engines.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

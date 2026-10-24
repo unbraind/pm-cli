@@ -2,22 +2,25 @@ id: pm-win-task-wait
 title: Use elapsed-time task-state waits in the Windows MRTR regression
 description: "Nightly40084795066 at93f71c0a3 passes13 of14 platform legs, including both Ubuntu22 shards. Windows24 shard2/4 fails mcp-server-branch-residual.spec.ts: the100-attempt five-ms tasks/get helper exhausts while waiting for input_required/failed. Preserve real request/response and durable task behavior while replacing iteration-count timing with a bounded elapsed-time wait. Related closed pm-tm6h9x fixed detached success cleanup, not this input/failure wait budget."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: mcp,nightly-regression,testing,windows
 created_at: "2026-10-24T10:26:49.672Z"
-updated_at: "2026-10-24T10:32:58.513Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
+updated_at: "2026-10-24T10:52:41.117Z"
+closed_at: "2026-10-24T10:52:40.524Z"
+completed_at: "2026-10-24T10:52:40.524Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "A controlled task delay beyond the old nominal500ms wait fails before the fix and passes afterward; Retain MRTR input_required, resume, stable completion and protocol failure assertions; Pass the full affected Windows24 hosted shard without quarantining or skipping tests"
-parent: pm-zlv8jl
+parent: pm-rs9vry
 risk: low
 confidence: 80
-expected_result: The test waits up to a bounded real deadline for asynchronous task state and still fails if the expected protocol state never arrives.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "The existing MRTR test waits for official task states using a bounded10-second condition deadline and retains a controlled1000ms operation delay, without changing production task semantics or the outer test ceiling."
+expected_result: "Scheduler latency does not exhaust an iteration-count budget, and absent or incorrect protocol states still fail the test."
+actual_result: "The delayed operation fails the original100-attempt/five-ms helper and passes the complete9-case suite with the new wait. Linked tests pass. Hosted Windows24 shard2/4 job120850005101 and all other13 platform legs pass in run40086359843, with exact full-source coverage."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-tm6h9x,related,"2026-10-24T10:26:49.672Z","harness:codex","cli:create:dep",detected
+  pm-zlv8jl,related,"2026-10-24T10:36:55.228Z","harness:codex","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-10-24T10:26:49.672Z","harness:codex","Duplicate check: full all-status corpus and fresh input_required task Windows search plus active/open lists found no active exact owner. Live full reads distinguish the closed pm-tm6h9x cleanup-coverage fix from this Windows input/failure wait. Preserve the original hosted failure; this is a new scoped recurrence under the existing flake-detection lineage, not a reopened or duplicated completed implementation."
   "2026-10-24T10:31:05.239Z","harness:codex","Independent negative control: in a detached temporary checkout, delayed only the mocked task operation by1000ms while preserving real task storage and protocol calls. The unchanged100-attempt/five-ms helper fails with task did not reach input_required. The root test now retains that representative slow operation and uses a10-second elapsed-time condition wait with25ms intervals for the official tasks/get protocol. All input-required, resume, stable completion and protocol error assertions remain; no production export, skip, quarantine or test-timeout ceiling was added. Hosted Windows acceptance is still required."
@@ -26,6 +29,19 @@ files[1]{path,scope}:
   tests/unit/mcp/mcp-server-branch-residual.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-branch-residual.spec.ts,project,240,"harness:codex","2026-10-24T10:28:44.358Z",local_mutation,fix/sdk-extension-read-contracts
+test_runs[1]:
+  - run_id: test-local-mvm9lbm2-3sjr6h
+    kind: test
+    status: passed
+    started_at: "2026-10-24T10:36:53.201Z"
+    finished_at: "2026-10-24T10:37:09.770Z"
+    recorded_at: "2026-10-24T10:37:09.770Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/mcp/mcp-server-branch-residual.spec.ts,schema,schema,source,local_source_ref
+close_reason: Verified bounded elapsed-time MCP task waits on the affected hosted Windows24 shard.
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

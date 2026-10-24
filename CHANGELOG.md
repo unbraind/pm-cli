@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+### Changed
+
+- Adopt release-age eligible ESLint 10.13.0 ([pm-eslint1013](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eslint1013.toon))
+
 ### Fixed
 
+- Use elapsed-time task-state waits in the Windows MRTR regression ([pm-win-task-wait](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-win-task-wait.toon))
+- Align the host grammar census with the latest installed package command ([pm-package-grammar24](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-package-grammar24.toon))
+- GH-1573: await telemetry producers before Sentry fixture cleanup ([pm-gh1573](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1573.toon))
+- GH-1568: keep read-only commands from recreating missing workflow schema files ([pm-gh1568](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1568.toon))
+- GH-1571: allow projection of active extension item fields across read surfaces ([pm-gh1571](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1571.toon))
 - GH-1561: normalize numeric template-save priority and publish supported options ([pm-gh1561](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1561.toon))
 - GH-1560: retain extension flag defaults in help and runtime contracts ([pm-gh1560](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1560.toon))
 

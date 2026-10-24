@@ -2,20 +2,25 @@ id: pm-gh1573
 title: "GH-1573: await telemetry producers before Sentry fixture cleanup"
 description: "Ubuntu Node22 nightly run40079265521 failed the intentional scope and parameter privacy tracing case during owned-root deletion (ENOTEMPTY under global/locks). The fixture deliberately clears test signals and therefore permits normal detached telemetry delivery. Establish producer lifetime and await delivery before cleanup while retaining consent/privacy/native-test controls. Source: https://github.com/unbraind/pm-cli/issues/1573"
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: github,nightly-regression,telemetry,testing
 created_at: "2026-10-24T09:44:39.464Z"
-updated_at: "2026-10-24T10:10:03.038Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
+updated_at: "2026-10-24T10:52:35.229Z"
+closed_at: "2026-10-24T10:52:34.592Z"
+completed_at: "2026-10-24T10:52:34.592Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Retain intentional loopback tracing and all privacy and consent assertions; Bind fixture delivery to foreground completion before deleting owned roots; Pass the affected telemetry suite and hosted Ubuntu Node22 shard without deleting or suppressing existing regression coverage
 parent: pm-5oj5
 risk: medium
 confidence: 75
-expected_result: "Fixture command completion also settles its telemetry producer, preserving real delivery and deterministic cleanup."
+resolution: "The intentional tracing harness explicitly uses foreground telemetry delivery, separates event batches from Sentry envelopes and asserts ordered start/finish delivery and an empty physical queue before cleanup."
+expected_result: Tracing privacy and consent controls remain enforced while no detached producer outlives the disposable fixture root.
+actual_result: "The isolated inline-disabled negative control fails the new event-pair assertion; foreground delivery passes all14 tracing cases plus4 native-test controls. Both Ubuntu22 shards pass in run40086359843, including shard2/2 job120850005170. Original failed attempts remain recorded."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-10-24T10:41:47.837Z","harness:codex","cli:update:dep",detected
+  pm-gh1484,related,"2026-10-24T10:41:47.837Z","harness:codex","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-10-24T09:44:39.464Z","harness:codex","Duplicate check: full strict corpus3094 items has no implementation owner for GH1573. Live open/in_progress and Sentry tracing cleanup search read; pm-2zjs0g is the closed measurement owner and pm-gh1484 is the completed native-test inference repair. Neither owns this intentional-delivery fixture lifetime. Retain original failure as historical evidence."
   "2026-10-24T09:48:24.638Z","harness:codex","Confirmed lifetime mechanism: clearing VITEST/NODE_ENV in the intentional tracing child selects the ordinary scheduleTelemetryFlush detached-spawn branch. The existing custom-harness opt-in PM_TELEMETRY_INLINE_FLUSH=1 selects serialized awaited delivery before finishTelemetryCommand returns. The fixture now uses that contract, routes loopback event batches separately from Sentry envelopes, asserts ordered command_start/command_finish and an empty physical event queue, and retains all consent/privacy/native-test controls. Focused 18-case telemetry suite passes; no production inference or cleanup retry was introduced."
@@ -36,6 +41,7 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts,schema,schema,source,local_source_ref
+close_reason: "Verified producer completion before Sentry fixture cleanup, including the affected hosted Ubuntu22 shard."
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened
@@ -43,5 +49,5 @@ gate_evidence:
   gate_id: sentry-fixture-producer-lifetime
   negative_control: node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts
   local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/telemetry/sentry-command-tracing.spec.ts tests/integration/telemetry/native-test-isolation.integration.spec.ts,node scripts/run-tests.mjs coverage
-  hosted_checks[2]: CI / Gates (coverage),Nightly Validation / ubuntu-latest / Node 22 shard 2/2
+  hosted_checks[2]: CI / Gates (coverage),"Nightly Validation / Nightly (ubuntu-latest, Node 22, shard 2/2)"
 body: ""

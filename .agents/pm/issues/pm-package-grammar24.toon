@@ -2,23 +2,26 @@ id: pm-package-grammar24
 title: Align the host grammar census with the latest installed package command
 description: "Installing the latest supported pm-changelog2026.10.24 correctly exposes changelog contracts, but pm-cli's SDK-owned package destination census omits it. The live command-grammar gate fails with missing_destination and stale_observed_signature. This is host contract inventory drift, not a changelog generator defect; preserve package ownership and the existing noun/verb surface."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: contracts,packages,sdk
 created_at: "2026-10-24T10:17:55.861Z"
-updated_at: "2026-10-24T10:22:42.373Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
+updated_at: "2026-10-24T10:52:38.474Z"
+closed_at: "2026-10-24T10:52:37.845Z"
+completed_at: "2026-10-24T10:52:37.845Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: "Declare the new command as package-owned in the SDK census; Preserve its empty positional shape and validate live structured help; Pass command grammar, generated contracts and public SDK surface gates without weakening them"
 parent: pm-1kxs
 risk: low
 confidence: 90
-expected_result: The latest installed package remains executable and its command is accounted for by host grammar and positional contracts.
-comments[2]{created_at,author,text}:
+resolution: The existing package-owned destination inventory now includes changelog contracts with empty positional slots; package identity and all unknown-command/positional guards remain enforced.
+expected_result: Installing the latest supported package does not create an undeclared live command in host grammar validation.
+actual_result: "Both focused grammar suites and the linked37-case command selection pass. Live grammar, generated contract snapshot, public SDK surface and all10 entrypoint import gates pass. The new command is exercised by the real installed external package; generator code remains upstream and unchanged."
+comments[3]{created_at,author,text}:
   "2026-10-24T10:17:55.861Z","harness:codex","Duplicate check: fresh exact changelog contracts search and current open/in_progress lists plus the all-status strict corpus found no integration owner for the new package command. Reuse the live agent grammar parent; the prior closed census owner remains completed. Before-fix full static gate captures missing_destination and stale_observed_signature for the package's real newly installed command. Package-owned changelog generate/check both pass, so generator implementation stays upstream and unchanged."
   "2026-10-24T10:20:22.962Z","harness:codex","Implemented the host integration using the existing package-owned destination table, retaining the package identity and empty positional slots. Extended the existing published-package contract table test rather than duplicating a fixture or changing generator implementation. Both focused grammar suites pass37 cases. The expected SDK contract snapshot drift is generated with contracts:update; the live grammar census and strict full static gates remain required, with no waived unknown command or positional checks."
+  "2026-10-24T10:36:56.720Z","harness:codex","Local end-state proof: live command grammar and the generated snapshot pass, as do the SDK public-surface compatibility and all10 entrypoint import budgets. The full static pipeline's unchanged transport component initially missed its qualified budget during an overlapping negative-control compile; it passes all6 operations once owned validators settle. Remaining graph/record/mutation components are running separately, and exact-head hosted full static stays required. Latest external package generation remains successful with no generator patch in this repository."
 files[3]{path,scope}:
   src/sdk/cli-contracts/grammar-contracts.ts,project
   tests/fixtures/contracts/full.json,project
@@ -37,6 +40,7 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts tests/unit/scripts/release/command-grammar-gate.spec.ts,schema,schema,source,local_source_ref
+close_reason: Aligned the SDK host census and generated positional contract snapshot with the latest installed package command.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

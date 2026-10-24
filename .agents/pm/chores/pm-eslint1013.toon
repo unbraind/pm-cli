@@ -2,20 +2,24 @@ id: pm-eslint1013
 title: Adopt release-age eligible ESLint 10.13.0
 description: "Ship the exact eligible ESLint10.13.0 update separately from the parent queue of still-ineligible minor tools. Registry publication October16 14:24UTC meets the seven-day minimum and the engine includes the supported Node22.18 floor. Retain10.12.0 as rollback."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
-tags[2]: dependencies,quality
+tags[3]: changed,dependencies,quality
 created_at: "2026-10-24T10:11:13.747Z"
-updated_at: "2026-10-24T10:23:24.504Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#67ddd7c5bf7e85e8f28aa1ff"
+updated_at: "2026-10-24T10:54:55.709Z"
+closed_at: "2026-10-24T10:52:43.155Z"
+completed_at: "2026-10-24T10:52:43.155Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: Use exact ESLint10.13.0 and its resolved lockfile; Pass typechecking and ESLint without relaxing static or coverage contracts; Keep the remaining cooldown and major-migration owners queued and unclaimed
 parent: pm-wb25c1
 risk: low
 confidence: 90
-expected_result: The project uses the newest eligible ESLint release with all existing lint and static contracts intact.
+resolution: Updated the development dependency and resolved lockfile from10.12.0 to10.13.0 after the seven-day adoption window; retained the remaining tooling and major migrations under their existing queue.
+expected_result: "The newest eligible ESLint release passes existing strict checks without compatibility, cooldown or quality exceptions."
+actual_result: "Registry publication October16 14:24UTC meets release age and its engines include the supported Node22.18 floor. Linked lint and typechecking pass; the locked567-package advisory gate has no findings and all14 hosted platform legs pass. The parent refresh queue is open and unclaimed."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-quzx,related,"2026-10-24T10:41:46.808Z","harness:codex","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-10-24T10:11:13.747Z","harness:codex","Duplicate check: current exact-version PM search plus fresh open/in_progress lists and the complete all-status corpus found only the broad pm-wb25c1 queue and historical census notes for10.13.0, no shipped implementation leaf. The dependency edit was actively owned under pm-wb25c1; this child captures that implemented slice for immutable close evidence and package-owned changelog attribution while preserving the incomplete parent queue."
   "2026-10-24T10:12:07.197Z","harness:codex","Duplicate-check clarification: the exact live version search also returned pm-quzx as a comment-only policy mention; it is the broad external-package dependency-range owner, not an ESLint implementation leaf. The full corpus and current active list contain no competing version-specific implementation owner. The parent queue remains open/unclaimed while this child carries the implemented version and verification."
@@ -37,4 +41,5 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm lint:eslint",schema,schema,source,local_source_ref
+close_reason: Adopted exact eligible ESLint10.13.0 with zero-warning lint and supported-runtime validation.
 body: ""
