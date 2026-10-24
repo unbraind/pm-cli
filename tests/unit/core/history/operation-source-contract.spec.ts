@@ -12,12 +12,22 @@ const nonHistoryCalls = new Set([
   "Sentry.startInactiveSpan",
 ]);
 
+/** Recognize a typed patch initializer without exempting native calls nested inside it. */
+function isTypedJsonPatch(node: ts.PropertyAssignment, source: ts.SourceFile): boolean {
+  let expression: ts.Node = node.parent;
+  while (ts.isConditionalExpression(expression.parent) || ts.isParenthesizedExpression(expression.parent) ||
+    ts.isAsExpression(expression.parent) || ts.isSatisfiesExpression(expression.parent)) expression = expression.parent;
+  const declaration = expression.parent;
+  return ts.isVariableDeclaration(declaration) && declaration.initializer === expression && declaration.type?.getText(source) === "HistoryPatchOp";
+}
+
 /** Exclude structurally identified hook, remediation, span and JSON Patch vocabularies. */
 function isNonHistoryField(
   node: ts.PropertyAssignment,
   source: ts.SourceFile,
   file: string,
 ): boolean {
+  if (isTypedJsonPatch(node, source)) return true;
   let caller: ts.Node | undefined = node.parent;
   while (caller && !ts.isCallExpression(caller)) caller = caller.parent;
   const name =
@@ -115,6 +125,11 @@ function undeclaredOperations(text: string, file: string): string[] {
 
 describe("native operation write-site contract", () => {
   it("rejects new undeclared native literals without confusing hook or patch vocabularies", () => {
+    expect(undeclaredOperations('const patch: HistoryPatchOp = missing ? { ...operation, op: "add" } : operation;', "fixture.ts")).toEqual([]);
+    expect(undeclaredOperations('const native = { op: "add" };', "fixture.ts")).toEqual(["fixture.ts:1:add"]);
+    for (const text of ['const native: Options = { op: "updaet" };', 'const patch: HistoryPatchOp = mutateItem({ op: "updaet" });']) {
+      expect(undeclaredOperations(text, "fixture.ts")).toEqual(["fixture.ts:1:updaet"]);
+    }
     expect(
       undeclaredOperations(
         'writeSettings(root, settings, "updaet");',

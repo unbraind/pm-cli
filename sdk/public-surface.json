@@ -2738,6 +2738,13 @@
       ],
       "package_version": "2026.10.24",
       "reason": "Bounded activity and calendar reads now expose fixed-window continuation, remaining-row counts and page-local calendar summary scope. Activity bounded defaults pin the upper timestamp; callers requiring future or unlimited history must provide to or unbounded. See docs/SDK.md."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.10.24",
+      "reason": "Add optional history_merge diagnostic coordinates; existing context fields and caller inputs remain compatible."
     }
   ],
   "entrypoints": {
@@ -13770,7 +13777,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -36769,6 +36776,7 @@
     "history_stream_over_compact_threshold",
     "history_target_out_of_range",
     "history_timestamp_invalid",
+    "history_union_rebase_conflict",
     "history_unknown_author_events",
     "history_version_mapping_unavailable",
     "history_version_pruned",
@@ -36850,6 +36858,7 @@
     "mcp_annotation_file_unavailable",
     "mcp_stdin_unavailable",
     "mcp_task_not_found_or_not_authorized",
+    "merge_artifacts_ignored",
     "merge_bun_launcher_unavailable",
     "merge_conflict_markers_detected",
     "merge_decisions_unreviewed",

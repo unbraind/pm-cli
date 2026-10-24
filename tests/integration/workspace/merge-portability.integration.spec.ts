@@ -23,6 +23,26 @@ function initializeGitTracker(context: TempPmContext, autocrlf: boolean) {
   return git;
 }
 
+/** Produce real unstaged merge proof for independent index and ignore-policy scenarios. */
+async function createUnstagedReceiptFixture(context: TempPmContext, autocrlf: boolean) {
+  const git = initializeGitTracker(context, autocrlf);
+  const id = createTestItemId(context, { title: "Indexed portable proof" });
+  git("add", "."); git("commit", "-qm", "Seed tracker"); git("branch", "other");
+  expect(context.runCli(["comments", id, "main context"]).code).toBe(0);
+  git("add", ".agents"); git("commit", "-qm", "Main context");
+  git("switch", "-q", "other");
+  expect(context.runCli(["comments", id, "other context"]).code).toBe(0);
+  git("add", ".agents"); git("commit", "-qm", "Other context");
+  git("switch", "-q", "main"); git("merge", "--no-edit", "other");
+  const scan = await inspectMergeReceiptEvidence(context.tempRoot);
+  const receipt = scan.receipts[0]!;
+  const relative = `.agents/pm/merge-receipts/${receipt.id}.json`;
+  const receiptPath = path.join(context.tempRoot, relative);
+  const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+  const before = await readFile(historyPath, "utf8");
+  return { git, scan, receipt, relative, receiptPath, historyPath, before };
+}
+
 describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (autocrlf) => {
   it("keeps both add/add snapshots visible when a copied creation prefix cannot prove ancestry", async () => {
     await withTempPmPath(async (context) => {
@@ -98,21 +118,7 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
 
   it("refuses ordinary audit writes until indexed proof matches and rolls back prepared receipts on failure", async () => {
     await withTempPmPath(async (context) => {
-      const git = initializeGitTracker(context, autocrlf);
-      const id = createTestItemId(context, { title: "Indexed portable proof" });
-      git("add", "."); git("commit", "-qm", "Seed tracker"); git("branch", "other");
-      expect(context.runCli(["comments", id, "main context"]).code).toBe(0);
-      git("add", ".agents"); git("commit", "-qm", "Main context");
-      git("switch", "-q", "other");
-      expect(context.runCli(["comments", id, "other context"]).code).toBe(0);
-      git("add", ".agents"); git("commit", "-qm", "Other context");
-      git("switch", "-q", "main"); git("merge", "--no-edit", "other");
-      const scan = await inspectMergeReceiptEvidence(context.tempRoot);
-      const receipt = scan.receipts[0]!;
-      const relative = `.agents/pm/merge-receipts/${receipt.id}.json`;
-      const receiptPath = path.join(context.tempRoot, relative);
-      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
-      const before = await readFile(historyPath, "utf8");
+      const { git, scan, receipt, relative, receiptPath, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
       expect(scan.durable_receipt_ids).not.toContain(receipt.id);
       expect(scan.unstaged_durable_receipt_ids).toContain(receipt.id);
       for (const options of [{}, { force: true }]) {
@@ -147,6 +153,30 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
       await symlink(context.pmPath, alias, "junction");
       expect((await runMergeReconcile({ stage: true }, { path: alias })).ok).toBe(true);
       expect(git("diff", "--cached", "--name-only")).toContain("preserve.txt");
+    });
+  });
+
+  it("refuses ignored proof before dry-run or apply without changing staged work or audit artifacts", async () => {
+    await withTempPmPath(async (context) => {
+      const { git, relative, receiptPath, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
+      const valid = await readFile(receiptPath, "utf8");
+      await writeFile(path.join(context.tempRoot, "preserve.txt"), "Unrelated staged work\n"); git("add", "preserve.txt");
+      const priorIndex = git("diff", "--cached", "--raw", "-z");
+      await writeFile(path.join(context.tempRoot, ".gitignore"), ".agents/pm/merge-receipts/\n");
+      for (const dryRun of [true, false]) {
+        await expect(runMergeReconcile({ stage: true, dryRun }, { path: context.pmPath })).rejects.toMatchObject({
+          context: { code: "merge_settlement_review_required", paths: [relative], reason: "ignored_merge_artifacts" },
+          message: expect.stringContaining(".gitignore:1: .agents/pm/merge-receipts/"),
+        });
+        expect(git("diff", "--cached", "--raw", "-z")).toBe(priorIndex);
+        expect(await readFile(historyPath, "utf8")).toBe(before);
+        expect(await readFile(receiptPath, "utf8")).toBe(valid);
+      }
+      const ignoredHealth = await runHealth({ path: context.pmPath }, { checkOnly: true, full: true });
+      expect(ignoredHealth.warnings).toContain("merge_artifacts_ignored:1");
+      expect(ignoredHealth.checks.find((check) => check.name === "integrity")?.details).toMatchObject({
+        ignored_merge_artifacts: [expect.objectContaining({ source: ".gitignore", line: 1, pattern: ".agents/pm/merge-receipts/" })],
+      });
     });
   });
 

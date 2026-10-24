@@ -1564,6 +1564,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "history_union_rebase_conflict",
+    meaning: "History union rebase conflict condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/merge/history-scalar-rebase.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "history_union_rebase_conflict",
+    aliases: [],
+  },
+  {
     code: "history_unknown_author_events",
     meaning: "History unknown author events condition.",
     stability: "stable",
@@ -2644,6 +2657,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "merge_artifacts_ignored",
+    meaning: "Merge artifacts ignored condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/diagnostics/remediation.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "merge_artifacts_ignored",
+    aliases: [],
+  },
+  {
     code: "merge_bun_launcher_unavailable",
     meaning: "Merge bun launcher unavailable condition.",
     stability: "provisional",
@@ -2810,19 +2836,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     sources: ["sdk/history-repair.ts"],
     emitting_commands: ["*"],
     canonical_code: "merge_reconcile_receipt_evidence_untrusted",
-    aliases: [],
-  },
-  {
-    code: "merge_root_not_found",
-    meaning: "Merge root not found condition.",
-    stability: "stable",
-    exit_code: 3,
-    class: "not_found",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/merge/install.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_root_not_found",
     aliases: [],
   },
 ];

@@ -2,23 +2,144 @@ id: pm-gh1556
 title: "GH-1556: diagnose ignored merge-receipt paths before settlement staging"
 description: "The October23 report identifies raw git add failure when legacy ignore rules hide merge-receipts that current settlement must commit. Reproduce with a real temporary Git repository, diagnose the owning ignore rule before staging, and keep settlement/history preservation and typed SDK/CLI recovery intact."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: context-management,"gh:1556",sdk
 created_at: "2026-10-23T07:34:10.262Z"
-updated_at: "2026-10-23T07:34:10.262Z"
+updated_at: "2026-10-24T22:30:59.228Z"
+closed_at: "2026-10-24T22:30:57.794Z"
+completed_at: "2026-10-24T22:30:57.794Z"
 author: "harness:codex"
 estimated_minutes: 150
 acceptance_criteria: A real Git fixture reproduces ignored receipt staging without source tracker access; Refusal names the ignore rule and safe remedy before ambiguous partial staging; Health/upgrade guidance reflects committed receipt requirements and normal settlement remains idempotent.
 parent: pm-o2kc
 risk: medium
 confidence: medium
-expected_result: Legacy ignored merge receipts produce typed actionable recovery naming the ignore rule and preserving unsettled proof; ordinary settlement and exact history verification continue to pass.
+resolution: "Check effective Git ignore policy before settlement writes, report owning rules, proactively warn in health, normalize tracker aliases and safely roll back prepared receipts; test ignore preservation independently from indexed-proof rollback."
+expected_result: "Ignore-policy refusal preserves index and audit files, ordinary and aliased trackers remain usable, and each complete Windows scenario meets the unchanged per-test deadline."
+actual_result: "The new ignore scenario and existing indexed-proof/rollback/settlement assertions run in separate real-Git fixtures: all 10 LF/CRLF cases and final linked tests pass locally, ESLint passes, and no timeout or acceptance assertion changed. Runtime matches e3c354623, with hosted exact coverage, static, typecheck, compatibility, smokes and six packed first-run checks green. Final revised-head native acceptance is required."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1475,related,"2026-10-23T07:34:10.262Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
-  "2026-10-23T07:34:10.262Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1556. Duplicate checks used request-specific live search and a fresh all-status strict corpus of3071 items with no omissions; related delivered lineage is linked and remains closed. The report is recorded without claiming current reproduction. Intake only, open and unclaimed."
-files[1]{path,scope}:
-  src/sdk/merge/stage.ts,project
+comments[11]:
+  - created_at: "2026-10-23T07:34:10.262Z"
+    author: "harness:codex"
+    text: "Intake: https://github.com/unbraind/pm-cli/issues/1556. Duplicate checks used request-specific live search and a fresh all-status strict corpus of3071 items with no omissions; related delivered lineage is linked and remains closed. The report is recorded without claiming current reproduction. Intake only, open and unclaimed."
+  - created_at: "2026-10-24T20:03:49.211Z"
+    author: "harness:codex"
+    text: "Active implementation: reproduce ignored merge-receipt staging in a real isolated Git fixture, refuse with owning ignore-rule diagnostics before any staging or audit writes, and expose proactive health/upgrade guidance. Grouped SDK merge delivery with pm-gh1553. GitHub currently reports no open PRs or security alerts; every open issue has canonical PM linkage."
+  - created_at: "2026-10-24T20:07:06.926Z"
+    author: "harness:codex"
+    text: "Added a real Git regression around existing portable-proof acceptance: an ignored receipt must refuse both dry-run and apply with merge_settlement_review_required, exact .gitignore rule coordinates, unchanged index/history/receipt bytes, and a proactive health warning. The current implementation is being exercised as the negative control before the fix."
+  - created_at: "2026-10-24T20:19:00.017Z"
+    author: "harness:codex"
+    text: "Local acceptance now covers typed ignored-path recovery in dry-run and apply, proactive health detection from .gitignore and .git/info/exclude before any receipt exists, exact NUL decoding/negation semantics, unavailable Git evidence refusal and new-index-entry rollback even when Git fails during preparation. Existing normal/alternate index and LF/CRLF preservation cases remain intact. Health composition is factored through its existing merge-evidence helper to preserve the complexity limit."
+  - created_at: "2026-10-24T20:28:46.595Z"
+    author: "harness:codex"
+    text: "Health evidence correction: the long read-only health scan reported history_drift_hash_mismatch for pm-gh1553 while tracker updates were in flight. A fresh pm history pm-gh1553 --verify proves15 valid entries, zero errors, and current_matches_latest=true; no repair was applied. Full history-drift validation passes, with170 historical resolution metadata advisories. A quiet follow-up health scan will distinguish the transient observation from current drift. Latest npm pm-changelog2026.10.24 installs/activates; package doctor has zero load/activation/blocking failures and advisory partial update-check coverage."
+    edited_at: "2026-10-24T20:29:44.941Z"
+  - created_at: "2026-10-24T20:34:46.527Z"
+    author: "harness:codex"
+    text: "Quiet verification completed: pm health --check-only --full --skip-vectors returns ok=true with zero blocking findings and only14 existing legacy hierarchy advisories. The earlier transient mismatch is absent, and no history repair was applied. Candidate packed smoke timed out before packaging while waiting on the full-coverage build lease; it will be rerun sequentially after coverage/static completion. No packed-consumer success is inferred from that timeout."
+  - created_at: "2026-10-24T21:38:35.195Z"
+    author: "harness:codex"
+    text: "Hosted PR1578 packed first-run checks exposed a portability regression in the new health preflight: findGitWorkspaceRoot returns a physical root, while the health ignore probe used a lexical tracker path. A disposable Git workspace with a directory symlink reproduces ignore_check_unavailable for the alias and succeeds for the physical path. The stage path already resolves its tracker physically. Will canonicalize the health probe and add the alias regression before the revised head; no Git policy bypass or force-add."
+  - created_at: "2026-10-24T21:53:56.330Z"
+    author: "harness:codex"
+    text: "Full sequential local source verification completed: packed npm/npx/Bun/bunx smoke and linked pm tests passed; canonical full coverage passed 11,222 tests with 3 intentional skips, exact 70,729/70,729 statements, 54,398/54,398 branches, 14,558/14,558 functions and 66,955/66,955 lines. All 15 changed runtime/test inputs retained SHA256 e95a5f1018ce6c8701c1fd85172e90949268afe7ad6e3e26ad13e5490cb32f25 throughout. Negative controls on original runtime 2fb55fa produced five intended failures before the fixes. The final alias preflight correction and revised-head hosted acceptance remain pending; registered test-coverage evidence lists mandatory hosted checks, not a waiver."
+  - created_at: "2026-10-24T22:04:28.905Z"
+    author: "harness:codex"
+    text: "Review closeout: CodeRabbit actionable finding is addressed by an isolated fallback replay document with a failing-before/passing-after mixed release-plus-comment regression. The separate physical-path health correction also has a failing-before/passing-after junction regression. All final linked tests pass; packed consumers, typecheck, lint and documentation checks pass. Keep the initial full 100-percent coverage receipt distinct from the final-head hosted coverage/Windows acceptance required before merging PR1578."
+  - created_at: "2026-10-24T22:26:03.950Z"
+    author: "harness:codex"
+    text: "Final-head e3c354623 hosted coverage and all six packed first-run checks passed. Native Windows LF and CRLF portability cases timed out at the unchanged 30-second per-test limit after combining existing indexed-proof/rollback/settlement work with the new ignore preflight and health scenarios. Reopened only this item for scoped test decomposition: move ignore-policy preservation assertions into a separate real-Git case sharing fixture setup, preserve all assertions and limits, then rerun hosted native acceptance. No timeout increase or blind retry."
+  - created_at: "2026-10-24T22:30:56.711Z"
+    author: "harness:codex"
+    text: "Native acceptance follow-up: all 10 decomposed real-Git LF/CRLF portability cases and the final linked item tests pass locally, with ESLint clean. Every ignore-policy, artifact preservation, rollback and settlement assertion is retained and the 30-second per-test limit is unchanged. Production runtime is unchanged from e3c354623, whose hosted static, exact coverage, typecheck, compatibility, smoke and all six packed consumer checks passed; native timeout cases were the only functional acceptance gap. Revised-head native checks remain mandatory before merge."
+learnings[2]{created_at,author,text}:
+  "2026-10-24T20:23:10.569Z","harness:codex","Portable merge receipts depend on effective Git policy from project, nested, clone-local and global ignore sources. Check effective rules with Git's NUL stdin/output protocol before staging or audit writes; preserve native negations and tracked-file semantics, and rollback newly prepared index entries on partial preparation failure."
+  "2026-10-24T21:54:42.969Z","harness:codex","Compare physical paths on both sides of a Git workspace boundary: findGitWorkspaceRoot realpaths its root, so health probes must also realpath the tracker before computing repository-relative receipt paths. An in-workspace tracker junction/symlink is a portable regression fixture for Git path-beyond-symlink refusals."
+files[11]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: CLI-generated activation timestamp from installing the latest pm-changelog for reviewed changelog validation
+  - path: src/core/diagnostics/remediation.ts
+    scope: project
+  - path: src/sdk/governance/health-merge-evidence.ts
+    scope: project
+  - path: src/sdk/governance/health.ts
+    scope: project
+  - path: src/sdk/merge/ignored-artifacts.ts
+    scope: project
+  - path: src/sdk/merge/stage.ts
+    scope: project
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/integration/workspace/merge-portability.integration.spec.ts
+    scope: project
+  - path: tests/unit/sdk/health-merge-driver-policy.spec.ts
+    scope: project
+  - path: tests/unit/sdk/merge/ignored-artifacts.spec.ts
+    scope: project
+  - path: tests/unit/sdk/merge/stage.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,project,600,"harness:codex","2026-10-24T20:09:37.605Z",local_mutation,fix/sdk-merge-history-settlement
+test_runs[4]:
+  - run_id: test-local-mvmuasy2-ink22r
+    kind: test
+    status: passed
+    started_at: "2026-10-24T20:15:23.226Z"
+    finished_at: "2026-10-24T20:16:50.954Z"
+    recorded_at: "2026-10-24T20:16:50.954Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmwsswi-nfmrus
+    kind: test
+    status: passed
+    started_at: "2026-10-24T21:25:32.540Z"
+    finished_at: "2026-10-24T21:26:49.938Z"
+    recorded_at: "2026-10-24T21:26:49.938Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmy1fpp-ipqjcd
+    kind: test
+    status: passed
+    started_at: "2026-10-24T22:00:36.093Z"
+    finished_at: "2026-10-24T22:01:32.365Z"
+    recorded_at: "2026-10-24T22:01:32.365Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmz28a8-7sotcl
+    kind: test
+    status: passed
+    started_at: "2026-10-24T22:28:08.785Z"
+    finished_at: "2026-10-24T22:30:09.008Z"
+    recorded_at: "2026-10-24T22:30:09.008Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/ignored-artifacts.spec.ts tests/unit/sdk/merge/stage.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  CHANGELOG.md,project
+  docs/MERGE_SAFETY.md,project
+  docs/SDK.md,project
+close_reason: Implemented and locally verified; decomposed native acceptance remains gated by PR1578.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-k6t4yb
+  negative_control: node scripts/run-tests.mjs test tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/health-merge-driver-policy.spec.ts
+  hosted_checks[4]: Gates (coverage),Windows regression (Node 24),"Packed first run (macos-latest, Node 24)","Packed first run (windows-latest, Node 24)"
 body: ""

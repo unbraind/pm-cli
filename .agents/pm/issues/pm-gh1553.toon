@@ -1,20 +1,113 @@
 id: pm-gh1553
-title: "GH-1553: investigate history union scalar replay refusal on concurrent appends"
+title: Rebase concurrent history assignments and removals without losing events
 description: "External report from pm-web using pm-cli 2026.10.19: history merge refuses scalar rebase when main closes an item and a branch appends comments/field edits. Reproduce on current SDK before changing the fail-closed replay contract; a manually unioned stream passing health alone is not proof that event semantics are lossless."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: context-management,"gh:1553",sdk
 created_at: "2026-10-23T06:27:49.281Z"
-updated_at: "2026-10-23T07:19:26.075Z"
+updated_at: "2026-10-24T22:08:31.530Z"
+closed_at: "2026-10-24T22:04:25.478Z"
+completed_at: "2026-10-24T22:04:25.478Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Current-version fixture reproduces or disproves the reported event sequence; Each scalar transition and retained event is checked against strict replay; Any safe correction preserves hash/replay integrity and provides actionable refusal evidence.
 parent: pm-o2kc
 risk: medium
 confidence: medium
-expected_result: A current-version fixture establishes scalar replay semantics for the reported merge before any correction; safe unions retain every event and unsafe transitions refuse with actionable coordinates.
-comments[1]{created_at,author,text}:
+resolution: "Preserve validated whole-field history intent across concurrent deletion, including repeated removals and collection changes; retain strict nested/conditional refusal with typed event and pointer coordinates."
+expected_result: "Concurrent closure, claim replacement, release and comments preserve every valid event and yield a strict verified history; ambiguous nested or conditional intent remains explicit."
+actual_result: "Original pm-web 16-event histories merge and verify. Seven scalar regressions pass, including mixed satisfied removals plus comments; its negative control failed with before_hash_mismatch before cloning. Final 36-test focused cohort and linked item runs pass. The canonical full suite passed 11,222 tests and exact 100/100/100/100 before the two targeted review/alias corrections, each separately proven. Final-head hosted gates remain mandatory for PR1578."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1556,related,"2026-10-24T21:14:38.077Z","harness:codex","cli:update:dep",detected
+comments[11]{created_at,author,text}:
   "2026-10-23T06:27:49.281Z","harness:codex","Intake: https://github.com/unbraind/pm-cli/issues/1553. Duplicate checks used live request-specific search, open/in_progress lists, and complete all-status strict read of 3067 items (2789 closed, 14 canceled); related delivered lineage remains closed. No matching active item exists. Intake only, left open and unclaimed."
+  "2026-10-24T20:03:48.254Z","harness:codex","Active implementation: reproduce the current SDK history union against concurrent closure and branch field/comment edits. Preserve strict replay and immutable event semantics; add event coordinates and safe remediation for transitions that cannot be rebased. Grouped delivery with pm-gh1556 after complete strict all-status corpus and live GitHub checks."
+  "2026-10-24T20:07:05.880Z","harness:codex","Current-version reproduction confirmed with original pm-web PR238 parent histories (base874ef8f, branch6f39c76, main55faf88). Failure is the later branch claim event: replace /metadata/claim_principal after the other branch release removed that field. Original branch replay is valid; synthetic fixture now covers closure, claim replacement, release and retained comments in both directions, plus concurrent duplicate removals. Root assignment/removal intent can be safely rebased without weakening nested patch refusal."
+  "2026-10-24T20:14:46.271Z","harness:codex","The rebuilt public SDK now merges the exact original pm-web streams successfully:16 retained events, union_reanchor strategy, verifyHistoryChain returns ok=true with zero errors. The five synthetic negative controls failed on unchanged main for intended boundaries (three scalar union cases and both LF/CRLF ignored-settlement fixtures). New SDK conflict diagnostics add only optional history_merge coordinates; no existing caller field is removed."
+  "2026-10-24T20:25:33.717Z","harness:codex","Verification: both canonical linked-test runs passed through sandboxed pm test --run --progress. Candidate workspace compatibility passed all four writer/reader directions against published2026.10.22 and2026.10.23, including public SDK reads, exact unknown fields, restore, native Git merge/reconciliation and strict history. Standalone public2026.10.24 verification and independent npm/Bun13-step installed sessions also pass; those released artifacts are distinct from this pending candidate."
+  "2026-10-24T20:51:18.971Z","harness:codex","Full first run completed11212 passing tests and10 failures. Nine failures were timeout/environment-related or cascading cwd cleanup after a timeout; the exact five affected files rerun in isolation pass36 tests after exposing the installed npm package through NODE_PATH as their existing diagnostic requires. The remaining native-operation source gate misclassified an explicitly typed JSON Patch add as a native history event. Its correction recognizes typed patch initializers structurally while negative controls still reject undeclared native operations, including nested native calls. No history operation identity or timeout threshold is relaxed."
+  "2026-10-24T20:55:40.092Z","harness:codex",The corrected source-operation gate and complete merge-focused set pass71 tests. The three scalar/ignore/staging modules each have exact100 percent statements/branches/functions/lines in focused coverage. Its broader helper-file selection also reported two uncovered pre-existing health-evidence branches; canonical full-source coverage remains required and is not claimed from that subset. All36 previously timeout/environment-affected assertions pass on the isolated rerun.
+  "2026-10-24T21:50:11.440Z","harness:codex","Initial PR1578 head dfa37ad6d completed hosted Gates (static), Gates (coverage), Gates (typecheck), Gates (compat), Gates (smokes) and runtime smoke checks successfully. Final-head validation is still required after the separately reproduced health ignore-probe alias correction for pm-gh1556. Sourcery guide notes broader union-on-ambiguity expectations: this delivery implements the reported whole-field release/replace failure and the issue minimum of precise event/field recovery coordinates; invalidated conditional/nested intent remains fail-closed to preserve strict replay."
+  "2026-10-24T21:53:54.045Z","harness:codex","Full sequential local source verification completed: packed npm/npx/Bun/bunx smoke and linked pm tests passed; canonical full coverage passed 11,222 tests with 3 intentional skips, exact 70,729/70,729 statements, 54,398/54,398 branches, 14,558/14,558 functions and 66,955/66,955 lines. All 15 changed runtime/test inputs retained SHA256 e95a5f1018ce6c8701c1fd85172e90949268afe7ad6e3e26ad13e5490cb32f25 throughout. Negative controls on original runtime 2fb55fa produced five intended failures before the fixes. The final alias preflight correction and revised-head hosted acceptance remain pending; registered test-coverage evidence lists mandatory hosted checks, not a waiver."
+  "2026-10-24T22:00:27.467Z","harness:codex","CodeRabbit review on PR1578 identified a valid fallback aliasing defect: if every scalar operation is an already-satisfied removal, rebaseHistoryScalarPatch returns the current comparison document itself. Subsequent collection union writes can then disappear from jsonPatch.compare. Will clone the fallback document and prove a combined concurrent release-plus-comment event retains its collection intent; this is scoped remediation of the active item before closure."
+  "2026-10-24T22:04:24.406Z","harness:codex","Review closeout: CodeRabbit actionable finding is addressed by an isolated fallback replay document with a failing-before/passing-after mixed release-plus-comment regression. The separate physical-path health correction also has a failing-before/passing-after junction regression. All final linked tests pass; packed consumers, typecheck, lint and documentation checks pass. Keep the initial full 100-percent coverage receipt distinct from the final-head hosted coverage/Windows acceptance required before merging PR1578."
+learnings[1]{created_at,author,text}:
+  "2026-10-24T20:23:07.969Z","harness:codex","A scalar JSON Patch replace can be valid in its original branch and fail after an earlier peer release removes the target. Validate original branch causality first, then rebase only whole-field assignment/removal intent; retain nested and conditional refusals with event coordinates."
+files[10]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/shared/errors.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/merge/history-scalar-rebase.ts,project
+  src/sdk/merge/three-way.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/core/history/operation-source-contract.spec.ts,project
+  tests/unit/sdk/merge-safety.spec.ts,project
+  tests/unit/sdk/merge/history-scalar-rebase.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/history-scalar-rebase.spec.ts tests/unit/sdk/merge-safety.spec.ts,project,600,"harness:codex","2026-10-24T20:09:36.265Z",local_mutation,fix/sdk-merge-history-settlement
+  node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,project,240,"harness:codex","2026-10-24T20:55:38.633Z",local_mutation,fix/sdk-merge-history-settlement
+test_runs[4]:
+  - run_id: test-local-mvmu8w8l-lkvgt4
+    kind: test
+    status: passed
+    started_at: "2026-10-24T20:14:12.718Z"
+    finished_at: "2026-10-24T20:15:21.909Z"
+    recorded_at: "2026-10-24T20:15:21.909Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/history-scalar-rebase.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmwr4hv-vc4k9i
+    kind: test
+    status: passed
+    started_at: "2026-10-24T21:24:46.998Z"
+    finished_at: "2026-10-24T21:25:31.651Z"
+    recorded_at: "2026-10-24T21:25:31.651Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/history-scalar-rebase.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmy07g1-bnk1ke
+    kind: test
+    status: passed
+    started_at: "2026-10-24T21:59:57.604Z"
+    finished_at: "2026-10-24T22:00:34.993Z"
+    recorded_at: "2026-10-24T22:00:34.993Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/history-scalar-rebase.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvmy4bko-6ribvr
+    kind: test
+    status: passed
+    started_at: "2026-10-24T22:03:09.431Z"
+    finished_at: "2026-10-24T22:03:46.967Z"
+    recorded_at: "2026-10-24T22:03:46.967Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/history-scalar-rebase.spec.ts tests/unit/sdk/merge-safety.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/history/operation-source-contract.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/MERGE_SAFETY.md,project
+  docs/SDK.md,project
+close_reason: Implemented and locally verified with executable regression evidence; reviewed delivery is PR1578.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-k6t4yb
+  negative_control: node scripts/run-tests.mjs test tests/unit/sdk/merge/history-scalar-rebase.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs coverage,node scripts/run-tests.mjs test tests/unit/sdk/merge/history-scalar-rebase.spec.ts
+  hosted_checks[4]: Gates (coverage),Windows regression (Node 24),"Packed first run (macos-latest, Node 24)","Packed first run (windows-latest, Node 24)"
 body: ""

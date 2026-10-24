@@ -312,6 +312,19 @@ explicitly installs the merge-aware pre-commit hook; the default installs no hoo
 verified lossless history and receipt artifacts. It refuses forced acceptance,
 competing values, unrelated drift, dirty reconciliation paths and unresolved Git
 paths. `staged_paths` reports exactly which relative paths were added to the index.
+Git-ignored artifacts refuse before staging or auditing with
+`merge_settlement_review_required`, `reason: ignored_merge_artifacts`, relative
+`paths`, and owning ignore-rule coordinates. The same check applies to
+`{ stage: true, dryRun: true }`; health reports legacy directory rules before a
+merge exists. This recovery is tracked by
+[pm-gh1556](../.agents/pm/issues/pm-gh1556.toon).
+
+`mergeHistoryStreams` preserves validated whole-field assignment/removal intent
+when another branch removed its target. Nested or conditional patches that
+cannot replay refuse with `history_union_rebase_conflict` and typed
+`PmCliError.context.history_merge` coordinates, retaining source inputs for
+deliberate recovery. See [history semantics](MERGE_SAFETY.md#artifact-semantics)
+and [pm-gh1553](../.agents/pm/issues/pm-gh1553.toon).
 
 The single-commit journey pauses Git with `git merge --no-commit --no-ff` before
 reconciliation or an opted-in pre-commit hook runs. `durable_receipt_ids` on the

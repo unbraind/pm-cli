@@ -9,6 +9,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { findGitWorkspaceRoot } from "./install.js";
 import { gitWorkspaceEnvironment } from "./worktree-config.js";
+import { inspectIgnoredMergeArtifacts } from "./ignored-artifacts.js";
 import { isPathOutsideRoot } from "../workspace.js";
 import type { MergeReconcileResult } from "./reconcile.js";
 
@@ -53,8 +54,8 @@ async function applyAndStage(params: {
   let preparedReceipts = false;
   try {
     if (newReceiptPathspecs.length > 0) {
-      await git(["add", "--", ...newReceiptPathspecs]);
       preparedReceipts = true;
+      await git(["add", "--", ...newReceiptPathspecs]);
     }
     const result = await params.apply();
     if (!result.ok || JSON.stringify(result.receipts.summaries) !== JSON.stringify(preview.receipts.summaries) ||
@@ -109,6 +110,13 @@ export async function stageLosslessMergeReconciliation(params: {
   ])].map((target) => path.relative(workspaceRoot, target).replaceAll("\\", "/"));
   if (paths.some(isPathOutsideRoot)) {
     throw stagingRefusal("reconciliation artifacts must belong to this Git workspace");
+  }
+  const ignored = await inspectIgnoredMergeArtifacts(workspaceRoot, paths);
+  if (ignored.length > 0) {
+    throw new PmCliError(`Automatic merge settlement refused: required artifacts are ignored by Git: ${ignored.map((rule) => `${rule.path} (${rule.source}:${rule.line}: ${rule.pattern})`).join(", ")}. Remove or narrow the owning ignore rules because merge receipts must travel with the commit.`, EXIT_CODE.CONFLICT, {
+      code: "merge_settlement_review_required", reason: "ignored_merge_artifacts", paths: ignored.map((rule) => rule.path),
+      nextSteps: ["Remove or narrow the named ignore rules, preserve receipt and history files, then retry pm merge reconcile --stage --dry-run before applying pm merge reconcile --stage. Do not force-add ignored proof as a substitute for fixing the shared policy."],
+    });
   }
   const pathspecs = paths.map((target) => `:(literal)${target}`);
   const receiptPaths = preview.receipts.summaries.map((receipt) => path.relative(workspaceRoot, path.join(pmRoot, "merge-receipts", `${receipt.receipt_id}.json`)).replaceAll("\\", "/"));

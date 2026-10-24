@@ -255,6 +255,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "Clone-local tracker runtime artifacts are committed. Run the exact tracked_runtime_cache.remediation_command from the integrity check, commit the index-only removals, and keep the managed .gitignore fence.",
   },
   {
+    code: "merge_artifacts_ignored",
+    command: "pm health --check-only --full",
+    summary:
+      "Remove or narrow the owning ignore rules listed in integrity.ignored_merge_artifacts. Merge receipts must be committed with their audit history; preserve those files, then preview pm merge reconcile --stage --dry-run before applying settlement.",
+  },
+  {
     code: "merge_decisions_unreviewed",
     command: "pm merge reconcile --dry-run",
     summary:

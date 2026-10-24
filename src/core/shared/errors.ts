@@ -163,6 +163,19 @@ export interface PmCliErrorContext {
   reason?: string;
   /** Metadata field responsible for a validation failure, when known. */
   field?: string;
+  /** Original branch coordinates of a scalar patch that cannot safely join a history union. */
+  history_merge?: {
+    /** Side supplying the original event. */
+    branch: "ours" | "theirs";
+    /** One-based history entry position in that branch. */
+    line: number;
+    /** Original history operation name. */
+    op: string;
+    /** Zero-based operation index within the normalized scalar patch. */
+    patch_index: number;
+    /** JSON pointer of the operation that refused replay. */
+    patch_path: string;
+  };
   /** Assurance gate whose evaluation was refused, when known. */
   gate_id?: string;
   /** Assurance assertion whose evaluation was refused, when known. */

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-24T11:13:47.800Z"
+updated_at: "2026-10-24T21:55:42.533Z"
 reminders[1]{at,text}:
   "2026-10-25T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1574
 author: maintainer-agent
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[239]:
+comments[241]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -810,6 +810,13 @@ comments[239]:
   - created_at: "2026-10-24T11:13:46.951Z"
     author: "harness:codex"
     text: "PR1574 review remediation: the prior October22 one-shot reminder was stale. Set the next occurrence to October25 at06:00UTC through the PM CLI; immutable history retains the old occurrence. This item remains open as the standing release-health owner. Updating the occurrence schedules PM metadata; it does not itself execute an external automation."
+  - created_at: "2026-10-24T20:17:56.814Z"
+    author: "harness:codex"
+    text: "October24 continuation refresh: current npm latest and GitHub release are2026.10.24; verify-published-release.mjs --version2026.10.24 exits0 across public package/npx/bunx/MCP checks. This artifact predates the active merge fixes. Downloaded exact Release Reliability40126857187 artifacts: scheduled_failure_rate and dispatch_window remain failures; nightly recurrence retains original failures and insufficient-completed-attempt findings. Required Sentry/telemetry gate currently passes (zero unresolved/critical/high issues,4.86 percent weighted finish-error rate, zero missing-code rows). Keep the standing reminder open/unclaimed; do not interpret this release as publication of the pending PR."
+  - created_at: "2026-10-24T21:19:36.873Z"
+    author: "harness:codex"
+    text: "Clean-candidate release dry run returned ok=true, skipped=true, reason=release_already_cut_today, tags_today=[v2026.10.24]. Exactly one current UTC-day production tag is present and no release mutation occurred. The published artifact still predates this merge implementation; keep the next eligible release acceptance separate."
+    edited_at: "2026-10-24T21:55:42.533Z"
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent
