@@ -17,6 +17,8 @@ import {
 export interface SchedulingShortcutCommonOptions {
   /** Optional parent item id. */
   parent?: string;
+  /** Opt into saved session focus when no explicit parent is supplied. */
+  inheritFocus?: boolean;
   /** Permit a parent that has not been created yet. */
   allowMissingParent?: boolean;
   /** Comma-separated item tags. */
@@ -81,6 +83,7 @@ function buildCommonOptions(
     title,
     schedulePreset: "lightweight",
     parent: options.parent,
+    inheritFocus: options.inheritFocus,
     allowMissingParent: options.allowMissingParent,
     tags: options.tags,
     priority: options.priority,

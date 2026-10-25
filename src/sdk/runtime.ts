@@ -1375,7 +1375,7 @@ export class PmClient {
     return this.plan("materialize", id, options);
   }
 
-  /** Create an item using the same mutation path as `pm create`. Options are contract-typed (pm-x29o): unknown keys and non-scalar values fail `tsc`; runtime-schema custom fields go through the repeatable `field` option, and {@link PmClient.run} stays the wide escape hatch. */
+  /** Create an item using the same mutation path as `pm create`, with saved focus ignored unless `inheritFocus: true` is supplied. Explicit parent or `unset: ["parent"]` overrides focus. Options are contract-typed (pm-x29o): unknown keys and non-scalar values fail `tsc`; runtime-schema custom fields go through the repeatable `field` option, and {@link PmClient.run} stays the wide escape hatch. */
   create(options: PmCreateActionOptions = {}): Promise<CreateResult> {
     return this.runTyped("create", splitFullClientMutationOptions(options));
   }

@@ -819,6 +819,7 @@ Behavior and guarantees:
 
 - Focus is **session-local**: it is stored in `.agents/pm/runtime/session.json`, which is gitignored, so it never affects teammates or the tracker's git history.
 - When a focus is set and `pm create` is run **without** `--parent`, the new item inherits the focused item as its parent and the result includes `"parent_source": "focus"` so agents can see the parent was inherited.
+- `--no-inherit-focus` or `--unset parent` suppresses inheritance. SDK and MCP creates default to ignoring saved focus and opt in with `inheritFocus: true` ([pm-gh1577](../.agents/pm/issues/pm-gh1577.toon)).
 - An explicit `--parent` always overrides focus, including `--parent none` (create with no parent). An explicit but unresolvable focused parent produces the same missing-parent error/warning as an explicit stale `--parent` (it flows through the same `validation.parent_reference` policy).
 - `pm focus <id>` validates the item exists and fails fast with a not-found error otherwise. `pm focus --clear <id>` is a usage error (choose either set or clear).
 

@@ -48,7 +48,7 @@ describe("tool option contract composition", () => {
         TOOL_CREATE_OPTION_CONTRACTS,
         CREATE_FLAG_CONTRACTS,
       ),
-    ).toMatchObject({ ok: true, parameter_count: 45, findings: [] });
+    ).toMatchObject({ ok: true, parameter_count: 46, findings: [] });
     expect(
       verifyToolOptionCliParity(
         TOOL_UPDATE_OPTION_CONTRACTS,

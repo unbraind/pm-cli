@@ -1,0 +1,22 @@
+id: pm-gh1580
+title: "GH-1580: Host-bound extension settings sections"
+description: "SDK: no supported reader for an extension's own settings section, so packages re-read settings.json by path and lose their configuration on non-filesystem backends"
+type: Issue
+status: open
+priority: 2
+tags[4]: configuration,extensions,"gh:1580",sdk
+created_at: "2026-10-25T00:09:23.381Z"
+updated_at: "2026-10-25T00:52:37.967Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: SDK-owned settings-section read and revision-safe write primitives on host-bound extension contexts; backend-neutral capability/refusal contracts; avoid direct settings.json reads.
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: "Extensions read and validate their own settings through host-bound SDK services on filesystem and non-filesystem backends, with typed capability/refusal and revision evidence."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1399,related,"2026-10-25T00:52:37.751Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-25T00:09:23.381Z","harness:codex","Intake source: 1580. Duplicate check: complete strict 3101-item all-status corpus with no omissions, request-specific searches and current open/in_progress lists; related delivered lineage retained. Report recorded for independent verification. No implementation or completion claimed by intake."
+escape_class: production_defect
+body: "## Observed\n\nExtensions keep their configuration in their own section of `.agents/pm/settings.json` (for example `\"lint\": {...}`, `\"jev\": {...}`). The public SDK has `readSettings` / `readSettingsWithMetadata`, which validate and return the normalized core `PmSettings` tree and strip extension-owned keys. There is no supported way to read an extension's own section: `readSettingsSection` / `readWorkspaceSettingsSection` (or an equivalent) do not exist in 2026.10.24's exports (checked: every export matching /setting|config/ is `CONFIG_FLAG_CONTRACTS SETTINGS_DEFAULTS config getSettingsPath readSettings readSettingsWithMetadata resolveConfiguredPmPackageRoot resolveSettingsWithSemanticRuntimeDefaults runConfig runWithConfigurationOnlySettings writeSettings`).\n\nSo packages call `readSettings()` only to validate, then re-read and `JSON.parse` the file themselves via `getSettingsPath()`:\n\n- pm-lint `src/settings.ts`: `await readSettings(pmRoot); // SDK readSettings validates core settings but strips extension-owned keys.` followed by a raw file read and its own \"settings disappeared during read\" race handling.\n- pm-jev `index.ts` and `decision-calibration.ts` do the same.\n\nThat bypasses the host's backend abstraction: on a non-filesystem backend (hosted Postgres, remote MCP) there is no settings file path, so the extension's configuration silently disappears. It also duplicates parsing, error handling and race handling in every package.\n\n## Expected\n\nA host-bound reader for an extension's own section, for example:\n\n```ts\nconst section = await readSettingsSection(pmRoot, 'lint', { validate: lintSettingsSchema.parse });\n// -> { value, source: 'file' | 'default' | 'backend', revision } or a typed refusal (missing / malformed / backend-unsupported)\n```\n\nThe same reader should be available on the extension command context. Malformed sections should produce a typed refusal with a remedy rather than a thrown `JSON.parse` error, and it should work through whatever backend the host is bound to. A matching `writeSettingsSection` with an expected revision would complete it.\n\n## Why it matters for agents\n\nAgents configure extensions per tracker. Today an extension's settings work only when the tracker is a local directory, and every package re-implements a fragile raw read. Reading through the SDK would make extension configuration backend-neutral and remove the duplicated code.\n\nVersion: `@unbrained/pm-cli` 2026.10.24."

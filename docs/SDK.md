@@ -1123,6 +1123,24 @@ recurrence reason, accepts only the workspace open or in-progress target, and
 returns the terminal evidence captured atomically before the update path clears
 it from active metadata.
 
+Create focus policy is tracked by [pm-gh1577](../.agents/pm/issues/pm-gh1577.toon).
+Programmatic `create`, `PmClient.create`, `runCreate`, and MCP `pm_create`
+ignore saved session focus unless `inheritFocus: true` is supplied. An explicit
+parent, a parent from the selected template, or `unset: ["parent"]` takes
+precedence. Focus inheritance returns `parent_source: "focus"`; the effective
+parent remains in the item and immutable create event. `pm create` enables this
+convenience by default; `--no-inherit-focus` or `--unset parent` suppresses it.
+SDK scheduling shortcuts follow the same opt-in policy; package scheduling
+commands retain their focused creation convenience.
+
+Other create defaults still apply: an explicitly selected template supplies
+options before explicit caller values, workspace governance selects the default
+type/create mode, the type workflow selects its initial status, priority defaults
+to 2, tags to an empty array, and author identity comes from invocation/workspace
+policy. There is no implicit saved assignee or tag default outside the selected
+template. Importers should supply explicit type, status, priority, tags, assignee,
+and parent/unset policy when those values are part of their source contract.
+
 Lifecycle handoff and receipt guidance are tracked by
 [pm-gh1465](../.agents/pm/features/pm-gh1465.toon) and
 [pm-gh1464](../.agents/pm/issues/pm-gh1464.toon). Register a project-specific
@@ -2067,9 +2085,14 @@ signal-set metadata are supported, its item source matches, and its cursor,
 complete item-id set, and substantive recency-evidence fingerprint match.
 Missing, stale, version-incompatible, or corrupt state is rebuilt from the
 authoritative items and atomically replaced. The result reports `cache_status`
-and non-fatal `context_signal_store_stale`,
-`context_signal_store_invalid`, or `context_signal_store_write_failed`
-warnings. A write failure still serves the in-memory rebuilt candidates because
+without a warning for a successful missing/stale refresh
+([pm-gh1581](../.agents/pm/issues/pm-gh1581.toon)). Rebuilt signals are used in
+the current response; another read is unnecessary. With `explainRanking`,
+`ranking.feature_store.cache_status` exposes the refresh on context receipts.
+Corrupt/unreadable state and failed persistence retain actionable
+`context_signal_store_invalid` and `context_signal_store_write_failed` warnings.
+The exported stale-warning descriptor remains for compatibility with older
+receipts. A write failure still serves the in-memory rebuilt candidates because
 the snapshot is derived, never authoritative. Optional maps for activity density,
 graph proximity, claim/focus, knowledge density, author affinity, usage
 affinity, and semantic similarity let an index or application-specific host

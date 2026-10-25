@@ -11,5 +11,5 @@ export const schedulingCommands: CommandDefinition[] = schedulingCommandDefiniti
   ...definition,
   run: (context) => (
     definition.name === "meet" ? runMeet : definition.name === "event" ? runEvent : runRemind
-  )(context.args[0], context.options, context.global),
+  )(context.args[0], { inheritFocus: true, ...context.options }, context.global),
 }));

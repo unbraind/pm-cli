@@ -244,7 +244,7 @@ describe("command grammar gate", () => {
         ok: true,
         findings: [],
         option_parity: {
-          create: { ok: true, parameter_count: 45 },
+          create: { ok: true, parameter_count: 46 },
           update: { ok: true, parameter_count: 48 },
         },
       },

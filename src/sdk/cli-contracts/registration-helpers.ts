@@ -408,6 +408,7 @@ export function normalizeCreateOptions(
     message: readCreateString("message"),
     assignee: readCreateString("assignee"),
     parent: readCreateString("parent"),
+    inheritFocus: commandOptions.inheritFocus,
     allowMissingParent:
       anyOptionTrue(commandOptions, [
         "allowMissingParent",

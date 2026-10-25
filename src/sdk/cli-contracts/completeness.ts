@@ -183,6 +183,7 @@ const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
     "--workspace": "workspace",
   },
   create: {
+    "--no-inherit-focus": "inheritFocus",
     "--ac": "acceptanceCriteria",
     "--estimated-minutes": "estimate",
     "--file": "linkedFile",

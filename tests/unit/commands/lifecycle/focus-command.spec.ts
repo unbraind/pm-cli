@@ -10,6 +10,7 @@ import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { getFocusedItem } from "../../../../src/core/session/session-state.js";
 import type { TempPmContext } from "../../../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 
 async function seedItem(context: TempPmContext, title = "focus-parent"): Promise<string> {
   const created = await runCreate(
@@ -149,6 +150,38 @@ describe("runFocus", () => {
 });
 
 describe("runCreate focus inheritance (GH-161)", () => {
+  it("isolates programmatic creates from saved focus while preserving CLI convenience", async () => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      const parentId = await seedItem(context);
+      const otherId = await seedItem(context, "explicit parent");
+      await client.focus(parentId);
+      for (const [title, options, expectedParent, source] of [
+        ["SDK default", {}, undefined, undefined],
+        ["SDK opt out", { inheritFocus: false }, undefined, undefined],
+        ["SDK opt in", { inheritFocus: true }, parentId, "focus"],
+        ["SDK explicit", { inheritFocus: true, parent: otherId }, otherId, undefined],
+        ["SDK no parent", { inheritFocus: true, parent: "none" }, undefined, undefined],
+        ["SDK unset", { inheritFocus: true, unset: ["parent"] as string[] }, undefined, undefined],
+      ] as const) {
+        const result = await client.create({ title, type: "Task", createMode: "progressive", ...options });
+        expect(result.item.parent, title).toBe(expectedParent);
+        expect(result.parent_source, title).toBe(source);
+        expect((await client.get(result.item.id)).item.parent, title).toBe(expectedParent);
+      }
+      for (const inheritFocus of [undefined, false, true]) {
+        const mcp = await runAction({ action: "create", path: context.pmPath, noExtensions: true,
+          options: { title: `MCP ${inheritFocus}`, type: "Task", createMode: "progressive", inheritFocus } });
+        expect((await client.get((mcp as { id: string }).id)).item.parent).toBe(inheritFocus ? parentId : undefined);
+      }
+      for (const flags of [[], ["--no-inherit-focus"], ["--unset", "parent"]]) {
+        const cli = await context.runCliInProcess(["create", "task", `CLI ${flags.join(" ") || "default"}`,
+          "--create-mode", "progressive", "--full-changed-fields", "--json", ...flags]);
+        expect(cli.code, cli.stderr).toBe(0);
+        expect(JSON.parse(cli.stdout).item.parent).toBe(flags.length === 0 ? parentId : undefined);
+      }
+    });
+  });
   it("inherits the focused item as the default parent and reports parent_source", async () => {
     await withTempPmPath(async (context) => {
       const parentId = await seedItem(context, "focus-epic");
@@ -161,6 +194,7 @@ describe("runCreate focus inheritance (GH-161)", () => {
           status: "open",
           priority: "2",
           createMode: "progressive",
+          inheritFocus: true,
         },
         { path: context.pmPath },
       );
@@ -182,6 +216,7 @@ describe("runCreate focus inheritance (GH-161)", () => {
           status: "open",
           priority: "2",
           createMode: "progressive",
+          inheritFocus: true,
           parent: otherId,
         },
         { path: context.pmPath },
@@ -204,6 +239,7 @@ describe("runCreate focus inheritance (GH-161)", () => {
           status: "open",
           priority: "2",
           createMode: "progressive",
+          inheritFocus: true,
         },
         { path: context.pmPath },
       );
@@ -226,6 +262,7 @@ describe("runCreate focus inheritance (GH-161)", () => {
             status: "open",
             priority: "2",
             createMode: "progressive",
+            inheritFocus: true,
           },
           { path: context.pmPath },
         ),

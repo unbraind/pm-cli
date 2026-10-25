@@ -226,7 +226,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   packages: 56,
   install: 27,
   upgrade: 29,
-  create: 100,
+  // pm-gh1577: two explicit focus-policy controls; preserve the help ceiling and add no spare allowance.
+  create: 102,
   copy: 24,
   focus: 22,
   list: 86,

@@ -265,6 +265,7 @@ export const TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[
 
 /** Literal contract source for the create option table; const-asserted so typed per-action SDK inputs derive from the same single source (pm-x29o). */
 export const TOOL_CREATE_OPTION_CONTRACT_SOURCE = [
+  { param: "inheritFocus", flag: "--inherit-focus", booleanish: true },
   { param: "id", flag: "--id" },
   { param: "title", flag: "--title" },
   { param: "description", flag: "--description", allowEmpty: true },

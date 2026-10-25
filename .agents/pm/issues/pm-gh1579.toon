@@ -1,0 +1,22 @@
+id: pm-gh1579
+title: "GH-1579: Make inferred completion timestamps observable on close"
+description: "pm close: completed_at silently defaults to close time, so retroactive closes record delivery days late with no way to tell"
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,"gh:1579",lifecycle,sdk
+created_at: "2026-10-25T00:09:33.388Z"
+updated_at: "2026-10-25T00:52:39.865Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Preserve explicit completed-at and immutable closure evidence; expose whether completed_at was supplied or inferred; document retroactive closure behavior across SDK/CLI/MCP.
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: "Close receipts and immutable evidence distinguish explicit completion time from an inferred close-time default, preserving retroactive delivery dates."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1464,related,"2026-10-25T00:52:39.590Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-25T00:09:33.388Z","harness:codex","Intake source: 1579. Duplicate check: complete strict 3101-item all-status corpus with no omissions, request-specific searches and current open/in_progress lists; related delivered lineage retained. Report recorded for independent verification. No implementation or completion claimed by intake."
+escape_class: production_defect
+body: "## Observed\n\n`pm close <id> \"<reason>\"` without `--completed-at` sets `completed_at` to the close time, and nothing records that the value was defaulted rather than asserted. Agents that close work retroactively (tracker reconciliation, a sweep after PRs merged, closing a delivered item the next session) almost never pass `--completed-at`, so the tracker silently records delivery at reconciliation time.\n\nMeasured on 2026-10-24/25 in a 31-repository fleet: a reconciliation sweep closed 109 delivered items, every one with `completed_at` = sweep time although each close reason cited a PR merged 1–20 days earlier. Consumers that read `completed_at` as the delivery time (cycle time, burndown, Gantt bars, a memory package's recall-utility scoring) were all wrong until each item was corrected with `pm update <id> --completed-at <merge time>`. A review bot caught it on one repository; the other 30 had passed review.\n\n## Expected\n\nThe defaulted value should be distinguishable from an asserted one, and the CLI should nudge at the moment the mistake happens. For example:\n\n1. **Provenance:** record `completed_at_source: \"close_time\" | \"asserted\"` (or an equivalent history-event flag), so consumers can exclude or flag defaulted completion times.\n2. **Hint on retroactive closes:** when `pm close` runs without `--completed-at` and the item shows no substantive activity for N hours (or the close reason contains an ISO timestamp earlier than now), return a `hints[]` entry: `completed_at defaults to the close time; pass --completed-at <ISO> if the work finished earlier` with the exact command.\n3. Optionally `pm close --completed-at from-reason` to take the earliest ISO timestamp in the close reason.\n\n## Why it matters for agents\n\nAgents close items in batches long after delivery much more often than humans do, and `completed_at` is the field every analytics consumer trusts. A silent default turns one forgotten flag into wrong data in every downstream report, with no way to tell after the fact.\n\nVersion: `@unbrained/pm-cli` 2026.10.24."

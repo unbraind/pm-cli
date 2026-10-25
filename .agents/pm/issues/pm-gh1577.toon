@@ -2,23 +2,84 @@ id: pm-gh1577
 title: "GH-1577: make SDK create focus inheritance explicit and discoverable"
 description: Reported programmatic create can inherit a saved interactive focus as parent when the caller omitted parent. Inspect the current public receipt and documented unset-parent opt-out before choosing compatibility-safe SDK defaults or explicit inheritance policy.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1577",sdk
 created_at: "2026-10-24T16:12:43.896Z"
-updated_at: "2026-10-24T16:12:43.896Z"
+updated_at: "2026-10-25T01:54:12.412Z"
+closed_at: "2026-10-25T01:49:06.491Z"
+completed_at: "2026-10-25T01:49:05.450Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Reproduce public SDK creation in a sandbox with saved focus and explicit/omitted/unset parent controls; Define and document SDK focus inheritance policy without silently changing CLI convenience; Make applied ambient defaults and parent provenance discoverable through types/help/receipt; Verify importer-style Node/Bun consumers and CLI/MCP parity, including templates, tags, assignee and workflow defaults."
 parent: pm-9rgaal
 risk: medium
 confidence: medium
-expected_result: "Programmatic creation has an explicit, documented and observable hierarchy/default policy."
+resolution: "SDK/MCP/direct create and scheduling use explicit saved-focus opt-in; CLI/package convenience remains enabled. Public types, flags, schemas, contracts, receipts, help and template/parent precedence agree."
+expected_result: Programmatic importers create the declared hierarchy independently of saved interactive state.
+actual_result: "Isolated Node/Bun consumers verified template defaults and explicit overrides; CLI/MCP controls and persisted parents agree. Full canonical suite: 11227 passed, 3 skipped; exact source coverage100/100/100/100. Full static quality, typecheck, focused/linked PM tests and packed npm/npx/Bun/bunx acceptance pass."
 affected_version: 2026.10.20
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-72xf,related,"2026-10-24T16:12:43.896Z","harness:codex","cli:create:dep",detected
   pm-gh1360,related,"2026-10-24T16:12:43.896Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-24T16:12:43.896Z","harness:codex","Intake source: https://github.com/unbraind/pm-cli/issues/1577. Duplicate check: complete strict 3098-item all-status corpus with no omissions plus fresh request-specific searches and current open/in_progress lists; no existing owner matches this distinct acceptance. Full live related lineage was read. Existing delivered lease-fencing/focus behavior remains historically closed. This report is planning evidence; no current independent reproduction or fix is claimed. Queued open and unclaimed under the SDK outcome milestone."
+  "2026-10-25T00:09:35.211Z","harness:codex","Implementation plan: isolate saved focus from programmatic creation by default, expose explicit inheritance through the public SDK, preserve CLI convenience and explicit parent/unset/template precedence. Validate independent SDK, CLI and MCP boundaries, persisted hierarchy and importer-style consumers."
+  "2026-10-25T00:39:48.709Z","harness:codex","Full-suite feedback: the fixed100-flag/1887-help-token contract caught naive surface growth. Consolidate create-mode/schedule-preset underscore spellings as aliases, preserve every executable spelling and tighten create help; classify the negated focus flag through the existing strict parameter mapping, without new waivers or raised budgets. Update the existing focus-sensitive preview case to opt in and account for the new strict create parameter. The packed continuation test also exposed local npm module discovery under Homebrew Node; rerun with the verified global npm module directory via NODE_PATH, without a repository workaround. The initial full run completed11230 tests; its failures are retained and are not called a passing coverage result."
+  "2026-10-25T00:42:05.714Z","harness:codex","Measured correction to the earlier budget plan: underscore spellings are already aliases in the executable lexicon, so regrouping their source rows cannot free canonical entries; those cosmetic edits are reverted. Follow the existing per-feature ratchet pattern: register exactly the two new focus-policy controls under this owner (100 to102), with zero spare allowance and the unchanged1887-token help ceiling. Concise create help offsets the added controls. No historical spelling or compatibility baseline is removed. Native npm/package.json is available through the verified Homebrew global module directory; local test invocations receive NODE_PATH rather than a product-code change."
+  "2026-10-25T00:57:48.716Z","harness:codex","Current acceptance: all corrected targeted contracts pass, including strict CLI/SDK mappings and real packed Node/Bun continuation. pnpm typecheck passes. The maintained npm/npx/Bun/bunx packed smoke passes all9 default packages. Separate isolated Node and Bun consumers verify declared template parent/tags/assignee/priority, explicit overrides, workflow default, direct runCreate isolation and scheduling opt-in. Create help measures1884 against unchanged1887; zero lexicon or spelling findings. The47-assertion tracker quality composition now has zero failing assertions. Final full-source coverage is running serially; it is not yet claimed as passed."
+  "2026-10-25T01:17:25.907Z","harness:codex","The complete second suite ran11230 tests:11226 passed,3 skipped and one machine-help assertion failed. Shortening the title description had removed the existing [required] marker used to derive help JSON metadata. Restore that marker in the concise wording instead of weakening the test; help remains under the unchanged token ceiling. All functional focus/context, Node/Bun package, preview and continuation tests passed. Re-run the owning help/lexicon tests, full static gate and full exact coverage against the corrected source before closeout."
+  "2026-10-25T01:49:05.168Z","harness:codex","Final pre-PR acceptance: Isolated Node/Bun consumers verified template defaults and explicit overrides; CLI/MCP controls and persisted parents agree. Full canonical suite: 11227 passed, 3 skipped; exact source coverage100/100/100/100. Full static quality, typecheck, focused/linked PM tests and packed npm/npx/Bun/bunx acceptance pass. Hosted exact-head checks and external reviews remain required before merge; no publication claim is made by this source closure."
+notes[1]{created_at,author,text}:
+  "2026-10-25T00:57:47.115Z","harness:codex","Design: the SDK-owned create primitive defaults inheritFocus to false; the typed client/MCP and direct scheduling APIs expose opt-in. The thin CLI sets its own true default and exposes explicit positive/negative controls. Parent, template parent and unset-parent precedence remain governed by existing validators. Package calendar command handlers explicitly preserve their previous convenience. The effective inherited parent is stored in the item and create event, with parent_source:focus retained on the full receipt. New public types/help/schema/contracts remain aligned; no private import or test-only production seam was added."
+files[21]{path,scope}:
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project
+  docs/generated/AGENT_COMMAND_SURFACE.md,project
+  packages/pm-calendar/extensions/calendar/shortcuts.ts,project
+  sdk/public-surface.json,project
+  src/cli/register-mutation.ts,project
+  src/sdk/cli-contracts/commander-mutation-options.ts,project
+  src/sdk/cli-contracts/completeness.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
+  src/sdk/cli-contracts/registration-helpers.ts,project
+  src/sdk/cli-contracts/tool-option-contracts.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime.ts,project
+  src/sdk/scheduling-shortcuts.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/commands/lifecycle/focus-command.spec.ts,project
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project
+  tests/unit/sdk/tool-option-contracts.spec.ts,project
+  tests/unit/sdk/transactions/preview-snapshot.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts,project,600,"harness:codex","2026-10-25T00:16:36.817Z",local_mutation,fix/sdk-explicit-context
+test_runs[1]:
+  - run_id: test-local-mvn4b6gd-r69v5t
+    kind: test
+    status: passed
+    started_at: "2026-10-25T00:56:48.662Z"
+    finished_at: "2026-10-25T00:57:04.621Z"
+    recorded_at: "2026-10-25T00:57:04.621Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  docs/SDK.md,project
+close_reason: Make SDK focus inheritance explicit while preserving CLI convenience
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-gh1577
 body: "## Summary\n\n`PmClient.create` silently inherits the tracker's saved focus (`pm focus`) as the new item's parent when no parent is given. #161 added this as a CLI convenience for a human or agent working \"under\" a focused item. Through the SDK it turns ambient session state into data: an importer, sync job or hosted service writing into a tracker where someone left a focus set gets unplanned parent links, and the create receipt reports plain success.\n\n## Evidence\n\nA fleet importer (pm-beads dependency-closed transfer) shipped this defect until a read-only review reproduced it. Transferring `{\"id\":\"a\",\"title\":\"A\"}` into a tracker with an active focus created `a` with the focused item as parent and reported success. Tracing the 2026.10.20 SDK, `PmClient.create` calls `runCreate`, which reads saved focus whenever no parent is supplied and `unset` lacks `parent`. Passing `unset: [\"parent\"]` suppresses it. That option is typed, but neither the create typings nor the help mention that it suppresses focus inheritance. The package had to find this out by reading the source.\n\n## Reproduction (plain directory, no git)\n\n```bash\npm init --defaults --agent-guidance skip\np=$(pm create --type Epic --title Parent --json | jq -r .id)\npm focus \"$p\"\n```\n\n```ts\nimport { PmClient } from '@unbrained/pm-cli';\nconst c = new PmClient({ cwd: process.cwd(), author: 'importer' });\nconst { item } = await c.create({ type: 'Task', title: 'Imported row' });\nconsole.log(item.parent); // the focused Epic, though the caller never asked for a parent\n```\n\n## Expected (any of these, in order of preference)\n\n1. SDK creates do not read interactive session state (focus) unless the caller opts in, for example `inheritFocus: true`. The CLI keeps the #161 behavior.\n2. If inheritance stays the default, the receipt says so (`parent_source: \"focus\"`, the focus id) and a warning is emitted, so callers can detect it.\n3. At minimum, document on `create` (typings and help) that `unset: [\"parent\"]` is the opt-out. Also list every other ambient default a programmatic create can pick up (templates, default tags and assignee, workflow defaults), so importers can state them explicitly.\n\n## Why core\n\nEvery SDK consumer that writes items for someone else (importers, sync, hosted pm-web/pm-gpt/MCP, recursive agents creating subtasks in a shared tracker) is exposed. The failure is silent and leaves the hierarchy wrong rather than raising an error."

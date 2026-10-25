@@ -223,6 +223,8 @@ export interface CreateCommandOptions
   schedulePreset?: string;
   /** Explicitly permit a likely duplicate when strict governance is enabled. */
   allowDuplicate?: boolean;
+  /** Opt into saved session focus as parent when neither parent nor unset-parent is supplied. Defaults to false in SDK/MCP; the CLI enables it by default. */
+  inheritFocus?: boolean;
   [key: string]: unknown;
 }
 
@@ -1607,6 +1609,7 @@ async function inheritFocusedParent(
   pmRoot: string,
 ): Promise<{ parent: string | undefined; parentSource: "focus" | undefined }> {
   if (
+    resolvedOptions.inheritFocus !== true ||
     parent !== undefined ||
     unsetKeys.has("parent") ||
     resolvedOptions.parent !== undefined

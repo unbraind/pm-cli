@@ -1,0 +1,26 @@
+id: pm-help-required-metadata
+title: Declare machine-help requiredness independently of description prose
+description: "Machine help currently infers semantic requiredness from description markers in help-json-payload.ts. A concise title-help rewrite during GH1577 kept its meaning but dropped [required], making --help --json report title.required=false; the existing regression caught it before delivery. Keep current compatibility wording for this PR and design explicit metadata as a separate improvement."
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,contracts,sdk
+created_at: "2026-10-25T01:25:04.612Z"
+updated_at: "2026-10-25T01:25:04.612Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Preserve pm_help_v1 required/value-name semantics and GH441 active-mode behavior; declare semantic requiredness independently of value arity and text; prove shortening or localizing descriptions cannot alter requiredness; keep CLI/SDK/MCP discovery and fixed help budgets aligned.
+why_now: "Separate machine contracts from human wording so concise help, wording improvements and future localization cannot silently change agent decisions."
+parent: pm-9rgaal
+risk: medium
+confidence: high
+expected_result: "Requiredness comes from explicit semantic contract and active type/create-mode policy, while human descriptions can change without changing machine metadata."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1577,related,"2026-10-25T01:25:04.612Z","harness:codex","cli:create:dep",detected
+  pm-qmjx,related,"2026-10-25T01:25:04.612Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-25T01:25:04.612Z","harness:codex","Duplicate check: fresh keyword search plus open/in_progress lists and the complete strict all-status intake. Full live pm-qmjx metadata/history shows its delivered scope is active create-mode applicability, not generic prose-derived requiredness; that closure remains intact. This narrow enhancement records a separately reproduced pre-merge fragility at help-json-payload.ts274-275 and369. No implementation is claimed; leave open and unclaimed under the SDK outcome milestone."
+files[2]{path,scope}:
+  src/cli/help-json-payload.ts,project
+  src/sdk/cli-contracts/commander-mutation-options.ts,project
+body: ""
