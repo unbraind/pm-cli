@@ -15,6 +15,10 @@
 
 - GH-1583: recognize concrete private home paths through bounded shared normalization ([pm-gh1583](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1583.toon))
 
+### Other
+
+- Adopt release-age eligible gpt-tokenizer 4.1.0 and verify token-budget baselines ([pm-tokenizer410](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-tokenizer410.toon))
+
 ## 2026.10.25 - 2026-10-25
 
 ### Changed
