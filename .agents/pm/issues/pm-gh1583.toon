@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:security",privacy,sdk,secret-guard
 created_at: "2026-10-25T07:07:40.489Z"
-updated_at: "2026-10-25T12:28:17.140Z"
+updated_at: "2026-10-25T12:56:11.746Z"
 closed_at: "2026-10-25T11:23:16.611Z"
 completed_at: "2026-10-25T11:23:16.611Z"
 author: "harness:codex"
@@ -18,7 +18,7 @@ confidence: high
 resolution: "SDK preflight and repository scanning share platform, namespace, file-URL and bounded representation matching. Findings retain redacted provenance and whole-leaf incomplete status, escape scans are linear, portable references and guard modes remain compatible, and the approved legacy prefixes are removed through attributed SDK audit operations."
 expected_result: "Concrete private profile coordinates receive consistent redacted findings across documented representations, with explicit incomplete inspection and preserved legitimate workflows; tracked context and history remain valid."
 actual_result: "197 linked assertions, four strict type projects, full canonical static quality, SDK surface and documentation checks pass. Node and Bun each pass 16 compiled SDK checks. The approved ten prefix replacements in seven records preserve all other event and current-item content, every affected chain verifies, full tracker validation has zero errors or warnings, graph and record assurance pass, and the tracked-file secret scan is clear. Prior pushed-head full CI coverage is exact 100 percent; final-head hosted validation is required before merge."
-dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[10]{id,kind,created_at,author,source_kind,author_source}:
   pm-pim7,discovered_from,"2026-10-25T07:07:40.489Z","harness:codex","cli:create:dep",detected
   pm-wwooxx,discovered_from,"2026-10-25T07:07:40.489Z","harness:codex","cli:create:dep",detected
   pm-doxj,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
@@ -28,6 +28,7 @@ dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-s5pe,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
   pm-xaib,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
   pm-xk39,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+  pm-tokenizer410,related,"2026-10-25T12:56:11.516Z","harness:codex","cli:update:dep",detected
 comments[14]{created_at,author,text}:
   "2026-10-25T07:07:40.489Z","harness:codex","Intake for GitHub issue1583. Live request searches and open/in-progress inventories plus the complete3106-item corpus found no existing owner for representation normalization. Full live predecessor metadata/history confirms pm-pim7 delivered guarded preflight and pm-wwooxx delivered shared rule inventory: those completed scopes remain intact. New work extends concrete private-path coverage, preserves portable aliases and explicitly bounds the detector guarantee. Use only synthetic evidence from the already-public report."
   "2026-10-25T07:19:27.577Z","harness:codex","Independent regression baseline:34 failures and25 controls pass across59 cases before the fix. The read-only boundary investigator confirms shared SDK/repository matching is required, original source lines must survive normalization, routing paths and portable current-user aliases must remain usable, and direct SDK writes are not universally guarded. Keep existing configured modes and explicit override semantics. Recognize named-account references separately from current-user aliases and report bounded incomplete inspection conservatively rather than returning an unqualified clean result."
