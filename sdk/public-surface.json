@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2013,
+    "covered_symbols": 2022,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2014
+    "required_symbols": 2023
   },
   "breaking_acknowledgements": [
     {
@@ -2791,6 +2791,18 @@
       ],
       "package_version": "2026.10.25",
       "reason": "Add optional close completion provenance and refusal side-effect fields; preserve all existing options, values and error codes"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionCommandSdk",
+        "signature ./sdk:PmReadOutputSessionReceipt",
+        "signature ./sdk/authoring:ExtensionCommandSdk",
+        "signature ./sdk/contracts:PmReadOutputSessionReceipt",
+        "signature ./sdk/core:PmReadOutputSessionReceipt",
+        "signature ./sdk/runtime:PmReadOutputSessionReceipt"
+      ],
+      "package_version": "2026.10.25",
+      "reason": "pm-gh1567 and pm-session-reference-recovery: supply the public complete-envelope fitter on custom ExtensionCommandSdk hosts and replace the unusable restore_reference_with literal with get --depth brief."
     }
   ],
   "entrypoints": {
@@ -8117,7 +8129,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
+          "signature": "export interface ExtensionCommandSdk { fitOutputEnvelope: typeof fitOutputEnvelope; client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",
@@ -8760,6 +8772,24 @@
           "kind": "function",
           "name": "finishTelemetryCommand",
           "signature": "(activeCommand: ActiveTelemetryCommand | null, outcome: TelemetryCommandOutcome) => Promise<void> | calls: (activeCommand: ActiveTelemetryCommand | null, outcome: TelemetryCommandOutcome) => Promise<void>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "fitOutputEnvelope",
+          "signature": "<Row, Envelope extends Record<string, unknown>>(candidates: readonly Row[], options: FitOutputEnvelopeOptions<Row, Envelope>) => OutputEnvelopeFitResult<Row, Envelope> | calls: <Row, Envelope extends Record<string, unknown>>(candidates: readonly Row[], options: FitOutputEnvelopeOptions<Row, Envelope>) => OutputEnvelopeFitResult<Row, Envelope>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "FitOutputEnvelopeOptions",
+          "signature": "export interface FitOutputEnvelopeOptions<Row, Envelope extends Record<string, unknown>> { tokenBudget: number; policy?: OutputEnvelopeFitPolicy; buildEnvelope: (rows: readonly Row[], receipt: Readonly<OutputEnvelopeFitReceipt>) => Envelope; renderers: Readonly<Record<string, (envelope: FittedOutputEnvelope<Envelope>) => string>>; estimateTokens?: (text: string) => number; maxRenderCalls?: number; maxStabilizationPasses?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "FittedOutputEnvelope",
+          "signature": "export type FittedOutputEnvelope<Envelope> = Omit<Envelope, \"output_fit\"> & { readonly output_fit: Readonly<OutputEnvelopeFitReceipt>; };"
         },
         {
           "classification": "supported",
@@ -12170,6 +12200,42 @@
           "signature": "(graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]> | calls: (graph: RelationshipGraph, id: string, options?: GraphTraversalOptions) => RelationshipQueryResult<string[]>"
         },
         {
+          "classification": "supported",
+          "kind": "class",
+          "name": "OutputEnvelopeFitError",
+          "signature": "export declare class OutputEnvelopeFitError extends RangeError { readonly code: \"output_envelope_infeasible\" | \"output_envelope_work_limit\" | \"output_envelope_unstable\"; readonly work: Readonly<OutputEnvelopeFitWork>; readonly minimum_tokens: number | undefined; constructor(code: OutputEnvelopeFitError[\"code\"], work: OutputEnvelopeFitWork, minimumTokens?: number); }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "OutputEnvelopeFitPolicy",
+          "signature": "export type OutputEnvelopeFitPolicy = \"prefix\" | \"skip\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeFitReceipt",
+          "signature": "export interface OutputEnvelopeFitReceipt { version: 1; policy: OutputEnvelopeFitPolicy; total_candidates: number; included_indices: readonly number[]; omitted_count: number; token_budget: number; estimated_tokens: number; output_bytes: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeFitResult",
+          "signature": "export interface OutputEnvelopeFitResult<Row, Envelope> { rows: readonly Row[]; envelope: FittedOutputEnvelope<Envelope>; renderings: readonly OutputEnvelopeRendering[]; complete: boolean; work: Readonly<OutputEnvelopeFitWork>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeFitWork",
+          "signature": "export interface OutputEnvelopeFitWork { evaluated_candidates: number; render_calls: number; max_render_calls: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeRendering",
+          "signature": "export interface OutputEnvelopeRendering { name: string; text: string; bytes: number; estimated_tokens: number; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "OutputOmissionReceipt",
@@ -14837,7 +14903,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --depth brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",
@@ -22445,7 +22511,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
+          "signature": "export interface ExtensionCommandSdk { fitOutputEnvelope: typeof fitOutputEnvelope; client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",
@@ -25181,7 +25247,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --depth brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "contract_data",
@@ -26873,7 +26939,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --depth brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",
@@ -31924,6 +31990,24 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "fitOutputEnvelope",
+          "signature": "<Row, Envelope extends Record<string, unknown>>(candidates: readonly Row[], options: FitOutputEnvelopeOptions<Row, Envelope>) => OutputEnvelopeFitResult<Row, Envelope> | calls: <Row, Envelope extends Record<string, unknown>>(candidates: readonly Row[], options: FitOutputEnvelopeOptions<Row, Envelope>) => OutputEnvelopeFitResult<Row, Envelope>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "FitOutputEnvelopeOptions",
+          "signature": "export interface FitOutputEnvelopeOptions<Row, Envelope extends Record<string, unknown>> { tokenBudget: number; policy?: OutputEnvelopeFitPolicy; buildEnvelope: (rows: readonly Row[], receipt: Readonly<OutputEnvelopeFitReceipt>) => Envelope; renderers: Readonly<Record<string, (envelope: FittedOutputEnvelope<Envelope>) => string>>; estimateTokens?: (text: string) => number; maxRenderCalls?: number; maxStabilizationPasses?: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "FittedOutputEnvelope",
+          "signature": "export type FittedOutputEnvelope<Envelope> = Omit<Envelope, \"output_fit\"> & { readonly output_fit: Readonly<OutputEnvelopeFitReceipt>; };"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "formatVectorIndexRecoveryWarnings",
           "signature": "(staleCount: number, recovery: VectorIndexRecovery) => string[] | calls: (staleCount: number, recovery: VectorIndexRecovery) => string[]"
         },
@@ -32238,6 +32322,42 @@
           "kind": "interface",
           "name": "NextResult",
           "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "class",
+          "name": "OutputEnvelopeFitError",
+          "signature": "export declare class OutputEnvelopeFitError extends RangeError { readonly code: \"output_envelope_infeasible\" | \"output_envelope_work_limit\" | \"output_envelope_unstable\"; readonly work: Readonly<OutputEnvelopeFitWork>; readonly minimum_tokens: number | undefined; constructor(code: OutputEnvelopeFitError[\"code\"], work: OutputEnvelopeFitWork, minimumTokens?: number); }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "OutputEnvelopeFitPolicy",
+          "signature": "export type OutputEnvelopeFitPolicy = \"prefix\" | \"skip\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeFitReceipt",
+          "signature": "export interface OutputEnvelopeFitReceipt { version: 1; policy: OutputEnvelopeFitPolicy; total_candidates: number; included_indices: readonly number[]; omitted_count: number; token_budget: number; estimated_tokens: number; output_bytes: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeFitResult",
+          "signature": "export interface OutputEnvelopeFitResult<Row, Envelope> { rows: readonly Row[]; envelope: FittedOutputEnvelope<Envelope>; renderings: readonly OutputEnvelopeRendering[]; complete: boolean; work: Readonly<OutputEnvelopeFitWork>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeFitWork",
+          "signature": "export interface OutputEnvelopeFitWork { evaluated_candidates: number; render_calls: number; max_render_calls: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "OutputEnvelopeRendering",
+          "signature": "export interface OutputEnvelopeRendering { name: string; text: string; bytes: number; estimated_tokens: number; }"
         },
         {
           "classification": "supported",
@@ -34703,7 +34823,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSessionReceipt",
-          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --brief\"; next_state: PmReadOutputSessionState; }"
+          "signature": "export interface PmReadOutputSessionReceipt { contract_version: 1; id: string; measurement_scope: \"complete_read_envelope\"; estimator: \"ceil(utf8_bytes / 4)\"; token_budget: number; spent_before_tokens: number; spent_this_call_tokens: number; charged_this_call_tokens: number; spent_total_tokens: number; remaining_tokens: number; exhausted: boolean; seen_before_count: number; new_item_count: number; seen_item_overflow_count?: number; suppressed_repeat_count: number; reference_format: \"session:<session-id>:<item-id>\"; restore_reference_with: \"pm get <item-id> --depth brief\"; next_state: PmReadOutputSessionState; }"
         },
         {
           "classification": "supported",

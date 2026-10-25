@@ -599,6 +599,17 @@ sentinel rather than presenting it as a mistyped pm id.
 
 ### Agent output budgets and discovery
 
+Package-defined packets can use `fitOutputEnvelope` from the query entrypoint
+or `CommandHandlerContext.sdk.fitOutputEnvelope` to fit complete JSON/TOON
+renderings, including self-accounting receipts and framing. See
+[complete envelope fitting](READ_OUTPUT_CONTRACTS.md#package-defined-complete-envelopes)
+for policies, work ceilings and refusal contracts, tracked by
+[pm-gh1567](../.agents/pm/issues/pm-gh1567.toon).
+Session receipts now advertise `pm get <item-id> --depth brief`; the
+`restore_reference_with` literal type changes accordingly. Hosts constructing
+`ExtensionCommandSdk` implementations must supply `fitOutputEnvelope` from the
+public SDK; host-created command contexts already provide it.
+
 Tracked by [pm-5t33or](../.agents/pm/features/pm-5t33or.toon),
 [pm-gmdzaa](../.agents/pm/issues/pm-gmdzaa.toon), and
 [pm-dpqa3h](../.agents/pm/chores/pm-dpqa3h.toon).

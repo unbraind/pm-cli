@@ -9,6 +9,8 @@
 ### Fixed
 
 - GH-1581: Report successful context snapshot refresh without recovery warnings ([pm-gh1581](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1581.toon))
+- Session reference receipts advertise unsupported get --brief recovery ([pm-session-reference-recovery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-session-reference-recovery.toon))
+- GH-1567: fit whole SDK envelopes using the selected serializer and token budget ([pm-gh1567](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1567.toon))
 - GH-1579: Make inferred completion timestamps observable on close ([pm-gh1579](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1579.toon))
 - GH-1585: make tracked policy-refusal audit side effects explicit and actionable ([pm-gh1585](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1585.toon))
 - GH-1577: make SDK create focus inheritance explicit and discoverable ([pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon))
