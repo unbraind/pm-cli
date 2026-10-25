@@ -4,7 +4,7 @@
  * Provides SDK-first pre-write provenance and secret-detection guardrails for
  * CLI, MCP, and package-owned mutation dispatchers.
  */
-import { SECRET_RULES, findSecretRuleMatches, type SecretNormalizationKind } from "../core/shared/secret-rules.js";
+import { SECRET_RULES, findSecretRuleMatches, type SecretNormalizationKind, type SecretRule, type SecretRuleMatch } from "../core/shared/secret-rules.js";
 export type { SecretNormalizationKind } from "../core/shared/secret-rules.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -156,12 +156,29 @@ function stringLeaves(
   );
 }
 
+/** Keep credential matching lazy while preserving incomplete inspection anywhere in a home-path leaf. */
+function preflightRuleMatch(rule: SecretRule, value: string): SecretRuleMatch | undefined {
+  const matches = findSecretRuleMatches(rule, value);
+  const first = matches.next().value;
+  if (!first || rule.mutationRule !== "absolute_home_path" || first.normalization_incomplete) return first;
+  for (const later of matches) {
+    if (later.normalization_incomplete) {
+      return {
+        ...first,
+        normalizations: [...new Set([first.normalizations, later.normalizations].flatMap((kinds) => kinds ?? []))],
+        normalization_incomplete: true,
+      };
+    }
+  }
+  return first;
+}
+
 /** Detect credential-shaped string leaves without returning matched values. */
 export function scanMutationSecrets(payload: unknown): SecretGuardFinding[] {
   const findings: SecretGuardFinding[] = [];
   for (const leaf of stringLeaves(payload)) {
     for (const rule of SECRET_RULES) {
-      const match = findSecretRuleMatches(rule, leaf.value).next().value;
+      const match = preflightRuleMatch(rule, leaf.value);
       if (match) {
         const finding: SecretGuardFinding = { rule: rule.mutationRule, path: leaf.path };
         if (match.normalizations) finding.normalizations = match.normalizations;

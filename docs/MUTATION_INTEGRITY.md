@@ -110,8 +110,9 @@ Inspection is limited to four normalization passes per original line. Findings
 can include typed `normalizations` identifiers; original and decoded values are
 never returned, and payloads are never rewritten. If encoding remains after the
 limit, `normalization_incomplete: true` conservatively requires review using
-the same advisory/blocking policy. A blocking workspace may explicitly force a
-reviewed value. Repository diagnostics retain original source lines, including
+the same advisory/blocking policy. It applies to the entire string leaf, even
+when an earlier line already contained a concrete path. A blocking workspace
+may explicitly force a reviewed value. Repository diagnostics retain original source lines, including
 when an encoded value contains a newline.
 
 Portable references remain literal: current-user and named tilde references,

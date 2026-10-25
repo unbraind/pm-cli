@@ -46,6 +46,12 @@ const concrete = [
   ["mixed file URL", "file:/" + windows],
   ["drive authority file URL", "file://" + windows.replaceAll("\\", "/")],
   ["remote file URL", "file://server" + mac],
+  ["UNC shared profile", ["", "", "server", "share", "Users", "synthetic-user", "project"].join("\\")],
+  ["UNC shared drive", ["", "", "server", "C$", "Users", "synthetic-user", "project"].join("\\")],
+  ["shared file URL", "file://server/share" + mac],
+  ["shared drive file URL", "file://server/C$" + mac],
+  ["UNC share with spaces", ["", "", "server", "Team Share", "Users", "synthetic-user", "project"].join("\\")],
+  ["file URL share with spaces", "file://server/Team Share" + mac],
 ] as const;
 const portable = [
   "~/project", "~\\project", "$HOME/project", ["$", "{HOME}/project"].join(""),
@@ -59,6 +65,7 @@ const portable = [
   "~/home/module.ts", "~/Users/module.ts",
   "https://home/project/file", "https://Users/project/file", "https://root/project/file",
   "file://home/project/file", "file://Users/project/file", "file://server/share/project",
+  "https://server/share/Users/synthetic-user/project", "//server/share/ordinary/project",
 ];
 
 describe("concrete private home-path policy", () => {
@@ -126,6 +133,49 @@ describe("concrete private home-path policy", () => {
     let value = "ordinary text";
     for (let depth = 0; depth < 4; depth += 1) value = encodeURIComponent(value);
     expect(scanMutationSecrets({ note: value })).toEqual([]);
+  });
+
+  it.each([
+    [unix, ["percent_decode"]],
+    [encodeURIComponent(unix), ["percent_decode"]],
+    [unix.replace("home", "ho\u200bme"), ["unicode_fold", "percent_decode"]],
+  ] as const)("preserves incomplete inspection on a later line after %s", (first, normalizations) => {
+    let later = unix;
+    for (let depth = 0; depth < 6; depth += 1) later = encodeURIComponent(later);
+    const payload = { note: first + "\n" + later };
+    const settings = { require_attributed_author: false, secret_guard: "advise", stale_in_progress_hours: 72 } as const;
+    expect(evaluateMutationGuard({ author: "test", payload, settings }).findings).toEqual([{
+      rule: "absolute_home_path", path: "$.note", normalizations, normalization_incomplete: true,
+    }]);
+  });
+
+  it("keeps one complete finding when later lines contain fully inspected paths", () => {
+    expect(scanMutationSecrets({ note: unix + "\n" + encodeURIComponent(mac) })).toEqual([
+      { rule: "absolute_home_path", path: "$.note" },
+    ]);
+  });
+
+  it.each([0, 1, 4])("inspects residual encoding on the same line after a path encoded %i times", (depth) => {
+    let first = unix;
+    let later = unix;
+    for (let pass = 0; pass < depth; pass += 1) first = encodeURIComponent(first);
+    for (let pass = 0; pass < 6; pass += 1) later = encodeURIComponent(later);
+    expect(scanMutationSecrets({ note: first + " " + later })).toEqual([{
+      rule: "absolute_home_path", path: "$.note", normalizations: ["percent_decode"], normalization_incomplete: true,
+    }]);
+  });
+
+  it("bounds unmatched backslash runs through every normalization pass", async () => {
+    const gate = await harness.importModule<{ scanContent(file: string, content: string): unknown[] }>(
+      "scripts/check-secrets-lib.mjs",
+    );
+    let prefix = "ordinary text";
+    for (let depth = 0; depth < 4; depth += 1) prefix = encodeURIComponent(prefix);
+    const value = prefix + "\\".repeat(200_000) + "z";
+    const started = performance.now();
+    expect(scanMutationSecrets({ note: value })).toEqual([]);
+    expect(gate.scanContent("document.md", value)).toEqual([]);
+    expect(performance.now() - started).toBeLessThan(5_000);
   });
 
   it("bounds an adversarial percent chain and returns only inspection status", () => {

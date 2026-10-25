@@ -24,11 +24,13 @@ const ROOT_HOME = "(?:(?:home|users)" + SEPARATOR + ACCOUNT_PATH + "|root" + SEP
 const UNIX_HOME = "[/\\\\]" + ROOT_HOME;
 const MULTI_ROOT_HOME = "[/\\\\]{2,}" + ROOT_HOME;
 const WINDOWS_HOME = "/?[a-z]:" + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH;
-const UNC_HOME = "[/\\\\]{2,}" + COMPONENT + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH;
+const SHARE_COMPONENT = COMPONENT + "(?: +" + COMPONENT + ")*";
+const SHARED_PROFILE = "(?:" + SHARE_COMPONENT + SEPARATOR + ")?users" + SEPARATOR + ACCOUNT_PATH;
+const UNC_HOME = "[/\\\\]{2,}" + COMPONENT + SEPARATOR + SHARED_PROFILE;
 const FILE_HOME = "file:(?:(?:[/\\\\](?![/\\\\])|[/\\\\]{3,}|[/\\\\]{2}localhost" + SEPARATOR + ")"
   + "(?:" + ROOT_HOME + "|[a-z]:" + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH + ")"
   + "|[/\\\\]{2}(?:[a-z]:" + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH
-  + "|" + COMPONENT + SEPARATOR + ROOT_HOME + "))";
+  + "|" + COMPONENT + SEPARATOR + "(?:" + ROOT_HOME + "|" + SHARED_PROFILE + ")))";
 
 /** URI schemes cannot masquerade as native UNC roots; explicit file URLs remain supported. */
 export const PRIVATE_HOME_PATH_PATTERN = new RegExp(
@@ -38,7 +40,7 @@ export const PRIVATE_HOME_PATH_PATTERN = new RegExp(
 );
 
 const MAX_NORMALIZATION_PASSES = 4;
-const REMAINING_ENCODING = /%[a-f0-9]{2}|\\+(?:u[a-f0-9]{4}|x[a-f0-9]{2}|\/)/iu;
+const REMAINING_ENCODING = /%[a-f0-9]{2}|\\(?:u[a-f0-9]{4}|x[a-f0-9]{2}|\/)/iu;
 const utf8 = new TextDecoder("utf-8");
 
 /** Decode byte runs independently so malformed neighboring bytes cannot hide a path. */
@@ -50,9 +52,13 @@ function percentView(value: string): string {
 
 /** Interpret serialized slashes and character escapes without executing the payload. */
 function escapedView(value: string): string {
-  return value.replace(/\\+(?:u([a-f0-9]{4})|x([a-f0-9]{2}))/giu,
-    (_match, unicode: string | undefined, byte: string | undefined) => String.fromCharCode(Number.parseInt(unicode ?? byte!, 16)))
-    .replace(/\\+\//gu, "/");
+  // Consume an entire backslash run even without a recognized suffix. Retrying
+  // a required suffix at every position in an unmatched run would be quadratic.
+  return value.replace(/\\+(?:u([a-f0-9]{4})|x([a-f0-9]{2})|(\/))?/giu,
+    (match, unicode: string | undefined, byte: string | undefined, slash: string | undefined) => {
+      const code = unicode ?? byte;
+      return code === undefined ? slash ?? match : String.fromCharCode(Number.parseInt(code, 16));
+    });
 }
 
 /** Fold documented path disguises; this is a heuristic, not filesystem canonicalization. */
@@ -64,26 +70,32 @@ function unicodeView(value: string): string {
     .replace(/[\u0455\u0405]/gu, "s");
 }
 
-/** Inspect derived views lazily; their locations always refer to the original line start. */
-function* normalizedHomePathMatches(line: string, regex: RegExp): Generator<SecretRuleMatch> {
+/** Apply each view once and retain transformation identities in first-use order. */
+function nextNormalizedView(view: string, steps: SecretNormalizationKind[]): string {
+  for (const [kind, transform] of [
+      ["percent_decode", percentView], ["json_unescape", escapedView], ["unicode_fold", unicodeView],
+    ] as const) {
+    const transformed = transform(view);
+    if (transformed !== view && !steps.includes(kind)) steps.push(kind);
+    view = transformed;
+  }
+  return view;
+}
+
+/** Inspect the full line budget even after a coordinate is found; emit coordinates only once per view. */
+function* normalizedHomePathMatches(line: string, regex: RegExp, detected: boolean): Generator<SecretRuleMatch> {
   let view = line;
   const steps: SecretNormalizationKind[] = [];
   for (let pass = 0; pass < MAX_NORMALIZATION_PASSES; pass += 1) {
     const previous = view;
-    for (const [kind, transform] of [
-      ["percent_decode", percentView], ["json_unescape", escapedView], ["unicode_fold", unicodeView],
-    ] as const) {
-      const transformed = transform(view);
-      if (transformed !== view && !steps.includes(kind)) steps.push(kind);
-      view = transformed;
+    view = nextNormalizedView(view, steps);
+    if (!detected) {
+      regex.lastIndex = 0;
+      for (const _match of view.matchAll(regex)) {
+        detected = true;
+        yield { index: 0, normalizations: [...steps] };
+      }
     }
-    regex.lastIndex = 0;
-    let found = false;
-    for (const _match of view.matchAll(regex)) {
-      found = true;
-      yield { index: 0, normalizations: [...steps] };
-    }
-    if (found) break;
     if (view === previous) break;
     if (pass === MAX_NORMALIZATION_PASSES - 1 && REMAINING_ENCODING.test(view)) {
       yield { index: 0, normalizations: [...steps], normalization_incomplete: true };
@@ -101,9 +113,7 @@ export function* findPrivateHomePathMatches(content: string, regex: RegExp): Gen
       rawFound = true;
       yield { index: offset + match.index! };
     }
-    if (!rawFound) {
-      for (const match of normalizedHomePathMatches(line, regex)) yield { ...match, index: offset };
-    }
+    for (const match of normalizedHomePathMatches(line, regex, rawFound)) yield { ...match, index: offset };
     offset += line.length + 1;
   }
 }
