@@ -5,12 +5,20 @@
 ### Changed
 
 - Adopt release-age eligible Greptile 3.7.0 review tooling ([pm-greptile370](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-greptile370.toon))
+
+### Fixed
+
+- GH-1581: Report successful context snapshot refresh without recovery warnings ([pm-gh1581](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1581.toon))
+- GH-1577: make SDK create focus inheritance explicit and discoverable ([pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon))
+
+## 2026.10.25 - 2026-10-25
+
+### Changed
+
 - Adopt release-age eligible ESLint 10.13.0 ([pm-eslint1013](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-eslint1013.toon))
 
 ### Fixed
 
-- GH-1577: make SDK create focus inheritance explicit and discoverable ([pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon))
-- GH-1581: Report successful context snapshot refresh without recovery warnings ([pm-gh1581](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1581.toon))
 - GH-1556: diagnose ignored merge-receipt paths before settlement staging ([pm-gh1556](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1556.toon))
 - Rebase concurrent history assignments and removals without losing events ([pm-gh1553](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1553.toon))
 - GH-1562: expose calendar matching totals and bounded continuation ([pm-gh1562](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1562.toon))

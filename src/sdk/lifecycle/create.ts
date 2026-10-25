@@ -1601,7 +1601,7 @@ function collectCreateScheduleWarnings(
   return warnings;
 }
 
-/** Resolve the effective parent for a new item, inheriting the session-focused item (set via `pm focus <id>`) only when no explicit `--parent` was supplied and parent is not being unset (GH-161 / pm-72xf). An explicit `--parent` (including `--parent ""`) always overrides focus; the inherited value flows through the same locate/validate path as an explicit parent. */
+/** Consult saved focus only after explicit inheritance opt-in and absent caller/template/unset-parent choices. Inherited ids use the normal parent validation path (GH-161 / pm-72xf). */
 async function inheritFocusedParent(
   parent: string | undefined,
   resolvedOptions: CreateCommandOptions,

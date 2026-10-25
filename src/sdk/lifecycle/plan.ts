@@ -996,11 +996,11 @@ async function readPlanItem(
   return { document: loaded.document, itemId: located.id };
 }
 
+/** Collect plan relationships while shared creation owns parent normalization and its dependency edge. */
 function buildPlanCreateDependencies(
   options: PlanCommandOptions,
 ): string[] | undefined {
   const deps: string[] = [];
-  // runCreate owns parent normalization and the corresponding dependency edge.
   for (const ref of toArray(options.related))
     deps.push(`id=${ref},kind=related`);
   for (const ref of toArray(options.blocks)) deps.push(`id=${ref},kind=blocks`);

@@ -73,6 +73,7 @@ function appendQuotedPair(
   }
 }
 
+/** Preserve scheduling creation metadata and stdin token policy, including the caller's explicit focus choice. */
 function buildCommonOptions(
   type: string,
   title: string,
