@@ -1123,7 +1123,8 @@ recurrence reason, accepts only the workspace open or in-progress target, and
 returns the terminal evidence captured atomically before the update path clears
 it from active metadata.
 
-Create focus policy is tracked by [pm-gh1577](../.agents/pm/issues/pm-gh1577.toon).
+Create focus policy is tracked by [pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon)
+(this tracker record is repository-only and excluded from npm).
 Programmatic `create`, `PmClient.create`, `runCreate`, and MCP `pm_create`
 ignore saved session focus unless `inheritFocus: true` is supplied. An explicit
 parent, a parent from the selected template, or `unset: ["parent"]` takes
@@ -2088,7 +2089,8 @@ complete item-id set, and substantive recency-evidence fingerprint match.
 Missing, stale, version-incompatible, or corrupt state is rebuilt from the
 authoritative items and atomically replaced. The result reports `cache_status`
 without a warning for a successful missing/stale refresh
-([pm-gh1581](../.agents/pm/issues/pm-gh1581.toon)). Rebuilt signals are used in
+([pm-gh1581](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1581.toon);
+this tracker record is repository-only and excluded from npm). Rebuilt signals are used in
 the current response; another read is unnecessary. With `explainRanking`,
 `ranking.feature_store.cache_status` exposes the refresh on context receipts.
 Corrupt/unreadable state and failed persistence retain actionable
