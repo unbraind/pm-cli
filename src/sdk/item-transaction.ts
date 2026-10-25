@@ -19,13 +19,15 @@ import { EXIT_CODE, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS, SETTINGS_FILENAME } 
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { runWithItemMutationPrecondition } from "../core/store/item-mutation-precondition.js";
+import { hashDocument, hashHistoryStream } from "../core/history/history.js";
+import { historyVersionOffset } from "../core/history/version-address.js";
 import { isConfigurationOnlySettingsRead, readSettings } from "../core/store/settings.js";
 import { DEFAULT_RUNTIME_SCHEMA_FILE_PATHS, filePathForSchemaSection, loadRuntimeSchemaFromOptionalFiles, normalizeRuntimeSchemaSettings } from "../core/schema/runtime-schema.js";
 import { validateSettings } from "../core/store/settings-validator.js";
 import { resolveWorkspaceRoot } from "../core/store/paths.js";
 import { getSessionStatePath } from "../core/session/session-state.js";
 import { PmCliError } from "../core/shared/errors.js";
-import type { ItemDocument, ItemTypeDefinition, PmSettings } from "../types/index.js";
+import type { HistoryEntry, ItemDocument, ItemTypeDefinition, PmSettings } from "../types/index.js";
 import { stableUpsertValue, type ItemMutationUpsertCandidate } from "./structured-mutations.js";
 import { stableStringify } from "../core/shared/serialization.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
@@ -460,7 +462,49 @@ async function prepareRestoreCompensation(
       EXIT_CODE.NOT_FOUND,
     );
   }
-  return { target_updated_at: snapshot.updatedAt };
+  const history = await readHistoryEntries(path.join(pmRoot, "history", `${snapshot.id}.jsonl`), snapshot.id);
+  if (history.length === 0) throw new PmCliError(`Bulk ${mutation.op} target ${mutation.id} has no restorable history`, EXIT_CODE.NOT_FOUND);
+  return { target_updated_at: snapshot.updatedAt, target_version: String(historyVersionOffset(history) + history.length), target_history_hash: hashHistoryStream(history), target_history_length: history.length };
+}
+
+/** Preserve recovery data instead of overwriting changes whose ownership cannot be proved. */
+function partialMutationError(config: { transactionId: string }, itemId: string, stepId: string): PmCliError {
+  return new PmCliError(`Transaction ${config.transactionId} cannot safely compensate incomplete step ${stepId}; review item ${itemId} history before recovery.`, EXIT_CODE.CONFLICT, {
+    code: "transaction_partial_mutation", item_id: itemId,
+    required: "Reconcile the item's partial or intervening changes before resuming this transaction.",
+    why: "The retained history does not prove exclusive ownership of the changes to undo. The journal remains compensating instead of claiming a rollback or overwriting another writer.",
+    nextSteps: [`Run pm history ${itemId} and inspect this transaction's retained compensation data before explicitly restoring or reconciling the item.`],
+  });
+}
+
+/** Recognize a sibling step's durable attribution within the same coordinator-owned batch. */
+function isTransactionHistoryEntry(entry: HistoryEntry, transactionId: string): boolean {
+  const prefix = `bulk-item-transaction ${transactionId} `;
+  return [entry.message, entry.context?.item_transaction_step].some((value) => typeof value === "string" && value.startsWith(prefix));
+}
+
+/** Determine whether a retained prefix proves uncompensated effects owned exclusively by this step. */
+function hasOwnedCompensationEffects(
+  history: readonly HistoryEntry[],
+  proof: { expectedHistory: string; length: WorkspaceTransactionJsonValue | undefined; version: WorkspaceTransactionJsonValue | undefined },
+  identity: { transactionId: string; itemId: string; stepId: string },
+): boolean {
+  const { expectedHistory, length, version } = proof;
+  if (hashHistoryStream(history) === expectedHistory) return false;
+  if (typeof length !== "number" || !Number.isSafeInteger(length) || length < 1) throw partialMutationError(identity, identity.itemId, identity.stepId);
+  if (hashHistoryStream(history.slice(0, length)) !== expectedHistory || version !== String(historyVersionOffset(history) + length)) throw partialMutationError(identity, identity.itemId, identity.stepId);
+  const marker = bulkHistoryMarker(identity.transactionId, identity.stepId, "apply");
+  const changes = history.slice(length);
+  const isOwned = (entry: HistoryEntry) => entry.message === marker || entry.context?.item_transaction_step === marker;
+  const compensationMarker = bulkHistoryMarker(identity.transactionId, identity.stepId, "compensate");
+  if (changes.filter((entry) => isOwned(entry) || entry.message === compensationMarker).at(-1)?.message === compensationMarker) return false;
+  const owned = changes.filter(isOwned);
+  if (owned.length === 0) return false;
+  // Reverse-order sibling compensation appends history while restoring this
+  // step's exact forward state. Those neutral events remain in the audit log.
+  const siblingsRestored = history.at(-1)!.after_hash === owned.at(-1)!.after_hash && changes.every((entry) => isTransactionHistoryEntry(entry, identity.transactionId));
+  if (owned.length !== changes.length && !siblingsRestored) throw partialMutationError(identity, identity.itemId, identity.stepId);
+  return true;
 }
 
 /** Idempotently restore an item to its captured pre-mutation version. */
@@ -470,19 +514,27 @@ async function compensateByRestore(
   stepId: string,
   data: WorkspaceTransactionJsonValue | undefined,
 ): Promise<void> {
-  const target =
+  const receipt =
     data !== null && typeof data === "object" && !Array.isArray(data)
-      ? data.target_updated_at
+      ? data
       : undefined;
-  if (typeof target !== "string") {
+  if (receipt === undefined || typeof receipt.target_updated_at !== "string") {
     return;
   }
-  if ((await readItemSnapshot(config.pmRoot, itemId)) === undefined) {
-    return;
+  const target = receipt.target_updated_at;
+  const current = await readItemSnapshot(config.pmRoot, itemId);
+  if (current === undefined) return;
+  const history = await readHistoryEntries(path.join(config.pmRoot, "history", `${current.id}.jsonl`), current.id);
+  const expectedHistory = receipt.target_history_hash;
+  if (typeof expectedHistory === "string") {
+    if (!hasOwnedCompensationEffects(history, { expectedHistory, length: receipt.target_history_length, version: receipt.target_version }, { ...config, itemId: current.id, stepId })) return;
+  } else {
+    if (current.updatedAt === target) return;
+    if (!await isUpdateMarkerApplied(config.pmRoot, current.id, config.transactionId, stepId)) throw partialMutationError(config, current.id, stepId);
   }
-  await restore(
+  const applyRestore = () => restore(
     itemId,
-    target,
+    typeof receipt.target_version === "string" ? receipt.target_version : target,
     {
       force: true,
       author: config.author,
@@ -490,6 +542,9 @@ async function compensateByRestore(
     },
     { pmRoot: config.pmRoot },
   );
+  await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: current.id, validate: (document) => {
+    if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, current.id, stepId);
+  } }, applyRestore);
 }
 
 /** Build the workspace-transaction step for one item creation. */
@@ -584,6 +639,7 @@ function buildUpdateStep(
 ): WorkspaceTransactionStep {
   return {
     id: stepId,
+    compensatePending: true,
     async inspect(): Promise<WorkspaceTransactionStepInspection> {
       const snapshot = await readItemSnapshot(config.pmRoot, mutation.id);
       if (snapshot === undefined) {
@@ -613,13 +669,16 @@ function buildUpdateStep(
         { pmRoot: config.pmRoot },
       );
       const match = mutation.match;
-      const updated = match === undefined
-        ? await applyUpdate()
-        : await runWithItemMutationPrecondition({
+      let currentMatch = match;
+      const updated = await runWithItemMutationPrecondition({
             pmRoot: config.pmRoot,
             // Direct SDK callers may use an unprefixed item id; the locked store uses its canonical identity.
             id: String(((await get(mutation.id, {}, { pmRoot: config.pmRoot })).item as Record<string, unknown>).id),
-            validate: (document) => assertUpsertMatchCurrent(document, mutation.id, match),
+            validate: (document) => { if (currentMatch !== undefined) assertUpsertMatchCurrent(document, mutation.id, currentMatch); },
+            committed: (document) => {
+              if (match !== undefined) currentMatch = { key: match.key, value: structuredClone((document.metadata as Record<string, unknown>)[match.key]) };
+            },
+            historyContext: { item_transaction_step: bulkHistoryMarker(config.transactionId, stepId, "apply") },
           }, applyUpdate);
       const updatedItem = updated.item as Record<string, unknown>;
       config.uniqueIndex.invalidate();
@@ -863,6 +922,8 @@ async function validateMutationOperation<T>(mutation: BulkItemMutation, index: n
 /** Include durable tracker storage and its ancestors, excluding transient caches and locks. */
 function includePreviewPath(root: string, file: string, ownedPaths: readonly string[] | undefined, retainedPaths: readonly string[]): boolean {
   const relative = path.relative(root, file);
+  const segments = relative.split(path.sep);
+  if (segments[0] === "extensions" && segments[2] === "node_modules" && !retainedPaths.some((retained) => relative === retained || relative.startsWith(`${retained}${path.sep}`) || retained.startsWith(`${relative}${path.sep}`))) return false;
   if (["locks", "runtime", "search"].includes(relative.split(path.sep)[0]!)) return retainedPaths.some((retained) => relative === retained || relative.startsWith(`${retained}${path.sep}`) || retained.startsWith(`${relative}${path.sep}`));
   return relative === "" || ownedPaths === undefined || ownedPaths.some((owned) => relative === owned || relative.startsWith(`${owned}${path.sep}`) || owned.startsWith(`${relative}${path.sep}`));
 }
@@ -1107,7 +1168,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
       });
       await commitWorkspaceTransaction({ ...identity, pmRoot: stagedRoot, steps, onTransition: ({ transition }) => { if (transition === "committed") validated = true; } });
     });
-    return { validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", warnings, unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] };
+    return { validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", warnings, unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded"] };
   } finally {
     await rm(root, { recursive: true, force: true });
   }

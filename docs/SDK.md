@@ -1207,9 +1207,30 @@ If a process stops between the domain write and the journal update, rerunning
 the same plan discovers the already-applied step and continues. An ordinary
 error switches the journal to compensation mode and runs applied steps in
 reverse order, limited to steps whose forward attempt was durably recorded.
+Adapters can opt into `compensatePending: true` when `apply()` may fail after
+an internal write while inspection still reports `pending`. Such compensators
+must handle absent and partial effects idempotently. The default preserves
+applied-only compensation; an inspected `compensated` step is skipped.
+If compensation refuses, the journal retains its started steps
+and recovery data in `compensating` state instead of claiming a rollback.
 Compensations are new item-history or relationship events: the
 coordinator never deletes or rewrites immutable history. A crash during
 compensation resumes compensation before a new attempt begins.
+
+Guarded terminal updates are tracked by
+[pm-pllp78](../.agents/pm/issues/pm-pllp78.toon). A bulk update's `match` guard
+is checked under each item lock and advances to the operation's own committed
+key value before its next internal lifecycle write. A stale starting value
+still refuses without item or history writes. Item updates opt into pending
+compensation and attribute every internal write in immutable history. New
+receipts bind the history fingerprint, integer prefix length and exact version, so writes sharing
+one timestamp remain distinguishable. Recovery restores exclusively owned
+effects and preserves peer-only changes. Mixed ownership, rewritten receipts,
+or a peer write before the restore lock refuse with
+`transaction_partial_mutation`; the surfaced `AggregateError` retains both
+failures and the journal keeps recovery data. Repeated compensation recognizes
+its durable marker even when a peer adds context afterward. Legacy timestamp
+receipts remain supported, with ambiguous partial effects refused.
 
 ### Schema evolution and workspace history
 
@@ -1560,8 +1581,9 @@ handlers remain disabled. Package-backed `--template` create input cannot be
 semantically previewed through its package handler; expand it into explicit core
 mutation options before preview.
 
-Actionable previews are tracked by [pm-ekf2gu](../.agents/pm/issues/pm-ekf2gu.toon)
-and [pm-fa9olc](../.agents/pm/tasks/pm-fa9olc.toon).
+Actionable previews are tracked by [pm-ekf2gu](../.agents/pm/issues/pm-ekf2gu.toon),
+[pm-fa9olc](../.agents/pm/tasks/pm-fa9olc.toon), and
+[pm-jhkzk0](../.agents/pm/features/pm-jhkzk0.toon).
 `previewItemMutations` returns `warnings` grouped by zero-based operation
 `index`, canonical `id`, and `op`. These are the original create lifecycle
 warnings, including advisory `likely_duplicates` and duplicate-recovery tokens.
@@ -1577,7 +1599,14 @@ use this same projection. A `replayed_committed_plan` has no newly evaluated
 warnings; an empty warning list in that state does not certify current policy.
 
 Staging excludes derived `search` and `locks` content and unrelated runtime state,
-retaining registered item folders, explicitly configured schema files, and
+plus `extensions/<directory>/node_modules` dependency trees. These trees are
+excluded before entry inspection or traversal, including dependency links;
+configured schema files and registered item folders take precedence and retain
+the regular-file safety checks even inside a dependency tree. Extension source,
+manifests and managed-package metadata remain in the snapshot. The receipt
+declares `derived_extension_dependencies_excluded` among its unresolved commit
+constraints because executable package dependencies are not validated.
+Staging retains registered item folders, explicitly configured schema files, and
 `runtime/session.json` for core focus and inherited-parent semantics. Root-layout
 trackers copy only tracker-owned files and directories, including standard and
 custom item folders and configured schema files; unrelated project content is

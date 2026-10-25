@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Allow safe transaction previews in managed-package workspaces with derived dependency links ([pm-jhkzk0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jhkzk0.toon))
+
 ### Changed
 
 - Adopt release-age eligible Greptile 3.7.0 review tooling ([pm-greptile370](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-greptile370.toon))
@@ -9,6 +13,7 @@
 ### Fixed
 
 - GH-1581: Report successful context snapshot refresh without recovery warnings ([pm-gh1581](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1581.toon))
+- GH-1591: guarded terminal updates conflict with their own scalar write and misreport compensation ([pm-pllp78](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pllp78.toon))
 - Session reference receipts advertise unsupported get --brief recovery ([pm-session-reference-recovery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-session-reference-recovery.toon))
 - GH-1567: fit whole SDK envelopes using the selected serializer and token budget ([pm-gh1567](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1567.toon))
 - GH-1579: Make inferred completion timestamps observable on close ([pm-gh1579](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1579.toon))

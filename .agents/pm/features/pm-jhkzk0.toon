@@ -2,23 +2,55 @@ id: pm-jhkzk0
 title: Allow safe transaction previews in managed-package workspaces with derived dependency links
 description: "A real pm item mutate --from intake.json --dry-run in this repository refuses transaction_preview_non_regular_file because installed extensions contain node_modules SDK links. The no-follow safety boundary and typed refusal are already delivered by pm-preview-path-refusal and pm-fa9olc; this is a distinct usability extension, not a claim those completed fixes are missing. Specify and implement a derived-package dependency exclusion or another safe preview source, without following links or ignoring authoritative tracker content."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,packages,preview,sdk
 created_at: "2026-10-25T16:47:02.100Z"
-updated_at: "2026-10-25T17:51:18.072Z"
+updated_at: "2026-10-25T22:35:18.260Z"
+closed_at: "2026-10-25T22:24:55.385Z"
+completed_at: "2026-10-25T22:24:55.385Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "A managed-package tracker can preview item-only mutations without following dependency symlinks; authoritative non-regular entries still refuse; source bytes remain untouched; SDK, CLI and MCP share the contract; isolated fixtures cover managed dependency links and hostile authoritative paths."
 parent: pm-9rgaal
 risk: medium
 confidence: medium
-expected_result: "Normal package-managed tracker previews are useful and safe, with explicit classification of excluded derived dependencies and unchanged no-follow guarantees."
+resolution: "Exclude derived extension node_modules paths before traversal while preserving retained schema and registered item-folder authority, fingerprinting all retained content and reporting the exclusion in preview constraints."
+expected_result: "Managed SDK dependency symlinks no longer prevent safe staged transaction previews, with no source mutation or relaxation for authoritative tracker paths."
+actual_result: "Linked preview unit and semantic CLI/MCP tests pass, dependency links and external sentinels remain unchanged, authoritative-path negative controls still refuse, Node/Bun public SDK controls pass, and canonical coverage is exactly 100 percent in every metric."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-fa9olc,related,"2026-10-25T16:47:02.100Z","harness:codex","cli:create:dep",detected
   pm-msnapshot,related,"2026-10-25T16:47:02.100Z","harness:codex","cli:create:dep",detected
   pm-preview-path-refusal,related,"2026-10-25T16:47:02.100Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-25T16:47:02.100Z","harness:codex","text=Duplicate check: complete strict all-status3110-item corpus, refreshed open/in_progress lists and request-specific transaction-preview/managed-dependency search. Existing closed refusal/diagnostic owners and open managed-snapshot planning were read live and remain their own scopes. Reproduced during this delivery: three managed SDK dependency links cause read-only intake preview to refuse; normal committed bulk intake succeeds. Enhancement intake only, open and unclaimed."
   "2026-10-25T17:51:18.067Z","harness:codex","Intake/reconciliation provenance: https://github.com/unbraind/pm-cli/pull/1592 carries this queued work and its source evidence. This item remains open and unclaimed; the PR implements the related SDK output batch and does not claim this queued scope completed."
+  "2026-10-25T19:33:44.589Z","harness:codex","Implemented derived extension dependency exclusion before path inspection/copy/fingerprinting. Explicit schema and registered item storage retain precedence and still refuse non-regular authoritative entries; extension source/manifests/managed metadata remain authoritative. Receipt states derived_extension_dependencies_excluded. SDK and CLI/MCP regressions prove source settings, external sentinel, dependency link and item storage remain untouched. pm-changelog installed2026.10.25 equals current npm latest; generation/check will use that package without edits to its implementation."
+  "2026-10-25T20:10:16.500Z","harness:codex",Both linked suites passed through pm test --run --progress. Managed dependency preview is exercised through public SDK and CLI/MCP; explicit schema/item paths inside those namespaces remain authoritative and refuse links. Full canonical static and exact coverage verification are being rerun after the transaction recovery corrections. No package implementation was copied into core.
+  "2026-10-25T22:24:54.270Z","harness:codex","Acceptance verified: previews exclude only derived extension node_modules paths before stat, copying and fingerprinting. Explicit retained schema paths and registered item folders take precedence; authoritative symlinks continue to refuse with the existing typed error. Semantic CLI/MCP preview parity, unchanged source/link/sentinel controls, and direct Node/Bun public SDK preview controls pass. Canonical complete suite passes 11,423 tests with exact source coverage 100/100/100/100. SDK docs disclose derived-extension-dependency exclusion as an unresolved commit constraint."
+  "2026-10-25T22:35:18.260Z","harness:codex","Continuation verification: unchanged SDK bundle SHA-256 c9121e06756c98f95884575f7bf6d1e925ecf75d27a9d69bd0f9c716258125f2 independently passes the public Node26.12.1 and Bun1.4.3 guarded-terminal, frozen-clock compensation and managed-preview controls. Fresh six-suite test run passes154 cases. Latest pm-changelog2026.10.25 generated both delivered entries under Unreleased and its check passes. Immutable original full-suite receipt confirms11423 passes and exact100/100/100/100. Defect-evidence gate has zero findings across452 governed terminal defects. Delivery remains one related PR with complete hosted review required."
+learnings[1]{created_at,author,text}:
+  "2026-10-25T20:17:50.757Z","harness:codex","Classify derived dependency trees before stat, traversal, copying and fingerprinting. Explicit authoritative schema files and item folders take precedence over exclusions, so package usability never silently weakens tracker safety."
+files[3]{path,scope}:
+  src/sdk/item-transaction.ts,project
+  tests/integration/transactions/semantic-preview.integration.spec.ts,project
+  tests/unit/sdk/transactions/preview-snapshot.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,project,300,"harness:codex","2026-10-25T19:31:45.482Z",local_mutation,feat/sdk-transaction-safety
+test_runs[1]:
+  - run_id: test-local-mvo9hjre-nik53w
+    kind: test
+    status: passed
+    started_at: "2026-10-25T20:09:08.597Z"
+    finished_at: "2026-10-25T20:09:46.058Z"
+    recorded_at: "2026-10-25T20:09:46.058Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/preview-snapshot.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: "Managed-package preview acceptance and safety controls passed in the SDK, CLI and MCP paths."
 body: ""

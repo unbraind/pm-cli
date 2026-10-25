@@ -34,6 +34,29 @@ async function durableSnapshot(root: string): Promise<Record<string, string>> {
 }
 
 describe("semantic transaction previews (GH-1370)", () => {
+  it.skipIf(process.platform === "win32")("shares dependency exclusion across CLI and MCP without following links or writing source", async () => {
+    await withTempPmPath(async (context) => {
+      const extension = path.join(context.pmPath, "extensions", "installed");
+      await mkdir(extension, { recursive: true });
+      const sentinel = path.join(context.tempRoot, "dependency-sentinel.txt");
+      await writeFile(sentinel, "Unchanged external dependency");
+      const dependencyLink = path.join(extension, "node_modules");
+      await symlink(context.tempRoot, dependencyLink);
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const before = await readFile(settingsPath, "utf8");
+      const mutations = [{ op: "create", id: "pm-managed-preview", options: { title: "Managed preview", type: "Task" } }];
+      const cli = context.runCli(["item", "mutate", "--transaction-id", "managed-preview", "--dry-run", "--no-extensions", "--json"], { input: JSON.stringify(mutations), expectJson: true });
+      expect(cli.code).toBe(0);
+      const mcp = await handleRequest({ jsonrpc: "2.0", id: "managed-preview", method: "tools/call", params: { name: "pm_mutate", arguments: { path: context.pmPath, transactionId: "managed-preview", dryRun: true, mutations } } });
+      expect(cli.json).toMatchObject({ validation: { validated: true, unresolved_commit_constraints: expect.arrayContaining(["derived_extension_dependencies_excluded"]) } });
+      expect(mcp?.structuredContent).toMatchObject({ result: { validation: (cli.json as { validation: unknown }).validation } });
+      expect(await readFile(settingsPath, "utf8")).toBe(before);
+      expect(await readFile(sentinel, "utf8")).toBe("Unchanged external dependency");
+      expect((await lstat(dependencyLink)).isSymbolicLink()).toBe(true);
+      await expect(readFile(path.join(context.pmPath, "tasks", "pm-managed-preview.toon"))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
   it.each(["advisory", "strict", "off"])("shares row warnings and immutable source state across CLI/MCP under %s policy", async (mode) => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["create", "Task", "Canonical preview duplicate", "--id", "canonical", "--json"]).code).toBe(0);
@@ -352,7 +375,7 @@ describe("semantic transaction previews (GH-1370)", () => {
       const beforeValid = await durableSnapshot(context.pmPath);
       const preview = context.runCli([...valid, "--dry-run"], { expectJson: true });
       expect(preview.code).toBe(0);
-      expect(preview.json).toMatchObject({ mutation_count: 3, validation: { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks"] } });
+      expect(preview.json).toMatchObject({ mutation_count: 3, validation: { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded"] } });
       expect(await durableSnapshot(context.pmPath)).toEqual(beforeValid);
       expect(context.runCli(valid).code).toBe(0);
       expect(context.runCli(["get", "pm-complete", "--full", "--json"], { expectJson: true }).json).toMatchObject({ item: { status: "closed", resolution: "Delivered", comments: [expect.objectContaining({ text: "Staged completion evidence" })] } });

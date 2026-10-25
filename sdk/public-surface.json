@@ -2803,6 +2803,13 @@
       ],
       "package_version": "2026.10.25",
       "reason": "pm-gh1567 and pm-session-reference-recovery: supply the public complete-envelope fitter on custom ExtensionCommandSdk hosts and replace the unusable restore_reference_with literal with get --depth brief."
+    },
+    {
+      "changes": [
+        "signature ./sdk:WorkspaceTransactionStep"
+      ],
+      "package_version": "2026.10.25",
+      "reason": "Add optional compensatePending transaction-step capability; existing adapters retain applied-only compensation and signatures remain callable unchanged."
     }
   ],
   "entrypoints": {
@@ -21947,7 +21954,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WorkspaceTransactionStep",
-          "signature": "export interface WorkspaceTransactionStep { id: string; inspect(): Promise<WorkspaceTransactionStepInspection>; prepareCompensation?(): Promise<WorkspaceTransactionJsonValue | undefined>; apply(): Promise<WorkspaceTransactionJsonValue | undefined>; compensate(data?: WorkspaceTransactionJsonValue): Promise<void>; }"
+          "signature": "export interface WorkspaceTransactionStep { id: string; inspect(): Promise<WorkspaceTransactionStepInspection>; prepareCompensation?(): Promise<WorkspaceTransactionJsonValue | undefined>; compensatePending?: boolean; apply(): Promise<WorkspaceTransactionJsonValue | undefined>; compensate(data?: WorkspaceTransactionJsonValue): Promise<void>; }"
         },
         {
           "classification": "advanced_export",
@@ -37188,6 +37195,7 @@
     "tracker_root_unreadable",
     "transaction_create_compensated",
     "transaction_journal_invalid",
+    "transaction_partial_mutation",
     "transaction_plan_mismatch",
     "transaction_preview_external_schema",
     "transaction_preview_non_regular_file",

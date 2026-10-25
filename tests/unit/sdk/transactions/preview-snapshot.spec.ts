@@ -87,6 +87,28 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 afterEach(() => { copying.change = "none"; copying.configurationSource = ""; copying.transientNamespace = ""; });
 
 describe("semantic preview snapshot consistency", () => {
+  it.skipIf(process.platform === "win32")("excludes extension dependency links but retains authoritative paths within dependency trees", async () => {
+    await withTempPmPath(async (context) => {
+      const extension = path.join(context.pmPath, "extensions", "installed");
+      await mkdir(extension, { recursive: true });
+      const dependencies = path.join(extension, "node_modules");
+      await symlink(context.tempRoot, dependencies);
+      const options = { pmRoot: context.pmPath, transactionId: "managed-dependencies", author: "snapshot-agent", mutations: [{ op: "create" as const, id: "pm-managed-preview", options: { title: "Managed preview", type: "Task" } }] };
+      const before = await readFile(path.join(context.pmPath, "settings.json"), "utf8");
+      await expect(previewItemMutations(options)).resolves.toMatchObject({ validated: true, unresolved_commit_constraints: expect.arrayContaining(["derived_extension_dependencies_excluded"]) });
+      expect(await readFile(path.join(context.pmPath, "settings.json"), "utf8")).toBe(before);
+      expect(context.runCli(["get", "pm-managed-preview", "--json"]).code).toBe(3);
+      const settings = JSON.parse(before) as PmSettings;
+      settings.schema.files.types = "extensions/installed/node_modules/types.json";
+      await writeFile(path.join(context.pmPath, "settings.json"), JSON.stringify(settings));
+      await expect(previewItemMutations(options)).rejects.toMatchObject({ code: "transaction_preview_non_regular_file" });
+      settings.schema.files.types = "schema/types.json";
+      settings.item_types.definitions = [{ name: "Dependent", folder: "extensions/installed/node_modules/items" }];
+      await writeFile(path.join(context.pmPath, "settings.json"), JSON.stringify(settings));
+      await expect(previewItemMutations(options)).rejects.toMatchObject({ code: "transaction_preview_non_regular_file" });
+    });
+  });
+
   it("ignores a search-index rebuild during staging without writing source items", async () => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "search", "snapshot-probe.txt"), "old index");
