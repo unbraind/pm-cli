@@ -4,7 +4,8 @@
  * Provides SDK-first pre-write provenance and secret-detection guardrails for
  * CLI, MCP, and package-owned mutation dispatchers.
  */
-import { SECRET_RULES, acceptsSecretMatch } from "../core/shared/secret-rules.js";
+import { SECRET_RULES, findSecretRuleMatches, type SecretNormalizationKind } from "../core/shared/secret-rules.js";
+export type { SecretNormalizationKind } from "../core/shared/secret-rules.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -27,6 +28,10 @@ export interface SecretGuardFinding {
   rule: (typeof SECRET_RULES)[number]["mutationRule"];
   /** Object path or argument index containing the match. */
   path: string;
+  /** Detection-only transformations, without original or decoded coordinate values. */
+  normalizations?: SecretNormalizationKind[];
+  /** Remaining encoded input exceeded the finite inspection envelope and requires explicit review. */
+  normalization_incomplete?: true;
 }
 
 /** Result of a non-blocking or bypassed mutation guard evaluation. */
@@ -156,12 +161,12 @@ export function scanMutationSecrets(payload: unknown): SecretGuardFinding[] {
   const findings: SecretGuardFinding[] = [];
   for (const leaf of stringLeaves(payload)) {
     for (const rule of SECRET_RULES) {
-      rule.regex.lastIndex = 0;
-      for (const match of leaf.value.matchAll(rule.regex)) {
-        if (acceptsSecretMatch(rule, match)) {
-          findings.push({ rule: rule.mutationRule, path: leaf.path });
-          break;
-        }
+      const match = findSecretRuleMatches(rule, leaf.value).next().value;
+      if (match) {
+        const finding: SecretGuardFinding = { rule: rule.mutationRule, path: leaf.path };
+        if (match.normalizations) finding.normalizations = match.normalizations;
+        if (match.normalization_incomplete) finding.normalization_incomplete = true;
+        findings.push(finding);
       }
     }
   }

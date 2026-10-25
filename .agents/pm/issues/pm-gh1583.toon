@@ -1,0 +1,80 @@
+id: pm-gh1583
+title: "GH-1583: recognize concrete private home paths through bounded shared normalization"
+description: "The public detector-coverage report exposes platform and representation gaps in shared preflight. Recognize concrete private home coordinates at one shared matching boundary while preserving portable references, redacted diagnostics and existing guard modes. This is detection-only and does not make direct SDK persistence automatically guarded."
+type: Issue
+status: open
+priority: 1
+tags[4]: "area:security",privacy,sdk,secret-guard
+created_at: "2026-10-25T07:07:40.489Z"
+updated_at: "2026-10-25T08:51:43.434Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Recognize native POSIX, macOS, Windows, UNC and file-URL private home paths in the shared detector; Use bounded percent, escaped-slash and documented Unicode views while retaining original repository line locations; Keep portable aliases and non-private paths clear and preserve off, advise, block, force and scan-failure semantics; Return only safe typed normalization provenance and deterministic redacted findings; Prove pre-fix failure and legitimate controls through shared SDK/repository matching and guarded adapters"
+parent: pm-9rgaal
+risk: medium
+confidence: high
+expected_result: "Concrete private profile paths are detected consistently by SDK preflight and tracked-file scanning across supported platforms and documented representations, without rewriting content or rejecting portable references."
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
+  pm-pim7,discovered_from,"2026-10-25T07:07:40.489Z","harness:codex","cli:create:dep",detected
+  pm-wwooxx,discovered_from,"2026-10-25T07:07:40.489Z","harness:codex","cli:create:dep",detected
+  pm-doxj,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+  pm-ihmfs6,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+  pm-lvd647,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+  pm-mo2v,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+  pm-s5pe,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+  pm-xaib,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+  pm-xk39,related,"2026-10-25T08:46:26.954Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-25T07:07:40.489Z","harness:codex","Intake for GitHub issue1583. Live request searches and open/in-progress inventories plus the complete3106-item corpus found no existing owner for representation normalization. Full live predecessor metadata/history confirms pm-pim7 delivered guarded preflight and pm-wwooxx delivered shared rule inventory: those completed scopes remain intact. New work extends concrete private-path coverage, preserves portable aliases and explicitly bounds the detector guarantee. Use only synthetic evidence from the already-public report."
+  "2026-10-25T07:19:27.577Z","harness:codex","Independent regression baseline:34 failures and25 controls pass across59 cases before the fix. The read-only boundary investigator confirms shared SDK/repository matching is required, original source lines must survive normalization, routing paths and portable current-user aliases must remain usable, and direct SDK writes are not universally guarded. Keep existing configured modes and explicit override semantics. Recognize named-account references separately from current-user aliases and report bounded incomplete inspection conservatively rather than returning an unqualified clean result."
+  "2026-10-25T07:46:53.866Z","harness:codex","The one independent candidate review identified relative-path false positives and a missing bidi control. Both are corrected with regression cases. The shared matcher remains source-executable before a build and lazy for SDK callers. Current-user and named aliases remain literal to preserve portable project context, while concrete platform paths and bounded normalized views are covered. Expanded repository scanning exposes six pre-existing historical records: the prepared SDK dry-run replaces eight coordinate prefixes, preserves relative suffixes, verifies every chain with zero mismatches and confirms no source files changed. Recovery copies are retained. Explicit user approval for the audited history rewrite is pending; no redaction, force override or historical waiver has been applied."
+  "2026-10-25T08:10:26.529Z","harness:codex","The complete first source run passed11318 tests but one packed-consumer test could not resolve npm under the local Homebrew runtime, so no full coverage receipt was produced. Restored the documented per-command Node module environment without changing tests or product behavior and started a full rerun. Focused coverage exercises every edited shared-matcher branch; its only uncovered line is the pre-existing non-string-leaf return exercised elsewhere by the complete suite. The focused linked suite, strict types, SDK surface update and documentation links pass. Historical redaction approval remains pending and no history rewrite has occurred."
+  "2026-10-25T08:33:02.165Z","harness:codex","The complete source suite passed11319 tests with3 skips and exact100/100/100/100 coverage. Subsequent parser checks confirmed two additional equivalent forms: backslash file URLs and repeated separators. Added explicit profile-root handling and controls distinguishing URL authorities from local paths; all163 focused cases pass. The full coverage receipt predates these final regex-only additions, so hosted coverage must verify the final head. Historical rewrite approval remains pending; no history has been redacted."
+  "2026-10-25T08:38:38.635Z","harness:codex","Final isolated redaction rehearsal passes for seven legacy records, with ten coordinate-prefix replacements, zero remaining findings and valid recomputed history chains. This adds the audit shorthand record pm-xk39 and the Windows-root spelling in pm-s5pe to the earlier plan. Every authoritative source file remains unchanged. The retained recovery copy and exact dry-run scope are prepared; applying the real audited rewrite still requires explicit approval under repository policy. Full static checks are running after the complexity-preserving matcher extraction."
+  "2026-10-25T08:51:42.631Z","harness:codex","Final local evidence:163 linked assertions pass after the URL/separator cases and normalization-helper extraction; all four strict type projects, source lint/duplication/docstrings/export/dependency gates, SDK surface and import/transport budgets pass. Tracker context, graph composition and record integrity pass after recording confidence and explicit related-record edges. The existing mutation gate passes345 killed plus7 equivalent, zero failures. Latest pm-changelog2026.10.25 installs, generates2758 eligible closed-work rows unchanged and passes check; contracts, documentation links and this history chain pass. The complete predecessor coverage receipt is11319 passed/3 skipped/exact100%; final-head hosted coverage is required. Repository secret scan still reports20 matches across seven legacy records. Authoritative legacy history remains untouched pending the final seven-record approval. Prepare a draft PR for external review; do not close the item or merge through the failing secret gate."
+files[9]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
+  scripts/check-secrets-lib.mjs,project
+  sdk/public-surface.json,project
+  src/core/shared/secret-rules.ts,project
+  src/sdk/index.ts,project
+  src/sdk/mutation-guard.ts,project
+  src/sdk/runtime-primitives.ts,project
+  tests/unit/sdk/mutation-guard-adapters.spec.ts,project
+  tests/unit/sdk/security/home-path-normalization.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/home-path-normalization.spec.ts tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/scripts/check-secrets-lib.spec.ts,project,"harness:codex","2026-10-25T07:43:47.196Z",local_mutation,fix/sdk-private-home-paths
+test_runs[2]:
+  - run_id: test-local-mvniwwav-7vpb0v
+    kind: test
+    status: passed
+    started_at: "2026-10-25T07:45:34.399Z"
+    finished_at: "2026-10-25T07:45:52.519Z"
+    recorded_at: "2026-10-25T07:45:52.519Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/home-path-normalization.spec.ts tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/scripts/check-secrets-lib.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvnl4pf2-rvg703
+    kind: test
+    status: passed
+    started_at: "2026-10-25T08:47:35.590Z"
+    finished_at: "2026-10-25T08:47:56.078Z"
+    recorded_at: "2026-10-25T08:47:56.078Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/home-path-normalization.spec.ts tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/scripts/check-secrets-lib.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/security/home-path-normalization.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/security/home-path-normalization.spec.ts tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/scripts/check-secrets-lib.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-gh1583
+body: ""

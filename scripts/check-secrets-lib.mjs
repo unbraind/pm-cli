@@ -1,4 +1,4 @@
-import { SECRET_RULES } from "../src/core/shared/secret-rules.ts";
+import { SECRET_RULES, findSecretRuleMatches } from "../src/core/shared/secret-rules.ts";
 
 // Clone descriptors so test or consumer customization cannot change SDK policy.
 export const RULES = SECRET_RULES.filter((rule) => !("mutationOnlyReason" in rule))
@@ -41,11 +41,8 @@ export function scanContent(file, content) {
     if (rule.excludeFiles && rule.excludeFiles.test(file)) {
       continue;
     }
-    rule.regex.lastIndex = 0;
-    const matches = content.matchAll(rule.regex);
-    for (const match of matches) {
-      /* c8 ignore next -- String.prototype.matchAll always sets match.index; ?? 0 is unreachable defensive default */
-      const index = match.index ?? 0;
+    for (const match of findSecretRuleMatches(rule, content)) {
+      const index = match.index;
       findings.push({
         file,
         rule: rule.name,

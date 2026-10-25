@@ -300,6 +300,7 @@ export {
   type MutationHistoryScope,
   type SecretGuardFinding,
   type SecretGuardMode,
+  type SecretNormalizationKind,
 } from "./mutation-guard.js";
 export {
   findSimilarItems,
