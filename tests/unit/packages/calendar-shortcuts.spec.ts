@@ -1,11 +1,31 @@
 import { describe, expect, it } from "vitest";
 import { runContracts } from "../../../src/sdk/cli-contracts/runtime-contracts.js";
-import { runGet, type CreateResult } from "../../../src/sdk/index.js";
+import { PmClient, runGet, type CreateResult } from "../../../src/sdk/index.js";
 import { activateExtensionForTest, runRegisteredCommandForTest } from "../../../src/sdk/testing.js";
 import calendar from "../../../packages/pm-calendar/extensions/calendar/index.ts";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("calendar package scheduling ownership", () => {
+  it("preserves CLI focus for omitted or undefined policy while honoring explicit booleans", async () => {
+    const activated = await activateExtensionForTest(calendar);
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      const parent = await client.create({ title: "Calendar focus", type: "Epic", createMode: "progressive" });
+      await client.focus(parent.item.id);
+      for (const command of ["meet", "event", "remind"]) {
+        for (const options of [{}, { inheritFocus: undefined }, { inheritFocus: false }, { inheritFocus: true }]) {
+          const result = await runRegisteredCommandForTest(activated.commands, {
+            command, args: ["Focused schedule"], options, pmRoot: context.pmPath,
+            global: { path: context.pmPath },
+          });
+          expect(result.handled).toBe(true);
+          const id = (result.result as CreateResult).item.id;
+          expect((await client.get(id)).item.parent).toBe(options.inheritFocus === false ? undefined : parent.item.id);
+        }
+      }
+    });
+  });
+
   it("declares all shortcut contracts and preserves SDK scheduling behavior", async () => {
     const activated = await activateExtensionForTest(calendar);
     expect(activated.registrations.commands.map((command) => command.command), JSON.stringify(activated.failed)).toEqual(

@@ -342,7 +342,7 @@ export function formatHookWarnings(warnings: string[]): string {
   return warnings.join(",");
 }
 
-/** Implements normalize create options for the public runtime surface of this module. */
+/** Map CLI create flags to SDK options while preserving the caller's explicit focus policy. */
 export function normalizeCreateOptions(
   commandOptions: Record<string, unknown>,
   options: { requireType?: boolean } = {},

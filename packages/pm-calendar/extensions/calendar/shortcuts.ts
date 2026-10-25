@@ -6,10 +6,10 @@
 import { runEvent, runMeet, runRemind, type CommandDefinition } from "@unbrained/pm-cli/sdk";
 import { schedulingCommandDefinitions } from "./command-definitions.ts";
 
-/** Scheduling handlers preserve native SDK validation, history, and output receipts. */
+/** Preserve CLI focus for absent policy, explicit opt-out, and native SDK validation/history/receipts. */
 export const schedulingCommands: CommandDefinition[] = schedulingCommandDefinitions.map((definition) => ({
   ...definition,
   run: (context) => (
     definition.name === "meet" ? runMeet : definition.name === "event" ? runEvent : runRemind
-  )(context.args[0], { inheritFocus: true, ...context.options }, context.global),
+  )(context.args[0], { ...context.options, inheritFocus: (context.options.inheritFocus ?? true) === true }, context.global),
 }));

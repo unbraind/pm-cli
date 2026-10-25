@@ -4,10 +4,12 @@ import type { CalendarEvent, ItemMetadata, Reminder } from "../../../../src/type
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 
+/** Read persisted calendar events so shortcut assertions inspect actual stored schedules. */
 function events(item: ItemMetadata): CalendarEvent[] {
   return (item as ItemMetadata & { events?: CalendarEvent[] }).events ?? [];
 }
 
+/** Read persisted reminders without inventing schedule entries for non-reminder items. */
 function reminders(item: ItemMetadata): Reminder[] {
   return (item as ItemMetadata & { reminders?: Reminder[] }).reminders ?? [];
 }
