@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: dependencies,maintenance
 created_at: "2026-10-20T07:06:03.433Z"
-updated_at: "2026-10-25T16:43:19.992Z"
+updated_at: "2026-10-25T18:16:19.847Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "existing strict static, token, review-tool and coverage gates pass; Adopt eligible eslint, gpt-tokenizer, greptile, knip, typescript-eslint and jscpd after seven-day cooldown"
@@ -79,7 +79,8 @@ comments[19]:
     text: "October25 12:14UTC registry refresh: gpt-tokenizer4.1.0 (published October18 05:43:37.485UTC; age7.27days) is being adopted in child pm-tokenizer410, the only claimed implementation. Remaining routine latests remain under7days: SentryCLI3.8.2 age3.05d; jscpd5.4.2 age4.83d; Stryker core/runner10.1.1 age1.70d; knip6.43.0 age1.15d; typescript-eslint8.72.0 age5.80d; Unicorn79 age1.82d. Sentry11.9 is2.06d; broader major migration owners remain pm-t3jxjj, pm-fokyhh, pm-do5b and pm-ksr40d. Vitest5.0.5 and CodSpeed6.1 are old enough and declare compatible peers/Node22.18 engines, as already recorded on pm-fokyhh; their complete instrumentation/runner/coverage migration is distinct from this minor update. No cooldown or migration acceptance is bypassed. GitHub dependency/code/secret alerts remain zero in the fresh intake. This coordination item stays open and unclaimed."
   - created_at: "2026-10-25T16:43:19.992Z"
     author: "harness:codex"
-    text: "Fresh October25 registry census agrees with earlier intake: remaining minor/tooling latests are below the seven-day release-age policy (SentryCLI3.8.2, jscpd5.4.2, Stryker10.1.1, knip6.43.0, typescript-eslint8.72.0, Unicorn79 and Sentry11.9.0). Vitest5/CodSpeed6 remain the explicitly scoped toolchain migration pm-fokyhh; TypeScript7 conflicts with the declared TypeScript-eslint peer range and npm-package-arg14 exceeds the supported Node22.18 floor, retained by pm-do5b and pm-ksr40d. No cooldown, peer or runtime policy was bypassed. Strict registry plus OSV gate passed567 locked versions, with zero open GitHub Dependabot/code/secret alerts at this intake. Coordination stays unclaimed."
+    text: "Fresh October25 registry census agrees with earlier intake: remaining minor/tooling latests are below the seven-day release-age policy (SentryCLI3.8.2, jscpd5.4.2, Stryker10.1.1, knip6.43.0, typescript-eslint8.72.0, Unicorn79). Sentry11.9.0 is a separate major migration owned by pm-t3jxjj: release age alone is insufficient; adoption requires SDK/API and packed Node22/24/26 compatibility, telemetry delivery and expected-error classification with controls, strict static/exact coverage/release gates, and rollback without losing queued events. Vitest5/CodSpeed6 remain the explicitly scoped toolchain migration pm-fokyhh; TypeScript7 conflicts with the declared TypeScript-eslint peer range and npm-package-arg14 exceeds the supported Node22.18 floor, retained by pm-do5b and pm-ksr40d. No cooldown, peer or runtime policy was bypassed. Strict registry plus OSV gate passed567 locked versions, with zero open GitHub Dependabot/code/secret alerts at this intake. Coordination stays unclaimed."
+    edited_at: "2026-10-25T18:16:19.847Z"
 files[2]{path,scope}:
   package.json,project
   pnpm-lock.yaml,project

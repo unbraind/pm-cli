@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,output-budget,recovery,sdk
 created_at: "2026-10-23T06:39:45.840Z"
-updated_at: "2026-10-25T17:51:17.828Z"
+updated_at: "2026-10-25T18:17:53.878Z"
 closed_at: "2026-10-25T17:25:57.425Z"
 completed_at: "2026-10-25T17:25:57.425Z"
 author: "harness:codex"
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1551,discovered_from,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
   pm-hid9g1,related,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
   pm-gh1567,related,"2026-10-25T17:43:25.684Z","harness:codex","cli:update:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-10-23T06:39:45.840Z","harness:codex","Duplicate check: live search session restore reference brief plus the complete all-status strict corpus contained no matching session recovery item; related pm-hid9g1 is already closed and remains closed. Reproduced on October23 using the current build: pm get pm-gh1551 --brief refuses unknown_option, while pm get pm-gh1551 --depth brief succeeds. Intake only; left open and unclaimed while pm-gh1551 and pm-gh1552 are the active delivery."
   "2026-10-25T16:30:16.988Z","harness:codex","Scope: correct the SDK receipt literal and emitted recovery command, execute the advertised command in an isolated fixture, and align the public surface and docs. Existing closed SDK output lineage remains completed. Only this issue and pm-gh1567 are claimed for implementation."
   "2026-10-25T16:35:24.522Z","harness:codex","Regression evidence: added a sandboxed create/list/session-repeat test and executed the actual emitted restore command before the fix. It failed with unknown_option --brief (exit 2), as expected. The corrected --depth brief path now succeeds. The existing 256-token minimum fixture uses a one-character session identity to retain its original budget while accounting for the longer valid recovery command; no ceiling or assertion was relaxed."
@@ -32,6 +32,8 @@ comments[8]{created_at,author,text}:
   "2026-10-25T17:25:21.177Z","harness:codex","Final linked run records35/35 passing tests after the valid command spelling and minimum-envelope fixture update. The approved calibration report adds exactly30 bytes per five-command session at both corpus tiers, with unchanged ceilings, row counts and repeat suppression. Strict static tracker checks identified one redundant transitive prerequisite in the new backend intake; removed that direct edge while retaining the real ports-to-conformance-to-migration chain."
   "2026-10-25T17:48:14.492Z","harness:codex","Pre-PR acceptance: graph/record gates pass after linking the shared output work and removing the redundant intake prerequisite. Package-generated changelog includes this completed fix in Unreleased using latest pm-changelog2026.10.25; generation/check pass. Live history/storage validation passes and health summary has zero warnings;170 historical terminal-field warnings remain legacy data rather than invented backfills. No item is left in_progress."
   "2026-10-25T17:51:17.822Z","harness:codex","Reviewed delivery linkage: https://github.com/unbraind/pm-cli/pull/1592. Implementation and immutable closure evidence are included in the same PR; full hosted coverage and exact-head review/analyzer checks must pass before merge. This work remains Unreleased after the sole daily tag."
+  "2026-10-25T18:07:14.319Z","harness:codex","DeepScan review remediation: Chrome exposed NULL_POINTER in the executable recovery test because an optional JSON field was cast to string before replace(). Added an explicit runtime string guard with a precise missing-recovery failure. The35-case linked recovery suite and focused ESLint pass. The next pushed head must rerun DeepScan, hosted checks and bot reviews."
+  "2026-10-25T18:17:53.878Z","harness:codex","PR1592 review round on1c39ff4: every emitted hosted check completed, with only DeepScan failing on the optional test recovery-command value. Added a runtime string guard; the linked35-case recovery suite and targeted ESLint pass. CodeRabbit full review raised two valid PM-data consistency findings, corrected through audited CLI mutations: Sentry11 remains the separate pm-t3jxjj compatibility migration, and pm-69vv consistently requires proposed ADR ratification. Graph-composition and record-integrity gates pass after those edits. Sourcery and Cubic are quota-limited and Greptile trial ended; these are unavailable reviews, not approvals. Next head must pass required checks and a new full review."
 learnings[1]{created_at,author,text}:
   "2026-10-25T16:48:09.105Z","harness:codex","Recovery text is executable API surface: execute an emitted command in an isolated full user journey, rather than only asserting its literal string. A longer valid recovery spelling can change a minimum control-envelope boundary without changing the budget policy."
 files[5]:
@@ -50,7 +52,7 @@ files[5]:
     note: Existing session receipt contract owner; extend with executable recovery proof
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts,project,300,"harness:codex","2026-10-25T16:35:52.293Z",local_mutation,work/sdk-envelope-fitting-recovery-20261025
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvo1wqhd-pnydya
     kind: test
     status: passed
@@ -68,6 +70,17 @@ test_runs[2]:
     started_at: "2026-10-25T17:12:30.969Z"
     finished_at: "2026-10-25T17:12:41.822Z"
     recorded_at: "2026-10-25T17:12:41.822Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvo52cek-s66vu5
+    kind: test
+    status: passed
+    started_at: "2026-10-25T18:05:47.016Z"
+    finished_at: "2026-10-25T18:05:58.220Z"
+    recorded_at: "2026-10-25T18:05:58.220Z"
     passed: 1
     failed: 0
     skipped: 0

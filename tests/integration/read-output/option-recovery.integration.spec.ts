@@ -29,7 +29,8 @@ describe("same-command read option recovery (GH-1528)", () => {
       const repeated = context.runCli(["list", "--output-session", JSON.stringify(first.json?.read_session?.next_state), "--json"], { expectJson: true });
       expect(repeated.code, repeated.stderr).toBe(0);
       expect(repeated.json?.items).toEqual([{ id, context_ref: `session:recovery:${id}` }]);
-      const advertised = repeated.json?.read_session?.restore_reference_with as string;
+      const advertised: unknown = repeated.json?.read_session?.restore_reference_with;
+      if (typeof advertised !== "string") throw new Error("Missing executable session-reference recovery command");
       const args = advertised.replace("<item-id>", id).split(" ");
       expect(args.shift()).toBe("pm");
       const restored = context.runCli([...args, "--json"], { expectJson: true });
