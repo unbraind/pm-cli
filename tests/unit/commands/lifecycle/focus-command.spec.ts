@@ -165,6 +165,7 @@ describe("runCreate focus inheritance (GH-161)", () => {
         const cli = await context.runCliInProcess(["plan", "create", "--title", `Plan ${flags.join(" ") || "default"}`,
           "--create-mode", "progressive", "--full-changed-fields", "--json", ...flags]);
         expect(cli.code, cli.stderr).toBe(0);
+        expect(JSON.parse(cli.stdout).plan.parent).toBe(expectedParent);
         expect((await client.get(JSON.parse(cli.stdout).plan.id)).item.parent).toBe(expectedParent);
       }
       for (const inheritFocus of [undefined, false, true]) {

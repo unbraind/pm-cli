@@ -2761,6 +2761,16 @@
       ],
       "package_version": "2026.10.24",
       "reason": "pm-gh1577 adds an optional focus policy to PlanCommandOptions; callers retain source compatibility and SDK/MCP defaults remain opt-in."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.10.24",
+      "reason": "pm-gh1577 versions additive focus-policy schema discovery as strict4.23.0 and provider1.12.0; scheduling actions accept the already typed optional boolean, with no exports removed."
     }
   ],
   "entrypoints": {
@@ -13493,7 +13503,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.11.0\""
+          "signature": "\"1.12.0\""
         },
         {
           "classification": "supported",
@@ -13637,7 +13647,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.22.0\""
+          "signature": "\"4.23.0\""
         },
         {
           "classification": "contract_data",
@@ -24491,7 +24501,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"1.11.0\""
+          "signature": "\"1.12.0\""
         },
         {
           "classification": "contract_data",
@@ -24569,7 +24579,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.22.0\""
+          "signature": "\"4.23.0\""
         },
         {
           "classification": "contract_data",

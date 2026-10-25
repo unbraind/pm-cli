@@ -818,7 +818,7 @@ pm focus --clear      # clear focus; new items stop inheriting a parent
 Behavior and guarantees:
 
 - Focus is **session-local**: it is stored in `.agents/pm/runtime/session.json`, which is gitignored, so it never affects teammates or the tracker's git history.
-- When a focus is set and `pm create` or `pm plan create` is run **without** `--parent`, the new item inherits the focused item as its parent. The create result includes `"parent_source": "focus"` so agents can see the parent was inherited.
+- When a focus is set and `pm create` or `pm plan create` is run **without** `--parent`, the new item inherits the focused item as its parent. With `--full-changed-fields`, `pm create` reports `"parent_source": "focus"`; `pm plan create` exposes the effective parent as `plan.parent`.
 - `--no-inherit-focus` or `--parent none` suppresses inheritance (`pm create` also accepts `--unset parent`). SDK and MCP creates, including plans, default to ignoring saved focus and opt in with `inheritFocus: true` ([pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon); this tracker record is repository-only and excluded from npm).
 - An explicit `--parent` always overrides focus, including `--parent none` (create with no parent). An explicit but unresolvable focused parent produces the same missing-parent error/warning as an explicit stale `--parent` (it flows through the same `validation.parent_reference` policy).
 - `pm focus <id>` validates the item exists and fails fast with a not-found error otherwise. `pm focus --clear <id>` is a usage error (choose either set or clear).

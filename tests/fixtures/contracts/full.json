@@ -65266,6 +65266,10 @@
             "description": "End.",
             "type": "string"
           },
+          "inheritFocus": {
+            "description": "Inherit Focus.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -65406,6 +65410,10 @@
             "description": "End.",
             "type": "string"
           },
+          "inheritFocus": {
+            "description": "Inherit Focus.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -65543,6 +65551,10 @@
             "description": "Item description text.",
             "type": "string"
           },
+          "inheritFocus": {
+            "description": "Inherit Focus.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -65643,10 +65655,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.22.0"
+    "x-schema-version": "4.23.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.22.0",
+  "schema_version": "4.23.0",
   "selected": {
     "action": null,
     "availability_only": false,
