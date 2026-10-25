@@ -1,0 +1,59 @@
+id: pm-gh1581
+title: "GH-1581: Report successful context snapshot refresh without recovery warnings"
+description: pm context reports a self-healed snapshot rebuild as a warning and recommends a redundant second read
+type: Issue
+status: closed
+priority: 2
+tags[4]: agent-ux,context-management,"gh:1581",sdk
+created_at: "2026-10-25T00:09:27.613Z"
+updated_at: "2026-10-25T01:49:09.487Z"
+closed_at: "2026-10-25T01:49:08.691Z"
+completed_at: "2026-10-25T01:49:07.969Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Successful stale-cache rebuild produces fresh context without redundant warning/re-read instruction; retain actionable warnings on failed persistence or corrupt data and observable refresh status.
+parent: pm-4k6b
+risk: medium
+confidence: medium
+resolution: Successful stale/missing refresh uses rebuilt data in the current response without stale warnings. Cache status remains observable; corruption and failed persistence retain actionable recovery and the legacy exported descriptor remains compatible.
+expected_result: A correct self-healed context read needs no second read; actual persistence/validation problems remain observable.
+actual_result: "Cursor/source/corpus/recency refresh and stale-write-failure controls pass; a live context read returned no warnings and a fresh hosted command span. Full canonical suite: 11227 passed, 3 skipped; exact source coverage100/100/100/100. Full static quality, typecheck, focused/linked PM tests and packed npm/npx/Bun/bunx acceptance pass."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-wn1jy1,related,"2026-10-25T00:52:38.606Z","harness:codex","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-25T00:09:27.613Z","harness:codex","Intake source: 1581. Duplicate check: complete strict 3101-item all-status corpus with no omissions, request-specific searches and current open/in_progress lists; related delivered lineage retained. Report recorded for independent verification. No implementation or completion claimed by intake."
+  "2026-10-25T00:09:36.899Z","harness:codex","Implementation plan: successful stale snapshot rebuild is normal read maintenance; retain cache_status evidence and actionable malformed/read/write failure warnings, remove redundant recovery on successful refresh. Group with SDK focus policy to remove ambient session/cache surprises in agent context management."
+  "2026-10-25T01:35:24.638Z","harness:codex","Verification: the existing signal-store matrix now proves missing/stale/source/cursor/corpus/recency refreshes return rebuilt candidates without a stale warning. Corrupt snapshots and read/write failures retain recovery details, including a stale snapshot whose replacement write fails. The linked10-test run passes. A real repository context read returned no warnings and a current hosted pm.command span; the installation-scoped00:07-00:24UTC cohort had43 starts and43 finishes with no unmatched/orphan/duplicate sessions. Full static quality passes. The final canonical coverage run is still in progress and is not yet claimed as passed."
+  "2026-10-25T01:49:07.849Z","harness:codex","Final pre-PR acceptance: Cursor/source/corpus/recency refresh and stale-write-failure controls pass; a live context read returned no warnings and a fresh hosted command span. Full canonical suite: 11227 passed, 3 skipped; exact source coverage100/100/100/100. Full static quality, typecheck, focused/linked PM tests and packed npm/npx/Bun/bunx acceptance pass. Hosted exact-head checks and external reviews remain required before merge; no publication claim is made by this source closure."
+learnings[1]{created_at,author,text}:
+  "2026-10-25T00:57:50.438Z","harness:codex","A successful derived-cache refresh is ordinary maintenance, so report its cache_status and use the rebuilt data in the current response. Recovery warnings should identify a remaining storage/validation problem rather than instruct an agent to repeat a read that has already repaired itself."
+files[2]{path,scope}:
+  src/sdk/context-signal-store.ts,project
+  tests/unit/sdk/context-signal-store.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context-signal-store.spec.ts,project,600,"harness:codex","2026-10-25T00:16:39.585Z",local_mutation,fix/sdk-explicit-context
+test_runs[1]:
+  - run_id: test-local-mvn4bgi1-33u4da
+    kind: test
+    status: passed
+    started_at: "2026-10-25T00:57:05.174Z"
+    finished_at: "2026-10-25T00:57:17.641Z"
+    recorded_at: "2026-10-25T00:57:17.641Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context-signal-store.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: Stop redundant recovery after successful context-snapshot refresh
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/context-signal-store.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/context-signal-store.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-gh1581
+body: "Follow-up to #946.\n\n## Observed\n\nWhen another process has changed items since the last read, `pm context` rebuilds its persisted context-signal snapshot and returns correct, fresh output. It still emits:\n\n```\nwarning_details[1]{code,meaning,recovery_command,recovery_effect}:\n  context_signal_store_stale,The persisted context-signal snapshot did not match the authoritative cursor or item corpus and was rebuilt.,pm context,Re-read context and confirm the rebuilt snapshot is now fresh.\nwarnings[1]: context_signal_store_stale\n```\n\nThe recovery advice asks the agent to run `pm context` again. That second read returns the same content without the warning: 2.4–3.7 KB (~600–940 estimated tokens) spent only to clear a cache message. In a multi-agent tracker, where other writers change items between every read, this happens on most first reads of a session. Seen on 2026-10-25 in two independent trackers (a companion hub with 1,285 items and a package tracker), each time followed by a clean re-read.\n\n## Expected\n\nA cache that was detected stale and rebuilt successfully within the same call is not a condition the caller needs to act on. Either:\n\n- report it as informational metadata (for example `cache: { context_signals: \"rebuilt\" }` in the read receipt) instead of `warnings`, with no recovery command; or\n- keep a warning only when the rebuild failed or the output was produced from the stale snapshot.\n\nAgents treat `warnings` as something to act on, so a self-healed cache should not appear there.\n\nVersion: `@unbrained/pm-cli` 2026.10.24."

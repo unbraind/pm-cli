@@ -526,7 +526,7 @@ describe("context signal feature store", () => {
       store.readOrRebuild([item("pm-a", { release: "v2026.7.21" })], options),
     ).resolves.toMatchObject({
       cache_status: "rebuilt",
-      warnings: ["context_signal_store_stale"],
+      warnings: [],
       snapshot: {
         items: [
           {
@@ -600,18 +600,9 @@ describe("context signal feature store", () => {
     });
     expect(stale).toMatchObject({
       cache_status: "rebuilt",
-      warnings: ["context_signal_store_stale"],
+      warnings: [],
     });
-    expect(stale.warning_details).toEqual([
-      {
-        code: "context_signal_store_stale",
-        meaning:
-          "The persisted context-signal snapshot did not match the authoritative cursor or item corpus and was rebuilt.",
-        recovery_command: "pm context",
-        recovery_effect:
-          "Re-read context and confirm the rebuilt snapshot is now fresh.",
-      },
-    ]);
+    expect(stale.warning_details).toEqual([]);
     expect(
       await store.readOrRebuild([item("pm-a")], {
         ...options,
@@ -635,7 +626,7 @@ describe("context signal feature store", () => {
         },
       },
     });
-    expect(changedEvidence.warnings).toEqual(["context_signal_store_stale"]);
+    expect(changedEvidence.warnings).toEqual([]);
     expect(changedEvidence.snapshot.recency_evidence_fingerprint).toMatch(
       /^sha256:[a-f0-9]{64}$/u,
     );
@@ -643,7 +634,7 @@ describe("context signal feature store", () => {
       ...options,
       sourceCursor: "cursor-2",
     });
-    expect(changed.warnings).toEqual(["context_signal_store_stale"]);
+    expect(changed.warnings).toEqual([]);
     const changedSource = await store.readOrRebuild(
       [item("pm-a"), item("pm-b")],
       {
@@ -652,7 +643,13 @@ describe("context signal feature store", () => {
         sourceCursor: "cursor-2",
       },
     );
-    expect(changedSource.warnings).toEqual(["context_signal_store_stale"]);
+    expect(changedSource.warnings).toEqual([]);
+    adapter.throwOnWrite = true;
+    const staleWriteFailure = await store.readOrRebuild([item("pm-a")], options);
+    expect(staleWriteFailure).toMatchObject({ cache_status: "rebuilt", warnings: ["context_signal_store_write_failed"] });
+    expect(staleWriteFailure.warning_details?.[0]?.recovery_command).toBe("pm context");
+    expect(staleWriteFailure.candidates.map(({ id }) => id)).toEqual(["pm-a"]);
+    adapter.throwOnWrite = false;
     adapter.value = { corrupt: true };
     const malformed = await store.readOrRebuild([item("pm-a")], options);
     expect(malformed.warnings).toEqual(["context_signal_store_invalid"]);

@@ -533,6 +533,8 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--description" },
   { flag: "--scope" },
   { flag: "--parent" },
+  { flag: "--inherit-focus", value_type: "boolean", default: true },
+  { flag: "--no-inherit-focus", value_type: "boolean" },
   { flag: "--related" },
   { flag: "--blocks" },
   { flag: "--blocked-by", aliases: ["--blocked_by"] },
@@ -1277,6 +1279,8 @@ const ITEM_CONTENT_METADATA_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Creates flag contracts using the validated operation inputs. */
 export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--inherit-focus", value_type: "boolean", default: true },
+  { flag: "--no-inherit-focus", value_type: "boolean" },
   { flag: "--stdin-json" },
   { short: "-t", flag: "--title" },
   { flag: "--id" },

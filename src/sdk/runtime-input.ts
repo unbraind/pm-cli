@@ -314,6 +314,7 @@ export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string
       "create_mode",
       "allowMissingParent",
       "allowDuplicate",
+      "inheritFocus",
     ],
     update: ["parent", "allowMissingParent", "completedAt"],
     copy: ["allowDuplicate"],

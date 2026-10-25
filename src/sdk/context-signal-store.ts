@@ -561,9 +561,6 @@ export class ContextSignalStore {
     if (fresh && snapshot !== null) {
       resolvedSnapshot = snapshot;
     } else {
-      if (snapshot !== null) {
-        warnings.push("context_signal_store_stale");
-      }
       resolvedSnapshot = snapshotFromCandidates(
         authoritativeCandidates,
         options,

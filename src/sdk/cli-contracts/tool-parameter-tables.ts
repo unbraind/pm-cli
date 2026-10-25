@@ -178,6 +178,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowMissingParent: { type: "boolean" },
   allowUnresolvedDeps: { type: "boolean" },
   allowDuplicate: { type: "boolean" },
+  inheritFocus: { type: "boolean", description: "Opt into saved session focus as parent; SDK/MCP default false, CLI default true. Explicit parent or unset-parent takes precedence." },
   duplicateOf: { type: "string" },
   configAction: { type: "string", enum: ["get", "set", "list", "export"] },
   key: { type: "string" },

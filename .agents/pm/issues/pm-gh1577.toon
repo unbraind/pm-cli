@@ -2,23 +2,183 @@ id: pm-gh1577
 title: "GH-1577: make SDK create focus inheritance explicit and discoverable"
 description: Reported programmatic create can inherit a saved interactive focus as parent when the caller omitted parent. Inspect the current public receipt and documented unset-parent opt-out before choosing compatibility-safe SDK defaults or explicit inheritance policy.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1577",sdk
 created_at: "2026-10-24T16:12:43.896Z"
-updated_at: "2026-10-24T16:12:43.896Z"
+updated_at: "2026-10-25T06:05:52.472Z"
+closed_at: "2026-10-25T06:05:51.827Z"
+completed_at: "2026-10-25T06:05:51.329Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Reproduce public SDK creation in a sandbox with saved focus and explicit/omitted/unset parent controls; Define and document SDK focus inheritance policy without silently changing CLI convenience; Make applied ambient defaults and parent provenance discoverable through types/help/receipt; Verify importer-style Node/Bun consumers and CLI/MCP parity, including templates, tags, assignee and workflow defaults."
 parent: pm-9rgaal
 risk: medium
 confidence: medium
-expected_result: "Programmatic creation has an explicit, documented and observable hierarchy/default policy."
+resolution: "SDK/MCP create, plan and scheduling use explicit saved-focus opt-in. CLI create/plan and package scheduling retain convenience, including absent or explicitly undefined policy, while honoring false and explicit parent/unset controls. All five strict action schemas, versioned public contracts, full result-field docs and packaged references agree."
+expected_result: "Programmatic hierarchy follows explicit caller policy while CLI convenience survives every optional boolean case, and public declarations, result receipts and persisted parents agree."
+actual_result: "Independent activated-package regression fails before the calendar default correction and verifies omitted/undefined/false/true persisted parents after it across all three shortcuts. All 111 linked assertions plus documentation links, strict types and complete static pipeline pass; filler inventory decreases by one with the maintained ratchet generator. Prior exact-head hosted source suite passed 11231 tests with 3 skips with exact 100/100/100/100; the new package regression still requires fresh hosted CI/review. All five strict action declarations, generated contracts, explicit create/plan receipts, metadata-only JSON refusal and parent precedence remain covered. Public 2026.10.25 acceptance passed independently for npm/npx/bunx/MCP and npm/Bun agent sessions, but that tag predates this delivery; these changes remain Unreleased."
 affected_version: 2026.10.20
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-72xf,related,"2026-10-24T16:12:43.896Z","harness:codex","cli:create:dep",detected
   pm-gh1360,related,"2026-10-24T16:12:43.896Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-10-24T16:12:43.896Z","harness:codex","Intake source: https://github.com/unbraind/pm-cli/issues/1577. Duplicate check: complete strict 3098-item all-status corpus with no omissions plus fresh request-specific searches and current open/in_progress lists; no existing owner matches this distinct acceptance. Full live related lineage was read. Existing delivered lease-fencing/focus behavior remains historically closed. This report is planning evidence; no current independent reproduction or fix is claimed. Queued open and unclaimed under the SDK outcome milestone."
+  "2026-10-25T00:09:35.211Z","harness:codex","Implementation plan: isolate saved focus from programmatic creation by default, expose explicit inheritance through the public SDK, preserve CLI convenience and explicit parent/unset/template precedence. Validate independent SDK, CLI and MCP boundaries, persisted hierarchy and importer-style consumers."
+  "2026-10-25T00:39:48.709Z","harness:codex","Full-suite feedback: the fixed100-flag/1887-help-token contract caught naive surface growth. Consolidate create-mode/schedule-preset underscore spellings as aliases, preserve every executable spelling and tighten create help; classify the negated focus flag through the existing strict parameter mapping, without new waivers or raised budgets. Update the existing focus-sensitive preview case to opt in and account for the new strict create parameter. The packed continuation test also exposed local npm module discovery under Homebrew Node; rerun with the verified global npm module directory via NODE_PATH, without a repository workaround. The initial full run completed11230 tests; its failures are retained and are not called a passing coverage result."
+  "2026-10-25T00:42:05.714Z","harness:codex","Measured correction to the earlier budget plan: underscore spellings are already aliases in the executable lexicon, so regrouping their source rows cannot free canonical entries; those cosmetic edits are reverted. Follow the existing per-feature ratchet pattern: register exactly the two new focus-policy controls under this owner (100 to102), with zero spare allowance and the unchanged1887-token help ceiling. Concise create help offsets the added controls. No historical spelling or compatibility baseline is removed. Native npm/package.json is available through the verified Homebrew global module directory; local test invocations receive NODE_PATH rather than a product-code change."
+  "2026-10-25T00:57:48.716Z","harness:codex","Current acceptance: all corrected targeted contracts pass, including strict CLI/SDK mappings and real packed Node/Bun continuation. pnpm typecheck passes. The maintained npm/npx/Bun/bunx packed smoke passes all9 default packages. Separate isolated Node and Bun consumers verify declared template parent/tags/assignee/priority, explicit overrides, workflow default, direct runCreate isolation and scheduling opt-in. Create help measures1884 against unchanged1887; zero lexicon or spelling findings. The47-assertion tracker quality composition now has zero failing assertions. Final full-source coverage is running serially; it is not yet claimed as passed."
+  "2026-10-25T01:17:25.907Z","harness:codex","The complete second suite ran11230 tests:11226 passed,3 skipped and one machine-help assertion failed. Shortening the title description had removed the existing [required] marker used to derive help JSON metadata. Restore that marker in the concise wording instead of weakening the test; help remains under the unchanged token ceiling. All functional focus/context, Node/Bun package, preview and continuation tests passed. Re-run the owning help/lexicon tests, full static gate and full exact coverage against the corrected source before closeout."
+  "2026-10-25T01:49:05.168Z","harness:codex","Final pre-PR acceptance: Isolated Node/Bun consumers verified template defaults and explicit overrides; CLI/MCP controls and persisted parents agree. Full canonical suite: 11227 passed, 3 skipped; exact source coverage100/100/100/100. Full static quality, typecheck, focused/linked PM tests and packed npm/npx/Bun/bunx acceptance pass. Hosted exact-head checks and external reviews remain required before merge; no publication claim is made by this source closure."
+  "2026-10-25T02:16:19.329Z","harness:codex","PR1582 review reproduction: added a sandbox regression showing CLI plan create loses focused parent (fails before fix). Whole-item stdin JSON containing inheritFocus:false is refused as an unregistered item field before mutation; this is operation policy, not item metadata. Preserve that protocol and cover its refusal/no-write boundary instead of accepting policy fields in item documents. Restore CLI plan focus default with explicit positive/negative controls, retain typed SDK/MCP plan opt-in, and align public contracts/docs without spare flag or help-budget allowance."
+  "2026-10-25T02:24:04.566Z","harness:codex","Review validation correction: the full static gate caught requiredness drift after rewording the plan positional description. Restore the established Required; Plan subcommand wording; keep all positional contracts unchanged and shorten other help instead. This reinforces the separately queued semantic-help-metadata enhancement. Physical broker inspection currently shows0 ready,0 unacknowledged and1 consumer; no queue purge or operational mutation was used."
+  "2026-10-25T02:35:32.452Z","harness:codex","Review regression failed before the fix because CLI plan create persisted no focused parent. Corrected focus/plan/structured-input/tool-contract suite passes all66 tests; both linked PM commands pass with recorded execution receipts. Full static pipeline and typecheck pass. Whole-item stdin JSON containing inheritFocus:false is rejected before mutation and the requested id remains absent. CLI default/positive/negative flags, parent none, explicit parent and typed SDK plan omitted/false/true controls pass against real temporary persistence. Initial implementation full suite passed11227 tests with3 skips and exact100/100/100/100 source coverage; revised-head hosted coverage and external review remain required before merge. Initial strict operational gate passed; healthy API/worker and empty physical queue with active consumer are independently observed. The fresh seven-day telemetry query and final post-merge observability verification remain pending independently of source acceptance."
+  "2026-10-25T02:37:29.582Z","harness:codex","Fresh external operational result completed before review-fix push: strict Sentry access and thresholds pass with0 critical/high issues in14 days; required seven-day telemetry passes at4.89% finish errors against the unchanged6% ceiling, with0 failed finishes missing error-code data. API and worker are healthy; physical queue inspection shows0 ready and0 unacknowledged with1 active consumer. These observations do not clear the independent historical release-reliability owner or substitute for revised-head CI/review."
+  "2026-10-25T03:21:30.625Z","harness:codex","Full-head CodeRabbit review found a valid package-boundary documentation issue: docs are shipped but tracker issue records are excluded. Correct all three new tracker references introduced in the touched focus/context sections to canonical GitHub URLs with adjacent repository-only/npm-exclusion notices. Keep existing unrelated references and runtime implementation unchanged. Validate build, maintained docs-link gate and the actual npm pack manifest before closure; no new unit test is needed for this documentation-only correction."
+  "2026-10-25T03:23:30.591Z","harness:codex","Build and maintained documentation-link gate pass. Actual npm pack dry-run manifest confirms both documentation pages are shipped and tracker issue records are excluded. All three new focus/context tracker references now use canonical GitHub URLs and adjacent exclusion notices. Runtime source, executable contracts and tests are unchanged from the reviewed head that passed11229 tests with3 platform skips and exact100/100/100/100 coverage. The final documentation head still requires hosted checks and the requested bot review before merge."
+  "2026-10-25T04:34:36.398Z","harness:codex","Scheduling review reproduction: the independent strict-contract regression fails because meet has no declared inheritFocus property, while flat/nested runtime scheduling actions already honor omitted/false/true values. Add the optional boolean to meet/event/remind declarations, bump additive strict/provider schema versions to4.23.0/1.12.0, and align generated contracts/snapshots. All58 focused tests now pass, including real persisted scheduling parents and full plan.parent receipt assertions. Documentation names create provenance separately from the plan result. A live public schema endpoint currently reports4.4.0; compare that separately with an exact published artifact before any hosting update."
+  "2026-10-25T04:50:42.087Z","harness:codex","Independent strict-action regression failed before the fix because meet omitted the focus parameter; all five focus-enabled action schemas now declare an optional boolean. Real temporary persistence verifies omitted/false/true policy through flat and nested meet/event/remind calls. Full plan receipts expose plan.parent and docs identify create provenance separately. All58 targeted tests and the consolidated107-test linked suite plus maintained documentation-link gate pass with recorded receipts. Typecheck and the complete static pipeline pass, including graph/record integrity, dependency/security, SDK surface, contracts, help budgets and bounded mutation. Strict/provider schema versions are4.23.0/1.12.0 for the additive focus surface. The previous implementation head passed11229 tests with3 skips and exact100/100/100/100; the new schema/test head still requires hosted coverage and fresh external review. Hosted public-schema scope drift is recorded separately under the existing public-surface programme; no hosting deployment or publication claim is made."
+  "2026-10-25T05:04:28.792Z","harness:codex","Release-baseline reconciliation: ordinary field-aware merge incorporated the immutable2026.10.25 release commit. Package-owned changelog regeneration correctly leaves the later Greptile/context work under Unreleased instead of attributing it to the existing tag; the active focus row will return after closure. Refreshed contracts for the actual package baseline and clarified touched helper documentation in response to diff-scoped review coverage. Re-run consolidated linked checks, types and the full static pipeline before the final structured closure."
+  "2026-10-25T05:19:04.749Z","harness:codex","Reconciled the reviewed bundle with the automatically generated2026.10.25 main/tag baseline using a clean ordinary merge. Refreshed deterministic contracts and helper documentation. Independent strict-action regression failed before the fix because meet omitted the focus parameter; all five focus-enabled action schemas now declare an optional boolean. Real temporary persistence verifies omitted/false/true policy through flat and nested meet/event/remind calls. Full plan receipts expose plan.parent and docs identify create provenance separately. The consolidated107-test linked suite and maintained documentation-link gate pass again on the release baseline, along with typecheck and the complete static pipeline including graph/record integrity, security, SDK surface, contracts, help budgets and bounded mutation. Strict/provider versions are4.23.0/1.12.0. Previous full implementation coverage was11229 passed/3 skipped and exact100/100/100/100; revised-head hosted coverage and fresh review remain required. The automatic v2026.10.25 release and its npm/npx/bunx/MCP plus npm/Bun installed-agent acceptance pass, but its tag predates this implementation. New work stays Unreleased for a later eligible cut. Hosted-schema scope/identity migration is separately queued under the existing public-surface programme."
+  "2026-10-25T05:46:17.120Z","harness:codex","PR1582 latest full review reproduced the calendar default edge through actual activated package handlers and temporary persistence: an own inheritFocus:undefined overrides the prior default. Independent regression fails before the fix; omitted/undefined/false/true controls now pass for meet/event/remind, while direct SDK policy remains opt-in. Apply the default after the spread and narrow the generic option to a boolean before calling typed SDK operations. Added explanatory comments on touched normalization/schedule readers. The three-file35-test focus/scheduling/package suite passes; linked full verification and exact revised-head CI/review still follow. Grouped maintenance/intake and operational evidence remain in this one delivery per the requested BIG-PR scope."
+  "2026-10-25T06:05:51.205Z","harness:codex","Independent activated-package regression fails before the calendar default correction and verifies omitted/undefined/false/true persisted parents after it across all three shortcuts. All 111 linked assertions plus documentation links, strict types and complete static pipeline pass; filler inventory decreases by one with the maintained ratchet generator. Prior exact-head hosted source suite passed 11231 tests with 3 skips with exact 100/100/100/100; the new package regression still requires fresh hosted CI/review. All five strict action declarations, generated contracts, explicit create/plan receipts, metadata-only JSON refusal and parent precedence remain covered. Public 2026.10.25 acceptance passed independently for npm/npx/bunx/MCP and npm/Bun agent sessions, but that tag predates this delivery; these changes remain Unreleased."
+notes[1]{created_at,author,text}:
+  "2026-10-25T00:57:47.115Z","harness:codex","Design: the SDK-owned create primitive defaults inheritFocus to false; the typed client/MCP and direct scheduling APIs expose opt-in. The thin CLI sets its own true default and exposes explicit positive/negative controls. Parent, template parent and unset-parent precedence remain governed by existing validators. Package calendar command handlers explicitly preserve their previous convenience. The effective inherited parent is stored in the item and create event, with parent_source:focus retained on the full receipt. New public types/help/schema/contracts remain aligned; no private import or test-only production seam was added."
+files[27]{path,scope}:
+  docs/generated/AGENT_CAPABILITY_ROUTING.md,project
+  docs/generated/AGENT_COMMAND_SURFACE.md,project
+  packages/pm-calendar/extensions/calendar/shortcuts.ts,project
+  scripts/release/docstring-quality-baseline.json,project
+  sdk/public-surface.json,project
+  src/cli/register-mutation.ts,project
+  src/sdk/cli-contracts/commander-mutation-options.ts,project
+  src/sdk/cli-contracts/completeness.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
+  src/sdk/cli-contracts/registration-helpers.ts,project
+  src/sdk/cli-contracts/tool-option-contracts.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/plan.ts,project
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime.ts,project
+  src/sdk/scheduling-shortcuts.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/commands/lifecycle/focus-command.spec.ts,project
+  tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts,project
+  tests/unit/packages/calendar-shortcuts.spec.ts,project
+  tests/unit/scripts/release/command-grammar-gate.spec.ts,project
+  tests/unit/sdk/action-schema-parity.spec.ts,project
+  tests/unit/sdk/tool-option-contracts.spec.ts,project
+  tests/unit/sdk/transactions/preview-snapshot.spec.ts,project
+tests[3]:
+  - command: node scripts/release/docs-skills-gate.mjs --links-only
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-25T03:23:28.405Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-explicit-context
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/action-schema-parity.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-25T04:36:45.454Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-explicit-context
+  - command: node scripts/run-tests.mjs test -- tests/unit/packages/calendar-shortcuts.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-25T05:46:16.106Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-explicit-context
+test_runs[6]:
+  - run_id: test-local-mvn4b6gd-r69v5t
+    kind: test
+    status: passed
+    started_at: "2026-10-25T00:56:48.662Z"
+    finished_at: "2026-10-25T00:57:04.621Z"
+    recorded_at: "2026-10-25T00:57:04.621Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvn7fuv5-n237h7
+    kind: test
+    status: passed
+    started_at: "2026-10-25T02:24:05.049Z"
+    finished_at: "2026-10-25T02:24:41.729Z"
+    recorded_at: "2026-10-25T02:24:41.729Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvn9jhav-8xwun1
+    kind: test
+    status: passed
+    started_at: "2026-10-25T03:23:28.967Z"
+    finished_at: "2026-10-25T03:23:30.007Z"
+    recorded_at: "2026-10-25T03:23:30.007Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs --links-only,schema,schema,source,local_source_ref
+  - run_id: test-local-mvnc64os-s7r1sp
+    kind: test
+    status: passed
+    started_at: "2026-10-25T04:36:47.663Z"
+    finished_at: "2026-10-25T04:37:05.980Z"
+    recorded_at: "2026-10-25T04:37:05.980Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs --links-only,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvnd5r8c-ab4yuc
+    kind: test
+    status: passed
+    started_at: "2026-10-25T05:04:29.371Z"
+    finished_at: "2026-10-25T05:04:48.156Z"
+    recorded_at: "2026-10-25T05:04:48.156Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs --links-only,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvneo5wl-n8oj0d
+    kind: test
+    status: passed
+    started_at: "2026-10-25T05:46:33.965Z"
+    finished_at: "2026-10-25T05:47:06.597Z"
+    recorded_at: "2026-10-25T05:47:06.597Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs --links-only,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/commands/lifecycle/scheduling-shortcuts.spec.ts tests/unit/commands/lifecycle/plan-command.spec.ts tests/unit/cli/structured-mutation-registration.spec.ts tests/unit/sdk/tool-option-contracts.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/packages/calendar-shortcuts.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  docs/SDK.md,project
+close_reason: Complete explicit SDK focus policy and calendar boundary defaults
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-gh1577
 body: "## Summary\n\n`PmClient.create` silently inherits the tracker's saved focus (`pm focus`) as the new item's parent when no parent is given. #161 added this as a CLI convenience for a human or agent working \"under\" a focused item. Through the SDK it turns ambient session state into data: an importer, sync job or hosted service writing into a tracker where someone left a focus set gets unplanned parent links, and the create receipt reports plain success.\n\n## Evidence\n\nA fleet importer (pm-beads dependency-closed transfer) shipped this defect until a read-only review reproduced it. Transferring `{\"id\":\"a\",\"title\":\"A\"}` into a tracker with an active focus created `a` with the focused item as parent and reported success. Tracing the 2026.10.20 SDK, `PmClient.create` calls `runCreate`, which reads saved focus whenever no parent is supplied and `unset` lacks `parent`. Passing `unset: [\"parent\"]` suppresses it. That option is typed, but neither the create typings nor the help mention that it suppresses focus inheritance. The package had to find this out by reading the source.\n\n## Reproduction (plain directory, no git)\n\n```bash\npm init --defaults --agent-guidance skip\np=$(pm create --type Epic --title Parent --json | jq -r .id)\npm focus \"$p\"\n```\n\n```ts\nimport { PmClient } from '@unbrained/pm-cli';\nconst c = new PmClient({ cwd: process.cwd(), author: 'importer' });\nconst { item } = await c.create({ type: 'Task', title: 'Imported row' });\nconsole.log(item.parent); // the focused Epic, though the caller never asked for a parent\n```\n\n## Expected (any of these, in order of preference)\n\n1. SDK creates do not read interactive session state (focus) unless the caller opts in, for example `inheritFocus: true`. The CLI keeps the #161 behavior.\n2. If inheritance stays the default, the receipt says so (`parent_source: \"focus\"`, the focus id) and a warning is emitted, so callers can detect it.\n3. At minimum, document on `create` (typings and help) that `unset: [\"parent\"]` is the opt-out. Also list every other ambient default a programmatic create can pick up (templates, default tags and assignee, workflow defaults), so importers can state them explicitly.\n\n## Why core\n\nEvery SDK consumer that writes items for someone else (importers, sync, hosted pm-web/pm-gpt/MCP, recursive agents creating subtasks in a shared tracker) is exposed. The failure is silent and leaves the hierarchy wrong rather than raising an error."

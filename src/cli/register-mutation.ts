@@ -1601,9 +1601,9 @@ export function registerMutationCommands(
     .command("create")
     .argument(
       "[type-or-title]",
-      'Item title, or item type when a title follows (e.g. `pm create task "Fix bug"`)',
+      'Title, or type followed by title (e.g. task "Fix bug")',
     )
-    .argument("[title]", "Item title when the first argument is an item type")
+    .argument("[title]", "Title following an item type")
     .description("Create a new project management item.");
   registerCommanderOptionContracts(
     createCommand,
@@ -1612,7 +1612,7 @@ export function registerMutationCommands(
   createCommand
     .option(
       "--stdin-json",
-      "Read a full item JSON document from stdin; explicit flags override document values",
+      "Item JSON from stdin; explicit flags override",
     )
     .option(
       "--body-file <path>",
@@ -1632,6 +1632,8 @@ export function registerMutationCommands(
       "--allow-duplicate",
       "Explicitly create even when strict similarity governance finds likely duplicates",
     )
+    .option("--inherit-focus", "Use saved focus as parent (CLI default; SDK/MCP opt in)", true)
+    .option("--no-inherit-focus", "Ignore saved focus; --unset parent also suppresses it")
     .action(runCreateAction);
   if (registrationOptions.targetCommandName === "create") {
     return;
@@ -2205,7 +2207,7 @@ export function registerMutationCommands(
   const planCommand = program
     .command("plan")
     .description(
-      "Agent-optimized Plan item workflow: create, manage steps, link dependencies, approve, and materialize.",
+      "Plan workflow: create, manage steps and dependencies, approve, and materialize.",
     )
     .argument(
       "[subcommand]",
@@ -2213,7 +2215,7 @@ export function registerMutationCommands(
     )
     .argument(
       "[id]",
-      "Plan id (required for non-create subcommands); for create this may be the positional title",
+      "Plan id (non-create); positional title for create",
     )
     .argument(
       "[step]",
@@ -2224,22 +2226,24 @@ export function registerMutationCommands(
     .option("--description <value>", "Plan description")
     .option(
       "--scope <value>",
-      "Short scope statement of the target change or investigation",
+      "Change or investigation scope",
     )
     .option("--parent <value>", "Parent pm item id")
+    .option("--inherit-focus", "Create under saved focus (CLI default)", true)
+    .option("--no-inherit-focus", "Create without saved focus")
     .option(
       "--related <value>",
-      "Related pm item ids (repeatable, csv-friendly)",
+      "Related item ids (repeatable CSV)",
       collect,
     )
     .option(
       "--blocks <value>",
-      "Pm item ids this plan blocks (repeatable, csv-friendly)",
+      "Blocked item ids (repeatable CSV)",
       collect,
     )
     .option(
       "--blocked-by <value>",
-      "Pm item ids that block this plan (repeatable, csv-friendly)",
+      "Blocking item ids (repeatable CSV)",
       collect,
     )
     .option(

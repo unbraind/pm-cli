@@ -2,16 +2,37 @@ import { describe, expect, it } from "vitest";
 import { runEvent, runMeet, runRemind } from "../../../../src/sdk/scheduling-shortcuts.js";
 import type { CalendarEvent, ItemMetadata, Reminder } from "../../../../src/types/index.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 
+/** Read persisted calendar events so shortcut assertions inspect actual stored schedules. */
 function events(item: ItemMetadata): CalendarEvent[] {
   return (item as ItemMetadata & { events?: CalendarEvent[] }).events ?? [];
 }
 
+/** Read persisted reminders without inventing schedule entries for non-reminder items. */
 function reminders(item: ItemMetadata): Reminder[] {
   return (item as ItemMetadata & { reminders?: Reminder[] }).reminders ?? [];
 }
 
 describe("scheduling shortcuts", () => {
+  it("preserves explicit focus policy through flat and nested SDK scheduling actions", async () => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      const parent = await client.create({ title: "Scheduling focus", type: "Epic", createMode: "progressive" });
+      await client.focus(parent.item.id);
+      for (const action of ["meet", "event", "remind"] as const) {
+        for (const nested of [false, true]) {
+          for (const inheritFocus of [undefined, false, true]) {
+            const options = { title: `${action} ${nested} ${inheritFocus}`, inheritFocus };
+            const result = await runAction({ action, path: context.pmPath, noExtensions: true,
+              ...(nested ? { options } : options) }) as { item: ItemMetadata };
+            expect((await client.get(result.item.id)).item.parent).toBe(inheritFocus ? parent.item.id : undefined);
+          }
+        }
+      }
+    });
+  });
+
   it("runMeet creates a Meeting with default start=now and duration=1h", async () => {
     await withTempPmPath(async (context) => {
       const result = await runMeet("Sprint Planning", { author: "claude-code-agent" }, { path: context.pmPath });

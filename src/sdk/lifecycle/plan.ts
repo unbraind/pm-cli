@@ -106,6 +106,8 @@ export interface PlanCommandOptions
   scope?: string;
   /** Value that configures or reports parent for this contract. */
   parent?: string;
+  /** Opt into saved session focus as parent when creating; SDK default is false. */
+  inheritFocus?: boolean;
   /** Value that configures or reports related for this contract. */
   related?: string | string[];
   /** Value that configures or reports blocks for this contract. */
@@ -994,13 +996,11 @@ async function readPlanItem(
   return { document: loaded.document, itemId: located.id };
 }
 
+/** Collect plan relationships while shared creation owns parent normalization and its dependency edge. */
 function buildPlanCreateDependencies(
   options: PlanCommandOptions,
 ): string[] | undefined {
   const deps: string[] = [];
-  if (options.parent) {
-    deps.push(`id=${options.parent.trim()},kind=parent`);
-  }
   for (const ref of toArray(options.related))
     deps.push(`id=${ref},kind=related`);
   for (const ref of toArray(options.blocks)) deps.push(`id=${ref},kind=blocks`);

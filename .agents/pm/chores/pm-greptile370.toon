@@ -1,0 +1,47 @@
+id: pm-greptile370
+title: Adopt release-age eligible Greptile 3.7.0 review tooling
+description: "Adopt the newly eligible Greptile minor from3.6.2 to3.7.0; preserve Node>=22 support, existing lint/coverage gates and the seven-day policy. Keep the broader cooldown queue open for its separate pending versions."
+type: Chore
+status: closed
+priority: 2
+tags[3]: dependency-update,review,tooling
+created_at: "2026-10-25T00:55:02.851Z"
+updated_at: "2026-10-25T01:49:11.933Z"
+closed_at: "2026-10-25T01:49:11.012Z"
+completed_at: "2026-10-25T01:49:10.377Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: "Verify the exact October18 00:02UTC publication is at least seven days old; upgrade one review-tool package without transitive drift; pass --version, advisory and project verification; retain other dependency updates under canonical owners."
+parent: pm-wb25c1
+risk: low
+confidence: high
+resolution: "Updated one dev-tool resolution from3.6.2 to3.7.0 after seven full days, retaining Node>=22 and all security/cooldown/migration policies."
+expected_result: Review tooling reports3.7.0 with no unrelated resolution or supported-runtime change.
+actual_result: "Linked --version and all567-package advisory checks pass; one resolution replacement is verified. Full canonical suite: 11227 passed, 3 skipped; exact source coverage100/100/100/100. Full static quality, typecheck, focused/linked PM tests and packed npm/npx/Bun/bunx acceptance pass."
+comments[3]{created_at,author,text}:
+  "2026-10-25T00:55:02.851Z","harness:codex","Duplicate check: complete strict all-status3101-item intake plus fresh version-specific search and current open/in_progress lists. pm-wb25c1 owns the multi-version cooldown queue; previous Greptile3.5 work is distinct and remains historically closed. This narrow delivery child makes the actual3.7.0 adoption independently closable and package-changelog eligible while the queue remains open. The original manifest/lock edit was already owned by the claimed parent; this child carries its scoped delivery evidence."
+  "2026-10-25T01:35:26.211Z","harness:codex","Eligibility and scope: registry publication2026-10-18T00:02:04.038Z was at least seven full days old at adoption on October25. Greptile3.7.0 retains Node>=22, including the supported22.18 floor. The manifest and lockfile replace exactly one resolved package; unrelated dependency/cooldown/engine decisions remain with parent pm-wb25c1 and existing major-migration owners. Linked version/advisory tests, strict typecheck, full static quality, registry+OSV567-package audit and nine-package npm/npx/Bun/bunx smoke pass. Final full-source coverage is running."
+  "2026-10-25T01:49:10.250Z","harness:codex","Final pre-PR acceptance: Linked --version and all567-package advisory checks pass; one resolution replacement is verified. Full canonical suite: 11227 passed, 3 skipped; exact source coverage100/100/100/100. Full static quality, typecheck, focused/linked PM tests and packed npm/npx/Bun/bunx acceptance pass. Hosted exact-head checks and external reviews remain required before merge; no publication claim is made by this source closure."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  pnpm exec greptile --version,project,60,"harness:codex","2026-10-25T00:55:06.532Z",local_mutation,fix/sdk-explicit-context
+  node scripts/release/dependency-advisories/gate.mjs,project,240,"harness:codex","2026-10-25T00:55:06.532Z",local_mutation,fix/sdk-explicit-context
+test_runs[1]:
+  - run_id: test-local-mvn4blyx-icp2ix
+    kind: test
+    status: passed
+    started_at: "2026-10-25T00:57:18.188Z"
+    finished_at: "2026-10-25T00:57:24.729Z"
+    recorded_at: "2026-10-25T00:57:24.729Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      pnpm exec greptile --version,schema,schema,source,local_source_ref
+      node scripts/release/dependency-advisories/gate.mjs,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Adopt the eligible Greptile3.7.0 review CLI
+body: ""

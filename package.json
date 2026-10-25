@@ -254,7 +254,7 @@
     "fast-check": "^4.10.2",
     "github-slugger": "2.0.0",
     "gpt-tokenizer": "4.0.0",
-    "greptile": "^3.6.2",
+    "greptile": "^3.7.0",
     "jscpd": "^5.4.1",
     "knip": "^6.41.0",
     "marked": "18.1.1",

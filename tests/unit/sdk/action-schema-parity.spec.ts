@@ -33,6 +33,15 @@ interface CompletenessBaseline {
 }
 
 describe("action-scoped MCP schema parity", () => {
+  it("declares optional boolean focus policy on every focus-enabled creation action", () => {
+    for (const action of ["create", "plan", "meet", "event", "remind"] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties & { additionalProperties: boolean; required: string[] };
+      expect(schema.additionalProperties, action).toBe(false);
+      expect(schema.properties?.inheritFocus, action).toMatchObject({ type: "boolean" });
+      expect(schema.required, action).not.toContain("inheritFocus");
+    }
+  });
+
   it("requires a patch with either linked-test selector and rejects dual selectors", () => {
     const schema = _testOnlyCliContracts.buildActionScopedToolSchema("test") as {
       allOf: Array<{ if?: { required?: string[] }; then?: unknown; not?: unknown }>;
@@ -53,9 +62,9 @@ describe("action-scoped MCP schema parity", () => {
     expect(schema.properties?.definition).toMatchObject({ type: ["object", "string"] });
     expect(PM_TOOL_PARAMETER_PROPERTIES.definition).toEqual({ type: "object" });
   });
-  it("versions install planning and lifecycle handoff contracts", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.22.0");
-    expect(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("1.11.0");
+  it("versions additive lifecycle and focus contracts", () => {
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.23.0");
+    expect(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("1.12.0");
     const release = _testOnlyCliContracts.buildActionScopedToolSchema("release") as SchemaWithProperties & { allOf: Array<{ if?: { required?: string[] }; then?: unknown }> };
     expect(release.properties?.handoff).toMatchObject({ type: "string" });
     const handoffRequirement = release.allOf.find((entry) => entry.if?.required?.includes("handoff"));

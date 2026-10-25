@@ -16,14 +16,14 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       keys: ["title"],
       option: "--title, -t <value>",
       description:
-        "Item title [required] (or pass title as the first positional argument)",
+        "Item title [required] (or first positional argument)",
     },
     {
       target: "id",
       keys: ["id"],
       option: "--id <value>",
       description:
-        "Explicit item id (normalized with the configured id_prefix)",
+        "Explicit id (normalized with id_prefix)",
     },
     {
       target: "description",
@@ -35,19 +35,19 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       target: "type",
       keys: ["type"],
       option: "--type <value>",
-      description: "Item type (built-ins plus any configured custom types)",
+      description: "Built-in or custom item type",
     },
     {
       target: "template",
       keys: ["template"],
       option: "--template <value>",
-      description: "Apply named create template defaults before explicit flags",
+      description: "Named template defaults; explicit flags override",
     },
     {
       target: "createMode",
       keys: ["createMode", "create_mode"],
       option: "--create-mode <value>",
-      description: "Create required-option policy mode: strict|progressive",
+      description: "Required fields: strict|progressive",
       aliasOptions: [
         {
           option: "--create_mode <value>",
@@ -59,7 +59,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       target: "schedulePreset",
       keys: ["schedulePreset", "schedule_preset"],
       option: "--schedule-preset <value>",
-      description: "Scheduling preset for Reminder|Meeting|Event: lightweight",
+      description: "Reminder/Meeting/Event defaults: lightweight",
       aliasOptions: [
         {
           option: "--schedule_preset <value>",
@@ -77,7 +77,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       target: "closeReason",
       keys: ["closeReason", "close_reason"],
       option: "--close-reason <value>",
-      description: "Close reason when creating directly in a terminal status",
+      description: "Reason for a directly terminal item",
       aliasOptions: [
         {
           option: "--close_reason <value>",
@@ -89,7 +89,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       target: "completedAt",
       keys: ["completedAt", "completed_at"],
       option: "--completed-at <value>",
-      description: "Actual completion time for a terminal imported item",
+      description: "Actual completion time for terminal imports",
       aliasOptions: [
         {
           option: "--completed_at <value>",
