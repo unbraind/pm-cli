@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,output-budget,recovery,sdk
 created_at: "2026-10-23T06:39:45.840Z"
-updated_at: "2026-10-25T17:48:14.492Z"
+updated_at: "2026-10-25T17:51:17.828Z"
 closed_at: "2026-10-25T17:25:57.425Z"
 completed_at: "2026-10-25T17:25:57.425Z"
 author: "harness:codex"
@@ -23,7 +23,7 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1551,discovered_from,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
   pm-hid9g1,related,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
   pm-gh1567,related,"2026-10-25T17:43:25.684Z","harness:codex","cli:update:dep",detected
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-23T06:39:45.840Z","harness:codex","Duplicate check: live search session restore reference brief plus the complete all-status strict corpus contained no matching session recovery item; related pm-hid9g1 is already closed and remains closed. Reproduced on October23 using the current build: pm get pm-gh1551 --brief refuses unknown_option, while pm get pm-gh1551 --depth brief succeeds. Intake only; left open and unclaimed while pm-gh1551 and pm-gh1552 are the active delivery."
   "2026-10-25T16:30:16.988Z","harness:codex","Scope: correct the SDK receipt literal and emitted recovery command, execute the advertised command in an isolated fixture, and align the public surface and docs. Existing closed SDK output lineage remains completed. Only this issue and pm-gh1567 are claimed for implementation."
   "2026-10-25T16:35:24.522Z","harness:codex","Regression evidence: added a sandboxed create/list/session-repeat test and executed the actual emitted restore command before the fix. It failed with unknown_option --brief (exit 2), as expected. The corrected --depth brief path now succeeds. The existing 256-token minimum fixture uses a one-character session identity to retain its original budget while accounting for the longer valid recovery command; no ceiling or assertion was relaxed."
@@ -31,6 +31,7 @@ comments[7]{created_at,author,text}:
   "2026-10-25T17:08:09.282Z","harness:codex","Calibration review: the valid --depth brief recovery spelling adds exactly6 bytes per receipt across the five-command orientation. The generated approved report changes only session delivered bytes (+30 at both2-item and2243-item tiers), with spend3474->3479 and9664->9671. Command counts,20000-token ceilings, delivered rows, seen-item counts, suppressed repeats, intent ceilings and cursor baselines are unchanged. Regenerated through the package script; no gate predicate or margin changed."
   "2026-10-25T17:25:21.177Z","harness:codex","Final linked run records35/35 passing tests after the valid command spelling and minimum-envelope fixture update. The approved calibration report adds exactly30 bytes per five-command session at both corpus tiers, with unchanged ceilings, row counts and repeat suppression. Strict static tracker checks identified one redundant transitive prerequisite in the new backend intake; removed that direct edge while retaining the real ports-to-conformance-to-migration chain."
   "2026-10-25T17:48:14.492Z","harness:codex","Pre-PR acceptance: graph/record gates pass after linking the shared output work and removing the redundant intake prerequisite. Package-generated changelog includes this completed fix in Unreleased using latest pm-changelog2026.10.25; generation/check pass. Live history/storage validation passes and health summary has zero warnings;170 historical terminal-field warnings remain legacy data rather than invented backfills. No item is left in_progress."
+  "2026-10-25T17:51:17.822Z","harness:codex","Reviewed delivery linkage: https://github.com/unbraind/pm-cli/pull/1592. Implementation and immutable closure evidence are included in the same PR; full hosted coverage and exact-head review/analyzer checks must pass before merge. This work remains Unreleased after the sole daily tag."
 learnings[1]{created_at,author,text}:
   "2026-10-25T16:48:09.105Z","harness:codex","Recovery text is executable API surface: execute an emitted command in an isolated full user journey, rather than only asserting its literal string. A longer valid recovery spelling can change a minimum control-envelope boundary without changing the budget policy."
 files[5]:

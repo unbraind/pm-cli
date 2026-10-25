@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[2]: github-intake,sdk
 created_at: "2026-10-23T23:21:42.845Z"
-updated_at: "2026-10-25T17:48:13.820Z"
+updated_at: "2026-10-25T17:59:40.610Z"
 closed_at: "2026-10-25T17:25:55.897Z"
 completed_at: "2026-10-25T17:25:55.897Z"
 author: "harness:codex"
@@ -20,7 +20,7 @@ expected_result: Package authors fit complete context packets within every requi
 actual_result: "36 linked SDK/host tests pass, 49 correction/packed Node/Bun checks pass, all TypeScript consumers compile, receipt-exclusion and reserved-type negative controls detect regressions. Exact-head full hosted coverage and review remain required merge gates; this source work is Unreleased."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1552,related,"2026-10-24T00:11:32.955Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-10-23T23:21:42.845Z","harness:codex","Duplicate check 2026-10-24: canonical orientation, request-specific SDK/rollback search, fresh open and in_progress lists, and complete strict all-status read of 3083 items including 2799 closed and 14 canceled; no omissions or unreadable files. Exact GitHub issue and title checks found no existing owner for this delta. Closed SDK/bulk foundations were read live and remain completed. Source report retained in full; intake is not reproduction proof."
   "2026-10-25T16:30:16.367Z","harness:codex","Scope: implement a storage-neutral whole-envelope fitter with caller-owned rendering and envelope construction, bounded fixed-point accounting including receipts/framing, deterministic prefix/skip selection and explicit infeasibility. Related session-recovery work ships in one reviewed PR. Source inspection confirms existing context packer charges candidate projections and output-token-accounting deliberately excludes its own receipt; neither supplies this generic contract."
   "2026-10-25T16:35:54.679Z","harness:codex","Verification: 71 focused tests passed across whole-envelope fitting, existing read-output contracts, executable session recovery and copied-extension host injection. New typed consumer imports the query entrypoint and derives host function types from ExtensionCommandSdk. Complete fitting retains mandatory caller metadata and reserved output_fit receipts, uses the greatest required-renderer cost, and refuses infeasible/nonconvergent/work-limited results without returning oversized packets."
@@ -33,23 +33,37 @@ comments[12]{created_at,author,text}:
   "2026-10-25T17:08:09.969Z","harness:codex","Fresh command-level observability evidence: explicitly sampled get/list probes are present in Sentry as pm.command spans. Their exact telemetry cohort has one start and one finish for get and for list; the physical broker has0 ready and0 unacknowledged messages. The broader aggregate gate remains separate from per-action and historical completeness."
   "2026-10-25T17:25:20.448Z","harness:codex","Final public type negative control: the real public consumer compiles with zero diagnostics; an in-memory mutation of the shipped declaration retaining overwritten builder receipt fields produces the expected unused @ts-expect-error diagnostic. Runtime tests also reject mutation of the frozen receipt and its included-index array. Final linked runs record36 fitting/host tests and35 session/recovery tests passed; all TypeScript project/consumer configurations pass."
   "2026-10-25T17:48:13.820Z","harness:codex","Pre-PR acceptance: source lint/static/SDK boundary/contracts/public-surface/import-cost/transport checks passed; corrected full-population graph-composition and record-integrity gates pass. The canonical bounded mutation gate reports345 killed and7 declared equivalent of352 with zero gate failures. Package-artifact gate passes, and packed npx plus bunx smoke passes across9 packages. The full local suite had11397 passing tests plus two corrected/independently passing cases; full hosted coverage remains the exact-head merge authority."
+  "2026-10-25T17:51:17.736Z","harness:codex","Reviewed delivery linkage: https://github.com/unbraind/pm-cli/pull/1592. Implementation and immutable closure evidence are included in the same PR; full hosted coverage and exact-head review/analyzer checks must pass before merge. This work remains Unreleased after the sole daily tag."
+  "2026-10-25T17:59:40.609Z","harness:codex","Pre-review coverage refinement: a caller estimator can change token counts while rendered byte length stays constant. Added an independent custom-estimator case proving stabilization continues until both counts agree. The latest linked run passes37 fitting/host checks; together with35 session/recovery checks the focused total is72. Production implementation and API signatures are unchanged."
 notes[1]{created_at,author,text}:
   "2026-10-25T16:48:06.062Z","harness:codex","Design contract: callbacks own relevance, mandatory metadata, serializers and framing; SDK owns indivisible row admission and a frozen output_fit omission/accounting receipt. Prefix stops at first unaffordable trial; skip tries later rows and does not promise nested selections across budgets. The greatest renderer token and byte costs stabilize independently. Actual work stays outside measured output. Empty mandatory envelopes must fit; work/pass ceilings refuse without partial packets and cannot preempt arbitrary caller callbacks."
 learnings[1]{created_at,author,text}:
   "2026-10-25T16:48:07.637Z","harness:codex","A self-accounting packet must measure its complete final rendering, including its own receipt and newline, at a bounded fixed point. Projection costs and pre-receipt attribution are distinct contracts. Independent receipt-exclusion negative controls are needed because a fitter and its own estimator can agree on the same undercount."
-files[9]{path,scope}:
-  sdk/public-surface.json,project
-  src/core/extensions/extension-types.ts,project
-  src/sdk/extension-command-context.ts,project
-  src/sdk/index.ts,project
-  src/sdk/output/fit-envelope.ts,project
-  src/sdk/query.ts,project
-  tests/integration/extension-host-contracts.integration.spec.ts,project
-  tests/types/fit-output-envelope.test-d.ts,project
-  tests/unit/sdk/output/fit-envelope.spec.ts,project
+files[10]:
+  - path: .agents/pm/extensions/.managed-extensions.json
+    scope: project
+    note: Required package installation audit metadata
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/core/extensions/extension-types.ts
+    scope: project
+  - path: src/sdk/extension-command-context.ts
+    scope: project
+  - path: src/sdk/index.ts
+    scope: project
+  - path: src/sdk/output/fit-envelope.ts
+    scope: project
+  - path: src/sdk/query.ts
+    scope: project
+  - path: tests/integration/extension-host-contracts.integration.spec.ts
+    scope: project
+  - path: tests/types/fit-output-envelope.test-d.ts
+    scope: project
+  - path: tests/unit/sdk/output/fit-envelope.spec.ts
+    scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/output/fit-envelope.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,300,"harness:codex","2026-10-25T16:57:50.009Z",local_mutation,work/sdk-envelope-fitting-recovery-20261025
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvo1whgc-rw8bam
     kind: test
     status: passed
@@ -67,6 +81,17 @@ test_runs[2]:
     started_at: "2026-10-25T17:12:17.641Z"
     finished_at: "2026-10-25T17:12:30.402Z"
     recorded_at: "2026-10-25T17:12:30.402Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/fit-envelope.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvo4r28n-d7vb7p
+    kind: test
+    status: passed
+    started_at: "2026-10-25T17:56:56.259Z"
+    finished_at: "2026-10-25T17:57:11.831Z"
+    recorded_at: "2026-10-25T17:57:11.831Z"
     passed: 1
     failed: 0
     skipped: 0

@@ -89,6 +89,17 @@ describe("complete output envelope fitting (GH-1567)", () => {
     verifyPacket(result, 1);
   });
 
+  it("continues stabilizing when token counts change without a byte-count change", () => {
+    const result = fitOutputEnvelope([], {
+      ...base,
+      renderers: { json: (value) => `${JSON.stringify(value)}\n` },
+      estimateTokens: (text) => Math.min(JSON.parse(text).output_fit.estimated_tokens + 1, 3),
+    });
+    expect(result.work.render_calls).toBe(4);
+    expect(result.envelope.output_fit.estimated_tokens).toBe(3);
+    expect(result.envelope.output_fit.output_bytes).toBe(Buffer.byteLength(result.renderings[0]!.text));
+  });
+
   it.each([
     { tokenBudget: 0 }, { tokenBudget: Number.POSITIVE_INFINITY },
     { tokenBudget: 1.5 }, { maxRenderCalls: -1 }, { maxStabilizationPasses: Number.NaN },
