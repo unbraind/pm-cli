@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"gh:1579",lifecycle,sdk
 created_at: "2026-10-25T00:09:33.388Z"
-updated_at: "2026-10-25T14:49:00.029Z"
+updated_at: "2026-10-25T15:00:20.851Z"
 closed_at: "2026-10-25T14:48:59.266Z"
 completed_at: "2026-10-25T14:49:00.000Z"
 author: "harness:codex"
@@ -18,8 +18,10 @@ confidence: medium
 resolution: "SDK close distinguishes asserted, existing and inferred completion timestamps, seals timestamp/source under the item lock, preserves compact and bulk receipts, and supplies correction guidance. Bulk normalization preserves explicit canonical/snake-case timestamps. Portable history and existing JSON key prefixes are retained; token replays consume the added context with narrowly documented ceilings."
 expected_result: "Retroactive closes expose inference, explicit and existing dates survive every transport, and immutable history remains reproducible and independently verifiable."
 actual_result: "87 focused tests and both linked owners pass, including negative-before provenance controls, independent-process reproducibility, exact attribution and output ordering. Packed npm/npx/Bun/bunx and nine-package smoke pass. Strengthened token replay and seeded-growth rejection pass. Final static and hosted full coverage remain merge requirements."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1464,related,"2026-10-25T00:52:39.590Z","harness:codex","cli:update:dep",detected
+  pm-bj7rq0,related,"2026-10-25T15:00:20.188Z","harness:codex","cli:update:dep",detected
+  pm-gh1585,related,"2026-10-25T15:00:20.188Z","harness:codex","cli:update:dep",detected
 comments[9]{created_at,author,text}:
   "2026-10-25T00:09:33.388Z","harness:codex","Intake source: 1579. Duplicate check: complete strict 3101-item all-status corpus with no omissions, request-specific searches and current open/in_progress lists; related delivered lineage retained. Report recorded for independent verification. No implementation or completion claimed by intake."
   "2026-10-25T14:04:42.306Z","harness:codex","Implementation scope: pair completion-time provenance with pm-gh1585 refusal-side-effect disclosure in one SDK-first PR. Complete strict all-status baseline: 3109 items, 2821 closed, 215 open, 59 draft, 14 canceled, zero in_progress, zero omissions/unreadable records. Preserve asserted dates, prior completion values, and immutable close evidence; add actionable transport receipts and independent regression controls."

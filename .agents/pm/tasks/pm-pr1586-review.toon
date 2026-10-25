@@ -1,0 +1,52 @@
+id: pm-pr1586-review
+title: "PR1586: verify mutation audit delivery and tracker evidence"
+description: "Complete the reviewed mutation-audit delivery: reconcile new prose-only evidence with justified typed relationships, keep dependency inventory out of the historical advisory, resolve actionable review feedback, and verify exact-head CI without weakening existing gates."
+type: Task
+status: closed
+priority: 1
+tags[1]: changelog-exclude
+created_at: "2026-10-25T15:00:15.758Z"
+updated_at: "2026-10-25T15:16:34.737Z"
+closed_at: "2026-10-25T15:16:34.006Z"
+completed_at: "2026-10-25T15:16:00.000Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: New prose references have real typed lineage without increasing the graph ceiling; Original audit and correction history remains recoverable; All actionable review findings are resolved and final required checks pass; Changelog remains package-generated and final checkout returns to main
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: "Preserved audit history while correcting the advisory note scope, added justified co-delivery and validation relationships, refreshed the verified release outcome and next-day reminder, and retained the unchanged graph ceiling and all source gates."
+expected_result: The revised PR contains the complete review corrections and tracker evidence; final hosted checks and analyzer admission must pass before merge.
+actual_result: "First full CodeRabbit review completed with two valid reminder findings, both fixed. First-head coverage passes11372 tests at exact100/100/100/100. The sole first-head required failure is the repaired graph evidence; current graph, record-integrity, linked regressions and bounded mutation checks pass. Remaining optional reviews are quota/trial limited and are not approvals. Revised-head hosted verification remains blocking."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bj7rq0,related,"2026-10-25T15:00:15.758Z","harness:codex","cli:create:dep",detected
+  pm-gh1579,related,"2026-10-25T15:00:15.758Z","harness:codex","cli:create:dep",detected
+  pm-gh1585,related,"2026-10-25T15:00:15.758Z","harness:codex","cli:create:dep",detected
+  pm-7zs0,related,"2026-10-25T15:09:00.888Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-25T15:00:15.758Z","harness:codex","Duplicate check: fresh strict complete all-status3109-item corpus and PR1586 keyword search plus open/in_progress lists found no existing PR1586 review owner. Core fixes are already closed and released. This task owns required same-PR review and graph-evidence remediation only."
+  "2026-10-25T15:07:21.641Z","harness:codex","Graph remediation uses existing justified co-delivery and runner-validation relationships; the prose-gap measurement is back within its unchanged ceiling. Corrected only my own misplaced advisory comments through pm, preserving original texts in immutable history. Linked regressions and record-integrity pass. The bounded SDK mutation partition passes345/352 killed with7 classified equivalents and no uncovered mutants; this is not whole-SDK mutation proof. The first hosted head fails the same known graph gap and its source checks/reviews are still being collected. Sourcery is quota-limited and Greptile trial-limited; no unavailable provider is counted as approval."
+  "2026-10-25T15:09:02.922Z","harness:codex","CodeRabbit completed its first full review and raised two valid reminder findings. Updated the standing release check to the verified October25 publication outcome and re-armed its existing one-shot reminder for October26 at06:00UTC with matching expected evidence. The standing item remains open and its canonical ownership is preserved. Source coverage and Codecov patch checks pass on the first hosted head; the only required failure is the already repaired graph-evidence gap."
+notes[1]{created_at,author,text}:
+  "2026-10-25T15:16:33.298Z","harness:codex","Delivery PR: https://github.com/unbraind/pm-cli/pull/1586. First reviewed source head db2c4d02a6e17cb3ee3c748c4ba57da1f8e5711a passes863 test files and11372 tests (3 intentionally skipped), with exact100/100/100/100 all-source coverage. CodeRabbit completed full review with two reminder findings, both corrected through public PM mutations. All first-head required checks completed; only the known graph-evidence check failed. Current graph and record-integrity gates pass. Final revised-head CI and analyzer admission remain mandatory before merge."
+files[4]{path,scope}:
+  .agents/pm/issues/pm-4ydh.toon,project
+  .agents/pm/issues/pm-gh1579.toon,project
+  .agents/pm/reminders/pm-7zs0.toon,project
+  docs/agent-task-token-baseline.json,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts,project,240,"harness:codex","2026-10-25T15:00:22.915Z",local_mutation,fix/mutation-audit-provenance
+test_runs[1]:
+  - run_id: test-local-mvnyhd9q-cutggc
+    kind: test
+    status: passed
+    started_at: "2026-10-25T15:01:27.328Z"
+    finished_at: "2026-10-25T15:01:41.870Z"
+    recorded_at: "2026-10-25T15:01:41.870Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
+close_reason: Implemented and locally verified all first-pass review and graph-evidence corrections; carry closeout through the final reviewed head.
+body: ""
