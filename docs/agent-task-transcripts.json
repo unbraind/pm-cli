@@ -307,7 +307,10 @@
           "expected_exit_code": 0,
           "expected_output_kind": "mutation_receipt",
           "expected_accounting_mode": "self_reported",
-          "required_fields": ["id", "status", "close_reason"]
+          "required_fields": ["id", "status", "close_reason", "completion.timestamp", "completion.source", "completion.hint"],
+          "expected_field_values": {
+            "completion.source": "close_time"
+          }
         },
         {
           "id": "inspect-closed",
@@ -363,9 +366,10 @@
           "expected_exit_code": 7,
           "expected_output_kind": "collection",
           "expected_accounting_mode": "self_reported",
-          "required_fields": ["rows", "outcome", "exit_code"],
+          "required_fields": ["rows", "outcome", "exit_code", "rows.0.completion.timestamp", "rows.0.completion.source", "rows.0.completion.hint"],
           "expected_field_values": {
-            "outcome": "partial_effect"
+            "outcome": "partial_effect",
+            "rows.0.completion.source": "close_time"
           }
         },
         {

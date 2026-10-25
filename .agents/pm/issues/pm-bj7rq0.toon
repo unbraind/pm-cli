@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-24T21:14:44.343Z"
+updated_at: "2026-10-25T14:36:46.222Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[100]:
+comments[103]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -325,6 +325,15 @@ comments[100]:
   - created_at: "2026-10-24T21:14:44.342Z"
     author: "harness:codex"
     text: "October24 merge continuation retains qualified local startup admissions without changing any budget: full static reached sdk/graph273/172ms with61ms control; an unchanged isolated recheck passed graph137ms but failed aggregate506/500ms, core443/423ms and merge370/226ms with59ms control. A separate CLI floor census failed get407/362, context439/433, next503/440, create439/398 and claim463/415ms with53ms control. Source cause remains unproven; these are product-budget failures under the current qualifier, not runner-unqualified evidence. The previously recorded changing qualified failures remain relevant. Require final exact-head hosted static/coverage admission. Keep this broad owner open/unclaimed; no ceiling or runtime floor is relaxed."
+  - created_at: "2026-10-25T14:31:18.569Z"
+    author: "harness:codex"
+    text: "Local October25 evidence during mutation-audit validation: canonical full coverage run hit the unchanged composed-continuation integration deadline while other cohorts continued. A separately launched static gate correctly waited on the build lease, and an early linked-test run expired while waiting for that lease. Preserve these local failures, budgets and original assertions; do not count them as product provenance failures or erase them by retry. Wait for the full run, then execute the affected spec in isolation and record the exact settled results. This investigation note does not claim a diagnosed root cause or reopen closed work."
+  - created_at: "2026-10-25T14:34:20.954Z"
+    author: "harness:codex"
+    text: "Settled local full-run diagnosis corrects the earlier timing inference:11366 tests passed and4 failed. The continuation test failed because this Node26 runtime cannot resolve npm/package.json, not a test deadline. Three failures belong to the active receipt change (portable history, exact history context, deterministic key order) and will be fixed under pm-gh1579. Full coverage did not emit its summary because test execution failed; no exact-coverage pass is claimed. The early linked test also failed from its240-second build-lease wait and will be rerun after builds settle."
+  - created_at: "2026-10-25T14:36:46.222Z"
+    author: "harness:codex"
+    text: "The unchanged composed-continuation test passes in isolation (Node and Bun packed SDK journeys) after exposing the installed npm package via NODE_PATH for this Homebrew Node26 runtime. No test deadline, assertion or production source was changed for that environment repair. The three receipt-related failures also pass in the revised87-test focused cohort; the original complete-run and linked timeout evidence remain retained."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

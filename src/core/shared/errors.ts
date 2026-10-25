@@ -97,6 +97,15 @@ export interface PmCliErrorRecoveryPayload {
 
 /** Documents the pm cli error context payload exchanged by command, SDK, and package integrations. */
 export interface PmCliErrorContext {
+  /** Durable writes completed before refusal; paths are relative to the selected tracker. */
+  side_effects?: Array<{
+    /** Tracker-relative audit stream that was appended. */
+    path: string;
+    /** Immutable operation written to that stream. */
+    op: string;
+    /** Sealed record identity when supplied by the history writer. */
+    record_hash?: string;
+  }>;
   /** Admission completed before any mutation; omitted when writes may have occurred. */
   changed?: false;
   /** Value that configures or reports code for this contract. */

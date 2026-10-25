@@ -55,13 +55,15 @@ describe("declarative policy MCP parity", () => {
       expect(await client.workflowPolicy("policies")).toMatchObject({ policy_result: true, result: { enforcement: "refuse" } });
       await expect(handleRequest({ jsonrpc: "2.0", id: 2, method: "tools/call", params: {
         name: "pm_close", arguments: { path: pmPath, id: item.id, reason: "Completed" },
-      } })).rejects.toMatchObject({ code: "workflow_policy_refused", context: { policy_violations: [{ policy_id: "evidence", description: "Close with observed evidence.", missing_fields: ["actual_result"] }] } });
+      } })).rejects.toMatchObject({ code: "workflow_policy_refused", context: { side_effects: [{ path: "history/_workspace.jsonl", op: "policy_refused", record_hash: expect.any(String) }], policy_violations: [{ policy_id: "evidence", description: "Close with observed evidence.", missing_fields: ["actual_result"] }] } });
       await expect(client.close(item.id, "Completed")).rejects.toMatchObject({ code: "workflow_policy_refused" });
       const refused = runCli(["close", item.id, "Completed", "--resolution", "Valid resolution", "--json"]);
       expect(refused.code).not.toBe(0);
+      expect(JSON.parse(refused.stderr)).toMatchObject({ side_effects: [{ path: "history/_workspace.jsonl", op: "policy_refused", record_hash: expect.any(String) }] });
       expect(JSON.parse(refused.stderr).refusal).toMatchObject({ surface: "policy:evidence", missing_fields: ["actual_result"], policies: [{ policy_id: "evidence", description: "Close with observed evidence." }] });
       const human = runCli(["close", item.id, "Completed"]);
       expect(human.stderr).toContain("actual_result");
+      expect(human.stderr).toContain("history/_workspace.jsonl");
       const accepted = await handleRequest({ jsonrpc: "2.0", id: 3, method: "tools/call", params: {
         name: "pm_close", arguments: { path: pmPath, id: item.id, reason: "Completed", options: { actualResult: "Verified on every transport" } },
       } });

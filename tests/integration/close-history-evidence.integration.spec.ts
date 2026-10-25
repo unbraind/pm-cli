@@ -4,9 +4,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { runClose } from "../../src/cli/commands/lifecycle/close.js";
-import { runAction } from "../../src/sdk/runtime.js";
+import { PmClient, runAction } from "../../src/sdk/runtime.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
-import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 interface HistoryPatch {
   op: string;
@@ -17,9 +17,51 @@ interface HistoryPatch {
 interface HistoryEntry {
   op: string;
   patch: HistoryPatch[];
+  context?: Record<string, unknown>;
+}
+
+/** Exercise each transport's distinct normalization and compact receipt boundary. */
+async function closeThroughTransport(context: TempPmContext, transport: string, id: string, options: { completedAt?: string; force?: boolean }): Promise<unknown> {
+  if (transport === "SDK") return new PmClient({ pmRoot: context.pmPath, noExtensions: true }).close(id, "Delivered", options);
+  if (transport === "CLI") {
+    const closed = context.runCli(["close", id, "Delivered", "--json", ...(options.completedAt ? ["--completed-at", options.completedAt] : []), ...(options.force ? ["--force"] : [])], { expectJson: true, preserveDefaultMutationOutput: true });
+    expect(closed.code).toBe(0);
+    return closed.json;
+  }
+  if (transport === "MCP") return runAction({ action: "close", id, reason: "Delivered", path: context.pmPath, options });
+  const bulk = await runAction({ action: "close-many", path: context.pmPath, options: { list: { ids: id }, reason: "Delivered", ...options } }) as { rows: unknown[] };
+  return bulk.rows[0];
 }
 
 describe("close history evidence", () => {
+  it.each(["SDK", "CLI", "MCP", "bulk"])("discloses and seals completion provenance through %s", async (transport) => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      for (const source of ["close_time", "asserted", "existing"] as const) {
+        const { item } = await client.create({ title: `Completion provenance ${source}` });
+        const timestamp = "2026-01-02T03:04:05.000Z";
+        if (source === "existing") await client.update(item.id, { status: "closed", completedAt: timestamp, closeReason: "Earlier delivery" });
+        const options = { ...(source === "asserted" ? { completedAt: timestamp } : {}), ...(source === "existing" ? { force: true } : {}) };
+        const historyPath = path.join(context.pmPath, "history", `${item.id}.jsonl`);
+        const before = await readFile(historyPath, "utf8");
+        const result = await closeThroughTransport(context, transport, item.id, options);
+        const after = await readFile(historyPath, "utf8");
+        expect(after.startsWith(before)).toBe(true);
+        const entry = JSON.parse(after.trim().split("\n").at(-1)!) as HistoryEntry;
+        const completion = { source, timestamp: source === "close_time" ? expect.any(String) : timestamp };
+        expect(result).toMatchObject({ completion });
+        expect(entry.context).toMatchObject({ completion });
+        expect(entry.op).toBe("close");
+        if (source === "close_time") {
+          expect(result).toMatchObject({ completion: { hint: expect.stringContaining(`update ${item.id} --completed-at`) } });
+        } else expect((result as { completion: unknown }).completion).not.toHaveProperty("hint");
+        const stored = await client.get(item.id);
+        if (source === "close_time") expect(stored.item.completed_at).toBe(stored.item.closed_at);
+        expect(stored.item.completed_at).toBe((entry.context!.completion as { timestamp: string }).timestamp);
+        expect(await runAction({ action: "history", id: item.id, path: context.pmPath, options: { verify: true } })).toMatchObject({ verification: { ok: true } });
+      }
+    });
+  });
   it.each(["CLI", "MCP"])("preserves successful evidence follow-up in the default compact %s receipt", async (transport) => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Successful close receipt" });

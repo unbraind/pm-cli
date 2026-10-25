@@ -33,6 +33,7 @@ describe("workspace workflow policy enforcement", () => {
       expect(refusal).toBeInstanceOf(PmCliError);
       const error = refusal as PmCliError;
       expect(error.context).toMatchObject({
+        side_effects: [{ path: "history/_workspace.jsonl", op: "policy_refused", record_hash: expect.stringMatching(/^[a-f0-9]{64}$/) }],
         policy_violations: [{ policy_id: "complete", rule: "require_fields", description: "Keep observed evidence before closing.", missing_fields: ["actual_result"] }],
         recovery: { missing_required_fields: ["actual_result"] },
       });
@@ -45,6 +46,17 @@ describe("workspace workflow policy enforcement", () => {
       });
       expect(envelope.refusal).toMatchObject({ surface: "policy:complete", missing_fields: ["actual_result"] });
       expect(envelope.refusal).not.toHaveProperty("rejected_value");
+      expect(envelope.side_effects).toEqual(error.context.side_effects);
+      expect(envelope).not.toHaveProperty("changed", false);
+      expect(formatPmCliErrorForDisplay(error.message, error.context)).toContain("history/_workspace.jsonl");
+      const auditPath = path.join(pmPath, "history", "_workspace.jsonl");
+      const auditBefore = await readFile(auditPath, "utf8");
+      const repeated = await client.close(id, "Verified").catch((failure: unknown) => failure) as PmCliError;
+      const auditAfter = await readFile(auditPath, "utf8");
+      expect(auditAfter.startsWith(auditBefore)).toBe(true);
+      const event = JSON.parse(auditAfter.trim().split("\n").at(-1)!);
+      expect(repeated.context.side_effects).toEqual([{ path: "history/_workspace.jsonl", op: "policy_refused", record_hash: event.record_hash }]);
+      expect(event.record_hash).not.toBe(error.context.side_effects?.[0]?.record_hash);
       expect(formatPmCliErrorForDisplay(error.message, error.context)).toContain("actual_result");
       expect(await readFile(historyPath, "utf8")).toBe(before);
       expect(await readFile(path.join(pmPath, "history", "_workspace.jsonl"), "utf8")).toContain('"op":"policy_refused"');
@@ -226,7 +238,7 @@ describe("workspace workflow policy enforcement", () => {
       const settings = await readSettings(pmPath);
       const workspaceHistory = path.join(pmPath, "history", "_workspace.jsonl");
       const auditBefore = await readFile(workspaceHistory, "utf8");
-      await expect(deleteItem({ pmRoot: pmPath, settings, id: item.id, author: "other", dryRun: true })).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      await expect(deleteItem({ pmRoot: pmPath, settings, id: item.id, author: "other", dryRun: true })).rejects.toMatchObject({ code: "workflow_policy_refused", context: { side_effects: [] } });
       expect(await readFile(workspaceHistory, "utf8")).toBe(auditBefore);
       await expect(deleteItem({ pmRoot: pmPath, settings, id: item.id, author: "other" })).rejects.toMatchObject({ code: "workflow_policy_refused" });
       expect(await deleteItem({ pmRoot: pmPath, settings, id: item.id, author: "owner", dryRun: true })).toMatchObject({ item: { id: item.id } });

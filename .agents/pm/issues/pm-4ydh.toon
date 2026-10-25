@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependabot,github-alert,security,zod
 created_at: "2026-03-12T22:34:25.426Z"
-updated_at: "2026-09-19T08:39:28.621Z"
+updated_at: "2026-10-25T15:00:19.120Z"
 deadline: "2026-03-26T22:34:25.426Z"
 closed_at: "2026-04-03T17:45:51.399Z"
 author: codex-agent
@@ -42,11 +42,27 @@ regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
 dependencies[1]{id,kind,created_at}:
   pm-i7w2,implements,"2026-07-26T17:04:20.348Z"
-comments[4]{created_at,author,text}:
-  "2026-03-12T22:34:25.426Z",codex-agent,Imported GitHub Dependabot alert GHSA-m95q-7qp3-xv42.
-  "2026-03-12T23:19:25.123Z",cursor-agent,"Verification: pnpm audit --prod reports 'No known vulnerabilities found' on 2026-03-12. Current lockfile resolves undici@7.22.0, fast-json-patch@3.1.1, and zod@4.3.6, meeting or exceeding fixed versions recorded in this alert."
-  "2026-04-03T17:23:20.905Z",codex-agent,Reopened on 2026-04-03 after gh reported Dependabot alert #7 still open on default branch; remediation is now tracked under epic pm-i7w2.
-  "2026-04-03T17:45:49.932Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
+comments[6]:
+  - created_at: "2026-03-12T22:34:25.426Z"
+    author: codex-agent
+    text: Imported GitHub Dependabot alert GHSA-m95q-7qp3-xv42.
+  - created_at: "2026-03-12T23:19:25.123Z"
+    author: cursor-agent
+    text: "Verification: pnpm audit --prod reports 'No known vulnerabilities found' on 2026-03-12. Current lockfile resolves undici@7.22.0, fast-json-patch@3.1.1, and zod@4.3.6, meeting or exceeding fixed versions recorded in this alert."
+  - created_at: "2026-04-03T17:23:20.905Z"
+    author: codex-agent
+    text: Reopened on 2026-04-03 after gh reported Dependabot alert #7 still open on default branch; remediation is now tracked under epic pm-i7w2.
+  - created_at: "2026-04-03T17:45:49.932Z"
+    author: codex-agent
+    text: "Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
+  - created_at: "2026-10-25T14:13:58.377Z"
+    author: "harness:codex"
+    text: "October25 security intake observation: zero open Dependabot, code-scanning or secret-scanning alerts and zero open PRs at intake. This item remains the completed historical Zod advisory. The current dependency-update inventory belongs with the active delivery evidence and does not establish upgrade eligibility or reopen this resolved vulnerability."
+    edited_at: "2026-10-25T15:00:18.254Z"
+  - created_at: "2026-10-25T14:23:48.989Z"
+    author: "harness:codex"
+    text: "Correction to the preceding inventory note: its original version incorrectly treated this completed Zod advisory as a maintenance umbrella. The note is now scoped to the security snapshot. The original inventory and correction remain in immutable history; this advisory is not reopened."
+    edited_at: "2026-10-25T15:00:19.120Z"
 notes[1]{created_at,author,text}:
   "2026-03-12T22:34:25.426Z",codex-agent,Remediate or dismiss this alert with verification evidence.
 learnings[1]{created_at,author,text}:

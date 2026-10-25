@@ -6,17 +6,17 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-24T21:55:42.533Z"
+updated_at: "2026-10-25T15:08:59.908Z"
 reminders[1]{at,text}:
-  "2026-10-25T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1574
+  "2026-10-26T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1586
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "Verify the next eligible daily release once on October25 at06:00UTC; confirm immutable tag, npm latest, npm/Bun/npx/bunx consumers and observability separately."
-actual_result: "October24 scheduled publication and all supported consumers passed; historical rolling reliability remains red separately. Re-armed the one-shot reminder for October25 at06:00UTC through PM update."
+expected_result: "Verify the next eligible daily release once on October26 at06:00UTC after the release window; confirm tag, npm latest, npm/Bun/npx/bunx consumers and fresh observability as separate evidence."
+actual_result: "October25 GitHub release and npm latest are2026.10.25. Published package, npm/npx/Bun/bunx and MCP acceptance passed. The dry-run daily guard skipped the sole existing v2026.10.25 tag without mutation. Later mutation-audit fixes await the next eligible release. Rolling dispatch and nightly reliability remain red separately."
 dependencies[14]:
   - id: pm-7n5a
     kind: related
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[241]:
+comments[242]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -817,6 +817,9 @@ comments[241]:
     author: "harness:codex"
     text: "Clean-candidate release dry run returned ok=true, skipped=true, reason=release_already_cut_today, tags_today=[v2026.10.24]. Exactly one current UTC-day production tag is present and no release mutation occurred. The published artifact still predates this merge implementation; keep the next eligible release acceptance separate."
     edited_at: "2026-10-24T21:55:42.533Z"
+  - created_at: "2026-10-25T14:12:49.841Z"
+    author: "harness:codex"
+    text: "Live October25 verification: GitHub release and npm latest are2026.10.25; verify-published-release.mjs --version2026.10.25 exits0 for package/public npx/bunx/MCP consumers. This release predates the active mutation-audit PR. Downloaded Release Reliability40196921154 artifacts: native30 completed/3 failed, current violation dispatch_window; morning dispatcher20 completed/8 failed. Nightly original-attempt rates and renamed-shard sample insufficiency remain red. Closed measurement owners pm-e70zh5/pm-2zjs0g are delivered, not reopened defects; open pm-0trehk owns shard-lineage semantics. No additional same-day release was triggered."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

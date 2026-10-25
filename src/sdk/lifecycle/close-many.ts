@@ -27,6 +27,7 @@ import {
   readSettings,
 } from "../runtime-primitives.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
+import type { CloseCompletionReceipt } from "../lifecycle-policy.js";
 import { hasListFilters } from "../query/list-filter-shared.js";
 import { runList, type ListOptions, type ListedItem } from "../query/list.js";
 import {
@@ -95,6 +96,8 @@ interface CloseManyPlanRow {
 }
 
 interface CloseManyApplyRow {
+  /** Completion provenance for a successfully closed target. */
+  completion?: CloseCompletionReceipt;
   id: string;
   status: "closed" | "skipped" | "failed";
   skip_reason?: string;
@@ -455,6 +458,7 @@ async function applyCloseManyRows(params: {
       rows.push({
         id: item.id,
         status: "closed",
+        completion: result.completion,
         changed_fields: result.changed_fields,
         ...(result.warnings && result.warnings.length > 0
           ? { warnings: result.warnings }

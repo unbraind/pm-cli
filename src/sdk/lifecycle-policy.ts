@@ -50,6 +50,8 @@ export interface CloseOperationOptions {
 
 /** Result returned by the public close-item operation. */
 export interface CloseOperationResult {
+  /** Completion timestamp and the input that supplied it for this close event. */
+  completion?: CloseCompletionReceipt;
   /** Closed item projected as a stable record. */
   item: Record<string, unknown>;
   /** Metadata fields changed by the transition. */
@@ -58,6 +60,16 @@ export interface CloseOperationResult {
   follow_up?: CloseEvidenceFollowUp;
   /** Validation and lifecycle policy receipts. */
   warnings: string[];
+}
+
+/** Per-close completion provenance, also sealed into the immutable close event. */
+export interface CloseCompletionReceipt {
+  /** Actual persisted completed_at value. */
+  timestamp: string;
+  /** Caller assertion, preserved metadata, or inferred tracker close time. */
+  source: "asserted" | "existing" | "close_time";
+  /** Actionable correction guidance when completion was inferred. */
+  hint?: string;
 }
 
 /** Optional evidence completion after a successful, durable close. */

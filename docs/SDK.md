@@ -3538,6 +3538,20 @@ search degrades gracefully and emits warning codes instead of hard-failing.
 
 ## Completion-aware reporting and migration
 
+Close provenance is tracked by [pm-gh1579](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1579.toon)
+(a repository-only tracker record excluded from npm).
+`closeItem`, `PmClient.close`, CLI/MCP close receipts and successful `closeMany`
+rows return `completion` with the persisted `timestamp` and `source`:
+`asserted` means this close supplied `completedAt`, `existing` preserves an
+earlier metadata value, and `close_time` means completion was inferred from the
+tracker close time. Timestamp and source are sealed in the close event's
+`context.completion`; the local correction hint remains in the response.
+Existing records without it have unknown provenance;
+`existing` does not assert how an earlier value was obtained. No prior events are
+rewritten. Inferred receipts include a tracker-bound `update --completed-at`
+correction hint. Pass `completedAt` (CLI `--completed-at`) when closing delivered
+work retroactively; core never extracts a delivery date from reason prose.
+
 `resolveCompletionTimestamp(item)` gives reports one canonical timestamp plus a
 `source` and `fallback` disclosure. It prefers `completed_at` (when the work
 actually finished), then legacy `closed_at`, then `updated_at`.
