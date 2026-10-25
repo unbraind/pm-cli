@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2011,
+    "covered_symbols": 2012,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2012
+    "required_symbols": 2013
   },
   "breaking_acknowledgements": [
     {
@@ -2771,6 +2771,14 @@
       ],
       "package_version": "2026.10.24",
       "reason": "pm-gh1577 versions additive focus-policy schema discovery as strict4.23.0 and provider1.12.0; scheduling actions accept the already typed optional boolean, with no exports removed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:SecretGuardFinding",
+        "signature ./sdk/governance:SecretGuardFinding"
+      ],
+      "package_version": "2026.10.25",
+      "reason": "Additive redacted normalization provenance and finite-inspection status on secret-guard findings; existing guard modes, identifiers and required fields are preserved"
     }
   ],
   "entrypoints": {
@@ -19623,13 +19631,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; }"
+          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "SecretGuardMode",
           "signature": "export type SecretGuardMode = \"off\" | \"advise\" | \"block\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SecretNormalizationKind",
+          "signature": "export type SecretNormalizationKind = \"percent_decode\" | \"json_unescape\" | \"unicode_fold\";"
         },
         {
           "classification": "supported",
@@ -28821,13 +28835,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; }"
+          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "SecretGuardMode",
           "signature": "export type SecretGuardMode = \"off\" | \"advise\" | \"block\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SecretNormalizationKind",
+          "signature": "export type SecretNormalizationKind = \"percent_decode\" | \"json_unescape\" | \"unicode_fold\";"
         },
         {
           "classification": "supported",

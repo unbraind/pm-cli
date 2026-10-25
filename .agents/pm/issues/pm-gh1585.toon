@@ -1,0 +1,28 @@
+id: pm-gh1585
+title: "GH-1585: make tracked policy-refusal audit side effects explicit and actionable"
+description: "A refused workflow mutation intentionally records policy_refused in tracked workspace history before throwing, while the refusal envelope does not disclose that write. Evaluate a compatible SDK-first policy for audit location, opt-in tracking or explicit side-effect receipts and repeated-attempt handling; preserve refusal evidence and item immutability. Intake only; no implementation or fix is claimed."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,"area:governance",history,sdk
+created_at: "2026-10-25T11:59:39.059Z"
+updated_at: "2026-10-25T11:59:44.437Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: "Choose and document compatible refusal-audit semantics; expose any durable writes in typed SDK and transport diagnostics; cover repeated refusals and dry runs; retain item and item-history immutability; regression-test SDK, CLI and MCP in isolated trackers."
+parent: pm-f05lsg
+risk: medium
+confidence: high
+repro_steps: "External report https://github.com/unbraind/pm-cli/issues/1585 reproduces on pinned 2026.10.20 and 2026.10.24: refuse close through required-field policy and inspect tracked workspace history. Current source confirms appendWorkspaceAuditEvent occurs before workflow_policy_refused is thrown; no independent sandbox execution has yet been performed for this intake."
+expected_result: "Callers can derive all durable writes and safe recovery from the refusal; preserve the prior audit and policy evidence contract across SDK, CLI and MCP."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mj42og,discovered_from,"2026-10-25T11:59:39.059Z","harness:codex","cli:create:dep",detected
+  pm-o5s22y,discovered_from,"2026-10-25T11:59:39.059Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-25T11:59:39.059Z","harness:codex","Duplicate check: request-specific policy_refused and dirty-workspace searches plus complete strict all-status 3107-item corpus read (zero unreadable records and zero omissions) found no existing owner for GH-1585. Live full predecessor metadata/comments and verified histories show pm-mj42og intentionally introduced refusal auditing and pm-o5s22y shipped policy recovery evidence; preserve those closed outcomes. This report owns the undisclosed tracked-write UX gap under recovery parent pm-f05lsg. Source inspection at workflow-policy-store.ts confirms the write-before-refusal sequence. Remains open and unclaimed."
+files[4]{path,scope,note}:
+  src/core/policy/workflow-policy-store.ts,project,Existing implementation or regression surface for investigation
+  src/core/shared/errors.ts,project,Existing implementation or regression surface for investigation
+  tests/integration/workflow-policy-mcp.spec.ts,project,Existing implementation or regression surface for investigation
+  tests/unit/sdk/policy/workflow-policy-runtime.spec.ts,project,Existing implementation or regression surface for investigation
+body: ""

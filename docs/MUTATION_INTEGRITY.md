@@ -2,6 +2,8 @@
 
 Tracker references: [pm-h90s](../.agents/pm/issues/pm-h90s.toon), [pm-pim7](../.agents/pm/features/pm-pim7.toon), [pm-w8q4](../.agents/pm/features/pm-w8q4.toon), [pm-9yfo](../.agents/pm/tasks/pm-9yfo.toon), [pm-wwooxx](../.agents/pm/issues/pm-wwooxx.toon), [pm-3kk6](../.agents/pm/issues/pm-3kk6.toon)
 
+Concrete home-path normalization is tracked by [pm-gh1583](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1583.toon). Tracker records are repository-only and excluded from npm.
+
 `pm` treats mutation provenance and content safety as shared SDK policy. CLI,
 MCP, and package hosts can therefore enforce the same rules without duplicating
 argument parsing or exposing detected values.
@@ -70,6 +72,10 @@ whether a blocking policy was explicitly overridden. `scanMutationSecrets` is
 available separately for package-specific preflight UIs. Cyclic inputs are
 safe; scanner failures fail open with `secret_guard_scan_failed_open`.
 
+Direct SDK persistence does not automatically apply this host preflight.
+Integrations that require the policy must evaluate it before dispatching their
+SDK mutations. CLI and MCP adapters already do this.
+
 The SDK guard and repository scanner consume one inventory in
 `src/core/shared/secret-rules.ts`. It covers GitHub, npm, Slack, AWS access
 keys (including temporary keys), Google, Anthropic, OpenAI, GitLab, Sentry,
@@ -90,6 +96,33 @@ A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals
 with references or explicitly review a force override. CLI routing paths and
 payload content are distinct: pass only content to package-owned preflight.
+
+Home-path detection recognizes concrete POSIX and macOS account roots, root
+subdirectories, Windows user profiles, UNC profile shares, DOS device namespace
+profiles, and explicit file URLs. Device prefixes follow the
+[documented Windows path families](https://learn.microsoft.com/dotnet/standard/io/file-path-formats).
+It accepts surrounding markup and punctuation. Detection-only views
+decode percent-byte runs, serialized slash/character escapes, and documented
+Unicode disguises. Unicode handling applies NFKC, removes zero-width/bidi
+controls, and folds division/fraction slashes and Cyrillic look-alikes for the
+path vocabulary's letters o and s. These are finite heuristics, not filesystem
+canonicalization or a complete confidentiality guarantee.
+
+Inspection is limited to four normalization passes per original line. Findings
+can include typed `normalizations` identifiers; original and decoded values are
+never returned, and payloads are never rewritten. If encoding remains after the
+limit, `normalization_incomplete: true` conservatively requires review using
+the same advisory/blocking policy. It applies to the entire string leaf, even
+when an earlier line already contained a concrete path. A blocking workspace
+may explicitly force a reviewed value. Repository diagnostics retain original source lines, including
+when an encoded value contains a newline.
+
+Portable references remain literal: current-user and named tilde references,
+home environment variables, and Windows profile variables are not expanded
+using the scanner's host. They do not establish a concrete absolute coordinate.
+Ordinary web URLs and relative paths are also preserved. Package-specific
+policies may classify additional context, but must not treat an empty finding
+list as proof that arbitrary content is safe to publish.
 
 Nested settings reads use own properties. Writes reject empty and prototype
 path segments before changing any object, create local containers for inherited

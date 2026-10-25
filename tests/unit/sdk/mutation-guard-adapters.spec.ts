@@ -132,12 +132,16 @@ describe("CLI and MCP mutation guard adapters", () => {
     ).resolves.toEqual([]);
   });
 
-  it("excludes MCP routing paths but blocks private context in nested content", async () => {
+  it.each([
+    ["/home", "example", "project"].join("/"),
+    ["", "Users", "synthetic-user", "project"].join("/"),
+    ["C:", "Users", "synthetic-user", "project"].join("\\"),
+    encodeURIComponent(["", "home", "synthetic-user", "project"].join("/")),
+  ])("excludes MCP routing paths but blocks private context in nested content", async (homePath) => {
     const pmRoot = await initializedTracker();
     const settings = await readSettings(pmRoot);
     settings.mutation_guard.secret_guard = "block";
     await writeSettings(pmRoot, settings, "test:private-context-guard");
-    const homePath = ["/home", "example", "project"].join("/");
     await expect(mcpTestOnly.collectMutationGuardWarnings("pm_run", "create", {
       path: pmRoot, cwd: homePath, title: "Safe title",
     })).resolves.toEqual([]);
@@ -152,6 +156,10 @@ describe("CLI and MCP mutation guard adapters", () => {
   it.each([
     GITHUB_TOKEN_SAMPLE,
     ["/home", "example", "private-project"].join("/"),
+    ["", "Users", "synthetic-user", "private-project"].join("/"),
+    ["C:", "Users", "synthetic-user", "private-project"].join("\\"),
+    encodeURIComponent(["", "home", "synthetic-user", "private-project"].join("/")),
+    ["", "ho\u061cme", "synthetic-user", "private-project"].join("/"),
     ["192", "168", "42", "19"].join("."),
   ])("refuses content before item writes and redacts CLI recovery", async (credential) => {
     const pmRoot = await initializedTracker();

@@ -253,7 +253,7 @@
     "eslint-plugin-unicorn": "78.0.0",
     "fast-check": "^4.10.2",
     "github-slugger": "2.0.0",
-    "gpt-tokenizer": "4.0.0",
+    "gpt-tokenizer": "4.1.0",
     "greptile": "^3.7.0",
     "jscpd": "^5.4.1",
     "knip": "^6.41.0",

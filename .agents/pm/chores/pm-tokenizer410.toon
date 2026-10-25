@@ -1,0 +1,46 @@
+id: pm-tokenizer410
+title: Adopt release-age eligible gpt-tokenizer 4.1.0 and verify token-budget baselines
+description: Adopt the newly eligible tokenizer minor without changing runtime dependencies or token-budget thresholds. Verify the real o200k_base table-row measurements and existing context/token gates. Preserve the recorded baseline provenance rather than relabeling historical measurements.
+type: Chore
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-25T12:12:57.227Z"
+updated_at: "2026-10-25T12:28:18.132Z"
+closed_at: "2026-10-25T12:28:18.000Z"
+completed_at: "2026-10-25T12:28:18.000Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Pin gpt-tokenizer 4.1.0 with synchronized lockfile after seven full days; existing encoding/token-budget tests and gates pass without relaxed thresholds; locked advisory gate and final hosted checks pass.
+parent: pm-wb25c1
+risk: low
+confidence: high
+resolution: Pin development gpt-tokenizer4.1.0 and synchronized lockfile after seven full days; preserve historical baseline provenance and existing token-budget ceilings.
+expected_result: "The latest eligible tokenizer passes independent table-row measurements and the repository SDK, token, dependency and static gates without runtime or threshold changes."
+actual_result: "Installed4.1.0 replaces exactly one package; all22 linked output/table-row tests pass. Static pipeline passed through dependency/advisory, SDK, token and recovery gates; after correcting explicit confidence metadata, the failed tracker assertion and entire remaining static suffix pass, including graph/record and mutation assurance. Final-head hosted checks and full review remain merge requirements."
+comments[2]{created_at,author,text}:
+  "2026-10-25T12:12:57.227Z","harness:codex","Duplicate check: complete strict all-status 3107-item corpus and request-specific tokenizer 4.1.0 search identify pm-wb25c1 as the canonical queued parent with no dedicated adoption leaf. Full live parent comments/history were read and verified. Registry publication 2026-10-18T05:43:37.485Z crossed seven full days at 2026-10-25T05:43:37.485Z. Earlier Greptile adoption remains closed in its separate leaf. Create this implementation leaf for the actual tokenizer change; other major and cooldown migrations retain their owners."
+  "2026-10-25T12:24:30.508Z","harness:codex","Dependency proof: publication age exceeds seven days; pnpm replaced only gpt-tokenizer4.0.0 with4.1.0 and the lockfile resolution. All22 linked output/table-row tests pass against the unchanged historical4.0.0/o200k_base baseline, preserving provenance and existing ceilings. Static pipeline passed dependency/advisory, SDK, token and recovery checks before correctly refusing this new item missing explicit confidence; corrected that metadata without changing gate limits and rerunning the failed tracker assertion plus the remaining static suffix. Hosted exact-head review and coverage remain merge requirements."
+files[4]{path,scope,note}:
+  package.json,project,Dependency adoption or independent token measurement evidence
+  pnpm-lock.yaml,project,Dependency adoption or independent token measurement evidence
+  tests/fixtures/agent-encoding-baseline.json,project,Dependency adoption or independent token measurement evidence
+  tests/unit/sdk/output/table-rows.spec.ts,project,Dependency adoption or independent token measurement evidence
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts,project,240,"harness:codex","2026-10-25T12:13:16.740Z",local_mutation,fix/sdk-private-home-paths
+test_runs[1]:
+  - run_id: test-local-mvnsh0l5-r93rkt
+    kind: test
+    status: passed
+    started_at: "2026-10-25T12:13:17.612Z"
+    finished_at: "2026-10-25T12:13:27.737Z"
+    recorded_at: "2026-10-25T12:13:27.737Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Generated dependency adoption entry after structured closure
+close_reason: Adopt release-age eligible tokenizer minor with unchanged measurement contracts
+body: ""

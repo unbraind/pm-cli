@@ -346,6 +346,7 @@ export {
   type MutationGuardSettings,
   type SecretGuardFinding,
   type SecretGuardMode,
+  type SecretNormalizationKind,
 } from "./mutation-guard.js";
 export {
   jaccardSimilarity,
