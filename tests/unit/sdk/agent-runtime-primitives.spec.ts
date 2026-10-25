@@ -1048,6 +1048,7 @@ describe("agent runtime SDK primitives", () => {
             topic: null,
           },
           context: {
+            ...(op === "close" ? { completion: { timestamp: expect.any(String), source: "close_time" } } : {}),
             agent_provenance_outcomes:
               CODEX_MISSING_SESSION_PROVENANCE_OUTCOMES,
           },

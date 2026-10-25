@@ -16,8 +16,8 @@ import {
   buildItemNotFoundError,
   listAllItemMetadataLight,
   locateItem,
-  mutateItem,
   readLocatedItem,
+  mutateItem,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -32,11 +32,13 @@ import {
   type CloseOperationOptions,
   type CloseOperationResult,
   type CloseEvidenceFollowUp,
+  type CloseCompletionReceipt,
   type TerminalTransitionPolicy,
 } from "../lifecycle-policy.js";
 import type { ItemMetadata } from "../../types/index.js";
 import { nowIso } from "../../core/shared/time.js";
 import { renderPmCommand } from "../command-line.js";
+import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 
 /** Compatibility options for command-shaped close consumers. */
 export interface CloseCommandOptions {
@@ -62,6 +64,8 @@ export interface CloseCommandOptions {
 
 /** Compatibility result for command-shaped close consumers. */
 export interface CloseResult {
+  /** Completion timestamp provenance sealed into this close event. */
+  completion?: CloseCompletionReceipt;
   /** Closed item record. */
   item: Record<string, unknown>;
   /** Changed metadata fields. */
@@ -714,7 +718,12 @@ export async function closeItem(
           new Date(closedAt),
           "completed-at",
         );
-  const result = await mutateItem({
+  let completion: CloseCompletionReceipt = {
+    timestamp: completedAt,
+    source: options.completedAt === undefined ? "close_time" : "asserted",
+    ...(options.completedAt === undefined ? { hint: `completed_at defaults to the close time. If work finished earlier, correct it with ${renderPmCommand(["update", located.id, "--completed-at", "<ISO>", "--pm-path", pmRoot])}.` } : {}),
+  };
+  const result = await mutateItemWithHistoryContextResolver({
     pmRoot,
     settings,
     id: located.id,
@@ -722,7 +731,11 @@ export async function closeItem(
     author,
     message: options.message,
     force: options.force,
+    resolveHistoryContext: () => ({ completion: { timestamp: completion.timestamp, source: completion.source } }),
     mutate(document) {
+      if (options.completedAt === undefined && document.metadata.completed_at !== undefined) {
+        completion = { timestamp: document.metadata.completed_at, source: "existing" };
+      }
       return mutateCloseMetadata(document.metadata, {
         pmRoot,
         statusRegistry,
@@ -760,6 +773,7 @@ export async function closeItem(
         statusRegistry,
       )),
     ],
+    completion,
   };
 }
 

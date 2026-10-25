@@ -2,11 +2,13 @@ id: pm-gh1585
 title: "GH-1585: make tracked policy-refusal audit side effects explicit and actionable"
 description: "A refused workflow mutation intentionally records policy_refused in tracked workspace history before throwing, while the refusal envelope does not disclose that write. Evaluate a compatible SDK-first policy for audit location, opt-in tracking or explicit side-effect receipts and repeated-attempt handling; preserve refusal evidence and item immutability. Intake only; no implementation or fix is claimed."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:governance",history,sdk
 created_at: "2026-10-25T11:59:39.059Z"
-updated_at: "2026-10-25T11:59:44.437Z"
+updated_at: "2026-10-25T14:49:02.054Z"
+closed_at: "2026-10-25T14:49:01.264Z"
+completed_at: "2026-10-25T14:49:00.000Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Choose and document compatible refusal-audit semantics; expose any durable writes in typed SDK and transport diagnostics; cover repeated refusals and dry runs; retain item and item-history immutability; regression-test SDK, CLI and MCP in isolated trackers."
@@ -14,15 +16,57 @@ parent: pm-f05lsg
 risk: medium
 confidence: high
 repro_steps: "External report https://github.com/unbraind/pm-cli/issues/1585 reproduces on pinned 2026.10.20 and 2026.10.24: refuse close through required-field policy and inspect tracked workspace history. Current source confirms appendWorkspaceAuditEvent occurs before workflow_policy_refused is thrown; no independent sandbox execution has yet been performed for this intake."
-expected_result: "Callers can derive all durable writes and safe recovery from the refusal; preserve the prior audit and policy evidence contract across SDK, CLI and MCP."
+resolution: "Workflow-policy errors expose tracker-relative side_effects with the exact sealed record hash, preserve typed CLI/MCP diagnostics and human guidance, retain per-attempt audits, and return an empty side-effect list for write-free dry-run refusals."
+expected_result: A caller can identify every intentional refusal audit append and recover safely while item state and item history remain unchanged.
+actual_result: "SDK, real CLI and MCP refusal controls pass; repeated attempts return their appended record evidence; item-history bytes and dry-run workspace history remain unchanged. All 23 initial focused and 87 revised acceptance tests pass, with linked owner execution passing. Advisory and required observability gates pass. Final hosted checks remain merge requirements."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-mj42og,discovered_from,"2026-10-25T11:59:39.059Z","harness:codex","cli:create:dep",detected
   pm-o5s22y,discovered_from,"2026-10-25T11:59:39.059Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-25T11:59:39.059Z","harness:codex","Duplicate check: request-specific policy_refused and dirty-workspace searches plus complete strict all-status 3107-item corpus read (zero unreadable records and zero omissions) found no existing owner for GH-1585. Live full predecessor metadata/comments and verified histories show pm-mj42og intentionally introduced refusal auditing and pm-o5s22y shipped policy recovery evidence; preserve those closed outcomes. This report owns the undisclosed tracked-write UX gap under recovery parent pm-f05lsg. Source inspection at workflow-policy-store.ts confirms the write-before-refusal sequence. Remains open and unclaimed."
-files[4]{path,scope,note}:
-  src/core/policy/workflow-policy-store.ts,project,Existing implementation or regression surface for investigation
-  src/core/shared/errors.ts,project,Existing implementation or regression surface for investigation
-  tests/integration/workflow-policy-mcp.spec.ts,project,Existing implementation or regression surface for investigation
-  tests/unit/sdk/policy/workflow-policy-runtime.spec.ts,project,Existing implementation or regression surface for investigation
+  "2026-10-25T14:04:42.917Z","harness:codex","Implementation scope: grouped with pm-gh1579. Preserve intentional tracked refusal audits and per-attempt evidence, explicitly disclose the durable append through typed SDK errors and CLI/MCP recovery, and test repeated refusals and dry-run immutability. GitHub currently has no open PRs or dependency/code/secret-scanning alerts. No unrelated item is claimed."
+  "2026-10-25T14:12:48.919Z","harness:codex","Independent failing-before controls reproduced missing SDK/CLI/MCP side_effects and dry-run evidence. All 23 focused controls now pass, including exact appended record hash, repeated per-attempt identity, immutable item history, and write-free deletion preview. Completion provenance includes a related bulk completedAt adapter correction. All four TypeScript projects pass; conservative SDK signature gate requires an explicit acknowledgement for additive optional receipt/context fields, recorded without changing existing semantics."
+  "2026-10-25T14:36:47.124Z","harness:codex","Live observability proof on the revised build: required Sentry/telemetry gate passes, zero unresolved/critical/high Sentry issues,5.01 percent weighted finish-error rate and zero missing error-code rows. Hosted Sentry has a fresh successful pm contracts span. The fixed session window has92 remote sessions, each exactly one command_start and command_finish, zero unpaired; the real contracts probe ingested in at most1.916 seconds. Broker queue ready/unacknowledged counts are zero. Synthetic tests remain isolated and disable external error delivery."
+learnings[1]{created_at,author,text}:
+  "2026-10-25T14:11:54.488Z","harness:codex","A refused domain mutation can still append durable audit evidence. Disclose that write only after append succeeds, return its exact record identity, and preserve per-attempt history and write-free previews."
+files[5]:
+  - path: src/cli/error-guidance.ts
+    scope: project
+  - path: src/core/policy/workflow-policy-store.ts
+    scope: project
+    note: Existing implementation or regression surface for investigation
+  - path: src/core/shared/errors.ts
+    scope: project
+    note: Existing implementation or regression surface for investigation
+  - path: tests/integration/workflow-policy-mcp.spec.ts
+    scope: project
+    note: Existing implementation or regression surface for investigation
+  - path: tests/unit/sdk/policy/workflow-policy-runtime.spec.ts
+    scope: project
+    note: Existing implementation or regression surface for investigation
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts,project,240,"harness:codex","2026-10-25T14:10:43.583Z",local_mutation,fix/mutation-audit-provenance
+test_runs[1]:
+  - run_id: test-local-mvnxlada-x8zjlp
+    kind: test
+    status: passed
+    started_at: "2026-10-25T14:36:34.138Z"
+    finished_at: "2026-10-25T14:36:45.118Z"
+    recorded_at: "2026-10-25T14:36:45.118Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/WORKFLOW_POLICIES.md,project
+close_reason: Implemented explicit tracked refusal-audit disclosure while preserving immutable per-attempt evidence and write-free previews.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: workflow-refusal-side-effects
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts (baseline fails absent side_effects and dry-run receipts)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/policy/workflow-policy-runtime.spec.ts tests/integration/workflow-policy-mcp.spec.ts
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+  owner: pm-gh1585
 body: ""

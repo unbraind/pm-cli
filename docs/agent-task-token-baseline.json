@@ -1,7 +1,7 @@
 {
   "version": 5,
   "transcript_version": 2,
-  "transcript_digest": "sha256:6d4041acfaa4075dde1972d6127a74f18916f7661738b4f5d5fd47a61c179a78",
+  "transcript_digest": "sha256:83d4523ca528ad5e8801cf5c7c02dcebbf2b87dc72422d4b8e648755dcdc36c2",
   "estimator": "ceil(utf8_bytes / 4)",
   "comparison_scope": "plan_recovery_tracker_root_canonicalized",
   "measurement_scope": "output_before_token_accounting",
@@ -216,7 +216,7 @@
     },
     {
       "id": "lifecycle-mutation",
-      "max_estimated_tokens": 812,
+      "max_estimated_tokens": 888,
       "steps": [
         {
           "id": "create",
@@ -230,7 +230,7 @@
         },
         {
           "id": "close",
-          "max_estimated_tokens": 31,
+          "max_estimated_tokens": 107,
           "accounting_mode": "self_reported"
         },
         {
@@ -242,7 +242,7 @@
     },
     {
       "id": "bulk-effect-outcomes",
-      "max_estimated_tokens": 326,
+      "max_estimated_tokens": 406,
       "steps": [
         {
           "id": "create-bulk-target",
@@ -251,7 +251,7 @@
         },
         {
           "id": "partial-effect",
-          "max_estimated_tokens": 174,
+          "max_estimated_tokens": 254,
           "accounting_mode": "self_reported"
         },
         {
@@ -288,5 +288,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 13676
+  "composite_max_estimated_tokens": 13832
 }

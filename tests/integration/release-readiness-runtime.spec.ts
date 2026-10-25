@@ -2284,6 +2284,7 @@ describe("release readiness runtime coverage", () => {
         "item",
         "changed_fields",
         "warnings",
+        "completion",
       ]);
 
       const deleteResult = context.runCli(

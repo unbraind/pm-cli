@@ -520,6 +520,7 @@ export {
   resolveTerminalReason,
   type CloseOperationOptions,
   type CloseOperationResult,
+  type CloseCompletionReceipt,
   type TerminalOrderingMutation,
   type TerminalReasonInput,
   type TerminalReasonResolution,

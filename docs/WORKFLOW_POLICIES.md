@@ -80,7 +80,20 @@ reviewable history and skip approval requirements; use `transition` rules with
 of the current record, using the same content and independent-actor checks.
 
 Refused mutations preserve item state and item history, and append a workspace
-refusal event. Accepted mutations attach bounded policy decisions to their normal
+refusal event. This append changes the tracked `history/_workspace.jsonl` file
+under the selected tracker. Retain it with the workspace changes. The typed SDK
+error's `context.side_effects` and CLI JSON `side_effects` disclose the
+tracker-relative `path`, `op: "policy_refused"`, and sealed `record_hash`; MCP
+error details retain the same context. Human-readable diagnostics also name the
+write. Every refused attempt records a distinct event and returns its own record
+identity, including repeated identical requests. This preserves attempt history
+instead of silently coalescing it. Dry-run refusals have `side_effects: []` and
+append nothing. An audit failure retains its separate error contract below and
+does not claim a completed append. This disclosure is tracked by
+[pm-gh1585](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1585.toon)
+(a repository-only tracker record excluded from npm).
+
+Accepted mutations attach bounded policy decisions to their normal
 history event. Diagnostics contain policy ids and missing field paths, without
 copying reviewed content into errors.
 If the mandatory refusal audit cannot be appended, the mutation instead raises

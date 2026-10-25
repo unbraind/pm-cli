@@ -2,21 +2,86 @@ id: pm-gh1579
 title: "GH-1579: Make inferred completion timestamps observable on close"
 description: "pm close: completed_at silently defaults to close time, so retroactive closes record delivery days late with no way to tell"
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"gh:1579",lifecycle,sdk
 created_at: "2026-10-25T00:09:33.388Z"
-updated_at: "2026-10-25T00:52:39.865Z"
+updated_at: "2026-10-25T14:49:00.029Z"
+closed_at: "2026-10-25T14:48:59.266Z"
+completed_at: "2026-10-25T14:49:00.000Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Preserve explicit completed-at and immutable closure evidence; expose whether completed_at was supplied or inferred; document retroactive closure behavior across SDK/CLI/MCP.
 parent: pm-9rgaal
 risk: medium
 confidence: medium
-expected_result: "Close receipts and immutable evidence distinguish explicit completion time from an inferred close-time default, preserving retroactive delivery dates."
+resolution: "SDK close distinguishes asserted, existing and inferred completion timestamps, seals timestamp/source under the item lock, preserves compact and bulk receipts, and supplies correction guidance. Bulk normalization preserves explicit canonical/snake-case timestamps. Portable history and existing JSON key prefixes are retained; token replays consume the added context with narrowly documented ceilings."
+expected_result: "Retroactive closes expose inference, explicit and existing dates survive every transport, and immutable history remains reproducible and independently verifiable."
+actual_result: "87 focused tests and both linked owners pass, including negative-before provenance controls, independent-process reproducibility, exact attribution and output ordering. Packed npm/npx/Bun/bunx and nine-package smoke pass. Strengthened token replay and seeded-growth rejection pass. Final static and hosted full coverage remain merge requirements."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1464,related,"2026-10-25T00:52:39.590Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-25T00:09:33.388Z","harness:codex","Intake source: 1579. Duplicate check: complete strict 3101-item all-status corpus with no omissions, request-specific searches and current open/in_progress lists; related delivered lineage retained. Report recorded for independent verification. No implementation or completion claimed by intake."
+  "2026-10-25T14:04:42.306Z","harness:codex","Implementation scope: pair completion-time provenance with pm-gh1585 refusal-side-effect disclosure in one SDK-first PR. Complete strict all-status baseline: 3109 items, 2821 closed, 215 open, 59 draft, 14 canceled, zero in_progress, zero omissions/unreadable records. Preserve asserted dates, prior completion values, and immutable close evidence; add actionable transport receipts and independent regression controls."
+  "2026-10-25T14:10:37.814Z","harness:codex","Sandbox reproduction: new close-provenance controls fail on baseline because completion receipts/history context are absent. While extending bulk acceptance, found closeManyOptionsFromFlat drops completedAt despite the documented bulk option; include this related SDK/MCP adapter fix under the same owner. The implementation preserves existing terminal completion values and reports asserted/existing/close_time per close event, with an executable evidence-only update hint for inference."
+  "2026-10-25T14:14:00.141Z","harness:codex","GitHub intake audit: all29 open issues have a comment linking canonical PM lineage; no duplicate comments posted. Current mutation-audit work reuses the two existing owners. The latest pm-changelog2026.10.25 package is installed through the configured package-owned pipeline, with no generator implementation changes in pm-cli."
+  "2026-10-25T14:34:40.179Z","harness:codex","Full-suite feedback applied: immutable context stores only completion timestamp/source, retaining cross-workspace byte reproducibility; local hints remain response-only. Full close JSON preserves item/changed_fields/warnings order and appends completion. Exact harness-history assertions retain every provenance field while accepting the new close context. Added canonical/snake-case bulk completion normalization and precedence coverage. Original full run retained11366 passing/4 failing tests; three related failures are now covered by the revised focused run, and the independent npm module-discovery environment issue remains under pm-bj7rq0."
+  "2026-10-25T14:37:41.524Z","harness:codex","Revised acceptance passes87 tests across seven files, including the previously failing reproducibility, deterministic output and harness attribution controls. Both linked owner test runs now pass with the already built checkout and no build-lease contention. Canonical/snake-case bulk completion values retain precedence; no history rewriter or completion-time guesser was added. Final static, packed-consumer and hosted exact-coverage gates remain required before merge."
+  "2026-10-25T14:43:57.049Z","harness:codex","Packed acceptance passes for the current checkout: npm/npx and Bun/bunx smoke, with all nine bundled packages. Independent npm registry timestamps confirm eight latest candidates remain younger than the seven-day adoption boundary; the eligible major migrations retain existing canonical owners. No open dependency PR or security alert is present. Current PR changes remain restricted to mutation audit contracts, their regression owners, docs, generated surface/changelog and live evidence."
+  "2026-10-25T14:46:35.933Z","harness:codex","The unchanged task replay correctly refused new receipt cost: lifecycle close adds76 estimated tokens and partial bulk adds80. Strengthen both existing transcripts to require completion timestamp, source=close_time and correction guidance; regenerate their reviewed baseline with explicit quality-evidence rationale. No task, field, outcome, byte-accounting check or negative control is removed. Verify that only the two relevant task/step ceilings plus their composite change, and rerun the seeded-growth negative control before static admission."
+  "2026-10-25T14:48:56.015Z","harness:codex","Token proof: the real replay satisfies the strengthened required-field contracts; retained all unrelated historical ceilings and orientation metadata instead of accepting incidental tighter regeneration. Only lifecycle close(+76), partial bulk(+80), their task ceilings and composite(+156) change. The seeded extra1,000,000-token report is rejected by the original comparison logic. Local tracker validation is ok with the pre-existing historical resolution-field warning population; full history integrity remains required."
+learnings[1]{created_at,author,text}:
+  "2026-10-25T14:11:53.698Z","harness:codex","A completion value and its provenance are separate contracts. Preserve existing metadata without claiming it was asserted, seal provenance in the same locked close event, and keep it visible in compact receipts and bulk rows."
+files[14]{path,scope}:
+  docs/agent-task-token-baseline.json,project
+  docs/agent-task-transcripts.json,project
+  sdk/public-surface.json,project
+  src/core/output/mutation-projection.ts,project
+  src/sdk/core.ts,project
+  src/sdk/lifecycle-policy.ts,project
+  src/sdk/lifecycle/close-many.ts,project
+  src/sdk/lifecycle/close.ts,project
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime.ts,project
+  tests/integration/close-history-evidence.integration.spec.ts,project
+  tests/integration/release-readiness-runtime.spec.ts,project
+  tests/unit/sdk/agent-runtime-primitives.spec.ts,project
+  tests/unit/sdk/runtime/runtime-input-bulk.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts,project,240,"harness:codex","2026-10-25T14:10:40.074Z",local_mutation,fix/mutation-audit-provenance
+test_runs[2]:
+  - run_id: test-local-mvnxakjq-ywy9pq
+    kind: test
+    status: failed
+    started_at: "2026-10-25T14:24:24.613Z"
+    finished_at: "2026-10-25T14:28:25.094Z"
+    recorded_at: "2026-10-25T14:28:25.094Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvnxl1bm-5czc9y
+    kind: test
+    status: passed
+    started_at: "2026-10-25T14:36:21.998Z"
+    finished_at: "2026-10-25T14:36:33.394Z"
+    recorded_at: "2026-10-25T14:36:33.394Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/QUALITY_EVIDENCE.md,project
+  docs/SDK.md,project
+close_reason: Implemented completion provenance and bulk timestamp preservation with portable immutable evidence and verified transport acceptance.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: close-completion-provenance
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts (baseline fails absent completion receipts before implementation)
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/integration/close-history-evidence.integration.spec.ts,pnpm typecheck
+  hosted_checks[2]: Gates (coverage),Windows regression (Node 24)
+  owner: pm-gh1579
 body: "## Observed\n\n`pm close <id> \"<reason>\"` without `--completed-at` sets `completed_at` to the close time, and nothing records that the value was defaulted rather than asserted. Agents that close work retroactively (tracker reconciliation, a sweep after PRs merged, closing a delivered item the next session) almost never pass `--completed-at`, so the tracker silently records delivery at reconciliation time.\n\nMeasured on 2026-10-24/25 in a 31-repository fleet: a reconciliation sweep closed 109 delivered items, every one with `completed_at` = sweep time although each close reason cited a PR merged 1–20 days earlier. Consumers that read `completed_at` as the delivery time (cycle time, burndown, Gantt bars, a memory package's recall-utility scoring) were all wrong until each item was corrected with `pm update <id> --completed-at <merge time>`. A review bot caught it on one repository; the other 30 had passed review.\n\n## Expected\n\nThe defaulted value should be distinguishable from an asserted one, and the CLI should nudge at the moment the mistake happens. For example:\n\n1. **Provenance:** record `completed_at_source: \"close_time\" | \"asserted\"` (or an equivalent history-event flag), so consumers can exclude or flag defaulted completion times.\n2. **Hint on retroactive closes:** when `pm close` runs without `--completed-at` and the item shows no substantive activity for N hours (or the close reason contains an ISO timestamp earlier than now), return a `hints[]` entry: `completed_at defaults to the close time; pass --completed-at <ISO> if the work finished earlier` with the exact command.\n3. Optionally `pm close --completed-at from-reason` to take the earliest ISO timestamp in the close reason.\n\n## Why it matters for agents\n\nAgents close items in batches long after delivery much more often than humans do, and `completed_at` is the field every analytics consumer trusts. A silent default turns one forgotten flag into wrong data in every downstream report, with no way to tell after the fact.\n\nVersion: `@unbrained/pm-cli` 2026.10.24."

@@ -54,6 +54,15 @@ their real emitted-byte counts may differ. Output growth still fails the
 unchanged ceilings; normalization does not waive accounting, payload parity,
 required-field or executable-recovery checks.
 
+The completion-provenance delivery
+([pm-gh1579](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1579.toon),
+a repository-only tracker record excluded from npm) makes the existing close and
+partial-bulk transcripts consume completion timestamp, source and correction
+guidance. Their reviewed ceilings increase by 76 and 80 estimated tokens
+respectively to account for this new required context. Other task and step
+ceilings, orientation selection, output accounting and the seeded growth
+negative control retain their existing enforcement.
+
 ## SDK mutation testing
 
 `pnpm quality:mutation` uses Stryker's Vitest runner to mutate the SDK cursor and

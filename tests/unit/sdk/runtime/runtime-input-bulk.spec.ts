@@ -12,6 +12,11 @@ import {
 } from "../../../../src/core/item/parse.js";
 
 describe("bulk runtime input normalization", () => {
+  it.each(["completedAt", "completed_at"])("preserves %s and canonical completion precedence for bulk closure", (key) => {
+    const timestamp = "2026-01-02T03:04:05.000Z";
+    expect(closeManyOptionsFromFlat({ [key]: timestamp })).toMatchObject({ completedAt: timestamp });
+    expect(closeManyOptionsFromFlat({ completedAt: timestamp, completed_at: "other" })).toMatchObject({ completedAt: timestamp });
+  });
   it.each([updateManyOptionsFromFlat, closeManyOptionsFromFlat])("requires a checkpoint string without falling back to forward execution", (normalize) => {
     expect(normalize({ rollback: " checkpoint-1 " })).toMatchObject({ rollback: "checkpoint-1" });
     expect(normalize({ list: {}, update: {}, rollback: "checkpoint-1" })).toMatchObject({ rollback: "checkpoint-1" });

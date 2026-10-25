@@ -25,6 +25,7 @@ import {
 } from "../sdk/cli-contracts/command-aliases.js";
 
 interface GuidanceMessage {
+  sideEffects?: PmCliErrorContext["side_effects"];
   changed?: false;
   policyViolations?: PmCliErrorContext["policy_violations"];
   policyViolationCount?: number;
@@ -75,6 +76,8 @@ export interface PmRefusalEnvelope {
 
 /** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
 export interface JsonErrorEnvelope {
+  /** Completed durable writes, with paths relative to the selected tracker. */
+  side_effects?: PmCliErrorContext["side_effects"];
   /** Verified admission refusal before any mutation. */
   changed?: false;
   /** Ordered mutation that failed semantic preview validation. */
@@ -141,6 +144,8 @@ export function projectLeanErrorEnvelope(
 
 /** Documents the error classification payload exchanged by command, SDK, and package integrations. */
 export interface ErrorClassification {
+  /** Completed durable writes, with paths relative to the selected tracker. */
+  side_effects?: PmCliErrorContext["side_effects"];
   /** Verified admission refusal before any mutation. */
   changed?: false;
   /** Ordered mutation that failed semantic preview validation. */
@@ -725,6 +730,7 @@ function attachItemDiagnostics(
 function attachStructuredGuidanceDetails<
   Payload extends JsonErrorEnvelope | ErrorClassification,
 >(payload: Payload, message: GuidanceMessage): Payload {
+  if (message.sideEffects !== undefined) payload.side_effects = message.sideEffects;
   if (message.previewStorage !== undefined) payload.preview_storage = message.previewStorage;
   if (message.transactionOperation !== undefined) {
     payload.transaction_operation = message.transactionOperation;
@@ -1052,6 +1058,7 @@ function applyPmCliErrorContext(
     ...guidance,
     code,
     changed: context.changed,
+    sideEffects: context.side_effects,
     type,
     title: fallbackTitle ?? guidance.title,
     happened:

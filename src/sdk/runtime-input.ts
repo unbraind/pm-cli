@@ -770,6 +770,7 @@ export function closeManyOptionsFromFlat(
       ? normalizeBulkMutationListOptions(options.list)
       : mutationListOptions(options),
     reason: readRuntimeString(options, "reason"),
+    completedAt: readRuntimeString(options, "completedAt") ?? readRuntimeString(options, "completed_at"),
     resolution: readRuntimeString(options, "resolution"),
     expectedResult:
       readRuntimeString(options, "expectedResult") ??

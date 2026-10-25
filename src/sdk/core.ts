@@ -174,4 +174,4 @@ export type {
   PmSettings,
 } from "../types/index.js";
 
-export type { CloseEvidenceFollowUp } from "./lifecycle-policy.js";
+export type { CloseCompletionReceipt, CloseEvidenceFollowUp } from "./lifecycle-policy.js";
