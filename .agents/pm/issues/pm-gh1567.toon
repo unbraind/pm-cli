@@ -2,20 +2,86 @@ id: pm-gh1567
 title: "GH-1567: fit whole SDK envelopes using the selected serializer and token budget"
 description: "External report: https://github.com/unbraind/pm-cli/issues/1567. Revalidate the reported 2026.10.23 behavior against the checkout before implementation."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[2]: github-intake,sdk
 created_at: "2026-10-23T23:21:42.845Z"
-updated_at: "2026-10-24T00:11:33.270Z"
+updated_at: "2026-10-25T17:48:13.820Z"
+closed_at: "2026-10-25T17:25:55.897Z"
+completed_at: "2026-10-25T17:25:55.897Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Inspect existing read-output packing before adding a generic primitive; preserve mandatory envelope metadata and serializer-specific complete packet accounting; validate infeasible budgets and omission receipts
 parent: pm-5t33or
 risk: medium
 confidence: 70
-expected_result: A serializer-aware SDK primitive fits the complete packet within its declared token budget while retaining mandatory metadata and actionable infeasibility or omission receipts.
+resolution: "Add fitOutputEnvelope to aggregate/query SDK exports and the injected package SDK, with receipt-inclusive fixed-point measurements, prefix/skip policies, custom renderers/estimators, finite work limits, truthful omissions and readonly reserved receipt types."
+expected_result: Package authors fit complete context packets within every required rendering budget while retaining mandatory metadata and actionable bounded refusal evidence.
+actual_result: "36 linked SDK/host tests pass, 49 correction/packed Node/Bun checks pass, all TypeScript consumers compile, receipt-exclusion and reserved-type negative controls detect regressions. Exact-head full hosted coverage and review remain required merge gates; this source work is Unreleased."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1552,related,"2026-10-24T00:11:32.955Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-10-23T23:21:42.845Z","harness:codex","Duplicate check 2026-10-24: canonical orientation, request-specific SDK/rollback search, fresh open and in_progress lists, and complete strict all-status read of 3083 items including 2799 closed and 14 canceled; no omissions or unreadable files. Exact GitHub issue and title checks found no existing owner for this delta. Closed SDK/bulk foundations were read live and remain completed. Source report retained in full; intake is not reproduction proof."
+  "2026-10-25T16:30:16.367Z","harness:codex","Scope: implement a storage-neutral whole-envelope fitter with caller-owned rendering and envelope construction, bounded fixed-point accounting including receipts/framing, deterministic prefix/skip selection and explicit infeasibility. Related session-recovery work ships in one reviewed PR. Source inspection confirms existing context packer charges candidate projections and output-token-accounting deliberately excludes its own receipt; neither supplies this generic contract."
+  "2026-10-25T16:35:54.679Z","harness:codex","Verification: 71 focused tests passed across whole-envelope fitting, existing read-output contracts, executable session recovery and copied-extension host injection. New typed consumer imports the query entrypoint and derives host function types from ExtensionCommandSdk. Complete fitting retains mandatory caller metadata and reserved output_fit receipts, uses the greatest required-renderer cost, and refuses infeasible/nonconvergent/work-limited results without returning oversized packets."
+  "2026-10-25T16:38:59.020Z","harness:codex","Independent negative control: bundled an isolated source mutation that estimates an envelope without output_fit, then ran the same 25-case unit suite outside the checkout with synthetic tracker roots and external telemetry disabled. The mutated suite exited 1 and failed verifyPacket independent byte/token checks. The production source was never edited for the control. Default receipt-inclusive measurements and stronger caller estimators remain covered by the passing suite."
+  "2026-10-25T16:44:35.563Z","harness:codex","Security and operational baseline: strict dependency advisory gate passes all567 locked versions; tracked-source secret scan passes. Required live Sentry/telemetry gate passes with zero14-day critical/high issues,5.02percent7-day finish error rate and zero failures missing explicit error codes. Published2026.10.25 independently passes npm metadata, npx/bunx command dispatch, both MCP transports, Skills/Apps, all public bin coverage and negative controls. This publication predates the current PR; current changes are not claimed published."
+  "2026-10-25T16:53:17.364Z","harness:codex","Fresh operational probes use explicit command tracing and full read sampling without changing consent. Sentry API and physical telemetry pairing/broker observations are being checked independently of the aggregate gate, so no all-action historical completeness claim is inferred from threshold success."
+  "2026-10-25T16:57:21.805Z","harness:codex","Full-source attempt: 11397 passed, two failures. The new root-level SDK test exceeded tests/unit/sdk fan-out120 by one, so moved it to the domain output subdirectory and migrated its file/test links. The other failure is the existing packed-consumer harness requiring npm/package.json through Node resolution on this host; expose the verified installed npm module root with NODE_PATH when executing verification. No product workaround, test exclusion, ceiling change or assertion reduction is introduced."
+  "2026-10-25T17:00:05.181Z","harness:codex","Correction proof: 49 tests pass after the domain-folder move and host npm resolution setup. This includes the full23-case CI workflow contract file and real packed SDK list/search/context continuation journeys under both Node and Bun, with complete rows, serialized cursor recovery and concurrent-writer guards. The initial full run passed11397 tests; its two failing cases now pass independently. Final full-source hosted coverage remains a hard merge gate, not an inferred local pass."
+  "2026-10-25T17:05:55.597Z","harness:codex","Public type review: FittedOutputEnvelope now removes the caller-defined reserved output_fit field before adding the SDK-owned receipt, and exposes that frozen receipt as readonly. Type-level negative assertions reject access to overwritten builder fields and receipt mutation/replacement; this prevents published types from promising values that runtime intentionally replaces."
+  "2026-10-25T17:08:09.969Z","harness:codex","Fresh command-level observability evidence: explicitly sampled get/list probes are present in Sentry as pm.command spans. Their exact telemetry cohort has one start and one finish for get and for list; the physical broker has0 ready and0 unacknowledged messages. The broader aggregate gate remains separate from per-action and historical completeness."
+  "2026-10-25T17:25:20.448Z","harness:codex","Final public type negative control: the real public consumer compiles with zero diagnostics; an in-memory mutation of the shipped declaration retaining overwritten builder receipt fields produces the expected unused @ts-expect-error diagnostic. Runtime tests also reject mutation of the frozen receipt and its included-index array. Final linked runs record36 fitting/host tests and35 session/recovery tests passed; all TypeScript project/consumer configurations pass."
+  "2026-10-25T17:48:13.820Z","harness:codex","Pre-PR acceptance: source lint/static/SDK boundary/contracts/public-surface/import-cost/transport checks passed; corrected full-population graph-composition and record-integrity gates pass. The canonical bounded mutation gate reports345 killed and7 declared equivalent of352 with zero gate failures. Package-artifact gate passes, and packed npx plus bunx smoke passes across9 packages. The full local suite had11397 passing tests plus two corrected/independently passing cases; full hosted coverage remains the exact-head merge authority."
+notes[1]{created_at,author,text}:
+  "2026-10-25T16:48:06.062Z","harness:codex","Design contract: callbacks own relevance, mandatory metadata, serializers and framing; SDK owns indivisible row admission and a frozen output_fit omission/accounting receipt. Prefix stops at first unaffordable trial; skip tries later rows and does not promise nested selections across budgets. The greatest renderer token and byte costs stabilize independently. Actual work stays outside measured output. Empty mandatory envelopes must fit; work/pass ceilings refuse without partial packets and cannot preempt arbitrary caller callbacks."
+learnings[1]{created_at,author,text}:
+  "2026-10-25T16:48:07.637Z","harness:codex","A self-accounting packet must measure its complete final rendering, including its own receipt and newline, at a bounded fixed point. Projection costs and pre-receipt attribution are distinct contracts. Independent receipt-exclusion negative controls are needed because a fitter and its own estimator can agree on the same undercount."
+files[9]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/extensions/extension-types.ts,project
+  src/sdk/extension-command-context.ts,project
+  src/sdk/index.ts,project
+  src/sdk/output/fit-envelope.ts,project
+  src/sdk/query.ts,project
+  tests/integration/extension-host-contracts.integration.spec.ts,project
+  tests/types/fit-output-envelope.test-d.ts,project
+  tests/unit/sdk/output/fit-envelope.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output/fit-envelope.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,project,300,"harness:codex","2026-10-25T16:57:50.009Z",local_mutation,work/sdk-envelope-fitting-recovery-20261025
+test_runs[2]:
+  - run_id: test-local-mvo1whgc-rw8bam
+    kind: test
+    status: passed
+    started_at: "2026-10-25T16:37:13.785Z"
+    finished_at: "2026-10-25T16:37:25.980Z"
+    recorded_at: "2026-10-25T16:37:25.980Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/fit-output-envelope.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvo35l8i-ccn3ao
+    kind: test
+    status: passed
+    started_at: "2026-10-25T17:12:17.641Z"
+    finished_at: "2026-10-25T17:12:30.402Z"
+    recorded_at: "2026-10-25T17:12:30.402Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/fit-envelope.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+  docs/SDK.md,project
+close_reason: Implemented and verified the public whole-envelope fitting primitive for reviewed delivery.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: test-coverage
+  negative_control: "Run tests/unit/sdk/output/fit-envelope.spec.ts against an isolated bundled mutation replacing estimateTokens(text) with estimateTokens(JSON.stringify({ ...envelope, output_fit: undefined })); independent complete-packet verification must fail."
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/output/fit-envelope.spec.ts tests/integration/extension-host-contracts.integration.spec.ts,pnpm typecheck
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-gh1567
 body: "Evidence: [src/core.ts:87](https://github.com/unbraind/pm-memory/blob/1dc5b66ee84cf89b68c5f007eb88e215372b766d/src/core.ts#L87), [src/core.ts:23](https://github.com/unbraind/pm-evidence/blob/3dfeaae8d43d16f8e34f0aaecc404d1724ed2c51/src/core.ts#L23), [index.ts:1710](https://github.com/unbraind/pm-brief/blob/cdcd1e3f5e59db8b53cdfa5397e6d1ec18ef080d/index.ts#L1710) / [disclosure.ts:108](https://github.com/unbraind/pm-brief/blob/cdcd1e3f5e59db8b53cdfa5397e6d1ec18ef080d/disclosure.ts#L108).\n\nProblem: these packages repeatedly serialize their complete packet, stabilize a self-accounting field, fit rows under a budget and retain an omission receipt. Existing estimatePmOutputTokens, attachOutputTokenAccounting, packContextCandidates and universal read-output bounding cover related pieces, but none is a public generic fixed-point fitter for a caller-defined JSON/TOON envelope that must satisfy the larger rendering including its own receipt and newline. The SDK packer charges candidate projections, not arbitrary envelope bytes; token accounting intentionally measures pre-receipt bytes and discloses receipt overhead separately. Draft API: accept ordered candidates, renderers, a receipt/envelope builder, a deterministic prefix-or-skip policy and a minimum-envelope refusal policy; bound fitting work and report it. Acceptance: Unicode, differing JSON/TOON size order, digit-boundary self-accounting growth, a budget too small for the receipt, no split rows, and monotone deterministic omissions. Preserve domain-specific relevance and stronger one-token-per-byte limits rather than silently relaxing them.\n\n\nSource: a read-only audit of 30 fleet extensions against the exported SDK of @unbrained/pm-cli 2026.10.23 (3,188 exported names); each of the three cited packages re-implements this primitive today.\n\nRelated: #1401 (CLI `pm context` envelope accounting); this asks for the generic SDK primitive extensions can call."

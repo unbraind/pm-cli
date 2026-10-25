@@ -25,6 +25,7 @@ import type {
 import type { RelationshipImpactAnalysis } from "../../sdk/relationship-analytics.js";
 import type { PmClient } from "../../sdk/runtime.js";
 import type { GetItemAtResult } from "../../sdk/history-read.js";
+import type { fitOutputEnvelope } from "../../sdk/output/fit-envelope.js";
 import type {
   RelationshipEvent,
   RelationshipEventInput,
@@ -726,6 +727,8 @@ export interface CommandHandlerContext extends PortableWorkspaceContext {
 
 /** Runtime SDK services injected into every extension command invocation. */
 export interface ExtensionCommandSdk {
+  /** Fit complete package envelopes without runtime package resolution. */
+  fitOutputEnvelope: typeof fitOutputEnvelope;
   /** Tracker-bound client using the invocation author and workspace. */
   client: PmClient;
   /** Classify a host-native or structurally compatible missing-item error. */

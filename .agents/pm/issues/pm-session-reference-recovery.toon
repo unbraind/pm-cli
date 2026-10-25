@@ -2,28 +2,85 @@ id: pm-session-reference-recovery
 title: Session reference receipts advertise unsupported get --brief recovery
 description: "While verifying live SDK read-envelope observability, the session receipt restore_reference_with command pm get <item-id> --brief was checked against the current CLI. get refuses --brief with unknown_option; its accepted projection spelling is --depth brief. Update the shared SDK session-reference recovery contract and add executable grammar coverage instead of only asserting the recovery string."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,output-budget,recovery,sdk
 created_at: "2026-10-23T06:39:45.840Z"
-updated_at: "2026-10-23T07:28:34.552Z"
+updated_at: "2026-10-25T17:48:14.492Z"
+closed_at: "2026-10-25T17:25:57.425Z"
+completed_at: "2026-10-25T17:25:57.425Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "Every advertised session-reference restore command is accepted by current CLI contracts; A sandboxed session repeat can be restored using its advertised command; Public receipt literal types, docs and generated surface remain aligned."
 parent: pm-f05lsg
 risk: low
 confidence: high
-expected_result: A repeated session item can be restored by executing the command advertised in its public receipt against the current CLI grammar.
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Emit pm get <item-id> --depth brief in shared session receipts and public literal types; execute the advertised command in a sandboxed repeat/restore journey and regenerate the reviewed session-byte calibration.
+expected_result: Every advertised session restore command works against current CLI grammar and complete-envelope accounting stays truthful.
+actual_result: "35 linked read-output/recovery tests pass; the same recovery journey failed before the fix with unknown_option. Calibration adds exactly30 bytes per five-command session at both corpus tiers, with unchanged budgets, rows and suppression. Full hosted coverage and review remain required merge gates."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1552,discovered_from,"2026-10-23T07:04:19.210Z","harness:codex","cli:update:dep",detected
   pm-gh1551,discovered_from,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
   pm-hid9g1,related,"2026-10-23T07:28:32.065Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-gh1567,related,"2026-10-25T17:43:25.684Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
   "2026-10-23T06:39:45.840Z","harness:codex","Duplicate check: live search session restore reference brief plus the complete all-status strict corpus contained no matching session recovery item; related pm-hid9g1 is already closed and remains closed. Reproduced on October23 using the current build: pm get pm-gh1551 --brief refuses unknown_option, while pm get pm-gh1551 --depth brief succeeds. Intake only; left open and unclaimed while pm-gh1551 and pm-gh1552 are the active delivery."
-files[2]{path,scope,note}:
-  src/sdk/read-output-session.ts,project,Advertised unsupported session reference recovery literal
-  tests/unit/sdk/read-output-contracts.spec.ts,project,Existing session receipt contract owner; extend with executable recovery proof
+  "2026-10-25T16:30:16.988Z","harness:codex","Scope: correct the SDK receipt literal and emitted recovery command, execute the advertised command in an isolated fixture, and align the public surface and docs. Existing closed SDK output lineage remains completed. Only this issue and pm-gh1567 are claimed for implementation."
+  "2026-10-25T16:35:24.522Z","harness:codex","Regression evidence: added a sandboxed create/list/session-repeat test and executed the actual emitted restore command before the fix. It failed with unknown_option --brief (exit 2), as expected. The corrected --depth brief path now succeeds. The existing 256-token minimum fixture uses a one-character session identity to retain its original budget while accounting for the longer valid recovery command; no ceiling or assertion was relaxed."
+  "2026-10-25T17:00:06.787Z","harness:codex","Verification: 33 existing read-output cases and the two executable read-option recovery journeys passed, including the advertised command regression. The pre-fix command failed exactly with unknown_option; source/type/doc correction and the original256-token boundary remain covered. Exact-head hosted full coverage and review are required before merge."
+  "2026-10-25T17:08:09.282Z","harness:codex","Calibration review: the valid --depth brief recovery spelling adds exactly6 bytes per receipt across the five-command orientation. The generated approved report changes only session delivered bytes (+30 at both2-item and2243-item tiers), with spend3474->3479 and9664->9671. Command counts,20000-token ceilings, delivered rows, seen-item counts, suppressed repeats, intent ceilings and cursor baselines are unchanged. Regenerated through the package script; no gate predicate or margin changed."
+  "2026-10-25T17:25:21.177Z","harness:codex","Final linked run records35/35 passing tests after the valid command spelling and minimum-envelope fixture update. The approved calibration report adds exactly30 bytes per five-command session at both corpus tiers, with unchanged ceilings, row counts and repeat suppression. Strict static tracker checks identified one redundant transitive prerequisite in the new backend intake; removed that direct edge while retaining the real ports-to-conformance-to-migration chain."
+  "2026-10-25T17:48:14.492Z","harness:codex","Pre-PR acceptance: graph/record gates pass after linking the shared output work and removing the redundant intake prerequisite. Package-generated changelog includes this completed fix in Unreleased using latest pm-changelog2026.10.25; generation/check pass. Live history/storage validation passes and health summary has zero warnings;170 historical terminal-field warnings remain legacy data rather than invented backfills. No item is left in_progress."
+learnings[1]{created_at,author,text}:
+  "2026-10-25T16:48:09.105Z","harness:codex","Recovery text is executable API surface: execute an emitted command in an isolated full user journey, rather than only asserting its literal string. A longer valid recovery spelling can change a minimum control-envelope boundary without changing the budget policy."
+files[5]:
+  - path: scripts/release/context-intent-calibration.json
+    scope: project
+    note: Review exact receipt-byte drift caused by executable recovery grammar
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/sdk/read-output-session.ts
+    scope: project
+    note: Advertised unsupported session reference recovery literal
+  - path: tests/integration/read-output/option-recovery.integration.spec.ts
+    scope: project
+  - path: tests/unit/sdk/read-output-contracts.spec.ts
+    scope: project
+    note: Existing session receipt contract owner; extend with executable recovery proof
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts,project,300,"harness:codex","2026-10-25T16:35:52.293Z",local_mutation,work/sdk-envelope-fitting-recovery-20261025
+test_runs[2]:
+  - run_id: test-local-mvo1wqhd-pnydya
+    kind: test
+    status: passed
+    started_at: "2026-10-25T16:37:26.638Z"
+    finished_at: "2026-10-25T16:37:37.681Z"
+    recorded_at: "2026-10-25T16:37:37.681Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvo35u1q-r4ele3
+    kind: test
+    status: passed
+    started_at: "2026-10-25T17:12:30.969Z"
+    finished_at: "2026-10-25T17:12:41.822Z"
+    recorded_at: "2026-10-25T17:12:41.822Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output-contracts.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: "Executable session-reference recovery, public types and exact byte calibration are synchronized for reviewed delivery."
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/read-output/option-recovery.integration.spec.ts against the pre-fix SDK literal; it fails with unknown_option --brief and exit 2.
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/read-output/option-recovery.integration.spec.ts
+  hosted_checks[2]: Gates (static),Gates (coverage)
+  owner: pm-session-reference-recovery
 body: ""

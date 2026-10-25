@@ -642,6 +642,7 @@ export * from "./read-output-contracts.js";
 export * from "./read-output-rows.js";
 export * from "./read-output-session.js";
 export * from "./output-token-accounting.js";
+export * from "./output/fit-envelope.js";
 export * from "./context-packing.js";
 export * from "./context-usage.js";
 export {

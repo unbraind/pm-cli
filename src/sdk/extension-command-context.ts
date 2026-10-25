@@ -20,6 +20,7 @@ import { clearSettingsReadCache } from "../core/store/settings-read-cache.js";
 import { validateSettings } from "../core/store/settings-validator.js";
 import { isPmCliExpectedError } from "./errors.js";
 import { getItemAt } from "./history-read.js";
+import { fitOutputEnvelope } from "./output/fit-envelope.js";
 import {
   RelationshipEventLog,
   RelationshipEventStore,
@@ -89,6 +90,7 @@ export function createExtensionCommandSdk(
   invocationCommand?: string,
 ): ExtensionCommandSdk {
   return {
+    fitOutputEnvelope,
     client,
     isItemNotFoundError: (error) =>
       isPmCliExpectedError(error) && error.exitCode === EXIT_CODE.NOT_FOUND,

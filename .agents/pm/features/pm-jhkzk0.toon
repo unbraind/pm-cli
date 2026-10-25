@@ -1,0 +1,23 @@
+id: pm-jhkzk0
+title: Allow safe transaction previews in managed-package workspaces with derived dependency links
+description: "A real pm item mutate --from intake.json --dry-run in this repository refuses transaction_preview_non_regular_file because installed extensions contain node_modules SDK links. The no-follow safety boundary and typed refusal are already delivered by pm-preview-path-refusal and pm-fa9olc; this is a distinct usability extension, not a claim those completed fixes are missing. Specify and implement a derived-package dependency exclusion or another safe preview source, without following links or ignoring authoritative tracker content."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-ux,packages,preview,sdk
+created_at: "2026-10-25T16:47:02.100Z"
+updated_at: "2026-10-25T16:47:02.100Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "A managed-package tracker can preview item-only mutations without following dependency symlinks; authoritative non-regular entries still refuse; source bytes remain untouched; SDK, CLI and MCP share the contract; isolated fixtures cover managed dependency links and hostile authoritative paths."
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: "Normal package-managed tracker previews are useful and safe, with explicit classification of excluded derived dependencies and unchanged no-follow guarantees."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fa9olc,related,"2026-10-25T16:47:02.100Z","harness:codex","cli:create:dep",detected
+  pm-msnapshot,related,"2026-10-25T16:47:02.100Z","harness:codex","cli:create:dep",detected
+  pm-preview-path-refusal,related,"2026-10-25T16:47:02.100Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-25T16:47:02.100Z","harness:codex","text=Duplicate check: complete strict all-status3110-item corpus, refreshed open/in_progress lists and request-specific transaction-preview/managed-dependency search. Existing closed refusal/diagnostic owners and open managed-snapshot planning were read live and remain their own scopes. Reproduced during this delivery: three managed SDK dependency links cause read-only intake preview to refuse; normal committed bulk intake succeeds. Enhancement intake only, open and unclaimed."
+body: ""

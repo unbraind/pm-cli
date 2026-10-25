@@ -77,7 +77,7 @@ export interface PmReadOutputSessionReceipt {
   /** Stable reference syntax used by suppressed rows. */
   reference_format: "session:<session-id>:<item-id>";
   /** Command that restores a referenced item when prior context is unavailable. */
-  restore_reference_with: "pm get <item-id> --brief";
+  restore_reference_with: "pm get <item-id> --depth brief";
   /** Caller-carried state for the next read in the same request group. */
   next_state: PmReadOutputSessionState;
 }
@@ -276,7 +276,7 @@ export function attachReadOutputSessionReceipt(
       : { seen_item_overflow_count: seenItemOverflowCount }),
     suppressed_repeat_count: suppressedRepeatCount,
     reference_format: "session:<session-id>:<item-id>",
-    restore_reference_with: "pm get <item-id> --brief",
+    restore_reference_with: "pm get <item-id> --depth brief",
     next_state: {
       version: 1,
       id: state.id,

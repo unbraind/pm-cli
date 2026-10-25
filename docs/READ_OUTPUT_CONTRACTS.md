@@ -4,6 +4,10 @@ Tracker references: [pm-15yuly](../.agents/pm/issues/pm-15yuly.toon), [pm-g8oh0f
 
 ## Agent Quick Context
 
+Complete package-envelope fitting and session-reference recovery are tracked by
+[pm-gh1567](../.agents/pm/issues/pm-gh1567.toon) and
+[pm-session-reference-recovery](../.agents/pm/issues/pm-session-reference-recovery.toon).
+
 Every built-in read surface uses four output dimensions: what to include, how much to return, how much the result may cost, and how to encode it. The same canonical controls work through the CLI, SDK, MCP, generated schemas, runtime contracts, and shell completions.
 
 | Dimension | CLI                              | SDK and MCP     | Meaning                                                                |
@@ -26,6 +30,56 @@ The runtime uses that declaration internally on every read but omits the
 repeated metadata from results by default. Request
 `--output-row-contract` / `outputRowContract: true` when a consumer needs the
 row paths, jq selector, and active TOON encoding contract.
+
+### Package-defined complete envelopes
+
+`fitOutputEnvelope` is available from `@unbrained/pm-cli/sdk/query`, the
+aggregate SDK, and an extension command's `sdk.fitOutputEnvelope`. It fits
+ordered whole rows into a caller-defined envelope without changing domain
+ranking, metadata or transport policy:
+
+```ts
+import { fitOutputEnvelope } from "@unbrained/pm-cli/sdk/query";
+
+const fitted = fitOutputEnvelope([{ id: "one", title: "Context" }], {
+  tokenBudget: 800,
+  buildEnvelope: (items) => ({ source: "my-package", items }),
+  renderers: { json: (value) => JSON.stringify(value) + "\n" },
+});
+process.stdout.write(fitted.renderings[0]!.text);
+```
+
+The SDK reserves `output_fit`, attaches the omission/accounting receipt, and
+stabilizes its `estimated_tokens` and `output_bytes` against complete output,
+including the receipt itself and caller-supplied framing. Multiple required
+renderers may be supplied, such as JSON and TOON; each must fit, and the receipt
+records the greatest token estimate and byte count independently. Emit a cached
+rendering directly: another serializer or extra newline changes its cost.
+`buildEnvelope` can read the receipt for a package-owned self-accounting field.
+
+The default estimator is `ceil(UTF-8 bytes / 4)`. Supply `estimateTokens` for
+another contract, including a stronger one-token-per-byte bound. Estimates are
+not a tokenizer guarantee. Callbacks must be pure, deterministic, promptly
+returning, and include mandatory metadata in every rendering. The SDK does not
+interpret package fields or provider authentication.
+
+The default `prefix` policy stops at the first row that does not fit. `skip`
+tries later rows without changing their order. The receipt retains original
+`included_indices`, `total_candidates` and `omitted_count`; `complete` on the
+result means all candidate rows fit. Neither policy splits rows or assumes
+serialized size is monotone. A smaller budget does not promise nested selected
+sets under `skip`; use `prefix` when prefix continuity matters.
+
+The empty mandatory envelope must fit before any row is attempted.
+`OutputEnvelopeFitError.code` distinguishes `output_envelope_infeasible`
+(with `minimum_tokens`), `output_envelope_work_limit`, and
+`output_envelope_unstable`. No unverified or oversized packet is returned.
+`maxRenderCalls` defaults to 10,000 across every trial and renderer;
+`maxStabilizationPasses` defaults to 16 per trial. Actual renderer calls and
+evaluated candidates are reported in `work`, outside the measured packet.
+These ceilings bound fitting work; they cannot interrupt arbitrary callback
+execution. Existing candidate-projection packing and pre-receipt token
+attribution retain their distinct contracts.
 
 ### Include Modes
 
@@ -195,7 +249,7 @@ The session ceiling and an explicit `--output-budget` both bind; the smaller
 remaining allowance wins. Rows for item facts already present in the caller's
 context become `{ "id": "pm-a1b2", "context_ref":
 "session:orientation:pm-a1b2" }` instead of repeating prose. References retain
-stable item identity and can be restored with `pm get <item-id> --brief` when
+stable item identity and can be restored with `pm get <item-id> --depth brief` when
 the prior context is unavailable. The receipt reports estimated and charged
 tokens separately when the remaining group allowance is smaller than the
 minimum control envelope, plus the accumulated spend, remaining capacity,

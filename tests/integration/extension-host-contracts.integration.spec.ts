@@ -33,6 +33,29 @@ async function installHostContractExtension(
 }
 
 describe("extension host contracts", () => {
+  it("fits a complete envelope in a copied package using only the injected SDK", async () => {
+    await withTempPmPath(async (context) => {
+      await installHostContractExtension(context.pmPath, `
+        export default { activate(api) {
+          api.registerCommand({ name: 'host fit', run: ({ sdk }) => {
+            const fitted = sdk.fitOutputEnvelope(['first', 'x'.repeat(5000), 'last'], {
+              tokenBudget: 200, policy: 'skip',
+              buildEnvelope: (items) => ({ items, source: 'copied-package' }),
+              renderers: { json: (value) => JSON.stringify(value) + '\\n' },
+            });
+            return { packet: fitted.envelope, output: fitted.renderings[0].text };
+          } });
+        } };
+      `, ["commands"], ["host fit"]);
+      expect(context.runCli(["extension", "adopt-all", "--project", "--json"]).code).toBe(0);
+      const result = context.runCli(["host", "fit", "--json"], { expectJson: true });
+      expect(result.code, result.stderr).toBe(0);
+      expect(result.json?.packet).toMatchObject({ items: ["first", "last"], source: "copied-package", output_fit: { omitted_count: 1, included_indices: [0, 2] } });
+      expect(JSON.parse(result.json?.output as string)).toEqual(result.json?.packet);
+      expect(Math.ceil(Buffer.byteLength(result.json?.output as string) / 4)).toBe(result.json?.packet?.output_fit?.estimated_tokens);
+    });
+  });
+
   it("audits host-bound settings mutations from a copied extension without a local SDK", async () => {
     await withTempPmPath(async (context) => {
       await installHostContractExtension(

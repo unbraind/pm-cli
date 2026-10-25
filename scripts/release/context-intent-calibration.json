@@ -46,11 +46,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 3474,
-        "remaining_tokens": 16526,
+        "spent_tokens": 3479,
+        "remaining_tokens": 16521,
         "seen_item_count": 2,
         "suppressed_repeat_count": 4,
-        "delivered_bytes": 13884
+        "delivered_bytes": 13914
       }
     },
     {
@@ -95,11 +95,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 9664,
-        "remaining_tokens": 10336,
+        "spent_tokens": 9671,
+        "remaining_tokens": 10329,
         "seen_item_count": 107,
         "suppressed_repeat_count": 8,
-        "delivered_bytes": 38650
+        "delivered_bytes": 38680
       },
       "cursor_walks": {
         "list": {

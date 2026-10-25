@@ -328,14 +328,14 @@ describe("read output contracts", () => {
     for (const state of [
       {
         version: 1 as const,
-        id: "tiny",
+        id: "t",
         token_budget: 256,
         spent_tokens: 0,
         seen_item_ids: [],
       },
       {
         version: 1 as const,
-        id: "tiny",
+        id: "t",
         token_budget: 512,
         spent_tokens: 256,
         seen_item_ids: [],

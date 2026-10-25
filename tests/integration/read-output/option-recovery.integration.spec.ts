@@ -18,6 +18,26 @@ async function authoritativeFiles(root: string): Promise<Record<string, string>>
 }
 
 describe("same-command read option recovery (GH-1528)", () => {
+  it("restores a repeated session item by executing the advertised recovery command", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "Task", "Restore session context", "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      const id = created.json?.item?.id as string;
+      const initial = { version: 1, id: "recovery", token_budget: 10_000, spent_tokens: 0, seen_item_ids: [] };
+      const first = context.runCli(["list", "--output-session", JSON.stringify(initial), "--json"], { expectJson: true });
+      expect(first.code, first.stderr).toBe(0);
+      const repeated = context.runCli(["list", "--output-session", JSON.stringify(first.json?.read_session?.next_state), "--json"], { expectJson: true });
+      expect(repeated.code, repeated.stderr).toBe(0);
+      expect(repeated.json?.items).toEqual([{ id, context_ref: `session:recovery:${id}` }]);
+      const advertised = repeated.json?.read_session?.restore_reference_with as string;
+      const args = advertised.replace("<item-id>", id).split(" ");
+      expect(args.shift()).toBe("pm");
+      const restored = context.runCli([...args, "--json"], { expectJson: true });
+      expect(restored.code, restored.stderr).toBe(0);
+      expect(restored.json?.item).toMatchObject({ id, title: "Restore session context" });
+    });
+  });
+
   it("executes emitted retries without losing operands, explicit tracker selection or authoritative bytes", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(["create", "Task", "Whitespace query", "--json"], { expectJson: true });

@@ -65,6 +65,7 @@ export * from "./pagination.js";
 export * from "./item-children.js";
 export * from "./item-metadata-index.js";
 export * from "./context-packing.js";
+export * from "./output/fit-envelope.js";
 export * from "./context-relevance.js";
 export * from "./context-signal-store.js";
 export * from "./context-usage.js";
