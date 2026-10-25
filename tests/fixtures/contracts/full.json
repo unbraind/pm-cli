@@ -8513,6 +8513,15 @@
           "flag": "--parent"
         },
         {
+          "default": true,
+          "flag": "--inherit-focus",
+          "value_type": "boolean"
+        },
+        {
+          "flag": "--no-inherit-focus",
+          "value_type": "boolean"
+        },
+        {
           "flag": "--related"
         },
         {
@@ -39970,6 +39979,10 @@
             "description": "Impact.",
             "type": "string"
           },
+          "inheritFocus": {
+            "description": "Inherit Focus.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -60419,6 +60432,10 @@
           "impact": {
             "description": "Impact.",
             "type": "string"
+          },
+          "inheritFocus": {
+            "description": "Inherit Focus.",
+            "type": "boolean"
           },
           "json": {
             "default": true,

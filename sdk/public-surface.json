@@ -2754,6 +2754,13 @@
       ],
       "package_version": "2026.10.24",
       "reason": "Additive inheritFocus option and tool contract for explicit saved-focus policy; SDK and MCP creates now default to no focus inheritance while CLI convenience remains enabled. No exports removed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PlanCommandOptions"
+      ],
+      "package_version": "2026.10.24",
+      "reason": "pm-gh1577 adds an optional focus policy to PlanCommandOptions; callers retain source compatibility and SDK/MCP defaults remain opt-in."
     }
   ],
   "entrypoints": {
@@ -12814,7 +12821,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PlanCommandOptions",
-          "signature": "export interface PlanCommandOptions extends Omit<MutationMetadataCommandOptions, \"author\" | \"blockedBy\" | \"message\" | \"parent\">, Omit<SharedLinkedResourceOptions, \"dep\" | \"doc\" | \"field\" | \"file\" | \"test\"> { title?: string; description?: string; scope?: string; parent?: string; related?: string | string[]; blocks?: string | string[]; blockedBy?: string | string[]; harness?: string; mode?: string; resumeContext?: string; tags?: string; priority?: string; status?: string; createMode?: string; body?: string; claim?: boolean; fromSearch?: string; stepTitle?: string; step?: string | string[]; stepBody?: string; stepOwner?: string; stepStatus?: string; stepEvidence?: string; stepBlockedReason?: string; stepReplacement?: string; dependsOn?: string | string[]; link?: string | string[]; linkKind?: string; linkNote?: string; promoteToItemDep?: boolean; allowMultipleActive?: boolean; file?: string | string[]; test?: string | string[]; doc?: string | string[]; decisionText?: string; decision?: string; decisionRationale?: string; decisionEvidence?: string; discoveryText?: string; discovery?: string; validationText?: string; validation?: string; validationCommand?: string; validationExpected?: string; depth?: string; fields?: string; steps?: string; template?: string; materializeType?: string; materializeParent?: string; materializeTags?: string; field?: string | string[]; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface PlanCommandOptions extends Omit<MutationMetadataCommandOptions, \"author\" | \"blockedBy\" | \"message\" | \"parent\">, Omit<SharedLinkedResourceOptions, \"dep\" | \"doc\" | \"field\" | \"file\" | \"test\"> { title?: string; description?: string; scope?: string; parent?: string; inheritFocus?: boolean; related?: string | string[]; blocks?: string | string[]; blockedBy?: string | string[]; harness?: string; mode?: string; resumeContext?: string; tags?: string; priority?: string; status?: string; createMode?: string; body?: string; claim?: boolean; fromSearch?: string; stepTitle?: string; step?: string | string[]; stepBody?: string; stepOwner?: string; stepStatus?: string; stepEvidence?: string; stepBlockedReason?: string; stepReplacement?: string; dependsOn?: string | string[]; link?: string | string[]; linkKind?: string; linkNote?: string; promoteToItemDep?: boolean; allowMultipleActive?: boolean; file?: string | string[]; test?: string | string[]; doc?: string | string[]; decisionText?: string; decision?: string; decisionRationale?: string; decisionEvidence?: string; discoveryText?: string; discovery?: string; validationText?: string; validation?: string; validationCommand?: string; validationExpected?: string; depth?: string; fields?: string; steps?: string; template?: string; materializeType?: string; materializeParent?: string; materializeTags?: string; field?: string | string[]; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "advanced_export",

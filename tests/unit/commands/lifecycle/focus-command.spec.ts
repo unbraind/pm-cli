@@ -150,6 +150,44 @@ describe("runFocus", () => {
 });
 
 describe("runCreate focus inheritance (GH-161)", () => {
+  it("keeps plan CLI focus convenience and explicit opt-out separate from SDK policy", async () => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      const parentId = await seedItem(context);
+      await client.focus(parentId);
+      for (const [flags, expectedParent] of [
+        [[], parentId],
+        [["--inherit-focus"], parentId],
+        [["--no-inherit-focus"], undefined],
+        [["--parent", "none"], undefined],
+        [["--parent", parentId], parentId],
+      ] as const) {
+        const cli = await context.runCliInProcess(["plan", "create", "--title", `Plan ${flags.join(" ") || "default"}`,
+          "--create-mode", "progressive", "--full-changed-fields", "--json", ...flags]);
+        expect(cli.code, cli.stderr).toBe(0);
+        expect((await client.get(JSON.parse(cli.stdout).plan.id)).item.parent).toBe(expectedParent);
+      }
+      for (const inheritFocus of [undefined, false, true]) {
+        const plan = await client.planCreate({ title: `SDK plan ${inheritFocus}`, createMode: "progressive", inheritFocus });
+        expect((await client.get(plan.plan.id)).item.parent).toBe(inheritFocus ? parentId : undefined);
+      }
+    });
+  });
+
+  it("refuses operation policy in whole-item stdin JSON before creating an item", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = await seedItem(context);
+      await runFocus(parentId, {}, { path: context.pmPath });
+      const result = context.runCli(["create", "--stdin-json", "--create-mode", "progressive", "--json"], {
+        input: JSON.stringify({ id: "pm-json-policy", type: "Task", title: "Invalid policy", inheritFocus: false }),
+      });
+      expect(result.code).not.toBe(0);
+      expect(`${result.stdout}${result.stderr}`).toContain("inheritFocus");
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      await expect(client.get("pm-json-policy")).rejects.toBeInstanceOf(PmCliError);
+    });
+  });
+
   it("isolates programmatic creates from saved focus while preserving CLI convenience", async () => {
     await withTempPmPath(async (context) => {
       const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });

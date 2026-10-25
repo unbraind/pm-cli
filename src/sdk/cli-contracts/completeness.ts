@@ -191,6 +191,7 @@ const ACTION_FLAG_PARAMETER_OVERRIDES: Readonly<
     "--expected": "expectedResult",
     "--actual": "actualResult",
   },
+  plan: { "--no-inherit-focus": "inheritFocus" },
   update: {
     "--ac": "acceptanceCriteria",
     "--estimated-minutes": "estimate",

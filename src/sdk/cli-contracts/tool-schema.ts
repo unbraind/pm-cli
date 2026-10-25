@@ -941,6 +941,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "template",
         "scope",
         "parent",
+        "inheritFocus",
         "related",
         "blocks",
         "blockedBy",

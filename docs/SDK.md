@@ -1128,8 +1128,10 @@ Programmatic `create`, `PmClient.create`, `runCreate`, and MCP `pm_create`
 ignore saved session focus unless `inheritFocus: true` is supplied. An explicit
 parent, a parent from the selected template, or `unset: ["parent"]` takes
 precedence. Focus inheritance returns `parent_source: "focus"`; the effective
-parent remains in the item and immutable create event. `pm create` enables this
-convenience by default; `--no-inherit-focus` or `--unset parent` suppresses it.
+parent remains in the item and immutable create event. `pm create` and
+`pm plan create` enable this convenience by default; `--no-inherit-focus` or
+`--parent none` suppresses it (`pm create` also accepts `--unset parent`).
+SDK `planCreate` and MCP plan creation follow the same explicit opt-in policy.
 SDK scheduling shortcuts follow the same opt-in policy; package scheduling
 commands retain their focused creation convenience.
 
