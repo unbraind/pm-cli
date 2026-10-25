@@ -11,6 +11,10 @@
 - GH-1581: Report successful context snapshot refresh without recovery warnings ([pm-gh1581](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1581.toon))
 - GH-1577: make SDK create focus inheritance explicit and discoverable ([pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon))
 
+### Security
+
+- GH-1583: recognize concrete private home paths through bounded shared normalization ([pm-gh1583](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1583.toon))
+
 ## 2026.10.25 - 2026-10-25
 
 ### Changed

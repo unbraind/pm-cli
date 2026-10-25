@@ -98,8 +98,10 @@ with references or explicitly review a force override. CLI routing paths and
 payload content are distinct: pass only content to package-owned preflight.
 
 Home-path detection recognizes concrete POSIX and macOS account roots, root
-subdirectories, Windows user profiles, UNC profile shares, and explicit file
-URLs. It accepts surrounding markup and punctuation. Detection-only views
+subdirectories, Windows user profiles, UNC profile shares, DOS device namespace
+profiles, and explicit file URLs. Device prefixes follow the
+[documented Windows path families](https://learn.microsoft.com/dotnet/standard/io/file-path-formats).
+It accepts surrounding markup and punctuation. Detection-only views
 decode percent-byte runs, serialized slash/character escapes, and documented
 Unicode disguises. Unicode handling applies NFKC, removes zero-width/bidi
 controls, and folds division/fraction slashes and Cyrillic look-alikes for the

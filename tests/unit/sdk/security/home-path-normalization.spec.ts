@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { win32 } from "node:path";
+import { fileURLToPath } from "node:url";
 import { scanMutationSecrets, evaluateMutationGuard } from "../../../../src/sdk/mutation-guard.js";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
 
@@ -6,6 +8,8 @@ const harness = createScriptHarness();
 const unix = ["", "home", "synthetic-user", "project"].join("/");
 const mac = ["", "Users", "synthetic-user", "project"].join("/");
 const windows = ["C:", "Users", "synthetic-user", "project"].join("\\");
+const extendedUNC = win32.toNamespacedPath(["", "", "server", "share", "Users", "synthetic-user", "project"].join("\\"));
+const volume = "Volume{00000000-0000-0000-0000-000000000001}";
 const concrete = [
   ["unix", unix], ["mac", mac], ["root", ["", "root", "project"].join("/")],
   ["single quote", "'" + unix + "'"], ["double quote", '"' + unix + '"'],
@@ -52,6 +56,16 @@ const concrete = [
   ["shared drive file URL", "file://server/C$" + mac],
   ["UNC share with spaces", ["", "", "server", "Team Share", "Users", "synthetic-user", "project"].join("\\")],
   ["file URL share with spaces", "file://server/Team Share" + mac],
+  ["extended UNC namespace", extendedUNC],
+  ["device UNC namespace", ["", "", ".", "UNC", "server", "share", "Users", "synthetic-user", "project"].join("\\")],
+  ["extended namespace share with spaces", ["", "", "?", "UNC", "server", "Team Share", "Users", "synthetic-user", "project"].join("\\")],
+  ["extended drive namespace", ["", "", "?", "C:", "Users", "synthetic-user", "project"].join("\\")],
+  ["device drive namespace", ["", "", ".", "C:", "Users", "synthetic-user", "project"].join("\\")],
+  ["extended volume namespace", ["", "", "?", volume, "Users", "synthetic-user", "project"].join("\\")],
+  ["device volume namespace", ["", "", ".", volume, "Users", "synthetic-user", "project"].join("\\")],
+  ["device volume alias namespace", ["", "", ".", "BootPartition", "Users", "synthetic-user", "project"].join("\\")],
+  ["percent namespace", encodeURIComponent(extendedUNC)],
+  ["serialized namespace", extendedUNC.replaceAll("\\", "\\u005c")],
 ] as const;
 const portable = [
   "~/project", "~\\project", "$HOME/project", ["$", "{HOME}/project"].join(""),
@@ -66,9 +80,27 @@ const portable = [
   "https://home/project/file", "https://Users/project/file", "https://root/project/file",
   "file://home/project/file", "file://Users/project/file", "file://server/share/project",
   "https://server/share/Users/synthetic-user/project", "//server/share/ordinary/project",
+  ["", "", "?", "C:", "Windows", "System32"].join("\\"),
+  ["", "", ".", "PhysicalDrive0"].join("\\"),
+  ["", "", ".", "UNC", "server", "share", "ordinary", "project"].join("\\"),
+  ["", "", "?", volume, "Windows", "System32"].join("\\"),
+  "https://./UNC/server/share/Users/synthetic-user/project", "C:Users\\synthetic-user\\project",
+  "file://./UNC/server/share/ordinary/project",
 ];
 
 describe("concrete private home-path policy", () => {
+  it("detects a device namespace file URL before and after Windows conversion", async () => {
+    const gate = await harness.importModule<{ scanContent(file: string, content: string): Array<{ rule: string }> }>(
+      "scripts/check-secrets-lib.mjs",
+    );
+    const uri = "file://./UNC/server/share/Users/synthetic-user/project";
+    const native = fileURLToPath(uri, { windows: true });
+    for (const note of [uri, native]) {
+      expect(scanMutationSecrets({ note })).toEqual([{ rule: "absolute_home_path", path: "$.note" }]);
+      expect(gate.scanContent("document.md", note)).toEqual([expect.objectContaining({ rule: "absolute-home-path" })]);
+    }
+  });
+
   it.each(concrete)("detects %s with the same SDK and repository policy", async (_label, value) => {
     const gate = await harness.importModule<{ scanContent(file: string, content: string): Array<{ rule: string }> }>(
       "scripts/check-secrets-lib.mjs",

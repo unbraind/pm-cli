@@ -27,7 +27,10 @@ const WINDOWS_HOME = "/?[a-z]:" + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH
 const SHARE_COMPONENT = COMPONENT + "(?: +" + COMPONENT + ")*";
 const SHARED_PROFILE = "(?:" + SHARE_COMPONENT + SEPARATOR + ")?users" + SEPARATOR + ACCOUNT_PATH;
 const UNC_HOME = "[/\\\\]{2,}" + COMPONENT + SEPARATOR + SHARED_PROFILE;
-const FILE_HOME = "file:(?:(?:[/\\\\](?![/\\\\])|[/\\\\]{3,}|[/\\\\]{2}localhost" + SEPARATOR + ")"
+const DEVICE_VOLUME = "(?:[a-z]:|volume\\{[a-f0-9-]+\\}|" + COMPONENT + ")";
+const DEVICE_HOME = "[/\\\\]{2}[?.]" + SEPARATOR + "(?:unc" + SEPARATOR + COMPONENT + SEPARATOR
+  + SHARED_PROFILE + "|" + DEVICE_VOLUME + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH + ")";
+const FILE_HOME = "file:(?:" + DEVICE_HOME + "|(?:[/\\\\](?![/\\\\])|[/\\\\]{3,}|[/\\\\]{2}localhost" + SEPARATOR + ")"
   + "(?:" + ROOT_HOME + "|[a-z]:" + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH + ")"
   + "|[/\\\\]{2}(?:[a-z]:" + SEPARATOR + "users" + SEPARATOR + ACCOUNT_PATH
   + "|" + COMPONENT + SEPARATOR + "(?:" + ROOT_HOME + "|" + SHARED_PROFILE + ")))";
@@ -35,7 +38,7 @@ const FILE_HOME = "file:(?:(?:[/\\\\](?![/\\\\])|[/\\\\]{3,}|[/\\\\]{2}localhost
 /** URI schemes cannot masquerade as native UNC roots; explicit file URLs remain supported. */
 export const PRIVATE_HOME_PATH_PATTERN = new RegExp(
   "(?:^|[^\\p{L}\\p{N}_./\\\\~])(?:" + UNIX_HOME + "|" + WINDOWS_HOME + "|" + FILE_HOME + ")"
-    + "|(?:^|[^\\p{L}\\p{N}_:./\\\\~])(?:" + MULTI_ROOT_HOME + "|" + UNC_HOME + ")",
+    + "|(?:^|[^\\p{L}\\p{N}_:./\\\\~])(?:" + MULTI_ROOT_HOME + "|" + UNC_HOME + "|" + DEVICE_HOME + ")",
   "giu",
 );
 
