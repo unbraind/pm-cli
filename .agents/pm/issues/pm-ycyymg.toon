@@ -1,0 +1,30 @@
+id: pm-ycyymg
+title: Preserve Git-backed merge-receipt evidence in isolated linked-test contexts
+description: "Direct source tracker-context-quality passes, while the same static pipeline under an isolated tracker context blocks health-integrity-zero. Full health identifies merge_receipt_history_reference_missing for pm-1tns7o history line31 and receipt9c9246d9-2411-4a7c-8303-8e887f310dcf, which exists as a tracked source receipt. Both source-workspace and snapshot-workspace linked profiles reproduce the missing-reference verdict. Trace how isolated tracker roots retain authoritative receipt and Git-index identity without consulting unrelated workspaces or weakening evidence verification."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-25T21:01:02.654Z"
+updated_at: "2026-10-25T21:28:10.957Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce with an isolated real-Git fixture containing a durable receipt referenced by item history; Preserve supported source and snapshot workspace identity at receipt verification; Keep missing and corrupted receipt controls fail-closed; Prove source and isolated tracker bytes remain unchanged
+parent: pm-9rgaal
+risk: medium
+confidence: high
+expected_result: "Source and isolated linked health agree on valid Git-backed receipt references; missing, malformed or unrelated proofs still refuse, and source bytes remain untouched."
+actual_result: Current source preflight passes all47 assertions. Linked tracker and workspace-snapshot diagnostics each report one missing receipt reference for an existing tracked source receipt; root cause is not yet established.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-954h0o,related,"2026-10-25T21:01:02.654Z","harness:codex","cli:create:dep",detected
+  pm-1tns7o,related,"2026-10-25T21:28:04.328Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-25T21:01:02.654Z","harness:codex","Duplicate check: request-specific all-status linked tracker merge receipt search and full live pm-954h0o and pm-1tns7o lineage plus refreshed strict3116-item corpus and open/in_progress inventories. Existing source-VCS preservation is closed and remains delivered; this is a distinct receipt verification delta. Intake only and unclaimed."
+files[4]{path,scope}:
+  src/sdk/governance/health.ts,project
+  src/sdk/merge/indexed-receipt-blobs.ts,project
+  src/sdk/merge/receipts.ts,project
+  src/sdk/test/execution.ts,project
+tests[1]{command,scope,timeout_seconds,pm_context_mode,workspace_context_mode,provenance{author,created_at,source_kind,source_ref},note}:
+  node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded,project,300,tracker,snapshot,"harness:codex","2026-10-25T21:03:07.092Z",local_mutation,feat/sdk-transaction-safety,"Current reproduction: isolated health lacks one authoritative Git-backed receipt reference while the source preflight passes"
+body: ""

@@ -1,0 +1,23 @@
+id: pm-xq09zu
+title: Investigate unmatched aggregate starts from automation telemetry on 2026.10.24
+description: "A complete remote telemetry join found four aggregate command_start rows from producer2026.10.24 and source_context automation since2026-10-25T19:20:00Z with no matching command_finish by installation/session/command after more than two minutes. Current broker queue is empty and the required reliability threshold gate passes. Termination, timeout, producer lifecycle and ingestion causes remain unverified; this is an investigation rather than a confirmed current-version defect."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-25T19:40:57.328Z"
+updated_at: "2026-10-25T20:35:13.116Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Identify the producing automation and whether termination or ingestion explains each unmatched start; Reproduce any confirmed lifecycle defect with isolated positive and negative controls; Preserve sampling and distinguish intentional interruption from missing finalization without fabricating success
+parent: pm-5oj5
+risk: medium
+confidence: medium
+expected_result: Identify why each of the four 2026.10.24 automation aggregate starts lacks a matching finish; record termination evidence or a reproducible defect with a canonical owner and paired lifecycle controls.
+actual_result: Remote installation/session/command join found four unmatched aggregate starts from producer2026.10.24 and source_context automation. The current installation separately has40 starts and40 matching finishes with zero unmatched commands; cause of the older cohort remains unverified.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-wrdctq,related,"2026-10-25T20:35:11.340Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-25T19:40:57.328Z","harness:codex","Duplicate check: strict complete3115-item all-status corpus plus refreshed open/in_progress inventories and request-specific aggregate telemetry pairing search; full live pm-5oj5 and closed paired-sampling lineage pm-wrdctq were read. No canonical owner matched this newly observed four-row cohort. Intake only and unclaimed."
+  "2026-10-25T19:41:57.802Z","harness:codex","Refined source attribution: the four unmatched aggregate starts all report pm_version2026.10.24 and source_context automation. No current2026.10.25 mismatch is established by that cohort. Keep the intake open/unclaimed and retain termination or timeout as an unverified explanation rather than asserting ingestion loss."
+body: ""

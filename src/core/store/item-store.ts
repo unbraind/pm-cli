@@ -8,7 +8,7 @@ import { buildDeletedItemError } from "../history/tombstone.js";
 import { normalizeHistoryOperationForWrite } from "../history/operation-contract.js";
 import { enforceWorkflowMutation } from "../policy/workflow-policy-store.js";
 import { recordItemMetadataEnumeration } from "./item-metadata-read-work.js";
-import { assertItemMutationPreconditions } from "./item-mutation-precondition.js";
+import { advanceItemMutationPreconditions, assertItemMutationPreconditions, itemMutationPreconditionHistoryContext } from "./item-mutation-precondition.js";
 import { checkpointMutationHistoryContext } from "../checkpoint/mutation-context.js";
 import path from "node:path";
 import {
@@ -773,6 +773,7 @@ async function mutateItemWithDeferredHistoryContext(
     const historyContext = {
       ...params.resolveHistoryContext?.(),
       ...checkpointMutationHistoryContext(params.pmRoot, located.id),
+      ...itemMutationPreconditionHistoryContext(params.pmRoot, document),
     };
     const requiredFormat = Math.max(requiredItemFormatVersion(beforeDocument.metadata), requiredItemFormatVersion(mutableDocument.metadata));
     assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(params.pmRoot), requiredFormat);
@@ -911,6 +912,7 @@ async function mutateItemWithDeferredHistoryContext(
       },
     );
     const { derivedIndexWarnings, effectiveTargetItemPath } = committed;
+    advanceItemMutationPreconditions(params.pmRoot, afterDocument);
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,

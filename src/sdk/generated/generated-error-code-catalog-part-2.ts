@@ -1602,6 +1602,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "transaction_partial_mutation",
+    meaning: "Transaction partial mutation condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/item-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_partial_mutation",
+    aliases: [],
+  },
+  {
     code: "transaction_plan_mismatch",
     meaning: "Transaction plan mismatch condition.",
     stability: "provisional",

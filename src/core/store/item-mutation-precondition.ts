@@ -12,6 +12,10 @@ interface ItemMutationPrecondition {
   pmRoot: string;
   id: string;
   validate: (document: ItemDocument) => void;
+  /** Advance the guard only after this operation durably commits under the item lock. */
+  committed?: (document: ItemDocument) => void;
+  /** Immutable attribution for every internal write to this target. */
+  historyContext?: Record<string, unknown>;
 }
 
 const preconditions = new AsyncLocalStorage<readonly ItemMutationPrecondition[]>();
@@ -34,4 +38,20 @@ export function assertItemMutationPreconditions(pmRoot: string, document: ItemDo
       condition.validate(document);
     }
   }
+}
+
+/** Notify matching scoped guards of their own committed document before releasing the item lock. */
+export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument): void {
+  for (const condition of preconditions.getStore() ?? []) {
+    if (condition.pmRoot === path.resolve(pmRoot) && condition.id === document.metadata.id) {
+      condition.committed?.(document);
+    }
+  }
+}
+
+/** Collect target-scoped immutable attribution without attributing another caller's writes. */
+export function itemMutationPreconditionHistoryContext(pmRoot: string, document: ItemDocument): Record<string, unknown> {
+  return Object.assign({}, ...(preconditions.getStore() ?? [])
+    .filter((condition) => condition.pmRoot === path.resolve(pmRoot) && condition.id === document.metadata.id)
+    .map((condition) => condition.historyContext));
 }

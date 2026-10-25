@@ -1,0 +1,23 @@
+id: pm-gh1593
+title: "GH-1593: verify authoritative history integrity in SDK mutation-event reads"
+description: "## Observed\n\n`listMutationEvents` (and other reads served from the runtime history-event index) keep returning events from the cache after the authoritative history file was modified, as long as the file length is unchanged. Nothing in the result tells the caller the cache and the source disagree.\n\nMinimal reproduction on `@unbrained/pm-cli` **2026.10.25** (fresh install in a temp project, non-git tracker):\n\n1. `pm init`, then create one item.\n2. Prime the index: `listMutationEvents({ full: true })` through the SDK.\n3. In `.agents/pm/history/<id>.jsonl`, flip one hex character of a `record_hash` without changing the file length.\n4. Call `listMutationEvents({ full: true })` again, both in the same process and after a restart.\n\n**Result:** the cached chain is returned and verifies. `verifyHistoryEntries` on the authoritative file fails. The read response carries no integrity or completeness receipt that would reveal the disagreement.\n\n## Impact\n\nPackages that recover or act on mutation events (notification outboxes, sync cursors, closeout bots) read corrupted or tampered history as healthy unless they re-verify the raw files themselves. Measured in the pm fleet on 2026-10-25: three packages (pm-slack, pm-rlm, pm-todos) had to add their own raw `verifyHistoryEntries` pass after adopting the SDK event API. A review found that pm-slack queued notifications with `failed: 0` for a corrupted history.\n\n## Expected\n\n- **Cache validity:** keyed by content, not just length or mtime. For example, store a digest of each history file (or of its last record hash) and compare it before serving; a cheap prefix/last-record check is enough to catch rewritten records.\n- **Integrity receipt:** event reads return a receipt such as `integrity: \"verified\" | \"cache_unverified\" | \"mismatch\"`. Callers that act on events can then require `verified`, or ask the SDK to verify the affected items' authoritative chains.\n- **Strict option:** a documented `verify: true` option for event reads that verifies the authoritative chain of every returned item, so packages stop re-implementing it.\n\nRelated: #1485 (index lock contention), #1585 (side effects of refused mutations).\n"
+type: Issue
+status: open
+priority: 1
+tags[4]: "gh:1593",history,integrity,sdk
+created_at: "2026-10-25T22:30:37.097Z"
+updated_at: "2026-10-25T22:30:37.097Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: Same-length history rewrites invalidate cached event results; SDK event readers expose explicit integrity semantics and a strict authoritative-chain verification option; Existing non-Git connector consumers can use the public contract without raw-path verification; Positive and corrupted-history controls cover process-local and restarted index reads
+parent: pm-o2kc
+risk: high
+confidence: 85
+expected_result: Event consumers can require authoritative verified history with explicit integrity receipts and content-sensitive cache validity.
+actual_result: Reporter demonstrates a same-length record_hash rewrite remains hidden by the history-event index on2026.10.25. Implementation is queued.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7vr9,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
+  pm-up22,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-25T22:30:37.097Z","harness:codex","Duplicate check: complete strict3117-item all-status corpus without omissions; request-specific history/index/tampering search and full live pm-up22, pm-7vr9 and pm-o2kc reads. Existing drift-scan cache and history verification owners are delivered; no event-index integrity owner exists. Original GH1593 report retained verbatim. Intake only, open and unclaimed."
+body: ""

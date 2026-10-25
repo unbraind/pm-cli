@@ -43,9 +43,11 @@ export interface WorkspaceTransactionStep {
   inspect(): Promise<WorkspaceTransactionStepInspection>;
   /** Capture journal-safe pre-mutation data required by compensation. */
   prepareCompensation?(): Promise<WorkspaceTransactionJsonValue | undefined>;
+  /** Opt in when compensation can reconcile partial apply effects still inspected as pending. */
+  compensatePending?: boolean;
   /** Apply the forward mutation and return a journal-safe result, or store nothing. */
   apply(): Promise<WorkspaceTransactionJsonValue | undefined>;
-  /** Idempotently reconcile only this step's exact forward mutation when present. */
+  /** Idempotently reconcile this step's effects; opt-in adapters also handle pending partial apply failures. */
   compensate(data?: WorkspaceTransactionJsonValue): Promise<void>;
 }
 
@@ -570,8 +572,8 @@ async function compensateAppliedSteps(
     if (!started.has(step.id) && !completed.has(step.id)) continue;
     let shouldCompensate: boolean;
     try {
-      shouldCompensate =
-        started.has(step.id) && (await step.inspect()).state === "applied";
+      const state = (await step.inspect()).state;
+      shouldCompensate = started.has(step.id) && (state === "applied" || (state === "pending" && step.compensatePending === true));
     } catch {
       shouldCompensate = started.has(step.id);
     }

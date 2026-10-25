@@ -42,6 +42,21 @@ function createTestStep(
 }
 
 describe("workspace SDK transactions", () => {
+  it("compensates a started partial effect even while inspection still reports pending", async () => {
+    const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
+    let value = "original";
+    try {
+      await expect(commitWorkspaceTransaction({ pmRoot, transactionId: "partial-effect", author: "agent", steps: [{
+        id: "partial", inspect: async () => ({ state: "pending" }), compensatePending: true,
+        prepareCompensation: async () => ({ value }),
+        apply: async () => { value = "partial"; throw new Error("second internal write failed"); },
+        compensate: async (data) => { value = (data as { value: string }).value; },
+      }] })).rejects.toThrow("second internal write failed");
+      expect(value).toBe("original");
+      expect(JSON.parse(await readFile(path.join(pmRoot, "transactions", "sdk", "partial-effect.json"), "utf8"))).toMatchObject({ status: "compensated", startedStepIds: [], compensationData: {} });
+    } finally { await rm(pmRoot, { recursive: true, force: true }); }
+  });
+
   it("commits multiple ordered mutations and replays the durable result", async () => {
     const pmRoot = await mkdtemp(path.join(tmpdir(), "pm-sdk-transaction-"));
     try {
