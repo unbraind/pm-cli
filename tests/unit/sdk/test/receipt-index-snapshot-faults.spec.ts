@@ -31,9 +31,10 @@ describe("snapshot receipt copy boundaries", () => {
     expect(io.git.mock.calls.at(-1)?.[1].at(-1)).toBe(".agents/pm/merge-receipts/one.json");
   });
 
-  it.each(["empty", "absent"])("clears inherited namespace authority for an %s source", async (condition) => {
+  it.each(["empty", "absent", "non-receipt files"])("clears inherited namespace authority for an %s source", async (condition) => {
     if (condition === "empty") io.names.mockResolvedValue([]);
-    else io.names.mockRejectedValue(Object.assign(new Error("absent"), { code: "ENOENT" }));
+    else if (condition === "absent") io.names.mockRejectedValue(Object.assign(new Error("absent"), { code: "ENOENT" }));
+    else io.names.mockResolvedValue(["notes.txt"]);
     await seedSnapshotReceiptIndex("/source", "/snapshot", "/source/state");
     expect(io.blobs).not.toHaveBeenCalled();
     expect(io.git).toHaveBeenCalledTimes(1);

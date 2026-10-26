@@ -15,12 +15,12 @@ const RECEIPT_NAMESPACE = ".agents/pm/merge-receipts";
 /** Copy only stage-zero source receipt blobs; never stage a copied working-tree value. */
 export async function seedSnapshotReceiptIndex(sourceRoot: string, snapshotRoot: string, sourcePmRoot: string): Promise<void> {
   const directory = path.join(sourcePmRoot, "merge-receipts");
-  const names = await readdir(directory).catch((error: unknown) => {
+  const names = (await readdir(directory).catch((error: unknown) => {
     if (isFileMissingError(error)) return [];
     throw error;
-  });
+  })).filter((name) => name.endsWith(".json"));
   const { readIndexedReceiptBlobs } = await import("../merge/indexed-receipt-blobs.js");
-  const blobs = names.length === 0 ? new Map<string, string>() : await readIndexedReceiptBlobs(sourceRoot, directory, names.filter((name) => name.endsWith(".json")), MERGE_RECEIPT_FILE_MAX_BYTES, await realpath(directory));
+  const blobs = names.length === 0 ? new Map<string, string>() : await readIndexedReceiptBlobs(sourceRoot, directory, names, MERGE_RECEIPT_FILE_MAX_BYTES, await realpath(directory), { failOnReadError: true });
   const options = { cwd: snapshotRoot, env: gitWorkspaceEnvironment(), timeout: 10_000, maxBuffer: 1024 * 1024, windowsHide: true };
   // The selected tracker can differ from the source's default tracker. Clear
   // inherited authority before rebasing the selected source index into it.

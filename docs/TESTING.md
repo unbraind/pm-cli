@@ -690,7 +690,9 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   receipts and custom tracker roots. Inherited receipts from another tracker
   namespace are removed. Untracked, missing, conflicted, malformed, or
   provenance-divergent sidecars remain untrusted; no source receipt, index,
-  or history is written by verification.
+  or history is written by verification. A failed source index/object read aborts
+  snapshot setup before its receipt namespace is changed. A workspace without
+  Git authority or without indexed receipts still supplies no durable proof.
   See [Faithful package acceptance](PACKAGE_GATE_ACCEPTANCE.md) for limits.
   Each existing root or nested `node_modules`
   directory is linked at its original relative path, including installations

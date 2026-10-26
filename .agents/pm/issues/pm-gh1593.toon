@@ -6,24 +6,24 @@ status: closed
 priority: 1
 tags[4]: "gh:1593",history,integrity,sdk
 created_at: "2026-10-25T22:30:37.097Z"
-updated_at: "2026-10-26T10:12:56.619Z"
-closed_at: "2026-10-26T10:12:56.496Z"
-completed_at: "2026-10-26T10:12:56.496Z"
+updated_at: "2026-10-26T11:12:42.677Z"
+closed_at: "2026-10-26T11:12:42.551Z"
+completed_at: "2026-10-26T11:12:42.551Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Same-length history rewrites invalidate cached event results; SDK event readers expose explicit integrity semantics and a strict authoritative-chain verification option; Existing non-Git connector consumers can use the public contract without raw-path verification; Positive and corrupted-history controls cover process-local and restarted index reads; Cache verification covers the complete authoritative stream and detects same-length non-tail record edits even when the final record and hash remain unchanged
 parent: pm-o2kc
 risk: high
 confidence: 85
-resolution: Publish one immutable cache object containing matching stream receipts and ordered events; normalize host read failures through one shared SDK authoritative wrapper while preserving typed history refusals.
-expected_result: Interleaved readers cannot pair fresh receipts with stale rows; verified reads expose the same typed host-failure envelope as the authoritative fallback.
-actual_result: "Native interleaving and strict host-file controls fail on unchanged a6703edc8 and pass after the fix.135 focused and141 linked history tests pass, along with all TypeScript targets, build and the complete static pipeline. Final exact-head hosted coverage and review remain merge gates."
+resolution: Authenticate complete history bytes; expose strict SDK/CLI/MCP verification; publish coherent cache snapshots across failures and concurrent readers; normalize host errors; run real SDK history contracts in the native Windows cohort with independent selector validation.
+expected_result: Content changes invalidate caches; strict reads verify complete selected chains; concurrent receipts and rows stay coherent; host failures retain typed envelopes; Windows exercises the integrity and fallback contracts.
+actual_result: "SDK logic passes135 focused tests, all TypeScript targets, build and the full static pipeline. The Windows wiring/guard passes37 focused tests,142 linked history/CLI tests, ESLint and permissions. The inventory guard fails on52e941b3d because integrity coverage is absent and passes after adding it; the existing fallback selector remains correct. Final-head hosted100percent coverage, platform checks and full review remain required before merge."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7vr9,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
   pm-up22,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
   pm-0trehk,related,"2026-10-26T04:59:24.473Z","harness:codex","cli:update:dep",detected
   pm-j8z6,related,"2026-10-26T04:59:24.473Z","harness:codex","cli:update:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-25T22:30:37.097Z","harness:codex","Duplicate check: complete strict3117-item all-status corpus without omissions; request-specific history/index/tampering search and full live pm-up22, pm-7vr9 and pm-o2kc reads. Existing drift-scan cache and history verification owners are delivered; no event-index integrity owner exists. Original GH1593 report retained verbatim. Intake only, open and unclaimed."
   "2026-10-25T23:02:06.817Z","harness:codex","Review clarification: the retained GitHub report is source evidence, not a prescribed cache algorithm. A last-record hash or partial prefix check alone cannot detect arbitrary same-length edits to earlier records. Cache validity must cover the complete authoritative history content through a full-file content digest or authoritative chain verification. Strict reads must verify every affected authoritative chain. Include a negative control that changes an earlier record without altering file length or the final record/hash, in both a warm process and after restart. Preserve the original report wording and keep implementation queued and unclaimed."
   "2026-10-25T23:41:18.600Z","harness:codex","Implementation scope: content-sensitive authoritative stream validation for event-index reads plus explicit SDK verification receipts, bundled with isolated linked-test receipt verification under the related integrity work. Complete strict all-status census3118 read without omissions; no open PRs or security/dependency/secret alerts. Existing closed history repair and index-contention work remains delivered."
@@ -39,13 +39,17 @@ comments[15]{created_at,author,text}:
   "2026-10-26T06:04:18.756Z","harness:codex","Final atomic-cache refinement:121 focused native tests pass, including the unchanged-code failure reproduced before staging stream updates locally. All TypeScript targets, build and workflow permissions pass. Full static passed every stage across the original run and the identical isolated transport retry plus canonical graph/record/mutation suffix; the earlier qualified timing failure is retained and no threshold was changed. Linked tests now pass again. The final reviewed head must independently pass hosted exact100percent coverage; earlier complete local11447-test proof is explicitly before this atomic-cache change."
   "2026-10-26T09:54:57.449Z","harness:codex","Final full-review findings reproduced on unchanged a6703edc8: a native three-reader interleaving returns stale rows beside a fresh receipt, and the existing native fallback corruption/host-file test fails only for verify=true when ENOTDIR escapes unwrapped. Preserve the native fallback test and extend it to both modes; add no production-only test seam. Publish one new coherent cache object and share the established authoritative error wrapper. The three regression controls fail as expected: cache race, strict typed boundary, and the separate170minute release-reserve omission; unverified host-failure control still passes."
   "2026-10-26T10:12:55.710Z","harness:codex","Review remediation complete: coherent cache-object publication captures stream receipts and ordered rows together at read start and publishes a fresh object after success. The shared authoritative reader preserves existing PmCliError refusals and wraps native host failures for both strict and fallback paths. All135 focused tests,141 linked history tests, TypeScript targets, build and the complete quality:static pipeline pass. Native three-reader and strict ENOTDIR controls fail on unchanged a6703edc8 and pass after the fix. Final new-head hosted100percent coverage and full bot review remain mandatory before merge."
+  "2026-10-26T11:05:40.481Z","harness:codex","Platform audit clarification from independent filesystem, parsed YAML and Git HEAD reads: the effective Windows fallback selector is already the current sdk/history path; the actual live gap is omission of the new mutation-event-integrity spec. The old-path Vitest control demonstrates general silent selector omission but is not the effective current Windows command. Add the integrity spec while preserving the existing fallback selector. Replace the giant literal-command assertion with native filesystem inventory validation plus the existing critical test basenames, so selector existence and SDK coverage are checked independently."
 notes[1]{created_at,author,text}:
   "2026-10-26T00:06:30.630Z","harness:codex","Integrity cost boundary: default cache freshness hashes complete selected authoritative streams. Explicit item filters bound that population; strict verification additionally replays each selected stream before all other filters. Full-history raw timestamps remain sealed values in verified entries while ordering uses normalized timestamps. Performance documentation was corrected rather than claiming O(delta) source validation."
 learnings[3]{created_at,author,text}:
   "2026-10-26T01:24:47.928Z","harness:codex","A history projection cannot authenticate earlier records from byte length or the final record hash. Bind rows to a digest of the same complete raw stream, explicitly distinguish unverified reads, and verify selected authoritative chains before filters or pagination can hide corruption."
   "2026-10-26T04:54:56.263Z","harness:codex","For review rework use pm item reopen <id> <reason> --expected-result <current outcome>, then claim --start. Reopening deliberately archives prior closure expectations; the shipped planning-recovery contract preserves an explicitly supplied new expectation. Restore active readiness before running assurance and do not reopen its completed recovery owner as an unresolved feature."
   "2026-10-26T09:54:56.689Z","harness:codex","Failure atomicity alone is insufficient for asynchronous cache readers: capture receipts and ordered rows together, then publish a new cache object so later readers never observe a mixed-generation pair."
-files[18]:
+files[20]:
+  - path: .github/workflows/ci.yml
+    scope: project
+    note: Run both SDK history contracts in the native Windows cohort
   - path: sdk/public-surface.json
     scope: project
   - path: src/cli/register-list-query.ts
@@ -72,6 +76,9 @@ files[18]:
     scope: project
   - path: tests/fixtures/contracts/full.json
     scope: project
+  - path: tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    note: Check actual selected files instead of repeating a stale literal command
   - path: tests/unit/cli/register-list-query.spec.ts
     scope: project
   - path: tests/unit/core/history/event-index.spec.ts
@@ -83,10 +90,11 @@ files[18]:
     note: Native strict/fallback host-failure parity without mocking SDK results
   - path: tests/unit/sdk/history/mutation-event-integrity.spec.ts
     scope: project
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts tests/unit/core/history/history-read-bytes.spec.ts,project,300,"harness:codex","2026-10-26T04:33:40.401Z",local_mutation,fix/sdk-history-integrity
   node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-fallback.spec.ts,project,240,"harness:codex","2026-10-26T09:51:58.822Z",local_mutation,fix/sdk-history-integrity
-test_runs[4]:
+  "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"native Windows cohort includes existing SDK history regressions\"",project,240,"harness:codex","2026-10-26T10:51:36.602Z",local_mutation,fix/sdk-history-integrity
+test_runs[5]:
   - run_id: test-local-mvokbw4i-4ullsb
     kind: test
     status: passed
@@ -132,19 +140,32 @@ test_runs[4]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts tests/unit/core/history/history-read-bytes.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-fallback.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvp5lk7g-6w405y
+    kind: test
+    status: passed
+    started_at: "2026-10-26T11:08:04.816Z"
+    finished_at: "2026-10-26T11:08:40.971Z"
+    recorded_at: "2026-10-26T11:08:40.971Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts tests/unit/core/history/history-read-bytes.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-fallback.spec.ts,schema,schema,source,local_source_ref
+      "node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"native Windows cohort includes existing SDK history regressions\"",schema,schema,source,local_source_ref
 docs[5]{path,scope}:
   CHANGELOG.md,project
   docs/generated/FLAG_LEXICON_BUDGETS.md,project
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   docs/PERFORMANCE.md,project
   docs/SDK_CONTEXT_COORDINATION.md,project
-close_reason: Implemented concurrent snapshot coherence and authoritative error parity from the latest full PR1596 review.
+close_reason: Completed authoritative SDK history delivery with required Windows integrity coverage.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   gate_id: mutation-event-authoritative-integrity
-  negative_control: "Run new history/mutation-event-integrity.spec.ts against unchanged main3ba042b3d in an isolated worktree: stale same-length non-tail record_hash data is served and verification/raw timestamp controls fail. Identical post-fix controls pass. Review controls against ddc2d5ce1 fail three cases: call-order-dependent unverified timestamps and repeated reparsing of invalid-UTF8 receipts with and without SQLite; all pass after the exact-byte/projection refinements. Final review control against783318c3b warms two streams, appends to the first and corrupts the second, then proves a failed strict read must not hide the append on a selected unverified read; unchanged code fails and local staged-map publication passes. Against a6703edc8, native three-reader filesystem barriers expose fresh receipts paired with stale rows, and the existing native host-file test fails only for verify=true. Both fail before coherent object publication/shared error wrapping and pass afterward; no SDK result is mocked."
-  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts tests/unit/core/history/history-read-bytes.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static",node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-fallback.spec.ts
+  negative_control: "Run new history/mutation-event-integrity.spec.ts against unchanged main3ba042b3d in an isolated worktree: stale same-length non-tail record_hash data is served and verification/raw timestamp controls fail. Identical post-fix controls pass. Review controls against ddc2d5ce1 fail three cases: call-order-dependent unverified timestamps and repeated reparsing of invalid-UTF8 receipts with and without SQLite; all pass after the exact-byte/projection refinements. Final review control against783318c3b warms two streams, appends to the first and corrupts the second, then proves a failed strict read must not hide the append on a selected unverified read; unchanged code fails and local staged-map publication passes. Against a6703edc8, native three-reader filesystem barriers expose fresh receipts paired with stale rows, and the existing native host-file test fails only for verify=true. Both fail before coherent object publication/shared error wrapping and pass afterward; no SDK result is mocked. Native Windows-cohort inventory guard fails on52e941b3d because the SDK integrity spec is absent. The effective fallback selector is already correct; add integrity coverage and preserve all existing critical basenames. A separate nonexistent-selector control demonstrates general Vitest omission but does not describe the live fallback command."
+  local_checks[5]: node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts tests/unit/core/history/history-read-bytes.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static",node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-fallback.spec.ts,"node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts -t \"native Windows cohort includes existing SDK history regressions\""
   hosted_checks[3]: CI,CodeQL,Security and Script Quality
   owner: pm-gh1593
 body: ""

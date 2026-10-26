@@ -5,9 +5,65 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { inspectMergeReceiptEvidence, writeMergeReceipt } from "../../../../src/sdk/merge/receipts.js";
+import { readIndexedReceiptBlobs } from "../../../../src/sdk/merge/indexed-receipt-blobs.js";
+import { seedSnapshotReceiptIndex } from "../../../../src/sdk/test/receipt-index-snapshot.js";
 import { seedLinkedTestWorkspaceSnapshot } from "../../../../src/sdk/test/workspace-snapshot.js";
 
 describe("snapshot receipt index", () => {
+  it.each(["corrupt index", "missing object", "invalid repository", "missing Git metadata", "missing workspace"])("preserves snapshot authority on a source %s read failure", async (condition) => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-read-failure-"));
+    const source = path.join(root, "source");
+    const tracker = path.join(source, ".agents/pm");
+    const directory = path.join(tracker, "merge-receipts");
+    const snapshot = path.join(root, "snapshot");
+    const relativeReceipt = ".agents/pm/merge-receipts/one.json";
+    const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_")));
+    const git = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    try {
+      for (const workspace of [source, snapshot]) {
+        await mkdir(path.join(workspace, ".agents/pm/merge-receipts"), { recursive: true });
+        git(workspace, "init", "-q");
+        await writeFile(path.join(workspace, relativeReceipt), `${JSON.stringify({ workspace })}\n`);
+        git(workspace, "add", relativeReceipt);
+      }
+      expect((await readIndexedReceiptBlobs(source, directory, ["one.json"], 4096, directory)).size).toBe(1);
+      const snapshotIndex = await readFile(path.join(snapshot, ".git/index"));
+      const snapshotListing = git(snapshot, "ls-files", "--stage");
+      if (condition === "corrupt index") await writeFile(path.join(source, ".git/index"), "invalid-index");
+      if (condition === "missing object") {
+        const id = git(source, "rev-parse", `:${relativeReceipt}`);
+        await rm(path.join(source, ".git/objects", id.slice(0, 2), id.slice(2)));
+      }
+      if (condition === "invalid repository") {
+        await rm(path.join(source, ".git"), { recursive: true });
+        await writeFile(path.join(source, ".git"), "gitdir: /invalid/missing-repository\n");
+      }
+      if (condition === "missing Git metadata") await rm(path.join(source, ".git/HEAD"));
+      const cwd = condition === "missing workspace" ? path.join(root, "absent") : source;
+      const sourceIndex = condition === "invalid repository" ? null : await readFile(path.join(source, ".git/index"));
+      expect(await readIndexedReceiptBlobs(cwd, directory, ["one.json"], 4096, directory)).toEqual(new Map());
+      await expect(seedSnapshotReceiptIndex(cwd, snapshot, tracker)).rejects.toThrow();
+      expect(await readFile(path.join(snapshot, ".git/index"))).toEqual(snapshotIndex);
+      expect(git(snapshot, "ls-files", "--stage")).toBe(snapshotListing);
+      if (sourceIndex !== null) expect(await readFile(path.join(source, ".git/index"))).toEqual(sourceIndex);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it("supports a snapshot source without Git authority", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-no-git-"));
+    const source = path.join(root, "source");
+    const tracker = path.join(source, ".agents/pm");
+    const snapshot = path.join(root, "snapshot");
+    const relativeReceipt = ".agents/pm/merge-receipts/one.json";
+    try {
+      await mkdir(path.join(source, ".agents/pm/merge-receipts"), { recursive: true });
+      await writeFile(path.join(source, relativeReceipt), "{}\n");
+      await seedLinkedTestWorkspaceSnapshot(source, snapshot, tracker);
+      await expect(readFile(path.join(snapshot, ".git/HEAD"))).rejects.toMatchObject({ code: "ENOENT" });
+      expect(await readFile(path.join(source, relativeReceipt), "utf8")).toBe("{}\n");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
   it.each([".agents/pm", "project-state"])("preserves staged %s receipts without importing untracked or conflicting authority", async (relativeTracker) => {
     const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-receipt-index-"));
     const source = path.join(root, "source");

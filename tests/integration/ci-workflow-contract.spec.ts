@@ -667,7 +667,6 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       'PM_RUN_TESTS_SKIP_BUILD: "1"',
-      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
       "name: Verify copied plugin first-install command transport",
       "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",
@@ -1200,6 +1199,45 @@ describe("GitHub workflow contract", () => {
     );
     expect("{ npm publish --access public; }").toMatch(untaggedNpmPublish);
     expect("! npm publish --access public").toMatch(untaggedNpmPublish);
+  });
+
+  it("native Windows cohort includes existing SDK history regressions", async () => {
+    const workflow = parse(await readFile(path.resolve(repoRoot, ".github/workflows/ci.yml"), "utf8")) as {
+      jobs: Record<string, { steps: Array<{ if?: string; run?: string }> }>;
+    };
+    const command = workflow.jobs["windows-regression-cohorts"].steps.find(
+      (step) => step.if === "matrix.cohort == 'native'" && step.run?.startsWith("node scripts/run-tests.mjs test -- --maxWorkers=2 "),
+    )?.run ?? "";
+    const selectors = command.match(/\btests\/[\w./-]+\.spec\.ts/g) ?? [];
+    const existingTests = new Set(await glob("tests/**/*.spec.ts", { cwd: repoRoot }));
+    expect(selectors.length).toBeGreaterThan(0);
+    expect(selectors.filter((selector) => !existingTests.has(selector))).toEqual([]);
+    expect(selectors.map((selector) => path.posix.basename(selector))).toEqual(
+      expect.arrayContaining([
+        "cli-main-errors.spec.ts",
+        "argv-utils.spec.ts",
+        "runtime-schema-path-win32-guard.spec.ts",
+        "scriptModule.spec.ts",
+        "package-manifest.spec.ts",
+        "telemetry-runtime.spec.ts",
+        "init-command.spec.ts",
+        "init-path-guard.integration.spec.ts",
+        "static-extension-inventory.integration.spec.ts",
+        "test-runs-command.spec.ts",
+        "core-item-lock-coverage.spec.ts",
+        "event-index.spec.ts",
+        "event-index-snapshots.spec.ts",
+        "mutation-event-fallback.spec.ts",
+        "extension-source-resolution.spec.ts",
+        "contracts-full-projection.spec.ts",
+        "linked-artifact-glob.spec.ts",
+        "extension-migrations.spec.ts",
+        "merge-extension-asset-scope.spec.ts",
+        "release-automation-contract.spec.ts",
+        "activation-summary.spec.ts",
+        "mutation-event-integrity.spec.ts",
+      ]),
+    );
   });
 
   it("budgets the serial auto-release and exact-artifact acceptance workflows", async () => {
