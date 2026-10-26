@@ -914,6 +914,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     aliases: [],
   },
   {
+    code: "event_history_integrity_failed",
+    meaning: "Event history integrity failed condition.",
+    stability: "provisional",
+    exit_code: 1,
+    class: "generic_failure",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/history/event-index.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "event_history_integrity_failed",
+    aliases: [],
+  },
+  {
     code: "event_index_unavailable",
     meaning: "Event index unavailable condition.",
     stability: "stable",

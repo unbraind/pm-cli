@@ -53,6 +53,8 @@ interface MutationEventCursorEnvelope {
 
 /** Workspace and filtering controls for mutation-event reads. */
 export interface ListMutationEventsOptions {
+  /** Verify complete selected authoritative chains before filtering or pagination. */
+  verify?: boolean;
   /** Explicit tracker root, equivalent to global `--pm-path`. */
   pmRoot?: string;
   /** Working directory used to discover the nearest tracker. */
@@ -109,6 +111,10 @@ export interface MutationEvent {
 
 /** Bounded event page returned by {@link listMutationEvents}. */
 export interface MutationEventPage {
+  /** Chain verification is opt-in; content cache validation alone is not proof. */
+  integrity: "verified" | "unverified";
+  /** Complete selected authoritative streams checked when verification is requested. */
+  verified_streams?: number;
   /** Ordered mutation events. */
   events: MutationEvent[];
   /** Number of events in this page. */
@@ -274,6 +280,7 @@ async function resolveIndexedMutationEvents(
   pmRoot: string,
   query: NonNullable<Parameters<typeof readHistoryEventIndexPage>[1]>,
 ) {
+  if (query.verify) return queryAuthoritativeMutationEvents(pmRoot, query);
   const attempt = await readHistoryEventIndexPage(pmRoot, query);
   let indexed = attempt.result;
   if (indexed === null && attempt.repair_needed) {
@@ -286,22 +293,28 @@ async function resolveIndexedMutationEvents(
       // malformed or inaccessible history rather than hiding storage failures.
     }
   }
-  if (indexed === null) {
-    try {
-      return {
-        ...(await queryHistoryEventStreams(pmRoot, query)),
-        source: "authoritative_history" as const,
-      };
-    } catch (error: unknown) {
-      if (error instanceof PmCliError) throw error;
-      throw new PmCliError(
-        "Mutation events are unavailable because authoritative history could not be read.",
-        EXIT_CODE.GENERIC_FAILURE,
-        { code: "event_index_unavailable", why: toErrorMessage(error) },
-      );
-    }
-  }
+  if (indexed === null) return queryAuthoritativeMutationEvents(pmRoot, query);
   return { ...indexed, source: "derived_index" as const };
+}
+
+/** Preserve typed history refusals while normalizing host failures on both authoritative paths. */
+async function queryAuthoritativeMutationEvents(
+  pmRoot: string,
+  query: Parameters<typeof queryHistoryEventStreams>[1],
+) {
+  try {
+    return {
+      ...(await queryHistoryEventStreams(pmRoot, query)),
+      source: "authoritative_history" as const,
+    };
+  } catch (error: unknown) {
+    if (error instanceof PmCliError) throw error;
+    throw new PmCliError(
+      "Mutation events are unavailable because authoritative history could not be read.",
+      EXIT_CODE.GENERIC_FAILURE,
+      { code: "event_index_unavailable", why: toErrorMessage(error) },
+    );
+  }
 }
 
 /** Resolves the event cursor emission mode and rejects unsupported transport spellings. */
@@ -349,6 +362,7 @@ export async function listMutationEvents(
     fingerprint,
   );
   const query = {
+    verify: options.verify === true,
     ...(cursor
       ? {
           after_ts: cursor.ts,
@@ -388,7 +402,7 @@ export async function listMutationEvents(
       ? {}
       : { message: event.entry.message }),
     patch_count: event.entry.patch.length,
-    ...(options.full === true ? { entry: event.entry } : {}),
+    ...(options.full === true ? { entry: structuredClone(event.recorded_entry ?? event.entry) } : {}),
     ...(options.provenance === true
       ? {
           provenance: projectHistoryProvenance(event.entry, vocabulary, {
@@ -399,6 +413,8 @@ export async function listMutationEvents(
       : {}),
   }));
   return {
+    integrity: options.verify === true ? "verified" : "unverified",
+    ...(indexed.verified_streams === undefined ? {} : { verified_streams: indexed.verified_streams }),
     events,
     count: events.length,
     has_more: indexed.has_more,

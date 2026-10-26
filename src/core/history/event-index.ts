@@ -6,7 +6,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
@@ -21,7 +21,8 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { isMillisecondPrecisionRfc3339DateTime } from "../shared/time.js";
-import { readHistoryEntries } from "./read.js";
+import { readHistorySnapshot } from "./read.js";
+import { verifyHistoryChainWithVersion } from "./replay.js";
 import { classifyHistoryEvent } from "./event-classification.js";
 import {
   loadDatabaseSync,
@@ -29,8 +30,9 @@ import {
 } from "../store/sqlite-runtime.js";
 
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
-const EVENT_INDEX_VERSION = "6";
+const EVENT_INDEX_VERSION = "7";
 const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
+const HISTORY_STREAM_CONTENT_READ_CONCURRENCY = 32;
 const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
 const HISTORY_EVENT_INDEX_APPEND_OWNER_PREFIX = "history-event-index:append:";
 const HISTORY_EVENT_INDEX_REPAIR_COOLDOWN_MS = 5_000;
@@ -58,7 +60,13 @@ interface AuthoritativeHistoryCache {
 
 interface AuthoritativeHistorySnapshot {
   events: IndexedHistoryEvent[];
-  stream_byte_sizes: ReadonlyMap<string, number>;
+  stream_receipts: ReadonlyMap<string, HistoryStreamContentReceipt>;
+}
+
+/** Full-stream byte identity, independent of filesystem timestamps. */
+interface HistoryStreamContentReceipt {
+  byte_size: number;
+  content_hash: string;
 }
 
 const authoritativeHistoryCaches = new Map<string, AuthoritativeHistoryCache>();
@@ -71,10 +79,14 @@ export interface IndexedHistoryEvent {
   stream_offset: number;
   /** Authoritative history entry. */
   entry: HistoryEntry;
+  /** Exact recorded values retained by authoritative verification before timestamp normalization. */
+  recorded_entry?: HistoryEntry;
 }
 
 /** Index-native filters and continuation bounds for mutation events. */
 export interface HistoryEventIndexQuery {
+  /** Verify every selected authoritative chain before filtering or pagination. */
+  verify?: boolean;
   /** Return events strictly after this timestamp. */
   after_ts?: string;
   /** Stream tie-breaker paired with `after_ts`. */
@@ -110,6 +122,8 @@ export interface HistoryEventIndexQueryResult {
   events: IndexedHistoryEvent[];
   /** Whether another matching event exists. */
   has_more: boolean;
+  /** Number of complete authoritative streams verified, when requested. */
+  verified_streams?: number;
 }
 
 /** Latest substantive immutable event for each requested history stream. */
@@ -361,6 +375,8 @@ async function withHistoryEventIndexLock<T>(
 
 async function readAuthoritativeHistorySnapshot(
   pmRoot: string,
+  requestedStreamIds?: readonly string[],
+  verify = false,
 ): Promise<AuthoritativeHistorySnapshot> {
   const historyRoot = path.join(pmRoot, "history");
   const entries = await fs
@@ -376,10 +392,12 @@ async function readAuthoritativeHistorySnapshot(
       }
       throw error;
     });
-  const cached = authoritativeHistoryCaches.get(pmRoot) ?? {
+  const base = authoritativeHistoryCaches.get(pmRoot) ?? {
     streams: new Map<string, AuthoritativeHistoryStreamCache>(),
     ordered_events: [],
   };
+  const streams = new Map(base.streams);
+  let orderedEvents = base.ordered_events;
   const presentStreams = new Set<string>();
   let changed = !authoritativeHistoryCaches.has(pmRoot);
   for (const historyFile of entries
@@ -388,38 +406,24 @@ async function readAuthoritativeHistorySnapshot(
     const streamId = historyFile.name.slice(0, -".jsonl".length);
     presentStreams.add(streamId);
     const historyPath = path.join(historyRoot, historyFile.name);
-    const stats = await fs.stat(historyPath, { bigint: true });
-    const signature = [
-      stats.dev,
-      stats.ino,
-      stats.size,
-      stats.mtimeNs,
-      stats.ctimeNs,
-    ].join(":");
-    if (cached.streams.get(streamId)?.signature === signature) continue;
-    const history = await readIndexableHistoryEntries(historyPath, streamId);
-    cached.streams.set(streamId, {
-      signature,
-      byte_size: Number(stats.size),
-      events: history.map((entry, streamOffset) => ({
-        stream_id: streamId,
-        stream_offset: streamOffset,
-        entry,
-      })),
-    });
+    if (!historyStreamIsSelected(streamId, requestedStreamIds)) continue;
+    const stream = await readChangedHistoryStream(historyPath, streamId, streams.get(streamId), verify);
+    if (stream === undefined) continue;
+    streams.set(streamId, stream);
     changed = true;
   }
-  for (const streamId of cached.streams.keys()) {
+  for (const streamId of streams.keys()) {
     if (!presentStreams.has(streamId)) {
-      cached.streams.delete(streamId);
+      streams.delete(streamId);
       changed = true;
     }
   }
   if (changed) {
-    cached.ordered_events = [...cached.streams.values()]
+    orderedEvents = [...streams.values()]
       .flatMap((stream) => stream.events)
       .sort(compareHistoryEventPosition);
   }
+  const cached: AuthoritativeHistoryCache = { streams, ordered_events: orderedEvents };
   authoritativeHistoryCaches.delete(pmRoot);
   authoritativeHistoryCaches.set(pmRoot, cached);
   if (authoritativeHistoryCaches.size > AUTHORITATIVE_HISTORY_CACHE_LIMIT) {
@@ -427,13 +431,55 @@ async function readAuthoritativeHistorySnapshot(
     authoritativeHistoryCaches.delete(oldestRoot);
   }
   return {
-    events: cached.ordered_events,
-    stream_byte_sizes: new Map(
-      [...cached.streams].map(([streamId, stream]) => [
+    events: cached.ordered_events.filter((event) => historyStreamIsSelected(event.stream_id, requestedStreamIds)).map((event) => projectRecordedHistoryEvent(event, verify)),
+    stream_receipts: new Map(
+      [...cached.streams].filter(([streamId]) => historyStreamIsSelected(streamId, requestedStreamIds)).map(([streamId, stream]) => [
         streamId,
-        stream.byte_size,
+        { byte_size: stream.byte_size, content_hash: stream.signature },
       ]),
     ),
+  };
+}
+
+/** Keep default full-entry timestamps independent of earlier strict reads sharing this cache. */
+function projectRecordedHistoryEvent(event: IndexedHistoryEvent, verify: boolean): IndexedHistoryEvent {
+  if (verify || event.recorded_entry === undefined) return event;
+  return { stream_id: event.stream_id, stream_offset: event.stream_offset, entry: event.entry };
+}
+
+/** Empty or omitted selections retain the existing all-stream query semantics. */
+function historyStreamIsSelected(streamId: string, requested: readonly string[] | undefined): boolean {
+  return !requested?.length || requested.includes(streamId);
+}
+
+/** Reuse parsed rows only after validating every byte; strict reads always replay. */
+async function readChangedHistoryStream(historyPath: string, streamId: string, previous: AuthoritativeHistoryStreamCache | undefined, verify: boolean): Promise<AuthoritativeHistoryStreamCache | undefined> {
+  if (!verify && previous !== undefined && previous.byte_size === (await fs.stat(historyPath)).size) {
+    const signature = createHash("sha256").update(await fs.readFile(historyPath)).digest("hex");
+    if (previous.signature === signature) return undefined;
+  }
+  return readIndexableHistoryStream(historyPath, streamId, verify);
+}
+
+/** Capture rows and their complete byte receipt from the same authoritative read. */
+async function readIndexableHistoryStream(historyPath: string, streamId: string, verify: boolean): Promise<AuthoritativeHistoryStreamCache> {
+  const snapshot = await readHistorySnapshot(historyPath, streamId);
+  if (verify) {
+    const result = verifyHistoryChainWithVersion(snapshot.entries);
+    if (!result.ok) throw new PmCliError(
+      `Authoritative history integrity verification failed for ${streamId}.`,
+      EXIT_CODE.GENERIC_FAILURE,
+      { code: "event_history_integrity_failed", why: result.errors.join(", "),
+        nextSteps: [`Run pm history ${streamId} --verify to inspect the authoritative chain before retrying.`] },
+    );
+  }
+  const raw = snapshot.raw_bytes ?? new Uint8Array();
+  return {
+    signature: createHash("sha256").update(raw).digest("hex"),
+    byte_size: raw.byteLength,
+    events: normalizeIndexableHistoryEntries(snapshot.entries, streamId).map((entry, streamOffset) => ({ stream_id: streamId, stream_offset: streamOffset, entry,
+      ...(verify ? { recorded_entry: snapshot.entries[streamOffset] } : {}),
+    })),
   };
 }
 
@@ -441,7 +487,11 @@ async function readIndexableHistoryEntries(
   historyPath: string,
   streamId: string,
 ): Promise<HistoryEntry[]> {
-  const entries = await readHistoryEntries(historyPath, streamId);
+  return normalizeIndexableHistoryEntries((await readHistorySnapshot(historyPath, streamId)).entries, streamId);
+}
+
+/** Normalize timestamps only after integrity checks have seen the recorded values. */
+function normalizeIndexableHistoryEntries(entries: HistoryEntry[], streamId: string): HistoryEntry[] {
   for (const [index, entry] of entries.entries()) {
     if (
       typeof entry.ts !== "string" ||
@@ -458,12 +508,6 @@ async function readIndexableHistoryEntries(
     ...entry,
     ts: new Date(entry.ts.trim()).toISOString(),
   }));
-}
-
-async function readAuthoritativeHistoryEvents(
-  pmRoot: string,
-): Promise<IndexedHistoryEvent[]> {
-  return (await readAuthoritativeHistorySnapshot(pmRoot)).events;
 }
 
 let RuntimeDatabaseSync: DatabaseSyncConstructor | null | undefined;
@@ -499,7 +543,8 @@ function createSchema(database: DatabaseSync): void {
     ) STRICT;
     CREATE TABLE streams (
       stream_id TEXT PRIMARY KEY,
-      byte_size INTEGER NOT NULL CHECK(byte_size >= 0)
+      byte_size INTEGER NOT NULL CHECK(byte_size >= 0),
+      content_hash TEXT NOT NULL
     ) STRICT;
     CREATE INDEX events_order
       ON events(ts, stream_id, stream_offset);
@@ -563,17 +608,17 @@ function parseIndexedHistoryEvent(row: {
   };
 }
 
-function upsertStreamByteSize(
+function upsertStreamContentReceipt(
   database: DatabaseSync,
   streamId: string,
-  byteSize: number,
+  receipt: HistoryStreamContentReceipt,
 ): void {
   database
     .prepare(
-      `INSERT INTO streams(stream_id, byte_size) VALUES (?, ?)
-       ON CONFLICT(stream_id) DO UPDATE SET byte_size = excluded.byte_size`,
+      `INSERT INTO streams(stream_id, byte_size, content_hash) VALUES (?, ?, ?)
+       ON CONFLICT(stream_id) DO UPDATE SET byte_size = excluded.byte_size, content_hash = excluded.content_hash`,
     )
-    .run(streamId, byteSize);
+    .run(streamId, receipt.byte_size, receipt.content_hash);
 }
 
 /** Rebuild the complete optional event projection from authoritative streams. */
@@ -675,8 +720,8 @@ async function populateHistoryEventIndex(
     insertEvent(database, event);
     if (++inserted % 500 === 0) await yieldToEventLoop();
   }
-  for (const [streamId, byteSize] of snapshot.stream_byte_sizes) {
-    upsertStreamByteSize(database, streamId, byteSize);
+  for (const [streamId, receipt] of snapshot.stream_receipts) {
+    upsertStreamContentReceipt(database, streamId, receipt);
     if (++inserted % 500 === 0) await yieldToEventLoop();
   }
 }
@@ -777,24 +822,26 @@ export async function queryHistoryEventStreams(
   query: HistoryEventIndexQuery,
 ): Promise<HistoryEventIndexQueryResult> {
   const limit = Math.max(0, Math.floor(query.limit));
-  const rows = (await readAuthoritativeHistoryEvents(pmRoot))
+  const snapshot = await readAuthoritativeHistorySnapshot(pmRoot, query.stream_ids, query.verify);
+  const rows = snapshot.events
     .filter((event) => matchesHistoryEventQuery(event, query))
     .slice(0, limit + 1);
   return {
     events: rows.slice(0, query.limit),
     has_more: rows.length > query.limit,
+    ...(query.verify ? { verified_streams: snapshot.stream_receipts.size } : {}),
   };
 }
 
-/** Certify the incremental base before a later append can overwrite its size receipt. */
+/** Certify the complete incremental base before a later append advances its content receipt. */
 async function historyEventIndexHasAppendBase(
   database: DatabaseSync,
   historyPath: string,
 ): Promise<boolean> {
   const stored = database
-    .prepare("SELECT byte_size FROM streams WHERE stream_id = ?")
+    .prepare("SELECT byte_size, content_hash FROM streams WHERE stream_id = ?")
     .get(path.basename(historyPath, ".jsonl")) as
-    | { byte_size: number }
+    | HistoryStreamContentReceipt
     | undefined;
   let actualSize = 0;
   try {
@@ -802,7 +849,9 @@ async function historyEventIndexHasAppendBase(
   } catch (error: unknown) {
     if (!isFileMissingError(error)) throw error;
   }
-  return Number(stored?.byte_size ?? 0) === actualSize;
+  if (Number(stored?.byte_size ?? 0) !== actualSize) return false;
+  const current = await readHistoryStreamContentReceipt(path.dirname(path.dirname(historyPath)), path.basename(historyPath, ".jsonl"));
+  return stored === undefined ? current?.byte_size === 0 : current?.content_hash === stored.content_hash;
 }
 
 /**
@@ -890,10 +939,10 @@ export async function appendHistoryEntryWithEventIndex(
             stream_offset: Number(offset.value),
             entry,
           });
-          upsertStreamByteSize(
+          upsertStreamContentReceipt(
             database,
             streamId,
-            (await fs.stat(historyPath)).size,
+            (await readHistoryStreamContentReceipt(pmRoot, streamId))!,
           );
           database.exec("COMMIT");
           database.close();
@@ -1045,7 +1094,7 @@ async function readHistoryEventIndexSnapshot<T>(
     if (version?.value !== EVENT_INDEX_VERSION) return null;
     const result = read(database);
     if (result === null) return null;
-    const storedSizes = readHistoryEventIndexStreamSizes(
+    const storedSizes = readHistoryEventIndexStreamReceipts(
       database,
       requestedStreamIds,
     );
@@ -1057,7 +1106,7 @@ async function readHistoryEventIndexSnapshot<T>(
       pmRoot,
       requestedStreamIds,
     );
-    const sizesMatch = await historyIndexMatchesStreamSizes(
+    const sizesMatch = await historyIndexMatchesStreamContents(
       storedSizes,
       pmRoot,
       streamIds,
@@ -1096,31 +1145,31 @@ function isHistoryIndexWriteContention(error: unknown): boolean {
   );
 }
 
-/** Capture size receipts in the same synchronous transaction as the requested rows. */
-function readHistoryEventIndexStreamSizes(
+/** Capture content receipts in the same synchronous transaction as the requested rows. */
+function readHistoryEventIndexStreamReceipts(
   database: DatabaseSync,
   requestedStreamIds: readonly string[] | undefined,
-): Map<string, number> {
-  const storedSizes = new Map<string, number>();
+): Map<string, HistoryStreamContentReceipt> {
+  const storedSizes = new Map<string, HistoryStreamContentReceipt>();
   const ids =
     requestedStreamIds && requestedStreamIds.length > 0
       ? [...new Set(requestedStreamIds)]
       : undefined;
   if (ids === undefined) {
     for (const row of database
-      .prepare("SELECT stream_id, byte_size FROM streams")
+      .prepare("SELECT stream_id, byte_size, content_hash FROM streams")
       .all()) {
-      storedSizes.set(String(row.stream_id), Number(row.byte_size));
+      storedSizes.set(String(row.stream_id), { byte_size: Number(row.byte_size), content_hash: String(row.content_hash) });
     }
   } else {
     for (let start = 0; start < ids.length; start += 500) {
       const chunk = ids.slice(start, start + 500);
       for (const row of database
         .prepare(
-          `SELECT stream_id, byte_size FROM streams WHERE stream_id IN (${chunk.map(() => "?").join(", ")})`,
+          `SELECT stream_id, byte_size, content_hash FROM streams WHERE stream_id IN (${chunk.map(() => "?").join(", ")})`,
         )
         .all(...chunk)) {
-        storedSizes.set(String(row.stream_id), Number(row.byte_size));
+        storedSizes.set(String(row.stream_id), { byte_size: Number(row.byte_size), content_hash: String(row.content_hash) });
       }
     }
   }
@@ -1143,6 +1192,7 @@ export async function readHistoryEventIndexPage(
   result: HistoryEventIndexQueryResult | null;
   repair_needed: boolean;
 }> {
+  if (query.verify) return { result: await queryHistoryEventStreams(pmRoot, query), repair_needed: false };
   const Database = resolveDatabaseSync();
   if (!Database) return { result: null, repair_needed: false };
   const clauses: string[] = [];
@@ -1253,37 +1303,40 @@ function collectLatestSubstantiveEvents(
 }
 
 /** Treat absent streams as empty while preserving unsafe paths and storage errors. */
-async function readHistoryStreamByteSize(
+async function readHistoryStreamContentReceipt(
   pmRoot: string,
   streamId: string,
-): Promise<number | null> {
+): Promise<HistoryStreamContentReceipt | null> {
   if (path.basename(streamId) !== streamId) return null;
   try {
-    return (await fs.stat(path.join(pmRoot, "history", `${streamId}.jsonl`)))
-      .size;
+    const historyPath = path.join(pmRoot, "history", `${streamId}.jsonl`);
+    const stats = await fs.stat(historyPath);
+    const raw = await fs.readFile(historyPath);
+    if (stats.size !== raw.length) return null;
+    return { byte_size: raw.length, content_hash: createHash("sha256").update(raw).digest("hex") };
   } catch (error: unknown) {
-    if (isFileMissingError(error)) return 0;
+    if (isFileMissingError(error)) return { byte_size: 0, content_hash: createHash("sha256").digest("hex") };
     throw error;
   }
 }
 
-/** Compare captured projection receipts with authoritative sizes outside SQLite. */
-async function historyIndexMatchesStreamSizes(
-  storedSizes: ReadonlyMap<string, number>,
+/** Compare captured projection receipts with complete authoritative content outside SQLite. */
+async function historyIndexMatchesStreamContents(
+  storedSizes: ReadonlyMap<string, HistoryStreamContentReceipt>,
   pmRoot: string,
   streamIds: readonly string[],
 ): Promise<boolean> {
-  for (let start = 0; start < streamIds.length; start += 500) {
-    const chunk = streamIds.slice(start, start + 500);
+  for (let start = 0; start < streamIds.length; start += HISTORY_STREAM_CONTENT_READ_CONCURRENCY) {
+    const chunk = streamIds.slice(start, start + HISTORY_STREAM_CONTENT_READ_CONCURRENCY);
     const currentSizes = await Promise.all(
-      chunk.map((streamId) => readHistoryStreamByteSize(pmRoot, streamId)),
+      chunk.map((streamId) => readHistoryStreamContentReceipt(pmRoot, streamId)),
     );
     for (const [index, currentSize] of currentSizes.entries()) {
       if (currentSize === null) return false;
       const streamId = chunk[index] as string;
       const storedSize = storedSizes.get(streamId);
-      if (currentSize === 0 && storedSize === undefined) continue;
-      if (currentSize !== storedSize) return false;
+      if (currentSize.byte_size === 0 && storedSize === undefined) continue;
+      if (currentSize.byte_size !== storedSize?.byte_size || currentSize.content_hash !== storedSize.content_hash) return false;
     }
   }
   return true;

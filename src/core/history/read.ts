@@ -6,7 +6,8 @@
  * storage primitive below both the CLI and SDK prevents public history
  * maintenance APIs from depending on presentation-layer modules.
  */
-import { readFileIfExists } from "../fs/fs-utils.js";
+import fs from "node:fs/promises";
+import { isFileAbsentError } from "../fs/fs-utils.js";
 import { runActiveOnReadHooks } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
@@ -17,7 +18,9 @@ import type { HistoryEntry } from "../../types/index.js";
 export interface HistoryStreamSnapshot {
   /** Null means the stream did not exist; an empty string means it existed without entries. */
   raw: string | null;
-  /** Entries decoded from precisely the bytes in `raw`, after read hooks run. */
+  /** Original file bytes, before UTF-8 decoding; null means the stream did not exist. */
+  raw_bytes: Uint8Array | null;
+  /** Entries decoded from `raw_bytes`, after read hooks run. */
   entries: HistoryEntry[];
 }
 
@@ -26,13 +29,17 @@ export async function readHistorySnapshot(
   historyPath: string,
   itemId: string,
 ): Promise<HistoryStreamSnapshot> {
-  const raw = await readFileIfExists(historyPath);
+  const rawBytes = await fs.readFile(historyPath).catch((error: unknown) => {
+    if (isFileAbsentError(error)) return null;
+    throw error;
+  });
+  const raw = rawBytes?.toString("utf8") ?? null;
   if (raw === null) {
-    return { raw, entries: [] };
+    return { raw, raw_bytes: rawBytes, entries: [] };
   }
   await runActiveOnReadHooks({ path: historyPath, scope: "project" });
   if (raw.trim() === "") {
-    return { raw, entries: [] };
+    return { raw, raw_bytes: rawBytes, entries: [] };
   }
   const conflictMarker = findFirstMergeConflictMarker(raw);
   if (conflictMarker) {
@@ -71,7 +78,7 @@ export async function readHistorySnapshot(
       );
     }
   }
-  return { raw, entries };
+  return { raw, raw_bytes: rawBytes, entries };
 }
 
 /** Read and validate one item's JSONL history stream without mutating it. */

@@ -192,7 +192,7 @@ describe("GitHub workflow contract", () => {
     expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
     expect(setupNodeStep?.with).toMatchObject({ "node-version": 24 });
     expect(codSpeedStep?.uses).toBe(
-      "CodSpeedHQ/action@f842b9a3ffe213dbb81768fd7f7eeb4dfcf1c369",
+      "CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da",
     );
     expect(codSpeedOptions).toMatchObject({
       mode: "simulation",
@@ -283,7 +283,7 @@ describe("GitHub workflow contract", () => {
     const aggregate = workflow.jobs["windows-regression"];
     expect(aggregate.name).toBe("Windows regression (Node 24)");
     expect(aggregate.needs).toBe("windows-regression-cohorts");
-    expect(aggregate.if).toBe("always()");
+    expect(aggregate.if).toBe("${{ !cancelled() }}");
     expect(aggregate["continue-on-error"]).toBeUndefined();
     const gate = aggregate.steps[0];
     expect(gate.env.COHORT_RESULT).toBe("${{ needs.windows-regression-cohorts.result }}");
@@ -304,7 +304,7 @@ describe("GitHub workflow contract", () => {
     const aggregate = workflow.jobs.coverage;
     expect(aggregate.name).toBe(name);
     expect(aggregate.needs).toBe(dependency);
-    expect(aggregate.if).toBe("always()");
+    expect(aggregate.if).toBe(file === "ci.yml" ? "${{ !cancelled() }}" : "always()");
     expect(aggregate["continue-on-error"]).toBeUndefined();
     expect(shards["continue-on-error"]).toBeUndefined();
     const admission = aggregate.steps[0];
@@ -667,7 +667,6 @@ describe("GitHub workflow contract", () => {
       "run: pnpm install --frozen-lockfile",
       "run: pnpm build",
       'PM_RUN_TESTS_SKIP_BUILD: "1"',
-      "run: node scripts/run-tests.mjs test -- --maxWorkers=2 tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/argv-utils.spec.ts tests/unit/core/schema/runtime-schema-path-win32-guard.spec.ts tests/unit/helpers/scriptModule.spec.ts tests/unit/packages/package-manifest.spec.ts tests/unit/core/telemetry/telemetry-runtime.spec.ts tests/unit/commands/workspace/init-command.spec.ts tests/integration/init-path-guard.integration.spec.ts tests/integration/extensions/static-extension-inventory.integration.spec.ts tests/unit/commands/test/test-runs-command.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/sdk/history/mutation-event-fallback.spec.ts tests/unit/extensions/extension-source-resolution.spec.ts tests/unit/sdk/contracts-full-projection.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/sdk/extension-migrations.spec.ts tests/unit/sdk/merge-extension-asset-scope.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/core/extensions/activation-summary.spec.ts",
       'run: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t "installs runtime dependencies for packed npm package extensions"',
       "name: Verify copied plugin first-install command transport",
       "run: node scripts/run-tests.mjs test -- tests/integration/plugins/plugin-runtime-win32.integration.spec.ts tests/unit/plugins/plugin-runtime-races.spec.ts",
@@ -1202,6 +1201,45 @@ describe("GitHub workflow contract", () => {
     expect("! npm publish --access public").toMatch(untaggedNpmPublish);
   });
 
+  it("native Windows cohort includes existing SDK history regressions", async () => {
+    const workflow = parse(await readFile(path.resolve(repoRoot, ".github/workflows/ci.yml"), "utf8")) as {
+      jobs: Record<string, { steps: Array<{ if?: string; run?: string }> }>;
+    };
+    const command = workflow.jobs["windows-regression-cohorts"].steps.find(
+      (step) => step.if === "matrix.cohort == 'native'" && step.run?.startsWith("node scripts/run-tests.mjs test -- --maxWorkers=2 "),
+    )?.run ?? "";
+    const selectors = command.match(/\btests\/[\w./-]+\.spec\.ts/g) ?? [];
+    const existingTests = new Set(await glob("tests/**/*.spec.ts", { cwd: repoRoot }));
+    expect(selectors.length).toBeGreaterThan(0);
+    expect(selectors.filter((selector) => !existingTests.has(selector))).toEqual([]);
+    expect(selectors.map((selector) => path.posix.basename(selector))).toEqual(
+      expect.arrayContaining([
+        "cli-main-errors.spec.ts",
+        "argv-utils.spec.ts",
+        "runtime-schema-path-win32-guard.spec.ts",
+        "scriptModule.spec.ts",
+        "package-manifest.spec.ts",
+        "telemetry-runtime.spec.ts",
+        "init-command.spec.ts",
+        "init-path-guard.integration.spec.ts",
+        "static-extension-inventory.integration.spec.ts",
+        "test-runs-command.spec.ts",
+        "core-item-lock-coverage.spec.ts",
+        "event-index.spec.ts",
+        "event-index-snapshots.spec.ts",
+        "mutation-event-fallback.spec.ts",
+        "extension-source-resolution.spec.ts",
+        "contracts-full-projection.spec.ts",
+        "linked-artifact-glob.spec.ts",
+        "extension-migrations.spec.ts",
+        "merge-extension-asset-scope.spec.ts",
+        "release-automation-contract.spec.ts",
+        "activation-summary.spec.ts",
+        "mutation-event-integrity.spec.ts",
+      ]),
+    );
+  });
+
   it("budgets the serial auto-release and exact-artifact acceptance workflows", async () => {
     const releaseWorkflow = parse(
       await readFile(
@@ -1230,10 +1268,13 @@ describe("GitHub workflow contract", () => {
     expect(releaseTimeout).toBe(60);
     expect(acceptanceTimeout).toBe(15);
     expect(advertisementTimeout).toBe(5);
-    expect(autoReleaseTimeout).toBe(110);
+    const preparationReserve = 60;
+    const runnerQueueReserve = 30;
+    const orchestrationReserve = 10;
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
-      releaseTimeout + acceptanceTimeout + advertisementTimeout + 30,
+      releaseTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve + orchestrationReserve,
     );
+    expect(autoReleaseTimeout).toBeLessThanOrEqual(180);
   });
 
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {
@@ -1572,7 +1613,7 @@ describe("GitHub workflow contract", () => {
       "trivyignores: .trivyignore",
       "skip-dirs: node_modules,dist,coverage,.pnpm-store",
       "extra_args: --results=verified --fail-on-scan-errors --exclude-paths=.trufflehog-exclude-paths.txt",
-      "uses: trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9 # v3.99.2",
+      "uses: trufflesecurity/trufflehog@e63326d6545de8f425d93ce24078c6e68d83f70e # v3.99.3",
       "shellcheck --version",
       "shellcheck --severity=style",
       "$moduleVersion = '1.24.0'",
@@ -1598,8 +1639,8 @@ describe("GitHub workflow contract", () => {
     const scanners = securitySteps.filter(({ uses }) => uses?.startsWith("trufflesecurity/trufflehog@"));
     expect(scanners.length).toBeGreaterThan(0);
     for (const scanner of scanners) {
-      expect(scanner.uses).toBe("trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9");
-      expect(scanner.with?.version).toBe("3.99.2");
+      expect(scanner.uses).toBe("trufflesecurity/trufflehog@e63326d6545de8f425d93ce24078c6e68d83f70e");
+      expect(scanner.with?.version).toBe("3.99.3");
     }
     const trivyStep = securitySteps.find(({ name }) => name === "Trivy repository scan");
     expect(trivyStep?.env).toEqual({ TRIVY_INCLUDE_DEV_DEPS: "true" });

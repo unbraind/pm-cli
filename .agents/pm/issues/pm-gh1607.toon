@@ -1,0 +1,23 @@
+id: pm-gh1607
+title: "GH-1607: Provide intent-specific recovery for unsupported block and unblock commands"
+description: "**Version:** pm 2026.10.26.\n\n**Repro**\n```sh\npm block <id> --reason waiting\npm unblock <id> --note ready\n```\n**Observed:** both exit 2. `block` suggests `github blockers` and `list --status blocked` (read-only surfaces); `unblock` prints generic examples (`activity`, `aggregate`, `assurance`, …). Neither points at the supported local mutation.\n\n**Expected:** intent-specific recovery for these lifecycle verbs, e.g.\n```sh\npm update <id> --blocked-by <blocker> --blocked-reason \"waiting\"\npm update <id> --dep-remove <blocker> --unset blocked_by --unset blocked_reason --unblock-note \"ready\"\n```\nor first-class `block`/`unblock` aliases that map to those flags (never auto-executing a guessed mutation).\n\n**Why it matters for agents:** block/unblock are the verbs agents reach for during a work session; today the failed call is followed by a help search and another attempt (~600–750 bytes of unhelpful stderr each). Note that `--unblock-note` alone records a note but does not remove the blocker edge, which is easy to get wrong without a worked example.\n\n\nIntake boundary: this is a report against published 2026.10.26, not proof of a current-checkout defect. Reproduce in an external sandbox before implementation. Related completed work retains its shipped scope. Proposed examples or categories are not accepted contracts until validated.\n\nSource: https://github.com/unbraind/pm-cli/issues/1607"
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,github,sdk
+created_at: "2026-10-26T19:02:14.338Z"
+updated_at: "2026-10-26T19:02:14.338Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "Derive examples from live update contracts and prove the suggested block and unblock workflows on isolated trackers.; Unblock recovery explains removal of the actual blocker relationship and stale blocker metadata; a note alone is not presented as unblocking.; Refusals preserve the usage exit code, leave data unchanged, identify the intended lifecycle surface, and retain extension-command and ambiguity behavior. Any new alias must have a declared SDK/CLI/MCP contract."
+parent: pm-f05lsg
+risk: low
+confidence: medium
+expected_result: "Unsupported lifecycle verbs lead to a correct local mutation recipe with explicit identifiers and blocker-edge cleanup, without automatically executing an inferred mutation."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1p6f,related,"2026-10-26T19:02:14.338Z","harness:codex","cli:create:dep",detected
+  pm-in23qu,related,"2026-10-26T19:02:14.338Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-26T19:02:14.338Z","harness:codex","Duplicate check: fresh orientation, request-specific search, open/in-progress inventories and complete strict 3126-item all-status corpus found no open owner for this exact case. Full live metadata and histories of related owners confirm their completed, distinct scope. This is intake only, open and unclaimed; implementation is outside the current delivery cohort."
+escape_class: production_defect
+body: ""

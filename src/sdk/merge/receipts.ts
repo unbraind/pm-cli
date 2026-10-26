@@ -9,7 +9,7 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import type { Stats } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
+import { readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { readHistoryEntries } from "../../core/history/read.js";
@@ -35,13 +35,12 @@ import {
   type MergePreferredSide,
 } from "./three-way.js";
 import type { MergeReceiptOperation } from "./receipt-operation.js";
-import { readBoundedRegularFile } from "./receipt-file-boundary.js";
+import { MERGE_RECEIPT_FILE_MAX_BYTES as RECEIPT_FILE_MAX_BYTES, readBoundedRegularFile } from "./receipt-file-boundary.js";
 
 import { DURABLE_VALUE_POLICY, durableValueEvidence, isSafeReceiptId, isMergeDecisionReceipt, isPrehashedValue, normalizeLegacyReceipt, receiptCollectionValidationPath, receiptValidationError } from "./receipt-schema.js";
 export { isSafeReceiptId } from "./receipt-schema.js";
 
 const execFileAsync = promisify(execFile);
-const RECEIPT_FILE_MAX_BYTES = 16 * 1024 * 1024;
 const RECEIPT_INVALID_EVIDENCE_DETAIL_LIMIT = 100;
 
 /** One clone-local merge receipt with recoverable branch values. */
@@ -695,7 +694,8 @@ async function inspectReceiptCandidate(
 async function indexedDurableReceiptIds(cwd: string, trackerRoot: string, receipts: readonly MergeDecisionReceipt[]): Promise<string[]> {
   if (receipts.length === 0) return [];
   const { readIndexedReceiptBlobs } = await import("./indexed-receipt-blobs.js");
-  const blobs = await readIndexedReceiptBlobs(cwd, durableReceiptDirectory(trackerRoot), receipts.map((receipt) => receiptFileName(receipt.id)), RECEIPT_FILE_MAX_BYTES);
+  const linked = await linkedReceiptIndexContext(trackerRoot);
+  const blobs = await readIndexedReceiptBlobs(linked?.workspace ?? cwd, durableReceiptDirectory(trackerRoot), receipts.map((receipt) => receiptFileName(receipt.id)), RECEIPT_FILE_MAX_BYTES, linked?.directory);
   return receipts.flatMap((receipt) => {
     try {
       const indexed: unknown = normalizeLegacyReceipt(JSON.parse(blobs.get(receiptFileName(receipt.id)) ?? "") as unknown);
@@ -705,6 +705,23 @@ async function indexedDurableReceiptIds(cwd: string, trackerRoot: string, receip
       return stored.id === receipt.id && receiptProvenanceFingerprints(stored).some((fingerprint) => fingerprints.includes(fingerprint)) ? [receipt.id] : [];
     } catch { return []; }
   });
+}
+
+/** Bind only the active isolated tracker to its explicit read-only source identity. */
+async function linkedReceiptIndexContext(trackerRoot: string): Promise<{ workspace: string; directory: string } | undefined> {
+  const workspace = process.env.PM_SOURCE_WORKSPACE_ROOT;
+  const source = process.env.PM_SOURCE_PM_PATH;
+  const active = process.env.PM_PATH;
+  if (process.env.PM_SOURCE_CONTEXT_ACCESS !== "read_only" || !workspace || !source || !active) return undefined;
+  try {
+    if (await realpath(trackerRoot) !== await realpath(active)) return undefined;
+    const relative = path.relative(await realpath(workspace), await realpath(source));
+    const outside = relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
+    const directory = durableReceiptDirectory(outside ? path.join(await realpath(workspace), ".agents", "pm") : await realpath(source));
+    const [boundDirectory, sourceDirectory] = await Promise.all([realpath(directory), realpath(durableReceiptDirectory(source))]);
+    if (boundDirectory !== sourceDirectory) return undefined;
+    return { workspace, directory };
+  } catch { return undefined; }
 }
 
 /** Inspect valid receipts and count invalid evidence without returning untrusted file contents. */

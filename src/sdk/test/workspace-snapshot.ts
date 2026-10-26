@@ -7,6 +7,7 @@ import type { Stats } from "node:fs";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
+import { seedSnapshotReceiptIndex } from "./receipt-index-snapshot.js";
 import { isFileMissingError } from "../../core/fs/fs-utils.js";
 
 const EXCLUDED_SEGMENTS = new Set([
@@ -20,9 +21,9 @@ const execFileAsync = promisify(execFile);
  * shared object paths; removing origin prevents accidental source writeback.
  * Non-repository directories retain their existing filesystem-only snapshot.
  */
-async function seedSnapshotGitIdentity(sourceRoot: string, snapshotRoot: string): Promise<void> {
+async function seedSnapshotGitIdentity(sourceRoot: string, snapshotRoot: string): Promise<boolean> {
   const marker = await statSnapshotTarget(path.join(sourceRoot, ".git"));
-  if (!marker || (marker.isDirectory() && !await statSnapshotTarget(path.join(sourceRoot, ".git/HEAD")))) return;
+  if (!marker || (marker.isDirectory() && !await statSnapshotTarget(path.join(sourceRoot, ".git/HEAD")))) return false;
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_")));
   await execFileAsync("git", ["clone", "--no-local", "--no-checkout", "--template=", "--origin=origin", "--", sourceRoot, snapshotRoot], {
     env, timeout: 120_000, maxBuffer: 1024 * 1024, windowsHide: true,
@@ -30,6 +31,24 @@ async function seedSnapshotGitIdentity(sourceRoot: string, snapshotRoot: string)
   await execFileAsync("git", ["-C", snapshotRoot, "remote", "remove", "origin"], {
     env, timeout: 10_000, windowsHide: true,
   });
+  // --no-checkout leaves the index empty; retain committed receipt authority
+  // without checking source tracker files into the disposable working tree.
+  try {
+    await execFileAsync("git", ["-C", snapshotRoot, "rev-parse", "--verify", "--quiet", "HEAD"], {
+      env, timeout: 10_000, windowsHide: true,
+    });
+  } catch (error) {
+    if ((error as { code?: unknown }).code === 1) return true;
+    throw error;
+  }
+  await execFileAsync("git", ["-C", snapshotRoot, "read-tree", "HEAD"], { env, timeout: 10_000, windowsHide: true });
+  return true;
+}
+
+/** Retain source-index receipts only when the snapshot includes tracker data. */
+async function seedSnapshotGitAuthority(sourceRoot: string, snapshotRoot: string, sourcePmRoot: string | undefined, includeTrackerData: boolean | undefined): Promise<void> {
+  const gitIdentity = await seedSnapshotGitIdentity(sourceRoot, snapshotRoot);
+  if (gitIdentity && sourcePmRoot && includeTrackerData !== false) await seedSnapshotReceiptIndex(sourceRoot, snapshotRoot, sourcePmRoot);
 }
 
 /** Recognize reserved tracker/build segments independently of filesystem casing. */
@@ -109,6 +128,8 @@ async function resolveSnapshotTarget(
 export async function seedLinkedTestWorkspaceSnapshot(
   sourceRoot: string,
   snapshotRoot: string,
+  sourcePmRoot?: string,
+  includeTrackerData?: boolean,
 ): Promise<void> {
   const dependencyRoots: Array<[relative: string, target: string]> = [];
   const sourceLinks: Array<[relative: string, target: string, type: "junction" | "file"]> = [];
@@ -119,7 +140,7 @@ export async function seedLinkedTestWorkspaceSnapshot(
     throw new Error("Snapshot destination must be disjoint from the source workspace; choose a temporary root outside the checkout.");
   }
   await mkdir(path.dirname(snapshotRoot), { recursive: true });
-  await seedSnapshotGitIdentity(resolvedSourceRoot, snapshotRoot);
+  await seedSnapshotGitAuthority(resolvedSourceRoot, snapshotRoot, sourcePmRoot, includeTrackerData);
   await cp(resolvedSourceRoot, snapshotRoot, {
     recursive: true,
     force: true,

@@ -1,0 +1,22 @@
+id: pm-gh1597
+title: "GH-1597: expose host-bound item transaction status and safe abandonment or supersession"
+description: "GitHub https://github.com/unbraind/pm-cli/issues/1597 requests public recovery for interrupted item-mutation journals when a peer edit changes the retry plan. Existing bulk commit and guarded compensation are shipped; extend their public host-bound lifecycle rather than duplicating private journal storage or reviving completed implementation."
+type: Feature
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-26T04:54:49.262Z"
+updated_at: "2026-10-26T04:54:49.262Z"
+author: "harness:codex"
+estimated_minutes: 300
+acceptance_criteria: Expose typed host-bound journal state and applied/compensated step receipts with plan identity; Provide safe abandonment and supersession using proven apply markers and existing guarded compensation; never overwrite later peer edits or silently compensate committed work; Name executable public recovery in transaction-plan-mismatch guidance and verify non-Git crash/retry/peer-edit controls plus SDK contract documentation
+parent: pm-9rgaal
+risk: high
+confidence: high
+expected_result: Extensions can inspect and recover interrupted batches through a supported root-bound API without reading private paths or recreating journal and compensation rules.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9rgaal,implements,"2026-10-26T04:54:49.262Z","harness:codex","cli:create:dep",detected
+  pm-y9hq,discovered_from,"2026-10-26T04:54:49.262Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-26T04:54:49.262Z","harness:codex","Duplicate check: complete strict all-status corpus plus live request-specific searches and full terminal-lineage reads found no exact active owner. Existing SDK promotion and transaction/preview delivery remain completed; this item owns the newly requested public surface."
+body: ""

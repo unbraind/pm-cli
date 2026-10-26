@@ -741,7 +741,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("binds rebuilt stream sizes to the same pre-read authoritative snapshot", async () => {
+  it("binds rebuilt stream content and sizes to exactly the authoritative bytes indexed", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -756,22 +756,21 @@ describe("history mutation event index", () => {
       );
       const firstLine = `${JSON.stringify(first)}\n`;
       await fs.writeFile(historyPath, firstLine);
-      const originalStat = fs.stat.bind(fs);
+      const originalReadFile = fs.readFile.bind(fs);
       let appended = false;
-      const statSpy = vi
-        .spyOn(fs, "stat")
+      const readSpy = vi
+        .spyOn(fs, "readFile")
         .mockImplementation(async (...args) => {
-          const stats = await originalStat(...args);
           if (!appended && String(args[0]) === historyPath) {
             appended = true;
             await fs.appendFile(historyPath, `${JSON.stringify(second)}\n`);
           }
-          return stats;
+          return originalReadFile(...args);
         });
       try {
         await rebuildHistoryEventIndex(context.pmPath);
       } finally {
-        statSpy.mockRestore();
+        readSpy.mockRestore();
       }
 
       const database = new DatabaseSync(
@@ -781,10 +780,8 @@ describe("history mutation event index", () => {
         .prepare("SELECT byte_size FROM streams WHERE stream_id = ?")
         .get("pm-concurrent") as { byte_size: number };
       database.close();
-      expect(indexedStream.byte_size).toBe(Buffer.byteLength(firstLine));
-      expect((await fs.stat(historyPath)).size).toBeGreaterThan(
-        indexedStream.byte_size,
-      );
+      expect(indexedStream.byte_size).toBe(Buffer.byteLength(`${firstLine}${JSON.stringify(second)}\n`));
+      expect((await fs.stat(historyPath)).size).toBe(indexedStream.byte_size);
       await expect(
         readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-concurrent"]),
       ).resolves.toMatchObject({
@@ -888,12 +885,12 @@ describe("history mutation event index", () => {
             });
           return originalWrite(...args);
         });
-      const originalStat = fs.stat.bind(fs);
+      const originalReadFile = fs.readFile.bind(fs);
       let concurrentAppend: Promise<void> | undefined;
-      const statSpy = vi
-        .spyOn(fs, "stat")
+      const readSpy = vi
+        .spyOn(fs, "readFile")
         .mockImplementation(async (...args) => {
-          const stats = await originalStat(...args);
+          const raw = await originalReadFile(...args);
           if (
             concurrentAppend === undefined &&
             String(args[0]) === historyPath
@@ -901,13 +898,13 @@ describe("history mutation event index", () => {
             concurrentAppend = appendHistoryEntry(historyPath, second);
             await concurrentAppend;
           }
-          return stats;
+          return raw;
         });
       try {
         expect(await rebuildHistoryEventIndex(context.pmPath)).toBe(false);
         await concurrentAppend;
       } finally {
-        statSpy.mockRestore();
+        readSpy.mockRestore();
         writeSpy.mockRestore();
       }
 

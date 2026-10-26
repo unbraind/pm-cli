@@ -22,6 +22,8 @@ bounded at scale without shelling out from an SDK host.
 
 ## Durable mutation events
 
+Integrity contracts: [pm-gh1593](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1593.toon).
+
 Read committed history facts as newline-delimited JSON:
 
 ```bash
@@ -33,12 +35,41 @@ pm events --cursor-mode row --since <cursor>
 
 By default, event rows carry `item_id`, `version`, `ts`, `author`, `type`, and
 `patch_count`, followed by one `pm.stream.trailer` record with `count`,
-`has_more`, `next_cursor`, and `source`. Persist the trailer cursor only after
+`has_more`, `next_cursor`, `source`, and `integrity`. Persist the trailer cursor only after
 the batch is durable. A crash before cursor persistence can replay the last
 batch repeatedly, including across multiple crashes. Consumers must process
 idempotently or deduplicate replays. `--cursor-mode row` preserves the previous
 shape with one `cursor` per event and no trailer for consumers that checkpoint
 every row. Already issued version-1 cursors remain accepted by `--since`.
+
+Every SDK page declares `integrity: "unverified"` by default. Full-file content
+matching prevents a stale cache from hiding same-length edits to any record,
+including an earlier record when the final record is unchanged. This freshness
+check alone does not verify the chain.
+The public `readHistorySnapshot` result retains `raw_bytes` alongside decoded
+`raw` and `entries`. Content receipts use those original bytes, including when
+UTF-8 decoding replaces an invalid byte; parsing behavior remains unchanged.
+
+Use `listMutationEvents({ item: "pm-abcd", verify: true })` or
+`pm events --item pm-abcd --verify --json` before acting on verified events.
+The SDK reads authoritative bytes and verifies each complete selected stream
+before applying operation, author, timestamp, cursor, or row-limit filters.
+Selected-record failures are detected even outside the returned page. JSON
+parsing failures from `readHistorySnapshot` report `history_json_invalid`;
+chain-verification failures report `event_history_integrity_failed` with
+history-inspection recovery. Follow the returned typed recovery guidance. Select
+`item` to bound verification cost and exclude unrelated streams. With no item
+filter, all available item and workspace streams are checked. Successful pages
+return `integrity: "verified"`, `verified_streams`, and
+`source: "authoritative_history"`; this proves the recorded chain, not agreement
+with the current materialized item or an external author signature. Empty
+selections report zero verified streams. Subscriptions verify each yielded
+batch with the same options. MCP `pm_events` accepts `verify: true` too.
+Both strict reads and the authoritative fallback preserve typed history refusals
+and report other host read failures as `event_index_unavailable`. Cache receipts
+and ordered rows are published together, including across concurrent reads.
+Batch-mode NDJSON trailers retain the integrity receipt; compatibility row mode
+has no trailer, so use JSON or batch mode when persisting page receipts.
 
 Version-1 cursor ordering uses recorded timestamps, stream ids, and offsets.
 A fact committed later with an older timestamp falls before an advanced cursor.
@@ -53,15 +84,15 @@ streams with the same ordering, filters, pagination, and cursor contract; pages
 identify that path with `source: "authoritative_history"`.
 Writers without SQLite use the same pending and committed invalidation protocol,
 so a later Node writer cannot certify a cache that omitted their facts.
-Incremental writes also verify the previous size receipt before advancing it,
+Incremental writes also verify the previous full-content receipt before advancing it,
 so merged history cannot be hidden by a later append. Upgraded runtimes rebuild
 legacy projections that could contain omitted facts with apparently current
 receipts; authoritative history does not require a format migration.
 
 Index readers take a synchronous SQLite read transaction containing both event
-rows and their stream-size receipts, then close the database before checking
+rows and their full-stream SHA-256 content receipts, then close the database before checking
 authoritative files. They acquire neither history-index writer lock. File
-identity and write timestamps, authoritative stream sizes, and pending or
+identity and write timestamps, complete authoritative content digests, and pending or
 committed invalidations must still match before a snapshot is returned. A
 concurrent change refuses the optional snapshot; it cannot certify older rows
 using a newer size receipt.

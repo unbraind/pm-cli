@@ -266,7 +266,7 @@ describe("universal read-output transport contracts", () => {
 
   it("replays a real health cursor while enabled telemetry changes its queue", async () => {
     await withTempPmPath(async ({ env, runCli, tempRoot }) => {
-      env.PM_TELEMETRY_DISABLED = "0";
+      env.PM_TELEMETRY_DISABLED = "1";
       env.PM_TELEMETRY_OTEL_DISABLED = "1";
       env.PM_TELEMETRY_INLINE_FLUSH = "1";
       env.NODE_ENV = "production";
@@ -303,6 +303,8 @@ describe("universal read-output transport contracts", () => {
         `${JSON.stringify(globalSettings, null, 2)}\n`,
         "utf8",
       );
+      // Enable collection only after setup is bound to the fixture's loopback endpoint.
+      env.PM_TELEMETRY_DISABLED = "0";
 
       let first:
         | {

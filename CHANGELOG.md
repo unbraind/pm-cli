@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1593: verify authoritative history integrity in SDK mutation-event reads ([pm-gh1593](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1593.toon))
+- Isolate telemetry setup in the health cursor replay regression ([pm-oahhyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oahhyc.toon))
+- Preserve Git-backed merge-receipt evidence in isolated linked-test contexts ([pm-ycyymg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycyymg.toon))
+- Let superseded CI aggregators stop when their workflow is canceled ([pm-ci-cancel-aggregate](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ci-cancel-aggregate.toon))
+- Reserve preparation and runner queue time before serial release acceptance ([pm-29bwud](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-29bwud.toon))
+
+### Other
+
+- Use resilient temporary-root cleanup in the packed-install workflow fixture ([pm-p5u6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5u6.toon))
+- Refresh mature tooling, scanner pins and changelog SDK contracts ([pm-8skz5z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8skz5z.toon))
+
 ## 2026.10.26 - 2026-10-26
 
 ### Added
@@ -371,8 +386,8 @@
 
 ### Other
 
-- Prove native Git lock retry after observed contention in PR1425 ([pm-native-git-retry-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-native-git-retry-proof.toon))
 - Bound local temp footprint: prune Node compile cache and guarantee smoke/dogfood sandbox cleanup on failure ([pm-p5u6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5u6.toon))
+- Prove native Git lock retry after observed contention in PR1425 ([pm-native-git-retry-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-native-git-retry-proof.toon))
 
 ## 2026.10.7 - 2026-10-07
 

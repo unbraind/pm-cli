@@ -1,0 +1,23 @@
+id: pm-gh1606
+title: "GH-1606: Validate public SDK runtime operand values before mutation internals"
+description: "**Version:** `@unbrained/pm-cli` 2026.10.26 SDK (`@unbrained/pm-cli/sdk`), Node 24.19.0.\n\n**Repro** (`node --experimental-strip-types x.ts`):\n```ts\nimport { PmClient } from '@unbrained/pm-cli/sdk';\nconst pm = new PmClient({ pmRoot: '.agents/pm', author: 'agent' });\nawait pm.append('pm-xxxx', { text: 'object not string' } as any);\n```\n**Observed:** uncaught `TypeError: a.trim is not a function` with a minified bundle excerpt — 7,414 bytes of stderr, no error code, and nothing naming `append`'s body operand. Catching it yields only the bare TypeError. Updating with a numeric `estimatedMinutes: 2` likewise throws `TypeError: e.trim is not a function` (the string `'2'` works).\n\n**Expected:** public SDK methods validate positional/option value types at the boundary and throw a typed `PmCliError` (usage code) naming the operand, the expected type and a short corrective example (e.g. \"append body must be a string; use comments(id, { add }) for a comment\").\n\n**Why it matters for agents:** agents and tool/JSON bridges call the SDK with dynamically built values, so TypeScript types do not protect them. A minified TypeError forces the agent to inspect bundled internals to fix a simple call-shape mistake. (Related but different: #1520 is about unknown option keys being dropped.)\n\n\nIntake boundary: this is a report against published 2026.10.26, not proof of a current-checkout defect. Reproduce in an external sandbox before implementation. Related completed work retains its shipped scope. Proposed examples or categories are not accepted contracts until validated.\n\nSource: https://github.com/unbraind/pm-cli/issues/1606"
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,github,sdk
+created_at: "2026-10-26T19:02:10.791Z"
+updated_at: "2026-10-26T19:02:10.791Z"
+author: "harness:codex"
+estimated_minutes: 240
+acceptance_criteria: "Native public-client controls cover an object append operand and numeric estimatedMinutes according to the published input contract, alongside valid corresponding values.; Errors identify the public method, operand, expected type and corrective example through PmCliError usage semantics; rejected calls leave documents, history and receipts unchanged.; Validation derives from SDK-owned contracts across convenience methods and JSON bridges, preserving completed unknown-key and bulk-duration guards without mirrored per-wrapper schemas or a global exception handler."
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: "Invalid runtime operand values produce typed field-specific usage errors before any write, while valid public SDK inputs and custom project fields retain their documented semantics."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bulk-option-validation,related,"2026-10-26T19:02:10.791Z","harness:codex","cli:create:dep",detected
+  pm-fl3phm,related,"2026-10-26T19:02:10.791Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-26T19:02:10.791Z","harness:codex","Duplicate check: fresh orientation, request-specific search, open/in-progress inventories and complete strict 3126-item all-status corpus found no open owner for this exact case. Full live metadata and histories of related owners confirm their completed, distinct scope. This is intake only, open and unclaimed; implementation is outside the current delivery cohort."
+escape_class: production_defect
+body: ""

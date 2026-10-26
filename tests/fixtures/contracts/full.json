@@ -4364,6 +4364,9 @@
       "command": "events",
       "flags": [
         {
+          "flag": "--verify"
+        },
+        {
           "flag": "--since"
         },
         {
@@ -5363,6 +5366,9 @@
     {
       "command": "history events",
       "flags": [
+        {
+          "flag": "--verify"
+        },
         {
           "flag": "--since"
         },
@@ -22411,6 +22417,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "event_history_integrity_failed",
+      "class": "generic_failure",
+      "code": "event_history_integrity_failed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Event history integrity failed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/history/event-index.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "event_index_unavailable",
       "class": "generic_failure",
       "code": "event_index_unavailable",
@@ -30120,6 +30143,14 @@
         "target": "package"
       },
       {
+        "command": "changelog upgrades",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "cal",
         "disposition": "package_owned",
         "noun": "package",
@@ -32369,6 +32400,10 @@
             "variadic": false
           }
         ]
+      },
+      {
+        "command": "changelog upgrades",
+        "slots": []
       },
       {
         "command": "cal",
@@ -36782,6 +36817,10 @@
                 "type": "array"
               }
             ]
+          },
+          "verify": {
+            "description": "Verify complete selected authoritative history chains.",
+            "type": "boolean"
           }
         },
         "required": [],
@@ -54320,6 +54359,10 @@
                 "update"
               ]
             ]
+          },
+          "verify": {
+            "description": "Verify complete selected authoritative chains before filtering and pagination.",
+            "type": "boolean"
           }
         },
         "required": [

@@ -685,6 +685,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
     eval: { optional: ["mode", "k", "failUnder", "queries", "format"] },
     events: {
       optional: [
+        "verify",
         "since",
         "type",
         "author",

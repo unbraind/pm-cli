@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-10-25T23:02:24.407Z",
+  "updated_at": "2026-10-26T20:34:59.744Z",
   "entries": [
     {
       "name": "builtin-calendar",
@@ -68,7 +68,7 @@
       "name": "pm-changelog",
       "directory": "pm-changelog",
       "scope": "project",
-      "manifest_version": "2026.10.25",
+      "manifest_version": "2026.10.26",
       "manifest_entry": "./dist/extension.js",
       "capabilities": [
         "commands",
@@ -83,7 +83,8 @@
           "changelog contracts",
           "changelog export",
           "changelog generate",
-          "changelog milestone create"
+          "changelog milestone create",
+          "changelog upgrades"
         ],
         "command_overrides": [],
         "command_handlers": [
@@ -91,7 +92,8 @@
           "changelog contracts",
           "changelog export",
           "changelog generate",
-          "changelog milestone create"
+          "changelog milestone create",
+          "changelog upgrades"
         ],
         "hooks": [],
         "flag_commands": [
@@ -99,7 +101,8 @@
           "changelog contracts",
           "changelog export",
           "changelog generate",
-          "changelog milestone create"
+          "changelog milestone create",
+          "changelog upgrades"
         ],
         "item_types": [],
         "item_fields": [
@@ -126,7 +129,8 @@
               "changelog generate",
               "changelog export",
               "changelog audit",
-              "changelog contracts"
+              "changelog contracts",
+              "changelog upgrades"
             ],
             "result_discriminator": true
           },
@@ -136,7 +140,8 @@
               "changelog generate",
               "changelog export",
               "changelog audit",
-              "changelog contracts"
+              "changelog contracts",
+              "changelog upgrades"
             ],
             "result_discriminator": true
           }
@@ -145,13 +150,13 @@
         "preflight_ownership": []
       },
       "installed_at": "2026-05-23T20:26:03.509Z",
-      "updated_at": "2026-10-25T08:48:41.055Z",
+      "updated_at": "2026-10-26T14:33:05.113Z",
       "source": {
         "kind": "npm",
         "input": "npm:pm-changelog",
         "location": "package",
         "package": "pm-changelog",
-        "version": "2026.10.25"
+        "version": "2026.10.26"
       }
     }
   ]

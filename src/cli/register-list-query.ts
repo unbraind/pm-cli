@@ -895,6 +895,7 @@ function buildMutationEventOptions(
     limit:
       typeof options.limit === "string" ? Number(options.limit) : undefined,
     full: options.full === true,
+    ...(options.verify === true ? { verify: true } : {}),
     ...(options.provenance === true ? { provenance: true } : {}),
     ...(options.provenanceSummary === true ? { provenanceSummary: true } : {}),
     ...(harness === undefined ? {} : { harness }),
@@ -944,6 +945,8 @@ async function followMutationEvents(
           has_more: page.has_more,
           next_cursor: page.next_cursor ?? null,
           source: page.source,
+          integrity: page.integrity,
+          ...(page.verified_streams === undefined ? {} : { verified_streams: page.verified_streams }),
           heartbeat: page.count === 0,
         })}\n`,
       );
@@ -961,6 +964,8 @@ function renderMutationEventPage(page: MutationEventPage): string {
     has_more: page.has_more,
     next_cursor: page.next_cursor ?? null,
     source: page.source,
+    integrity: page.integrity,
+    ...(page.verified_streams === undefined ? {} : { verified_streams: page.verified_streams }),
     ...(page.provenance_summary === undefined
       ? {}
       : { provenance_summary: page.provenance_summary }),
@@ -1593,9 +1598,10 @@ export function registerListQueryCommands(
       .option("--limit <n>", "Return at most 1,000 events (default: 100)")
       .option(
         "--cursor-mode <mode>",
-        "Cursor framing: batch emits one terminal trailer (default); row preserves one cursor per event",
+        "Cursors: batch trailer (default) or per-row",
       )
       .option("--full", "Include each complete authoritative history entry")
+      .option("--verify", "Verify selected authoritative history chains")
       .option(
         "--provenance",
         "Include patch-free author, harness, instance, and extensible provenance",
@@ -1621,14 +1627,14 @@ export function registerListQueryCommands(
       )
       .option(
         "--follow",
-        "Continue emitting committed events as newline-delimited JSON",
+        "Follow committed events as NDJSON",
       )
       .option(
         "--interval-ms <n>",
         "Empty-read delay while following (minimum: 10ms; default: 250ms)",
       )
       .description(
-        "Emit cursor-resumable committed mutation facts as newline-delimited JSON.",
+        "Read mutation events as NDJSON with resumable cursors.",
       )
       .action(runEventsAction);
   }

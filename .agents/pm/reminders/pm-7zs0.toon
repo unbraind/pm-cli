@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-25T15:08:59.908Z"
+updated_at: "2026-10-26T00:03:44.500Z"
 reminders[1]{at,text}:
   "2026-10-26T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1586
 author: maintainer-agent
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[242]:
+comments[243]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -820,6 +820,9 @@ comments[242]:
   - created_at: "2026-10-25T14:12:49.841Z"
     author: "harness:codex"
     text: "Live October25 verification: GitHub release and npm latest are2026.10.25; verify-published-release.mjs --version2026.10.25 exits0 for package/public npx/bunx/MCP consumers. This release predates the active mutation-audit PR. Downloaded Release Reliability40196921154 artifacts: native30 completed/3 failed, current violation dispatch_window; morning dispatcher20 completed/8 failed. Nightly original-attempt rates and renamed-shard sample insufficiency remain red. Closed measurement owners pm-e70zh5/pm-2zjs0g are delivered, not reopened defects; open pm-0trehk owns shard-lineage semantics. No additional same-day release was triggered."
+  - created_at: "2026-10-26T00:03:44.499Z"
+    author: "harness:codex"
+    text: "Independent public verifier for2026.10.25 passes: npm integrity metadata, npx and bunx CLI/default CLI, stateless MCP Skills/Apps, HTTP MCP, all published bins, and missing-bin negative controls. Exactly one2026.10.25 release exists; current integrity implementation postdates that artifact and remains Unreleased. The next automatic cut is governed by the existing UTC-day guard; no second automatic version or manual publication was requested. Remote current2026.10.25 actions since23:39UTC have exact start/finish pairing across21 observed command families with zero settled mismatches; broker queue is0/0/0. Sentry has no unresolved issues and contains a fresh pm.command contracts span at2026-10-26T00:01:06Z; provider span ingestion reports approximately73seconds delay, while telemetry ingestion is current within seconds. Required Sentry/telemetry gate passes at5.07percent finish error rate with zero missing error-code rows. Historical dispatcher timing and Nightly reliability remain separately recorded on their canonical owners."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

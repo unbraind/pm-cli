@@ -2,7 +2,7 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   listMutationEvents,
   subscribeMutationEventBatches,
@@ -13,8 +13,32 @@ import {
 } from "../../../../src/core/history/event-index.js";
 import { acquireLock } from "../../../../src/core/lock/lock.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { createTestItemId } from "../../../helpers/itemFactory.js";
 
 describe("mutation event accelerator fallback", () => {
+  it.each(["cold", "size-changed", "warm"])("reads selected history bytes once for a %s cache query", async (phase) => {
+    const restore = _testOnly.setDatabaseSync(null);
+    try {
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: "History read budget", createMode: "progressive" });
+        const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+        if (phase !== "cold") await listMutationEvents({ pmRoot: context.pmPath, item: id });
+        if (phase === "size-changed") context.runCli(["comments", id, "A new event changes the stream size"]);
+        const readFile = fs.readFile.bind(fs);
+        let contentReads = 0;
+        const observer = vi.spyOn(fs, "readFile").mockImplementation(async (...args) => {
+          if (String(args[0]) === historyPath) contentReads += 1;
+          return readFile(...args);
+        });
+        try {
+          const page = await listMutationEvents({ pmRoot: context.pmPath, item: id });
+          expect(page).toMatchObject({ source: "authoritative_history", integrity: "unverified", count: phase === "size-changed" ? 2 : 1 });
+          expect(contentReads).toBe(1);
+        } finally { observer.mockRestore(); }
+      });
+    } finally { restore(); }
+  });
+
   it("resumes SDK and CLI pages through authoritative history while repair is locked", async () => {
     await withTempPmPath(async (context) => {
       const restore = _testOnly.setDatabaseSync(DatabaseSync);
@@ -118,19 +142,19 @@ describe("mutation event accelerator fallback", () => {
     });
   });
 
-  it("propagates authoritative corruption when optional repair fails", async () => {
+  it.each([false, true])("propagates authoritative corruption and wraps host failures with verify=%s", async (verify) => {
     await withTempPmPath(async ({ pmPath }) => {
       await fs.writeFile(
         path.join(pmPath, "history", "pm-corrupt.jsonl"),
         "{invalid}\n",
       );
-      await expect(listMutationEvents({ pmRoot: pmPath })).rejects.toThrow(
+      await expect(listMutationEvents({ pmRoot: pmPath, verify })).rejects.toThrow(
         /invalid JSON/,
       );
       await fs.rm(path.join(pmPath, "history"), { recursive: true });
       await fs.writeFile(path.join(pmPath, "history"), "not a directory");
       await expect(
-        listMutationEvents({ pmRoot: pmPath }),
+        listMutationEvents({ pmRoot: pmPath, verify }),
       ).rejects.toMatchObject({
         context: { code: "event_index_unavailable", why: expect.any(String) },
       });

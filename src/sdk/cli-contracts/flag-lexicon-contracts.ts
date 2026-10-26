@@ -251,7 +251,8 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   eval: 25,
   next: 38,
   history: 35,
-  events: 33,
+  // pm-gh1593: one opt-in authoritative chain verification flag; no spare allowance.
+  events: 34,
   // pm-3z0k: three proof options plus the shared global surface; no spare allowance.
   "history-attest": 23,
   "history-redact": 27,

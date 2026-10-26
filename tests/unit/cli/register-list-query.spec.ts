@@ -723,6 +723,25 @@ describe("register-list-query activity streaming", () => {
 });
 
 describe("register-list-query mutation events", () => {
+  const verifiedBatch = {
+    events: [], count: 0, has_more: false, cursor_mode: "batch" as const,
+    source: "authoritative_history" as const, integrity: "verified" as const, verified_streams: 2,
+  };
+
+  it("forwards authoritative verification and preserves proof in a finite trailer", async () => {
+    vi.mocked(listMutationEvents).mockResolvedValueOnce(verifiedBatch);
+    await runRaw("events", "--verify");
+    expect(vi.mocked(listMutationEvents)).toHaveBeenCalledWith(expect.objectContaining({ verify: true }));
+    expect(JSON.parse(String(vi.mocked(writeStdout).mock.calls.at(-1)?.[0]))).toMatchObject({ integrity: "verified", verified_streams: 2, record_type: "pm.stream.trailer" });
+  });
+
+  it("preserves authoritative verification on followed heartbeat trailers", async () => {
+    vi.mocked(subscribeMutationEventBatches).mockImplementationOnce(async function* () { yield verifiedBatch; });
+    await runRaw("events", "--follow", "--verify");
+    expect(vi.mocked(subscribeMutationEventBatches)).toHaveBeenCalledWith(expect.objectContaining({ verify: true }));
+    expect(JSON.parse(String(vi.mocked(writeStdout).mock.calls.at(-1)?.[0]))).toMatchObject({ integrity: "verified", verified_streams: 2, heartbeat: true });
+  });
+
   it("maps every event filter and emits compact NDJSON with profile timing", async () => {
     await runProfiled(
       "events",

@@ -1,0 +1,23 @@
+id: pm-1rfy0y
+title: Advertise safe linked-test command replacement after an immutable-command edit refusal
+description: "During evidence maintenance, test --update-index --set-json with a command field correctly refused rewriting immutable command/provenance identity, but returned generic Command failed guidance without an executable replacement route. The successful current route is an exact command removal followed by adding the replacement with fresh provenance. Preserve the completed metadata-editing and deterministic replacement implementations and improve this distinct refusal UX."
+type: Issue
+status: open
+priority: 3
+tags[3]: agent-ux,linked-tests,recovery
+created_at: "2026-10-26T00:21:26.298Z"
+updated_at: "2026-10-26T00:21:26.298Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Refusal exposes a stable code and selector-aware supported replacement recovery; SDK CLI and MCP agree on immutable command/provenance semantics; Executed recovery replaces only the selected command and preserves unrelated tests plus append-only history; Metadata-only edits remain supported and preserve provenance
+parent: pm-f05lsg
+risk: low
+confidence: 90
+expected_result: An agent receiving this refusal can discover and execute a safe command replacement without guessing flags or mutating provenance.
+actual_result: "Command changes are correctly refused, but generic recovery omits the supported remove/add route."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9djr6d,discovered_from,"2026-10-26T00:21:26.298Z","harness:codex","cli:create:dep",detected
+  pm-bjpo,related,"2026-10-26T00:21:26.298Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-26T00:21:26.298Z","harness:codex","Duplicate check: complete all-status3118-item corpus plus fresh keyword AND and hybrid linked-test command/replacement/recovery searches and open/in_progress inventories; full live pm-9djr6d and pm-bjpo lineage retained. This is distinct refusal recovery UX. Intake only: open and unclaimed."
+body: ""

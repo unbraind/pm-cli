@@ -44,6 +44,7 @@ describe("linked workspace snapshot filesystem policy", () => {
       expect(git(snapshot, ["rev-parse", "HEAD"])).toBe(head);
       expect(git(snapshot, ["describe", "--tags", "--exact-match"])).toBe("v1.0.0");
       expect(git(snapshot, ["remote"])).toBe("");
+      expect(git(snapshot, ["ls-files", "--stage"])).toBe(git(source, ["ls-files", "--stage"]));
       expect(git(snapshot, ["config", "--get-regexp", "^core\\."])).not.toContain(source);
       expect(git(snapshot, ["config", "--list"])).not.toContain("snapshot.private");
       await expect(lstat(path.join(snapshot, ".git/hooks/pre-commit"))).rejects.toMatchObject({ code: "ENOENT" });
@@ -67,6 +68,19 @@ describe("linked workspace snapshot filesystem policy", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+  it("preserves an unborn repository without requiring a committed index", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-unborn-"));
+    try {
+      const source = path.join(root, "source");
+      const snapshot = path.join(root, "snapshot");
+      await mkdir(source);
+      execFileSync("git", ["init", "-q", source], { env: Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_"))) });
+      await writeFile(path.join(source, "first.txt"), "uncommitted source");
+      await seedLinkedTestWorkspaceSnapshot(source, snapshot);
+      expect(await readFile(path.join(snapshot, "first.txt"), "utf8")).toBe("uncommitted source");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
   it("copies sources, excludes tracker/build trees, and retains each real dependency directory", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-"));
     const source = path.join(root, "source");
