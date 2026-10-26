@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[2]: dependencies,maintenance
 created_at: "2026-10-20T07:06:03.433Z"
-updated_at: "2026-10-26T04:33:34.942Z"
+updated_at: "2026-10-26T18:35:03.607Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "existing strict static, token, review-tool and coverage gates pass; Adopt eligible eslint, gpt-tokenizer, greptile, knip, typescript-eslint and jscpd after seven-day cooldown"
@@ -20,7 +20,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-fokyhh,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
-comments[22]:
+comments[23]:
   - created_at: "2026-10-20T07:06:03.433Z"
     author: "harness:codex"
     text: "Duplicate check: complete3021-item strict all-status/full-body read plus dependency/cooldown search and open/in-progress inventories found completed pm-ul0ow4 and broad owners, with no active minor-refresh leaf. Major migration owners are preserved. Open/unclaimed until eligible implementation."
@@ -90,6 +90,9 @@ comments[22]:
   - created_at: "2026-10-26T04:33:34.941Z"
     author: "harness:codex"
     text: "Fresh dependency PRs1599 and1601 are handled by child pm-8skz5z: mature Knip6.42.0 plus CodeQL4.39.0/CodSpeed5.5.0 are being folded into the existing combined PR1596. Knip6.42.1 remains below seven days until October26 18:24:59.186Z; TruffleHog3.99.3 until18:21:40Z. The Sentry11.8 proposal1600 has an actual enableLogs compile failure and was closed with its existing major-migration link. Coordination remains open/unclaimed; only the bounded adoption child is active."
+  - created_at: "2026-10-26T18:35:03.607Z"
+    author: "harness:codex"
+    text: "PR1596 adoption child now includes newly mature TypeScript ESLint 8.72.0, Knip 6.42.1 and TruffleHog 3.99.3 after their exact seven-day cutoffs, alongside mature CodeQL 4.39.0 and CodSpeed 5.5.0. Newly introduced lock entries are age-verified individually. Existing workspace security floors are retained. Remaining immature or incompatible major versions keep their existing age and migration constraints; this coordination item remains open and unclaimed while only the bounded adoption child is active."
 files[2]{path,scope}:
   package.json,project
   pnpm-lock.yaml,project

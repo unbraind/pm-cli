@@ -12,7 +12,7 @@
 
 ### Other
 
-- Adopt mature Knip 6.42.0 and CodeQL/CodSpeed action pins ([pm-8skz5z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8skz5z.toon))
+- Refresh mature tooling, scanner pins and changelog SDK contracts ([pm-8skz5z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8skz5z.toon))
 
 ## 2026.10.26 - 2026-10-26
 
