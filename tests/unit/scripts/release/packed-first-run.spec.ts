@@ -1,20 +1,18 @@
 import path from "node:path";
 import {
   mkdir,
-  mkdtemp,
   readFile,
   realpath,
-  rm,
   writeFile,
 } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { once } from "node:events";
 import { createServer, request, type IncomingMessage, type ServerResponse } from "node:http";
-import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
+import { withTempDir } from "../../../helpers/temp.js";
 import type * as FirstRunModule from "../../../../scripts/release/packed-first-run.mjs";
 import { collectTelemetryCompletion, readQuickstartCommands } from "../../../../scripts/release/packed-first-run.mjs";
 
@@ -138,10 +136,8 @@ describe("packed first run", () => {
       .split("\n")
       .find((line) => line.startsWith("npm install "));
     expect(install).toBeDefined();
-    const root = await realpath(
-      await mkdtemp(path.join(tmpdir(), "pm-workflow-install-")),
-    );
-    try {
+    await withTempDir("pm-workflow-install-", async (tempRoot) => {
+      const root = await realpath(tempRoot);
       for (const folder of ["fixture", "packed", "home"])
         await mkdir(path.join(root, folder));
       await writeFile(
@@ -197,9 +193,7 @@ describe("packed first run", () => {
         ),
       );
       expect(installed.version).toBe("1.0.0");
-    } finally {
-      await rm(root, { recursive: true, force: true });
-    }
+    });
   }, 40_000);
 
   it("runs its CLI entrypoint and refuses an unspecified installation", async () => {

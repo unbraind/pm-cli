@@ -12,6 +12,7 @@
 
 ### Other
 
+- Use resilient temporary-root cleanup in the packed-install workflow fixture ([pm-p5u6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5u6.toon))
 - Refresh mature tooling, scanner pins and changelog SDK contracts ([pm-8skz5z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8skz5z.toon))
 
 ## 2026.10.26 - 2026-10-26
@@ -385,8 +386,8 @@
 
 ### Other
 
-- Prove native Git lock retry after observed contention in PR1425 ([pm-native-git-retry-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-native-git-retry-proof.toon))
 - Bound local temp footprint: prune Node compile cache and guarantee smoke/dogfood sandbox cleanup on failure ([pm-p5u6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5u6.toon))
+- Prove native Git lock retry after observed contention in PR1425 ([pm-native-git-retry-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-native-git-retry-proof.toon))
 
 ## 2026.10.7 - 2026-10-07
 
