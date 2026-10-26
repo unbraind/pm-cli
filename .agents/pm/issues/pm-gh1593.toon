@@ -6,25 +6,25 @@ status: closed
 priority: 1
 tags[4]: "gh:1593",history,integrity,sdk
 created_at: "2026-10-25T22:30:37.097Z"
-updated_at: "2026-10-26T15:33:40.697Z"
-closed_at: "2026-10-26T14:05:11.925Z"
-completed_at: "2026-10-26T14:05:11.925Z"
+updated_at: "2026-10-26T20:33:57.601Z"
+closed_at: "2026-10-26T20:33:56.468Z"
+completed_at: "2026-10-26T20:33:56.468Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Same-length history rewrites invalidate cached event results; SDK event readers expose explicit integrity semantics and a strict authoritative-chain verification option; Existing non-Git connector consumers can use the public contract without raw-path verification; Positive and corrupted-history controls cover process-local and restarted index reads; Cache verification covers the complete authoritative stream and detects same-length non-tail record edits even when the final record and hash remain unchanged
 parent: pm-o2kc
 risk: high
 confidence: 85
-resolution: "Authenticate complete original history bytes; expose strict SDK/CLI/MCP verification and explicit integrity receipts; preserve coherent cache snapshots, exact sealed entries and typed host errors; execute native Windows SDK contracts; avoid redundant cold/changed reads. Document selected-stream read validation and complete pre/post indexed-append hashing costs."
-expected_result: "History integrity, concurrency and transport contracts remain protected; cache reuse validates every byte; consumers can assess both read and append costs accurately."
-actual_result: "Head 1a4b9a6f8 passes 11,461 tests with three platform skips and exact 100 percent source coverage. The quiet full static pipeline previously passed on 258ab2223. Current documentation is checked against both append receipt call sites; current combined tests, types/build/lint and workflow permissions pass. New-head hosted coverage and reviews remain mandatory before landing."
+resolution: "Authenticate complete original history bytes; expose strict SDK/CLI/MCP verification and explicit integrity receipts; preserve coherent cache snapshots, exact sealed entries and typed host errors; execute native Windows SDK contracts; avoid redundant cold/changed reads. Document selected-stream read validation and complete pre/post indexed-append hashing costs. Clarify history_json_invalid parsing failures separately from event_history_integrity_failed chain failures and preserve typed recovery guidance."
+expected_result: Complete selected-stream integrity semantics remain unchanged; SDK consumers distinguish parsing failures from chain failures using the returned typed codes and recovery.
+actual_result: "All26 required GitHub contexts passed on3662; the only full-review finding was documentation taxonomy. The corrected docs build and focused11 existing history cases pass, with relative-link/content checks. Original full source suite remains11461 passed/3 platform skips at exact100percent coverage; renewed revised-head checks/review remain required."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-7vr9,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
   pm-up22,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
   pm-0trehk,related,"2026-10-26T04:59:24.473Z","harness:codex","cli:update:dep",detected
   pm-j8z6,related,"2026-10-26T04:59:24.473Z","harness:codex","cli:update:dep",detected
   pm-29ymfn,related,"2026-10-26T14:25:29.760Z","harness:codex","cli:update:dep",detected
-comments[22]{created_at,author,text}:
+comments[24]{created_at,author,text}:
   "2026-10-25T22:30:37.097Z","harness:codex","Duplicate check: complete strict3117-item all-status corpus without omissions; request-specific history/index/tampering search and full live pm-up22, pm-7vr9 and pm-o2kc reads. Existing drift-scan cache and history verification owners are delivered; no event-index integrity owner exists. Original GH1593 report retained verbatim. Intake only, open and unclaimed."
   "2026-10-25T23:02:06.817Z","harness:codex","Review clarification: the retained GitHub report is source evidence, not a prescribed cache algorithm. A last-record hash or partial prefix check alone cannot detect arbitrary same-length edits to earlier records. Cache validity must cover the complete authoritative history content through a full-file content digest or authoritative chain verification. Strict reads must verify every affected authoritative chain. Include a negative control that changes an earlier record without altering file length or the final record/hash, in both a warm process and after restart. Preserve the original report wording and keep implementation queued and unclaimed."
   "2026-10-25T23:41:18.600Z","harness:codex","Implementation scope: content-sensitive authoritative stream validation for event-index reads plus explicit SDK verification receipts, bundled with isolated linked-test receipt verification under the related integrity work. Complete strict all-status census3118 read without omissions; no open PRs or security/dependency/secret alerts. Existing closed history repair and index-contention work remains delivered."
@@ -47,6 +47,8 @@ comments[22]{created_at,author,text}:
   "2026-10-26T14:08:08.971Z","harness:codex","Operational acceptance on the prior head 1a4b9a6f8: a real strict events command produced a fresh Sentry pm.command trace at 13:16 UTC; the required Sentry/telemetry gate passed with zero unresolved issues, a 5.32 percent seven-day error rate below the unchanged six-percent limit, and zero missing error codes. This installation had 94 starts and 94 finishes across 19 command families since 09:50 UTC, zero settled mismatches and mean ingestion of 0.548 seconds. Physical broker counts were zero for total, ready and unacknowledged messages. This is a scoped installation acceptance result; the separate cross-installation investigation remains open. The new delivery head must still pass every required hosted analyzer and check."
   "2026-10-26T15:33:39.148Z","harness:codex","Revised source head 71a76e320b48cbcc1decff53d53fbdf9ebc921ba validation: CodeRabbit acknowledged completion of the requested full review; fresh complete inventory has zero unresolved inline threads. Both valid findings from the previous head were fixed and answered once in their original threads. DeepScan Chrome report binds to source head 71a76e320 and reports zero new or fixed issues; CodeFactor App check for that exact source head is successful. Sourcery and Cubic remain quota-limited and Greptile trial-expired, so their availability is not treated as approval. GitHub Actions jobs are waiting for hosted runners and remain mandatory before merge."
   "2026-10-26T15:33:40.696Z","harness:codex","Fresh source-head observability after the review fixes: a real strict verified-events command produced Sentry pm.command / pm events span a83c03cced9adc6f at 15:04:14 UTC, trace afa99190d44d4c498f05ac001d303837. Required Sentry/telemetry gate passes with zero unresolved critical/high Sentry issues, seven-day finish error rate 5.32 percent below the unchanged six-percent limit, and zero failures missing error codes. This installation has 179 starts and 179 finishes with zero settled mismatches since 09:50 UTC, 27 command families, mean ingestion 0.505 seconds, and one physical event queue with zero total/ready/unacknowledged messages. This scoped proof does not resolve old unmatched commands from other installations or historical release/nightly reliability."
+  "2026-10-26T20:31:03.057Z","harness:codex","Review4382106093 verified against readHistorySnapshot: JSON.parse failures preserve history_json_invalid and their salvage-tail dry-run recovery; parsed chain-integrity failures report event_history_integrity_failed with history inspection. Corrected only the SDK coordination wording, including failures outside a returned page. Existing complete-stream semantics and runtime behavior stay unchanged. The requested PR split is inapplicable to the user-authorized grouped delivery: seven canonical PM items are directly linked, and closed/released review closeout is required before merge by repository policy."
+  "2026-10-26T20:33:55.382Z","harness:codex","Documentation review fix validated: pnpm build passes; the focused existing original-byte/history-integrity cohort passes all11 cases; error taxonomy wording and the document relative link pass the content check. No runtime code, test assertion, budget or deadline changed. Prior3662 required26 GitHub contexts passed, including native Windows cleanup; the revised documentation head will receive its own fresh checks and full review."
 notes[1]{created_at,author,text}:
   "2026-10-26T00:06:30.630Z","harness:codex","Integrity cost boundary: default cache freshness hashes complete selected authoritative streams. Explicit item filters bound that population; strict verification additionally replays each selected stream before all other filters. Full-history raw timestamps remain sealed values in verified entries while ordering uses normalized timestamps. Performance documentation was corrected rather than claiming O(delta) source validation."
 learnings[4]{created_at,author,text}:
@@ -182,7 +184,7 @@ docs[5]{path,scope}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   docs/PERFORMANCE.md,project
   docs/SDK_CONTEXT_COORDINATION.md,project
-close_reason: Complete verified history delivery with honest read and append cost guidance.
+close_reason: Clarify parse and chain failure codes in the verified-history SDK documentation.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
