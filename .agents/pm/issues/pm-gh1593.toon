@@ -2,26 +2,28 @@ id: pm-gh1593
 title: "GH-1593: verify authoritative history integrity in SDK mutation-event reads"
 description: "## Observed\n\n`listMutationEvents` (and other reads served from the runtime history-event index) keep returning events from the cache after the authoritative history file was modified, as long as the file length is unchanged. Nothing in the result tells the caller the cache and the source disagree.\n\nMinimal reproduction on `@unbrained/pm-cli` **2026.10.25** (fresh install in a temp project, non-git tracker):\n\n1. `pm init`, then create one item.\n2. Prime the index: `listMutationEvents({ full: true })` through the SDK.\n3. In `.agents/pm/history/<id>.jsonl`, flip one hex character of a `record_hash` without changing the file length.\n4. Call `listMutationEvents({ full: true })` again, both in the same process and after a restart.\n\n**Result:** the cached chain is returned and verifies. `verifyHistoryEntries` on the authoritative file fails. The read response carries no integrity or completeness receipt that would reveal the disagreement.\n\n## Impact\n\nPackages that recover or act on mutation events (notification outboxes, sync cursors, closeout bots) read corrupted or tampered history as healthy unless they re-verify the raw files themselves. Measured in the pm fleet on 2026-10-25: three packages (pm-slack, pm-rlm, pm-todos) had to add their own raw `verifyHistoryEntries` pass after adopting the SDK event API. A review found that pm-slack queued notifications with `failed: 0` for a corrupted history.\n\n## Expected\n\n- **Cache validity:** keyed by content, not just length or mtime. For example, store a digest of each history file (or of its last record hash) and compare it before serving; a cheap prefix/last-record check is enough to catch rewritten records.\n- **Integrity receipt:** event reads return a receipt such as `integrity: \"verified\" | \"cache_unverified\" | \"mismatch\"`. Callers that act on events can then require `verified`, or ask the SDK to verify the affected items' authoritative chains.\n- **Strict option:** a documented `verify: true` option for event reads that verifies the authoritative chain of every returned item, so packages stop re-implementing it.\n\nRelated: #1485 (index lock contention), #1585 (side effects of refused mutations).\n"
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "gh:1593",history,integrity,sdk
 created_at: "2026-10-25T22:30:37.097Z"
-updated_at: "2026-10-26T05:04:27.354Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#9a3d0027739dfadbcc41b040"
+updated_at: "2026-10-26T05:21:05.911Z"
+closed_at: "2026-10-26T05:21:05.495Z"
+completed_at: "2026-10-26T05:21:05.495Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Same-length history rewrites invalidate cached event results; SDK event readers expose explicit integrity semantics and a strict authoritative-chain verification option; Existing non-Git connector consumers can use the public contract without raw-path verification; Positive and corrupted-history controls cover process-local and restarted index reads; Cache verification covers the complete authoritative stream and detects same-length non-tail record edits even when the final record and hash remain unchanged
 parent: pm-o2kc
 risk: high
 confidence: 85
-expected_result: Content receipts use the exact original history bytes; unverified full entries remain stable across prior strict reads; selected complete chains fail closed on corruption and content validation bounds concurrent reads.
+resolution: "Authenticate complete source streams with content receipts; expose strict verified SDK/CLI/MCP reads with explicit integrity receipts, exact sealed entries and bounded validation IO."
+expected_result: Same-length earlier history changes invalidate caches; strict reads fail closed; unverified projections remain stable across calls; receipts cover exact source bytes.
+actual_result: "136 linked tests and95 focused review tests pass; negative controls fail on the prior head. Types, static stages, generated public contracts and bootstrap26 checks pass. Exact final-head hosted checks remain the merge gate."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-7vr9,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
   pm-up22,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
   pm-0trehk,related,"2026-10-26T04:59:24.473Z","harness:codex","cli:update:dep",detected
   pm-j8z6,related,"2026-10-26T04:59:24.473Z","harness:codex","cli:update:dep",detected
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-10-25T22:30:37.097Z","harness:codex","Duplicate check: complete strict3117-item all-status corpus without omissions; request-specific history/index/tampering search and full live pm-up22, pm-7vr9 and pm-o2kc reads. Existing drift-scan cache and history verification owners are delivered; no event-index integrity owner exists. Original GH1593 report retained verbatim. Intake only, open and unclaimed."
   "2026-10-25T23:02:06.817Z","harness:codex","Review clarification: the retained GitHub report is source evidence, not a prescribed cache algorithm. A last-record hash or partial prefix check alone cannot detect arbitrary same-length edits to earlier records. Cache validity must cover the complete authoritative history content through a full-file content digest or authoritative chain verification. Strict reads must verify every affected authoritative chain. Include a negative control that changes an earlier record without altering file length or the final record/hash, in both a warm process and after restart. Preserve the original report wording and keep implementation queued and unclaimed."
   "2026-10-25T23:41:18.600Z","harness:codex","Implementation scope: content-sensitive authoritative stream validation for event-index reads plus explicit SDK verification receipts, bundled with isolated linked-test receipt verification under the related integrity work. Complete strict all-status census3118 read without omissions; no open PRs or security/dependency/secret alerts. Existing closed history repair and index-contention work remains delivered."
@@ -31,6 +33,7 @@ comments[9]{created_at,author,text}:
   "2026-10-26T01:39:44.245Z","harness:codex","Final complete source coverage passed: statements71014/71014, branches54642/54642, functions14608/14608, lines67183/67183; zero uncovered counts and no threshold/denominator changes. Full static pipeline, TypeScript targets, linked regressions and9 packed npx/bunx workflows passed. Published2026.10.25 consumer acceptance passed npm and Bun installed-agent sessions plus CLI/MCP transports. Latest pm-changelog is2026.10.25; package-owned regeneration follows closure. Required Sentry/telemetry gate previously passed with0 unresolved issues, fresh pm.command span metadata, exact settled command pairing and drained broker; historical release/nightly limitations remain with canonical owners."
   "2026-10-26T04:05:13.770Z","harness:codex","PR1596 review triage: accept exact-byte receipts for parseable invalid UTF-8, remove recorded-entry leakage from unverified fallback reads, and reduce concurrent whole-file reads. Two tracker findings are declined after live full reads: the new pm-j8z6 command is an intentionally failing reproduction on an open item, and the CLI-authored pm-0trehk text contains zero comma delimiters and decodes completely. Only this history-integrity item is reopened for source edits; receipt implementation remains closed."
   "2026-10-26T04:33:42.548Z","harness:codex","PR1596 review refinement proof: the three targeted regressions fail against unchanged ddc2d5ce1 in an isolated worktree. Current native suite passes 95 tests across five files; TypeScript targets and source static-quality detail pass. Public readHistorySnapshot now retains raw_bytes from the same read while raw/entries parsing stays unchanged. Unverified fallback projections discard strict-only recorded entries and content validation limits whole-file read fan-out to32. Two tracker findings are declined using native TOON decoding and intentional open-item reproduction semantics."
+  "2026-10-26T05:21:04.561Z","harness:codex","PR1596 final review delivery: 136 linked history/SDK/CLI/MCP tests pass; 95 focused review regressions pass including three controls that fail on unchanged reviewed head. TypeScript, source static quality, contracts, dependency policy, tracker context/graph/integrity and mutation gates pass across the recorded canonical stages. Review fixes retain exact original bytes, stable unverified projections and a32-read concurrency bound. Rebuilt successfully against prepared release2026.10.26 main46fd91415 without product conflicts. Final exact-head hosted coverage and review remain merge prerequisites, distinct from the earlier complete local100percent run."
 notes[1]{created_at,author,text}:
   "2026-10-26T00:06:30.630Z","harness:codex","Integrity cost boundary: default cache freshness hashes complete selected authoritative streams. Explicit item filters bound that population; strict verification additionally replays each selected stream before all other filters. Full-history raw timestamps remain sealed values in verified entries while ordering uses normalized timestamps. Performance documentation was corrected rather than claiming O(delta) source validation."
 learnings[2]{created_at,author,text}:
@@ -85,6 +88,7 @@ docs[5]{path,scope}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   docs/PERFORMANCE.md,project
   docs/SDK_CONTEXT_COORDINATION.md,project
+close_reason: Implemented authoritative mutation-event integrity and reviewed byte-level refinements in PR1596.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
