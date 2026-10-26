@@ -6,24 +6,25 @@ status: closed
 priority: 1
 tags[3]: "area:release",automation,reliability
 created_at: "2026-10-26T05:41:17.393Z"
-updated_at: "2026-10-26T06:04:21.980Z"
-closed_at: "2026-10-26T06:04:21.864Z"
-completed_at: "2026-10-26T06:04:21.864Z"
+updated_at: "2026-10-26T10:12:57.655Z"
+closed_at: "2026-10-26T10:12:57.545Z"
+completed_at: "2026-10-26T10:12:57.545Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: Parent budget covers the unchanged60+15+5 minute child path plus60 minutes preparation and30 minutes aggregate runner queue reserve; Existing110-minute configuration fails the strengthened workflow contract; corrected bounded configuration passes; Public2026.10.26 distribution and all nine registry acceptance legs are independently verified; no duplicate release is triggered
 parent: pm-prrlce
 risk: low
 confidence: high
-resolution: "Budget the Auto Release parent at180minutes for60preparation,30aggregate queue delay, unchanged60/15/5child limits and10orchestration; document same-tag recovery and strengthen the existing workflow contract."
-expected_result: The automatic parent can observe successful publication after realistic preparation and runner queue delays without changing publication admission or daily immutability.
-actual_result: "The prior110minute workflow fails the strengthened contract; corrected180minute configuration passes all121 focused tests, linked release tests, TypeScript/build/permissions and full static stages. Release26 passed all nine platform legs and independent npm/Bun/npx/bunx checks; the canceled parent recovered in attempt2 by verifying the existing tag without another publication."
+resolution: "Include the10minute orchestration reserve in the existing parent-budget assertion, preserving the production180minute envelope and all child/admission limits."
+expected_result: The workflow contract refuses170minutes because it omits the documented orchestration reserve.
+actual_result: "The original assertion admits a native170minute workflow fixture; the strengthened assertion refuses it. Restored production180minutes passes135 focused tests,48 linked release tests, TypeScript/build and the complete static pipeline. Previously verified accepted-tag recovery and all nine public platform legs remain unchanged."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-u9d0,implements,"2026-10-26T05:41:17.393Z","harness:codex","cli:create:dep",detected
   pm-ygli86,discovered_from,"2026-10-26T05:41:17.393Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-26T05:41:17.393Z","harness:codex","Duplicate check: strict complete3119-item all-status corpus, refreshed open/in_progress lists, two request-specific searches, full live release reliability and publication-fence owners, plus Git introduction6fc2dd060 identify shipped registry acceptance lineage rather than an existing orchestration-envelope defect. New bounded child tracks the actual October26 timeout; no closed feature is reopened."
   "2026-10-26T05:51:54.350Z","harness:codex","Exact operational proof: original parent40265600223 attempt1 cancelled at05:35:30Z after110minutes. Child40269172902 independently passed all nine Linux/macOS/Windows by npm-local/npm-global/Bun acceptance legs and advertised2026.10.26 at05:35:55Z. A manual rerun of the same parent, attempt2, succeeded at05:46 UTC through existing-tag verification: it reused child40269172902 and immutable commit46fd91415. No second tag or publication occurred. Strengthened existing workflow-budget test fails against110minutes; the bounded180minute envelope passes, reserving60preparation+30queues+unchanged60/15/5children+10orchestration. All121 focused native tests, TypeScript targets, build and permission checks pass; full static and linked evidence follow."
+  "2026-10-26T09:54:58.317Z","harness:codex","Review-test refinement: the prior contract actually passes with the parent temporarily set to170minutes, proving it omits the documented10minute orchestration reserve. Strengthen the existing arithmetic assertion to include that reserve: the same170minute control now fails at required180. Restore the production workflow to its unchanged180minute limit immediately after the isolated test. No child timeout, publication guard or quality policy changes."
 learnings[1]{created_at,author,text}:
   "2026-10-26T05:51:07.427Z","harness:codex",A waiting parent workflow needs separate wall-time reserves for local preparation and aggregate runner queues; child execution limits alone do not bound orchestration duration.
 files[2]{path,scope,note}:
@@ -31,7 +32,7 @@ files[2]{path,scope,note}:
   tests/integration/ci-workflow-contract.spec.ts,project,Strengthen existing preparation and queue reserve contract
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,240,"harness:codex","2026-10-26T05:41:42.611Z",local_mutation,fix/sdk-history-integrity
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvouog4i-alp7bk
     kind: test
     status: passed
@@ -43,15 +44,26 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvp3hkxu-c7mgu6
+    kind: test
+    status: passed
+    started_at: "2026-10-26T10:09:19.170Z"
+    finished_at: "2026-10-26T10:09:36.066Z"
+    recorded_at: "2026-10-26T10:09:36.066Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,Package-owned release history generation
   docs/RELEASING.md,project,Explain execution limits versus orchestration wall time
-close_reason: Implemented the bounded parent release envelope and its regression contract in PR1596.
+close_reason: Strengthened the release-parent contract to include every documented reserve.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
   gate_id: serial-release-orchestration-budget
-  negative_control: "Run the strengthened budgets-the-serial-auto-release test against unchanged110-minute workflow: child60+15+5 plus preparation60 and queue30 exceeds the parent. The same existing test passes with the bounded180-minute envelope; other child and quality limits remain unchanged."
+  negative_control: "Run the strengthened budgets-the-serial-auto-release test against unchanged110-minute workflow: child60+15+5 plus preparation60 and queue30 exceeds the parent. The same existing test passes with the bounded180-minute envelope; other child and quality limits remain unchanged. The original arithmetic test admits170minutes. Adding the documented10minute orchestration reserve makes that native170minute workflow control fail at required180; restore the unchanged production180minute configuration and pass."
   local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,node scripts/check-workflow-permissions.mjs,pnpm build
   hosted_checks[3]: CI,actionlint,Docs and Skills
   owner: pm-29bwud

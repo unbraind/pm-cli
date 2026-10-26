@@ -118,19 +118,19 @@ describe("mutation event accelerator fallback", () => {
     });
   });
 
-  it("propagates authoritative corruption when optional repair fails", async () => {
+  it.each([false, true])("propagates authoritative corruption and wraps host failures with verify=%s", async (verify) => {
     await withTempPmPath(async ({ pmPath }) => {
       await fs.writeFile(
         path.join(pmPath, "history", "pm-corrupt.jsonl"),
         "{invalid}\n",
       );
-      await expect(listMutationEvents({ pmRoot: pmPath })).rejects.toThrow(
+      await expect(listMutationEvents({ pmRoot: pmPath, verify })).rejects.toThrow(
         /invalid JSON/,
       );
       await fs.rm(path.join(pmPath, "history"), { recursive: true });
       await fs.writeFile(path.join(pmPath, "history"), "not a directory");
       await expect(
-        listMutationEvents({ pmRoot: pmPath }),
+        listMutationEvents({ pmRoot: pmPath, verify }),
       ).rejects.toMatchObject({
         context: { code: "event_index_unavailable", why: expect.any(String) },
       });

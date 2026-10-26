@@ -140,6 +140,63 @@ describe("authoritative mutation event integrity", () => {
     } finally { restore(); }
   });
 
+  it("publishes coherent cache snapshots across interleaved readers", async () => {
+    const restore = _testOnly.setDatabaseSync(null);
+    try {
+      await withTempPmPath(async (context) => {
+        const changing = createTestItemId(context, { title: "Changing stream", createMode: "progressive" });
+        const suspended = createTestItemId(context, { title: "Suspended stream", createMode: "progressive" });
+        const changingPath = path.join(context.pmPath, "history", `${changing}.jsonl`);
+        const suspendedPath = path.join(context.pmPath, "history", `${suspended}.jsonl`);
+        await listMutationEvents({ pmRoot: context.pmPath, full: true });
+        const heldSnapshot = Promise.withResolvers<void>();
+        const resumeSnapshot = Promise.withResolvers<void>();
+        const heldValidation = Promise.withResolvers<void>();
+        const resumeValidation = Promise.withResolvers<void>();
+        const originalSnapshot = historyRead.readHistorySnapshot;
+        const snapshotSpy = vi.spyOn(historyRead, "readHistorySnapshot").mockImplementation(async (...args) => {
+          const snapshot = await originalSnapshot(...args);
+          if (String(args[0]) === suspendedPath) {
+            heldSnapshot.resolve();
+            await resumeSnapshot.promise;
+          }
+          return snapshot;
+        });
+        let statSpy: { mockRestore(): void } | undefined;
+        const olderRead = listMutationEvents({ pmRoot: context.pmPath, item: suspended, verify: true });
+        let unchangedRead: ReturnType<typeof listMutationEvents> | undefined;
+        try {
+          await heldSnapshot.promise;
+          context.runCli(["comments", changing, "Append between reader snapshots"]);
+          await listMutationEvents({ pmRoot: context.pmPath, item: changing, verify: true });
+          const expected = (await historyRead.readHistorySnapshot(changingPath, changing)).entries;
+          const originalStat = fs.stat.bind(fs);
+          statSpy = vi.spyOn(fs, "stat").mockImplementation(async (...args) => {
+            const stats = await originalStat(...args);
+            if (String(args[0]) === changingPath) {
+              heldValidation.resolve();
+              await resumeValidation.promise;
+            }
+            return stats;
+          });
+          unchangedRead = listMutationEvents({ pmRoot: context.pmPath, item: changing, full: true });
+          await heldValidation.promise;
+          resumeSnapshot.resolve();
+          await olderRead;
+          resumeValidation.resolve();
+          expect((await unchangedRead).events.map((event) => event.entry)).toEqual(expected);
+          expect((await listMutationEvents({ pmRoot: context.pmPath, item: changing, full: true })).events.map((event) => event.entry)).toEqual(expected);
+        } finally {
+          resumeSnapshot.resolve();
+          resumeValidation.resolve();
+          await Promise.allSettled([olderRead, ...(unchangedRead ? [unchangedRead] : [])]);
+          statSpy?.mockRestore();
+          snapshotSpy.mockRestore();
+        }
+      });
+    } finally { restore(); }
+  });
+
   it("returns no actions when a selected stream disappears at its authoritative read boundary", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Disappearing stream", createMode: "progressive" });

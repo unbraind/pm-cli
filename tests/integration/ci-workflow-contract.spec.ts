@@ -1232,8 +1232,9 @@ describe("GitHub workflow contract", () => {
     expect(advertisementTimeout).toBe(5);
     const preparationReserve = 60;
     const runnerQueueReserve = 30;
+    const orchestrationReserve = 10;
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
-      releaseTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve,
+      releaseTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve + orchestrationReserve,
     );
     expect(autoReleaseTimeout).toBeLessThanOrEqual(180);
   });

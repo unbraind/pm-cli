@@ -392,11 +392,12 @@ async function readAuthoritativeHistorySnapshot(
       }
       throw error;
     });
-  const cached = authoritativeHistoryCaches.get(pmRoot) ?? {
+  const base = authoritativeHistoryCaches.get(pmRoot) ?? {
     streams: new Map<string, AuthoritativeHistoryStreamCache>(),
     ordered_events: [],
   };
-  const streams = new Map(cached.streams);
+  const streams = new Map(base.streams);
+  let orderedEvents = base.ordered_events;
   const presentStreams = new Set<string>();
   let changed = !authoritativeHistoryCaches.has(pmRoot);
   for (const historyFile of entries
@@ -418,11 +419,11 @@ async function readAuthoritativeHistorySnapshot(
     }
   }
   if (changed) {
-    cached.ordered_events = [...streams.values()]
+    orderedEvents = [...streams.values()]
       .flatMap((stream) => stream.events)
       .sort(compareHistoryEventPosition);
   }
-  cached.streams = streams;
+  const cached: AuthoritativeHistoryCache = { streams, ordered_events: orderedEvents };
   authoritativeHistoryCaches.delete(pmRoot);
   authoritativeHistoryCaches.set(pmRoot, cached);
   if (authoritativeHistoryCaches.size > AUTHORITATIVE_HISTORY_CACHE_LIMIT) {

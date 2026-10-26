@@ -63,6 +63,9 @@ return `integrity: "verified"`, `verified_streams`, and
 with the current materialized item or an external author signature. Empty
 selections report zero verified streams. Subscriptions verify each yielded
 batch with the same options. MCP `pm_events` accepts `verify: true` too.
+Both strict reads and the authoritative fallback preserve typed history refusals
+and report other host read failures as `event_index_unavailable`. Cache receipts
+and ordered rows are published together, including across concurrent reads.
 Batch-mode NDJSON trailers retain the integrity receipt; compatibility row mode
 has no trailer, so use JSON or batch mode when persisting page receipts.
 

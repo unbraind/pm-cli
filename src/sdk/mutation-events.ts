@@ -280,10 +280,7 @@ async function resolveIndexedMutationEvents(
   pmRoot: string,
   query: NonNullable<Parameters<typeof readHistoryEventIndexPage>[1]>,
 ) {
-  if (query.verify) return {
-    ...(await queryHistoryEventStreams(pmRoot, query)),
-    source: "authoritative_history" as const,
-  };
+  if (query.verify) return queryAuthoritativeMutationEvents(pmRoot, query);
   const attempt = await readHistoryEventIndexPage(pmRoot, query);
   let indexed = attempt.result;
   if (indexed === null && attempt.repair_needed) {
@@ -296,22 +293,28 @@ async function resolveIndexedMutationEvents(
       // malformed or inaccessible history rather than hiding storage failures.
     }
   }
-  if (indexed === null) {
-    try {
-      return {
-        ...(await queryHistoryEventStreams(pmRoot, query)),
-        source: "authoritative_history" as const,
-      };
-    } catch (error: unknown) {
-      if (error instanceof PmCliError) throw error;
-      throw new PmCliError(
-        "Mutation events are unavailable because authoritative history could not be read.",
-        EXIT_CODE.GENERIC_FAILURE,
-        { code: "event_index_unavailable", why: toErrorMessage(error) },
-      );
-    }
-  }
+  if (indexed === null) return queryAuthoritativeMutationEvents(pmRoot, query);
   return { ...indexed, source: "derived_index" as const };
+}
+
+/** Preserve typed history refusals while normalizing host failures on both authoritative paths. */
+async function queryAuthoritativeMutationEvents(
+  pmRoot: string,
+  query: Parameters<typeof queryHistoryEventStreams>[1],
+) {
+  try {
+    return {
+      ...(await queryHistoryEventStreams(pmRoot, query)),
+      source: "authoritative_history" as const,
+    };
+  } catch (error: unknown) {
+    if (error instanceof PmCliError) throw error;
+    throw new PmCliError(
+      "Mutation events are unavailable because authoritative history could not be read.",
+      EXIT_CODE.GENERIC_FAILURE,
+      { code: "event_index_unavailable", why: toErrorMessage(error) },
+    );
+  }
 }
 
 /** Resolves the event cursor emission mode and rejects unsupported transport spellings. */
