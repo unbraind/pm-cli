@@ -72,7 +72,7 @@ A supported create, update, move, or delete acquires the cross-process
 derived-index writer lock before the authoritative item commit and atomically
 publishes one collapsed delta containing every compatible tier projection,
 directory signatures, and the next cursor before releasing the lock. Mutation
-cost therefore follows changed items rather than total workspace size. A torn,
+cost for this metadata projection therefore follows changed items rather than total workspace size. A torn,
 corrupt, or base-mismatched delta is rejected and rebuilt from source.
 
 Large indexes also carry `runtime/metadata-query-index.sqlite`, a rebuildable
@@ -100,6 +100,16 @@ chain, before filtering or pagination. These checks detect same-length rewrites
 without trusting timestamps or a last-record hash. The version-7 schema retains
 substantive-versus-maintenance indexing, so context recency still retrieves only
 the latest substantive row per requested stream after content validation.
+
+An indexed history append reads and SHA-256-hashes the complete affected stream
+before the append to certify its existing index base, then reads and hashes it
+again after the authoritative append to publish the new content receipt. Both
+checks run under the history-index writer lock. This history validation cost is
+O(stream bytes), in addition to the changed-item metadata projection work.
+Unfiltered follow queries repeat selected-stream validation on every iteration;
+use an item filter and an explicit interval appropriate to the history size.
+Further append and follow measurements are tracked by
+[pm-history-receipt-cost](../.agents/pm/tasks/pm-history-receipt-cost.toon).
 See [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
 
 SDK hosts that commit authoritative item documents outside the stock mutation

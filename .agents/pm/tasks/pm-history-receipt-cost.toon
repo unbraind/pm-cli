@@ -1,0 +1,27 @@
+id: pm-history-receipt-cost
+title: Measure and bound history receipt costs for indexed append and follow
+description: "Complete byte receipts make indexed appends hash the full affected stream before and after each append under the writer lock. Unfiltered follow reads validate every selected stream per iteration. Measure these history-length and stream-count axes, then assess safe caller guidance, polling policy or receipt-state designs while preserving detection of external same-length rewrites. This is separate from pm-29ymfn item-state replay/canonicalization cost."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-26T13:52:55.362Z"
+updated_at: "2026-10-26T14:25:27.528Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Measure representative history lengths and filtered/unfiltered follow workloads on the release Node major; preserve native same-length tamper and concurrent-receipt controls; record tradeoffs before changing defaults or introducing cheaper receipt state.
+parent: pm-9rxu
+risk: medium
+confidence: medium
+expected_result: "Local measurements quantify append and follow CPU, IO, wall time and memory before selecting a compatible optimization or cadence policy; complete-history integrity and restore behavior remain protected."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-29ymfn,related,"2026-10-26T13:52:55.362Z","harness:codex","cli:create:dep",detected
+  pm-gh1593,related,"2026-10-26T13:52:55.362Z","harness:codex","cli:create:dep",detected
+  pm-mi2x,related,"2026-10-26T14:25:27.297Z","harness:codex","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-26T13:52:55.362Z","harness:codex","Duplicate check: refreshed strict3123-item corpus and history-hashing/follow searches, plus full live pm-29ymfn, closed pm-mi2x and open pm-9rxu lineage. Existing validation-replay work is related but does not own indexed-append pre/post receipts or follow cadence. Discovered by PR1596 full review; intake only, open and unclaimed."
+files[1]{path,scope}:
+  src/core/history/event-index.ts,project
+docs[1]{path,scope}:
+  docs/PERFORMANCE.md,project
+body: ""

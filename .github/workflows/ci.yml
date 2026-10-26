@@ -561,7 +561,8 @@ jobs:
   coverage:
     name: Gates (coverage)
     needs: coverage-shards
-    if: always()
+    # pm-ci-cancel-aggregate: report failures without retaining canceled workflow slots.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -850,7 +851,7 @@ jobs:
   windows-regression:
     name: Windows regression (Node 24)
     needs: windows-regression-cohorts
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:

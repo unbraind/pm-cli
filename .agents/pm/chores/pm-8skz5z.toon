@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-26T04:25:59.589Z"
-updated_at: "2026-10-26T05:21:08.087Z"
+updated_at: "2026-10-26T14:48:08.952Z"
 closed_at: "2026-10-26T05:21:07.950Z"
 completed_at: "2026-10-26T05:21:07.950Z"
 author: "harness:codex"
@@ -21,12 +21,14 @@ actual_result: "33 linked workflow/dependency tests pass; frozen lock install, d
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-u9d0,implements,"2026-10-26T04:25:59.589Z","harness:codex","cli:create:dep",detected
   pm-wb25c1,discovered_from,"2026-10-26T04:25:59.589Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-26T04:25:59.589Z","harness:codex","Duplicate check: a fresh complete strict all-status corpus and explicit version searches found historical refreshes plus the open coordination parent; no item covers these exact mature tooling versions."
   "2026-10-26T04:33:33.920Z","harness:codex","Exact public upstream evidence at October26 04:20 UTC: Knip6.42.0 published October18 13:44:32.638Z; CodeQL action4.39.0 October15 10:57:05Z; CodSpeed action5.5.0 October14 11:38:37Z. All exceed seven full days and official action tag refs match the adopted immutable SHAs. TruffleHog3.99.3 was published October19 18:21:40Z and is not eligible until October26 18:21:40Z; both existing3.99.2 action/binary pins remain untouched. Frozen-lock install passed. Current full static, linked contracts and exact-head hosted acceptance follow before closure."
   "2026-10-26T05:07:09.986Z","harness:codex","The linked workflow suite correctly detected its old exact CodSpeed action SHA after adoption: 32 tests passed and the existing immutable-pin assertion failed. Update that one expected SHA to the independently verified v5.5.0 tag; retain Ubuntu22.04, Node24, simulation mode, no stale instrument caches, all permission checks and every deadline unchanged."
   "2026-10-26T05:21:07.255Z","harness:codex","PR1596 final tooling validation: all33 existing workflow/dependency contract tests pass after updating the exact CodSpeed SHA assertion. Frozen lockfile installation, source static dependency/advisory/cooldown checks, runtime42-package lock, workflow permission checks and build pass. Merge of prepared release2026.10.26 changed distribution versions only. Dependabot1599/1601 will be closed with this canonical PM link after the combined delivery lands; the immature TruffleHog update remains deferred under the existing coordinator."
-files[5]{path,scope}:
+  "2026-10-26T14:48:07.955Z","harness:codex","Latest-package verification: npm published pm-changelog 2026.10.26 during this delivery. Updated the managed project package through pm package install and generated/checked CHANGELOG.md with version 2026.10.26. Fresh isolated npm and Bun installations of published pm-cli 2026.10.26 both install and activate this extension, pass deep package diagnostics and contracts, and execute changelog upgrades for api-user, operator and agent-behavior with complete no-obligation results for the 2026.10.25 to 2026.10.26 range. Their npx and bunx launchers report 2026.10.26. The initial probe used an output-budget flag unsupported on that extension surface in the published host; the structured refusal is retained, and the supported command invocation passes. No pm-changelog source fix or host workaround is needed."
+files[6]{path,scope}:
+  .agents/pm/extensions/.managed-extensions.json,project
   .github/workflows/codeql.yml,project
   .github/workflows/codspeed.yml,project
   .github/workflows/scorecard.yml,project

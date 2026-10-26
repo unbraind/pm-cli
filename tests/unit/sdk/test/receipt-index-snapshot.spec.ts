@@ -70,7 +70,8 @@ describe("snapshot receipt index", () => {
     const tracker = path.join(source, relativeTracker);
     const sandbox = path.join(root, "sandbox");
     const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.toUpperCase().startsWith("GIT_")));
-    const git = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    // Native fixture inventories exceed one MiB; production Git limits stay unchanged.
+    const git = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, env, encoding: "utf8", maxBuffer: 4 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }).trim();
     try {
       await mkdir(tracker, { recursive: true });
       await writeFile(path.join(tracker, "settings.json"), "{}\n");
@@ -84,6 +85,10 @@ describe("snapshot receipt index", () => {
         await mkdir(oldNamespace, { recursive: true });
         await writeFile(path.join(oldNamespace, `${receipt.id}.json`), raw);
         git(source, "add", ".agents/pm/merge-receipts");
+        const objectId = git(source, "rev-parse", `:.agents/pm/merge-receipts/${receipt.id}.json`);
+        const inherited = Array.from({ length: 8000 }, (_, index) => `.agents/pm/merge-receipts/inherited-${index}-${"x".repeat(100)}.json`);
+        expect(Buffer.byteLength(inherited.join("\n"))).toBeGreaterThan(1024 * 1024);
+        execFileSync("git", ["update-index", "--index-info"], { cwd: source, env, input: inherited.map((file) => `100644 ${objectId}\t${file}\n`).join("") });
         git(source, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-qm", "Unrelated receipt namespace");
       }
       git(source, "add", relativeReceipt);

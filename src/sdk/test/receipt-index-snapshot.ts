@@ -24,7 +24,7 @@ export async function seedSnapshotReceiptIndex(sourceRoot: string, snapshotRoot:
   const options = { cwd: snapshotRoot, env: gitWorkspaceEnvironment(), timeout: 10_000, maxBuffer: 1024 * 1024, windowsHide: true };
   // The selected tracker can differ from the source's default tracker. Clear
   // inherited authority before rebasing the selected source index into it.
-  await execFileAsync("git", ["rm", "-r", "--cached", "--ignore-unmatch", "--", RECEIPT_NAMESPACE], options);
+  await execFileAsync("git", ["rm", "-q", "-r", "--cached", "--ignore-unmatch", "--", RECEIPT_NAMESPACE], options);
   for (const [name, raw] of blobs) {
     const pending = execFileAsync("git", ["hash-object", "-w", "--stdin"], options);
     const input = pending.child.stdin;

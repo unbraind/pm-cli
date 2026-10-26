@@ -283,7 +283,7 @@ describe("GitHub workflow contract", () => {
     const aggregate = workflow.jobs["windows-regression"];
     expect(aggregate.name).toBe("Windows regression (Node 24)");
     expect(aggregate.needs).toBe("windows-regression-cohorts");
-    expect(aggregate.if).toBe("always()");
+    expect(aggregate.if).toBe("${{ !cancelled() }}");
     expect(aggregate["continue-on-error"]).toBeUndefined();
     const gate = aggregate.steps[0];
     expect(gate.env.COHORT_RESULT).toBe("${{ needs.windows-regression-cohorts.result }}");
@@ -304,7 +304,7 @@ describe("GitHub workflow contract", () => {
     const aggregate = workflow.jobs.coverage;
     expect(aggregate.name).toBe(name);
     expect(aggregate.needs).toBe(dependency);
-    expect(aggregate.if).toBe("always()");
+    expect(aggregate.if).toBe(file === "ci.yml" ? "${{ !cancelled() }}" : "always()");
     expect(aggregate["continue-on-error"]).toBeUndefined();
     expect(shards["continue-on-error"]).toBeUndefined();
     const admission = aggregate.steps[0];
