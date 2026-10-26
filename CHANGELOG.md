@@ -5,6 +5,7 @@
 ### Fixed
 
 - Preserve Git-backed merge-receipt evidence in isolated linked-test contexts ([pm-ycyymg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycyymg.toon))
+- Reserve preparation and runner queue time before serial release acceptance ([pm-29bwud](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-29bwud.toon))
 - GH-1593: verify authoritative history integrity in SDK mutation-event reads ([pm-gh1593](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1593.toon))
 
 ### Other

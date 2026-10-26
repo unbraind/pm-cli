@@ -396,6 +396,7 @@ async function readAuthoritativeHistorySnapshot(
     streams: new Map<string, AuthoritativeHistoryStreamCache>(),
     ordered_events: [],
   };
+  const streams = new Map(cached.streams);
   const presentStreams = new Set<string>();
   let changed = !authoritativeHistoryCaches.has(pmRoot);
   for (const historyFile of entries
@@ -405,22 +406,23 @@ async function readAuthoritativeHistorySnapshot(
     presentStreams.add(streamId);
     const historyPath = path.join(historyRoot, historyFile.name);
     if (!historyStreamIsSelected(streamId, requestedStreamIds)) continue;
-    const stream = await readChangedHistoryStream(historyPath, streamId, cached.streams.get(streamId), verify);
+    const stream = await readChangedHistoryStream(historyPath, streamId, streams.get(streamId), verify);
     if (stream === undefined) continue;
-    cached.streams.set(streamId, stream);
+    streams.set(streamId, stream);
     changed = true;
   }
-  for (const streamId of cached.streams.keys()) {
+  for (const streamId of streams.keys()) {
     if (!presentStreams.has(streamId)) {
-      cached.streams.delete(streamId);
+      streams.delete(streamId);
       changed = true;
     }
   }
   if (changed) {
-    cached.ordered_events = [...cached.streams.values()]
+    cached.ordered_events = [...streams.values()]
       .flatMap((stream) => stream.events)
       .sort(compareHistoryEventPosition);
   }
+  cached.streams = streams;
   authoritativeHistoryCaches.delete(pmRoot);
   authoritativeHistoryCaches.set(pmRoot, cached);
   if (authoritativeHistoryCaches.size > AUTHORITATIVE_HISTORY_CACHE_LIMIT) {

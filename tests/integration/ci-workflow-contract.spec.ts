@@ -1230,10 +1230,12 @@ describe("GitHub workflow contract", () => {
     expect(releaseTimeout).toBe(60);
     expect(acceptanceTimeout).toBe(15);
     expect(advertisementTimeout).toBe(5);
-    expect(autoReleaseTimeout).toBe(110);
+    const preparationReserve = 60;
+    const runnerQueueReserve = 30;
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
-      releaseTimeout + acceptanceTimeout + advertisementTimeout + 30,
+      releaseTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve,
     );
+    expect(autoReleaseTimeout).toBeLessThanOrEqual(180);
   });
 
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {

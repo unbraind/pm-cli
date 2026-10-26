@@ -52,10 +52,10 @@ jobs:
     name: Auto release pipeline
     if: "${{ github.event_name != 'issues' || (github.actor != 'github-actions[bot]' && github.event.issue.title == 'Auto Release blocked: scheduled run failed' && github.event.issue.user.login == 'github-actions[bot]') }}"
     runs-on: ubuntu-latest
-    # This job runs the local release gates before waiting for the serial
-    # exact-tag Release workflow: 60 publish + 15 acceptance + 5 advertisement
-    # minutes, with 30 minutes reserved for preparation and local gates.
-    timeout-minutes: 110
+    # Reserve 60 minutes for preparation and gates, 30 for shared-runner
+    # queues, and the unchanged serial child limits: 60 publish + 15
+    # acceptance + 5 advertisement. Retain 10 minutes for orchestration.
+    timeout-minutes: 180
     permissions:
       # Blocker-closure recovery dispatches the reviewed current workflow for
       # the immutable tag; it never reruns historical code or creates a

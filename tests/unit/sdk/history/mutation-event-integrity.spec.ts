@@ -115,6 +115,31 @@ describe("authoritative mutation event integrity", () => {
     } finally { restore(); }
   });
 
+  it("keeps fallback cache coherent after a failed multi-stream read", async () => {
+    const restore = _testOnly.setDatabaseSync(null);
+    try {
+      await withTempPmPath(async (context) => {
+        const ids = [
+          createTestItemId(context, { title: "First stream", createMode: "progressive" }),
+          createTestItemId(context, { title: "Second stream", createMode: "progressive" }),
+        ].sort((left, right) => left.localeCompare(right));
+        const [good, bad] = ids;
+        await listMutationEvents({ pmRoot: context.pmPath, full: true });
+        context.runCli(["comments", good, "Appended after the warm read"]);
+        const goodPath = path.join(context.pmPath, "history", `${good}.jsonl`);
+        const goodHistory = await historyRead.readHistorySnapshot(goodPath, good);
+        const badPath = path.join(context.pmPath, "history", `${bad}.jsonl`);
+        const badEntry = JSON.parse((await fs.readFile(badPath, "utf8")).trim()) as HistoryEntry;
+        badEntry.message = "Changed without resealing";
+        await fs.writeFile(badPath, `${JSON.stringify(badEntry)}\n`);
+        await expect(listMutationEvents({ pmRoot: context.pmPath, verify: true })).rejects.toMatchObject({ context: { code: "event_history_integrity_failed" } });
+        const selected = await listMutationEvents({ pmRoot: context.pmPath, item: good, full: true });
+        expect(selected.events.map((event) => event.entry)).toEqual(goodHistory.entries);
+        expect(selected.integrity).toBe("unverified");
+      });
+    } finally { restore(); }
+  });
+
   it("returns no actions when a selected stream disappears at its authoritative read boundary", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Disappearing stream", createMode: "progressive" });

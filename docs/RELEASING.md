@@ -572,6 +572,17 @@ never move a published tag or mint a second automatic version for the same UTC d
 - GitHub Release creation
 - GitHub Release metadata verification through the same local verification script
 
+The Auto Release parent has a 180-minute orchestration limit: 60 minutes for
+preparation and gates, 30 for aggregate runner queue delays, the unchanged
+60-minute publication, 15-minute acceptance and 5-minute advertisement job
+limits, and 10 minutes for orchestration overhead. Runner queue time consumes
+the waiting parent's wall time even when no child job is executing. The
+reserve accommodates delays without extending a child job or changing a
+quality gate. Extreme queue delays can still exhaust the parent; recover the
+existing immutable tag after checking its publication evidence rather than
+creating another daily version. Tracked by
+[pm-29bwud](../.agents/pm/issues/pm-29bwud.toon).
+
 Monitor:
 
 ```bash

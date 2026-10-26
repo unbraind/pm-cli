@@ -1,0 +1,58 @@
+id: pm-29bwud
+title: Reserve preparation and runner queue time before serial release acceptance
+description: "Observed October26 Auto Release40265600223 cancelled at its110-minute parent deadline at05:35:30Z; exact-tag Release40269172902 succeeded and advertised v2026.10.26 at05:35:55Z. Preparation alone consumed42minutes rather than the assumed30; downstream runner queues consumed additional wall time. The serial child60+15+5 minute job limits remain valid, but the parent has no realistic preparation and queue reserve. Preserve immutable publication and same-day guards; extend only the orchestration envelope and strengthen the existing workflow budget contract."
+type: Issue
+status: closed
+priority: 1
+tags[3]: "area:release",automation,reliability
+created_at: "2026-10-26T05:41:17.393Z"
+updated_at: "2026-10-26T06:04:21.980Z"
+closed_at: "2026-10-26T06:04:21.864Z"
+completed_at: "2026-10-26T06:04:21.864Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Parent budget covers the unchanged60+15+5 minute child path plus60 minutes preparation and30 minutes aggregate runner queue reserve; Existing110-minute configuration fails the strengthened workflow contract; corrected bounded configuration passes; Public2026.10.26 distribution and all nine registry acceptance legs are independently verified; no duplicate release is triggered
+parent: pm-prrlce
+risk: low
+confidence: high
+resolution: "Budget the Auto Release parent at180minutes for60preparation,30aggregate queue delay, unchanged60/15/5child limits and10orchestration; document same-tag recovery and strengthen the existing workflow contract."
+expected_result: The automatic parent can observe successful publication after realistic preparation and runner queue delays without changing publication admission or daily immutability.
+actual_result: "The prior110minute workflow fails the strengthened contract; corrected180minute configuration passes all121 focused tests, linked release tests, TypeScript/build/permissions and full static stages. Release26 passed all nine platform legs and independent npm/Bun/npx/bunx checks; the canceled parent recovered in attempt2 by verifying the existing tag without another publication."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-u9d0,implements,"2026-10-26T05:41:17.393Z","harness:codex","cli:create:dep",detected
+  pm-ygli86,discovered_from,"2026-10-26T05:41:17.393Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-26T05:41:17.393Z","harness:codex","Duplicate check: strict complete3119-item all-status corpus, refreshed open/in_progress lists, two request-specific searches, full live release reliability and publication-fence owners, plus Git introduction6fc2dd060 identify shipped registry acceptance lineage rather than an existing orchestration-envelope defect. New bounded child tracks the actual October26 timeout; no closed feature is reopened."
+  "2026-10-26T05:51:54.350Z","harness:codex","Exact operational proof: original parent40265600223 attempt1 cancelled at05:35:30Z after110minutes. Child40269172902 independently passed all nine Linux/macOS/Windows by npm-local/npm-global/Bun acceptance legs and advertised2026.10.26 at05:35:55Z. A manual rerun of the same parent, attempt2, succeeded at05:46 UTC through existing-tag verification: it reused child40269172902 and immutable commit46fd91415. No second tag or publication occurred. Strengthened existing workflow-budget test fails against110minutes; the bounded180minute envelope passes, reserving60preparation+30queues+unchanged60/15/5children+10orchestration. All121 focused native tests, TypeScript targets, build and permission checks pass; full static and linked evidence follow."
+learnings[1]{created_at,author,text}:
+  "2026-10-26T05:51:07.427Z","harness:codex",A waiting parent workflow needs separate wall-time reserves for local preparation and aggregate runner queues; child execution limits alone do not bound orchestration duration.
+files[2]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,Bound parent orchestration above the unchanged serial child path
+  tests/integration/ci-workflow-contract.spec.ts,project,Strengthen existing preparation and queue reserve contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,project,240,"harness:codex","2026-10-26T05:41:42.611Z",local_mutation,fix/sdk-history-integrity
+test_runs[1]:
+  - run_id: test-local-mvouog4i-alp7bk
+    kind: test
+    status: passed
+    started_at: "2026-10-26T06:02:45.320Z"
+    finished_at: "2026-10-26T06:02:59.874Z"
+    recorded_at: "2026-10-26T06:02:59.874Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Package-owned release history generation
+  docs/RELEASING.md,project,Explain execution limits versus orchestration wall time
+close_reason: Implemented the bounded parent release envelope and its regression contract in PR1596.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: serial-release-orchestration-budget
+  negative_control: "Run the strengthened budgets-the-serial-auto-release test against unchanged110-minute workflow: child60+15+5 plus preparation60 and queue30 exceeds the parent. The same existing test passes with the bounded180-minute envelope; other child and quality limits remain unchanged."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,node scripts/check-workflow-permissions.mjs,pnpm build
+  hosted_checks[3]: CI,actionlint,Docs and Skills
+  owner: pm-29bwud
+body: ""
