@@ -20,10 +20,11 @@ import { WORKSPACE_SNAPSHOT_ACTIONS } from "../../../../src/sdk/workspace-snapsh
 
 describe("CLI noun-verb grammar contracts", () => {
   it("retains the published pm-changelog package command contracts", () => {
-    // Public package 2026.10.24 registers audit/contracts without positionals and milestone create with a required name.
+    // Public package 2026.10.26 adds upgrades without positionals; milestone create requires a name.
     for (const [command, slots] of [
       ["changelog audit", []],
       ["changelog contracts", []],
+      ["changelog upgrades", []],
       ["changelog milestone create", [{ name: "name", value_kind: "string", required: true }]],
     ] as const) {
       expect(PM_COMMAND_DESTINATION_CONTRACTS.find((row) => row.command === command)).toMatchObject({ disposition: "package_owned", owner: "package:pm-changelog" });

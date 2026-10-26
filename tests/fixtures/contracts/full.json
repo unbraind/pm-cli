@@ -30143,6 +30143,14 @@
         "target": "package"
       },
       {
+        "command": "changelog upgrades",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "cal",
         "disposition": "package_owned",
         "noun": "package",
@@ -32392,6 +32400,10 @@
             "variadic": false
           }
         ]
+      },
+      {
+        "command": "changelog upgrades",
+        "slots": []
       },
       {
         "command": "cal",

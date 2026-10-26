@@ -915,7 +915,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "package",
       "package_owned",
       "package:pm-changelog",
-      ["changelog audit", "changelog contracts", "changelog export", "changelog generate", "changelog milestone create"],
+      ["changelog audit", "changelog contracts", "changelog export", "changelog generate", "changelog milestone create", "changelog upgrades"],
     ),
     ...destinationRows(
       "package",

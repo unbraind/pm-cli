@@ -6,37 +6,45 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-26T04:25:59.589Z"
-updated_at: "2026-10-26T14:48:08.952Z"
-closed_at: "2026-10-26T05:21:07.950Z"
-completed_at: "2026-10-26T05:21:07.950Z"
+updated_at: "2026-10-26T17:52:15.444Z"
+closed_at: "2026-10-26T17:52:14.354Z"
+completed_at: "2026-10-26T17:52:14.354Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Verify each exact adopted upstream timestamp is older than seven full days and each action SHA matches its official tag; Pass frozen-lock install and dependency/advisory, static, workflow-permission, typecheck, full exact coverage and supported consumer checks without weakening policies; Keep immature TruffleHog and the unaccepted Sentry major outside the adoption; close superseded bot PRs with canonical PM links after reviewed combined delivery"
 parent: pm-wb25c1
 risk: low
 confidence: high
-resolution: "Adopt Knip6.42.0, CodeQL4.39.0 and CodSpeed5.5.0 using independently verified immutable action tags; preserve the seven-day age policy and existing TruffleHog3.99.2 pins."
-expected_result: Eligible tooling updates and their exact contract assertions pass without runtime dependency or supply-chain exceptions.
-actual_result: "33 linked workflow/dependency tests pass; frozen lock install, dependency/advisory/cooldown/static checks and release26 bootstrap pass. No runtime package migration or policy exception was introduced."
+resolution: "Adopt mature Knip, CodeQL and CodSpeed pins; activate pm-changelog 2026.10.26 and declare its upgrades command in the SDK destination/positional census and generated contracts."
+expected_result: "The latest package activates and executes through npm and Bun, while SDK grammar, compatibility and immutable dependency policy gates describe every active command."
+actual_result: "All linked commands and 23 focused cases pass; full suite 11461 pass,3skip at exact100/100/100/100 with unchanged denominators. Functional static and SDK import gates pass; qualified local transport failures also occur on immutable main and remain documented, with exact-head hosted admission still mandatory."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-u9d0,implements,"2026-10-26T04:25:59.589Z","harness:codex","cli:create:dep",detected
   pm-wb25c1,discovered_from,"2026-10-26T04:25:59.589Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-26T04:25:59.589Z","harness:codex","Duplicate check: a fresh complete strict all-status corpus and explicit version searches found historical refreshes plus the open coordination parent; no item covers these exact mature tooling versions."
   "2026-10-26T04:33:33.920Z","harness:codex","Exact public upstream evidence at October26 04:20 UTC: Knip6.42.0 published October18 13:44:32.638Z; CodeQL action4.39.0 October15 10:57:05Z; CodSpeed action5.5.0 October14 11:38:37Z. All exceed seven full days and official action tag refs match the adopted immutable SHAs. TruffleHog3.99.3 was published October19 18:21:40Z and is not eligible until October26 18:21:40Z; both existing3.99.2 action/binary pins remain untouched. Frozen-lock install passed. Current full static, linked contracts and exact-head hosted acceptance follow before closure."
   "2026-10-26T05:07:09.986Z","harness:codex","The linked workflow suite correctly detected its old exact CodSpeed action SHA after adoption: 32 tests passed and the existing immutable-pin assertion failed. Update that one expected SHA to the independently verified v5.5.0 tag; retain Ubuntu22.04, Node24, simulation mode, no stale instrument caches, all permission checks and every deadline unchanged."
   "2026-10-26T05:21:07.255Z","harness:codex","PR1596 final tooling validation: all33 existing workflow/dependency contract tests pass after updating the exact CodSpeed SHA assertion. Frozen lockfile installation, source static dependency/advisory/cooldown checks, runtime42-package lock, workflow permission checks and build pass. Merge of prepared release2026.10.26 changed distribution versions only. Dependabot1599/1601 will be closed with this canonical PM link after the combined delivery lands; the immature TruffleHog update remains deferred under the existing coordinator."
   "2026-10-26T14:48:07.955Z","harness:codex","Latest-package verification: npm published pm-changelog 2026.10.26 during this delivery. Updated the managed project package through pm package install and generated/checked CHANGELOG.md with version 2026.10.26. Fresh isolated npm and Bun installations of published pm-cli 2026.10.26 both install and activate this extension, pass deep package diagnostics and contracts, and execute changelog upgrades for api-user, operator and agent-behavior with complete no-obligation results for the 2026.10.25 to 2026.10.26 range. Their npx and bunx launchers report 2026.10.26. The initial probe used an output-budget flag unsupported on that extension surface in the published host; the structured refusal is retained, and the supported command invocation passes. No pm-changelog source fix or host workaround is needed."
-files[6]{path,scope}:
+  "2026-10-26T16:47:10.328Z","harness:codex","Hosted CI40351508407 static gate correctly refused new changelog upgrades: missing destination and undeclared positional signature. Latest pm-changelog 2026.10.26 is functional; the host census was stale. The existing published-package contract table now includes upgrades with no positionals and fails before the SDK census fix: 18 focused cases pass and the one new table row fails. Add the package-owned destination, retaining package ownership, grammar budgets and every gate."
+  "2026-10-26T17:52:09.936Z","harness:codex","CI remediation validation: the existing package contract table fails on its new upgrades row against the old SDK census and passes after the package-owned destination is added. The generated full contract fixture adds twelve lines for destination and empty positional metadata; public SDK type surface has zero classified changes. All linked commands and 23 focused cases pass. Complete source coverage passes 11,461 tests with three platform skips and exact 100/100/100/100: 71,030 statements, 54,658 branches, 14,612 functions and 67,194 lines covered, with unchanged denominators. Functional static, dependency/advisory/cooldown, SDK/MCP/schema, graph/record and mutation stages pass; current SDK import admission passes. Qualified local CLI transport failures also occur on immutable main and remain retained with the startup investigation owner. No monolithic local static success is claimed; fresh exact-head hosted static is required."
+learnings[1]{created_at,author,text}:
+  "2026-10-26T17:52:12.442Z","harness:codex","Activating a new package version and exercising its command is not a complete host integration check. Synchronize the SDK destination/positional census and generated contract fixture when the package adds a command, then execute the actual grammar and static gates."
+files[9]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   .github/workflows/codeql.yml,project
   .github/workflows/codspeed.yml,project
   .github/workflows/scorecard.yml,project
   pnpm-lock.yaml,project
+  src/sdk/cli-contracts/grammar-contracts.ts,project
+  tests/fixtures/contracts/full.json,project
   tests/integration/ci-workflow-contract.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/release/workflow-permissions-gate.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,project,300,"harness:codex","2026-10-26T04:33:32.865Z",local_mutation,fix/sdk-history-integrity
-test_runs[2]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,project,240,"harness:codex","2026-10-26T16:47:09.466Z",local_mutation,fix/sdk-history-integrity
+test_runs[3]:
   - run_id: test-local-mvoslhgy-6l3p52
     kind: test
     status: failed
@@ -59,7 +67,19 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/release/workflow-permissions-gate.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvphr5x4-46tyjp
+    kind: test
+    status: passed
+    started_at: "2026-10-26T16:48:32.735Z"
+    finished_at: "2026-10-26T16:48:57.784Z"
+    recorded_at: "2026-10-26T16:48:57.784Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/release/workflow-permissions-gate.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/cli-contracts/grammar-contracts.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   CHANGELOG.md,project
-close_reason: Implemented mature tooling portions of Dependabot1599/1601 in combined PR1596.
+close_reason: Latest package grammar and tooling integration verified
 body: ""
