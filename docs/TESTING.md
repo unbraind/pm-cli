@@ -20,6 +20,16 @@ Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), 
   creates its own sandboxed `PM_PATH`.
 - Run linked tests before closing the item that owns the work.
 
+Linked tests classify a confirmed missing executable as `spawn_error`, retaining
+the shell's exit code and exact stderr. Confirmation requires a literal leading
+executable, the shell's named lookup diagnostic and a failed lookup using the
+execution's environment and working directory. A child deliberately exiting
+127, arbitrary `ENOENT` output, compound shell programs, expansions, and an
+unavailable lookup probe retain their existing classification. This conservative
+rule supports POSIX shells and Windows command lookup; it does not infer setup
+failure from arbitrary runner output
+([pm-gh1604](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1604.toon); tracker record excluded from npm).
+
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 Local/hosted gate parity is tracked by [pm-ei6x66](../.agents/pm/tasks/pm-ei6x66.toon).
@@ -262,12 +272,14 @@ into the pass count; a persistent assertion still fails after the bounded
 retry. Local runs do not retry, so deterministic failures stay immediate while
 iterating.
 
-The complete receipt-operation, aborted-operation recovery, receipt-settlement, merge-portability and
+The complete receipt-operation, receipt-health classification, aborted-operation recovery, receipt-settlement, merge-portability and
 lossless-collection-union integration files run in the existing serial
 `lifecycle-performance` project after parallel contracts. Both nightly shards and
 full coverage use that same project partition, retaining every case and its
 original assertions, deadlines and retry policy. This allocation is tracked by
-[pm-89297t](../.agents/pm/tasks/pm-89297t.toon); it does not classify or erase
+[pm-89297t](../.agents/pm/tasks/pm-89297t.toon) and
+[pm-receipt-serial](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-receipt-serial.toon)
+(tracker records are excluded from npm); it does not classify or erase
 historical failed attempts.
 
 The complete nightly suites use two Vitest shards on Linux Node 22/25 and

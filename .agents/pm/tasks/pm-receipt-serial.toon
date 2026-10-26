@@ -1,0 +1,52 @@
+id: pm-receipt-serial
+title: Schedule the complete merge-receipt classification keeper after parallel contracts
+description: "The second full local coverage attempt timed out the real lossless receipt classification keeper at its unchanged 120000ms deadline while 11485 other tests passed. Its file remains outside the shared serial Git-heavy cohort. Allocate the complete file once after parallel contracts, preserving every assertion, original deadline, retry and coverage member."
+type: Task
+status: in_progress
+priority: 2
+tags[3]: bug,ci,testing
+created_at: "2026-10-26T23:27:36.520Z"
+updated_at: "2026-10-26T23:31:14.660Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7efbcd86a29946bbfe9221c3"
+author: "harness:codex"
+acceptance_criteria: A config-boundary regression fails before allocation and passes afterward; the complete five-case Git integration file passes with unchanged 120-second keeper deadline; full hosted coverage remains exact 100/100/100/100.
+parent: pm-u9d0
+risk: medium
+confidence: high
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-89297t,discovered_from,"2026-10-26T23:27:36.520Z","harness:codex","cli:create:dep",detected
+  pm-bj7rq0,related,"2026-10-26T23:27:36.520Z","harness:codex","cli:create:dep",detected
+  pm-v0600g,related,"2026-10-26T23:27:36.520Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-26T23:27:36.520Z","harness:codex","Duplicate check: strict complete all-status3131-item corpus has zero omissions or unreadables; request searches plus open/in_progress lists and full live reads of pm-89297t and pm-v0600g confirm both earlier scopes completed. No active owner covers this remaining parallel allocation gap. The broader runtime causation issue stays open and unclaimed. Local failed coverage log is retained; this task does not extend deadlines or relabel it green."
+  "2026-10-26T23:29:13.320Z","harness:codex","The added project-partition guard fails on the unchanged config, then passes after moving the complete classification file into the existing serial cohort. The real five-case file passes in34.22s with its keeper26.53s and original120-second deadline. The failed full attempt remains11485passed/1timeout and near-exact coverage, not a pass. Full exact-head hosted coverage remains required before merge; no corpus, assertion, timeout, retry or denominator was changed."
+files[2]{path,scope}:
+  vitest.config.ts,project
+  tests/integration/vitest-retry-policy.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,project,300,"harness:codex","2026-10-26T23:27:36.520Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvpw4i1l-0midiw
+    kind: test
+    status: passed
+    started_at: "2026-10-26T23:30:27.416Z"
+    finished_at: "2026-10-26T23:31:14.649Z"
+    recorded_at: "2026-10-26T23:31:14.649Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-receipt-serial
+body: ""

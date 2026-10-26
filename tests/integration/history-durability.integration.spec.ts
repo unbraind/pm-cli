@@ -673,10 +673,10 @@ describe("history durability across storage maintenance", () => {
       expect(
         compact.compact_history?.map(({ index, version }) => [index, version]),
       ).toEqual([
-        [1, 2],
-        [2, 3],
-        [3, 4],
         [4, 5],
+        [3, 4],
+        [2, 3],
+        [1, 2],
       ]);
       const provenance = await runHistory(
         id,
@@ -685,7 +685,7 @@ describe("history durability across storage maintenance", () => {
       );
       expect(
         provenance.provenance_history?.map(({ version }) => version),
-      ).toEqual([2, 3, 4, 5]);
+      ).toEqual([5, 4, 3, 2]);
     });
   });
 

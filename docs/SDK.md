@@ -431,6 +431,16 @@ Promoted Plan links retain their graph semantics: `depends_on` canonicalizes to 
 
 ### Immutable history and rich item reads
 
+`runHistory(id, { compact: true }, global)` and `{ provenance: true }` return
+newest-first rows when no `limit` is supplied. The CLI and `runAction` history
+defaults use compact rows. The result declares `order` and a complete matching
+`total`; original row indices and durable versions stay unchanged. Apply the
+public read-output dimensions and carry `outputCursor` from their truncation
+receipt to traverse older entries. An explicit latest-entry `limit` retains
+chronological order, as do full SDK reads (`runHistory(id, {}, global)`) and
+`runAction` with `full: true`. Verification still consumes the full chain
+([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon); tracker record excluded from npm).
+
 Tracked: [pm-4a7m](../.agents/pm/features/pm-4a7m.toon),
 [pm-hib1](../.agents/pm/features/pm-hib1.toon),
 [pm-y4z5](../.agents/pm/issues/pm-y4z5.toon), and
@@ -2759,6 +2769,14 @@ A typo fails activation with a did-you-mean hint (e.g. `type: "strnig"` →
 time.
 
 ## Expected CLI Errors
+
+`resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument
+templates and next steps for unsupported `block` and `unblock` verbs. It checks
+the SDK's update flag contracts and declines installed verbs, unknown paths,
+and runtimes without update. Templates require actual identifiers and never
+execute a mutation. Unblocking uses `--unset blocked-by` to clear all blocker
+edges, followed by stale-reason cleanup and an optional explanatory note
+([pm-gh1607](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1607.toon); tracker record excluded from npm).
 
 Packages and adapters can derive explicit retries for misplaced linked-resource
 values with the public SDK:

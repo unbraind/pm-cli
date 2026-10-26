@@ -2,11 +2,13 @@ id: pm-gh1607
 title: "GH-1607: Provide intent-specific recovery for unsupported block and unblock commands"
 description: "**Version:** pm 2026.10.26.\n\n**Repro**\n```sh\npm block <id> --reason waiting\npm unblock <id> --note ready\n```\n**Observed:** both exit 2. `block` suggests `github blockers` and `list --status blocked` (read-only surfaces); `unblock` prints generic examples (`activity`, `aggregate`, `assurance`, …). Neither points at the supported local mutation.\n\n**Expected:** intent-specific recovery for these lifecycle verbs, e.g.\n```sh\npm update <id> --blocked-by <blocker> --blocked-reason \"waiting\"\npm update <id> --dep-remove <blocker> --unset blocked_by --unset blocked_reason --unblock-note \"ready\"\n```\nor first-class `block`/`unblock` aliases that map to those flags (never auto-executing a guessed mutation).\n\n**Why it matters for agents:** block/unblock are the verbs agents reach for during a work session; today the failed call is followed by a help search and another attempt (~600–750 bytes of unhelpful stderr each). Note that `--unblock-note` alone records a note but does not remove the blocker edge, which is easy to get wrong without a worked example.\n\n\nIntake boundary: this is a report against published 2026.10.26, not proof of a current-checkout defect. Reproduce in an external sandbox before implementation. Related completed work retains its shipped scope. Proposed examples or categories are not accepted contracts until validated.\n\nSource: https://github.com/unbraind/pm-cli/issues/1607"
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-26T19:02:14.338Z"
-updated_at: "2026-10-26T19:02:14.338Z"
+updated_at: "2026-10-26T23:30:26.565Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7efbcd86a29946bbfe9221c3"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Derive examples from live update contracts and prove the suggested block and unblock workflows on isolated trackers.; Unblock recovery explains removal of the actual blocker relationship and stale blocker metadata; a note alone is not presented as unblocking.; Refusals preserve the usage exit code, leave data unchanged, identify the intended lifecycle surface, and retain extension-command and ambiguity behavior. Any new alias must have a declared SDK/CLI/MCP contract."
@@ -17,7 +19,42 @@ expected_result: "Unsupported lifecycle verbs lead to a correct local mutation r
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-1p6f,related,"2026-10-26T19:02:14.338Z","harness:codex","cli:create:dep",detected
   pm-in23qu,related,"2026-10-26T19:02:14.338Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-26T19:02:14.338Z","harness:codex","Duplicate check: fresh orientation, request-specific search, open/in-progress inventories and complete strict 3126-item all-status corpus found no open owner for this exact case. Full live metadata and histories of related owners confirm their completed, distinct scope. This is intake only, open and unclaimed; implementation is outside the current delivery cohort."
+  "2026-10-26T22:07:05.127Z","harness:codex","Confirmed the existing update contract clears every blocked_by relationship through --unset blocked-by; an explicit dep-remove is unnecessary. The original unsupported block/unblock calls failed the new guidance regression. SDK-owned intent templates now check declared update flags and decline installed or ambiguous command paths. Native recovery controls use two blockers, clear blocker metadata, preserve an unrelated related edge, retain usage exit 2 and unchanged history on refusal, and preserve tracker scope in the inspection-only help retry. Focused cohort passed 96 tests."
+  "2026-10-26T23:06:14.959Z","harness:codex","The published npm artifact reproduces both unsupported-verb problems: block exits2 with901 stderr bytes and no blocker-mutation recipe; unblock exits2 with810 bytes and no cleanup recipe. Current Node and Bun consumers retain exit2 and provide the appropriate block or unblock template (963 and1213 bytes). The extra guidance supplies the previously missing action and explicitly keeps project-specific blocked-status selection separate. Native two-blocker tests prove exact relation cleanup and preservation of unrelated relations; no inferred mutation is executed by a refusal."
+learnings[1]{created_at,author,text}:
+  "2026-10-26T22:10:50.419Z","harness:codex","The supported unblock operation is the existing --unset blocked-by contract, which removes the primary scalar and every blocked_by edge. Guidance should reuse that primitive rather than build an incomplete dep-remove recipe or imply a note changes graph readiness."
+files[6]{path,scope}:
+  .github/workflows/ci.yml,project
+  sdk/public-surface.json,project
+  src/cli/commander-usage.ts,project
+  src/sdk/agent/command-recovery.ts,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/unit/cli/lifecycle-verb-recovery.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts,project,300,"harness:codex","2026-10-26T22:07:02.718Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvpw3gxn-7j15it
+    kind: test
+    status: passed
+    started_at: "2026-10-26T23:30:10.583Z"
+    finished_at: "2026-10-26T23:30:26.555Z"
+    recorded_at: "2026-10-26T23:30:26.555Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: lifecycle-verb-recovery
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
+  owner: pm-gh1607
 body: ""

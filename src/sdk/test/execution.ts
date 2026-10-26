@@ -9,6 +9,7 @@ import {
   findLinkedTestExecutionReceipt,
 } from "./execution-receipts.js";
 import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
+import { detectLinkedTestCommandNotFound } from "./command-resolution.js";
 import { updateLinkedTest, parseLinkedTestUpdateOptions, assertLinkedTestEditUsage } from "./update.js";
 import { admitLinkedTestRequest, assertLinkedTestCommand } from "./entry.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
@@ -1521,6 +1522,9 @@ async function runLinkedTestCommand(
     const truncationNotice = outputTruncated
       ? `\n[pm linked-test output truncated at ${TEST_OUTPUT_MAX_BUFFER_BYTES} bytes per stream; the child process continued to completion]\n`
       : "";
+    if (!spawnError && await detectLinkedTestCommandNotFound(command, { exitCode: code, stderr: stderr.text }, env, cwd)) {
+      spawnError = "Linked test executable was not found. Install the tool or update the linked command before retrying.";
+    }
     const executionResult: LinkedTestExecutionResult = {
       stdout: `${stdout.text}${truncationNotice}`,
       stderr: stderr.text,

@@ -1236,6 +1236,10 @@ describe("GitHub workflow contract", () => {
         "release-automation-contract.spec.ts",
         "activation-summary.spec.ts",
         "mutation-event-integrity.spec.ts",
+        "missing-command.spec.ts",
+        "command-resolution.spec.ts",
+        "lifecycle-verb-recovery.spec.ts",
+        "history-recency.spec.ts",
       ]),
     );
   });

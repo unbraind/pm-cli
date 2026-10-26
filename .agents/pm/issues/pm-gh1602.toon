@@ -1,0 +1,24 @@
+id: pm-gh1602
+title: "GH-1602: Windows extension-handler refusal has warning bytes before its JSON error envelope"
+description: "Hosted Nightly Validation 40303228148 at 46fd91415c6e1009cff69f64c24fc17186a2af81 failed Windows Node 24 shard 3/4. The existing CLI integration control for a matched extension handler throwing reached expectJsonErrorEnvelope at cli.integration.spec.ts:5639, but JSON.parse of stderr began with warning:se and failed. The log does not expose enough of the prefix to identify its producer. Other results: 3086 passed, 19 skipped. This is a concrete transport framing failure signature, not evidence of a Sentry, settings or product cause. Source: https://github.com/unbraind/pm-cli/issues/1602 and https://github.com/unbraind/pm-cli/actions/runs/40303228148. Preserve the completed recurrence meter and prior distinct platform failures."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,ci,github,output,windows
+created_at: "2026-10-26T22:10:10.109Z"
+updated_at: "2026-10-26T22:10:48.774Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Identify the exact warning producer through an isolated native control before selecting a fix; Machine-readable stderr remains one parseable JSON envelope while meaningful warnings remain represented and handler details remain intact; Preserve exit 1 and obtain a clean affected Windows regression cohort without erasing recurrence observations
+parent: pm-u9d0
+risk: medium
+confidence: medium
+expected_result: Agents receive a parseable structured extension-handler failure on Windows without warning bytes preceding its JSON envelope.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
+  pm-gh1366,related,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-26T22:10:10.109Z","harness:codex","Duplicate check: complete strict 3130-item all-status corpus and live warning/JSON stderr searches found completed related output-format and recurrence work but no exact active owner for this observed Windows failure. Intake only, open and unclaimed."
+  "2026-10-26T22:10:48.773Z","harness:codex",The current continuation independently read the complete hosted failure log and linked the source alert. A later local Linux full-suite run passes the existing handler-error test; that does not establish the native Windows warning producer or a fix. Reproduction and native hosted proof remain necessary. No implementation claim is taken.
+escape_class: production_defect
+body: ""

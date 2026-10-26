@@ -698,7 +698,10 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     runFilesDiscover(requireMcpItemId(ctx), ctx.options, ctx.global),
   "files-lookup": (ctx) =>
     runMcpFilesLookupAction(ctx, readStringArray(ctx.options.paths)),
-  history: (ctx) => runHistory(requireMcpItemId(ctx), ctx.options, ctx.global),
+  history: (ctx) => runHistory(requireMcpItemId(ctx), {
+    ...ctx.options,
+    compact: ctx.options.full === true || ctx.options.provenance === true ? false : ctx.options.compact !== false,
+  }, ctx.global),
   "history-redact": (ctx) =>
     runHistoryRedact(requireMcpItemId(ctx), ctx.options, ctx.global),
   "history-repair": runMcpHistoryRepairAction,

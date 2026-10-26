@@ -46,7 +46,7 @@ import {
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 import { canonicalizeCommandSuggestions, rankCommandPaths, resolveMisnestedCommandPath } from "../sdk/agent/command-suggestions.js";
-import { isCompatibleRecoveryFlag, renderMissingOptionRetry } from "../sdk/agent/command-recovery.js";
+import { isCompatibleRecoveryFlag, renderMissingOptionRetry, resolveLifecycleVerbRecovery } from "../sdk/agent/command-recovery.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
@@ -681,6 +681,17 @@ export function buildUnknownCommandGuidanceFromRuntime(
   }
   if (commandPaths.length === 0) {
     return undefined;
+  }
+
+  const lifecycleRecovery = resolveLifecycleVerbRecovery(normalizedUnknown, commandPaths);
+  if (lifecycleRecovery) {
+    const retryArgs = buildCanonicalHelpRetryArgs("update", invocationArgv)!;
+    return {
+      suggestedRetryCommand: renderPmCommand(retryArgs),
+      suggestedRetryArgs: retryArgs,
+      unknownCommandExamples: [renderPmCommand(retryArgs), ...lifecycleRecovery.examples.map((args) => renderPmCommand(args))],
+      unknownCommandNextSteps: lifecycleRecovery.nextSteps,
+    };
   }
 
   const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);

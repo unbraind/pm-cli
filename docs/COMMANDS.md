@@ -664,6 +664,19 @@ Every transition into a terminal status stamps two distinct ISO timestamps: `clo
 
 `pm create --blocked-by <id>` and `pm update --blocked-by <id>` keep the scalar `blocked_by` field as the latest/primary blocker for compatibility. When the value resolves to a real item, the command also appends a `blocked_by` dependency edge so `pm deps` and reverse dependency scans see the full blocker graph. Repeating `pm update --blocked-by` with a different blocker preserves the prior blocker edge and appends the new one; repeating the same blocker is deduplicated. Use `pm update <id> --unset blocked-by` to clear the scalar and all `blocked_by` dependency edges.
 
+Unsupported `pm block` and `pm unblock` invocations return usage errors with
+`pm update --help` and these explicit mutation templates
+([pm-gh1607](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1607.toon); tracker record excluded from npm):
+
+```bash
+pm update <item-id> --blocked-by <blocker-id> --blocked-reason "waiting"
+pm update <item-id> --unset blocked-by --unset blocked-reason --unblock-note "ready"
+```
+
+Inspect the actual blockers before applying either template. The unblock recipe
+clears all `blocked_by` relationships and stale blocker metadata while preserving
+other relationship kinds. `--unblock-note` alone only records a note.
+
 When closing a blocker, `pm close` scans reverse `blocked_by` edges and auto-unblocks dependent items only when every resolvable blocker is now terminal. Each unblocked item is updated through the normal audited mutation path, gets an `unblock_note`, and the close result reports compact `auto_unblocked:<id>:resolved_blockers=<ids>` warnings. Items with another active blocker remain blocked.
 
 Over MCP, single-item mutations (`pm_create`, `pm_update`, `pm_close`, and
@@ -1165,6 +1178,17 @@ unowned hooks. Default installation remains hook-free. See
 [Merge safety](MERGE_SAFETY.md#settle-a-lossless-merge-in-one-commit).
 
 ## History and Recovery
+
+Compact and provenance history without `--limit` display newest entries first,
+so the latest handoff survives an output budget. The `order` receipt declares
+the display direction and `total` counts all matching entries before limits.
+Physical `index` values and durable version addresses retain their original
+meaning. Use the returned `output_budget_truncation` continuation with
+`--output-cursor` to read older rows without gaps or duplicates. Explicit
+`--limit N` keeps the latest N entries in chronological order; `--full
+--output-budget unbounded` returns complete chronological entries. Verification
+always checks the full authoritative chain
+([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon); tracker record excluded from npm).
 
 After a branch merge that touched tracker history, preview and apply the
 one-command reconciliation gate:

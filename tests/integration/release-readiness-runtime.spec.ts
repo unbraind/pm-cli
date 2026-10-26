@@ -2158,6 +2158,8 @@ describe("release readiness runtime coverage", () => {
         "projection",
         "omission_receipt",
         "count",
+        "total",
+        "order",
         "limit",
       ]);
 
