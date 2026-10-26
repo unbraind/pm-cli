@@ -1,0 +1,59 @@
+id: pm-8skz5z
+title: Adopt mature Knip 6.42.0 and CodeQL/CodSpeed action pins
+description: "Implement the eligible portions of Dependabot PR1599 and PR1601 in combined PR1596. Adopt Knip6.42.0, CodeQL action4.39.0 and CodSpeed action5.5.0 after exact upstream age and immutable-tag verification. Preserve TruffleHog3.99.2 because3.99.3 is younger than seven days. Runtime Sentry11 migration stays outside this compatible tooling update."
+type: Chore
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-10-26T04:25:59.589Z"
+updated_at: "2026-10-26T05:07:22.639Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#9a3d0027739dfadbcc41b040"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "Verify each exact adopted upstream timestamp is older than seven full days and each action SHA matches its official tag; Pass frozen-lock install and dependency/advisory, static, workflow-permission, typecheck, full exact coverage and supported consumer checks without weakening policies; Keep immature TruffleHog and the unaccepted Sentry major outside the adoption; close superseded bot PRs with canonical PM links after reviewed combined delivery"
+parent: pm-wb25c1
+risk: low
+confidence: high
+expected_result: Eligible development and analyzer updates ship through the existing combined reviewed PR with no policy exceptions or untracked dependency PRs.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-u9d0,implements,"2026-10-26T04:25:59.589Z","harness:codex","cli:create:dep",detected
+  pm-wb25c1,discovered_from,"2026-10-26T04:25:59.589Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-26T04:25:59.589Z","harness:codex","Duplicate check: a fresh complete strict all-status corpus and explicit version searches found historical refreshes plus the open coordination parent; no item covers these exact mature tooling versions."
+  "2026-10-26T04:33:33.920Z","harness:codex","Exact public upstream evidence at October26 04:20 UTC: Knip6.42.0 published October18 13:44:32.638Z; CodeQL action4.39.0 October15 10:57:05Z; CodSpeed action5.5.0 October14 11:38:37Z. All exceed seven full days and official action tag refs match the adopted immutable SHAs. TruffleHog3.99.3 was published October19 18:21:40Z and is not eligible until October26 18:21:40Z; both existing3.99.2 action/binary pins remain untouched. Frozen-lock install passed. Current full static, linked contracts and exact-head hosted acceptance follow before closure."
+  "2026-10-26T05:07:09.986Z","harness:codex","The linked workflow suite correctly detected its old exact CodSpeed action SHA after adoption: 32 tests passed and the existing immutable-pin assertion failed. Update that one expected SHA to the independently verified v5.5.0 tag; retain Ubuntu22.04, Node24, simulation mode, no stale instrument caches, all permission checks and every deadline unchanged."
+files[5]{path,scope}:
+  .github/workflows/codeql.yml,project
+  .github/workflows/codspeed.yml,project
+  .github/workflows/scorecard.yml,project
+  pnpm-lock.yaml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/release/workflow-permissions-gate.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,project,300,"harness:codex","2026-10-26T04:33:32.865Z",local_mutation,fix/sdk-history-integrity
+test_runs[2]:
+  - run_id: test-local-mvoslhgy-6l3p52
+    kind: test
+    status: failed
+    started_at: "2026-10-26T05:04:28.056Z"
+    finished_at: "2026-10-26T05:04:42.418Z"
+    recorded_at: "2026-10-26T05:04:42.418Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/release/workflow-permissions-gate.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvosox3c-dl49ao
+    kind: test
+    status: passed
+    started_at: "2026-10-26T05:07:10.820Z"
+    finished_at: "2026-10-26T05:07:22.632Z"
+    recorded_at: "2026-10-26T05:07:22.632Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/unit/scripts/release/dependency-cooldown.spec.ts tests/unit/scripts/release/workflow-permissions-gate.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+body: ""

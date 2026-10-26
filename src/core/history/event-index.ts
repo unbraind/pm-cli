@@ -32,6 +32,7 @@ import {
 const EVENT_INDEX_FILENAME = "history-event-index.sqlite";
 const EVENT_INDEX_VERSION = "7";
 const AUTHORITATIVE_HISTORY_CACHE_LIMIT = 8;
+const HISTORY_STREAM_CONTENT_READ_CONCURRENCY = 32;
 const HISTORY_EVENT_INDEX_LOCK_ID = "history-event-index";
 const HISTORY_EVENT_INDEX_APPEND_OWNER_PREFIX = "history-event-index:append:";
 const HISTORY_EVENT_INDEX_REPAIR_COOLDOWN_MS = 5_000;
@@ -427,7 +428,7 @@ async function readAuthoritativeHistorySnapshot(
     authoritativeHistoryCaches.delete(oldestRoot);
   }
   return {
-    events: cached.ordered_events.filter((event) => historyStreamIsSelected(event.stream_id, requestedStreamIds)),
+    events: cached.ordered_events.filter((event) => historyStreamIsSelected(event.stream_id, requestedStreamIds)).map((event) => projectRecordedHistoryEvent(event, verify)),
     stream_receipts: new Map(
       [...cached.streams].filter(([streamId]) => historyStreamIsSelected(streamId, requestedStreamIds)).map(([streamId, stream]) => [
         streamId,
@@ -435,6 +436,12 @@ async function readAuthoritativeHistorySnapshot(
       ]),
     ),
   };
+}
+
+/** Keep default full-entry timestamps independent of earlier strict reads sharing this cache. */
+function projectRecordedHistoryEvent(event: IndexedHistoryEvent, verify: boolean): IndexedHistoryEvent {
+  if (verify || event.recorded_entry === undefined) return event;
+  return { stream_id: event.stream_id, stream_offset: event.stream_offset, entry: event.entry };
 }
 
 /** Empty or omitted selections retain the existing all-stream query semantics. */
@@ -464,10 +471,10 @@ async function readIndexableHistoryStream(historyPath: string, streamId: string,
         nextSteps: [`Run pm history ${streamId} --verify to inspect the authoritative chain before retrying.`] },
     );
   }
-  const raw = snapshot.raw ?? "";
+  const raw = snapshot.raw_bytes ?? new Uint8Array();
   return {
     signature: createHash("sha256").update(raw).digest("hex"),
-    byte_size: Buffer.byteLength(raw),
+    byte_size: raw.byteLength,
     events: normalizeIndexableHistoryEntries(snapshot.entries, streamId).map((entry, streamOffset) => ({ stream_id: streamId, stream_offset: streamOffset, entry,
       ...(verify ? { recorded_entry: snapshot.entries[streamOffset] } : {}),
     })),
@@ -1317,8 +1324,8 @@ async function historyIndexMatchesStreamContents(
   pmRoot: string,
   streamIds: readonly string[],
 ): Promise<boolean> {
-  for (let start = 0; start < streamIds.length; start += 500) {
-    const chunk = streamIds.slice(start, start + 500);
+  for (let start = 0; start < streamIds.length; start += HISTORY_STREAM_CONTENT_READ_CONCURRENCY) {
+    const chunk = streamIds.slice(start, start + HISTORY_STREAM_CONTENT_READ_CONCURRENCY);
     const currentSizes = await Promise.all(
       chunk.map((streamId) => readHistoryStreamContentReceipt(pmRoot, streamId)),
     );

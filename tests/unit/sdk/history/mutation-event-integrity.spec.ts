@@ -67,6 +67,54 @@ describe("authoritative mutation event integrity", () => {
     });
   });
 
+  it("keeps unverified full entries stable before and after a strict read of the shared cache", async () => {
+    const restore = _testOnly.setDatabaseSync(null);
+    try {
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: "Stable default timestamps", createMode: "progressive" });
+        const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+        const entry = JSON.parse((await fs.readFile(historyPath, "utf8")).trim()) as HistoryEntry;
+        entry.ts = entry.ts.replace("Z", "+00:00");
+        const sealed = sealHistoryRecord(entry);
+        await fs.writeFile(historyPath, `${JSON.stringify(sealed)}\n`);
+        const before = await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true });
+        const strict = await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true, verify: true });
+        const after = await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true });
+        expect(strict.events[0].entry).toEqual(sealed);
+        expect(before.events[0].entry!.ts).toBe(new Date(sealed.ts).toISOString());
+        expect(after.events).toEqual(before.events);
+        expect(after.integrity).toBe("unverified");
+      });
+    } finally { restore(); }
+  });
+
+  it.each([true, false])("reuses receipts for original bytes containing a decoded replacement character with SQLite=%s", async (sqlite) => {
+    const restore = sqlite ? () => {} : _testOnly.setDatabaseSync(null);
+    try {
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: "Original byte receipt", createMode: "progressive" });
+        const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+        const entry = JSON.parse((await fs.readFile(historyPath, "utf8")).trim()) as HistoryEntry;
+        entry.message = "Replacement: \uFFFD";
+        const sealed = sealHistoryRecord(entry);
+        const encoded = Buffer.from(`${JSON.stringify(sealed)}\n`);
+        const offset = encoded.indexOf(Buffer.from("\uFFFD"));
+        const bytes = Buffer.concat([encoded.subarray(0, offset), Buffer.from([0xff]), encoded.subarray(offset + 3)]);
+        await fs.writeFile(historyPath, bytes);
+        const snapshot = await historyRead.readHistorySnapshot(historyPath, id);
+        expect(snapshot.raw).toBe(encoded.toString("utf8"));
+        expect(verifyHistoryEntries(snapshot.entries).ok).toBe(true);
+        const prime = await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true });
+        const reading = vi.spyOn(historyRead, "readHistorySnapshot");
+        try {
+          expect((await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true })).events).toEqual(prime.events);
+          expect(reading).not.toHaveBeenCalled();
+        } finally { reading.mockRestore(); }
+        expect(snapshot.raw_bytes).toEqual(bytes);
+      });
+    } finally { restore(); }
+  });
+
   it("returns no actions when a selected stream disappears at its authoritative read boundary", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Disappearing stream", createMode: "progressive" });

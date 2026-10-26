@@ -46,6 +46,9 @@ Every SDK page declares `integrity: "unverified"` by default. Full-file content
 matching prevents a stale cache from hiding same-length edits to any record,
 including an earlier record when the final record is unchanged. This freshness
 check alone does not verify the chain.
+The public `readHistorySnapshot` result retains `raw_bytes` alongside decoded
+`raw` and `entries`. Content receipts use those original bytes, including when
+UTF-8 decoding replaces an invalid byte; parsing behavior remains unchanged.
 
 Use `listMutationEvents({ item: "pm-abcd", verify: true })` or
 `pm events --item pm-abcd --verify --json` before acting on verified events.
