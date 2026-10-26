@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-26T13:52:51.445Z"
-updated_at: "2026-10-26T14:32:59.309Z"
+updated_at: "2026-10-26T15:33:39.906Z"
 closed_at: "2026-10-26T14:05:07.395Z"
 completed_at: "2026-10-26T14:05:07.395Z"
 author: "harness:codex"
@@ -20,10 +20,11 @@ expected_result: Canceled obsolete workflows release their concurrency slot; act
 actual_result: "Both unchanged always() guards fail the revised contract. All 24 workflow cases and native dependency outcome controls pass with the new guards; typecheck, build, ESLint and workflow permission checks pass. Hosted checks remain mandatory on the new head."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gxq0dt,related,"2026-10-26T14:25:28.819Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-26T13:52:51.445Z","harness:codex","Duplicate check: refreshed strict3123-item corpus, request-specific coverage/cancellation search, current open/in-progress inventories, and full closed pm-gxq0dt lineage. Its complete-shard and timeout work remains delivered; this is the distinct cancellation behavior observed during PR1596. Official GitHub expressions guidance recommends !cancelled() for failure-reporting jobs that should stop after cancellation."
   "2026-10-26T14:05:04.497Z","harness:codex","Verification: the strengthened workflow contract fails both unchanged CI always() guards, then passes all 24 cases after switching the coverage and Windows aggregates to !cancelled(). Native shell controls still reject failure, canceled, skipped and missing dependency results. Full source coverage thresholds, required contexts and runner budgets are unchanged. The observed obsolete run had 24 completed jobs and one queued coverage aggregate after normal cancellation; GitHub accepted its documented cancellation fallback and the native watcher confirmed cancellation."
   "2026-10-26T14:32:59.309Z","harness:codex","All canonical static stages passed across the recorded invocation and its unchanged post-fix remainder. The initial new-intake readiness and prose-lineage refusals are retained; planning fields and the cited relationships are now complete. SDK surface/import budgets, all six CLI latency operations, graph and record assurances, and all 352 mutation cases pass with no failures. Terminal defect evidence covers 456 governed defects with zero findings. Thresholds, baselines and waivers are unchanged."
+  "2026-10-26T15:33:39.906Z","harness:codex","Fresh operational evidence after the reviewed cancellation fix: source head 71a76e320 has no new unresolved review findings and retains every required CI context. The current build job explicitly reports waiting for a hosted runner; queued jobs are not represented as passed. No source/runtime change is included in the subsequent tracker-only intake and evidence commit."
 files[2]{path,scope}:
   .github/workflows/ci.yml,project
   tests/integration/ci-workflow-contract.spec.ts,project
