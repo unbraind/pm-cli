@@ -15,6 +15,9 @@ export interface ReceiptFileBoundary {
   open(receiptPath: string, flags: number): Promise<FileHandle>;
 }
 
+/** Maximum bytes accepted for a portable merge receipt at every read/copy boundary. */
+export const MERGE_RECEIPT_FILE_MAX_BYTES = 16 * 1024 * 1024;
+
 const NODE_RECEIPT_FILE_BOUNDARY: ReceiptFileBoundary = { lstat, open };
 
 /** Resolve the platform no-follow flag, falling back only where Node omits it. */

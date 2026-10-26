@@ -2810,6 +2810,14 @@
       ],
       "package_version": "2026.10.25",
       "reason": "Add optional compensatePending transaction-step capability; existing adapters retain applied-only compensation and signatures remain callable unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ListMutationEventsOptions",
+        "signature ./sdk:MutationEventPage"
+      ],
+      "package_version": "2026.10.25",
+      "reason": "Mutation event read options add opt-in authoritative verification; event pages now require explicit integrity and optionally report verified stream count. Existing reads default to unverified and existing cursors remain valid."
     }
   ],
   "entrypoints": {
@@ -11184,7 +11192,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ListMutationEventsOptions",
-          "signature": "export interface ListMutationEventsOptions { pmRoot?: string; cwd?: string; since?: string; type?: string | readonly string[]; author?: string | readonly string[]; item?: string | readonly string[]; limit?: number; full?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; cursorMode?: \"batch\" | \"row\"; }"
+          "signature": "export interface ListMutationEventsOptions { verify?: boolean; pmRoot?: string; cwd?: string; since?: string; type?: string | readonly string[]; author?: string | readonly string[]; item?: string | readonly string[]; limit?: number; full?: boolean; provenance?: boolean; provenanceSummary?: boolean; harness?: string | readonly string[]; agentInstance?: string | readonly string[]; provenanceFilter?: string | readonly string[]; cursorMode?: \"batch\" | \"row\"; }"
         },
         {
           "classification": "supported",
@@ -11766,7 +11774,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "MutationEventPage",
-          "signature": "export interface MutationEventPage { events: MutationEvent[]; count: number; has_more: boolean; cursor_mode: \"batch\" | \"row\"; next_cursor?: string; source: \"derived_index\" | \"authoritative_history\"; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface MutationEventPage { integrity: \"verified\" | \"unverified\"; verified_streams?: number; events: MutationEvent[]; count: number; has_more: boolean; cursor_mode: \"batch\" | \"row\"; next_cursor?: string; source: \"derived_index\" | \"authoritative_history\"; provenance_summary?: HistoryProvenanceSummary; }"
         },
         {
           "classification": "supported",
@@ -36929,6 +36937,7 @@
     "ENOTDIR",
     "error_code_mismatch",
     "event_cursor_query_mismatch",
+    "event_history_integrity_failed",
     "event_index_unavailable",
     "exit_code_mismatch",
     "extension_command_activation_failed",

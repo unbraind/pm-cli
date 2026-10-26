@@ -1637,6 +1637,7 @@ export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
 
 /** Public contract for mutation event stream flags shared by SDK and CLI consumers. */
 export const EVENTS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--verify" },
   { flag: "--since" },
   { flag: "--type", repeatable: true },
   { flag: "--author", repeatable: true },

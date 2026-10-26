@@ -344,6 +344,7 @@ const RAW_TOOLS: ToolDefinition[] = [
     description:
       "Read a bounded, cursor-resumable page of committed mutation events across item history streams. Batch cursors are the token-efficient default; pass cursorMode=row for per-event checkpoints.",
     inputSchema: objectSchema({
+      verify: { type: "boolean", description: "Verify complete selected authoritative history chains." },
       since: {
         type: "string",
         description: "Durable event cursor or ISO timestamp lower bound.",

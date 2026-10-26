@@ -103,7 +103,8 @@ export function runRuntimeEventsAction(
         ? undefined
         : parseRuntimeInteger(input.limit, "limit"),
     full: input.full === true,
-    cursorMode,
+    ...(input.verify === true ? { verify: true } : {}),
+    ...(cursorMode === undefined ? {} : { cursorMode }),
     ...(input.provenance === undefined
       ? {}
       : { provenance: input.provenance === true }),

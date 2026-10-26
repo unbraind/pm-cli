@@ -741,7 +741,7 @@ describe("history mutation event index", () => {
     });
   });
 
-  it("binds rebuilt stream sizes to the same pre-read authoritative snapshot", async () => {
+  it("binds rebuilt stream content and sizes to exactly the authoritative bytes indexed", async () => {
     await withTempPmPath(async (context) => {
       const historyPath = path.join(
         context.pmPath,
@@ -781,10 +781,8 @@ describe("history mutation event index", () => {
         .prepare("SELECT byte_size FROM streams WHERE stream_id = ?")
         .get("pm-concurrent") as { byte_size: number };
       database.close();
-      expect(indexedStream.byte_size).toBe(Buffer.byteLength(firstLine));
-      expect((await fs.stat(historyPath)).size).toBeGreaterThan(
-        indexedStream.byte_size,
-      );
+      expect(indexedStream.byte_size).toBe(Buffer.byteLength(`${firstLine}${JSON.stringify(second)}\n`));
+      expect((await fs.stat(historyPath)).size).toBe(indexedStream.byte_size);
       await expect(
         readLatestSubstantiveHistoryEvents(context.pmPath, ["pm-concurrent"]),
       ).resolves.toMatchObject({

@@ -91,11 +91,16 @@ create/copy duplicate-governance probe. Minimal/default governance keeps the
 probe off and performs no query on the create path; advisory/strict modes reuse
 one dependency-light SDK scorer with the package-owned dedupe audit. Mutation
 history events use a separate rebuildable ordered SQLite projection so
-`pm events --since <cursor>` catch-up cost follows new history rows instead of
-workspace size. Its v5 schema also indexes the declared substantive-versus-
-maintenance event class, allowing context recency to fetch only the latest
-substantive row per requested stream instead of folding complete histories on
-each read. See [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
+`pm events --since <cursor>` retrieves only matching rows from the index.
+As required by [pm-gh1593](../.agents/pm/issues/pm-gh1593.toon), cache validation
+hashes the complete authoritative bytes of selected streams on every read;
+its cost therefore grows with selected history size. An `--item` filter bounds
+that source population. Opt-in `--verify` additionally replays each selected
+chain, before filtering or pagination. These checks detect same-length rewrites
+without trusting timestamps or a last-record hash. The version-7 schema retains
+substantive-versus-maintenance indexing, so context recency still retrieves only
+the latest substantive row per requested stream after content validation.
+See [SDK Context Coordination](SDK_CONTEXT_COORDINATION.md).
 
 SDK hosts that commit authoritative item documents outside the stock mutation
 commands use `acquireItemMetadataDerivedIndexLock` and

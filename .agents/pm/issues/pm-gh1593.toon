@@ -2,23 +2,80 @@ id: pm-gh1593
 title: "GH-1593: verify authoritative history integrity in SDK mutation-event reads"
 description: "## Observed\n\n`listMutationEvents` (and other reads served from the runtime history-event index) keep returning events from the cache after the authoritative history file was modified, as long as the file length is unchanged. Nothing in the result tells the caller the cache and the source disagree.\n\nMinimal reproduction on `@unbrained/pm-cli` **2026.10.25** (fresh install in a temp project, non-git tracker):\n\n1. `pm init`, then create one item.\n2. Prime the index: `listMutationEvents({ full: true })` through the SDK.\n3. In `.agents/pm/history/<id>.jsonl`, flip one hex character of a `record_hash` without changing the file length.\n4. Call `listMutationEvents({ full: true })` again, both in the same process and after a restart.\n\n**Result:** the cached chain is returned and verifies. `verifyHistoryEntries` on the authoritative file fails. The read response carries no integrity or completeness receipt that would reveal the disagreement.\n\n## Impact\n\nPackages that recover or act on mutation events (notification outboxes, sync cursors, closeout bots) read corrupted or tampered history as healthy unless they re-verify the raw files themselves. Measured in the pm fleet on 2026-10-25: three packages (pm-slack, pm-rlm, pm-todos) had to add their own raw `verifyHistoryEntries` pass after adopting the SDK event API. A review found that pm-slack queued notifications with `failed: 0` for a corrupted history.\n\n## Expected\n\n- **Cache validity:** keyed by content, not just length or mtime. For example, store a digest of each history file (or of its last record hash) and compare it before serving; a cheap prefix/last-record check is enough to catch rewritten records.\n- **Integrity receipt:** event reads return a receipt such as `integrity: \"verified\" | \"cache_unverified\" | \"mismatch\"`. Callers that act on events can then require `verified`, or ask the SDK to verify the affected items' authoritative chains.\n- **Strict option:** a documented `verify: true` option for event reads that verifies the authoritative chain of every returned item, so packages stop re-implementing it.\n\nRelated: #1485 (index lock contention), #1585 (side effects of refused mutations).\n"
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "gh:1593",history,integrity,sdk
 created_at: "2026-10-25T22:30:37.097Z"
-updated_at: "2026-10-25T23:02:07.547Z"
+updated_at: "2026-10-26T01:39:46.166Z"
+closed_at: "2026-10-26T01:39:45.546Z"
+completed_at: "2026-10-26T01:39:45.546Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Same-length history rewrites invalidate cached event results; SDK event readers expose explicit integrity semantics and a strict authoritative-chain verification option; Existing non-Git connector consumers can use the public contract without raw-path verification; Positive and corrupted-history controls cover process-local and restarted index reads; Cache verification covers the complete authoritative stream and detects same-length non-tail record edits even when the final record and hash remain unchanged
 parent: pm-o2kc
 risk: high
 confidence: 85
-expected_result: Event consumers can require authoritative verified history with explicit integrity receipts and content-sensitive cache validity.
-actual_result: Reporter demonstrates a same-length record_hash rewrite remains hidden by the history-event index on2026.10.25. Implementation is queued.
+resolution: "Bind event-index rows and append bases to complete authoritative stream digests. Add strict SDK, CLI and MCP verification with explicit integrity receipts; preserve exact sealed entry values and isolate returned copies. Update generated contracts, SDK surface, docs and native corruption regressions."
+expected_result: Same-length non-tail rewrites invalidate cached event results; strict reads verify complete selected chains before filtering/pagination; non-Git consumers can require verified receipts without raw-path workarounds.
+actual_result: "Pre-fix controls failed on unchanged main3ba042b3d and pass after implementation, including warm/restarted SQLite and raw fallback reads, filtered corruption, sealed offset timestamps, CLI/MCP and disappearing-source controls. Complete suite and exact100/100/100/100 coverage, static gates, typecheck, linked tests and packed consumers pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-7vr9,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
   pm-up22,related,"2026-10-25T22:30:37.097Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-25T22:30:37.097Z","harness:codex","Duplicate check: complete strict3117-item all-status corpus without omissions; request-specific history/index/tampering search and full live pm-up22, pm-7vr9 and pm-o2kc reads. Existing drift-scan cache and history verification owners are delivered; no event-index integrity owner exists. Original GH1593 report retained verbatim. Intake only, open and unclaimed."
   "2026-10-25T23:02:06.817Z","harness:codex","Review clarification: the retained GitHub report is source evidence, not a prescribed cache algorithm. A last-record hash or partial prefix check alone cannot detect arbitrary same-length edits to earlier records. Cache validity must cover the complete authoritative history content through a full-file content digest or authoritative chain verification. Strict reads must verify every affected authoritative chain. Include a negative control that changes an earlier record without altering file length or the final record/hash, in both a warm process and after restart. Preserve the original report wording and keep implementation queued and unclaimed."
+  "2026-10-25T23:41:18.600Z","harness:codex","Implementation scope: content-sensitive authoritative stream validation for event-index reads plus explicit SDK verification receipts, bundled with isolated linked-test receipt verification under the related integrity work. Complete strict all-status census3118 read without omissions; no open PRs or security/dependency/secret alerts. Existing closed history repair and index-contention work remains delivered."
+  "2026-10-25T23:57:39.770Z","harness:codex","Pre-fix regression proof executed in an independent temporary worktree at unchanged main3ba042b3d with isolated PM roots: the new history-event controls fail on stale same-length non-tail content and absent authoritative verification contracts. Related linked receipt controls also fail without source-index binding. Current focused suite passes48 cases; existing concurrent-writer/read snapshots remain nonblocking. Exact sealed timestamp preservation and caller-copy isolation were added before full coverage. Full-source coverage and public contract snapshots are being verified; no final gate result is claimed yet."
+  "2026-10-26T00:22:46.033Z","harness:codex","First full verification ran11433 tests over1241seconds:861 files passed;13 assertions in7 files exposed contract/layout or environment issues rather than the new integrity behavior. Fixed exact flag allowance and shortened help within its407-token ceiling, preserved absent adapter options, and moved new tests below the unchanged120-file directory cap. Packed continuation resolves the host bundled npm through a command-local NODE_PATH; no global host configuration changed. All89 targeted regressions now pass, including actual MCP verification and the previously timed-out calibration entrypoint at15.5seconds. Full exact coverage is rerun with failure reporting enabled and without competing heavy lint/typecheck processes."
+  "2026-10-26T01:12:49.014Z","harness:codex","Validation: complete quality:static pipeline passed, including exact contracts, dependency/advisory checks, CodeFactor complexity, SDK budgets, tracker assurances and mutation testing. Typecheck passed. Native controls cover source and snapshot authority, staged and custom roots, inherited Git selectors, missing/corrupted proof, sealed timestamps and same-length earlier history changes. Final canonical coverage and packed delivery checks follow before closure."
+  "2026-10-26T01:39:44.245Z","harness:codex","Final complete source coverage passed: statements71014/71014, branches54642/54642, functions14608/14608, lines67183/67183; zero uncovered counts and no threshold/denominator changes. Full static pipeline, TypeScript targets, linked regressions and9 packed npx/bunx workflows passed. Published2026.10.25 consumer acceptance passed npm and Bun installed-agent sessions plus CLI/MCP transports. Latest pm-changelog is2026.10.25; package-owned regeneration follows closure. Required Sentry/telemetry gate previously passed with0 unresolved issues, fresh pm.command span metadata, exact settled command pairing and drained broker; historical release/nightly limitations remain with canonical owners."
+notes[1]{created_at,author,text}:
+  "2026-10-26T00:06:30.630Z","harness:codex","Integrity cost boundary: default cache freshness hashes complete selected authoritative streams. Explicit item filters bound that population; strict verification additionally replays each selected stream before all other filters. Full-history raw timestamps remain sealed values in verified entries while ordering uses normalized timestamps. Performance documentation was corrected rather than claiming O(delta) source validation."
+learnings[1]{created_at,author,text}:
+  "2026-10-26T01:24:47.928Z","harness:codex","A history projection cannot authenticate earlier records from byte length or the final record hash. Bind rows to a digest of the same complete raw stream, explicitly distinguish unverified reads, and verify selected authoritative chains before filters or pagination can hide corruption."
+files[15]{path,scope}:
+  sdk/public-surface.json,project
+  src/cli/register-list-query.ts,project
+  src/core/history/event-index.ts,project
+  src/mcp/tool-definitions.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/mutation-events.ts,project
+  src/sdk/runtime-extended-actions.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/cli/register-list-query.spec.ts,project
+  tests/unit/core/history/event-index.spec.ts,project
+  tests/unit/sdk/history/mutation-event-integrity.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts,project,300,"harness:codex","2026-10-26T01:12:48.456Z",local_mutation,fix/sdk-history-integrity
+test_runs[1]:
+  - run_id: test-local-mvokbw4i-4ullsb
+    kind: test
+    status: passed
+    started_at: "2026-10-26T01:13:03.594Z"
+    finished_at: "2026-10-26T01:13:17.922Z"
+    recorded_at: "2026-10-26T01:13:17.922Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts,schema,schema,source,local_source_ref
+docs[5]{path,scope}:
+  CHANGELOG.md,project
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  docs/PERFORMANCE.md,project
+  docs/SDK_CONTEXT_COORDINATION.md,project
+close_reason: Implemented and validated authoritative mutation-event integrity for combined reviewed delivery
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: mutation-event-authoritative-integrity
+  negative_control: "Run new history/mutation-event-integrity.spec.ts against unchanged main3ba042b3d in an isolated worktree: stale same-length non-tail record_hash data is served and verification/raw timestamp controls fail. Identical post-fix controls pass."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/history/mutation-event-integrity.spec.ts tests/unit/sdk/mutation-events.spec.ts tests/unit/core/history/event-index.spec.ts tests/unit/core/history/event-index-snapshots.spec.ts tests/unit/cli/register-list-query.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI,CodeQL,Security and Script Quality
+  owner: pm-gh1593
 body: ""

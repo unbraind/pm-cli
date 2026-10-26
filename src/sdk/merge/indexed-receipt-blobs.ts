@@ -70,16 +70,16 @@ function decodeBlobs(output: Buffer, entries: BlobEntry[], blobs: Map<string, st
 }
 
 /** Resolve physical roots, list the index once, and batch only requested bounded blobs. */
-export async function readIndexedReceiptBlobs(cwd: string, directory: string, fileNames: string[], maximumBytes: number): Promise<Map<string, string>> {
+export async function readIndexedReceiptBlobs(cwd: string, directory: string, fileNames: string[], maximumBytes: number, linkedDirectory?: string): Promise<Map<string, string>> {
   const env = gitWorkspaceEnvironment();
   // Replacement refs are clone-local; authenticate the stored object bytes.
   env.GIT_NO_REPLACE_OBJECTS = "1";
-  if (process.env.GIT_INDEX_FILE !== undefined) env.GIT_INDEX_FILE = path.resolve(process.env.GIT_INDEX_FILE);
+  if (linkedDirectory === undefined && process.env.GIT_INDEX_FILE !== undefined) env.GIT_INDEX_FILE = path.resolve(process.env.GIT_INDEX_FILE);
   const options: GitOptions = { cwd, env, windowsHide: true, timeout: 10_000, maxBuffer: maximumBytes + 256 };
   try {
     const root = (await execFileAsync("git", ["rev-parse", "--show-toplevel"], { ...options, encoding: "utf8" })).stdout.trim();
-    const [workspace, physicalDirectory] = await Promise.all([realpath(root), realpath(directory)]);
-    const relative = path.relative(workspace, physicalDirectory).replaceAll("\\", "/");
+    const [workspace, physicalDirectory] = await Promise.all([realpath(root), realpath(linkedDirectory ?? directory)]);
+    const relative = path.relative(workspace, linkedDirectory === undefined ? physicalDirectory : path.resolve(linkedDirectory)).replaceAll("\\", "/");
     if (isPathOutsideRoot(relative)) return new Map();
     options.cwd = workspace;
     const names = new Map(fileNames.map((file) => [`${relative}/${file}`, file]));

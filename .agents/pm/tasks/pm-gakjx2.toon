@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-19T13:25:37.256Z"
-updated_at: "2026-10-19T13:37:06.598Z"
+updated_at: "2026-10-25T23:56:10.831Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Capture exact provider error and analyzed source identities and compare with the real repository lint contract; Verify a supported integration against representative TypeScript and JavaScript negative controls before claiming equivalent coverage; Preserve required ESLint10 native DeepScan and CodeFactor gates without error suppression synthetic statuses or reduced source membership; Document any provider-version limitation separately from zero native findings and keep remediation auditable
@@ -16,7 +16,8 @@ confidence: high
 expected_result: "Hosted analyzer evidence distinguishes native DeepScan from its auxiliary ESLint execution, and the intended source coverage is either genuinely verified or explicitly bounded while required ESLint10 remains enforced."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-39cqqx,discovered_from,"2026-10-19T13:25:37.256Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-19T13:25:37.256Z","harness:codex","Duplicate check: strict full all-status3001-item intake, fresh DeepScan ESLint and auxiliary ESLint no files searches, live open/in-progress lists, and full pm-39cqqx metadata. The completed immutable-tree analyzer gate owns provenance rather than this legacy auxiliary-engine error. No exact open owner was found. Source is the visible DeepScan dashboard for main54a583c at2026-10-19. Intake only, open and unclaimed, with no provider setting changed."
   "2026-10-19T13:37:06.597Z","harness:codex","Captured public dashboard: https://deepscan.io/dashboard/#view=project&tid=30234&pid=32092&bid=1043829 . Main54a583c is nativeGood with0 findings and1678 analyzed files. The expanded auxiliary banner reports ESLint8.15.0 and No files matching the pattern dot were found. This observation is distinct from the completed immutable-tree provenance gate and from the required repository ESLint10 check; no provider configuration or security control was changed."
+  "2026-10-25T23:56:10.831Z","harness:codex","Live Chrome verification on main3ba042b3d: DeepScan GOOD, zero high/medium/low findings, with the existing auxiliary ESLint failure still displayed. CodeFactor main at the same SHA is gradeA with no new commit issues; two generated plugin/template duplication groups remain represented by their existing GitHub reports. Read-only intake only; no claim or analyzer-policy change in this integrity delivery."
 body: ""

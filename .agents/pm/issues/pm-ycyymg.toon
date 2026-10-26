@@ -2,29 +2,98 @@ id: pm-ycyymg
 title: Preserve Git-backed merge-receipt evidence in isolated linked-test contexts
 description: "Direct source tracker-context-quality passes, while the same static pipeline under an isolated tracker context blocks health-integrity-zero. Full health identifies merge_receipt_history_reference_missing for pm-1tns7o history line31 and receipt9c9246d9-2411-4a7c-8303-8e887f310dcf, which exists as a tracked source receipt. Both source-workspace and snapshot-workspace linked profiles reproduce the missing-reference verdict. Trace how isolated tracker roots retain authoritative receipt and Git-index identity without consulting unrelated workspaces or weakening evidence verification."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-25T21:01:02.654Z"
-updated_at: "2026-10-25T21:28:10.957Z"
+updated_at: "2026-10-26T01:39:47.584Z"
+closed_at: "2026-10-26T01:39:46.894Z"
+completed_at: "2026-10-26T01:39:46.894Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce with an isolated real-Git fixture containing a durable receipt referenced by item history; Preserve supported source and snapshot workspace identity at receipt verification; Keep missing and corrupted receipt controls fail-closed; Prove source and isolated tracker bytes remain unchanged
 parent: pm-9rgaal
 risk: medium
 confidence: high
-expected_result: "Source and isolated linked health agree on valid Git-backed receipt references; missing, malformed or unrelated proofs still refuse, and source bytes remain untouched."
-actual_result: Current source preflight passes all47 assertions. Linked tracker and workspace-snapshot diagnostics each report one missing receipt reference for an existing tracked source receipt; root cause is not yet established.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Bind only the active isolated tracker to explicit read-only source identity. Seed independent snapshot Git indexes from HEAD plus exact bounded stage-zero source receipt blobs, including staged-only and custom-root evidence, clearing unrelated inherited receipt authority and ignoring ambient Git selectors."
+expected_result: "Source and snapshot linked contexts recognize valid durable Git-backed receipts while missing, corrupted, divergent, conflicting or unrelated evidence fails closed; original tracker, history and Git index remain unchanged."
+actual_result: "Native37-test receipt suite passes across7 files, including real linked source/snapshot commands, staged/custom tracker roots and Git/IO faults. The original real-project snapshot has health-integrity=0 and history-drift=0. Its separate223-versus195 missing-linked-path finding and unchanged broad reproduction are retained under the existing linked-file hygiene owner. Exact full source coverage100/100/100/100 and complete static/type/packed gates pass."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-954h0o,related,"2026-10-25T21:01:02.654Z","harness:codex","cli:create:dep",detected
   pm-1tns7o,related,"2026-10-25T21:28:04.328Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+  pm-j8z6,related,"2026-10-26T01:20:21.249Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-10-25T21:01:02.654Z","harness:codex","Duplicate check: request-specific all-status linked tracker merge receipt search and full live pm-954h0o and pm-1tns7o lineage plus refreshed strict3116-item corpus and open/in_progress inventories. Existing source-VCS preservation is closed and remains delivered; this is a distinct receipt verification delta. Intake only and unclaimed."
-files[4]{path,scope}:
+  "2026-10-25T23:41:19.347Z","harness:codex","Implementation scope: reproduce isolated source/snapshot merge-receipt verification through real Git and preserve durable receipt authority without changing tracker bytes. Bundled with event-read integrity in one reviewed delivery. Only these two implementation items are claimed."
+  "2026-10-25T23:57:41.733Z","harness:codex","Real-Git regression passes source and snapshot modes for valid, missing-index and malformed receipts. Child assertions compare copied receipt/history bytes before and after health. Independent same-process controls refuse missing, mismatched or unrelated source coordinates and ignore inherited decoy GIT_DIR/GIT_INDEX_FILE. Snapshot Git objects/index are independent; committed index initialization retains durable authority, including unborn repository handling. Unchanged main fails the positive source-index proof. No source tracker/index/history mutation is performed by verification."
+  "2026-10-26T00:40:11.542Z","harness:codex","Additional isolated real-Git acceptance exposed a remaining source/snapshot parity gap before closure: a valid durable receipt staged after the source HEAD is trusted in source mode (1 validated indexed id) but absent from the independent snapshot index (0), because read-tree HEAD preserves only committed entries. The implementation will copy only bounded source-index receipt blobs into the independent snapshot namespace, retaining exact source index evidence for staged and custom tracker roots while preserving missing, conflict-stage, divergent and unrelated proof refusals. No source index or tracker writes are required. This item remains actively claimed; the documented staged-only limitation will be removed with the completed implementation."
+  "2026-10-26T00:51:56.011Z","harness:codex","Completed staged/custom-root authority transfer: only bounded stage-zero source-index receipt blobs are written to the independent snapshot object store/index, with the selected tracker rebased into its bound namespace. Inherited default-namespace authority is cleared first. Native Git controls now cover both default and custom tracker roots, staged-only receipts absent from HEAD, untracked copies, conflict stages, divergent working values, and a same-id stale receipt in another committed namespace. Source index/history/receipt bytes remain unchanged. IO controls reject permission faults, missing/broken child input and malformed object identities. Related66-case and63-case focused suites pass; full regression previously passed11432 tests with four remaining branch-coverage edges being completed before the final exact gate."
+  "2026-10-26T01:12:51.319Z","harness:codex","Validation: complete quality:static pipeline passed, including exact contracts, dependency/advisory checks, CodeFactor complexity, SDK budgets, tracker assurances and mutation testing. Typecheck passed. Native controls cover source and snapshot authority, staged and custom roots, inherited Git selectors, missing/corrupted proof, sealed timestamps and same-length earlier history changes. Final canonical coverage and packed delivery checks follow before closure."
+  "2026-10-26T01:20:20.550Z","harness:codex","Live original snapshot reproduction after exact clone-local command acknowledgment: all ten health assertions pass, including health-integrity-zero=0 and health-history-drift-zero=0. The sole remaining failure is validate-missing-linked-paths=223 against the unchanged source baseline ceiling195. Snapshot excludes the .agents namespace; retained skill/plugin links are a separate path-validation dimension. Preserve this full gate on the existing linked-file hygiene owner; the receipt-specific real-Git suite passes37 tests across7 files. No threshold, history provenance, or project trust policy was changed."
+  "2026-10-26T01:39:44.794Z","harness:codex","Final complete source coverage passed: statements71014/71014, branches54642/54642, functions14608/14608, lines67183/67183; zero uncovered counts and no threshold/denominator changes. Full static pipeline, TypeScript targets, linked regressions and9 packed npx/bunx workflows passed. Published2026.10.25 consumer acceptance passed npm and Bun installed-agent sessions plus CLI/MCP transports. Latest pm-changelog is2026.10.25; package-owned regeneration follows closure. Required Sentry/telemetry gate previously passed with0 unresolved issues, fresh pm.command span metadata, exact settled command pairing and drained broker; historical release/nightly limitations remain with canonical owners."
+learnings[1]{created_at,author,text}:
+  "2026-10-26T01:24:49.550Z","harness:codex","A no-checkout Git clone has no index, and read-tree HEAD omits legitimate staged-only evidence. Snapshot receipt authority must preserve exact bounded stage-zero source-index blobs in its independent object store and selected logical namespace; staging copied working-tree files would manufacture proof."
+files[13]{path,scope}:
   src/sdk/governance/health.ts,project
   src/sdk/merge/indexed-receipt-blobs.ts,project
+  src/sdk/merge/receipt-file-boundary.ts,project
   src/sdk/merge/receipts.ts,project
   src/sdk/test/execution.ts,project
-tests[1]{command,scope,timeout_seconds,pm_context_mode,workspace_context_mode,provenance{author,created_at,source_kind,source_ref},note}:
-  node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded,project,300,tracker,snapshot,"harness:codex","2026-10-25T21:03:07.092Z",local_mutation,feat/sdk-transaction-safety,"Current reproduction: isolated health lacks one authoritative Git-backed receipt reference while the source preflight passes"
+  src/sdk/test/receipt-index-snapshot.ts,project
+  src/sdk/test/workspace-snapshot.ts,project
+  tests/integration/test-execution/linked-test-receipt-integrity.integration.spec.ts,project
+  tests/unit/sdk/merge/linked-receipt-context.spec.ts,project
+  tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts,project
+  tests/unit/sdk/test/receipt-index-snapshot.spec.ts,project
+  tests/unit/sdk/test/workspace-snapshot-git-faults.spec.ts,project
+  tests/unit/sdk/test/workspace-snapshot.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/linked-receipt-context.spec.ts tests/integration/test-execution/linked-test-receipt-integrity.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts tests/unit/sdk/test/workspace-snapshot-git-faults.spec.ts tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge-receipts.spec.ts,project,300,"harness:codex","2026-10-26T01:12:50.676Z",local_mutation,fix/sdk-history-integrity
+test_runs[3]:
+  - run_id: test-local-mvokdu67-jp53ye
+    kind: test
+    status: failed
+    started_at: "2026-10-26T01:13:18.581Z"
+    finished_at: "2026-10-26T01:14:48.703Z"
+    recorded_at: "2026-10-26T01:14:48.703Z"
+    passed: 1
+    failed: 1
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded,tracker,tracker,snapshot,foreign_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/linked-receipt-context.spec.ts tests/integration/test-execution/linked-test-receipt-integrity.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts tests/unit/sdk/test/workspace-snapshot-git-faults.spec.ts tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge-receipts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvokh3yt-ueshgh
+    kind: test
+    status: failed
+    started_at: "2026-10-26T01:15:09.052Z"
+    finished_at: "2026-10-26T01:17:21.365Z"
+    recorded_at: "2026-10-26T01:17:21.365Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node dist/cli.js assurance run tracker-context-quality --trigger ci --dry-run --json --output-budget unbounded,tracker,tracker,snapshot,acknowledged
+  - run_id: test-local-mvokn8ts-d90kxo
+    kind: test
+    status: passed
+    started_at: "2026-10-26T01:21:52.356Z"
+    finished_at: "2026-10-26T01:22:07.600Z"
+    recorded_at: "2026-10-26T01:22:07.600Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/merge/linked-receipt-context.spec.ts tests/integration/test-execution/linked-test-receipt-integrity.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts tests/unit/sdk/test/workspace-snapshot-git-faults.spec.ts tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge-receipts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+close_reason: Implemented and validated isolated linked-test receipt authority for combined reviewed delivery
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-test-durable-receipt-authority
+  negative_control: "Run linked-receipt-context.spec.ts against unchanged main3ba042b3d in an isolated worktree: valid copied Git-backed receipts have no durable authority. Post-fix source/snapshot positives pass while missing, corrupted, unrelated-source and inherited decoy controls refuse."
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/linked-receipt-context.spec.ts tests/integration/test-execution/linked-test-receipt-integrity.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts tests/unit/sdk/test/workspace-snapshot-git-faults.spec.ts tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge-receipts.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: CI,CodeQL,Security and Script Quality
+  owner: pm-ycyymg
 body: ""

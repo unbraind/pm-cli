@@ -750,6 +750,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
     },
   },
   events: {
+    verify: { type: "boolean" },
     since: { type: "string", minLength: 1 },
     type: {
       anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
@@ -2293,6 +2294,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
     },
   },
   events: {
+    verify: { description: "Verify complete selected authoritative chains before filtering and pagination." },
     since: {
       description:
         "Durable event cursor returned as next_cursor, or an inclusive event timestamp.",

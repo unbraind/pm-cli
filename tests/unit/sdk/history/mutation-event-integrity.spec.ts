@@ -1,0 +1,106 @@
+/** Prove event cache freshness and authoritative proof across processes and optional SQLite. */
+import fs from "node:fs/promises";
+import path from "node:path";
+import { describe, expect, it, vi } from "vitest";
+import { listMutationEvents, subscribeMutationEventBatches } from "../../../../src/sdk/mutation-events.js";
+import { _testOnly, queryHistoryEventIndex } from "../../../../src/core/history/event-index.js";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { createTestItemId } from "../../../helpers/itemFactory.js";
+import * as historyRead from "../../../../src/core/history/read.js";
+import { sealHistoryRecord } from "../../../../src/core/history/history.js";
+import { verifyHistoryEntries } from "../../../../src/sdk/history-read.js";
+import type { HistoryEntry } from "../../../../src/types/index.js";
+
+describe("authoritative mutation event integrity", () => {
+  it.each([true, false])("detects earlier same-length rewrites with SQLite=%s, warm and restarted readers", async (sqlite) => {
+    const restore = sqlite ? () => {} : _testOnly.setDatabaseSync(null);
+    try {
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: "Event integrity", createMode: "progressive" });
+        context.runCli(["comments", id, "Second record"]);
+        const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+        const raw = await fs.readFile(historyPath, "utf8");
+        const lines = raw.trimEnd().split("\n");
+        const first = JSON.parse(lines[0]) as HistoryEntry;
+        expect(first.record_hash).toBeDefined();
+        const prime = await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true });
+        const oldHash = first.record_hash!;
+        const changedHash = `${oldHash[0] === "a" ? "b" : "a"}${oldHash.slice(1)}`;
+        const modified = raw.replace(oldHash, changedHash);
+        expect(Buffer.byteLength(modified)).toBe(Buffer.byteLength(raw));
+        expect(modified.trimEnd().split("\n").at(-1)).toBe(lines.at(-1));
+        const stats = await fs.stat(historyPath);
+        await fs.writeFile(historyPath, modified);
+        await fs.utimes(historyPath, stats.atime, stats.mtime);
+        expect((await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true })).events[0].entry!.record_hash).toBe(changedHash);
+        expect(prime.integrity).toBe("unverified");
+        await expect(listMutationEvents({ pmRoot: context.pmPath, item: id, verify: true, type: "absent", limit: 0 })).rejects.toMatchObject({ context: { code: "event_history_integrity_failed" } });
+        const restarted = context.runCli(["events", "--item", id, "--full", "--json"], { expectJson: true });
+        expect(restarted.code).toBe(0);
+        expect(restarted.json).toMatchObject({ integrity: "unverified" });
+        expect((restarted.json as { events: { entry: HistoryEntry }[] }).events[0].entry.record_hash).toBe(changedHash);
+        const strict = context.runCli(["events", "--item", id, "--verify", "--json"], { expectJson: true });
+        expect(strict.code).not.toBe(0);
+        expect(`${strict.stdout}\n${strict.stderr}`).toContain("event_history_integrity_failed");
+        expect(await fs.readFile(historyPath, "utf8")).toBe(modified);
+      });
+    } finally { restore(); }
+  });
+
+  it("retains exact sealed timestamps and isolates returned entries from the authoritative cache", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Recorded timestamp", createMode: "progressive" });
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const entry = JSON.parse((await fs.readFile(historyPath, "utf8")).trim()) as HistoryEntry;
+      entry.ts = entry.ts.replace("Z", "+00:00");
+      const sealed = sealHistoryRecord(entry);
+      await fs.writeFile(historyPath, `${JSON.stringify(sealed)}\n`);
+      const page = await listMutationEvents({ pmRoot: context.pmPath, item: id, verify: true, full: true });
+      expect(page.events[0].entry).toEqual(sealed);
+      expect(verifyHistoryEntries(page.events.map((row) => row.entry!)).ok).toBe(true);
+      page.events[0].entry!.author = "consumer changed its own copy";
+      const restore = _testOnly.setDatabaseSync(null);
+      try {
+        expect((await listMutationEvents({ pmRoot: context.pmPath, item: id, full: true })).events[0].entry!.author).toBe(sealed.author);
+      } finally { restore(); }
+      expect(await listMutationEvents({ pmRoot: context.pmPath, item: "pm-no-stream", verify: true })).toMatchObject({ count: 0, verified_streams: 0, integrity: "verified" });
+    });
+  });
+
+  it("returns no actions when a selected stream disappears at its authoritative read boundary", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Disappearing stream", createMode: "progressive" });
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const original = historyRead.readHistorySnapshot;
+      const reading = vi.spyOn(historyRead, "readHistorySnapshot").mockImplementation(async (...args) => {
+        if (String(args[0]) === historyPath) await fs.rm(historyPath, { force: true });
+        return original(...args);
+      });
+      try {
+        expect(await listMutationEvents({ pmRoot: context.pmPath, item: id, verify: true })).toMatchObject({ count: 0, integrity: "verified" });
+      } finally { reading.mockRestore(); }
+    });
+  });
+
+  it("verifies selected complete streams and carries proof on subscription batches and MCP", async () => {
+    await withTempPmPath(async (context) => {
+      const good = createTestItemId(context, { title: "Valid selected stream", createMode: "progressive" });
+      await fs.writeFile(path.join(context.pmPath, "history", "pm-unrelated.jsonl"), "invalid unrelated JSON\n");
+      const page = await listMutationEvents({ pmRoot: context.pmPath, item: good, verify: true });
+      expect(page).toMatchObject({ integrity: "verified", verified_streams: 1, count: 1 });
+      expect(await queryHistoryEventIndex(context.pmPath, { verify: true, stream_ids: [good], limit: 1 })).toMatchObject({ verified_streams: 1 });
+      const signal = new AbortController();
+      for await (const batch of subscribeMutationEventBatches({ pmRoot: context.pmPath, item: good, verify: true, signal: signal.signal })) {
+        expect(batch.integrity).toBe("verified");
+        signal.abort();
+      }
+      const cli = context.runCli(["events", "--item", good, "--verify"], { expectJson: false });
+      expect(cli.code).toBe(0);
+      expect(cli.stdout).toContain('"integrity":"verified"');
+      const { handleRequest } = await import("../../../../src/mcp/server.js");
+      expect(await handleRequest({ id: 1, method: "tools/call", params: { name: "pm_events", arguments: { path: context.pmPath, item: good, verify: true } } })).toMatchObject({ structuredContent: { result: { integrity: "verified", verified_streams: 1 } } });
+      const { runRuntimeEventsAction } = await import("../../../../src/sdk/runtime-extended-actions.js");
+      expect(await runRuntimeEventsAction({ action: "events", args: { path: context.pmPath, item: good, verify: true }, options: {}, global: { path: context.pmPath } })).toMatchObject({ integrity: "verified", verified_streams: 1 });
+    });
+  });
+});

@@ -13,6 +13,8 @@
 ### Fixed
 
 - GH-1581: Report successful context snapshot refresh without recovery warnings ([pm-gh1581](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1581.toon))
+- Preserve Git-backed merge-receipt evidence in isolated linked-test contexts ([pm-ycyymg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycyymg.toon))
+- GH-1593: verify authoritative history integrity in SDK mutation-event reads ([pm-gh1593](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1593.toon))
 - GH-1591: guarded terminal updates conflict with their own scalar write and misreport compensation ([pm-pllp78](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pllp78.toon))
 - Session reference receipts advertise unsupported get --brief recovery ([pm-session-reference-recovery](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-session-reference-recovery.toon))
 - GH-1567: fit whole SDK envelopes using the selected serializer and token budget ([pm-gh1567](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1567.toon))

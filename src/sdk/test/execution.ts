@@ -2929,6 +2929,8 @@ export async function runLinkedTests(
       await seedLinkedTestWorkspaceSnapshot(
         sourceWorkspaceRoot,
         layout.workspaceSnapshotRoot,
+        sourceRoots?.projectPmRoot,
+        includeTrackerData,
       );
     }
     const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
