@@ -756,22 +756,21 @@ describe("history mutation event index", () => {
       );
       const firstLine = `${JSON.stringify(first)}\n`;
       await fs.writeFile(historyPath, firstLine);
-      const originalStat = fs.stat.bind(fs);
+      const originalReadFile = fs.readFile.bind(fs);
       let appended = false;
-      const statSpy = vi
-        .spyOn(fs, "stat")
+      const readSpy = vi
+        .spyOn(fs, "readFile")
         .mockImplementation(async (...args) => {
-          const stats = await originalStat(...args);
           if (!appended && String(args[0]) === historyPath) {
             appended = true;
             await fs.appendFile(historyPath, `${JSON.stringify(second)}\n`);
           }
-          return stats;
+          return originalReadFile(...args);
         });
       try {
         await rebuildHistoryEventIndex(context.pmPath);
       } finally {
-        statSpy.mockRestore();
+        readSpy.mockRestore();
       }
 
       const database = new DatabaseSync(
@@ -886,12 +885,12 @@ describe("history mutation event index", () => {
             });
           return originalWrite(...args);
         });
-      const originalStat = fs.stat.bind(fs);
+      const originalReadFile = fs.readFile.bind(fs);
       let concurrentAppend: Promise<void> | undefined;
-      const statSpy = vi
-        .spyOn(fs, "stat")
+      const readSpy = vi
+        .spyOn(fs, "readFile")
         .mockImplementation(async (...args) => {
-          const stats = await originalStat(...args);
+          const raw = await originalReadFile(...args);
           if (
             concurrentAppend === undefined &&
             String(args[0]) === historyPath
@@ -899,13 +898,13 @@ describe("history mutation event index", () => {
             concurrentAppend = appendHistoryEntry(historyPath, second);
             await concurrentAppend;
           }
-          return stats;
+          return raw;
         });
       try {
         expect(await rebuildHistoryEventIndex(context.pmPath)).toBe(false);
         await concurrentAppend;
       } finally {
-        statSpy.mockRestore();
+        readSpy.mockRestore();
         writeSpy.mockRestore();
       }
 

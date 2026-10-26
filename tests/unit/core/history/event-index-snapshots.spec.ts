@@ -265,10 +265,10 @@ describe("history index read snapshots", () => {
       await appendHistoryEntry(newPath, second);
       const entered = Promise.withResolvers<void>();
       const resume = Promise.withResolvers<void>();
-      const originalStat = fs.stat.bind(fs);
+      const originalReadFile = fs.readFile.bind(fs);
       let paused = false;
-      vi.spyOn(fs, "stat").mockImplementation(async (...args) => {
-        const result = await originalStat(...args);
+      vi.spyOn(fs, "readFile").mockImplementation(async (...args) => {
+        const result = await originalReadFile(...args);
         if (String(args[0]) === newPath && !paused) {
           paused = true;
           entered.resolve();

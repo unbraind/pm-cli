@@ -454,10 +454,9 @@ function historyStreamIsSelected(streamId: string, requested: readonly string[] 
 
 /** Reuse parsed rows only after validating every byte; strict reads always replay. */
 async function readChangedHistoryStream(historyPath: string, streamId: string, previous: AuthoritativeHistoryStreamCache | undefined, verify: boolean): Promise<AuthoritativeHistoryStreamCache | undefined> {
-  if (!verify) {
-    const stats = await fs.stat(historyPath);
+  if (!verify && previous !== undefined && previous.byte_size === (await fs.stat(historyPath)).size) {
     const signature = createHash("sha256").update(await fs.readFile(historyPath)).digest("hex");
-    if (previous?.byte_size === stats.size && previous.signature === signature) return undefined;
+    if (previous.signature === signature) return undefined;
   }
   return readIndexableHistoryStream(historyPath, streamId, verify);
 }
