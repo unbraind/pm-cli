@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-07-14T21:35:50.603Z"
-updated_at: "2026-09-08T06:18:37.088Z"
+updated_at: "2026-10-27T14:06:28.118Z"
 closed_at: "2026-07-14T22:11:20.261Z"
 author: maintainer-agent
 estimated_minutes: 90
@@ -22,9 +22,17 @@ dependencies[3]{id,kind,created_at}:
   pm-7rlp,related,"2026-07-14T21:35:50.603Z"
   pm-mi2x,related,"2026-07-14T21:35:50.603Z"
   pm-9rxu,implements,"2026-07-26T17:30:16.062Z"
-comments[2]{created_at,author,text}:
-  "2026-07-14T21:48:49.268Z",maintainer-agent,"PR#564 merged to main 2026-07-14 (merge commit) after review: all 25 checks green including the new 'Run benchmarks (Ubuntu, Node 24)' CodSpeed job (1m54s, 11 benchmarks uploaded in simulation mode). Workflow verified against repo conventions — SHA-pinned actions (CodSpeedHQ/action@f99becdc v4.18.5, checkout v7.0.0, pnpm/action-setup v6, setup-node v6), least-privilege permissions (contents:read + id-token:write for OIDC), timeout-minutes:20, concurrency cancel-in-progress. Bench config isolated from the 100%-coverage correctness suite (separate vitest.bench.config.ts; coverage shards passed on the PR). Awaiting: baseline run on main + a subsequent PR comparison report."
-  "2026-07-26T21:13:37.688Z","harness:codex","PR #753 exact-head CodSpeed evidence (6356953c): simulation comparison reported aggregate -1.23%, with createQueryFingerprint -3.09%, BM25 2k-document construction -1.78%, encodeQueryCursor -1.56%, and decodeQueryCursor +1.58%. The PR changes none of the pagination, cursor, BM25, or benchmark implementations, while the mandatory hosted Run benchmarks job passed in 2m06s and the prior intermediate report varied from -1.07%. Classified as non-causal simulation variance for this SDK/runtime PR; retain the signal for future repeated-baseline analysis under this canonical CodSpeed item, per its existing no-new-item note."
+comments[3]:
+  - created_at: "2026-07-14T21:48:49.268Z"
+    author: maintainer-agent
+    text: "PR#564 merged to main 2026-07-14 (merge commit) after review: all 25 checks green including the new 'Run benchmarks (Ubuntu, Node 24)' CodSpeed job (1m54s, 11 benchmarks uploaded in simulation mode). Workflow verified against repo conventions — SHA-pinned actions (CodSpeedHQ/action@f99becdc v4.18.5, checkout v7.0.0, pnpm/action-setup v6, setup-node v6), least-privilege permissions (contents:read + id-token:write for OIDC), timeout-minutes:20, concurrency cancel-in-progress. Bench config isolated from the 100%-coverage correctness suite (separate vitest.bench.config.ts; coverage shards passed on the PR). Awaiting: baseline run on main + a subsequent PR comparison report."
+  - created_at: "2026-07-26T21:13:37.688Z"
+    author: "harness:codex"
+    text: "PR #753 exact-head CodSpeed evidence (6356953c): simulation comparison reported aggregate -1.23%, with createQueryFingerprint -3.09%, BM25 2k-document construction -1.78%, encodeQueryCursor -1.56%, and decodeQueryCursor +1.58%. The PR changes none of the pagination, cursor, BM25, or benchmark implementations, while the mandatory hosted Run benchmarks job passed in 2m06s and the prior intermediate report varied from -1.07%. Classified as non-causal simulation variance for this SDK/runtime PR; retain the signal for future repeated-baseline analysis under this canonical CodSpeed item, per its existing no-new-item note."
+  - created_at: "2026-10-27T14:05:35.730Z"
+    author: "harness:codex"
+    text: "PR #1608 final-source benchmark observation, not a new adoption defect: the hosted Run benchmarks job passed on ee88e54e929bc2357a76a72182b57d330175b0ac against main 77ff26ad72e141de7c3f56dfddc6ff7951dafab4. The updated CodSpeed comparison reports aggregate -0.3%, createQueryFingerprint -2.12%, encodeQueryCursor +1.55%, and 9 untouched cases. It explicitly warns that base/head used different runner types and that one benchmark is system-call dominated. Exact Git comparison shows no changes to src/sdk/pagination.ts, src/core/shared/serialization.ts, benchmarks/pagination.bench.ts, pnpm-lock.yaml or the CodSpeed workflow. This is an unattributed simulation signal; matched-runner repeated-baseline evidence is needed before attributing it to production code. Preserve this measurement under the existing canonical no-new-item policy; do not weaken checks, acknowledge away the report, introduce paid runners, or claim wall-clock regression/fix. Report: https://github.com/unbraind/pm-cli/pull/1608#issuecomment-6429985955 ; benchmark run: https://github.com/unbraind/pm-cli/actions/runs/40506519318 ."
+    edited_at: "2026-10-27T14:06:28.117Z"
 notes[1]{created_at,author,text}:
   "2026-07-14T22:11:04.618Z",maintainer-agent,"Benchmark wishlist (AC follow-up, extend at fix time — candidates from PR#564 notes + pm-9rxu levers): item parsing (toon decode/encode round-trip), history JSONL replay/verify, relationship-analytics (critical path/blast radius on synthetic graphs from the pm-mi2x generator), context assembly scoring hot path (ContextRelevanceCandidate derivation), BM25 index update (incremental), cursor fingerprint canonicalization at 10k-item envelopes. File future additions as notes here or extend benchmarks/ directly — no new tracking item needed."
 files[4]{path,scope,note}:
