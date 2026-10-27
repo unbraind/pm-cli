@@ -6,20 +6,24 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T02:42:14.362Z"
-updated_at: "2026-10-27T05:08:18.717Z"
-closed_at: "2026-10-27T03:35:45.818Z"
-completed_at: "2026-10-27T03:35:45.818Z"
+updated_at: "2026-10-27T05:55:59.443Z"
+closed_at: "2026-10-27T05:55:58.680Z"
+completed_at: "2026-10-27T05:55:58.680Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: A real POSIX script with a missing interpreter fails as spawn_error while retaining platform exit code and stderr; Installed scripts deliberately emitting matching diagnostics or exiting127 remain assertion failures and commands are never rerun during classification; Lifecycle guidance negative controls explicitly pin the failing adapter revision and replay only the relevant assertion in an isolated tracker
 parent: pm-gh1604
-resolution: Classify independently verified missing POSIX script interpreters with canonical absence semantics and preserve native results. Make all three pinned regression replays reject suite-level runtime errors using actual Vitest4 testResults messages. Preserve historical evidence and record the current hosted source receipt.
-expected_result: "Missing interpreters classify conservatively without rerunning user commands, and replay proof accepts only its intended assertion failure with empty suite error messages."
-actual_result: "All three corrected pinned-source replays prove exactly their intended AssertionError. Current production/test source8bed passes every required hosted check, native Windows, six packed first-run legs and exact aggregate100/100/100/100 coverage with zero uncovered counts.111 linked tests, Node/Bun consumers, and local static/governance acceptance pass. Final metadata-only head checks and review remain mandatory before merge."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+risk: medium
+confidence: high
+resolution: "Verify missing-script startup conservatively with canonical absence semantics, and make every delivery counterexample a pinned unsafe source replay distinct from passing checks. Enforce actual Vitest4 suite-message guards and exact named assertion outcomes while preserving historical events and release boundaries."
+expected_result: "All six controls demonstrate their intended regression with expected failure and refuse suite/runtime/setup errors, while passing local verification and current source acceptance remain separate."
+actual_result: "All six frozen-source controls execute and prove their intended named AssertionError with empty suite messages and expected exit1. Corrected executable, newest-history and serial-allocation controls additionally match stable expected assertion fragments; setup or mismatched failure returns3. Runtime/test files remain unchanged, all prior passing local/source acceptance is preserved, and exact-aff external analyzer evidence has zero findings. Final metadata-head hosted checks and full review remain mandatory before merge."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1607,related,"2026-10-27T02:51:04.850Z","harness:codex","cli:update:dep",detected
   pm-lifecycle-example-scope,related,"2026-10-27T02:51:04.850Z","harness:codex","cli:update:dep",detected
-comments[13]{created_at,author,text}:
+  pm-gh1605,related,"2026-10-27T05:40:32.720Z","harness:codex","cli:update:dep",detected
+  pm-receipt-serial,related,"2026-10-27T05:40:32.720Z","harness:codex","cli:update:dep",detected
+comments[14]{created_at,author,text}:
   "2026-10-27T02:42:14.362Z","harness:codex","Duplicate check: complete3134-item all-status full strict read has zero unreadable items or omissions. Request-specific search and open/in-progress inventories found no missing-interpreter or negative-replay owner. pm-gh1604 is completed for missing executables, so this bounded follow-up owns new review work; pm-gh1607 and pm-lifecycle-example-scope retain their completed lineage. PR1608 review threads4384464587,4384464563,4384464571."
   "2026-10-27T02:46:18.309Z","harness:codex","Native reproduction: executable lookup succeeds, but /bin/sh reports absent shebang interpreter with exit126 and the original bad-interpreter diagnostic on this host. The real linked regression failed as assertion_failure before this change (negative log retained privately), then passed after the fix. POSIX shells reporting named not-found/127 use the same bounded-header proof; Windows resolution remains separate. Linux execve documents ENOENT for a missing script interpreter: https://man7.org/linux/man-pages/man2/execve.2.html. The classifier reads at most256 header bytes with nonblocking open, closes the handle, declines incomplete/ambiguous or unavailable evidence, and never reruns the user command. Real executed scripts spoofing both127 and126 diagnostics remain assertions. Focused110 tests pass, including platform controls; focused exact module coverage is100/100/100/100 (42statements,45branches,6functions,37lines), typecheck and focused lint pass."
   "2026-10-27T02:49:11.012Z","harness:codex","Review1608 negative-control clarification: candidate73846f26f2255ca4afaffb642543e2e3d3d63f44 with ONLY src/sdk/test/command-resolution.ts replaced by 9dad0a28c87beb0fbb66f9eec9f7360f9bf549dd. The recorded runnable control archives immutable source into a disposable checkout, uses sandboxed PM roots, and requires exactly the named AssertionError before intentionally returning exit1; setup/runtime failure returns3. Executed now and proved the intended failure. Current passing local_checks are separate. Existing immutable events remain preserved; no prior history was edited."
@@ -33,6 +37,9 @@ comments[13]{created_at,author,text}:
   "2026-10-27T03:35:44.918Z","harness:codex","All111 linked tests and current-source hosted CI40442741640 pass at8bedb5f771be697dffacb3397f55565a429be9f6, including exact aggregate100/100/100/100 coverage with zero uncovered counts, static, native Windows and all six packed first-run legs. Full review found no production-code issue and two evidence improvements: refresh the source receipt on the lifecycle owner, and use actual Vitest4 suite-message error data. All three corrected immutable-source negative controls execute and prove their intended assertion failure. Production source and tests have not changed since the accepted8bed head; pending final metadata checks/review remain pre-merge requirements."
   "2026-10-27T05:02:02.568Z","harness:codex","Release-base reconciliation: AutoRelease advanced main to77ff26ad72e141de7c3f56dfddc6ff7951dafab4 and created tagv2026.10.27 while the PR waited for runners. A normal merge preserves published history. Latest pm-changelog2026.10.26 regenerated the file and correctly retains all six delivery changes in Unreleased, with the tagged27 base inventory in its own dated section. No package bug or hand-edited changelog workaround is used. The branch inherits release-version metadata27; runtime implementation and tests remain unchanged from accepted8bed. Build succeeds and pm version reports2026.10.27. New exact-head checks/review remain mandatory, and tag creation is separate from npm publication."
   "2026-10-27T05:08:18.717Z","harness:codex","The queued259 static job122008784709 finally ran after tag27 appeared and correctly rejected its pre-tag changelog as out of date. The locally merged release base and package-generated changelog now pass the check. Contract snapshot, public SDK snapshot with zero classified changes, plugin wrapper/skill generation checks, Node/Bun public SDK consumers, tracker-context quality, graph composition, record integrity and defect evidence all pass on the inherited27 metadata. The six pending changes remain Unreleased. This is release-base reconciliation, with no source implementation or assertion change."
+  "2026-10-27T05:55:57.845Z","harness:codex","Complete six-item control audit: the original executable, history-recency and serial-allocation fields also used passing checks. They now pin frozen candidateaff043f08ea0bd4a14b30af6f420d0f7f01c910f with only pre-fix execution.ts, an explicit newestFirst=false projection mutant, or pre-fix vitest.config.ts, respectively. All three reproduce exactly their expected named assertion with empty suite errors. The prior lifecycle, scoped-example and direct-interpreter controls were independently re-executed and proved too: all six now have distinct unsafe conditions and expected exit1 versus refusal3. The first serial evidence predicate refused a truncated Vitest message; matching its observed unique filename prefix now proves the correct guard without relaxing the test. No runtime implementation, assertions, deadlines or ceilings changed. Exact-aff CodeFactor and DeepScan evidence is releasable with zero issues/annotations; revised metadata-head CI/review remain required."
+learnings[1]{created_at,author,text}:
+  "2026-10-27T05:55:57.251Z","harness:codex","Audit every delivery negative control, rather than only the latest review location: pin a pre-fix source file or explicit unsafe mutant and distinguish the expected assertion failure from passing checks and setup refusals. Vitest4.1.12 reports suite errors in testResults[].message and may truncate expected values in assertion stacks; combine the exact named test, AssertionError, a stable unique matcher fragment where needed, and empty suite messages. Reproduce in disposable archives with sandboxed PM roots, and preserve old immutable events when strengthening current evidence."
 files[3]{path,scope}:
   src/sdk/test/command-resolution.ts,project
   tests/unit/sdk/test/command-resolution.spec.ts,project
@@ -65,7 +72,7 @@ test_runs[2]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/TESTING.md,project
-close_reason: Vitest4 replay evidence corrected and re-executed; current production/test source has full hosted acceptance.
+close_reason: All six delivery negative controls audited and independently replayed; final metadata checks and review remain required.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened
