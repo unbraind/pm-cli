@@ -1,0 +1,23 @@
+id: pm-gh1611
+title: "GH-1611: render portable tracker scope in generated completion hints"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1611 shows pm close completion guidance serializing the resolved absolute tracker root even for the default cwd tracker. Investigate portable scope rendering across generated hints while preserving an explicitly selected tracker and extension mode. Reported behavior is not yet independently reproduced; completed lifecycle-example explicit-scope preservation remains completed."
+type: Issue
+status: open
+priority: 2
+tags[2]: agent-ux,github
+created_at: "2026-10-27T10:20:17.530Z"
+updated_at: "2026-10-27T10:20:17.530Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce completion hint behavior in isolated cwd-default and explicitly selected trackers; preserve caller-provided relative scope and no-extensions mode; copied mutation examples target the selected tracker and leave ambient tracker bytes unchanged; cover shared hint formatting through SDK and thin CLI rendering without exposing host paths unnecessarily.
+value: Keep copied guidance portable and avoid redundant host coordinates
+impact: Generated completion hints and recovery examples consumed by agents
+parent: pm-mpbb
+risk: medium
+confidence: medium
+expected_result: Generated hints omit redundant default absolute roots and preserve explicit or distinct tracker selection through portable structured context.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-lifecycle-example-scope,related,"2026-10-27T10:20:17.530Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-27T10:20:17.530Z","harness:codex","Duplicate check: strict complete3137-item all-status corpus with no omissions plus completion-hint and issue-number searches and refreshed open/in_progress lists; full live completed explicit-scope recovery item and parent data/history inspected. This intake owns portability and redundant default path output, while completed scope retention remains preserved. No matching active owner found. Open and unclaimed; issue report is not proof of a reproduced production cause."
+body: ""

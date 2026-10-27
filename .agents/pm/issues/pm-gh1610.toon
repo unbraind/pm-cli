@@ -1,0 +1,24 @@
+id: pm-gh1610
+title: "GH-1610: compact lean refusals and expose structured claim context"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1610 measures redundant refusal headlines and generic recovery boilerplate, with lean text larger than default. Investigate current public SDK normalization and renderers, preserve actionable recovery, and expose existing claim holder metadata as typed fields. Reported2026.10.27 behavior has not been independently reproduced; earlier completed lean-error work remains completed."
+type: Issue
+status: open
+priority: 2
+tags[2]: agent-ux,github
+created_at: "2026-10-27T10:20:14.486Z"
+updated_at: "2026-10-27T10:20:14.486Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce the reported claim-conflict bytes in isolated trackers; remove duplicated and constant lean boilerplate without deleting specific recovery; preserve default compatibility and sensitive-value redaction; verify CLI and public SDK structured holder metadata; add meaningful before/after controls.
+value: Reduce repeated agent refusal context while retaining executable recovery
+impact: CLI text and structured SDK refusal consumers
+parent: pm-mpbb
+risk: medium
+confidence: medium
+expected_result: Lean refusals preserve code-specific recovery and typed claim metadata while never exceeding equivalent default output; shared SDK normalization owns semantics.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-g9xk,related,"2026-10-27T10:20:14.486Z","harness:codex","cli:create:dep",detected
+  pm-q0kr,related,"2026-10-27T10:20:14.486Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-27T10:20:14.486Z","harness:codex","Duplicate check: strict complete3137-item all-status corpus with no omissions plus request-specific hybrid and keyword searches and refreshed open/in_progress lists; full live completed lean and guidance lineages and parent metadata/history inspected. Existing closed lean implementation does not own this newly reported byte-size and claim-metadata acceptance; no matching active item found. Intake is open and unclaimed; no reproduction or repair claimed."
+body: ""
