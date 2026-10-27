@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T02:42:14.362Z"
-updated_at: "2026-10-27T03:35:46.839Z"
+updated_at: "2026-10-27T05:08:18.717Z"
 closed_at: "2026-10-27T03:35:45.818Z"
 completed_at: "2026-10-27T03:35:45.818Z"
 author: "harness:codex"
@@ -19,7 +19,7 @@ actual_result: "All three corrected pinned-source replays prove exactly their in
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1607,related,"2026-10-27T02:51:04.850Z","harness:codex","cli:update:dep",detected
   pm-lifecycle-example-scope,related,"2026-10-27T02:51:04.850Z","harness:codex","cli:update:dep",detected
-comments[11]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-10-27T02:42:14.362Z","harness:codex","Duplicate check: complete3134-item all-status full strict read has zero unreadable items or omissions. Request-specific search and open/in-progress inventories found no missing-interpreter or negative-replay owner. pm-gh1604 is completed for missing executables, so this bounded follow-up owns new review work; pm-gh1607 and pm-lifecycle-example-scope retain their completed lineage. PR1608 review threads4384464587,4384464563,4384464571."
   "2026-10-27T02:46:18.309Z","harness:codex","Native reproduction: executable lookup succeeds, but /bin/sh reports absent shebang interpreter with exit126 and the original bad-interpreter diagnostic on this host. The real linked regression failed as assertion_failure before this change (negative log retained privately), then passed after the fix. POSIX shells reporting named not-found/127 use the same bounded-header proof; Windows resolution remains separate. Linux execve documents ENOENT for a missing script interpreter: https://man7.org/linux/man-pages/man2/execve.2.html. The classifier reads at most256 header bytes with nonblocking open, closes the handle, declines incomplete/ambiguous or unavailable evidence, and never reruns the user command. Real executed scripts spoofing both127 and126 diagnostics remain assertions. Focused110 tests pass, including platform controls; focused exact module coverage is100/100/100/100 (42statements,45branches,6functions,37lines), typecheck and focused lint pass."
   "2026-10-27T02:49:11.012Z","harness:codex","Review1608 negative-control clarification: candidate73846f26f2255ca4afaffb642543e2e3d3d63f44 with ONLY src/sdk/test/command-resolution.ts replaced by 9dad0a28c87beb0fbb66f9eec9f7360f9bf549dd. The recorded runnable control archives immutable source into a disposable checkout, uses sandboxed PM roots, and requires exactly the named AssertionError before intentionally returning exit1; setup/runtime failure returns3. Executed now and proved the intended failure. Current passing local_checks are separate. Existing immutable events remain preserved; no prior history was edited."
@@ -31,6 +31,8 @@ comments[11]{created_at,author,text}:
   "2026-10-27T03:09:56.747Z","harness:codex","Refreshed normal registry/OSV advisory evidence passes; the full local repository-static-quality assurance now passes every assertion, including its unchanged absence ceiling.111 linked tests, focused exact100/100/100/100 coverage, typecheck, lint and Node/Bun public SDK consumers pass on the canonical-helper refinement. Earlier failed hosted static and stale-receipt local attempts remain preserved. Final revised-head required checks and full free-tier review are mandatory before merge."
   "2026-10-27T03:35:06.564Z","harness:codex","Full-review correction: installed Vitest4.1.12 JSON reporter stores suite-level runtime errors in testResults[].message and does not emit numRuntimeErrorTestSuites. The current runnable negative control requires every suite message to be exactly empty, alongside the single named AssertionError and native exit1. This corrected immutable-source replay was executed and proved the intended failure. A missing, nonempty or malformed suite message refuses proof. Existing historical events remain unchanged."
   "2026-10-27T03:35:44.918Z","harness:codex","All111 linked tests and current-source hosted CI40442741640 pass at8bedb5f771be697dffacb3397f55565a429be9f6, including exact aggregate100/100/100/100 coverage with zero uncovered counts, static, native Windows and all six packed first-run legs. Full review found no production-code issue and two evidence improvements: refresh the source receipt on the lifecycle owner, and use actual Vitest4 suite-message error data. All three corrected immutable-source negative controls execute and prove their intended assertion failure. Production source and tests have not changed since the accepted8bed head; pending final metadata checks/review remain pre-merge requirements."
+  "2026-10-27T05:02:02.568Z","harness:codex","Release-base reconciliation: AutoRelease advanced main to77ff26ad72e141de7c3f56dfddc6ff7951dafab4 and created tagv2026.10.27 while the PR waited for runners. A normal merge preserves published history. Latest pm-changelog2026.10.26 regenerated the file and correctly retains all six delivery changes in Unreleased, with the tagged27 base inventory in its own dated section. No package bug or hand-edited changelog workaround is used. The branch inherits release-version metadata27; runtime implementation and tests remain unchanged from accepted8bed. Build succeeds and pm version reports2026.10.27. New exact-head checks/review remain mandatory, and tag creation is separate from npm publication."
+  "2026-10-27T05:08:18.717Z","harness:codex","The queued259 static job122008784709 finally ran after tag27 appeared and correctly rejected its pre-tag changelog as out of date. The locally merged release base and package-generated changelog now pass the check. Contract snapshot, public SDK snapshot with zero classified changes, plugin wrapper/skill generation checks, Node/Bun public SDK consumers, tracker-context quality, graph composition, record integrity and defect evidence all pass on the inherited27 metadata. The six pending changes remain Unreleased. This is release-base reconciliation, with no source implementation or assertion change."
 files[3]{path,scope}:
   src/sdk/test/command-resolution.ts,project
   tests/unit/sdk/test/command-resolution.spec.ts,project
@@ -60,7 +62,8 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,schema,schema,source,local_source_ref
-docs[1]{path,scope}:
+docs[2]{path,scope}:
+  CHANGELOG.md,project
   docs/TESTING.md,project
 close_reason: Vitest4 replay evidence corrected and re-executed; current production/test source has full hosted acceptance.
 escape_class: review_caught_late

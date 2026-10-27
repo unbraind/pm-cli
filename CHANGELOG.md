@@ -10,6 +10,11 @@
 - GH-1607: Provide intent-specific recovery for unsupported block and unblock commands ([pm-gh1607](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1607.toon))
 - GH-1605: Preserve recent events when default history output must be bounded ([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon))
 - GH-1604: Classify missing linked-test executables separately from assertion failures ([pm-gh1604](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1604.toon))
+
+## 2026.10.27 - 2026-10-27
+
+### Fixed
+
 - GH-1593: verify authoritative history integrity in SDK mutation-event reads ([pm-gh1593](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1593.toon))
 - Isolate telemetry setup in the health cursor replay regression ([pm-oahhyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oahhyc.toon))
 - Preserve Git-backed merge-receipt evidence in isolated linked-test contexts ([pm-ycyymg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycyymg.toon))
