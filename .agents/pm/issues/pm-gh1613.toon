@@ -1,0 +1,25 @@
+id: pm-gh1613
+title: "GH-1613: preserve typed PmClient validation and lookup refusals"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1613 on published2026.10.27 shows PmClient update validation and get not-found refusals throwing PmCliError with undefined code and empty context, while the equivalent CLI envelope has a stable code. Provide SDK-owned classification and structured field/value/allowed or item-ID facts, using SDK option names and retaining existing claim and document-parse contracts. This reported behavior has not been independently reproduced in this delivery; no implementation or repair is claimed."
+type: Issue
+status: open
+priority: 1
+tags[3]: error-model,github,sdk
+created_at: "2026-10-27T12:22:43.116Z"
+updated_at: "2026-10-27T12:22:43.116Z"
+author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: "Reproduce the three published validation/lookup cases in isolated owned trackers; preserve custom-schema allowed values and existing typed claim/document-parse behavior; expose stable codes plus structured field/value/allowed or ID facts without prose inference or sensitive-value leaks; add meaningful CLI-to-SDK conformance and packed Node/Bun consumer controls, failing before and passing after the repair."
+value: Let package authors and self-improving agents handle public SDK refusals without parsing English messages
+impact: Public PmClient validation/lookup consumers and CLI/MCP refusal parity
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: "Public PmClient validation and not-found refusals carry the same stable code as equivalent CLI envelopes, with specific structured context and SDK-oriented messages derived from active contracts."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1606,related,"2026-10-27T12:22:43.116Z","harness:codex","cli:create:dep",detected
+  pm-gh1610,related,"2026-10-27T12:22:43.116Z","harness:codex","cli:create:dep",detected
+  pm-r9pudt,related,"2026-10-27T12:22:43.116Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-27T12:22:43.116Z","harness:codex","Duplicate check: strict complete3140-item all-status corpus with no omissions/unreadables, request-specific typed-refusal/PmClient searches and refreshed context/open/in_progress lists. Full live SDK outcome milestone, completed SDK-first architecture and document-parse classification lineage, and distinct runtime-operand sibling data/history inspected. The existing parser fix owns document decoding; runtime operand checking owns raw TypeErrors; lean refusal formatting owns renderer/claim metadata. No existing bounded owner matches already-detected PmClient validation/lookup classification, so this intake is open and unclaimed under the SDK outcome milestone. No source change or reproduced production-cause claim."
+body: ""
