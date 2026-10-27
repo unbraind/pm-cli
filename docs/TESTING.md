@@ -27,12 +27,21 @@ execution's environment and working directory. On POSIX, a resolved script may
 also qualify when a bounded shebang read confirms its absolute interpreter is
 absent. The script is never rerun to probe startup. A child deliberately exiting
 127, arbitrary `ENOENT` output, compound shell programs, expansions, and an
-unavailable lookup probe retain their existing classification. This conservative
+unavailable lookup probe retain their existing classification. A killed or
+signaled resolver cannot establish absence, even if its reported code is 1.
+The required native fixture captures the real lookup's status, signal, kill
+flag, duration, working directory and effective child-environment equality. It
+requires the category established by that independent evidence; unavailable
+proof must remain an assertion failure. Environment values are not logged.
+This conservative
 rule supports POSIX shells and Windows command lookup; it does not infer setup
 failure from arbitrary runner output
 ([pm-gh1604](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1604.toon); tracker record excluded from npm).
 Interpreter verification and replay evidence:
 [pm-script-launch-evidence](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-script-launch-evidence.toon)
+(tracker record excluded from npm).
+Native resolver evidence:
+[pm-windows-lookup-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-windows-lookup-proof.toon)
 (tracker record excluded from npm).
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).

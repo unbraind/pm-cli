@@ -17,6 +17,18 @@ afterEach(() => {
 
 describe("shell lookup evidence", () => {
   it.each([
+    ["win32", "timeout", { code: 1, killed: true }],
+    ["win32", "signal", { code: 1, signal: "SIGTERM" }],
+    ["linux", "timeout", { code: 127, killed: true }],
+    ["linux", "signal", { code: 1, signal: "SIGTERM" }],
+  ] as const)("declines %s resolver evidence interrupted by %s", async (platform, _reason, error) => {
+    Object.defineProperty(process, "platform", { value: platform });
+    mocks.execute.mockImplementation((_file, _args, _options, callback) => callback(Object.assign(new Error("interrupted lookup"), error), "", ""));
+    const stderr = platform === "win32" ? "'missing-tool' is not recognized as an internal or external command," : "/bin/sh: 1: missing-tool: not found";
+    expect(await detectLinkedTestCommandNotFound("missing-tool", { exitCode: platform === "win32" ? 1 : 127, stderr }, {}, "/tmp/lookup-test")).toBe(false);
+  });
+
+  it.each([
     ["./script", "#!/absent/interpreter\nexit 0", "ENOENT", true],
     ["./script", "#!/not-a-directory/interpreter\nexit 0", "ENOTDIR", true],
     ["./script", "#! \t/absent/interpreter --flag\n", "ENOENT", true],
@@ -73,6 +85,7 @@ describe("shell lookup evidence", () => {
     ["win32", "node", 1, "'node' is not recognized as an internal or external command,", null, false],
     ["win32", "node", 9009, "'node' is not recognized as an internal or external command,", null, false],
     ["win32", "missing-tool", 1, "'missing-tool' is not recognized as an internal or external command,", 127, false],
+    ["win32", "missing-tool", 1, "'missing-tool' is not recognized as an internal or external command,", "ETIMEDOUT", false],
   ])("certifies %s lookup for %s only from the resolver outcome", async (platform, command, exitCode, stderr, code, expected) => {
     Object.defineProperty(process, "platform", { value: platform });
     mocks.execute.mockImplementation((_file, _args, _options, callback) => callback(code === null ? null : Object.assign(new Error("lookup failed"), { code }), "", ""));

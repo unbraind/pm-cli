@@ -76,7 +76,9 @@ export async function detectLinkedTestCommandNotFound(
     const { stdout } = await execFileAsync(resolver, args, { env, cwd, timeout: 1_000, windowsHide: true });
     return !windows && hasAbsentScriptInterpreter(stdout, cwd);
   } catch (error) {
-    const code = (error as { code?: unknown }).code;
+    const failure = error as { code?: unknown; killed?: boolean; signal?: unknown };
+    if (failure.killed || failure.signal) return false;
+    const code = failure.code;
     return code === 1 || (!windows && code === 127);
   }
 }

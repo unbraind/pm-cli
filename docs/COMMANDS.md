@@ -1274,7 +1274,7 @@ extension/package activation are recorded in
 workspace auditing and is created on the first audited singleton mutation.
 `pm get --at` is the read-only counterpart: it reconstructs a recorded version through the shared restore replay kernel and labels the result so consumers cannot confuse historical state with current state. Checkpoint baselines produced by `history-compact` remain valid reconstruction roots.
 
-`--diff` replays the history chain and emits, per entry, a `changes` array of `{ field, before, after }` field-level value transitions (alongside the `changed_fields` name list) — so you can see exactly what each field changed from and to without comparing snapshots. It is independent of the compact/full projection. `--field <name>` narrows the diff to a single field's transitions (implying `--diff`), answering "when did `<field>` change?" — e.g. `pm history <id> --diff --field status`.
+`--diff` replays the history chain and emits, per entry, a `changes` array of `{ field, before, after }` field-level value transitions (alongside the `changed_fields` name list) — so you can see exactly what each field changed from and to without comparing snapshots. It is independent of the compact/full projection. Provenance filters and limits select the same physical entries for the diff; excluded intermediate events still contribute to accurate before/after values. `--field <name>` narrows the diff to a single field's transitions (implying `--diff`), answering "when did `<field>` change?" — e.g. `pm history <id> --diff --field status`.
 
 `pm stats` reports item and history totals plus a screen-sized lifecycle table.
 Every non-empty item type is one row with `total`, `open`, `in_progress`,

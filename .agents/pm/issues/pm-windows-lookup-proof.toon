@@ -2,11 +2,13 @@ id: pm-windows-lookup-proof
 title: Investigate intermittent Windows missing-command classification evidence
 description: "Native Windows Node24 cohort job121994981615 in CI40445155345 at metadata head8c8c7586a reports a genuinely missing literal executable as assertion_failure, despite retaining the expected shell diagnostic and native exit1. It failed both native test attempts. The identical production/test source passed every hosted check at8bedb5f77. The confirming resolver currently uses bounded where.exe execution, but this run did not capture its actual status, signal or duration, so probe timeout or environment variation is a hypothesis rather than a confirmed cause. Preserve the raw failure and compare one fresh native-cohort rerun before selecting a fix. CI link: https://github.com/unbraind/pm-cli/actions/runs/40445155345/job/121994981615"
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-27T03:57:59.615Z"
-updated_at: "2026-10-27T04:08:07.696Z"
+updated_at: "2026-10-27T07:57:22.526Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7efbcd86a29946bbfe9221c3"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Capture actual Windows resolver status signal and duration with the same child environment and working directory; Separate confirmed command absence from unavailable proof without trusting arbitrary child diagnostics; Retain bounded lookup behavior native exit status exact stderr and installed-child127 or ENOENT negative controls
@@ -16,14 +18,33 @@ confidence: low
 expected_result: Missing-command classification remains reliable on native Windows while unavailable resolution evidence is explained and installed children cannot forge a startup failure.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-script-launch-evidence,related,"2026-10-27T03:58:03.374Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-27T03:57:59.615Z","harness:codex","Duplicate check: complete3136-item strict full all-status corpus, request search and live open/in-progress inventories contain no dedicated intermittent Windows probe-evidence owner. Full live pm-gh1604 data retains its completed baseline and the separate pm-script-launch-evidence follow-up is completed for direct script interpreters and replay evidence. This queued investigation owns the newly observed native classification variation. It remains open and unclaimed; no Windows root cause or repair is claimed."
   "2026-10-27T04:08:07.696Z","harness:codex","Fresh native cohort attempt2 succeeds on identical8c8c7586a production/test source: job122000399134 https://github.com/unbraind/pm-cli/actions/runs/40445155345/job/122000399134 and dependent Windows gate122002600907 both pass. This confirms variation across native attempts, not a source repair or a proven timeout cause. The whole workflow still fails the separate known planner fields on the immutable8c intake; those metadata fields are corrected locally for the next head. Keep the resolver investigation open/unclaimed and preserve the failed first attempt."
+  "2026-10-27T07:45:32.591Z","harness:codex","Review4386092218 correctly challenges an unconditional native assertion when the bounded external resolver can be unavailable. Keep the required Windows test and unchanged1s bound. Capture the actual native execFile boundary, status/signal/killed/duration and sanitized environment/cwd evidence, then require the classification dictated by that independent observed proof. An absent probe or wrong classification must still fail. Do not infer the historical failure cause or remove the required cohort. No production test-only seam or new public API is needed."
+  "2026-10-27T07:54:21.829Z","harness:codex","Source audit found a distinct reproducible conservative-proof defect: an error with numeric absence code1/127 plus killed=true or signal=SIGTERM was accepted as absence. Four external-boundary cases fail before the guard and pass afterward. Interrupted/unavailable proof now declines regardless of numeric code. This does not establish the historical Windows attempt cause. The native passthrough observer records actual child/resolver identity and outcomes without replacing OS results, printing environment values, or adding a production seam; the required cohort and1s budget stay intact."
+  "2026-10-27T07:57:22.525Z","harness:codex","Connected acceptance passes locally: all118 assertions across history recency2, native linked-command2, lookup41 and linked-runner73; the linked native/lookup cohort passes43 tests. Exact lookup coverage is47/47 statements,53/53 branches,6/6 functions,40/40 lines, with zero uncovered counts. TypeScript and focused ESLint pass. Native instrumentation compares effective environment values without requiring object identity and emits sanitized status/signal/kill/duration/cwd evidence. Actual hosted Windows capture and fresh exact-head source admission remain required before this investigation is closed."
 files[5]{path,scope}:
   .github/workflows/ci.yml,project
   src/sdk/test/command-resolution.ts,project
   src/sdk/test/execution.ts,project
   tests/unit/sdk/test/command-resolution.spec.ts,project
   tests/unit/sdk/test/missing-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts,project,300,"harness:codex","2026-10-27T07:55:25.426Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvqe5klj-x9kb26
+    kind: test
+    status: passed
+    started_at: "2026-10-27T07:55:45.973Z"
+    finished_at: "2026-10-27T07:55:57.703Z"
+    recorded_at: "2026-10-27T07:55:57.703Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/TESTING.md,project
 escape_class: review_caught_late
 body: ""

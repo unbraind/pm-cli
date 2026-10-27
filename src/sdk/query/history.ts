@@ -319,13 +319,12 @@ export async function runHistory(
 
   if (options.diff || options.field !== undefined) {
     // --diff replays the full chain to surface per-field before/after values for
-    // the displayed window (the latest --limit entries). --field narrows to a
+    // the selected physical entries, including non-contiguous provenance filters. --field narrows to a
     // single field's transitions ("when did status change?"). Unlike the compact
     // projection above, the value diff is independent of the compact/full toggle.
-    result.diff = computeHistoryDiff(fullHistory, {
-      windowStartIndex: Math.max(0, fullHistory.length - result.count),
-      field: options.field,
-    });
+    const selectedIndices = new Set(selectedHistory.map(({ version }) => version));
+    result.diff = computeHistoryDiff(fullHistory, { field: options.field })
+      .filter((row) => selectedIndices.has(row.index));
     if (result.order === "newest_first") result.diff.reverse();
   }
 

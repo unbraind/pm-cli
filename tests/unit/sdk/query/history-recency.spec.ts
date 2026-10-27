@@ -5,8 +5,36 @@ import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contr
 import { runAction } from "../../../../src/sdk/runtime.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import { createTestItemId } from "../../../helpers/itemFactory.js";
+import { runWithHarnessDetectionSignals } from "../../../../src/core/shared/author.js";
 
 describe("recent history recovery", () => {
+  it("aligns filtered diffs with physical history while replaying excluded updates", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Filtered diff" });
+      for (const [index, instance] of ["selected", "excluded", "selected", "excluded"].entries()) {
+        await runWithHarnessDetectionSignals({
+          env: { CODEX_THREAD_ID: instance }, home_dir: context.tempRoot,
+          cwd: context.tempRoot, argv: [], probes_enabled: false,
+        }, () => runUpdate(id, { title: `Title ${index + 2}` }, { path: context.pmPath }));
+      }
+      const full = await runHistory(id, {}, { path: context.pmPath });
+      const agentInstance = full.history?.[1]?.agent_instance;
+      expect(agentInstance).toBeTypeOf("string");
+      for (const mode of [{ compact: true }, { provenance: true }, { compact: false }]) {
+        const result = await runHistory(id, { ...mode, agentInstance, diff: true }, { path: context.pmPath });
+        const indices = mode.compact === false ? [2, 4] : [4, 2];
+        expect(result.diff?.map((row) => row.index)).toEqual(indices);
+        expect(result.diff?.find((row) => row.index === 4)?.changes).toContainEqual({ field: "title", before: "Title 3", after: "Title 4" });
+      }
+      const limited = await runHistory(id, { compact: true, agentInstance, limit: "1", field: "title" }, { path: context.pmPath });
+      expect(limited.diff).toMatchObject([{ index: 4, changes: [{ field: "title", before: "Title 3", after: "Title 4" }] }]);
+      expect(await runHistory(id, { agentInstance: "absent", diff: true }, { path: context.pmPath })).toMatchObject({ count: 0, diff: [] });
+      const cli = context.runCli(["history", id, "--agent-instance", agentInstance!, "--diff", "--field", "title", "--json"], { expectJson: true });
+      expect(cli.code).toBe(0);
+      expect((cli.json as { diff: Array<{ index: number }> }).diff.map((row) => row.index)).toEqual([4, 2]);
+    });
+  });
+
   it("keeps the newest of 251 native entries and resumes every older entry exactly once", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Recent handoff" });
