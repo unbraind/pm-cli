@@ -8,6 +8,8 @@
 - Schedule the complete merge-receipt classification keeper after parallel contracts ([pm-receipt-serial](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-receipt-serial.toon))
 - GH-1607: Provide intent-specific recovery for unsupported block and unblock commands ([pm-gh1607](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1607.toon))
 - GH-1604: Classify missing linked-test executables separately from assertion failures ([pm-gh1604](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1604.toon))
+- GH-1605: Preserve recent events when default history output must be bounded ([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon))
+- Capture native lookup evidence and reject interrupted command-absence proof ([pm-windows-lookup-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-windows-lookup-proof.toon))
 - Review1608: classify absent script interpreters and make negative controls replayable ([pm-script-launch-evidence](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-script-launch-evidence.toon))
 
 ## 2026.10.27 - 2026-10-27

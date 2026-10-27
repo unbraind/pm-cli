@@ -323,7 +323,10 @@ export async function runHistory(
     // single field's transitions ("when did status change?"). Unlike the compact
     // projection above, the value diff is independent of the compact/full toggle.
     const selectedIndices = new Set(selectedHistory.map(({ version }) => version));
-    result.diff = computeHistoryDiff(fullHistory, { field: options.field })
+    result.diff = computeHistoryDiff(fullHistory, {
+      windowStartIndex: (selectedHistory[0]?.version ?? fullHistory.length + 1) - 1,
+      field: options.field,
+    })
       .filter((row) => selectedIndices.has(row.index));
     if (result.order === "newest_first") result.diff.reverse();
   }
