@@ -6,16 +6,19 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-10-27T03:16:18.150Z"
-updated_at: "2026-10-27T03:16:55.298Z"
+updated_at: "2026-10-27T04:08:08.404Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce the real-wall-clock SIGKILL sequence in disposable non-Git trackers on the reported old and current versions; If confirmed fix preserves mutation fencing and audit history with negative controls for live and unknown owners; Separate monotonic acquisition deadlines from owner liveness and verify Node and Bun public SDK behavior
 parent: pm-02z97f
+risk: high
+confidence: low
 expected_result: "A provably dead writer is recovered safely after an interrupted commit, and bounded acquisition does not hang under a frozen wall clock; live or ambiguous ownership retains protection."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-10-27T03:16:19.265Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-27T03:16:18.150Z","harness:codex","Duplicate check: complete3135-item strict full all-status corpus has no exact GH1609 owner, no unreadable items and no omissions. Request-specific search, open and zero-in-progress inventories were read. Full live pm-02z97f data confirms its earlier audited dead-owner recovery is closed/completed, not newly outstanding. This newly reported crash-inside-fence scenario is a bounded follow-up. Current source includes both owner_dead_recovery_attempt and the independent commit fence in src/core/lock/lock.ts; the report has not yet been independently reproduced. Keep this intake open/unclaimed; do not treat reported symptoms as a proven root cause."
+  "2026-10-27T04:08:08.403Z","harness:codex","Hosted tracker-context-quality correctly identified missing risk/confidence metadata on the new intake. Both fields are supplied through pm (high risk for interrupted-commit safety, low confidence until independent reproduction). Full local tracker-context-quality, graph composition and record integrity now pass their unchanged gates. The item remains open/unclaimed and no reported runtime behavior is claimed fixed."
 files[4]{path,scope}:
   src/core/lock/lock-gc.ts,project
   src/core/lock/lock-owner.ts,project
