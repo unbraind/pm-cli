@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ execute: vi.fn() }));
-vi.mock("node:child_process", () => ({ execFile: (...args: unknown[]) => mocks.execute(...args) }));
+const mocks = vi.hoisted(() => ({ execute: vi.fn(), open: vi.fn(), read: vi.fn(), close: vi.fn(), access: vi.fn() }));
+vi.mock("node:child_process", () => ({ execFile: Object.assign(() => {}, {
+  [Symbol.for("nodejs.util.promisify.custom")]: (...args: unknown[]) => new Promise((resolve, reject) => {
+    mocks.execute(...args, (error: unknown, stdout: string, stderr: string) => error ? reject(error) : resolve({ stdout, stderr }));
+  }),
+}) }));
+vi.mock("node:fs/promises", () => ({ open: (...args: unknown[]) => mocks.open(...args), access: (...args: unknown[]) => mocks.access(...args) }));
 import { detectLinkedTestCommandNotFound } from "../../../../src/sdk/test/command-resolution.js";
 
 const originalPlatform = process.platform;
@@ -11,6 +16,40 @@ afterEach(() => {
 });
 
 describe("shell lookup evidence", () => {
+  it.each([
+    ["./script", "#!/absent/interpreter\nexit 0", "ENOENT", true],
+    ["./script", "#! \t/absent/interpreter --flag\n", "ENOENT", true],
+    ["./script", "#!/present/interpreter", null, false],
+    ["./script", "#!/unreadable/interpreter\n", "EACCES", false],
+    ["./script", "#!/uncertain/interpreter\n", undefined, false],
+    ["./script", "#!relative-interpreter\n", "ENOENT", false],
+    ["./script", "ordinary binary", "ENOENT", false],
+    ["./script", `#!/${"x".repeat(300)}`, "ENOENT", false],
+    ["./script", `#!/absent/interpreter\n${"x".repeat(300)}`, "ENOENT", true],
+    ["", "#!/absent/interpreter\n", "ENOENT", false],
+    ["./script\n./another-script", "#!/absent/interpreter\n", "ENOENT", false],
+  ])("corroborates the resolved script header %s conservatively", async (resolved, header, code, expected) => {
+    Object.defineProperty(process, "platform", { value: "linux" });
+    mocks.execute.mockImplementation((_file, _args, _options, callback) => callback(null, `${resolved}\n`, ""));
+    mocks.open.mockResolvedValue({ read: mocks.read, close: mocks.close });
+    mocks.read.mockImplementation((buffer: Buffer) => Promise.resolve({ bytesRead: buffer.write(header) }));
+    if (code !== null) mocks.access.mockRejectedValue(Object.assign(new Error("unavailable"), { code }));
+    expect(await detectLinkedTestCommandNotFound("./script", { exitCode: 127, stderr: "/bin/sh: 1: ./script: not found" }, {}, "/tmp/lookup-test")).toBe(expected);
+    expect(mocks.execute).toHaveBeenCalledTimes(1);
+    if (resolved && !resolved.includes("\n")) expect(mocks.close).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["open", "read", "close"] as const)("declines unavailable script evidence when %s fails", async (stage) => {
+    Object.defineProperty(process, "platform", { value: "linux" });
+    mocks.execute.mockImplementation((_file, _args, _options, callback) => callback(null, "./script\n", ""));
+    mocks.open.mockResolvedValue({ read: mocks.read, close: mocks.close });
+    mocks.read.mockResolvedValue({ bytesRead: 0 });
+    mocks[stage].mockRejectedValue(Object.assign(new Error("unavailable"), { code: "ENOENT" }));
+    expect(await detectLinkedTestCommandNotFound("./script", { exitCode: 127, stderr: "/bin/sh: 1: ./script: not found" }, {}, "/tmp/lookup-test")).toBe(false);
+    expect(mocks.access).not.toHaveBeenCalled();
+    if (stage !== "open") expect(mocks.close).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ["win32", "missing-tool", 127, "'missing-tool' is not recognized as an internal or external command,"],
     ["win32", "missing-tool", 1, "ENOENT: not found"],

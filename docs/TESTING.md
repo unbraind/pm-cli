@@ -23,12 +23,17 @@ Tracked implementation updates: [pm-52eh](../.agents/pm/features/pm-52eh.toon), 
 Linked tests classify a confirmed missing executable as `spawn_error`, retaining
 the shell's exit code and exact stderr. Confirmation requires a literal leading
 executable, the shell's named lookup diagnostic and a failed lookup using the
-execution's environment and working directory. A child deliberately exiting
+execution's environment and working directory. On POSIX, a resolved script may
+also qualify when a bounded shebang read confirms its absolute interpreter is
+absent. The script is never rerun to probe startup. A child deliberately exiting
 127, arbitrary `ENOENT` output, compound shell programs, expansions, and an
 unavailable lookup probe retain their existing classification. This conservative
 rule supports POSIX shells and Windows command lookup; it does not infer setup
 failure from arbitrary runner output
 ([pm-gh1604](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1604.toon); tracker record excluded from npm).
+Interpreter verification and replay evidence:
+[pm-script-launch-evidence](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-script-launch-evidence.toon)
+(tracker record excluded from npm).
 
 Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 

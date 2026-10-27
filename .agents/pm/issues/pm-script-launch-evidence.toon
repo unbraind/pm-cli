@@ -1,0 +1,41 @@
+id: pm-script-launch-evidence
+title: "Review1608: classify absent script interpreters and make negative controls replayable"
+description: "Review1608 identified an executable script whose shebang interpreter is absent. A successful command lookup is insufficient proof that the script started. Conservatively corroborate native shell startup diagnostics with the resolved script header and absent absolute interpreter, retaining raw result data and child assertions. Clarify exact pre-fix adapter revisions and replay commands for lifecycle recovery negative controls without rewriting immutable history."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-10-27T02:42:14.362Z"
+updated_at: "2026-10-27T02:46:59.849Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7efbcd86a29946bbfe9221c3"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: A real POSIX script with a missing interpreter fails as spawn_error while retaining platform exit code and stderr; Installed scripts deliberately emitting matching diagnostics or exiting127 remain assertion failures and commands are never rerun during classification; Lifecycle guidance negative controls explicitly pin the failing adapter revision and replay only the relevant assertion in an isolated tracker
+parent: pm-gh1604
+expected_result: "A proven absent script interpreter is a setup failure, installed children remain assertions, and negative controls identify reproducible failing revisions."
+comments[2]{created_at,author,text}:
+  "2026-10-27T02:42:14.362Z","harness:codex","Duplicate check: complete3134-item all-status full strict read has zero unreadable items or omissions. Request-specific search and open/in-progress inventories found no missing-interpreter or negative-replay owner. pm-gh1604 is completed for missing executables, so this bounded follow-up owns new review work; pm-gh1607 and pm-lifecycle-example-scope retain their completed lineage. PR1608 review threads4384464587,4384464563,4384464571."
+  "2026-10-27T02:46:18.309Z","harness:codex","Native reproduction: executable lookup succeeds, but /bin/sh reports absent shebang interpreter with exit126 and the original bad-interpreter diagnostic on this host. The real linked regression failed as assertion_failure before this change (negative log retained privately), then passed after the fix. POSIX shells reporting named not-found/127 use the same bounded-header proof; Windows resolution remains separate. Linux execve documents ENOENT for a missing script interpreter: https://man7.org/linux/man-pages/man2/execve.2.html. The classifier reads at most256 header bytes with nonblocking open, closes the handle, declines incomplete/ambiguous or unavailable evidence, and never reruns the user command. Real executed scripts spoofing both127 and126 diagnostics remain assertions. Focused110 tests pass, including platform controls; focused exact module coverage is100/100/100/100 (42statements,45branches,6functions,37lines), typecheck and focused lint pass."
+files[3]{path,scope}:
+  src/sdk/test/command-resolution.ts,project
+  tests/unit/sdk/test/command-resolution.spec.ts,project
+  tests/unit/sdk/test/missing-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,project,300,"harness:codex","2026-10-27T02:46:19.340Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvq348ou-tiy272
+    kind: test
+    status: passed
+    started_at: "2026-10-27T02:46:20.422Z"
+    finished_at: "2026-10-27T02:46:59.838Z"
+    recorded_at: "2026-10-27T02:46:59.838Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+escape_class: review_caught_late
+body: ""
