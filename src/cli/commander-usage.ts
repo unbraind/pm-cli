@@ -47,6 +47,7 @@ import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js
 import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 import { canonicalizeCommandSuggestions, rankCommandPaths, resolveMisnestedCommandPath } from "../sdk/agent/command-suggestions.js";
 import { isCompatibleRecoveryFlag, renderMissingOptionRetry, resolveLifecycleVerbRecovery } from "../sdk/agent/command-recovery.js";
+import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
 
@@ -656,8 +657,7 @@ function buildCanonicalHelpRetryArgs(
   if (!canonicalPath) return undefined;
   const bootstrapGlobal = parseBootstrapGlobalOptions([...invocationArgv]);
   return [
-    ...(bootstrapGlobal.path ? ["--pm-path", resolvePmRoot(process.cwd(), bootstrapGlobal.path)] : []),
-    ...(bootstrapGlobal.noExtensions ? ["--no-extensions"] : []),
+    ...resolvePmCommandScopeArgs(bootstrapGlobal),
     ...canonicalPath.split(" "), "--help",
   ];
 }

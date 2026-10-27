@@ -1,12 +1,14 @@
 id: pm-gh1611
 title: "GH-1611: render portable tracker scope in generated completion hints"
-description: "GitHub report https://github.com/unbraind/pm-cli/issues/1611 shows pm close completion guidance serializing the resolved absolute tracker root even for the default cwd tracker. Investigate portable scope rendering across generated hints while preserving an explicitly selected tracker and extension mode. Reported behavior is not yet independently reproduced; completed lifecycle-example explicit-scope preservation remains completed."
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1611 shows pm close completion guidance serializing the resolved absolute tracker root even for the default cwd tracker. Investigate portable scope rendering across generated hints while preserving an explicitly selected tracker and extension mode. Independently reproduced on pinned original source. Current shared SDK scope formatter preserves explicit selection and extension mode, omits implicit defaults, and renders distinct environment roots relative to the invocation. Two-tracker shell replay and full exact coverage pass; hosted admission and revised-head review remain required. Completed lifecycle-example explicit-scope preservation remains completed."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[2]: agent-ux,github
 created_at: "2026-10-27T10:20:17.530Z"
-updated_at: "2026-10-27T10:20:17.530Z"
+updated_at: "2026-10-27T17:44:23.279Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4f9b0131c245b9f712c46790"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce completion hint behavior in isolated cwd-default and explicitly selected trackers; preserve caller-provided relative scope and no-extensions mode; copied mutation examples target the selected tracker and leave ambient tracker bytes unchanged; cover shared hint formatting through SDK and thin CLI rendering without exposing host paths unnecessarily.
@@ -18,6 +20,48 @@ confidence: medium
 expected_result: Generated hints omit redundant default absolute roots and preserve explicit or distinct tracker selection through portable structured context.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-lifecycle-example-scope,related,"2026-10-27T10:20:17.530Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-27T10:20:17.530Z","harness:codex","Duplicate check: strict complete3137-item all-status corpus with no omissions plus completion-hint and issue-number searches and refreshed open/in_progress lists; full live completed explicit-scope recovery item and parent data/history inspected. This intake owns portability and redundant default path output, while completed scope retention remains preserved. No matching active owner found. Open and unclaimed; issue report is not proof of a reproduced production cause."
+  "2026-10-27T16:07:37.473Z","harness:codex","Both isolated negative controls fail before the scope repair: the default SDK completion serializes an absolute temporary root, and the selected tracker loses its relative spelling and extension policy. The repaired 136-test cohort passes, including real-shell completion correction against a selected tracker with a colliding item ID in the ambient tracker and exact unchanged ambient history bytes. A shared SDK scope formatter is used by completion, strict close evidence, terminal-close recovery, warning follow-up and lifecycle-verb examples. Dispatch captures caller scope before resolving storage coordinates. Broader coverage, static checks and packed consumers are pending; no hosted or merge success is claimed."
+  "2026-10-27T17:21:50.496Z","harness:codex",Packed runtime consumers under npm/Node and Bun confirm portable scope behavior and extension suppression through the public SDK. The final scope fixture also proves that a matching environment tracker adds no redundant path and that an environment-selected ancestor is retained when a nearer nested default tracker exists. All primary negative controls still fail against immutable b76d697ee and pass on the candidate. Relative retries now preserve their invocation cwd in the owned acceptance harness; explicit absolute retries still execute from another directory and authoritative ambient bytes remain unchanged. Complete functional and exact coverage acceptance is running.
+  "2026-10-27T17:44:23.278Z","harness:codex","Validation: qualified Node24 canonical coverage completed in 1157.23 seconds: 878 files passed plus one platform skip; 11512 tests passed and 3 platform skips; statements71117/71117, branches54752/54752, functions14628/14628, lines67266/67266, exact100% with zero uncovered. Fresh linked test receipts passed for each active owner. Packed out-of-tree npm and Bun consumers pass typed refusals, custom statuses and portable scope. Typecheck, ESLint, generated contracts/surface, 10 SDK import costs, 567-package advisory gate, runtime closure42, graph9/9, record integrity1/1, bounded mutation345 killed+7 equivalent/352 all pass. Local static transport timing remains failed (create400ms vs398ms); immutable original independently fails get419vs362/create440vs398. No threshold waived: exact-head hosted static/coverage, analyzer provenance and fresh bot review remain required before merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-27T16:49:23.245Z","harness:codex","Preserve caller scope before resolving storage paths. Relative copied commands retain their invocation-directory context, while explicitly absolute selections support replay from another directory. Avoid implicit tracker discovery when the environment-selected workspace cannot own the invocation cwd."
+files[11]{path,scope}:
+  scripts/release/agent-recovery-acceptance.mjs,project
+  sdk/public-surface.json,project
+  src/cli/commander-usage.ts,project
+  src/sdk/command-line.ts,project
+  src/sdk/index.ts,project
+  src/sdk/lifecycle/close.ts,project
+  src/sdk/runtime.ts,project
+  tests/integration/cli/agent-receipt-recovery.integration.spec.ts,project
+  tests/integration/close-history-evidence.integration.spec.ts,project
+  tests/unit/cli/canonical-command-recovery.spec.ts,project
+  tests/unit/sdk/lifecycle/completion-scope.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/completion-scope.spec.ts,project,240,"harness:codex","2026-10-27T16:10:49.957Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvqz10qv-071d8f
+    kind: test
+    status: passed
+    started_at: "2026-10-27T17:39:59.371Z"
+    finished_at: "2026-10-27T17:40:17.286Z"
+    recorded_at: "2026-10-27T17:40:17.286Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/completion-scope.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: portable-completion-scope
+  owner: pm-gh1611
+  negative_control: "node --input-type=module --eval 'import { execFileSync, spawnSync } from '\"'\"'node:child_process'\"'\"';\nimport { mkdtempSync, mkdirSync, readFileSync, copyFileSync, symlinkSync, rmSync, existsSync } from '\"'\"'node:fs'\"'\"';\nimport os from '\"'\"'node:os'\"'\"';\nimport path from '\"'\"'node:path'\"'\"';\nconst root = process.cwd();\nconst unsafe = '\"'\"'b76d697ee7d38d9f9a031406e6d08cb3dc387870'\"'\"';\nconst tmp = mkdtempSync(path.join(os.tmpdir(), '\"'\"'pm-refusal-negative-'\"'\"'));\nconst files = ['\"'\"'tests/unit/sdk/lifecycle/refusal-parity.spec.ts'\"'\"', '\"'\"'tests/unit/sdk/lifecycle/completion-scope.spec.ts'\"'\"'];\ntry {\n  const work = path.join(tmp, '\"'\"'checkout'\"'\"'); mkdirSync(work);\n  const archive = path.join(tmp, '\"'\"'source.tar'\"'\"');\n  execFileSync('\"'\"'git'\"'\"', ['\"'\"'archive'\"'\"', '\"'\"'--output='\"'\"' + archive, unsafe], { cwd: root });\n  execFileSync('\"'\"'tar'\"'\"', ['\"'\"'--exclude=.agents/pm'\"'\"', '\"'\"'-xf'\"'\"', archive, '\"'\"'-C'\"'\"', work]);\n  symlinkSync(path.join(root, '\"'\"'node_modules'\"'\"'), path.join(work, '\"'\"'node_modules'\"'\"'), '\"'\"'junction'\"'\"');\n  for (const file of files) copyFileSync(path.join(root, file), path.join(work, file));\n  const report = path.join(tmp, '\"'\"'result.json'\"'\"');\n  const result = spawnSync(process.execPath, ['\"'\"'scripts/run-tests.mjs'\"'\"', '\"'\"'test'\"'\"', '\"'\"'--'\"'\"', ...files, '\"'\"'--reporter=json'\"'\"', '\"'\"'--outputFile='\"'\"' + report], { cwd: work, encoding: '\"'\"'utf8'\"'\"', timeout: 240000, maxBuffer: 16777216, env: { ...process.env, PM_PATH: path.join(tmp, '\"'\"'pm'\"'\"'), PM_GLOBAL_PATH: path.join(tmp, '\"'\"'global'\"'\"') } });\n  if (!existsSync(report)) throw new Error('\"'\"'Missing negative-control report: '\"'\"' + result.status + '\"'\"' '\"'\"' + result.signal + '\"'\"' '\"'\"' + (result.error?.message ?? '\"'\"''\"'\"') + '\"'\"'\\n'\"'\"' + result.stderr);\n  const data = JSON.parse(readFileSync(report, '\"'\"'utf8'\"'\"'));\n  const failed = data.testResults.flatMap(s => s.assertionResults).filter(t => t.status === '\"'\"'failed'\"'\"');\n  const expected = ['\"'\"'preserves validation facts, active status domains and lookup identity across SDK and CLI'\"'\"', '\"'\"'omits the implicit cwd tracker from SDK and CLI completion and evidence guidance'\"'\"', '\"'\"'replays relative selected-tracker guidance without changing the ambient tracker'\"'\"'];\n  const proven = result.status === 1 && !result.signal && !result.error && data.numFailedTests === 3 && failed.length === 3 && data.testResults.every(s => s.message === '\"'\"''\"'\"') && expected.every(title => failed.some(t => t.title === title && t.failureMessages.some(m => m.includes('\"'\"'AssertionError'\"'\"'))));\n  console.log(JSON.stringify({ unsafe, negative_control_proven: proven, failed: failed.map(t => t.title) }));\n  process.exitCode = proven ? 1 : 3;\n} catch (error) { console.error(error); process.exitCode = 3; }\nfinally { rmSync(tmp, { recursive: true, force: true }); }\n'"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/completion-scope.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),"Packed first run (ubuntu-latest, Node 24)"
 body: ""

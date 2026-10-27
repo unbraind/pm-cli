@@ -1330,7 +1330,7 @@ function buildInvalidArgumentGuidance(
   const helpExample = commandName
     ? `pm ${commandName} --help`
     : "pm <command> --help";
-  const allowedValues = inferAllowedValuesFromMessage(message);
+  const allowedValues = context?.allowed ?? inferAllowedValuesFromMessage(message);
   const enrichedRecovery = normalizeRecoveryPayload({
     ...recovery,
     allowed_values: recovery?.allowed_values ?? allowedValues,

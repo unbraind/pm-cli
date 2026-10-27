@@ -64,12 +64,12 @@ describe("agent receipt and recovery contracts", () => {
       const refusal = runDirectDistCli(refusedArgs, { env, cwd: context.tempRoot });
       expect(refusal.code, refusal.stderr).toBe(2);
       const recovery = (JSON.parse(refusal.stderr) as JsonErrorEnvelope).recovery!;
-      expect(recovery.suggested_retry_args, refusal.stderr).toEqual(["--pm-path", context.pmPath, "recoveryprobe", "scoped-help", "--help"]);
+      expect(recovery.suggested_retry_args, refusal.stderr).toEqual(["--pm-path", refusedArgs[1], "recoveryprobe", "scoped-help", "--help"]);
       expect((JSON.parse(refusal.stderr) as JsonErrorEnvelope).examples?.[0]).toBe(recovery.suggested_retry);
       const sourceRefusal = await runInProcessDistCli(refusedArgs, { env, cwd: context.tempRoot }, runPmCli);
       expect(sourceRefusal.code, sourceRefusal.stderr).toBe(2);
       expect((JSON.parse(sourceRefusal.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(recovery.suggested_retry_args);
-      const help = runDirectDistCli([...recovery.suggested_retry_args!, "--json"], { env, cwd: otherTracker });
+      const help = runDirectDistCli([...recovery.suggested_retry_args!, "--json"], { env, cwd: context.tempRoot });
       expect(help.code, help.stderr).toBe(0);
       expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "recoveryprobe scoped-help" });
       const nestedArgs = ["--pm-path", context.pmPath, "recoveryprobe", "subgroup", "misplaced", "--help", "--json"];
@@ -95,7 +95,7 @@ describe("agent receipt and recovery contracts", () => {
           expect(isolatedInvocation.code, isolatedInvocation.stderr).toBe(2);
           if (json) expect((JSON.parse(isolatedInvocation.stderr) as JsonErrorEnvelope).recovery?.suggested_retry_args).toEqual(expectedRetry);
           else {
-            expect(isolatedInvocation.stderr).toContain(context.pmPath);
+            expect(isolatedInvocation.stderr).toContain(expectedRetry[1]);
             if (expectedRetry.includes("--no-extensions")) expect(isolatedInvocation.stderr).toContain("--no-extensions");
           }
         }
@@ -142,7 +142,7 @@ describe("agent receipt and recovery contracts", () => {
         ["item", "update", "--help"], ["item", "update", "pm-recovery", "--title", "Must not execute"],
         ["test", "pm-recovery", "--measure", "coverage=100", "--only-index", "1"],
       ]) {
-        const refusal = await runInProcessDistCli(["--no-extensions", ...args, "--json"], { env: context.env }, runPmCli);
+        const refusal = await runInProcessDistCli(["--no-extensions", ...args, "--json"], { env: context.env, cwd: context.tempRoot }, runPmCli);
         expect(refusal.code, refusal.stderr).toBe(2);
         const envelope = JSON.parse(refusal.stderr) as JsonErrorEnvelope;
         expect(envelope).toMatchObject({ code: args[0] === "item" ? "unknown_command" : "test_measure_requires_run" });
@@ -153,7 +153,7 @@ describe("agent receipt and recovery contracts", () => {
         if (args[0] === "item") {
           expect(retryArgs).toEqual(["--no-extensions", "update", "--help"]);
           expect(envelope.examples?.[0]).toBe("pm --no-extensions update --help");
-          const help = await runInProcessDistCli([...retryArgs!, "--json"], { env: context.env }, runPmCli);
+          const help = await runInProcessDistCli([...retryArgs!, "--json"], { env: context.env, cwd: context.tempRoot }, runPmCli);
           expect(help.code).toBe(0);
           expect(JSON.parse(help.stdout)).toMatchObject({ resolved_path: "update" });
         } else {

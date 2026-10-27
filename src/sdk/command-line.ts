@@ -4,8 +4,37 @@
  * Renders copy-safe pm command suggestions for SDK and CLI diagnostics.
  */
 import { findBootstrapCommandTokenIndex } from "./cli-contracts/bootstrap-command-scanner.js";
+import path from "node:path";
+import type { GlobalOptions } from "../core/shared/command-types.js";
+import { resolveImplicitPmRoot, resolvePmRoot, resolveWorkspaceRoot } from "../core/store/paths.js";
+import { isPathWithinDirectory } from "../core/fs/path-utils.js";
 
 export { quoteWindowsCommandArg, quoteCommandArg, renderPmCommand } from "../core/shared/command-line.js";
+
+type CommandScope = Pick<GlobalOptions, "path" | "noExtensions">;
+const requestedPaths = new WeakMap<CommandScope, string | undefined>();
+
+/** Retain caller scope before runtime dispatch resolves its working storage path. */
+export function capturePmCommandScope(options: CommandScope): void {
+  requestedPaths.set(options, options.path);
+}
+
+/** Inspect implicit discovery only when an environment-selected workspace could actually own this cwd. */
+function environmentCommandScope(cwd: string): string | undefined {
+  if (!process.env.PM_PATH?.trim()) return undefined;
+  const resolved = resolvePmRoot(cwd);
+  return isPathWithinDirectory(resolveWorkspaceRoot(resolved), cwd) && resolved === resolveImplicitPmRoot(cwd)
+    ? undefined : path.relative(cwd, resolved);
+}
+
+/** Build copy-safe tracker and extension arguments, preserving explicit spelling and omitting the implicit cwd tracker. */
+export function resolvePmCommandScopeArgs(options: CommandScope, cwd = process.cwd()): string[] {
+  const requested = requestedPaths.has(options) ? requestedPaths.get(options) : options.path;
+  const selected = requested || environmentCommandScope(cwd);
+  const args = selected ? ["--pm-path", selected] : [];
+  if (options.noExtensions) args.push("--no-extensions");
+  return args;
+}
 
 const HISTORY_REDACT_SENSITIVE_FLAGS = new Set([
   "--literal",

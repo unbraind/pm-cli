@@ -1,0 +1,57 @@
+id: pm-vkckiv
+title: Patch qs 6.16.0 after independent OSV detection of GHSA-6pq8-jhm2-2vcw
+description: "The complete independent OSV gate on October27 reports GHSA-6pq8-jhm2-2vcw for locked qs6.16.0 while npm audit still reports zero. GitHub advisory https://github.com/advisories/GHSA-6pq8-jhm2-2vcw, updated October27, identifies6.16.1 as patched. The installed edge is development-only Stryker10 -> typed-rest-client2.3.1 -> qs6.16.0. Six library-level comma serializer triggers throw and two ordinary controls pass. Application-level production exploitability is not established. Preserve the completed older qs6.16.0 remediation under pm-mlpn91 for its distinct advisories."
+type: Issue
+status: in_progress
+priority: 1
+tags[3]: dependencies,osv,security
+created_at: "2026-10-27T16:39:18.304Z"
+updated_at: "2026-10-27T17:44:24.576Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#4f9b0131c245b9f712c46790"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "Every locked qs edge resolves to6.16.1 or later within major6; Six original and alternate comma serializer triggers no longer throw and ordinary serialization controls remain unchanged; Independent all-package OSV and npm evidence both report zero without advisory suppression; Existing strict quality, runtime distribution and frozen-lockfile contracts pass"
+parent: pm-qwoy
+risk: medium
+confidence: high
+expected_result: "All locked qs bindings resolve to mature6.16.1 or a later verified safe major6 release, the original and alternate comma serialization triggers no longer throw, ordinary controls retain their contract, and complete independent dependency evidence reports zero without suppressions."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-mlpn91,related,"2026-10-27T16:39:18.304Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-27T16:39:18.304Z","harness:codex","Duplicate check: complete3141-item all-status corpus has no matching advisory. Fresh advisory-ID and qs searches plus live open and in_progress lists were read. Full live older qs owner data/history confirms completed different advisories, and the security capability parent data/history was refreshed. This is a newly updated advisory and a distinct bounded repair, not a reopening of completed work."
+  "2026-10-27T16:42:57.591Z","harness:codex","Independent pre-patch package proof: all6 JSON, parsed-prototype and null-prototype comma serialization cases throw TypeError in6.16.0, while2 ordinary controls pass. Patched6.16.1 passes those6 cases,8 alternate nested/parsed/encoding cases and the actual typed-rest-client Util.getUrl route. Ordinary repeat/comma/scalar serialization remains identical and intentional custom-encoder failures still propagate. The direct consumer harness initially needed its pnpm symlink resolved physically; corrected setup passes. Both parent investigation and an independent read-only investigation trace only the development Stryker->typed-rest-client edge, absent from runtime distribution, with production exploitability unproven. Raised the existing major6 override floor to6.16.1 and regenerated only its resolution, using an explicitly verified10080-minute resolver age.6.16.1 was published October14; today6.17.0 was deliberately not adopted. Frozen install, runtime lock, complete567-package OSV and npm evidence now pass. Fresh candidate review and full quality gates remain pending."
+  "2026-10-27T16:47:17.266Z","harness:codex","Fresh candidate review found no concrete surviving vulnerable binding or compatibility regression. It independently exercised28 malicious representations,7 ordinary controls and169 unchanged comparative outputs; the one ISO-8859-1 plus-sign difference matches the documented upstream correctness fix and round-trips. The unchanged independent gate was also replayed on immutable b76d697ee source in a disposable checkout: complete feed receipts identify the exact qs6.16.0 advisory and the gate refuses with native exit1; setup or unavailable-feed conditions cannot count as proof. Current567-package receipts are clear. Full repository acceptance and delivery review remain pending."
+  "2026-10-27T17:44:24.576Z","harness:codex","Validation: qualified Node24 canonical coverage completed in 1157.23 seconds: 878 files passed plus one platform skip; 11512 tests passed and 3 platform skips; statements71117/71117, branches54752/54752, functions14628/14628, lines67266/67266, exact100% with zero uncovered. Fresh linked test receipts passed for each active owner. Packed out-of-tree npm and Bun consumers pass typed refusals, custom statuses and portable scope. Typecheck, ESLint, generated contracts/surface, 10 SDK import costs, 567-package advisory gate, runtime closure42, graph9/9, record integrity1/1, bounded mutation345 killed+7 equivalent/352 all pass. Local static transport timing remains failed (create400ms vs398ms); immutable original independently fails get419vs362/create440vs398. No threshold waived: exact-head hosted static/coverage, analyzer provenance and fresh bot review remain required before merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-27T16:49:24.353Z","harness:codex","A zero npm audit result did not prove the complete dependency graph safe: the independent all-package OSV feed detected this advisory. Keep both feeds and exact input hashes, include development and optional versions, and distinguish an affected library from demonstrated production exploitability."
+files[2]{path,scope}:
+  pnpm-lock.yaml,project
+  pnpm-workspace.yaml,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/dependency-advisories/gate.mjs,project,240,"harness:codex","2026-10-27T16:42:55.278Z",local_mutation,fix/agent-history-and-recovery
+  node scripts/release/runtime-lock.mjs check,project,240,"harness:codex","2026-10-27T16:42:55.278Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvqz19jy-m3z0s0
+    kind: test
+    status: passed
+    started_at: "2026-10-27T17:40:23.049Z"
+    finished_at: "2026-10-27T17:40:28.702Z"
+    recorded_at: "2026-10-27T17:40:28.702Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/dependency-advisories/gate.mjs,schema,schema,source,local_source_ref
+      node scripts/release/runtime-lock.mjs check,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: repository-independent-dependency-advisories
+  owner: pm-vkckiv
+  negative_control: "node --input-type=module --eval 'import { execFileSync, spawnSync } from '\"'\"'node:child_process'\"'\"';\nimport { mkdtempSync, mkdirSync, readFileSync, symlinkSync, rmSync } from '\"'\"'node:fs'\"'\"';\nimport os from '\"'\"'node:os'\"'\"';\nimport path from '\"'\"'node:path'\"'\"';\nconst root = process.cwd(), unsafe = '\"'\"'b76d697ee7d38d9f9a031406e6d08cb3dc387870'\"'\"';\nconst tmp = mkdtempSync(path.join(os.tmpdir(), '\"'\"'pm-qs-gate-negative-'\"'\"'));\ntry {\n const work = path.join(tmp, '\"'\"'checkout'\"'\"'); mkdirSync(work);\n const archive = path.join(tmp, '\"'\"'source.tar'\"'\"');\n execFileSync('\"'\"'git'\"'\"', ['\"'\"'archive'\"'\"', '\"'\"'--output='\"'\"' + archive, unsafe]);\n execFileSync('\"'\"'tar'\"'\"', ['\"'\"'--exclude=.agents/pm'\"'\"', '\"'\"'-xf'\"'\"', archive, '\"'\"'-C'\"'\"', work]);\n symlinkSync(path.join(root, '\"'\"'node_modules'\"'\"'), path.join(work, '\"'\"'node_modules'\"'\"'), '\"'\"'junction'\"'\"');\n const result = spawnSync(process.execPath, ['\"'\"'scripts/release/dependency-advisories/gate.mjs'\"'\"'], { cwd: work, encoding: '\"'\"'utf8'\"'\"', timeout: 180000, maxBuffer: 16777216, env: { ...process.env, PM_PATH: path.join(tmp, '\"'\"'pm'\"'\"'), PM_GLOBAL_PATH: path.join(tmp, '\"'\"'global'\"'\"'), PM_TELEMETRY_DISABLED: '\"'\"'1'\"'\"', PM_SENTRY_DISABLED: '\"'\"'1'\"'\"' } });\n const receipt = JSON.parse(readFileSync(path.join(work, '\"'\"'.cache/dependency-security/receipt.json'\"'\"'), '\"'\"'utf8'\"'\"'));\n const row = receipt.feeds?.osv?.rows?.find(r => r.name === '\"'\"'qs'\"'\"' && r.version === '\"'\"'6.16.0'\"'\"');\n const proven = result.status === 1 && !result.signal && !result.error && receipt.status === '\"'\"'complete'\"'\"' && receipt.feeds.registry.status === '\"'\"'complete'\"'\"' && receipt.feeds.osv.status === '\"'\"'complete'\"'\"' && row?.ids.includes('\"'\"'GHSA-6pq8-jhm2-2vcw'\"'\"');\n console.log(JSON.stringify({ unsafe, negative_control_proven: proven, advisory: row?.ids }));\n process.exitCode = proven ? 1 : 3;\n} catch (error) { console.error(error); process.exitCode = 3; }\nfinally { rmSync(tmp, { recursive: true, force: true }); }\n'"
+  local_checks[3]: node scripts/release/dependency-advisories/gate.mjs,pnpm install --frozen-lockfile,node scripts/release/runtime-lock.mjs check
+  hosted_checks[2]: Gates (static),Gates (coverage)
+body: ""

@@ -71,7 +71,8 @@ describe("close history evidence", () => {
         expect(closed.code).toBe(0);
         result = closed.json;
       } else result = await runAction({ action: "close", id, reason: "Delivered", path: context.pmPath, options: { validateClose: "warn" } });
-      expect(result).toMatchObject({ id, status: "closed", follow_up: { kind: "complete_close_evidence", missing: ["--resolution", "--expected-result", "--actual-result"], suggested_command: expect.stringContaining("update"), suggested_command_args: ["--pm-path", context.pmPath, "update", id, "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"] } });
+      const selectedScope = transport === "CLI" ? path.relative(process.cwd(), context.pmPath) : context.pmPath;
+      expect(result).toMatchObject({ id, status: "closed", follow_up: { kind: "complete_close_evidence", missing: ["--resolution", "--expected-result", "--actual-result"], suggested_command: expect.stringContaining("update"), suggested_command_args: ["--pm-path", selectedScope, "update", id, "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"] } });
       expect(result).not.toHaveProperty("recovery");
     });
   });

@@ -161,6 +161,7 @@ export {
   quoteCommandArg,
   quoteWindowsCommandArg,
   renderPmCommand,
+  resolvePmCommandScopeArgs,
 } from "./command-line.js";
 export * from "./agent/command-recovery.js";
 export * from "./agent/linked-resource-recovery.js";

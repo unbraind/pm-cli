@@ -797,8 +797,9 @@ const PLANNED_UPDATE_VALIDATORS: PlannedUpdateValidator[] = [
         (definition) => definition.id,
       );
       throw new PmCliError(
-        `Invalid --status value "${update.status}". Allowed: ${allowedStatuses.join(", ")}`,
+        `Invalid status value "${update.status}". Allowed: ${allowedStatuses.join(", ")}`,
         EXIT_CODE.USAGE,
+        { code: "invalid_argument_value", field: "status", value: update.status, allowed: allowedStatuses },
       );
     }
   },

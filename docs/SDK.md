@@ -176,6 +176,26 @@ When adopting this update, read `error.context?.changed === false` as proof of a
 preflight refusal. An absent property gives no guarantee about writes; do not
 coerce it to `false` or treat an executed failure as safe to retry. Consumers
 that enumerate error keys should accept the additional optional property.
+
+Validation refusals for item status and priority carry producer-owned
+`code: "invalid_argument_value"` and `context.field`, `context.value` and
+`context.allowed`. The allowed spellings come from the active status schema or
+priority domain; values are represented as strings, including numeric priority
+input. Missing-item lookups carry `code: "item_not_found"` and `context.id`.
+These are the same codes as the corresponding CLI envelopes. SDK status
+messages name `status` rather than a CLI flag, and callers can handle these
+refusals through `isPmCliExpectedError` without parsing the message. Existing
+document-parse and ownership diagnostics retain their separate codes.
+
+`resolvePmCommandScopeArgs({ path, noExtensions }, cwd?)` builds portable
+tracker and extension arguments for package-authored guidance. It preserves an
+explicit path's spelling, omits the implicit cwd tracker, and expresses a
+different environment-selected tracker relative to the invocation directory.
+Completion corrections, missing close-evidence updates and lifecycle-verb
+examples share this formatter. SDK dispatch preserves the original scope before
+resolving storage paths, so copied commands retain relative selection and
+`--no-extensions` without adding a redundant absolute host path.
+
 JavaScript create/update callers must also remove misspelled keys and move
 mutation fields into `options` on generic `run` calls: these requests now fail
 instead of silently dropping fields. See [Robust Automation Pattern](#robust-automation-pattern)

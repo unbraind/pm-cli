@@ -589,7 +589,7 @@ describe("runUpdateMany", () => {
       {
         name: "invalid status",
         update: { status: "BogusStatus" },
-        message: 'Invalid --status value "BogusStatus"',
+        message: 'Invalid status value "BogusStatus"',
       },
       {
         name: "invalid deadline",

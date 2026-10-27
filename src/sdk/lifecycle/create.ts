@@ -328,6 +328,7 @@ function parseStatusValue(
     throw new PmCliError(
       `Invalid status value "${value}". Allowed: ${allowedStatuses.join(", ")}`,
       EXIT_CODE.USAGE,
+      { code: "invalid_argument_value", field: "status", value, allowed: allowedStatuses },
     );
   }
   return normalized;
