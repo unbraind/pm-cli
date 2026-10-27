@@ -29,6 +29,12 @@ function priorityUsageError(raw: string): PmCliError {
   return new PmCliError(
     `Invalid priority "${raw}". Accepted values: ${PRIORITY_ACCEPTED_FORMS_HINT}.`,
     EXIT_CODE.USAGE,
+    {
+      code: "invalid_argument_value",
+      field: "priority",
+      value: raw,
+      allowed: ["0", "1", "2", "3", "4", ...PRIORITY_NAME_LIST],
+    },
   );
 }
 

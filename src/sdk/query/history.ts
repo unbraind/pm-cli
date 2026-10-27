@@ -115,6 +115,10 @@ export interface HistoryResult {
   omission_receipt: OutputOmissionReceipt;
   /** Value that configures or reports count for this contract. */
   count: number;
+  /** Complete number of matching entries before the latest-entry limit or output budget. */
+  total: number;
+  /** Display order; physical indices and durable version addresses never change. */
+  order: "newest_first" | "oldest_first";
   /** Value that configures or reports limit for this contract. */
   limit: number | null;
   /** Value that configures or reports diff for this contract. */
@@ -216,6 +220,65 @@ async function resolveHistoryReadTarget(id: string, global: GlobalOptions) {
   return { historyPath, located, resolvedId, settings };
 }
 
+/** Build ordered display rows while retaining immutable physical and durable history coordinates. */
+function buildHistoryProjection(params: {
+  resolvedId: string;
+  selectedHistory: ReturnType<typeof indexHistoryEntries>;
+  options: HistoryCommandOptions;
+  limit: number | undefined;
+  addressing: HistoryResult["version_addressing"];
+  vocabulary: Parameters<typeof projectHistoryProvenance>[1];
+  total: number;
+}): HistoryResult {
+  const { resolvedId, selectedHistory, options, limit, addressing, vocabulary, total } = params;
+  const compact = options.compact === true;
+  const newestFirst = limit === undefined && (compact || options.provenance === true);
+  const displayedHistory = newestFirst ? [...selectedHistory].reverse() : selectedHistory;
+  const history = displayedHistory.map(({ entry }) => entry);
+  const compactHistory = compact
+    ? buildDiffEntries(displayedHistory, addressing)
+    : undefined;
+  const provenanceHistory =
+    options.provenance === true
+      ? displayedHistory.map(({ entry, durableVersion }) =>
+          projectHistoryProvenance(entry, vocabulary, {
+            itemId: resolvedId,
+            version: durableVersion,
+          }),
+        )
+      : undefined;
+  const projectionMode =
+    options.provenance === true ? "provenance" : compact ? "compact" : "full";
+  const rowProjection = {
+    compact: { compact_history: compactHistory },
+    provenance: { provenance_history: provenanceHistory },
+    full: { history },
+  }[projectionMode];
+  const rowKey = {
+    compact: "compact_history",
+    provenance: "provenance_history",
+    full: "history",
+  } as const;
+  return {
+    id: resolvedId,
+    ...rowProjection,
+    compact,
+    projection: {
+      mode: projectionMode,
+      row_key: rowKey[projectionMode],
+    },
+    omission_receipt: resolveModePairedOutputOmissionReceipt(
+      "history",
+      projectionMode,
+    ),
+    count: history.length,
+    total,
+    order: newestFirst ? "newest_first" : "oldest_first",
+    limit: limit ?? null,
+    version_addressing: addressing,
+  };
+}
+
 /** Implements run history for the public runtime surface of this module. */
 export async function runHistory(
   id: string,
@@ -244,67 +307,28 @@ export async function runHistory(
   const filteredHistory = indexHistoryEntries(fullHistory)
     .filter(({ entry }) => matchesProvenance(entry));
   const selectedHistory = limitEntries(filteredHistory, limit);
-  const history = selectedHistory.map(({ entry }) => entry);
-  const compact = options.compact === true;
-  const compactHistory = compact
-    ? buildDiffEntries(selectedHistory, addressing)
-    : undefined;
-  const provenanceHistory =
-    options.provenance === true
-      ? selectedHistory.map(({ entry, durableVersion }) =>
-          projectHistoryProvenance(entry, vocabulary, {
-            itemId: resolvedId,
-            version: durableVersion,
-          }),
-        )
-      : undefined;
-  const projectionMode =
-    options.provenance === true ? "provenance" : compact ? "compact" : "full";
-  const rowProjection = {
-    compact: { compact_history: compactHistory },
-    provenance: { provenance_history: provenanceHistory },
-    full: { history },
-  }[projectionMode];
-  const rowKey = {
-    compact: "compact_history",
-    provenance: "provenance_history",
-    full: "history",
-  } as const;
-  const result: HistoryResult = {
-    id: resolvedId,
-    ...rowProjection,
-    compact,
-    projection: {
-      mode: projectionMode,
-      row_key: rowKey[projectionMode],
-    },
-    omission_receipt: resolveModePairedOutputOmissionReceipt(
-      "history",
-      projectionMode,
-    ),
-    count: history.length,
-    limit: limit ?? null,
-    version_addressing: addressing,
-    ...(options.provenanceSummary === true
-      ? {
-          provenance_summary: summarizeHistoryProvenance(
-            filteredHistory.map(({ entry }) => entry),
-            vocabulary,
-            provenanceDimensions,
-          ),
-        }
-      : {}),
-  };
+  const result = buildHistoryProjection({
+    resolvedId, selectedHistory, options, limit, addressing, vocabulary,
+    total: filteredHistory.length,
+  });
+  if (options.provenanceSummary === true) {
+    result.provenance_summary = summarizeHistoryProvenance(
+      filteredHistory.map(({ entry }) => entry), vocabulary, provenanceDimensions,
+    );
+  }
 
   if (options.diff || options.field !== undefined) {
     // --diff replays the full chain to surface per-field before/after values for
-    // the displayed window (the latest --limit entries). --field narrows to a
+    // the selected physical entries, including non-contiguous provenance filters. --field narrows to a
     // single field's transitions ("when did status change?"). Unlike the compact
     // projection above, the value diff is independent of the compact/full toggle.
+    const selectedIndices = new Set(selectedHistory.map(({ version }) => version));
     result.diff = computeHistoryDiff(fullHistory, {
-      windowStartIndex: Math.max(0, fullHistory.length - history.length),
+      windowStartIndex: (selectedHistory[0]?.version ?? fullHistory.length + 1) - 1,
       field: options.field,
-    });
+    })
+      .filter((row) => selectedIndices.has(row.index));
+    if (result.order === "newest_first") result.diff.reverse();
   }
 
   if (options.verify) {

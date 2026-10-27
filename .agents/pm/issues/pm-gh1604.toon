@@ -2,21 +2,61 @@ id: pm-gh1604
 title: "GH-1604: Classify missing linked-test executables separately from assertion failures"
 description: "**Version:** pm 2026.10.26 (Node 24.19.0), plain non-git tracker.\n\n**Repro**\n```sh\npm init\npm create --type Task --title t            # -> pm-xxxx\npm test pm-xxxx --add 'command=definitely-not-a-binary-xyz'\npm test pm-xxxx --run --json\n```\n**Observed:** `{\"exit_code\":127,\"failure_category\":\"assertion_failure\",\"status\":\"failed\"}` with stderr `/bin/sh: 1: definitely-not-a-binary-xyz: not found`. An ordinary `node -e \"process.exit(1)\"` gets the same category, and `npm test` without a package manifest (stderr reports `ENOENT`) is also `assertion_failure`.\n\n**Expected:** a test whose executable cannot be resolved (shell exit 127 with the command named as not found), or whose runner cannot start, is classified separately from an executed test that failed — e.g. a documented `command_not_found` / setup category, or the existing `spawn_error` extended to shell resolution failures. Keep exit code and stderr unchanged.\n\n**Why it matters for agents:** agents route on `failure_category`. Today a missing tool or broken test command is routed to \"fix the implementation\", and the agent needs a second read of stderr (≈2.7 KB here) to discover it is a setup problem. Classifying narrowly (exit 127 + the named executable is missing) avoids misreading arbitrary child stderr that contains \"not found\".\n\n\nIntake boundary: this is a report against published 2026.10.26, not proof of a current-checkout defect. Reproduce in an external sandbox before implementation. Related completed work retains its shipped scope. Proposed examples or categories are not accepted contracts until validated.\n\nSource: https://github.com/unbraind/pm-cli/issues/1604"
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-26T19:02:02.694Z"
-updated_at: "2026-10-26T19:02:02.694Z"
+updated_at: "2026-10-27T05:45:22.801Z"
+closed_at: "2026-10-26T23:58:40.395Z"
+completed_at: "2026-10-26T23:58:40.395Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Native isolated controls distinguish a missing executable from an installed child that deliberately exits 127 or prints not found.; Classification uses actual resolution and recognized runner context, preserving shell syntax, Windows semantics, exit codes, stderr and aggregate counts; arbitrary child ENOENT text is not sufficient.; Public SDK, CLI and MCP result contracts and documented recovery agree."
 parent: pm-f05lsg
 risk: medium
 confidence: medium
-expected_result: A missing named executable produces a precise setup or spawn category while preserving the original exit status and stderr; an executed assertion failure keeps its current category.
+resolution: Classify proven shell lookup failures as setup failures while preserving child assertion semantics.
+expected_result: A missing literal executable is spawn_error with the original exit code and stderr; executed children exiting127 or printing ENOENT remain assertion failures.
+actual_result: "Linked95-test cohort passes, including actual native shell controls and POSIX/Windows resolver boundaries. Hosted native Windows regression and all six packed first-run platform/runtime checks pass at58e8f1226; aggregate exact coverage passes100/100/100/100. First-head static planner metadata failure is corrected locally; revised-head required checks and review remain pre-merge gates."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-siz,related,"2026-10-26T19:02:02.694Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-26T19:02:02.694Z","harness:codex","Duplicate check: fresh orientation, request-specific search, open/in-progress inventories and complete strict 3126-item all-status corpus found no open owner for this exact case. Full live metadata and histories of related owners confirm their completed, distinct scope. This is intake only, open and unclaimed; implementation is outside the current delivery cohort."
+  "2026-10-26T22:07:04.100Z","harness:codex","Native regression initially returned assertion_failure for a genuinely absent executable. The new orchestration control now distinguishes that shell lookup failure as spawn_error while preserving exact stderr and exit status. Installed Node children deliberately exiting 127 or printing ENOENT remain assertion_failure. Platform controls cover Windows command lookup, POSIX lookup return variants, successful lookup, unavailable probes, compound syntax and expansions. Focused cohort passed 96 tests; aggregate category shape and measurement exclusion reuse existing spawn_error semantics."
+  "2026-10-26T22:35:17.740Z","harness:codex","Portability refinement: Windows shell lookup can preserve either code1 or9009; recognition still requires the exact named diagnostic and an actual negative lookup. The native regression now compares both exit status and stderr directly with an independently spawned platform shell, avoiding an assumed Windows code. Microsoft Terminal documents9009 for a command lookup failure: https://github.com/microsoft/terminal/wiki/Frequently-Asked-Questions-(FAQ)/cac7ddd81f2016142f41313cf459f3a1a2efc773 . Mocked platform controls include both statuses and installed-child negative cases. Source behavior and exact public category shape are unchanged for ordinary assertions."
+  "2026-10-26T23:06:12.843Z","harness:codex",An independently installed published npm 2026.10.26 artifact reproduces assertion_failure/exit127 for the absent executable in an isolated non-Git tracker. Current public-SDK workspace consumers on both Node and Bun report spawn_error while preserving exit127. Targeted native tests independently compare exact stderr/status to a platform shell and retain deliberate installed-child exit127/ENOENT negatives. All new resolution-module branches have complete focused diagnostic coverage; canonical full-source coverage remains running.
+  "2026-10-26T23:58:39.621Z","harness:codex","Hosted acceptance for source head58e8f12264497c1411f29afd78d139b406231663: https://github.com/unbraind/pm-cli/actions/runs/40420598204. Exact aggregate coverage has zero uncovered counts; native Windows regression and all packed first-run checks pass. The first static job fails solely active planner completeness on this delivery task (estimate and expected result); both fields were supplied through pm and local tracker-context assurance now passes. Full revised-head static/check/review acceptance is still mandatory before merge. Preserve the failed local coverage attempt and separate qualified Node26 admission failures; no overall-green claim is made for the first workflow."
+  "2026-10-27T05:45:22.800Z","harness:codex","Complete delivery-control audit: frozen candidateaff043f08ea0bd4a14b30af6f420d0f7f01c910f; only src/sdk/test/execution.ts is replaced with ce979159acfe034217a5694a3e826940895b3581. The recorded runnable replay archives isolated source, uses sandboxed PM roots, and requires one exact named AssertionError with its expected matcher fragment and empty Vitest4 suite messages. Executed now and proved the intended failure. Expected counterexample returns1; setup/runtime or mismatched assertion returns3. Passing local_checks remain separate; immutable historical events are retained."
+files[6]{path,scope}:
+  .github/workflows/ci.yml,project
+  src/sdk/test/command-resolution.ts,project
+  src/sdk/test/execution.ts,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/unit/sdk/test/command-resolution.spec.ts,project
+  tests/unit/sdk/test/missing-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,project,300,"harness:codex","2026-10-26T22:07:02.029Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvpw2g7g-2a3ssr
+    kind: test
+    status: passed
+    started_at: "2026-10-26T23:28:27.737Z"
+    finished_at: "2026-10-26T23:29:38.956Z"
+    recorded_at: "2026-10-26T23:29:38.956Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+close_reason: Implementation and focused/native hosted acceptance complete; reviewed delivery continues in PR1608.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-test-executable-resolution
+  negative_control: "node --input-type=module --eval 'import {execFileSync,spawnSync} from '\\''node:child_process'\\'';\nimport {mkdtempSync,readFileSync,writeFileSync,symlinkSync,rmSync} from '\\''node:fs'\\'';\nimport os from '\\''node:os'\\'';import path from '\\''node:path'\\'';\nconst root=process.cwd(),tmp=mkdtempSync(path.join(os.tmpdir(),'\\''pm-negative-replay-'\\''));\ntry {\n const archive=path.join(tmp,'\\''source.tar'\\'');execFileSync('\\''git'\\'',['\\''archive'\\'','\\''--output='\\''+archive,'\\''aff043f08ea0bd4a14b30af6f420d0f7f01c910f'\\'']);\n execFileSync('\\''tar'\\'',['\\''--exclude=.agents/pm'\\'','\\''-xf'\\'',archive,'\\''-C'\\'',tmp]);\n symlinkSync(path.join(root,'\\''node_modules'\\''),path.join(tmp,'\\''node_modules'\\''),'\\''junction'\\'');\n writeFileSync(path.join(tmp,\"src/sdk/test/execution.ts\"),execFileSync('\\''git'\\'',['\\''show'\\'',\"ce979159acfe034217a5694a3e826940895b3581:src/sdk/test/execution.ts\"]));\n const report=path.join(tmp,'\\''negative.json'\\'');\n const result=spawnSync(process.execPath,['\\''scripts/run-tests.mjs'\\'','\\''test'\\'','\\''--'\\'',\"tests/unit/sdk/test/missing-command.spec.ts\",'\\''-t'\\'',\"distinguishes shell command lookup failures from executed children exiting 127 or printing ENOENT\",'\\''--reporter=json'\\'','\\''--outputFile'\\'',report],{cwd:tmp,env:{...process.env,PM_TELEMETRY_DISABLED:'\\''1'\\'',PM_SENTRY_DISABLED:'\\''1'\\''},stdio:'\\''inherit'\\''});\n const data=JSON.parse(readFileSync(report,'\\''utf8'\\'')),failures=data.testResults.flatMap(s=>s.assertionResults).filter(t=>t.status==='\\''failed'\\'');\n const proven=result.status===1 && data.numFailedTests===1 && data.testResults.every(s=>s.message==='\\'''\\'') && failures.length===1 && failures[0].title===\"distinguishes shell command lookup failures from executed children exiting 127 or printing ENOENT\" && failures[0].failureMessages.some(m=>m.includes('\\''AssertionError'\\'')&&m.includes(\"to match object\"));\n console.log(JSON.stringify({candidate:'\\''aff043f08ea0bd4a14b30af6f420d0f7f01c910f'\\'',unsafe_condition:\"ce979159acfe034217a5694a3e826940895b3581\",file:\"src/sdk/test/execution.ts\",test:\"distinguishes shell command lookup failures from executed children exiting 127 or printing ENOENT\",negative_control_proven:proven}));\n if(!proven)console.error(JSON.stringify({status:result.status,suites:data.testResults.map(s=>({message:s.message})),failures}));\n process.exitCode=proven?1:3;\n} catch(error){console.error(error);process.exitCode=3;} finally{rmSync(tmp,{recursive:true,force:true});}'"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
+  owner: pm-gh1604
 body: ""

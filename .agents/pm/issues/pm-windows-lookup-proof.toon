@@ -1,0 +1,62 @@
+id: pm-windows-lookup-proof
+title: Capture native lookup evidence and reject interrupted command-absence proof
+description: "Native Windows Node24 cohort job121994981615 in CI40445155345 at metadata head8c8c7586a reports a genuinely missing literal executable as assertion_failure, despite retaining the expected shell diagnostic and native exit1. It failed both native test attempts. The identical production/test source passed every hosted check at8bedb5f77. The confirming resolver currently uses bounded where.exe execution, but this run did not capture its actual status, signal or duration, so probe timeout or environment variation is a hypothesis rather than a confirmed cause. Preserve the raw failure and compare one fresh native-cohort rerun before selecting a fix. CI link: https://github.com/unbraind/pm-cli/actions/runs/40445155345/job/121994981615"
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-10-27T03:57:59.615Z"
+updated_at: "2026-10-27T08:34:21.268Z"
+closed_at: "2026-10-27T08:32:38.234Z"
+completed_at: "2026-10-27T08:32:38.234Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Capture actual Windows resolver status signal and duration with the same child environment and working directory; Separate confirmed command absence from unavailable proof without trusting arbitrary child diagnostics; Retain bounded lookup behavior native exit status exact stderr and installed-child127 or ENOENT negative controls
+parent: pm-gh1604
+risk: medium
+confidence: high
+resolution: "Capture real native child/resolver status, signal, killed flag, duration, cwd and effective environment equality without replacing OS results. Make the required gate assert classification from independent proof, and reject interrupted numeric absence statuses. Keep the required Windows cohort, raw status/stderr, installed-child controls and one-second budget."
+expected_result: "A completed fresh negative lookup establishes spawn_error; unavailable or interrupted evidence stays assertion_failure. Native child and probe use equal effective environments and cwd, and pinned unsafe-source replays fail only the intended assertion."
+actual_result: "All43 linked native/lookup tests and all118 connected tests pass locally; focused coverage is47/47 statements,53/53 branches,6/6 functions,40/40 lines. Actual Windows source862 logs code1/no signal/no kill at476.7433ms and equal child context. Its native cohort and full100/100/100/100 source coverage pass. The pinned interrupted-proof counterexample fails as intended; no historical cause is invented."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-script-launch-evidence,related,"2026-10-27T03:58:03.374Z","harness:codex","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-10-27T03:57:59.615Z","harness:codex","Duplicate check: complete3136-item strict full all-status corpus, request search and live open/in-progress inventories contain no dedicated intermittent Windows probe-evidence owner. Full live pm-gh1604 data retains its completed baseline and the separate pm-script-launch-evidence follow-up is completed for direct script interpreters and replay evidence. This queued investigation owns the newly observed native classification variation. It remains open and unclaimed; no Windows root cause or repair is claimed."
+  "2026-10-27T04:08:07.696Z","harness:codex","Fresh native cohort attempt2 succeeds on identical8c8c7586a production/test source: job122000399134 https://github.com/unbraind/pm-cli/actions/runs/40445155345/job/122000399134 and dependent Windows gate122002600907 both pass. This confirms variation across native attempts, not a source repair or a proven timeout cause. The whole workflow still fails the separate known planner fields on the immutable8c intake; those metadata fields are corrected locally for the next head. Keep the resolver investigation open/unclaimed and preserve the failed first attempt."
+  "2026-10-27T07:45:32.591Z","harness:codex","Review4386092218 correctly challenges an unconditional native assertion when the bounded external resolver can be unavailable. Keep the required Windows test and unchanged1s bound. Capture the actual native execFile boundary, status/signal/killed/duration and sanitized environment/cwd evidence, then require the classification dictated by that independent observed proof. An absent probe or wrong classification must still fail. Do not infer the historical failure cause or remove the required cohort. No production test-only seam or new public API is needed."
+  "2026-10-27T07:54:21.829Z","harness:codex","Source audit found a distinct reproducible conservative-proof defect: an error with numeric absence code1/127 plus killed=true or signal=SIGTERM was accepted as absence. Four external-boundary cases fail before the guard and pass afterward. Interrupted/unavailable proof now declines regardless of numeric code. This does not establish the historical Windows attempt cause. The native passthrough observer records actual child/resolver identity and outcomes without replacing OS results, printing environment values, or adding a production seam; the required cohort and1s budget stay intact."
+  "2026-10-27T07:57:22.525Z","harness:codex","Connected acceptance passes locally: all118 assertions across history recency2, native linked-command2, lookup41 and linked-runner73; the linked native/lookup cohort passes43 tests. Exact lookup coverage is47/47 statements,53/53 branches,6/6 functions,40/40 lines, with zero uncovered counts. TypeScript and focused ESLint pass. Native instrumentation compares effective environment values without requiring object identity and emits sanitized status/signal/kill/duration/cwd evidence. Actual hosted Windows capture and fresh exact-head source admission remain required before this investigation is closed."
+  "2026-10-27T08:09:13.621Z","harness:codex","Portable counterexample evidence: frozen candidate 862c800cfe785da6e80a2490318b81586615465b with only src/sdk/test/command-resolution.ts changed. The preimage is a967abee7afff03cdb9b2e2fba7d206c7b497313; the newest-history condition changes only newestFirst to false. Each named case independently requires exactly one expected AssertionError, its specific matcher fragment, empty suite-error messages and native exit1. Unexpected/runtime/setup outcomes refuse proof with3. All applicable cases were independently executed now; passing local checks and historical immutable events remain separate."
+  "2026-10-27T08:32:36.488Z","harness:codex","Actual hosted Windows proof: source862c800cfe785da6e80a2490318b81586615465b, CI40470864579 native job122077768670 captures where.exe code1, signal=null, killed=false, duration476.7433ms within the1000ms budget; working directory D:/a/pm-cli/pm-cli matches the real child, effective environment equality=true and SystemRoot/ComSpec/PATH/PATHEXT names are present without logging values. The required cohort passes. Exact full-source coverage job122081493455 passes100/100/100/100 with zero uncovered counts. Controlled interrupted-provider cases prove refusal independently; the historical failed attempt cause remains unproven. DeepScan has not published this source status, so global merge readiness is still refused separately."
+files[5]{path,scope}:
+  .github/workflows/ci.yml,project
+  src/sdk/test/command-resolution.ts,project
+  src/sdk/test/execution.ts,project
+  tests/unit/sdk/test/command-resolution.spec.ts,project
+  tests/unit/sdk/test/missing-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts,project,300,"harness:codex","2026-10-27T07:55:25.426Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvqe5klj-x9kb26
+    kind: test
+    status: passed
+    started_at: "2026-10-27T07:55:45.973Z"
+    finished_at: "2026-10-27T07:55:57.703Z"
+    recorded_at: "2026-10-27T07:55:57.703Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/TESTING.md,project
+close_reason: "Native evidence and conservative proof classification are implemented and verified; final exact-head checks, review and the missing required DeepScan publisher remain delivery prerequisites."
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: linked-test-native-lookup-proof
+  owner: pm-windows-lookup-proof
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
+  negative_control: "node --input-type=module --eval 'import {execFileSync,spawnSync} from '\\''node:child_process'\\'';\nimport {mkdtempSync,readFileSync,writeFileSync,symlinkSync,rmSync} from '\\''node:fs'\\'';\nimport os from '\\''node:os'\\'';import path from '\\''node:path'\\'';\nconst candidate=\"862c800cfe785da6e80a2490318b81586615465b\",unsafe=\"a967abee7afff03cdb9b2e2fba7d206c7b497313\",file=\"src/sdk/test/command-resolution.ts\",cases=[{\"kind\":\"preimage\",\"title\":\"declines win32 resolver evidence interrupted by timeout\",\"file\":\"tests/unit/sdk/test/command-resolution.spec.ts\",\"fragment\":\"expected true to be false\"}];\nconst root=process.cwd(),tmp=mkdtempSync(path.join(os.tmpdir(),'\\''pm-negative-replay-'\\''));\ntry {\n const archive=path.join(tmp,'\\''source.tar'\\'');\n execFileSync('\\''git'\\'',['\\''archive'\\'','\\''--output='\\''+archive,candidate]);\n execFileSync('\\''tar'\\'',['\\''--exclude=.agents/pm'\\'','\\''-xf'\\'',archive,'\\''-C'\\'',tmp]);\n symlinkSync(path.join(root,'\\''node_modules'\\''),path.join(tmp,'\\''node_modules'\\''),'\\''junction'\\'');\n const fixed=execFileSync('\\''git'\\'',['\\''show'\\'',candidate+'\\'':'\\''+file],{encoding:'\\''utf8'\\''});\n for(const control of cases){\n  let mutant=execFileSync('\\''git'\\'',['\\''show'\\'',unsafe+'\\'':'\\''+file],{encoding:'\\''utf8'\\''});\n  if(control.kind==='\\''newest-mutant'\\''){\n   const needle='\\''const newestFirst = limit === undefined && (compact || options.provenance === true);'\\'';\n   if(fixed.split(needle).length!==2)throw new Error('\\''Refuse ambiguous newest-history mutant'\\'');\n   mutant=fixed.replace(needle,'\\''const newestFirst = false;'\\'');\n  }\n  writeFileSync(path.join(tmp,file),mutant);\n  const report=path.join(tmp,'\\''negative-control.json'\\'');\n  const result=spawnSync(process.execPath,['\\''scripts/run-tests.mjs'\\'','\\''test'\\'','\\''--'\\'',control.file,'\\''-t'\\'',control.title,'\\''--reporter=json'\\'','\\''--outputFile='\\''+report],{cwd:tmp,encoding:'\\''utf8'\\'',timeout:180000,maxBuffer:16777216});\n  const data=JSON.parse(readFileSync(report,'\\''utf8'\\''));\n  const failures=data.testResults.flatMap(s=>s.assertionResults).filter(t=>t.status==='\\''failed'\\'');\n  const proven=result.status===1&&data.numFailedTests===1&&data.testResults.every(s=>s.message==='\\'''\\'')&&failures.length===1&&failures[0].title===control.title&&failures[0].failureMessages.some(m=>m.includes('\\''AssertionError'\\'')&&m.includes(control.fragment));\n  console.log(JSON.stringify({candidate,unsafe,condition:control.kind,test:control.title,negative_control_proven:proven}));\n  if(!proven){process.exitCode=3;break;}\n }\n if(process.exitCode!==3)process.exitCode=1;\n} catch(error){console.error(error);process.exitCode=3;}finally{rmSync(tmp,{recursive:true,force:true});}'"
+body: ""

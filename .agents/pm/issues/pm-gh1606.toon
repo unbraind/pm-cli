@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-26T19:02:10.791Z"
-updated_at: "2026-10-26T19:02:10.791Z"
+updated_at: "2026-10-27T16:25:44.354Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Native public-client controls cover an object append operand and numeric estimatedMinutes according to the published input contract, alongside valid corresponding values.; Errors identify the public method, operand, expected type and corrective example through PmCliError usage semantics; rejected calls leave documents, history and receipts unchanged.; Validation derives from SDK-owned contracts across convenience methods and JSON bridges, preserving completed unknown-key and bulk-duration guards without mirrored per-wrapper schemas or a global exception handler."
@@ -17,7 +17,8 @@ expected_result: "Invalid runtime operand values produce typed field-specific us
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-bulk-option-validation,related,"2026-10-26T19:02:10.791Z","harness:codex","cli:create:dep",detected
   pm-fl3phm,related,"2026-10-26T19:02:10.791Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-26T19:02:10.791Z","harness:codex","Duplicate check: fresh orientation, request-specific search, open/in-progress inventories and complete strict 3126-item all-status corpus found no open owner for this exact case. Full live metadata and histories of related owners confirm their completed, distinct scope. This is intake only, open and unclaimed; implementation is outside the current delivery cohort."
+  "2026-10-27T16:25:44.353Z","harness:codex","Additional independent runtime-input observation while developing the separate validation-code parity fix: schemaAddStatus(name,{role:\"active\"}) from untyped JavaScript reaches schema normalization and rejects with an unclassified PmCliError, while the declared SDK contract requires role:[\"active\"]. Correcting the fixture to the declared array shape establishes valid setup and exposes the distinct status/priority classification defect under pm-gh1613. This is supplied as a reproduction lead for this existing runtime-operand owner, without broadening or claiming its implementation."
 escape_class: production_defect
 body: ""

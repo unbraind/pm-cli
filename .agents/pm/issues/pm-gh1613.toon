@@ -1,0 +1,75 @@
+id: pm-gh1613
+title: "GH-1613: preserve typed PmClient validation and lookup refusals"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1613 on published2026.10.27 shows PmClient update validation and get not-found refusals throwing PmCliError with undefined code and empty context, while the equivalent CLI envelope has a stable code. Provide SDK-owned classification and structured field/value/allowed or item-ID facts, using SDK option names and retaining existing claim and document-parse contracts. Independently reproduced on pinned original source. Current source supplies typed producer codes and structured status/priority/lookup context; focused and full exact-coverage tests pass. Hosted admission and revised-head review remain required."
+type: Issue
+status: closed
+priority: 1
+tags[3]: error-model,github,sdk
+created_at: "2026-10-27T12:22:43.116Z"
+updated_at: "2026-10-27T20:52:58.258Z"
+closed_at: "2026-10-27T19:49:59.028Z"
+completed_at: "2026-10-27T19:49:59.028Z"
+author: "harness:codex"
+estimated_minutes: 150
+acceptance_criteria: "Reproduce the three published validation/lookup cases in isolated owned trackers; preserve custom-schema allowed values and existing typed claim/document-parse behavior; expose stable codes plus structured field/value/allowed or ID facts without prose inference or sensitive-value leaks; add meaningful CLI-to-SDK conformance and packed Node/Bun consumer controls, failing before and passing after the repair."
+value: Let package authors and self-improving agents handle public SDK refusals without parsing English messages
+impact: Public PmClient validation/lookup consumers and CLI/MCP refusal parity
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+resolution: "Known status and priority validation plus missing-item lookup classify at the SDK producer with the existing public codes and structured field/value/allowed or ID context, including custom status domains."
+expected_result: Equivalent SDK and CLI refusals expose actionable typed facts without mutating the tracker.
+actual_result: Pinned original fails the named SDK assertion; focused linked parity test and full11512-test exact100% coverage pass. All required hosted checks and exact analyzer provenance pass on1c534fce727cf29d22cc44c20db570d41a357712. npm/Bun packed consumers pass typed errors and custom statuses.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1606,related,"2026-10-27T12:22:43.116Z","harness:codex","cli:create:dep",detected
+  pm-gh1610,related,"2026-10-27T12:22:43.116Z","harness:codex","cli:create:dep",detected
+  pm-r9pudt,related,"2026-10-27T12:22:43.116Z","harness:codex","cli:create:dep",detected
+comments[6]{created_at,author,text}:
+  "2026-10-27T12:22:43.116Z","harness:codex","Duplicate check: strict complete3140-item all-status corpus with no omissions/unreadables, request-specific typed-refusal/PmClient searches and refreshed context/open/in_progress lists. Full live SDK outcome milestone, completed SDK-first architecture and document-parse classification lineage, and distinct runtime-operand sibling data/history inspected. The existing parser fix owns document decoding; runtime operand checking owns raw TypeErrors; lean refusal formatting owns renderer/claim metadata. No existing bounded owner matches already-detected PmClient validation/lookup classification, so this intake is open and unclaimed under the SDK outcome milestone. No source change or reproduced production-cause claim."
+  "2026-10-27T16:00:19.719Z","harness:codex","Reproduced on the current checkout with an isolated public PmClient and CLI conformance fixture: invalid status throws an expected error with undefined code. Initial fixture setup used a scalar role where the SDK requires an array; corrected setup is independently valid, and the retained pre-fix result is the intended code AssertionError. Producer changes now attach canonical validation codes plus field/value/allowed facts, preserve custom status domains, and attach item_not_found plus ID to missing-item errors. The actual CLI code is item_not_found, so that existing code is retained rather than the report prose spelling not_found. Focused verification is running; only this item is claimed."
+  "2026-10-27T16:47:16.331Z","harness:codex","The intentional contract snapshot update adds producer locations and update/update-many to the existing invalid_argument_value contract, plus the item-store source to item_not_found. It introduces no new error code or exit contract. The seven-file qualified cohort passes79 tests with one platform skip, and the final new-boundary cohort passes all3 cases. Full initial source run retained9 failures:8 old scope/wording assertions and1 host npm module-resolution setup failure. Updated compatibility expectations preserve relative caller scope in its invocation cwd, keep absolute cross-cwd replay and unchanged authoritative-byte assertions, and isolate grammar fixtures outside the real tracker. Broader final gates are running sequentially under Node24 with command-local npm resolution."
+  "2026-10-27T17:21:48.727Z","harness:codex","The canonical staged runtime artifact installs through npm and Bun, and each out-of-tree public SDK consumer passes all three typed status/priority/missing-ID refusals, active custom-status allowed values and portable command scope. The artifact runtime excludes development-only qs. Public surface and generated error catalog/contract fixtures are current; typecheck and ESLint pass. Full static semantic checks pass until the preserved local transport-floor failure, which also occurs on independently built immutable baseline b76d697ee and remains subject to exact-head hosted acceptance. Graph9/9, record integrity1/1 and bounded mutation352 cases pass:345killed,7classified equivalent,0failures. The complete Node24 functional/exact-coverage run is active; its result is not yet claimed."
+  "2026-10-27T17:44:21.443Z","harness:codex","Validation: qualified Node24 canonical coverage completed in 1157.23 seconds: 878 files passed plus one platform skip; 11512 tests passed and 3 platform skips; statements71117/71117, branches54752/54752, functions14628/14628, lines67266/67266, exact100% with zero uncovered. Fresh linked test receipts passed for each active owner. Packed out-of-tree npm and Bun consumers pass typed refusals, custom statuses and portable scope. Typecheck, ESLint, generated contracts/surface, 10 SDK import costs, 567-package advisory gate, runtime closure42, graph9/9, record integrity1/1, bounded mutation345 killed+7 equivalent/352 all pass. Local static transport timing remains failed (create400ms vs398ms); immutable original independently fails get419vs362/create440vs398. No threshold waived: exact-head hosted static/coverage, analyzer provenance and fresh bot review remain required before merge."
+  "2026-10-27T18:15:58.483Z","harness:codex","Delivery review evidence: CodeRabbit completed the c72930a7f full review and found PM metadata corrections only. Both are addressed in1c534fce7 through pm; complete tracker context47/47passes and the actionable inline thread is resolved with one reply. Fresh reviews were requested after that push. Sourcery's exact-head check is skipped because its free250000-diff-character/7day budget is exhausted (provider reports4h8m to retry), and Greptile reports an expired trial. Neither is approval; no paid features, extra top-level acknowledgements or branch-policy changes are used. Required hosted static/coverage/platform checks remain pending."
+learnings[1]{created_at,author,text}:
+  "2026-10-27T16:49:22.273Z","harness:codex",Producer-owned error codes and validation domains keep SDK consumers independent of CLI wording. Keep existing canonical codes and derive custom-status allowed values from the active schema.
+files[12]{path,scope}:
+  sdk/public-surface.json,project
+  src/cli/error-guidance.ts,project
+  src/core/item/priority.ts,project
+  src/core/shared/errors.ts,project
+  src/core/store/item-store.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/update-many.ts,project
+  src/sdk/lifecycle/update.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/commands/lifecycle/update-many-command.spec.ts,project
+  tests/unit/sdk/lifecycle/refusal-parity.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/refusal-parity.spec.ts,project,240,"harness:codex","2026-10-27T16:10:44.773Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvqz0mbo-4z4pew
+    kind: test
+    status: passed
+    started_at: "2026-10-27T17:39:43.772Z"
+    finished_at: "2026-10-27T17:39:58.596Z"
+    recorded_at: "2026-10-27T17:39:58.596Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/refusal-parity.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/SDK.md,project
+close_reason: SDK validation and lookup producers now expose stable typed refusal facts
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: sdk-refusal-cli-parity
+  owner: pm-gh1613
+  negative_control: "node --input-type=module --eval 'import { execFileSync, spawnSync } from '\"'\"'node:child_process'\"'\"';\nimport { mkdtempSync, mkdirSync, readFileSync, copyFileSync, symlinkSync, rmSync, existsSync } from '\"'\"'node:fs'\"'\"';\nimport os from '\"'\"'node:os'\"'\"';\nimport path from '\"'\"'node:path'\"'\"';\nconst root = process.cwd();\nconst unsafe = \"b76d697ee7d38d9f9a031406e6d08cb3dc387870\";\nconst tmp = mkdtempSync(path.join(os.tmpdir(), '\"'\"'pm-refusal-negative-'\"'\"'));\nconst files = [\"tests/unit/sdk/lifecycle/refusal-parity.spec.ts\"];\ntry {\n  const work = path.join(tmp, '\"'\"'checkout'\"'\"'); mkdirSync(work);\n  const archive = path.join(tmp, '\"'\"'source.tar'\"'\"');\n  execFileSync('\"'\"'git'\"'\"', ['\"'\"'archive'\"'\"', '\"'\"'--output='\"'\"' + archive, unsafe], { cwd: root });\n  execFileSync('\"'\"'tar'\"'\"', ['\"'\"'--exclude=.agents/pm'\"'\"', '\"'\"'-xf'\"'\"', archive, '\"'\"'-C'\"'\"', work]);\n  symlinkSync(path.join(root, '\"'\"'node_modules'\"'\"'), path.join(work, '\"'\"'node_modules'\"'\"'), '\"'\"'junction'\"'\"');\n  for (const file of files) copyFileSync(path.join(root, file), path.join(work, file));\n  const report = path.join(tmp, '\"'\"'result.json'\"'\"');\n  const result = spawnSync(process.execPath, ['\"'\"'scripts/run-tests.mjs'\"'\"', '\"'\"'test'\"'\"', '\"'\"'--'\"'\"', ...files, '\"'\"'-t'\"'\"', \"preserves validation facts, active status domains and lookup identity across SDK and CLI\", '\"'\"'--reporter=json'\"'\"', '\"'\"'--outputFile='\"'\"' + report], { cwd: work, encoding: '\"'\"'utf8'\"'\"', timeout: 240000, maxBuffer: 16777216, env: { ...process.env, PM_PATH: path.join(tmp, '\"'\"'pm'\"'\"'), PM_GLOBAL_PATH: path.join(tmp, '\"'\"'global'\"'\"') } });\n  if (!existsSync(report)) throw new Error('\"'\"'Missing negative-control report: '\"'\"' + result.status + '\"'\"' '\"'\"' + result.signal + '\"'\"' '\"'\"' + (result.error?.message ?? '\"'\"''\"'\"') + '\"'\"'\\n'\"'\"' + result.stderr);\n  const data = JSON.parse(readFileSync(report, '\"'\"'utf8'\"'\"'));\n  const failed = data.testResults.flatMap(s => s.assertionResults).filter(t => t.status === '\"'\"'failed'\"'\"');\n  const expected = [\"preserves validation facts, active status domains and lookup identity across SDK and CLI\"];\n  const proven = result.status === 1 && !result.signal && !result.error && data.numFailedTests === 1 && failed.length === 1 && data.testResults.every(s => s.message === '\"'\"''\"'\"') && expected.every(title => failed.some(t => t.title === title && t.failureMessages.some(m => m.includes('\"'\"'AssertionError'\"'\"'))));\n  console.log(JSON.stringify({ unsafe, negative_control_proven: proven, failed: failed.map(t => t.title) }));\n  process.exitCode = proven ? 1 : 3;\n} catch (error) { console.error(error); process.exitCode = 3; }\nfinally { rmSync(tmp, { recursive: true, force: true }); }\n'"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/refusal-parity.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),"Packed first run (ubuntu-latest, Node 24)"
+body: ""

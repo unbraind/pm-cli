@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: ci,quality,security
 created_at: "2026-07-03T14:10:21.927Z"
-updated_at: "2026-09-27T09:57:14.230Z"
+updated_at: "2026-10-27T08:28:45.852Z"
 closed_at: "2026-07-03T14:41:06.488Z"
 author: maintainer-agent
 release: v2026.7.4
@@ -23,7 +23,10 @@ dependencies[2]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-09-27T09:57:14.230Z","harness:codex","2026-09-27 merged-main Security and Script Quality run 36310034735 attempt 1 failed before analysis because PowerShell Gallery blocked the pinned PSScriptAnalyzer package download with a WAF response. A single failed-job rerun (attempt 2) completed successfully with every job green. This was an external fetch failure, not an analyzer finding; the required gate stayed enforced."
+  "2026-10-27T06:27:54.321Z","harness:codex","2026-10-27 PR1608 Security and Script Quality run40459662231 attempt1 PSScriptAnalyzer job122041003781 failed before analyzer execution: the unchanged pinned1.24.0 PowerShell Gallery package request returned HTTP404. All module integrity and finding assertions remain enforced. A single job-scoped unchanged-source retry was requested only after the entire workflow completed; outcome remains pending. This is download availability evidence, not an analyzer finding or a reopened implementation."
+  "2026-10-27T06:34:44.062Z","harness:codex","The bounded unchanged-source retry completed successfully: run40459662231 attempt2, PSScriptAnalyzer job122045543280, 2026-10-27T06:32:55Z. Every Security and Script Quality job passes. The original HTTP404 failure remains preserved; no package hash, analyzer assertion, workflow source or branch-protection requirement was bypassed."
+  "2026-10-27T08:28:45.851Z","harness:codex","2026-10-27 source862c800cfe785da6e80a2490318b81586615465b: every reported GitHub Actions check passes, including CI40470864579 and exact aggregate coverage, but the canonical readiness inventory correctly refuses merge because required DeepScan is absent. The exact-commit hosted-analysis gate reports DeepScan status missing; GitHub combined statuses contain only Hound and CodeRabbit. Chrome navigation and one Reload of the existing DeepScan PR dashboard both return ERR_EMPTY_RESPONSE. This is an observed provider availability gap, not a zero-finding receipt or an approved bypass. Keep DeepScan required and re-evaluate the final head normally."
 close_reason: completed
 body: ""

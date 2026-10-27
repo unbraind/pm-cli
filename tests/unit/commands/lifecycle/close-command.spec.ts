@@ -1451,7 +1451,7 @@ describe("runClose", () => {
       const scalarHistoryJson = scalarHistory.json as {
         compact_history: Array<{ index: number; changed_fields: string[] }>;
       };
-      const autoUnblockEntry = scalarHistoryJson.compact_history.at(-1);
+      const autoUnblockEntry = scalarHistoryJson.compact_history[0];
       expect(autoUnblockEntry?.changed_fields).toEqual(
         expect.arrayContaining([
           "status",

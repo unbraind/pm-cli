@@ -23718,7 +23718,9 @@
       "emitting_commands": [
         "*",
         "create",
-        "task-composition"
+        "task-composition",
+        "update",
+        "update-many"
       ],
       "exit_code": 2,
       "meaning": "Invalid argument value condition.",
@@ -23726,12 +23728,15 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
+        "core/item/priority.ts",
         "core/telemetry/observability.ts",
         "sdk/context-intent-contracts.ts",
         "sdk/dependencies.ts",
         "sdk/governance/assurance-mutation-error.ts",
         "sdk/lifecycle/create.ts",
         "sdk/lifecycle/task-composition.ts",
+        "sdk/lifecycle/update-many.ts",
+        "sdk/lifecycle/update.ts",
         "sdk/runtime-input.ts",
         "sdk/runtime/mutation-admission.ts",
         "sdk/runtime/schema-preview.ts",
@@ -24270,6 +24275,7 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "cli/error-guidance.ts",
+        "core/store/item-store.ts",
         "core/telemetry/observability.ts",
         "sdk/governance/validate-history-drift.ts"
       ],

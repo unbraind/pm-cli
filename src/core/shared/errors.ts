@@ -172,6 +172,8 @@ export interface PmCliErrorContext {
   reason?: string;
   /** Metadata field responsible for a validation failure, when known. */
   field?: string;
+  /** Accepted scalar spellings from the active validation domain, without parsing diagnostic prose. */
+  allowed?: string[];
   /** Original branch coordinates of a scalar patch that cannot safely join a history union. */
   history_merge?: {
     /** Side supplying the original event. */

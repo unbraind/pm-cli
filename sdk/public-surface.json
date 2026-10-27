@@ -2825,6 +2825,21 @@
       ],
       "package_version": "2026.10.25",
       "reason": "pm-gh1593: add raw_bytes to snapshot output so exact storage receipts do not depend on UTF-8 decoding; existing raw and entries values and input contracts remain unchanged."
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryResult",
+        "signature ./sdk/query:HistoryResult"
+      ],
+      "package_version": "2026.10.26",
+      "reason": "HistoryResult adds matching total and display order receipts. Compact and provenance reads without a latest-entry limit display newest first for bounded handoff recovery; full chronological reads, explicit latest-N windows and durable version addresses remain available."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.10.27",
+      "reason": "Add optional validation-domain metadata and a portable command-scope helper; existing error codes, input shapes and signatures remain valid."
     }
   ],
   "entrypoints": {
@@ -10053,7 +10068,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryResult",
-          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; version_addressing?: { offset: number | null; first_version: number | null; last_version: number | null; }; }"
+          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; total: number; order: \"newest_first\" | \"oldest_first\"; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; version_addressing?: { offset: number | null; first_version: number | null; last_version: number | null; }; }"
         },
         {
           "classification": "supported",
@@ -13917,7 +13932,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -17690,6 +17705,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveLifecycleVerbRecovery",
+          "signature": "(verb: string, availablePaths: readonly string[]) => { examples: string[][]; nextSteps: string[]; } | undefined | calls: (verb: string, availablePaths: readonly string[]) => { examples: string[][]; nextSteps: string[]; } | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveLinkedResourcePositionalRecovery",
           "signature": "(command: string | undefined, argv: readonly string[]) => LinkedResourcePositionalRecovery | undefined | calls: (command: string | undefined, argv: readonly string[]) => LinkedResourcePositionalRecovery | undefined"
         },
@@ -17824,6 +17845,12 @@
           "kind": "function",
           "name": "resolvePmCommandPositionalContract",
           "signature": "(command: string) => PmCommandPositionalContract | undefined | calls: (command: string) => PmCommandPositionalContract | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolvePmCommandScopeArgs",
+          "signature": "(options: CommandScope, cwd?: string) => string[] | calls: (options: CommandScope, cwd?: string) => string[]"
         },
         {
           "classification": "advanced_export",
@@ -32079,7 +32106,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "HistoryResult",
-          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; version_addressing?: { offset: number | null; first_version: number | null; last_version: number | null; }; }"
+          "signature": "export interface HistoryResult { id: string; history?: HistoryEntry[]; compact_history?: HistoryDiffEntry[]; provenance_history?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"compact\" | \"provenance\" | \"full\"; row_key: \"compact_history\" | \"provenance_history\" | \"history\"; }; omission_receipt: OutputOmissionReceipt; count: number; total: number; order: \"newest_first\" | \"oldest_first\"; limit: number | null; diff?: HistoryDiffValueEntry[]; verification?: HistoryVerificationResult; provenance_summary?: HistoryProvenanceSummary; version_addressing?: { offset: number | null; first_version: number | null; last_version: number | null; }; }"
         },
         {
           "classification": "supported",

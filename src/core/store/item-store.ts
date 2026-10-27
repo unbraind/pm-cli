@@ -446,6 +446,8 @@ export async function buildItemNotFoundError(
     nextSteps.unshift(`Did you mean one of: ${suggestions.join(", ")}?`);
   }
   return new PmCliError(`Item ${badId} not found`, EXIT_CODE.NOT_FOUND, {
+    code: "item_not_found",
+    id: badId,
     nextSteps,
   });
 }

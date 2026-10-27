@@ -37,7 +37,7 @@ import {
 } from "../lifecycle-policy.js";
 import type { ItemMetadata } from "../../types/index.js";
 import { nowIso } from "../../core/shared/time.js";
-import { renderPmCommand } from "../command-line.js";
+import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 
 /** Compatibility options for command-shaped close consumers. */
@@ -85,6 +85,7 @@ type CloseInlineFieldKey = "resolution" | "expected_result" | "actual_result";
 
 interface CloseMutationContext {
   pmRoot: string;
+  commandScope: string[];
   statusRegistry: RuntimeStatusRegistry;
   force: boolean | undefined;
   options: CloseOperationOptions;
@@ -154,12 +155,12 @@ function findMissingCloseValidationFields(
 }
 
 /** Build an argv-safe update that appends acceptance evidence without repeating a terminal transition. */
-function closeEvidenceRecovery(metadata: ItemMetadata, pmRoot: string, options: CloseCommandOptions = {}): { missing: string[]; suggested_retry: string; suggested_retry_args: string[] } | undefined {
+function closeEvidenceRecovery(metadata: ItemMetadata, commandScope: readonly string[], options: CloseCommandOptions = {}): { missing: string[]; suggested_retry: string; suggested_retry_args: string[] } | undefined {
   const missing = findMissingCloseValidationFields(metadata);
   if (missing.length === 0) return undefined;
   const values = { resolution: options.resolution, expected_result: options.expectedResult, actual_result: options.actualResult };
   const missingFlags = missing.map((field) => `--${field.key.replaceAll("_", "-")}`);
-  const args = ["--pm-path", pmRoot, "update", metadata.id, ...missing.flatMap((field, index) => [missingFlags[index]!, values[field.key]?.trim() || "<value>"])];
+  const args = [...commandScope, "update", metadata.id, ...missing.flatMap((field, index) => [missingFlags[index]!, values[field.key]?.trim() || "<value>"])];
   return { missing: missingFlags, suggested_retry: renderPmCommand(args), suggested_retry_args: args };
 }
 
@@ -467,7 +468,7 @@ function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
-  pmRoot: string,
+  commandScope: readonly string[],
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
@@ -479,8 +480,7 @@ function collectCloseValidationWarnings(
           (field) => `--${field.key.replaceAll("_", "-")}`,
         );
         const updateTokens = [
-          "--pm-path",
-          pmRoot,
+          ...commandScope,
           "update",
           metadata.id,
           ...missingFlags.flatMap((flag) => [flag, "<value>"]),
@@ -493,6 +493,7 @@ function collectCloseValidationWarnings(
             recovery: {
               missing: missingFlags,
               suggested_retry: renderPmCommand(updateTokens),
+              suggested_retry_args: updateTokens,
             },
             nextSteps: [
               "Run the suggested pm update, then retry the original pm close invocation.",
@@ -557,7 +558,7 @@ function mutateCloseMetadata(
     throw new PmCliError(
       `Item ${metadata.id} is already terminal; use pm update to append acceptance evidence, or --force only for an intentional repeat closure.`,
       EXIT_CODE.CONFLICT,
-      { recovery: closeEvidenceRecovery(metadata, context.pmRoot, context.options) },
+      { recovery: closeEvidenceRecovery(metadata, context.commandScope, context.options) },
     );
   }
   const inlineChangedFields = applyInlineCloseFields(metadata, context.options);
@@ -569,7 +570,7 @@ function mutateCloseMetadata(
     metadata,
     context.validateCloseMode,
     context.activeChildIds,
-    context.pmRoot,
+    context.commandScope,
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;
@@ -626,6 +627,7 @@ export async function closeItem(
   global: GlobalOptions,
 ): Promise<CloseOperationResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const commandScope = resolvePmCommandScopeArgs(global);
   await assertInitializedTracker(pmRoot);
 
   const settings = await readSettings(pmRoot);
@@ -721,7 +723,7 @@ export async function closeItem(
   let completion: CloseCompletionReceipt = {
     timestamp: completedAt,
     source: options.completedAt === undefined ? "close_time" : "asserted",
-    ...(options.completedAt === undefined ? { hint: `completed_at defaults to the close time. If work finished earlier, correct it with ${renderPmCommand(["update", located.id, "--completed-at", "<ISO>", "--pm-path", pmRoot])}.` } : {}),
+    ...(options.completedAt === undefined ? { hint: `completed_at defaults to the close time. If work finished earlier, correct it with ${renderPmCommand([...commandScope, "update", located.id, "--completed-at", "<ISO>"])}.` } : {}),
   };
   const result = await mutateItemWithHistoryContextResolver({
     pmRoot,
@@ -738,6 +740,7 @@ export async function closeItem(
       }
       return mutateCloseMetadata(document.metadata, {
         pmRoot,
+        commandScope,
         statusRegistry,
         force: options.force,
         options,
@@ -752,7 +755,7 @@ export async function closeItem(
     },
   });
 
-  const evidence = validateCloseMode === "warn" ? closeEvidenceRecovery(result.item, pmRoot) : undefined;
+  const evidence = validateCloseMode === "warn" ? closeEvidenceRecovery(result.item, commandScope) : undefined;
   return {
     item: toItemRecord(result.item),
     changed_fields: result.changedFields,

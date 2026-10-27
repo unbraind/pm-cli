@@ -1,9 +1,23 @@
 import { Command } from "commander";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { canonicalizeCommandSuggestions, resolveMisnestedCommandPath } from "../../../src/sdk/agent/command-suggestions.js";
 import { buildUnknownCommandGuidanceFromRuntime } from "../../../src/cli/commander-usage.js";
 
 describe("canonical unknown-command recovery", () => {
+  let cwd: string;
+  beforeAll(() => {
+    cwd = mkdtempSync(path.join(os.tmpdir(), "pm-canonical-recovery-"));
+    vi.spyOn(process, "cwd").mockReturnValue(cwd);
+    vi.stubEnv("PM_PATH", "");
+  });
+  afterAll(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+    rmSync(cwd, { recursive: true, force: true });
+  });
   it("resolves only an unambiguous installed suffix under a known namespace", () => {
     const paths = ["item", "item test", "test", "update", "workspace", "workspace config"];
     expect(resolveMisnestedCommandPath("item update", paths)).toBe("update");

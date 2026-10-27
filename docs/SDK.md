@@ -176,6 +176,28 @@ When adopting this update, read `error.context?.changed === false` as proof of a
 preflight refusal. An absent property gives no guarantee about writes; do not
 coerce it to `false` or treat an executed failure as safe to retry. Consumers
 that enumerate error keys should accept the additional optional property.
+
+Validation refusals for item status and priority carry producer-owned
+`code: "invalid_argument_value"` and `context.field`, `context.value` and
+`context.allowed`. The allowed spellings come from the active status schema or
+priority domain; values are represented as strings, including numeric priority
+input. Missing-item lookups carry `code: "item_not_found"` and `context.id`.
+These are the same codes as the corresponding CLI envelopes. SDK status
+messages name `status` rather than a CLI flag, and callers can handle these
+refusals through `isPmCliExpectedError` without parsing the message. Existing
+document-parse and ownership diagnostics retain their separate codes.
+
+`resolvePmCommandScopeArgs({ path, noExtensions }, cwd?)` builds portable
+tracker and extension arguments for package-authored guidance. It preserves an
+explicit path's spelling, omits the implicit cwd tracker, and expresses a
+different environment-selected tracker relative to the invocation directory.
+An environment-selected root-layout tracker at that directory is rendered as
+`--pm-path .` when a nested default tracker also exists.
+Completion corrections, missing close-evidence updates and lifecycle-verb
+examples share this formatter. SDK dispatch preserves the original scope before
+resolving storage paths, so copied commands retain relative selection and
+`--no-extensions` without adding a redundant absolute host path.
+
 JavaScript create/update callers must also remove misspelled keys and move
 mutation fields into `options` on generic `run` calls: these requests now fail
 instead of silently dropping fields. See [Robust Automation Pattern](#robust-automation-pattern)
@@ -430,6 +452,16 @@ Plan creation accepts the shared typed mutation metadata and linked-resource fie
 Promoted Plan links retain their graph semantics: `depends_on` canonicalizes to `blocked_by`, while `implements` and `verifies` are built-in directed relationship kinds. Custom graph tools therefore receive the same meaning advertised by `PlanStepLinkKind` instead of a lossy `related` fallback.
 
 ### Immutable history and rich item reads
+
+`runHistory(id, { compact: true }, global)` and `{ provenance: true }` return
+newest-first rows when no `limit` is supplied. The CLI and `runAction` history
+defaults use compact rows. The result declares `order` and a complete matching
+`total`; original row indices and durable versions stay unchanged. Apply the
+public read-output dimensions and carry `outputCursor` from their truncation
+receipt to traverse older entries. An explicit latest-entry `limit` retains
+chronological order, as do full SDK reads (`runHistory(id, {}, global)`) and
+`runAction` with `full: true`. Verification still consumes the full chain
+([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon); tracker record excluded from npm).
 
 Tracked: [pm-4a7m](../.agents/pm/features/pm-4a7m.toon),
 [pm-hib1](../.agents/pm/features/pm-hib1.toon),
@@ -2759,6 +2791,14 @@ A typo fails activation with a did-you-mean hint (e.g. `type: "strnig"` →
 time.
 
 ## Expected CLI Errors
+
+`resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument
+templates and next steps for unsupported `block` and `unblock` verbs. It checks
+the SDK's update flag contracts and declines installed verbs, unknown paths,
+and runtimes without update. Templates require actual identifiers and never
+execute a mutation. Unblocking uses `--unset blocked-by` to clear all blocker
+edges, followed by stale-reason cleanup and an optional explanatory note
+([pm-gh1607](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1607.toon); tracker record excluded from npm).
 
 Packages and adapters can derive explicit retries for misplaced linked-resource
 values with the public SDK:

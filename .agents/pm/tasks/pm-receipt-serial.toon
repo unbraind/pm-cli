@@ -1,0 +1,59 @@
+id: pm-receipt-serial
+title: Schedule the complete merge-receipt classification keeper after parallel contracts
+description: "The second full local coverage attempt timed out the real lossless receipt classification keeper at its unchanged 120000ms deadline while 11485 other tests passed. Its file remains outside the shared serial Git-heavy cohort. Allocate the complete file once after parallel contracts, preserving every assertion, original deadline, retry and coverage member."
+type: Task
+status: closed
+priority: 2
+tags[3]: bug,ci,testing
+created_at: "2026-10-26T23:27:36.520Z"
+updated_at: "2026-10-27T05:48:44.857Z"
+closed_at: "2026-10-26T23:58:50.155Z"
+completed_at: "2026-10-26T23:58:50.155Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: A config-boundary regression fails before allocation and passes afterward; the complete five-case Git integration file passes with unchanged 120-second keeper deadline; full hosted coverage remains exact 100/100/100/100.
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: Allocate the complete merge-receipt classification file once after parallel contracts with a regression guard.
+expected_result: "Every receipt classification assertion and original deadline/retry remains intact, with one serial inclusion and no parallel inclusion; exact full coverage succeeds."
+actual_result: "The partition guard fails before allocation and passes afterward. Both linked suites pass all7 cases; the five-case real Git file finishes34.44s and its unchanged120-second keeper26.88s. Four hosted source coverage shards and their integer aggregate pass100/100/100/100 at58e8f1226. No denominator, deadline, retry or assertion was weakened. First-head static planner metadata failure is corrected locally; revised-head required checks and review remain pre-merge gates."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-89297t,discovered_from,"2026-10-26T23:27:36.520Z","harness:codex","cli:create:dep",detected
+  pm-bj7rq0,related,"2026-10-26T23:27:36.520Z","harness:codex","cli:create:dep",detected
+  pm-v0600g,related,"2026-10-26T23:27:36.520Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-26T23:27:36.520Z","harness:codex","Duplicate check: strict complete all-status3131-item corpus has zero omissions or unreadables; request searches plus open/in_progress lists and full live reads of pm-89297t and pm-v0600g confirm both earlier scopes completed. No active owner covers this remaining parallel allocation gap. The broader runtime causation issue stays open and unclaimed. Local failed coverage log is retained; this task does not extend deadlines or relabel it green."
+  "2026-10-26T23:29:13.320Z","harness:codex","The added project-partition guard fails on the unchanged config, then passes after moving the complete classification file into the existing serial cohort. The real five-case file passes in34.22s with its keeper26.53s and original120-second deadline. The failed full attempt remains11485passed/1timeout and near-exact coverage, not a pass. Full exact-head hosted coverage remains required before merge; no corpus, assertion, timeout, retry or denominator was changed."
+  "2026-10-26T23:58:49.334Z","harness:codex","Hosted acceptance for source head58e8f12264497c1411f29afd78d139b406231663: https://github.com/unbraind/pm-cli/actions/runs/40420598204. Exact aggregate coverage has zero uncovered counts; native Windows regression and all packed first-run checks pass. The first static job fails solely active planner completeness on this delivery task (estimate and expected result); both fields were supplied through pm and local tracker-context assurance now passes. Full revised-head static/check/review acceptance is still mandatory before merge. Preserve the failed local coverage attempt and separate qualified Node26 admission failures; no overall-green claim is made for the first workflow."
+  "2026-10-27T05:48:44.857Z","harness:codex","Complete delivery-control audit: frozen candidateaff043f08ea0bd4a14b30af6f420d0f7f01c910f; only vitest.config.ts is replaced with ce979159acfe034217a5694a3e826940895b3581. The recorded runnable replay archives isolated source, uses sandboxed PM roots, and requires one exact named AssertionError with its expected matcher fragment and empty Vitest4 suite messages. Executed now and proved the intended failure. Expected counterexample returns1; setup/runtime or mismatched assertion returns3. Passing local_checks remain separate; immutable historical events are retained."
+files[2]{path,scope}:
+  vitest.config.ts,project
+  tests/integration/vitest-retry-policy.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,project,300,"harness:codex","2026-10-26T23:27:36.520Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvpw4i1l-0midiw
+    kind: test
+    status: passed
+    started_at: "2026-10-26T23:30:27.416Z"
+    finished_at: "2026-10-26T23:31:14.649Z"
+    recorded_at: "2026-10-26T23:31:14.649Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/TESTING.md,project
+close_reason: Implementation and focused/native hosted acceptance complete; reviewed delivery continues in PR1608.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: "node --input-type=module --eval 'import {execFileSync,spawnSync} from '\\''node:child_process'\\'';\nimport {mkdtempSync,readFileSync,writeFileSync,symlinkSync,rmSync} from '\\''node:fs'\\'';\nimport os from '\\''node:os'\\'';import path from '\\''node:path'\\'';\nconst root=process.cwd(),tmp=mkdtempSync(path.join(os.tmpdir(),'\\''pm-negative-replay-'\\''));\ntry {\n const archive=path.join(tmp,'\\''source.tar'\\'');execFileSync('\\''git'\\'',['\\''archive'\\'','\\''--output='\\''+archive,'\\''aff043f08ea0bd4a14b30af6f420d0f7f01c910f'\\'']);\n execFileSync('\\''tar'\\'',['\\''--exclude=.agents/pm'\\'','\\''-xf'\\'',archive,'\\''-C'\\'',tmp]);\n symlinkSync(path.join(root,'\\''node_modules'\\''),path.join(tmp,'\\''node_modules'\\''),'\\''junction'\\'');\n writeFileSync(path.join(tmp,\"vitest.config.ts\"),execFileSync('\\''git'\\'',['\\''show'\\'',\"ce979159acfe034217a5694a3e826940895b3581:vitest.config.ts\"]));\n const report=path.join(tmp,'\\''negative.json'\\'');\n const result=spawnSync(process.execPath,['\\''scripts/run-tests.mjs'\\'','\\''test'\\'','\\''--'\\'',\"tests/integration/vitest-retry-policy.integration.spec.ts\",'\\''-t'\\'',\"runs every expensive keeper once after parallel contracts with the original deadlines\",'\\''--reporter=json'\\'','\\''--outputFile'\\'',report],{cwd:tmp,env:{...process.env,PM_TELEMETRY_DISABLED:'\\''1'\\'',PM_SENTRY_DISABLED:'\\''1'\\''},stdio:'\\''inherit'\\''});\n const data=JSON.parse(readFileSync(report,'\\''utf8'\\'')),failures=data.testResults.flatMap(s=>s.assertionResults).filter(t=>t.status==='\\''failed'\\'');\n const proven=result.status===1 && data.numFailedTests===1 && data.testResults.every(s=>s.message==='\\'''\\'') && failures.length===1 && failures[0].title===\"runs every expensive keeper once after parallel contracts with the original deadlines\" && failures[0].failureMessages.some(m=>m.includes('\\''AssertionError'\\'')&&m.includes(\"tests/integration/merge-receipt-healt\"));\n console.log(JSON.stringify({candidate:'\\''aff043f08ea0bd4a14b30af6f420d0f7f01c910f'\\'',unsafe_condition:\"ce979159acfe034217a5694a3e826940895b3581\",file:\"vitest.config.ts\",test:\"runs every expensive keeper once after parallel contracts with the original deadlines\",negative_control_proven:proven}));\n if(!proven)console.error(JSON.stringify({status:result.status,suites:data.testResults.map(s=>({message:s.message})),failures}));\n process.exitCode=proven?1:3;\n} catch(error){console.error(error);process.exitCode=3;} finally{rmSync(tmp,{recursive:true,force:true});}'"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/integration/merge-receipt-health-classification.integration.spec.ts
+  hosted_checks[1]: Gates (coverage)
+  owner: pm-receipt-serial
+body: ""

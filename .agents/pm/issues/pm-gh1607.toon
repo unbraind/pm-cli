@@ -2,22 +2,66 @@ id: pm-gh1607
 title: "GH-1607: Provide intent-specific recovery for unsupported block and unblock commands"
 description: "**Version:** pm 2026.10.26.\n\n**Repro**\n```sh\npm block <id> --reason waiting\npm unblock <id> --note ready\n```\n**Observed:** both exit 2. `block` suggests `github blockers` and `list --status blocked` (read-only surfaces); `unblock` prints generic examples (`activity`, `aggregate`, `assurance`, …). Neither points at the supported local mutation.\n\n**Expected:** intent-specific recovery for these lifecycle verbs, e.g.\n```sh\npm update <id> --blocked-by <blocker> --blocked-reason \"waiting\"\npm update <id> --dep-remove <blocker> --unset blocked_by --unset blocked_reason --unblock-note \"ready\"\n```\nor first-class `block`/`unblock` aliases that map to those flags (never auto-executing a guessed mutation).\n\n**Why it matters for agents:** block/unblock are the verbs agents reach for during a work session; today the failed call is followed by a help search and another attempt (~600–750 bytes of unhelpful stderr each). Note that `--unblock-note` alone records a note but does not remove the blocker edge, which is easy to get wrong without a worked example.\n\n\nIntake boundary: this is a report against published 2026.10.26, not proof of a current-checkout defect. Reproduce in an external sandbox before implementation. Related completed work retains its shipped scope. Proposed examples or categories are not accepted contracts until validated.\n\nSource: https://github.com/unbraind/pm-cli/issues/1607"
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-26T19:02:14.338Z"
-updated_at: "2026-10-26T19:02:14.338Z"
+updated_at: "2026-10-27T03:35:44.271Z"
+closed_at: "2026-10-26T23:58:46.714Z"
+completed_at: "2026-10-26T23:58:46.714Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Derive examples from live update contracts and prove the suggested block and unblock workflows on isolated trackers.; Unblock recovery explains removal of the actual blocker relationship and stale blocker metadata; a note alone is not presented as unblocking.; Refusals preserve the usage exit code, leave data unchanged, identify the intended lifecycle surface, and retain extension-command and ambiguity behavior. Any new alias must have a declared SDK/CLI/MCP contract."
 parent: pm-f05lsg
 risk: low
 confidence: medium
-expected_result: "Unsupported lifecycle verbs lead to a correct local mutation recipe with explicit identifiers and blocker-edge cleanup, without automatically executing an inferred mutation."
+resolution: Expose SDK-owned lifecycle recovery templates and scoped inspection guidance for unsupported block and unblock verbs.
+expected_result: Unsupported verbs refuse without mutation and explain declared update flags; the unblock template clears all blockers and stale reasons while preserving unrelated relationships.
+actual_result: "Linked19-test cohort passes; real command templates remove both blocker edges while preserving the unrelated related edge, and refusals leave history unchanged. Hosted native Windows regression, complete exact coverage and every packed first-run check pass at58e8f1226. First-head static planner metadata failure is corrected locally; revised-head required checks and review remain pre-merge gates."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-1p6f,related,"2026-10-26T19:02:14.338Z","harness:codex","cli:create:dep",detected
   pm-in23qu,related,"2026-10-26T19:02:14.338Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-26T19:02:14.338Z","harness:codex","Duplicate check: fresh orientation, request-specific search, open/in-progress inventories and complete strict 3126-item all-status corpus found no open owner for this exact case. Full live metadata and histories of related owners confirm their completed, distinct scope. This is intake only, open and unclaimed; implementation is outside the current delivery cohort."
+  "2026-10-26T22:07:05.127Z","harness:codex","Confirmed the existing update contract clears every blocked_by relationship through --unset blocked-by; an explicit dep-remove is unnecessary. The original unsupported block/unblock calls failed the new guidance regression. SDK-owned intent templates now check declared update flags and decline installed or ambiguous command paths. Native recovery controls use two blockers, clear blocker metadata, preserve an unrelated related edge, retain usage exit 2 and unchanged history on refusal, and preserve tracker scope in the inspection-only help retry. Focused cohort passed 96 tests."
+  "2026-10-26T23:06:14.959Z","harness:codex","The published npm artifact reproduces both unsupported-verb problems: block exits2 with901 stderr bytes and no blocker-mutation recipe; unblock exits2 with810 bytes and no cleanup recipe. Current Node and Bun consumers retain exit2 and provide the appropriate block or unblock template (963 and1213 bytes). The extra guidance supplies the previously missing action and explicitly keeps project-specific blocked-status selection separate. Native two-blocker tests prove exact relation cleanup and preservation of unrelated relations; no inferred mutation is executed by a refusal."
+  "2026-10-26T23:58:45.952Z","harness:codex","Hosted acceptance for source head58e8f12264497c1411f29afd78d139b406231663: https://github.com/unbraind/pm-cli/actions/runs/40420598204. Exact aggregate coverage has zero uncovered counts; native Windows regression and all packed first-run checks pass. The first static job fails solely active planner completeness on this delivery task (estimate and expected result); both fields were supplied through pm and local tracker-context assurance now passes. Full revised-head static/check/review acceptance is still mandatory before merge. Preserve the failed local coverage attempt and separate qualified Node26 admission failures; no overall-green claim is made for the first workflow."
+  "2026-10-27T02:46:17.088Z","harness:codex","Review1608 negative-control clarification: candidate9dad0a28c87beb0fbb66f9eec9f7360f9bf549dd with ONLY src/cli/commander-usage.ts replaced by ce979159acfe034217a5694a3e826940895b3581. The recorded runnable control archives immutable source into a disposable checkout, uses sandboxed PM roots, and requires exactly the named AssertionError before intentionally returning exit1; setup/runtime failure returns3. Executed now and proved the intended failure. Current passing local_checks are separate. Existing immutable events remain preserved; no prior history was edited."
+  "2026-10-27T03:34:10.707Z","harness:codex","Full-review correction: installed Vitest4.1.12 JSON reporter stores suite-level runtime errors in testResults[].message and does not emit numRuntimeErrorTestSuites. The current runnable negative control requires every suite message to be exactly empty, alongside the single named AssertionError and native exit1. This corrected immutable-source replay was executed and proved the intended failure. A missing, nonempty or malformed suite message refuses proof. Existing historical events remain unchanged."
+  "2026-10-27T03:35:44.270Z","harness:codex","Current reviewed production/test source8bedb5f771be697dffacb3397f55565a429be9f6 completes CI40442741640 successfully: https://github.com/unbraind/pm-cli/actions/runs/40442741640 . The current scoped adapter and lifecycle spec are included, along with canonical interpreter refinement. Hosted exact aggregate coverage job121990397778 passes100/100/100/100 with zero uncovered counts; native Windows and all six packed first-run platform/runtime legs pass. This refresh supplements the immutable source-specific58e8f evidence instead of rewriting it. The next metadata-only intake/replay correction head still requires its own exact-head checks and review before merge."
+learnings[1]{created_at,author,text}:
+  "2026-10-26T22:10:50.419Z","harness:codex","The supported unblock operation is the existing --unset blocked-by contract, which removes the primary scalar and every blocked_by edge. Guidance should reuse that primitive rather than build an incomplete dep-remove recipe or imply a note changes graph readiness."
+files[6]{path,scope}:
+  .github/workflows/ci.yml,project
+  sdk/public-surface.json,project
+  src/cli/commander-usage.ts,project
+  src/sdk/agent/command-recovery.ts,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+  tests/unit/cli/lifecycle-verb-recovery.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts,project,300,"harness:codex","2026-10-26T22:07:02.718Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvpw3gxn-7j15it
+    kind: test
+    status: passed
+    started_at: "2026-10-26T23:30:10.583Z"
+    finished_at: "2026-10-26T23:30:26.555Z"
+    recorded_at: "2026-10-26T23:30:26.555Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: Implementation and focused/native hosted acceptance complete; reviewed delivery continues in PR1608.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: lifecycle-verb-recovery
+  negative_control: "node --input-type=module --eval 'import {execFileSync,spawnSync} from '\\''node:child_process'\\'';\nimport {mkdtempSync,readFileSync,writeFileSync,symlinkSync,rmSync} from '\\''node:fs'\\'';\nimport os from '\\''node:os'\\'';\nimport path from '\\''node:path'\\'';\nconst root=process.cwd(),tmp=mkdtempSync(path.join(os.tmpdir(),'\\''pm-negative-replay-'\\''));\ntry {\n const archive=path.join(tmp,'\\''source.tar'\\'');\n execFileSync('\\''git'\\'',['\\''archive'\\'','\\''--output='\\''+archive,'\\''9dad0a28c87beb0fbb66f9eec9f7360f9bf549dd'\\'']);\n execFileSync('\\''tar'\\'',['\\''--exclude=.agents/pm'\\'','\\''-xf'\\'',archive,'\\''-C'\\'',tmp]);\n symlinkSync(path.join(root,'\\''node_modules'\\''),path.join(tmp,'\\''node_modules'\\''),'\\''junction'\\'');\n writeFileSync(path.join(tmp,'\\''src/cli/commander-usage.ts'\\''),execFileSync('\\''git'\\'',['\\''show'\\'','\\''ce979159acfe034217a5694a3e826940895b3581:src/cli/commander-usage.ts'\\'']));\n const report=path.join(tmp,'\\''negative.json'\\'');\n const result=spawnSync(process.execPath,['\\''scripts/run-tests.mjs'\\'','\\''test'\\'','\\''--'\\'','\\''tests/unit/cli/lifecycle-verb-recovery.spec.ts'\\'','\\''-t'\\'',\"teaches block and unblock through the supported mutation without changing the item\",'\\''--reporter=json'\\'','\\''--outputFile'\\'',report],{cwd:tmp,env:{...process.env,PM_TELEMETRY_DISABLED:'\\''1'\\'',PM_SENTRY_ENABLED:'\\''0'\\''},stdio:'\\''inherit'\\''});\n const data=JSON.parse(readFileSync(report,'\\''utf8'\\''));\n const failures=data.testResults.flatMap(s=>s.assertionResults).filter(t=>t.status==='\\''failed'\\'');\n const proven=result.status===1 && data.numFailedTests===1 && data.testResults.every(s=>s.message===\"\") && failures.length===1 && failures[0].title===\"teaches block and unblock through the supported mutation without changing the item\" && failures[0].failureMessages.some(m=>m.includes('\\''AssertionError'\\''));\n console.log(JSON.stringify({candidate:'\\''9dad0a28c87beb0fbb66f9eec9f7360f9bf549dd'\\'',mutant:'\\''ce979159acfe034217a5694a3e826940895b3581'\\'',test:\"teaches block and unblock through the supported mutation without changing the item\",negative_control_proven:proven}));\n process.exitCode=proven?1:3;\n} catch(error){console.error(error);process.exitCode=3;} finally{rmSync(tmp,{recursive:true,force:true});}'"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
+  owner: pm-gh1607
 body: ""

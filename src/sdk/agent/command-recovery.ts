@@ -15,6 +15,24 @@ import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 const READ_PROJECTION_FLAGS = new Set<string>([...Object.values(READ_OUTPUT_DIMENSION_FLAGS), ...READ_OUTPUT_COMPOSITION_FLAGS, "--full", "--brief", "--compact", "--summary", "--fields", "--section", "--token-budget"]);
 const MUTATION_RECEIPT_FLAGS = new Set(["--full-changed-fields", "--no-changed-fields", "--id-only"]);
 
+/** Explain unsupported lifecycle verbs using declared mutation flags, without authorizing or executing a guessed mutation. */
+export function resolveLifecycleVerbRecovery(
+  verb: string,
+  availablePaths: readonly string[],
+): { examples: string[][]; nextSteps: string[] } | undefined {
+  if (!["block", "unblock"].includes(verb) || availablePaths.includes(verb) || !availablePaths.includes("update")) return undefined;
+  const flags = new Set(resolveSubcommandFlagContractsForCommand("update").map((entry) => entry.flag));
+  const requiredFlags = verb === "block" ? ["--blocked-by", "--blocked-reason"] : ["--unset", "--unblock-note"];
+  if (!requiredFlags.every((flag) => flags.has(flag))) return undefined;
+  return verb === "block" ? {
+    examples: [["update", "<item-id>", "--blocked-by", "<blocker-id>", "--blocked-reason", "<reason>"]],
+    nextSteps: ["Choose the actual item and blocker identifiers before running update. --blocked-by records the blocker field and its blocked_by relationship."],
+  } : {
+    examples: [["update", "<item-id>", "--unset", "blocked-by", "--unset", "blocked-reason", "--unblock-note", "<note>"]],
+    nextSteps: ["Inspect the item's blockers before running update. --unset blocked-by removes the blocker field and all blocked_by relationships; --unset blocked-reason clears the stale reason. --unblock-note alone records a note and does not unblock the item.", "If your project also uses a blocked lifecycle status, choose its appropriate next status separately with update --status."],
+  };
+}
+
 /** Preserve the lower time bound when activity receives the event-stream spelling. */
 function activitySinceCorrection(token: string, next: string | undefined): { consumed: number; replacement: string[]; conflicts: string[] } | undefined {
   const inline = token.includes("=");

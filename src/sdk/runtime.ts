@@ -3,6 +3,7 @@
  * Provides the public client and coordinates isolated extension lifecycles.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { capturePmCommandScope } from "./command-line.js";
 import {
   createEmptyExtensionCommandRegistry,
   createEmptyExtensionHookRegistry,
@@ -2838,6 +2839,7 @@ function resolveSdkActionInput(args: PmActionInput): {
 export async function runAction(args: PmActionInput): Promise<unknown> {
   const resolved = resolveSdkActionInput(args);
   const global = globalOptions(resolved.args);
+  capturePmCommandScope(global);
   const invalidateWorkspaceContractsCache =
     shouldInvalidateWorkspaceContractsCacheAfterAction(resolved.action);
   // pm-zumn: dispatch every action (built-in and dynamic) inside one extension

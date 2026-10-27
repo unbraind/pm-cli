@@ -79,6 +79,7 @@ const sequentialPerformanceSpecs = [
   "tests/unit/scripts/point-read-costs.spec.ts",
   "tests/unit/scripts/release/absence-tolerance-gate.spec.ts",
   "tests/integration/receipt-operation-boundaries.integration.spec.ts",
+  "tests/integration/merge-receipt-health-classification.integration.spec.ts",
   "tests/integration/aborted-rebase-recovery.integration.spec.ts",
   "tests/integration/workspace/merge-receipt-settlement.integration.spec.ts",
   "tests/integration/workspace/merge-portability.integration.spec.ts",
