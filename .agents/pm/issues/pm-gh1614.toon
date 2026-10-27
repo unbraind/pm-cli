@@ -6,11 +6,20 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-10-27T17:43:51.501Z"
-updated_at: "2026-10-27T17:43:51.501Z"
+updated_at: "2026-10-27T18:12:31.905Z"
 author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Literal SDK text fields preserve sentinel spellings through create/update/append; SDK data calls do not implicitly consume stdin or read files; Explicit typed clear/unset and existing CLI transport semantics retain focused conformance tests
 parent: pm-9rgaal
+risk: high
+confidence: high
 expected_result: Typed SDK string data round-trips sentinel spellings without implicit stdin/file reads; explicit unset remains typed and CLI sentinel behavior retains focused conformance evidence.
-comments[1]{created_at,author,text}:
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rl4e,related,"2026-10-27T18:11:15.727Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-10-27T17:43:51.501Z","harness:codex","Duplicate check: fresh sentinel and 1614 searches plus complete 3142-item corpus and live open/in-progress lists found no canonical GH-1614 item. Full live pm-rl4e/history confirms the older none-token migration is closed for its own accepted scope; this reproduces a new SDK boundary defect. Source reproduction ran in a new temporary project/global tracker with telemetry disabled; no real data was touched. Track as separate open SDK data-integrity work while the validated refusal/recovery delivery proceeds through review."
+  "2026-10-27T18:12:31.904Z","harness:codex","Review remediation: assessed high risk/high confidence from the reproduced silent rewrites, added explicit three-part SDK/CLI conformance acceptance and180minute estimate, and linked completed pm-rl4e as related lineage. The complete repository tracker-context-quality gate now passes all47 assertions, including zero missing required active metadata and the semantic graph bounds. This is intake verification, not an implementation or closure claim."
+learnings[1]{created_at,author,text}:
+  "2026-10-27T18:11:16.886Z","harness:codex","After creating repository work, run the complete tracker-context-quality gate before pushing. Progressive intake still requires repository acceptance criteria, risk, confidence and estimated minutes, plus real semantic relationships; a passing gate predating the new item does not certify it."
 escape_class: production_defect
 body: ""

@@ -1,12 +1,12 @@
 id: pm-wb25c1
 title: "Refresh cooldown-pending October 20 lint, token and review tooling"
-description: "October20 registry census: eslint10.13.0 published October16; gpt-tokenizer4.1.0 and greptile3.7.0 October18; knip6.42.1 October19. Latest versions remain younger than seven days. Recheck exact publication timestamps before adoption."
+description: "Ongoing governed tooling maintenance. October27 registry refresh confirms jscpd5.4.2 crossed seven days and is adopted in PR1608; earlier eligible tokenizer/Greptile/Knip/TypeScript ESLint work retains its completed child lineage. Remaining current routine versions are still younger than seven days (SentryCLI3.8.2, marked18.1.2, Stryker10.1.1, Knip6.43.0 and Unicorn79). Major upgrades retain their separate canonical compatibility owners. Recheck exact publication timestamps before each adoption; no cooldown or compatibility exception is implied."
 type: Chore
 status: in_progress
 priority: 3
 tags[2]: dependencies,maintenance
 created_at: "2026-10-20T07:06:03.433Z"
-updated_at: "2026-10-27T17:44:26.392Z"
+updated_at: "2026-10-27T18:04:15.967Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#4f9b0131c245b9f712c46790"
 author: "harness:codex"
@@ -22,7 +22,7 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-fokyhh,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
-comments[27]:
+comments[28]:
   - created_at: "2026-10-20T07:06:03.433Z"
     author: "harness:codex"
     text: "Duplicate check: complete3021-item strict all-status/full-body read plus dependency/cooldown search and open/in-progress inventories found completed pm-ul0ow4 and broad owners, with no active minor-refresh leaf. Major migration owners are preserved. Open/unclaimed until eligible implementation."
@@ -107,6 +107,9 @@ comments[27]:
   - created_at: "2026-10-27T17:44:26.391Z"
     author: "harness:codex"
     text: "Validation: qualified Node24 canonical coverage completed in 1157.23 seconds: 878 files passed plus one platform skip; 11512 tests passed and 3 platform skips; statements71117/71117, branches54752/54752, functions14628/14628, lines67266/67266, exact100% with zero uncovered. Fresh linked test receipts passed for each active owner. Packed out-of-tree npm and Bun consumers pass typed refusals, custom statuses and portable scope. Typecheck, ESLint, generated contracts/surface, 10 SDK import costs, 567-package advisory gate, runtime closure42, graph9/9, record integrity1/1, bounded mutation345 killed+7 equivalent/352 all pass. Local static transport timing remains failed (create400ms vs398ms); immutable original independently fails get419vs362/create440vs398. No threshold waived: exact-head hosted static/coverage, analyzer provenance and fresh bot review remain required before merge."
+  - created_at: "2026-10-27T18:04:15.966Z"
+    author: "harness:codex"
+    text: "Fresh primary-registry timestamps at18:02UTC: jscpd5.4.2 age7.07days adopted and zero-clone/native bundle tests pass. Remaining routine latests: SentryCLI3.8.2 age5.29d, marked18.1.2 age1.13d, Stryker10.1.1 age3.95d, Knip6.43.0 age3.40d, Unicorn79 age4.06d. Major boundaries remain CodSpeed6.1, Sentry11.9, Vitest5.0.5/coverage, npm-package-arg14 and TypeScript7; no blind major upgrade is claimed. This broad owner must remain open after the selected jscpd change is delivered."
 files[3]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   package.json,project
