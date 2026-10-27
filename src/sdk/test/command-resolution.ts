@@ -25,6 +25,7 @@ function shellReportsMissing(executable: string, code: number | null, stderr: st
     return (code === 1 || code === 9009) && stderr.split(/\r?\n/u).some((line) =>
       line.trim() === `'${executable}' is not recognized as an internal or external command,`);
   }
+  if (code !== 126 && code !== 127) return false;
   return stderr.split(/\r?\n/u).some((line) =>
     (code === 127 && (line.endsWith(`: ${executable}: not found`) || line.endsWith(`: ${executable}: command not found`))) ||
     (code === 126 && line.includes(`: ${executable}: `) && line.endsWith(": bad interpreter: No such file or directory")));
