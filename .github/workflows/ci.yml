@@ -238,11 +238,12 @@ jobs:
         run: node scripts/run-tests.mjs test -- tests/unit/sdk/security/completion-search-boundaries.spec.ts
 
       # pm-gh1475 / pm-gh1491: exercise native Git hooks and portable refusal evidence.
+      # pm-receipt-native-fixture: retain receipt authority fault controls on macOS temp aliases.
       - name: Verify portable merge settlement on macOS
         if: matrix.os == 'macos-latest'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts
+        run: node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/unit/sdk/merge/settlement-hook.spec.ts tests/unit/sdk/test/receipt-index-snapshot.spec.ts
 
       # pm-n912nt: entry/open races must execute against macOS's canonical /private/tmp root.
       # pm-gh1409: imported source identities must resolve on native filesystem boundaries.

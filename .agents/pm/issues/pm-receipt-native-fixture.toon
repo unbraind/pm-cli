@@ -1,0 +1,53 @@
+id: pm-receipt-native-fixture
+title: "GH-1612: canonicalize native receipt fault fixtures and guard macOS before merge"
+description: "Scheduled main77ff26ad Nightly40482594067 macOS Node24 shard2/2 fails five receipt-index-snapshot fault cases at their initial positive authority assertion: zero indexed blobs instead of one. A controlled symlink TMPDIR replay on unchanged0af source independently reproduces the same five AssertionErrors with no suite/runtime errors. Production snapshot transfer already passes the canonical physical source directory; the new fault fixture passes the lexical alias to a reader whose linked-directory argument is an index coordinate. Canonicalize the owned fixture root and add the existing complete receipt snapshot suite to the existing native macOS merge check, preserving all fault assertions and production boundaries."
+type: Issue
+status: in_progress
+priority: 1
+tags[3]: github,nightly,portability
+created_at: "2026-10-27T10:39:20.310Z"
+updated_at: "2026-10-27T10:44:21.161Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#7efbcd86a29946bbfe9221c3"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: "Controlled aliased TMPDIR replay fails with exactly the five initial positive authority assertions before the fixture correction and passes after; no production containment or read-error semantics, budgets, retries or assertions are weakened; native macOS pre-merge verification and required exact coverage pass before closure."
+value: Catch native filesystem fixture regressions before merge and retain authority fault coverage
+impact: Receipt snapshot test portability and native macOS admission
+parent: pm-ycyymg
+risk: low
+confidence: high
+expected_result: "All five unchanged fault scenarios start from valid source authority and preserve snapshot index bytes after genuine source failures, including a symlink-addressed temporary parent; the existing macOS pre-merge job executes the full snapshot suite."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,related,"2026-10-27T10:39:20.310Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-27T10:39:20.310Z","harness:codex","text=Duplicate check: complete3139-item all-status corpus, request-specific receipt snapshot source-index alias searches and fresh context/open/in_progress inventories; full live closed source-receipt owner and recurrence measurement owner plus open reliability-lineage item inspected. The older macOS alert1544 concerns repaired cache-exclusion rules and is not this five-case receipt setup failure. Reuse completed source authority lineage through this bounded native fixture child. Report1612: https://github.com/unbraind/pm-cli/issues/1612 ; failed native job https://github.com/unbraind/pm-cli/actions/runs/40482594067/job/122116361740 . No product defect or historical-rate repair is claimed."
+  "2026-10-27T10:44:21.159Z","harness:codex","Controlled reproduction and correction: unchanged0af0391c1c4a4c2ff80a2e0abb74379b3bcb3169 under an external symlink-addressed TMPDIR fails exactly all five initial source-index authority assertions (expected1, actual0), with empty Vitest suite-error messages. Canonicalizing only the owned fault-fixture root makes the same five cases pass; all31 connected receipt tests and the linked execution pass. The complete8-case snapshot suite is added to the existing native macOS merge step, retaining job names, timeouts, all assertions, source index byte preservation, containment and production error behavior. Typecheck, focused ESLint, diff checks and read-only workflow permissions pass. The item remains actively claimed until native macOS and exact source coverage acceptance complete. The portable pinned counterexample was independently executed and proved all five named failures; an earlier replay setup correctly refused a TMPDIR inside its disposable checkout and is not counted as regression evidence."
+files[2]{path,scope}:
+  .github/workflows/ci.yml,project
+  tests/unit/sdk/test/receipt-index-snapshot.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge/indexed-receipt-blobs.spec.ts tests/unit/sdk/merge/linked-receipt-context.spec.ts,project,240,"harness:codex","2026-10-27T10:41:04.420Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvqk5ody-ejkiwo
+    kind: test
+    status: passed
+    started_at: "2026-10-27T10:43:47.510Z"
+    finished_at: "2026-10-27T10:44:00.310Z"
+    recorded_at: "2026-10-27T10:44:00.310Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge/indexed-receipt-blobs.spec.ts tests/unit/sdk/merge/linked-receipt-context.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: receipt-snapshot-native-fixture
+  owner: pm-receipt-native-fixture
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge/indexed-receipt-blobs.spec.ts tests/unit/sdk/merge/linked-receipt-context.spec.ts
+  hosted_checks[3]: "Runtime smoke (macos-latest, Node 24)",Gates (coverage),Gates (static)
+  negative_control: "node --input-type=module --eval 'import {execFileSync,spawnSync} from '\\''node:child_process'\\'';\nimport {mkdtempSync,mkdirSync,existsSync,readFileSync,writeFileSync,symlinkSync,rmSync} from '\\''node:fs'\\'';\nimport os from '\\''node:os'\\'';import path from '\\''node:path'\\'';\nconst unsafe='\\''0af0391c1c4a4c2ff80a2e0abb74379b3bcb3169'\\'',root=process.cwd(),tmp=mkdtempSync(path.join(os.tmpdir(),'\\''pm-native-receipt-negative-'\\''));\ntry{\n const work=path.join(tmp,'\\''checkout'\\'');mkdirSync(work);const archive=path.join(tmp,'\\''source.tar'\\'');execFileSync('\\''git'\\'',['\\''archive'\\'','\\''--output='\\''+archive,unsafe]);execFileSync('\\''tar'\\'',['\\''--exclude=.agents/pm'\\'','\\''-xf'\\'',archive,'\\''-C'\\'',work]);\n symlinkSync(path.join(root,'\\''node_modules'\\''),path.join(work,'\\''node_modules'\\''),'\\''junction'\\'');\n const physical=path.join(tmp,'\\''physical'\\''),alias=path.join(tmp,'\\''alias'\\'');mkdirSync(physical);symlinkSync(physical,alias,'\\''junction'\\'');\n const report=path.join(tmp,'\\''negative.json'\\'');\n const result=spawnSync(process.execPath,['\\''scripts/run-tests.mjs'\\'','\\''test'\\'','\\''--'\\'','\\''tests/unit/sdk/test/receipt-index-snapshot.spec.ts'\\'','\\''-t'\\'','\\''preserves snapshot authority on a source'\\'','\\''--reporter=json'\\'','\\''--outputFile='\\''+report],{cwd:work,encoding:'\\''utf8'\\'',timeout:180000,maxBuffer:16777216,env:{...process.env,TMPDIR:alias,TMP:alias,TEMP:alias,PM_PATH:path.join(tmp,'\\''sandbox-pm'\\''),PM_GLOBAL_PATH:path.join(tmp,'\\''sandbox-global'\\'')}});\n if(!existsSync(report)){console.error(JSON.stringify({status:result.status,signal:result.signal,error:result.error?.message}));console.error((result.stdout||'\\'''\\'')+(result.stderr||'\\'''\\''));throw new Error('\\''Missing negative-control report'\\'');}\n const data=JSON.parse(readFileSync(report,'\\''utf8'\\'')),failed=data.testResults.flatMap(s=>s.assertionResults).filter(t=>t.status==='\\''failed'\\'');\n const conditions=['\\''corrupt index'\\'','\\''missing object'\\'','\\''invalid repository'\\'','\\''missing Git metadata'\\'','\\''missing workspace'\\''];\n const expected=conditions.map(c=>'\\''preserves snapshot authority on a source '\\''+c+'\\'' read failure'\\'');\n const proven=result.status===1&&data.numFailedTests===5&&data.testResults.every(s=>s.message==='\\'''\\'')&&failed.length===5&&expected.every(title=>failed.some(t=>t.title===title&&t.failureMessages.some(m=>m.includes('\\''AssertionError'\\'')&&m.includes('\\''expected +0 to be 1'\\''))));\n console.log(JSON.stringify({unsafe,failed_cases:failed.length,negative_control_proven:proven}));process.exitCode=proven?1:3;\n}catch(error){console.error(error);process.exitCode=3;}finally{rmSync(tmp,{recursive:true,force:true});}'"
+body: ""

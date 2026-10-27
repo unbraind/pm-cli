@@ -1,6 +1,6 @@
 /** Source-index receipts remain authoritative across staged and custom-root snapshots. */
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -11,7 +11,8 @@ import { seedLinkedTestWorkspaceSnapshot } from "../../../../src/sdk/test/worksp
 
 describe("snapshot receipt index", () => {
   it.each(["corrupt index", "missing object", "invalid repository", "missing Git metadata", "missing workspace"])("preserves snapshot authority on a source %s read failure", async (condition) => {
-    const root = await mkdtemp(path.join(tmpdir(), "pm-snapshot-read-failure-"));
+    // Linked index coordinates use Git's physical root, including native temp aliases.
+    const root = await realpath(await mkdtemp(path.join(tmpdir(), "pm-snapshot-read-failure-")));
     const source = path.join(root, "source");
     const tracker = path.join(source, ".agents/pm");
     const directory = path.join(tracker, "merge-receipts");
