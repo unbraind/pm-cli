@@ -6,31 +6,36 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T02:42:14.362Z"
-updated_at: "2026-10-27T02:51:05.937Z"
-closed_at: "2026-10-27T02:49:46.774Z"
-completed_at: "2026-10-27T02:49:46.774Z"
+updated_at: "2026-10-27T03:10:00.254Z"
+closed_at: "2026-10-27T03:09:59.361Z"
+completed_at: "2026-10-27T03:09:59.361Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: A real POSIX script with a missing interpreter fails as spawn_error while retaining platform exit code and stderr; Installed scripts deliberately emitting matching diagnostics or exiting127 remain assertion failures and commands are never rerun during classification; Lifecycle guidance negative controls explicitly pin the failing adapter revision and replay only the relevant assertion in an isolated tracker
 parent: pm-gh1604
-resolution: "Corroborate resolved POSIX script startup failures using a bounded shebang read and absent absolute interpreter, preserving native diagnostics and executed-child assertions. Pin lifecycle and interpreter negative controls to immutable failing source substitutions."
-expected_result: Absent interpreters classify as spawn_error without rerunning commands; installed child failures retain assertion semantics; negative controls reproduce only their intended regression.
-actual_result: "All110 linked tests pass, including real script failures and spoofed126/127 child diagnostics. Focused exact coverage is100/100/100/100 with zero uncovered counts. Three immutable-source replays prove their intended assertion failure, with setup/runtime failures distinguished. Typecheck, lint and docs checks pass; final hosted/review gates remain pre-merge requirements."
+resolution: "Use the canonical ENOENT/ENOTDIR absence predicate for independently verified missing POSIX script interpreters, without rerunning commands or changing native results. Preserve pinned, independently replayed regression controls and typed lifecycle evidence lineage."
+expected_result: Missing script interpreters classify as spawn_error while executed children retain assertions; ENOTDIR is handled consistently with canonical filesystem absence rules and the repository absence gate passes.
+actual_result: "All111 linked tests and Node/Bun SDK controls pass; focused exact module coverage is100/100/100/100 with zero uncovered counts. Canonical absence guard, full repository-static-quality assurance with refreshed zero-advisory receipt, typecheck and lint pass. Source/head coverage, native platform acceptance and AI review remain required before merge. Prior closure and failed attempts are retained in immutable history."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1607,related,"2026-10-27T02:51:04.850Z","harness:codex","cli:update:dep",detected
   pm-lifecycle-example-scope,related,"2026-10-27T02:51:04.850Z","harness:codex","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-27T02:42:14.362Z","harness:codex","Duplicate check: complete3134-item all-status full strict read has zero unreadable items or omissions. Request-specific search and open/in-progress inventories found no missing-interpreter or negative-replay owner. pm-gh1604 is completed for missing executables, so this bounded follow-up owns new review work; pm-gh1607 and pm-lifecycle-example-scope retain their completed lineage. PR1608 review threads4384464587,4384464563,4384464571."
   "2026-10-27T02:46:18.309Z","harness:codex","Native reproduction: executable lookup succeeds, but /bin/sh reports absent shebang interpreter with exit126 and the original bad-interpreter diagnostic on this host. The real linked regression failed as assertion_failure before this change (negative log retained privately), then passed after the fix. POSIX shells reporting named not-found/127 use the same bounded-header proof; Windows resolution remains separate. Linux execve documents ENOENT for a missing script interpreter: https://man7.org/linux/man-pages/man2/execve.2.html. The classifier reads at most256 header bytes with nonblocking open, closes the handle, declines incomplete/ambiguous or unavailable evidence, and never reruns the user command. Real executed scripts spoofing both127 and126 diagnostics remain assertions. Focused110 tests pass, including platform controls; focused exact module coverage is100/100/100/100 (42statements,45branches,6functions,37lines), typecheck and focused lint pass."
   "2026-10-27T02:49:11.012Z","harness:codex","Review1608 negative-control clarification: candidate73846f26f2255ca4afaffb642543e2e3d3d63f44 with ONLY src/sdk/test/command-resolution.ts replaced by 9dad0a28c87beb0fbb66f9eec9f7360f9bf549dd. The recorded runnable control archives immutable source into a disposable checkout, uses sandboxed PM roots, and requires exactly the named AssertionError before intentionally returning exit1; setup/runtime failure returns3. Executed now and proved the intended failure. Current passing local_checks are separate. Existing immutable events remain preserved; no prior history was edited."
   "2026-10-27T02:49:45.963Z","harness:codex","Acceptance complete: linked execution passed all110 tests; focused exact coverage passed100/100/100/100 with zero uncovered counts; typecheck, focused ESLint, and docs/skills gate pass. Each of the three replay controls independently archived its immutable candidate, substituted only the named pre-fix source file, and proved exactly its intended AssertionError. The current fields identify runnable failing controls separately from current passing local_checks, while old immutable history is preserved. The dependency checkpoint finding is declined with exact timestamps in its existing inline thread: checkpoint22:07:37Z predates PR creation23:33:40Z. Hosted revised-head checks and review remain required before merge."
+  "2026-10-27T03:03:13.745Z","harness:codex","Current-head static run40440955981 job121981248330 failed the zero-tolerance absence guard: the new interpreter lookup catches ENOENT without ENOTDIR. Dependency, repository static, token, context, docs and defect evidence assertions in that admission passed. Reopened only this actively edited follow-up to use the existing canonical filesystem absence predicate, add the ENOTDIR boundary control, and rerun meaningful local acceptance. No policy ceiling will change."
+  "2026-10-27T03:04:09.727Z","harness:codex","The first reopen invocation used an unsupported reason flag and did not mutate state. The positional-reason reopen and normal claim/start then succeeded, preserving the previous closure archive. Active work now uses the canonical isFileAbsentError helper for ENOENT and ENOTDIR, with a new ENOTDIR boundary case. No force or absence-policy exception is used."
+  "2026-10-27T03:06:28.489Z","harness:codex","Absence refinement:111 focused/linked tests pass, including ENOTDIR and actual absent-interpreter scripts; focused exact coverage remains100/100/100/100 with zero uncovered counts. The canonical absence-tolerance guard passes at its unchanged zero ceiling, typecheck and lint pass. Current Node and Bun public-SDK consumers independently classify the script as spawn_error, retain native126, and match exact stderr. Current-source sampled Sentry pm history root/trace is fresh at02:58:23UTC with a25.48ms span; independent telemetry start/finish ingestion is0.522995s/0.051558s. Expanded scoped observation from21:00UTC has241starts/240finishes with the same one unequal pair; physical queues are empty. Existing partial-pairing investigation remains separate and no universal pairing claim is made."
+  "2026-10-27T03:07:29.370Z","harness:codex","The241/240 pairing observation above ends at03:00:30UTC. A later query while the linked test command was still active also saw that in-flight start, which is not a missing terminal event. The earlier unequal changelog session identity is confirmed. The broad local repository-assurance attempt passed static, absence, token, context, docs and defect assertions but rejected a stale cached advisory receipt. Refreshing the normal feed receipt before repeating that read-only assurance; no dependency acceptance is inferred from a stale receipt."
+  "2026-10-27T03:09:56.747Z","harness:codex","Refreshed normal registry/OSV advisory evidence passes; the full local repository-static-quality assurance now passes every assertion, including its unchanged absence ceiling.111 linked tests, focused exact100/100/100/100 coverage, typecheck, lint and Node/Bun public SDK consumers pass on the canonical-helper refinement. Earlier failed hosted static and stale-receipt local attempts remain preserved. Final revised-head required checks and full free-tier review are mandatory before merge."
 files[3]{path,scope}:
   src/sdk/test/command-resolution.ts,project
   tests/unit/sdk/test/command-resolution.spec.ts,project
   tests/unit/sdk/test/missing-command.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,project,300,"harness:codex","2026-10-27T02:46:19.340Z",local_mutation,fix/agent-history-and-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvq348ou-tiy272
     kind: test
     status: passed
@@ -42,9 +47,20 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvq3t9vi-mfz8vh
+    kind: test
+    status: passed
+    started_at: "2026-10-27T03:05:52.733Z"
+    finished_at: "2026-10-27T03:06:27.774Z"
+    recorded_at: "2026-10-27T03:06:27.774Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/missing-command.spec.ts tests/unit/sdk/test/command-resolution.spec.ts tests/unit/commands/test/test-command.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/TESTING.md,project
-close_reason: Absent-interpreter classification and reproducible negative evidence verified locally; reviewed delivery continues in PR1608.
+close_reason: Canonical absence refinement and all local acceptance complete; final hosted review remains a pre-merge gate.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened

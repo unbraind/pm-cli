@@ -8,6 +8,7 @@ import { constants } from "node:fs";
 import { access, open } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -50,7 +51,7 @@ async function hasAbsentScriptInterpreter(resolved: string, cwd: string): Promis
       await access(interpreter);
       return false;
     } catch (error) {
-      return (error as NodeJS.ErrnoException).code === "ENOENT";
+      return isFileAbsentError(error);
     }
   } catch {
     return false;

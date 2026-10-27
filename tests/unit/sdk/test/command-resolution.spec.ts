@@ -18,6 +18,7 @@ afterEach(() => {
 describe("shell lookup evidence", () => {
   it.each([
     ["./script", "#!/absent/interpreter\nexit 0", "ENOENT", true],
+    ["./script", "#!/not-a-directory/interpreter\nexit 0", "ENOTDIR", true],
     ["./script", "#! \t/absent/interpreter --flag\n", "ENOENT", true],
     ["./script", "#!/present/interpreter", null, false],
     ["./script", "#!/unreadable/interpreter\n", "EACCES", false],
