@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-27T17:13:22.670Z"
+updated_at: "2026-10-27T20:03:07.933Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[108]:
+comments[109]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -349,6 +349,9 @@ comments[108]:
   - created_at: "2026-10-27T17:13:22.670Z"
     author: "harness:codex"
     text: "Current Node24.21 full static run passes all preceding semantic/static/contract/tracker gates but transport product admission fails create409/398ms. A separate unchanged candidate run fails only create400/398 with a qualified37ms control. An independently built disposable archive of immutable b76d697ee also fails get419/362 and create440/398 with a qualified45ms control, using the unchanged ten-sample isolated one-item protocol and the same installed runtime dependencies. These measurements do not establish patch causality and do not waive product admission. Keep every ceiling and runner criterion unchanged; require exact-head hosted static acceptance. Remaining graph/record/mutation checks and complete functional coverage are being run separately so this local static attempt is not described as all green."
+  - created_at: "2026-10-27T20:03:07.933Z"
+    author: "harness:codex"
+    text: "Admission distinction: the unchanged strict hosted static job passes on1c534fce727cf29d22cc44c20db570d41a357712 (job122381186596), and every required check on that head is successful with verified publishers. This clears candidate delivery admission without waiving any threshold. Local isolated candidate create400ms vs398ms and original get419vs362/create440vs398 remain retained observations on this host; they do not establish patch causality. No timing threshold, retry count or benchmark baseline was altered."
 files[11]:
   - path: .github/workflows/ci.yml
     scope: project

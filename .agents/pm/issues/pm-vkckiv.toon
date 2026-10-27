@@ -1,21 +1,23 @@
 id: pm-vkckiv
-title: Patch qs 6.16.0 after independent OSV detection of GHSA-6pq8-jhm2-2vcw
+title: Raise qs floor to 6.16.1 for GHSA-6pq8-jhm2-2vcw
 description: "The complete independent OSV gate on October27 reports GHSA-6pq8-jhm2-2vcw for locked qs6.16.0 while npm audit still reports zero. GitHub advisory https://github.com/advisories/GHSA-6pq8-jhm2-2vcw, updated October27, identifies6.16.1 as patched. The installed edge is development-only Stryker10 -> typed-rest-client2.3.1 -> qs6.16.0. Six library-level comma serializer triggers throw and two ordinary controls pass. Application-level production exploitability is not established. Preserve the completed older qs6.16.0 remediation under pm-mlpn91 for its distinct advisories."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[3]: dependencies,osv,security
 created_at: "2026-10-27T16:39:18.304Z"
-updated_at: "2026-10-27T17:44:24.576Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4f9b0131c245b9f712c46790"
+updated_at: "2026-10-27T19:57:24.973Z"
+closed_at: "2026-10-27T19:50:07.161Z"
+completed_at: "2026-10-27T19:50:07.161Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Every locked qs edge resolves to6.16.1 or later within major6; Six original and alternate comma serializer triggers no longer throw and ordinary serialization controls remain unchanged; Independent all-package OSV and npm evidence both report zero without advisory suppression; Existing strict quality, runtime distribution and frozen-lockfile contracts pass"
 parent: pm-qwoy
 risk: medium
 confidence: high
-expected_result: "All locked qs bindings resolve to mature6.16.1 or a later verified safe major6 release, the original and alternate comma serialization triggers no longer throw, ordinary controls retain their contract, and complete independent dependency evidence reports zero without suppressions."
+resolution: "Raised every major-six qs edge to at least6.16.1 and locked the Stryker/typed-rest-client development chain to6.16.1, retaining the seven-day policy and all advisory gates."
+expected_result: "Original and alternate serializer triggers no longer throw, ordinary URL behavior is preserved and all-package security checks admit the candidate without suppression."
+actual_result: "Original6.16.0 reproduces six throws and its pinned graph is refused specifically for GHSA-6pq8-jhm2-2vcw with complete feeds. Candidate triggers, eight alternate consumer cases and ordinary controls pass; independent review found no concrete surviving route. Both feeds complete for567packages with zero findings, npm audit0 and runtime closure42 excludes qs. Full exact100% coverage and all hosted gates pass on1c534fce727cf29d22cc44c20db570d41a357712. Production exploitability was not established."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-mlpn91,related,"2026-10-27T16:39:18.304Z","harness:codex","cli:create:dep",detected
 comments[4]{created_at,author,text}:
@@ -46,6 +48,7 @@ test_runs[1]:
       node scripts/release/runtime-lock.mjs check,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   CHANGELOG.md,project
+close_reason: Mature qs6.16.1 closes the independently detected advisory binding
 escape_class: scanner_finding
 gate_evidence:
   disposition: gate_strengthened

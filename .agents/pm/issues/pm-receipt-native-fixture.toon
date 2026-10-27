@@ -2,11 +2,13 @@ id: pm-receipt-native-fixture
 title: "GH-1612: canonicalize native receipt fault fixtures and guard macOS before merge"
 description: "Scheduled main77ff26ad Nightly40482594067 macOS Node24 shard2/2 fails five receipt-index-snapshot fault cases at their initial positive authority assertion: zero indexed blobs instead of one. A controlled symlink TMPDIR replay on unchanged0af source independently reproduces the same five AssertionErrors with no suite/runtime errors. Production snapshot transfer already passes the canonical physical source directory; the new fault fixture passes the lexical alias to a reader whose linked-directory argument is an index coordinate. Canonicalize the owned fixture root and add the existing complete receipt snapshot suite to the existing native macOS merge check, preserving all fault assertions and production boundaries."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: github,nightly,portability
 created_at: "2026-10-27T10:39:20.310Z"
-updated_at: "2026-10-27T14:06:30.169Z"
+updated_at: "2026-10-27T19:50:11.815Z"
+closed_at: "2026-10-27T19:50:11.005Z"
+completed_at: "2026-10-27T19:50:11.005Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "Controlled aliased TMPDIR replay fails with exactly the five initial positive authority assertions before the fixture correction and passes after; no production containment or read-error semantics, budgets, retries or assertions are weakened; native macOS pre-merge verification and required exact coverage pass before closure."
@@ -15,11 +17,12 @@ impact: Receipt snapshot test portability and native macOS admission
 parent: pm-ycyymg
 risk: low
 confidence: high
-expected_result: "All five unchanged fault scenarios start from valid source authority and preserve snapshot index bytes after genuine source failures, including a symlink-addressed temporary parent; the existing macOS pre-merge job executes the full snapshot suite."
-actual_result: "Implemented fixture-only physical-root normalization and included the complete8-case snapshot suite in the existing native macOS merge check. Controlled external alias replay fails exactly all5 initial positive assertions before and passes after;31 connected and linked tests pass. Full Node24.21 canonical run passes11509 tests with3 platform skips at exact100/100/100/100 coverage:71103 statements,54739 branches,14625 functions,67254 lines. Typecheck/lint/workflow permissions pass. Native macOS and hosted exact coverage remain UNVERIFIED because all9 emitted source Actions jobs, including build foundation, remain queued after a20-minute watcher; missing required DeepScan independently blocks merge. No production semantics, assertions or budgets changed. The item is open pending its explicit native/hosted acceptance, with no completion or shipment claim."
+resolution: "Canonicalized owned fixture roots before deriving Git index coordinates and added the complete receipt snapshot suite to the existing macOS merge smoke. Production containment, authority assertions and deadlines remain intact."
+expected_result: "All five source-failure scenarios start from positive indexed authority, preserve exact snapshot index bytes and execute on native macOS before merge."
+actual_result: Pinned unsafe source reproduces all five intended assertion failures with no setup errors. Current four-file linked receipt suite passes. Native macOS job122381186744 independently passes all8snapshot cases on1c534fce727cf29d22cc44c20db570d41a357712; containing cohort21tests and follow-up271tests pass. All required hosted coverage/static/platform gates pass; local11512 tests have exact100% coverage.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,related,"2026-10-27T10:39:20.310Z","harness:codex","cli:create:dep",detected
-comments[5]:
+comments[7]:
   - created_at: "2026-10-27T10:39:20.310Z"
     author: "harness:codex"
     text: "text=Duplicate check: complete3139-item all-status corpus, request-specific receipt snapshot source-index alias searches and fresh context/open/in_progress inventories; full live closed source-receipt owner and recurrence measurement owner plus open reliability-lineage item inspected. The older macOS alert1544 concerns repaired cache-exclusion rules and is not this five-case receipt setup failure. Reuse completed source authority lineage through this bounded native fixture child. Report1612: https://github.com/unbraind/pm-cli/issues/1612 ; failed native job https://github.com/unbraind/pm-cli/actions/runs/40482594067/job/122116361740 . No product defect or historical-rate repair is claimed."
@@ -36,6 +39,13 @@ comments[5]:
     author: "harness:codex"
     text: "Follow-up admission on 2026-10-27 after one complete 20-minute blocking watcher of ee88e54e929bc2357a76a72182b57d330175b0ac: the benchmark job passed, but eight Actions jobs including build foundation remain queued; the build has runner_id 0 and no steps. Native macOS and hosted exact coverage therefore remain UNVERIFIED and this item remains open/unclaimed. All 13 review threads are resolved with no new actionable code findings; unavailable providers are not approvals. Required CodeFactor has a queued suite with zero emitted check runs despite its PR dashboard showing No issues found; GitHub rejected one exact-suite rerequest with 404, so the dashboard is not current-commit acceptance. DeepScan webhook deliveries fail HTTP 500/EOF; one verified synchronize event for this PR/head was redelivered at 13:45:00 UTC and again failed 500/EOF after 5.17 seconds. Chrome also returns ERR_EMPTY_RESPONSE for DeepScan, and further CodeFactor UI work is currently blocked by an open extension panel. The exact-head hosted analyzer gate still refuses releasability. No native assertions, budgets, analyzer provenance, branch requirements or security settings were weakened. Source and local exact 100% coverage proof are unchanged; no native acceptance, closure, merge or publication is claimed."
     edited_at: "2026-10-27T14:06:30.169Z"
+  - created_at: "2026-10-27T18:30:46.425Z"
+    author: "harness:codex"
+    text: "Current checkout linked verification passes: all four receipt snapshot/fault/indexed-blob/linked-context suites completed through the sandbox-safe pm test runner and recorded a durable passed receipt. The original b76 native macOS job122313605663 independently ran all8 snapshot cases successfully; that proves its native fixture criterion on that head, not acceptance of later revisions. Current full Node24 coverage is11512passed/3platformskips and exact100% all four metrics; current-head hosted native/coverage/static remain required. DeepScan and CodeFactor exact c729 analysis are green with zero issues/annotations. The provider auxiliary ESLint error remains separate. No closure or current-head native proof is claimed."
+  - created_at: "2026-10-27T18:36:22.710Z"
+    author: "harness:codex"
+    text: "Native current-head criterion is now proven on1c534fce727cf29d22cc44c20db570d41a357712: GitHub macOS Node24 job122381186744 succeeded and its independently retrieved native log shows receipt-index-snapshot.spec.ts all8tests passing at18:24:23UTC, then21tests across the containing3files and271follow-up tests. Job: https://github.com/unbraind/pm-cli/actions/runs/40557895938/job/122381186744 . Current-head coverage and static checks remain pending; their explicit acceptance is not waived, so the item remains active and unclosed."
+    edited_at: "2026-10-27T18:37:31.266Z"
 learnings[1]{created_at,author,text}:
   "2026-10-27T11:22:23.113Z","harness:codex","Native temporary-directory aliases can differ from Git physical roots. A fixture passing linked index coordinates should canonicalize its owned root before deriving paths; use an external symlink TMPDIR to independently exercise this setup on other platforms, preserve the initial positive authority control and all fault byte assertions, and keep the actual native suite in pre-merge checks."
 files[2]{path,scope}:
@@ -43,7 +53,7 @@ files[2]{path,scope}:
   tests/unit/sdk/test/receipt-index-snapshot.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge/indexed-receipt-blobs.spec.ts tests/unit/sdk/merge/linked-receipt-context.spec.ts,project,240,"harness:codex","2026-10-27T10:41:04.420Z",local_mutation,fix/agent-history-and-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvqk5ody-ejkiwo
     kind: test
     status: passed
@@ -55,8 +65,20 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge/indexed-receipt-blobs.spec.ts tests/unit/sdk/merge/linked-receipt-context.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvr0ovp2-ye2xx0
+    kind: test
+    status: passed
+    started_at: "2026-10-27T18:26:38.138Z"
+    finished_at: "2026-10-27T18:26:50.101Z"
+    recorded_at: "2026-10-27T18:26:50.101Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/receipt-index-snapshot.spec.ts tests/unit/sdk/test/receipt-index-snapshot-faults.spec.ts tests/unit/sdk/merge/indexed-receipt-blobs.spec.ts tests/unit/sdk/merge/linked-receipt-context.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   CHANGELOG.md,project
+close_reason: Canonical native receipt fault fixtures satisfy macOS and hosted admission
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

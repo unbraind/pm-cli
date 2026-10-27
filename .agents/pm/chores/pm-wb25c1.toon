@@ -1,28 +1,30 @@
 id: pm-wb25c1
-title: "Refresh cooldown-pending October 20 lint, token and review tooling"
-description: "Ongoing governed tooling maintenance. October27 registry refresh confirms jscpd5.4.2 crossed seven days and is adopted in PR1608; earlier eligible tokenizer/Greptile/Knip/TypeScript ESLint work retains its completed child lineage. Remaining current routine versions are still younger than seven days (SentryCLI3.8.2, marked18.1.2, Stryker10.1.1, Knip6.43.0 and Unicorn79). Major upgrades retain their separate canonical compatibility owners. Recheck exact publication timestamps before each adoption; no cooldown or compatibility exception is implied."
+title: Complete October 20 tooling cohort with mature jscpd 5.4.2
+description: "Complete the October20 maintenance cohort: adopt the then-pending eligible eslint10.13.0, gpt-tokenizer4.1.0, Greptile3.7.0, Knip6.42.1, TypeScript ESLint8.72.0 and jscpd5.4.2 after seven full days. Live October27 manifest/binary verification confirms all six target versions are installed; jscpd was the last cohort adoption in PR1608. Closure still requires the existing strict static, token, review-tool and coverage gates. Later routine and major versions are a separate registry census and do not expand this finite cohort implicitly."
 type: Chore
-status: in_progress
+status: closed
 priority: 3
 tags[2]: dependencies,maintenance
 created_at: "2026-10-20T07:06:03.433Z"
-updated_at: "2026-10-27T18:04:15.967Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#4f9b0131c245b9f712c46790"
+updated_at: "2026-10-27T19:57:24.077Z"
+closed_at: "2026-10-27T19:50:15.561Z"
+completed_at: "2026-10-27T19:50:15.561Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: "existing strict static, token, review-tool and coverage gates pass; Adopt eligible eslint, gpt-tokenizer, greptile, knip, typescript-eslint and jscpd after seven-day cooldown"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: Eligible tooling updates pass existing quality and token contracts without release-age exceptions.
+resolution: "Completed the six-target maintenance cohort. Current manifests/binary confirm ESLint10.13.0, tokenizer4.1.0, Greptile3.7.0, Knip6.42.1, TypeScript ESLint8.72.0 and final jscpd5.4.2 adoption. Existing completed child lineage is preserved."
+expected_result: "All finite cohort targets are adopted after seven full days and existing static, token, tooling and coverage gates pass without exceptions."
+actual_result: "jscpd5.4.2 crossed seven days at2026-10-27T16:14:40.512Z and matching native bundles pass. Three clone scans report0duplicates; development bundles and linked tests pass. Four child adoptions are live closed with substantive resolutions. All required hosted static/coverage/compatibility checks pass on1c534fce727cf29d22cc44c20db570d41a357712. Later registry versions remain separate work."
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-ul0ow4,discovered_from,"2026-10-20T07:06:03.433Z","harness:codex","cli:create:dep",detected
   pm-do5b,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
   pm-fokyhh,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
   pm-ksr40d,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
   pm-t3jxjj,related,"2026-10-20T07:49:32.939Z","harness:codex","cli:update:dep",detected
-comments[28]:
+comments[29]:
   - created_at: "2026-10-20T07:06:03.433Z"
     author: "harness:codex"
     text: "Duplicate check: complete3021-item strict all-status/full-body read plus dependency/cooldown search and open/in-progress inventories found completed pm-ul0ow4 and broad owners, with no active minor-refresh leaf. Major migration owners are preserved. Open/unclaimed until eligible implementation."
@@ -110,6 +112,9 @@ comments[28]:
   - created_at: "2026-10-27T18:04:15.966Z"
     author: "harness:codex"
     text: "Fresh primary-registry timestamps at18:02UTC: jscpd5.4.2 age7.07days adopted and zero-clone/native bundle tests pass. Remaining routine latests: SentryCLI3.8.2 age5.29d, marked18.1.2 age1.13d, Stryker10.1.1 age3.95d, Knip6.43.0 age3.40d, Unicorn79 age4.06d. Major boundaries remain CodSpeed6.1, Sentry11.9, Vitest5.0.5/coverage, npm-package-arg14 and TypeScript7; no blind major upgrade is claimed. This broad owner must remain open after the selected jscpd change is delivered."
+  - created_at: "2026-10-27T18:55:39.558Z"
+    author: "harness:codex"
+    text: "Scope correction after full live item/history review: this owner names a finite October20 cohort (eslint, tokenizer, Greptile, Knip, TypeScript ESLint and jscpd), not perpetual adoption of every future registry version. Current manifests show10.13.0/4.1.0/3.7.0/6.42.1/8.72.0/5.4.2 respectively; direct Greptile --version agrees3.7.0. Thus the six target adoptions are present, with current jscpd the final one. My earlier statement that this owner must remain open for all newer age-gated versions was too broad. Required hosted static and coverage admission are still pending, so it remains open/unclaimed now; if they pass, close this finite cohort and let the package-owned changelog include its actual completion."
 files[3]{path,scope}:
   .agents/pm/extensions/.managed-extensions.json,project
   package.json,project
@@ -130,4 +135,5 @@ test_runs[1]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/check-development-dependencies.mjs,schema,schema,source,local_source_ref
       "pnpm lint:duplicates",schema,schema,source,local_source_ref
+close_reason: Finite October20 tooling cohort is complete with mature jscpd5.4.2
 body: ""
