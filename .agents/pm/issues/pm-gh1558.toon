@@ -1,0 +1,30 @@
+id: pm-gh1558
+title: "GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions"
+description: The Oct24 Windows Node24 shard1/4 passed2598 tests but failed with one unhandled EPERM rejection from the test-only publishGeneration raw rename in lock-lease-fencing.spec.ts. Its source is unchanged through the current candidate. The public alert links only the completed recurrence meter and completed production progress-wait work; neither owns this remaining fixture repair. Preserve the original Oct23 merge-portability timeout as a different signature.
+type: Issue
+status: open
+priority: 2
+tags[4]: bug,ci,nightly,windows
+created_at: "2026-10-26T23:50:33.633Z"
+updated_at: "2026-10-26T23:50:33.633Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Preserve atomic generation publication and original timing/fencing assertions; capture and settle background rejections promptly; prove regression sensitivity and pass the complete affected native Windows Node24 shard with zero unhandled errors; retain both historical failed attempts.
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: medium
+expected_result: Generation publication remains atomic and all existing progress/hard-ceiling assertions complete with every background rejection handled and settled; the affected native Windows shard reports zero unhandled errors.
+actual_result: Nightly40079265521 attempt1 at b8f98ff8 passed215 files and2598 tests with105 skips but exited1 on an unhandled EPERM raw rename from publishGeneration while the explicit maxWaitMs-ceiling control ran. No fixture repair or new reproduction is claimed.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,related,"2026-10-26T23:50:33.633Z","harness:codex","cli:create:dep",detected
+  pm-bj7rq0,related,"2026-10-26T23:50:33.633Z","harness:codex","cli:create:dep",detected
+  pm-iop1pg,discovered_from,"2026-10-26T23:50:33.633Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-26T23:50:33.633Z","harness:codex","Duplicate check: strict complete3132-item all-status corpus plus Windows lock fixture rename search and live open/in_progress lists found no active owner for the fixture rejection. Full live pm-iop1pg data confirms completed production progress waiting; current GH1558 preserves the distinct Oct24 failure and original Oct23 timeout. git diff b8f98ff8..58e8f1226 is empty for the fixture, so the reported implementation boundary remains unchanged. Intake stays open/unclaimed; this delivery does not certify a repair. Hosted source: https://github.com/unbraind/pm-cli/actions/runs/40079265521/job/120829198058"
+files[1]{path,scope}:
+  tests/unit/core/lock/lock-lease-fencing.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,project,240,"harness:codex","2026-10-26T23:50:33.633Z",local_mutation,fix/agent-history-and-recovery
+escape_class: nightly_regression
+body: ""
