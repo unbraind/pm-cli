@@ -1,0 +1,55 @@
+id: pm-lifecycle-example-scope
+title: Preserve explicit tracker scope in lifecycle recovery mutation examples
+description: PR1608 CodeRabbit review4383854533 correctly identifies that block/unblock help retries retain the selected tracker but their rendered update examples drop bootstrap scope. Prefix each example with the canonical help retry bootstrap arguments and prove mutations cannot fall back to another tracker.
+type: Task
+status: closed
+priority: 1
+tags[3]: agent-ux,bug,review
+created_at: "2026-10-27T00:30:40.690Z"
+updated_at: "2026-10-27T00:35:37.836Z"
+closed_at: "2026-10-27T00:35:37.075Z"
+completed_at: "2026-10-27T00:35:37.075Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: A negative two-tracker control fails before the change and passes afterward; both block and unblock examples retain explicit tracker scope and extension suppression; the ambient tracker history stays unchanged; full required checks and review pass.
+parent: pm-gh1607
+risk: medium
+confidence: high
+resolution: Prefix every rendered lifecycle mutation example with the selected tracker and explicit extension-suppression bootstrap arguments already retained by its inspection retry.
+expected_result: Executing filled block/unblock examples from another working directory mutates only the explicitly selected tracker and retains extension suppression.
+actual_result: "The unchanged implementation fails the new real-shell two-tracker control; the corrected implementation passes the full20-test linked cohort, complete typecheck, focused ESLint and docs links. Both trackers share the same item ID, and ambient history remains byte-for-byte semantically unchanged. Exact-head coverage, Windows and review remain pre-merge requirements."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1607,discovered_from,"2026-10-27T00:30:40.690Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-27T00:30:40.690Z","harness:codex","Duplicate check: strict complete3133-item all-status corpus, lifecycle recovery example tracker scope search, and live open/in_progress lists show no active owner for this new review finding. Full live parent data records completed initial intent recovery. This child owns scoped rendered-example replay only. Review: https://github.com/unbraind/pm-cli/pull/1608#discussion_r4383854533"
+  "2026-10-27T00:35:33.819Z","harness:codex","The new two-tracker control fails before the fix: executing a rendered example from an ambient tracker succeeds, but the explicitly selected item remains unblocked. After prefixing examples with the same canonical bootstrap arguments as the help retry, linked verification passes all20 tests. The control replays both block and unblock via a real shell from the ambient working directory, with the same item ID in both trackers; only the selected tracker changes and ambient history stays identical. Complete typecheck, focused ESLint and documentation links pass. Native Windows and full exact-head checks remain required on the pushed revision."
+files[2]{path,scope}:
+  src/cli/commander-usage.ts,project
+  tests/unit/cli/lifecycle-verb-recovery.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts,project,300,"harness:codex","2026-10-27T00:30:40.690Z",local_mutation,fix/agent-history-and-recovery
+test_runs[1]:
+  - run_id: test-local-mvpyc8k6-hk38z8
+    kind: test
+    status: passed
+    started_at: "2026-10-27T00:32:58.574Z"
+    finished_at: "2026-10-27T00:33:14.838Z"
+    recorded_at: "2026-10-27T00:33:14.838Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/COMMANDS.md,project
+close_reason: Preserved scope in executable lifecycle recovery examples with a real two-tracker regression.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/cli/lifecycle-verb-recovery.spec.ts tests/unit/cli/unknown-command-help-runtime.spec.ts tests/unit/cli/canonical-command-recovery.spec.ts
+  hosted_checks[3]: Gates (coverage),Gates (static),Windows regression (Node 24)
+  owner: pm-lifecycle-example-scope
+body: ""

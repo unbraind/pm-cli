@@ -686,10 +686,11 @@ export function buildUnknownCommandGuidanceFromRuntime(
   const lifecycleRecovery = resolveLifecycleVerbRecovery(normalizedUnknown, commandPaths);
   if (lifecycleRecovery) {
     const retryArgs = buildCanonicalHelpRetryArgs("update", invocationArgv)!;
+    const bootstrapArgs = retryArgs.slice(0, -2);
     return {
       suggestedRetryCommand: renderPmCommand(retryArgs),
       suggestedRetryArgs: retryArgs,
-      unknownCommandExamples: [renderPmCommand(retryArgs), ...lifecycleRecovery.examples.map((args) => renderPmCommand(args))],
+      unknownCommandExamples: [renderPmCommand(retryArgs), ...lifecycleRecovery.examples.map((args) => renderPmCommand([...bootstrapArgs, ...args]))],
       unknownCommandNextSteps: lifecycleRecovery.nextSteps,
     };
   }

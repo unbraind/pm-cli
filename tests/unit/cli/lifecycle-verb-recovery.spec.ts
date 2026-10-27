@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Command } from "commander";
+import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import * as flagContracts from "../../../src/sdk/cli-contracts/flag-contracts.js";
@@ -9,6 +10,8 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { runHistory } from "../../../src/sdk/query/history.js";
 import { runGet } from "../../../src/sdk/query/get.js";
+import { quoteCommandArg } from "../../../src/sdk/command-line.js";
+import { distCliPath } from "../../helpers/cliRunner.js";
 
 describe("unsupported lifecycle verb recovery", () => {
   it("teaches block and unblock through the supported mutation without changing the item", async () => {
@@ -45,6 +48,33 @@ describe("unsupported lifecycle verb recovery", () => {
       expect(recovered.item.blocked_reason).toBeUndefined();
       expect(recovered.item.unblock_note).toBe("ready");
       expect(recovered.item.dependencies).toEqual([expect.objectContaining({ id: blocker, kind: "related" })]);
+    });
+  });
+
+  it("replays scoped mutation examples from another tracker without changing that tracker", async () => {
+    await withTempPmPath(async (selected) => {
+      const id = createTestItemId(selected, { title: "Selected item" });
+      const blocker = createTestItemId(selected, { title: "Selected blocker" });
+      await withTempPmPath(async (ambient) => {
+        expect(ambient.runCli(["create", "--id", id, "--title", "Ambient item", "--type", "Task", "--create-mode", "progressive"]).code).toBe(0);
+        const before = await runHistory(id, {}, { path: ambient.pmPath });
+        const root = new Command("pm");
+        root.command("update");
+        for (const verb of ["block", "unblock"]) {
+          const recovery = buildUnknownCommandGuidanceFromRuntime(`unknown command '${verb}'`, root, new Map(), ["--pm-path", selected.pmPath, "--no-extensions", verb, id])!;
+          const flag = verb === "block" ? "--blocked-by" : "--unblock-note";
+          const example = recovery.unknownCommandExamples!.find((command) => command.includes(flag))!;
+          const filled = example.replaceAll("<item-id>", id).replaceAll("<blocker-id>", blocker).replaceAll("<reason>", "waiting").replaceAll("<note>", "ready");
+          const command = `${quoteCommandArg(process.execPath)} ${quoteCommandArg(distCliPath())} ${filled.slice(3)}`;
+          const executed = spawnSync(command, { shell: true, cwd: ambient.tempRoot, env: ambient.env, encoding: "utf8", timeout: 15_000 });
+          expect(executed.status, executed.stderr).toBe(0);
+          const result = await runGet(id, { path: selected.pmPath }, { full: true });
+          expect(result.item.blocked_by).toBe(verb === "block" ? blocker : undefined);
+          expect(example).toContain("--no-extensions");
+        }
+        expect(await runHistory(id, {}, { path: ambient.pmPath })).toEqual(before);
+        expect((await runGet(id, { path: selected.pmPath }, { full: true })).item.blocked_reason).toBeUndefined();
+      });
     });
   });
 

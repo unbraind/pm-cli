@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Preserve explicit tracker scope in lifecycle recovery mutation examples ([pm-lifecycle-example-scope](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lifecycle-example-scope.toon))
 - Schedule the complete merge-receipt classification keeper after parallel contracts ([pm-receipt-serial](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-receipt-serial.toon))
 - GH-1607: Provide intent-specific recovery for unsupported block and unblock commands ([pm-gh1607](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1607.toon))
 - GH-1605: Preserve recent events when default history output must be bounded ([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon))

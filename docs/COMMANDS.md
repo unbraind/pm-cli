@@ -676,6 +676,9 @@ pm update <item-id> --unset blocked-by --unset blocked-reason --unblock-note "re
 Inspect the actual blockers before applying either template. The unblock recipe
 clears all `blocked_by` relationships and stale blocker metadata while preserving
 other relationship kinds. `--unblock-note` alone only records a note.
+The help retry and mutation examples preserve an explicit `--pm-path` and
+`--no-extensions` from the failed invocation
+([pm-lifecycle-example-scope](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lifecycle-example-scope.toon); tracker record excluded from npm).
 
 When closing a blocker, `pm close` scans reverse `blocked_by` edges and auto-unblocks dependent items only when every resolvable blocker is now terminal. Each unblocked item is updated through the normal audited mutation path, gets an `unblock_note`, and the close result reports compact `auto_unblocked:<id>:resolved_blockers=<ids>` warnings. Items with another active blocker remain blocked.
 
