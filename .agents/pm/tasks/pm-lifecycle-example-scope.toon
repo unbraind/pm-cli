@@ -6,23 +6,25 @@ status: closed
 priority: 1
 tags[3]: agent-ux,bug,review
 created_at: "2026-10-27T00:30:40.690Z"
-updated_at: "2026-10-27T00:35:37.836Z"
-closed_at: "2026-10-27T00:35:37.075Z"
-completed_at: "2026-10-27T00:35:37.075Z"
+updated_at: "2026-10-27T01:31:20.515Z"
+closed_at: "2026-10-27T01:31:19.720Z"
+completed_at: "2026-10-27T01:31:19.720Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: A negative two-tracker control fails before the change and passes afterward; both block and unblock examples retain explicit tracker scope and extension suppression; the ambient tracker history stays unchanged; full required checks and review pass.
 parent: pm-gh1607
 risk: medium
 confidence: high
-resolution: Prefix every rendered lifecycle mutation example with the selected tracker and explicit extension-suppression bootstrap arguments already retained by its inspection retry.
-expected_result: Executing filled block/unblock examples from another working directory mutates only the explicitly selected tracker and retains extension suppression.
-actual_result: "The unchanged implementation fails the new real-shell two-tracker control; the corrected implementation passes the full20-test linked cohort, complete typecheck, focused ESLint and docs links. Both trackers share the same item ID, and ambient history remains byte-for-byte semantically unchanged. Exact-head coverage, Windows and review remain pre-merge requirements."
+resolution: "Retained explicit tracker and extension scope in lifecycle mutation examples, verified real-shell two-tracker replay, and corrected completion timing through a recorded reopen followed by hosted acceptance."
+expected_result: "Both rendered lifecycle templates affect only the explicitly selected tracker, with required source-head checks and review findings handled before completion."
+actual_result: "For source head bb19f6b37435ec6a28fba491de0a346d23286c58, every required context and its publisher binding is present and passing, with no failed or pending checks. CI40427868889 coverage job121952280993 reports exact100/100/100/100 with zero uncovered counts; native Windows regression, all six packed first-run checks, static, typecheck, compatibility and smoke checks pass. The latest CodeRabbit review has no new code finding; its closure-timing finding was accepted by reopening this item during verification. This closure follows those hosted results, preserves earlier partial evidence, and leaves fresh metadata-head checks plus conversation resolution as separate pre-merge controls. The real-shell two-tracker test preserves ambient history values and the local20-test linked cohort passes."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1607,discovered_from,"2026-10-27T00:30:40.690Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-27T00:30:40.690Z","harness:codex","Duplicate check: strict complete3133-item all-status corpus, lifecycle recovery example tracker scope search, and live open/in_progress lists show no active owner for this new review finding. Full live parent data records completed initial intent recovery. This child owns scoped rendered-example replay only. Review: https://github.com/unbraind/pm-cli/pull/1608#discussion_r4383854533"
   "2026-10-27T00:35:33.819Z","harness:codex","The new two-tracker control fails before the fix: executing a rendered example from an ambient tracker succeeds, but the explicitly selected item remains unblocked. After prefixing examples with the same canonical bootstrap arguments as the help retry, linked verification passes all20 tests. The control replays both block and unblock via a real shell from the ambient working directory, with the same item ID in both trackers; only the selected tracker changes and ambient history stays identical. Complete typecheck, focused ESLint and documentation links pass. Native Windows and full exact-head checks remain required on the pushed revision."
+  "2026-10-27T01:23:52.542Z","harness:codex","CodeRabbit review4384162254 correctly identified premature closure relative to the explicit hosted/review acceptance criterion. Reopened through pm; the prior negative control and passing20-test/typecheck/lint/docs evidence remain valid. Only this follow-up is claimed while source-head hosted verification completes. The existing GitHub CI attempt acquired a runner during the guarded requeue check, so no cancel/rerun was performed. No source code or acceptance threshold changes are needed for this correction."
+  "2026-10-27T01:31:18.867Z","harness:codex","Hosted source acceptance completed before verified re-closure: https://github.com/unbraind/pm-cli/actions/runs/40427868889 and exact coverage https://github.com/unbraind/pm-cli/actions/runs/40427868889/job/121952280993 . The canonical receipt has zero failed/pending/missing contexts and matching required publishers; GitHub remains BLOCKED solely by the still-open timing conversation, which is addressed by this recorded reopen/verified-close sequence and will be resolved after it is pushed. No source changes or acceptance/coverage reductions are made."
 files[2]{path,scope}:
   src/cli/commander-usage.ts,project
   tests/unit/cli/lifecycle-verb-recovery.spec.ts,project
@@ -43,7 +45,7 @@ test_runs[1]:
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/COMMANDS.md,project
-close_reason: Preserved scope in executable lifecycle recovery examples with a real two-tracker regression.
+close_reason: Hosted source acceptance passed after reopening; verified closure is included in reviewed delivery.
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_strengthened
