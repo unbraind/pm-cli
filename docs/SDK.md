@@ -191,6 +191,8 @@ document-parse and ownership diagnostics retain their separate codes.
 tracker and extension arguments for package-authored guidance. It preserves an
 explicit path's spelling, omits the implicit cwd tracker, and expresses a
 different environment-selected tracker relative to the invocation directory.
+An environment-selected root-layout tracker at that directory is rendered as
+`--pm-path .` when a nested default tracker also exists.
 Completion corrections, missing close-evidence updates and lifecycle-verb
 examples share this formatter. SDK dispatch preserves the original scope before
 resolving storage paths, so copied commands retain relative selection and

@@ -24,7 +24,7 @@ function environmentCommandScope(cwd: string): string | undefined {
   if (!process.env.PM_PATH?.trim()) return undefined;
   const resolved = resolvePmRoot(cwd);
   return isPathWithinDirectory(resolveWorkspaceRoot(resolved), cwd) && resolved === resolveImplicitPmRoot(cwd)
-    ? undefined : path.relative(cwd, resolved);
+    ? undefined : path.relative(cwd, resolved) || ".";
 }
 
 /** Build copy-safe tracker and extension arguments, preserving explicit spelling and omitting the implicit cwd tracker. */

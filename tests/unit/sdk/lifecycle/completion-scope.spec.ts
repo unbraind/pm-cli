@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { cp, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { PmClient } from "../../../../src/sdk/runtime.js";
@@ -66,6 +66,34 @@ describe("portable completion guidance (pm-gh1611)", () => {
         expect((await owner.get(item.id)).item.completed_at).toBe(timestamp);
         expect(await readFile(historyPath, "utf8")).toBe(before);
       });
+    });
+  });
+
+  it("replays an environment-selected root-layout tracker at cwd without touching its nested peer", async () => {
+    await withTempPmPath(async (context) => {
+      await cp(context.pmPath, context.tempRoot, { recursive: true });
+      const root = new PmClient({ cwd: context.tempRoot, pmRoot: context.tempRoot, noExtensions: true });
+      const nested = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      const { item } = await root.create({ type: "Task", title: "Root selection", createMode: "progressive" });
+      await nested.create({ id: item.id, type: "Task", title: "Nested peer", createMode: "progressive" });
+      await nested.close(item.id, "Peer finished");
+      const historyPath = path.join(context.pmPath, "history", `${item.id}.jsonl`);
+      const before = await readFile(historyPath, "utf8");
+      const selectedPath = process.env.PM_PATH;
+      process.env.PM_PATH = ".";
+      try {
+        const selected = new PmClient({ cwd: context.tempRoot, noExtensions: true });
+        const result = await selected.close(item.id, "Root finished", { validateClose: "warn" });
+        const correction = result.completion!.hint!.match(/correct it with (pm .*)\.$/)![1]!.replace(/^pm /, "");
+        const timestamp = "2026-10-02T10:00:00.000Z";
+        const replay = spawnSync(`${quoteCommandArg(process.execPath)} ${quoteCommandArg(distCliPath())} ${correction.replace("<ISO>", timestamp)}`, { shell: true, cwd: context.tempRoot, env: { ...context.env, PM_PATH: "" }, encoding: "utf8" });
+        expect(replay.status, replay.stderr).toBe(0);
+        expect((await root.get(item.id)).item.completed_at).toBe(timestamp);
+        expect(await readFile(historyPath, "utf8")).toBe(before);
+        expect(result.follow_up?.suggested_command_args.slice(0, 3)).toEqual(["--pm-path", ".", "--no-extensions"]);
+      } finally {
+        process.env.PM_PATH = selectedPath;
+      }
     });
   });
 });
