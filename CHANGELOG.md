@@ -4,12 +4,21 @@
 
 ### Fixed
 
+- GH-1614: keep typed SDK data literal across CLI sentinel inputs ([pm-gh1614](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1614.toon))
+- GH-1606: Validate public SDK runtime operand values before mutation internals ([pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon))
+
+### Other
+
+- Serialize cold transport and executable refusal gate fixtures during full validation ([pm-serial-cold-gates](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-serial-cold-gates.toon))
+
+## 2026.10.28 - 2026-10-28
+
+### Fixed
+
 - Preserve explicit tracker scope in lifecycle recovery mutation examples ([pm-lifecycle-example-scope](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lifecycle-example-scope.toon))
 - Schedule the complete merge-receipt classification keeper after parallel contracts ([pm-receipt-serial](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-receipt-serial.toon))
 - GH-1607: Provide intent-specific recovery for unsupported block and unblock commands ([pm-gh1607](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1607.toon))
 - GH-1604: Classify missing linked-test executables separately from assertion failures ([pm-gh1604](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1604.toon))
-- GH-1614: keep typed SDK data literal across CLI sentinel inputs ([pm-gh1614](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1614.toon))
-- GH-1606: Validate public SDK runtime operand values before mutation internals ([pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon))
 - GH-1611: render portable tracker scope in generated completion hints ([pm-gh1611](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1611.toon))
 - GH-1612: canonicalize native receipt fault fixtures and guard macOS before merge ([pm-receipt-native-fixture](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-receipt-native-fixture.toon))
 - GH-1613: preserve typed PmClient validation and lookup refusals ([pm-gh1613](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1613.toon))
@@ -23,7 +32,6 @@
 
 ### Other
 
-- Serialize cold transport and executable refusal gate fixtures during full validation ([pm-serial-cold-gates](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-serial-cold-gates.toon))
 - Complete October 20 tooling cohort with mature jscpd 5.4.2 ([pm-wb25c1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wb25c1.toon))
 
 ## 2026.10.27 - 2026-10-27
