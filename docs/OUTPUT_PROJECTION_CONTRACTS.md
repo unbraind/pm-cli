@@ -120,8 +120,9 @@ primary rows while a rich result can name
 `checks.0.details.missing_resolution_rows` as a continuation row. This prevents
 an inner diagnostic array from disabling `--output-limit` on the outer checks.
 `toon_encoding: "tabular_when_uniform"` declares that an array of flat objects
-with one shared key set renders as a length-marked TOON table; mixed, nested,
-or heterogeneous arrays retain the expanded representation. Quoted,
+with one shared key set can render as a length-marked TOON table. Nested or
+heterogeneous object rows can also use a smaller table with explicit sibling
+encoding metadata; otherwise they retain the expanded representation. Quoted,
 separator-bearing, and multiline values use the canonical TOON encoder and
 round-trip through the strict decoder.
 Commands without a row collection, including a dependency tree or leaf `get`,
@@ -470,7 +471,9 @@ rejected.
 Tracked by [pm-gh1603](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1603.toon)
 (tracker record excluded from npm). The SDK `encodePmTableRows(rows, { compact: true })`
 can declare `list_columns` (column to delimiter) and `null_columns` alongside
-`json_columns` and `absent`. `decodePmTableRows` restores these facts exactly.
+`json_columns` and `absent`. Omitted null columns also carry `column_order`
+to restore their original first-occurrence positions. `decodePmTableRows` restores
+these facts exactly.
 A safe string-array column uses `;` between nonempty members; an empty cell means
 an empty array. Any empty member, delimiter collision, mixed type or nested value
 uses the existing JSON-column encoding instead. Null columns are omitted only

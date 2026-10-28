@@ -2,40 +2,58 @@ id: pm-gh1617
 title: "GH-1617: make history display order explicit and consistent across projections"
 description: "GitHub #1617 reports implicit history direction changes with limit and projection, breaking replay. Add a typed SDK/CLI/MCP order option with documented defaults, preserving latest-window selection, physical indices, diff alignment and continuation."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: agent-ux,github,history,sdk
 created_at: "2026-10-28T15:27:06.469Z"
-updated_at: "2026-10-28T15:58:27.022Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#738f7d9b84aae278517b105a"
+updated_at: "2026-10-28T16:46:57.489Z"
+closed_at: "2026-10-28T16:40:15.282Z"
+completed_at: "2026-10-28T16:40:15.282Z"
 author: "harness:codex"
 estimated_minutes: 100
 acceptance_criteria: SDK validates order before history reads;CLI and MCP expose identical ordering;Every projection aligns row and diff order across limits;Document defaults and chronological replay compatibility
 parent: pm-mpbb
-expected_result: "Explicit oldest_first and newest_first align rows and diffs in every projection and latest-N window, with executable continuation and documented defaults."
+risk: low
+confidence: 95
+resolution: "Added oldest_first/newest_first display ordering after latest-N selection, preserving full-history chronological defaults and diff replay. CLI contracts, top-level MCP forwarding, valid schema examples, docs and SDK compatibility snapshot are aligned."
+expected_result: "Limits must not silently flip compact/provenance display order, and callers must be able to request chronological replay through every public transport."
+actual_result: "48 linked history tests pass, including the projection/limit/order matrix, physical diff coordinates, CLI and nested/top-level runtime requests. The pinned semantic negative control fails the intended ordering assertion. Typecheck and packed Node/Bun continuation pass. Exact-head hosted checks remain required before merge; full local coverage is not claimed."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1605,related,"2026-10-28T15:27:06.469Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-28T15:27:06.469Z","harness:codex","Duplicate check: complete strict 3146-item all-status corpus without omissions, history search and open/in-progress lists found no GH1617 owner. Completed pm-gh1605 remains closed; this is a display-contract follow-up."
   "2026-10-28T15:28:07.749Z","harness:codex","Implementation decision: explicit order applies identically to compact, provenance and full rows plus value diffs. Preserve full/raw chronological default; compact/provenance default newest_first independent of limit. Document both defaults and require --order oldest_first for chronological compact replay. Latest-N selection remains independent of presentation."
   "2026-10-28T15:42:07.989Z","harness:codex","Red/green proof: new persistent history fixture fails on unchanged source with newest_first versus requested oldest_first. Implemented explicit SDK validation and CLI/MCP enum, consistent latest-N presentation, aligned value diffs and documented compatibility. Linked history cohort passes48tests. Complete all-source coverage and static/current-head hosted admission remain pending."
+  "2026-10-28T16:25:14.752Z","harness:codex","CodeRabbit review found top-level MCP/runtime order was accepted by schema but not hoisted. Added forwarding and a top-level oldest_first regression alongside nested options coverage; corrected action-specific schema examples. Full local coverage run: 11520 passing, two failures (global npm module resolution and 30-second scale benchmark timeout); no coverage artifact produced, so no full-coverage pass is claimed."
 notes[1]{created_at,author,text}:
   "2026-10-28T15:47:48.508Z","harness:codex","Selection and presentation are separate contracts: limit chooses the latest matching entries; order chooses their display direction. Replay the complete authoritative chain before selecting value diffs so excluded updates still establish before-values."
-files[10]{path,scope}:
-  sdk/public-surface.json,project
-  src/cli/help-content.ts,project
-  src/cli/register-list-query.ts,project
-  src/sdk/cli-contracts/flag-contracts.ts,project
-  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
-  src/sdk/cli-contracts/tool-parameter-tables.ts,project
-  src/sdk/cli-contracts/tool-schema.ts,project
-  src/sdk/query/history.ts,project
-  tests/fixtures/contracts/full.json,project
-  tests/unit/sdk/query/history-recency.spec.ts,project
+files[11]:
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/cli/help-content.ts
+    scope: project
+  - path: src/cli/register-list-query.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-lexicon-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-parameter-tables.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-schema.ts
+    scope: project
+  - path: src/sdk/query/history.ts
+    scope: project
+  - path: src/sdk/runtime-input.ts
+    scope: project
+    note: Forward_schema_valid_top_level_order
+  - path: tests/fixtures/contracts/full.json
+    scope: project
+  - path: tests/unit/sdk/query/history-recency.spec.ts
+    scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-recency.spec.ts tests/unit/commands/history/history-activity-command.spec.ts,project,300,"harness:codex","2026-10-28T15:37:59.418Z",local_mutation,fix/context-read-contracts
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvsa5avb-ywgwnf
     kind: test
     status: passed
@@ -47,10 +65,22 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-recency.spec.ts tests/unit/commands/history/history-activity-command.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvsbzxar-jjjhep
+    kind: test
+    status: passed
+    started_at: "2026-10-28T16:30:43.876Z"
+    finished_at: "2026-10-28T16:31:07.347Z"
+    recorded_at: "2026-10-28T16:31:07.347Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-recency.spec.ts tests/unit/commands/history/history-activity-command.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   docs/COMMANDS.md,project
   docs/generated/FLAG_LEXICON_BUDGETS.md,project
   docs/SDK.md,project
+close_reason: "Implemented explicit consistent history order across SDK, CLI and MCP; reviewed delivery is carried by PR #1619."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

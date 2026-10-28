@@ -168,7 +168,8 @@ describe("lossless SDK table cells", () => {
         await runUpdate(id, { reminder: ["at=2099-01-02T09:00:00Z,text=Follow up"], event: ["start=2099-01-03T09:00:00Z,title=Review"] }, { path: context.pmPath });
       }
       for (const depth of ["brief", "standard", "full"]) {
-        const result = await runContext({ depth, limit: "20", tokenBudget: 100000 }, { path: context.pmPath });
+        const result = await runContext({ depth, limit: "30", tokenBudget: 100000 }, { path: context.pmPath });
+        expect(new Set(result.agenda.events.map(event => event.kind))).toEqual(new Set(["deadline", "reminder", "event"]));
         const facts = JSON.parse(JSON.stringify({ agenda: result.agenda, low_level: result.low_level }));
         const rendered = formatBuiltInOutput(facts, "toon");
         expect(restoreTables(decode(rendered))).toEqual(facts);
@@ -192,6 +193,8 @@ describe("lossless SDK table cells", () => {
     expect(table.rows[1]).toMatchObject({ tags: "automation;ci;fleet;release" });
     expect(table.rows[0]).not.toHaveProperty("event_title");
     expect(decodePmTableRows(table)).toEqual(rows);
+    expect(Object.keys(decodePmTableRows(table)[0]!)).toEqual(Object.keys(rows[0]!));
+    expect(Object.keys(decodePmTableRows(encodePmTableRows([{ a: null, b: 1 }], { compact: true }))[0]!)).toEqual(["a", "b"]);
     const source = { agenda: { events: rows } };
     const rendered = formatBuiltInOutput(source, "toon");
     expect(restoreTables(decode(rendered))).toEqual(source);

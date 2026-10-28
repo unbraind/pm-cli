@@ -2850,6 +2850,13 @@
       ],
       "package_version": "2026.10.28",
       "reason": "Add optional history display order and opt-in compact table encoding metadata. Existing table encoder defaults and full-history defaults remain compatible; compact/provenance latest-N reads now retain newest-first direction. Chronological replay uses explicit oldest_first."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmTableCellEncoding"
+      ],
+      "package_version": "2026.10.28",
+      "reason": "pm-gh1603: additive optional column_order metadata preserves omitted null column positions; existing table decoders and default encodings remain compatible."
     }
   ],
   "entrypoints": {
@@ -15160,7 +15167,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmTableCellEncoding",
-          "signature": "export interface PmTableCellEncoding { json_columns: string[]; list_columns?: Record<string, string>; null_columns?: string[]; absent: Array<[ number, string ]>; }"
+          "signature": "export interface PmTableCellEncoding { json_columns: string[]; list_columns?: Record<string, string>; null_columns?: string[]; column_order?: string[]; absent: Array<[ number, string ]>; }"
         },
         {
           "classification": "contract_data",

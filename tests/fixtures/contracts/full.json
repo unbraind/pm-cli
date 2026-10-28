@@ -53844,17 +53844,14 @@
             "type": "boolean"
           },
           "order": {
-            "description": "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
+            "description": "Display direction after selecting the latest matching entries; defaults to newest_first for compact/provenance and oldest_first for full history.",
             "enum": [
               "oldest_first",
               "newest_first"
             ],
             "examples": [
-              0,
-              1,
-              "2",
-              "asc",
-              "desc"
+              "oldest_first",
+              "newest_first"
             ],
             "type": "string"
           },

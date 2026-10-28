@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- GH-1617: make history display order explicit and consistent across projections ([pm-gh1617](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1617.toon))
+- GH-1603: Reduce null agenda fields and escaped tag overhead in bounded context output ([pm-gh1603](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1603.toon))
 - GH-1606: Validate public SDK runtime operand values before mutation internals ([pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon))
 - GH-1614: keep typed SDK data literal across CLI sentinel inputs ([pm-gh1614](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1614.toon))
 

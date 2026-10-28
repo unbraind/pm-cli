@@ -15,6 +15,8 @@ export interface PmTableCellEncoding {
   list_columns?: Record<string, string>;
   /** Columns omitted from every encoded row because every source value is explicit null. */
   null_columns?: string[];
+  /** Original first-occurrence column order when omitted null columns need reinsertion. */
+  column_order?: string[];
   /** Missing field coordinates, expressed as [zero-based row, column name]. */
   absent: Array<[number, string]>;
 }
@@ -72,7 +74,7 @@ export function encodePmTableRows(
   );
   return { rows: encoded, encoding: { json_columns: jsonColumns, absent,
     ...(listColumns.length ? { list_columns: Object.fromEntries(listColumns.map(column => [column, ";"])) } : {}),
-    ...(nullColumns.length ? { null_columns: nullColumns } : {}),
+    ...(nullColumns.length ? { null_columns: nullColumns, column_order: columns } : {}),
   } };
 }
 
@@ -89,16 +91,19 @@ export function decodePmTableRows(
   const absent = new Set(
     table.encoding.absent.map(([row, column]) => JSON.stringify([row, column])),
   );
-  return table.rows.map((row, index) =>
-    Object.fromEntries(
-      [...Object.entries(row).flatMap(([column, cell]) => {
+  return table.rows.map((row, index) => {
+    const cells = new Map<string, JsonValue>(
+      Object.entries(row).flatMap(([column, cell]): Array<[string, JsonValue]> => {
         if (absent.has(JSON.stringify([index, column]))) return [];
         const delimiter = delimiters.get(column);
         const value = delimiter !== undefined
           ? (cell === "" ? [] : String(cell).split(delimiter))
           : nested.has(column) ? (JSON.parse(String(cell)) as JsonValue) : cell;
         return [[column, value]];
-      }), ...(table.encoding.null_columns ?? []).map(column => [column, null])],
-    ),
-  );
+      }),
+    );
+    for (const column of table.encoding.null_columns ?? []) cells.set(column, null);
+    const columns = table.encoding.column_order ?? [...cells.keys()];
+    return Object.fromEntries(columns.filter(column => cells.has(column)).map(column => [column, cells.get(column)!]));
+  });
 }

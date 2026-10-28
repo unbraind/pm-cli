@@ -40,6 +40,8 @@ describe("recent history recovery", () => {
       expect(cli.json).toMatchObject({ order: "oldest_first", diff: [{ index: 3 }, { index: 4 }] });
       expect(await runAction({ action: "history", id, path: context.pmPath, options: { order: "oldest_first", limit: "2", diff: true } }))
         .toMatchObject({ order: "oldest_first", diff: [{ index: 3 }, { index: 4 }] });
+      expect(await runAction({ action: "history", id, path: context.pmPath, order: "oldest_first", options: { limit: "2", diff: true } }))
+        .toMatchObject({ order: "oldest_first", diff: [{ index: 3 }, { index: 4 }] });
       await expect(runHistory(id, { order: "invalid" as "oldest_first" }, { path: "/nonexistent-order-validation" }))
         .rejects.toThrow("--order must be oldest_first or newest_first");
     });
