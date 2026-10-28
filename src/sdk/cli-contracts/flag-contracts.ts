@@ -398,6 +398,7 @@ export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
 export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
   { flag: "--limit" },
+  { flag: "--order", value_name: "value", value_type: "string" },
   { flag: "--compact" },
   { flag: "--full" },
   { flag: "--provenance" },

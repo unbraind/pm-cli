@@ -5127,6 +5127,11 @@
           "flag": "--limit"
         },
         {
+          "flag": "--order",
+          "value_name": "value",
+          "value_type": "string"
+        },
+        {
           "flag": "--compact"
         },
         {
