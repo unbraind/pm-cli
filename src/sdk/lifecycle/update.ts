@@ -4,7 +4,9 @@
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
 import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
+import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import {
   COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
@@ -319,6 +321,7 @@ const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS =
 function normalizeLegacyNoneUpdateOptions(
   options: UpdateCommandOptions,
 ): UpdateCommandOptions {
+  if (isLiteralMutationInput(options)) return options;
   const normalized: UpdateCommandOptions = {
     ...options,
     unset: options.unset ? [...options.unset] : undefined,
@@ -1503,6 +1506,7 @@ async function resolveStdinUpdateOptions(
 export async function resolveUpdateTransportOptions(
   options: UpdateCommandOptions,
 ): Promise<UpdateCommandOptions> {
+  options = prepareNativeMutationOptions("update", options);
   return shouldResolveMutationStdinTokens(options)
     ? await resolveStdinUpdateOptions(options)
     : normalizeLegacyNoneUpdateOptions(options);
@@ -1772,6 +1776,7 @@ function rejectUnsetScalarConflicts(
 }
 
 function rejectLegacyScalarTokens(options: UpdateCommandOptions): void {
+  if (isLiteralMutationInput(options)) return;
   const assertNoLegacyScalarToken = (
     value: string | undefined,
     optionKey: string,
@@ -3531,6 +3536,7 @@ export async function runUpdate(
   options: UpdateCommandOptions,
   global: GlobalOptions,
 ): Promise<UpdateResult> {
+  assertMutationStringOperand(id, "update", "id");
   return runUpdateWithContext(id, options, global);
 }
 

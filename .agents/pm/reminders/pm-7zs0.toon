@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-27T20:43:43.235Z"
+updated_at: "2026-10-27T22:23:23.291Z"
 reminders[1]{at,text}:
   "2026-10-28T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1608
 author: maintainer-agent
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[245]:
+comments[246]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -829,6 +829,9 @@ comments[245]:
   - created_at: "2026-10-27T20:43:43.235Z"
     author: "harness:codex"
     text: "Final review found the reminder row still at October26 despite the current October27 publication evidence. Re-armed its sole occurrence to October28 06:00UTC, retaining the previous time of day and updating the delivery reference to PR1608. The current actual_result and prior hash-chained evidence are unchanged; this schedules observation and does not assert a future release."
+  - created_at: "2026-10-27T22:23:23.290Z"
+    author: "harness:codex"
+    text: "Independent October27 public verifier rerun succeeds for version2026.10.27: package metadata/integrity, npm/npx/Bun/bunx dispatch, all bins and stateless MCP journeys. Native schedule40472638505 accepts the successful immutable publication originally proved by Release40449393972, so no second automatic version is cut. Current main7d85bc8c1 CI40591995412 is successful; the transient local watcher failure was exhausted REST quota, not a CI failure. This published base predates the active literal/runtime-input SDK changes, which remain unreleased. Existing October28 reminder remains scheduled."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

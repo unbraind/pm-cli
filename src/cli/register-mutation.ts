@@ -14,6 +14,7 @@ import {
   readSettings,
   resolvePmRoot,
   resolveRuntimeFieldRegistry,
+  withLiteralMutationInput,
 } from "../sdk/runtime-primitives.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -50,7 +51,6 @@ import { runUpdateMany } from "./commands/lifecycle/update-many.js";
 import {
   createStdinTokenResolver,
   preserveMutationStdinTokenFields,
-  preserveMutationStdinTokenLiterals,
 } from "../sdk/runtime-primitives.js";
 import { resolveDescriptionStdin } from "./description-stdin.js";
 import { itemDocumentToMutationOptions } from "../sdk/structured-mutations.js";
@@ -721,8 +721,7 @@ async function runCreateAction(
     bodyFileResolved,
     descriptionStdinResolved,
   );
-  if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
-  const result = await runCreate(normalized, globalOptions);
+  const result = await runCreate(stdinJsonConsumed ? withLiteralMutationInput(normalized) : normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(result, globalOptions);
   if (globalOptions.profile) {
@@ -1251,8 +1250,7 @@ async function runUpdateAction(
     bodyFileResolved,
     descriptionStdinResolved,
   );
-  if (stdinJsonConsumed) preserveMutationStdinTokenLiterals(normalized);
-  const result = await runUpdate(id, normalized, globalOptions);
+  const result = await runUpdate(id, stdinJsonConsumed ? withLiteralMutationInput(normalized) : normalized, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(
     await applyActiveCommandResultService(

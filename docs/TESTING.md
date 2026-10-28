@@ -80,6 +80,14 @@ policy-check budget. This allocation is tracked by
 [pm-a3c6g4](../.agents/pm/tasks/pm-a3c6g4.toon); broader runner qualification
 remains with [pm-bj7rq0](../.agents/pm/issues/pm-bj7rq0.toon).
 
+The same cohort runs the complete cold transport-floor and executable refusal
+gate fixture files after parallel contracts
+([pm-serial-cold-gates](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-serial-cold-gates.toon),
+a repository-only tracker record excluded from npm). Their original 30-second
+and 360-second test deadlines, assertions, negative controls, retries, and product
+benchmark thresholds are unchanged. Isolated passes qualify this allocation;
+they do not establish passing product latency or replace complete-suite proof.
+
 The same serial cohort runs the ten-thousand-item aggregation, cold governance
 read, and surface-replication fixture files after parallel contracts
 ([pm-ckb8w5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-ckb8w5.toon),

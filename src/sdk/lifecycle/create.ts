@@ -4,6 +4,8 @@
  * Implements the pm create command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
+import { prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import {
   assertNoAmbiguousBareCommaEntry,
@@ -369,6 +371,7 @@ const CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS =
 function normalizeLegacyNoneCreateOptions(
   options: CreateCommandOptions,
 ): CreateCommandOptions {
+  if (isLiteralMutationInput(options)) return options;
   const normalized: CreateCommandOptions = {
     ...options,
     unset: options.unset ? [...options.unset] : undefined,
@@ -2165,6 +2168,7 @@ function assertNoCreateScalarUnsetConflicts(
 function assertNoLegacyCreateScalarTokens(
   resolvedOptions: CreateCommandOptions,
 ): void {
+  if (isLiteralMutationInput(resolvedOptions)) return;
   const assertNoLegacyScalarToken = (
     value: string | undefined,
     optionKey: string,
@@ -2736,6 +2740,7 @@ export async function runCreate(
   options: CreateCommandOptions,
   global: GlobalOptions,
 ): Promise<CreateResult> {
+  options = prepareNativeMutationOptions("create", options);
   let resolvedOptions = normalizeLegacyNoneCreateOptions(
     await resolveCreateTransportInputs(options),
   );

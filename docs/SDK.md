@@ -1166,6 +1166,43 @@ recurrence reason, accepts only the workspace open or in-progress target, and
 returns the terminal evidence captured atomically before the update path clears
 it from active metadata.
 
+Literal mutation data and runtime value admission are tracked by
+[pm-gh1614](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1614.toon)
+and [pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon)
+(repository-only tracker records excluded from npm).
+SDK `create`, `update`, and `append` inputs are data: `"-"` remains text,
+`"none"` and `"null"` remain text where the field's domain permits them, and
+`"@file"` remains text. These calls do not implicitly consume stdin or read a
+file. This also applies to the corresponding `runCreate`, `runUpdate`,
+`runAppend` operations and update-many mutation values. Normal field validation,
+whitespace handling, structured collection syntax, and project schemas still
+apply. Clear fields explicitly with `unset: ["assignee"]` or the declared
+`clear*` collection options; JavaScript `null` is not an unset directive.
+CLI adapters retain `--description -`, append stdin, file flags, and legacy
+clear-token compatibility. Values inside CLI `--stdin-json` documents are
+literal data, including `"none"` and `"null"`; use explicit CLI clear/unset
+flags when the intent is to remove a field.
+
+Native create/update values are checked against the SDK-owned option contracts
+before normalization and writes. A malformed append body or option value throws
+`PmCliError` with `code: "invalid_argument_value"`, usage exit code 2, the
+affected `context.field`, corrective guidance, and `context.changed: false`.
+For example, `estimatedMinutes` requires `"45"`, while `priority` accepts a
+string or finite number. JavaScript and JSON bridge callers must correct invalid
+types instead of relying on coercion. Integrations that previously used `"-"`
+to request stdin should read that input themselves and pass the resulting text;
+integrations that used `"none"` to clear must migrate to `unset`.
+Direct `runCreate`/`runUpdate` calls require the declared string arrays for
+repeatable fields. Generic action dispatch retains its documented scalar-to-array
+normalization before invoking those operations.
+
+Adapter authors can import `withCliMutationInput` and
+`withLiteralMutationInput` from the SDK root or runtime entrypoint. Both return
+cloned option bags with an in-process input policy. Use the first only for
+explicit CLI parsing, and the second for decoded JSON or other literal data
+inside that adapter. Existing literal data and already-resolved stdin fields
+retain their policy through the clone; no marker is serialized into an item.
+
 Create focus policy is tracked by [pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon)
 (this tracker record is repository-only and excluded from npm).
 Programmatic `create`, `PmClient.create`, `runCreate`, and MCP `pm_create`

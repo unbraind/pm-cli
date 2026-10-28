@@ -199,6 +199,7 @@ export {
   splitAcceptanceCriteria,
 } from "../core/item/parse.js";
 export { resolvePriority } from "../core/item/priority.js";
+export { withCliMutationInput, withLiteralMutationInput } from "./lifecycle/cli-input.js";
 export { validateSprintOrReleaseValue } from "../core/item/sprint-release-format.js";
 export { parseStatusFilterCsv } from "../core/item/status-filter.js";
 export {

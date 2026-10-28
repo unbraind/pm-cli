@@ -33,6 +33,8 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { HOISTED_ACTION_OPTION_KEYS } from "./runtime-input.js";
+import { assertMutationOptionBag } from "./runtime/mutation-value-validation.js";
+export { withCliMutationInput, withLiteralMutationInput } from "./lifecycle/cli-input.js";
 import { createAsyncReadWriteGate } from "../core/shared/serial-queue.js";
 import { getSettingsPath,resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
@@ -883,12 +885,13 @@ export class PmClient {
   }
 
   /** Append markdown/body text to an item through the mutation pipeline. */
-  append(
+  async append(
     id: string,
     body: string,
     options: PmClientFullMutationOptions = {},
   ): Promise<AppendResult> {
-    return this.runTyped("append", {
+    assertMutationOptionBag(options, "append");
+    return await this.runTyped("append", {
       id,
       ...splitFullClientMutationOptions(
         mutationOptionsWithOverrides(options, { body }),

@@ -1,0 +1,26 @@
+id: pm-ogzvx6
+title: Adopt the next mature tooling maintenance cohort after registry cooldown
+description: "Live October27 registry census finds SentryCLI3.8.2, marked18.1.2, TypeScriptESLint8.72.1, Stryker core/runner10.1.1, Knip6.43.0 and Unicorn79.0.0 newer than this checkout. All are younger than the enforced seven-day cooldown: about5.47,1.31,1.22,4.13,3.58 and4.24days respectively. Preserve the completed finite October20 owner pm-wb25c1. Recheck package ages and supported Node/compiler/peer contracts before adoption; keep Stryker pins synchronized and treat Unicorn79 as a reviewed major. No current advisory or open Dependabot PR requires bypassing cooldown. Separate Vitest5/CodSpeed6, Sentry11, TypeScript7 and npm-package-arg14 migrations retain their canonical owners."
+type: Chore
+status: open
+priority: 3
+tags: []
+created_at: "2026-10-27T22:24:28.217Z"
+updated_at: "2026-10-28T00:06:33.339Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: "Recheck primary registry ages and adopt only versions eligible under project cooldown; Preserve supported Node versions and matching Stryker/peer/runtime locks; Run sandboxed coverage, static, package and hosted gates with reviewed changelog and no advisory regressions"
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: "Adopt only cooldown-eligible and contract-compatible tooling versions with synchronized lockfiles, zero advisories, and complete local and hosted validation."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-wb25c1,related,"2026-10-27T22:24:28.217Z","harness:codex","cli:create:dep",detected
+  pm-do5b,related,"2026-10-28T00:06:33.019Z","harness:codex","cli:update:dep",detected
+  pm-fokyhh,related,"2026-10-28T00:06:33.019Z","harness:codex","cli:update:dep",detected
+  pm-ksr40d,related,"2026-10-28T00:06:33.019Z","harness:codex","cli:update:dep",detected
+  pm-t3jxjj,related,"2026-10-28T00:06:33.019Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-27T22:24:28.217Z","harness:codex","Duplicate check: complete strict3143-item all-status corpus, live open/in-progress lists, dependency maintenance and cooldown cohort searches, and full live pm-wb25c1 metadata confirm the prior finite cohort is closed and no open owner covers these new versions. This is future maintenance intake only, open and unclaimed."
+  "2026-10-27T22:25:22.658Z","harness:codex","Primary public-registry metadata confirms latest SentryCLI3.8.2 age5.47days, marked18.1.2 age1.31days, TypeScriptESLint8.72.1 age1.22days, Stryker core+runner10.1.1 age4.13days, Knip6.43.0 age3.58days and Unicorn79 age4.24days. All are below seven days. Major owners remain pm-fokyhh for Vitest/coverage5.0.5 plus CodSpeed6.1.0, pm-t3jxjj for Sentry11, pm-do5b for TypeScript7 and pm-ksr40d for npm-package-arg14. Latest CodSpeed peers include Vitest5, as already recorded on its owner; compatibility/migration gates still need implementation. Current pnpm audit reports zero vulnerabilities across567 dependencies and GitHub has zero open dependency alerts or update PRs. Keep this intake open/unclaimed; no dependency version or policy is changed in the SDK input PR."
+body: ""
