@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-26T19:02:10.791Z"
-updated_at: "2026-10-28T02:38:37.991Z"
-closed_at: "2026-10-28T02:38:37.191Z"
-completed_at: "2026-10-28T02:38:37.191Z"
+updated_at: "2026-10-28T14:50:38.930Z"
+closed_at: "2026-10-28T14:47:46.298Z"
+completed_at: "2026-10-28T14:47:46.298Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Native public-client controls cover an object append operand and numeric estimatedMinutes according to the published input contract, alongside valid corresponding values.; Errors identify the public method, operand, expected type and corrective example through PmCliError usage semantics; rejected calls leave documents, history and receipts unchanged.; Validation derives from SDK-owned contracts across convenience methods and JSON bridges, preserving completed unknown-key and bulk-duration guards without mirrored per-wrapper schemas or a global exception handler."
 parent: pm-9rgaal
 risk: medium
 confidence: medium
-resolution: "All direct and client SDK mutation values are validated before parsing, regardless of input policy. Declared CLI aliases retain supported string/array forms while canonical native fields stay strict. Expanded template fields receive the same admission, and explicit IDs reuse the shared typed string assertion."
-expected_result: "Malformed native, explicit CLI-policy and template-provided operands return typed field-specific usage errors without item/history writes; valid CLI and SDK retries remain compatible."
-actual_result: "Final source passes all 11,518 tests and exact 100/100/100/100 coverage with zero uncovered counts. All three linked groups pass, including real CLI integration and packed-first-run controls. Template title/ID/duration controls fail before the fix and now return invalid_argument_value with changed:false and identical complete item/history inventories. Both npm/Node and Bun packed consumers pass nine no-write refusals and valid template/client/bulk operations. Typecheck, ESLint and source/import/complexity checks pass. PR https://github.com/unbraind/pm-cli/pull/1616 carries review remediation; revised-head composite static and hosted checks remain required before merge."
+resolution: "SDK and client mutation operands and contract-declared options now reject malformed values with typed usage errors before coercion, transport resolution or writes. Shared update/reopen ID guards and recurrence-reason validation prevent raw TypeErrors and partial reopen mutations."
+expected_result: "Malformed native or client calls identify the offending operand or field with invalid_argument_value and changed:false while preserving item and history bytes; valid calls remain usable."
+actual_result: "All four linked groups pass; all 11,519 source tests pass with exact 100% coverage and three platform skips. Real npm/Node24 and Bun packed consumers pass fourteen typed no-write controls, both public entrypoints and npx/bunx. Typecheck, graph, record integrity, secrets and bounded mutation checks pass. Qualified local timing failures remain preserved; exact-head hosted checks and renewed review remain merge gates."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-bulk-option-validation,related,"2026-10-26T19:02:10.791Z","harness:codex","cli:create:dep",detected
   pm-fl3phm,related,"2026-10-26T19:02:10.791Z","harness:codex","cli:create:dep",detected
-comments[11]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-26T19:02:10.791Z","harness:codex","Duplicate check: fresh orientation, request-specific search, open/in-progress inventories and complete strict 3126-item all-status corpus found no open owner for this exact case. Full live metadata and histories of related owners confirm their completed, distinct scope. This is intake only, open and unclaimed; implementation is outside the current delivery cohort."
   "2026-10-27T16:25:44.353Z","harness:codex","Additional independent runtime-input observation while developing the separate validation-code parity fix: schemaAddStatus(name,{role:\"active\"}) from untyped JavaScript reaches schema normalization and rejects with an unclassified PmCliError, while the declared SDK contract requires role:[\"active\"]. Correcting the fixture to the declared array shape establishes valid setup and exposes the distinct status/priority classification defect under pm-gh1613. This is supplied as a reproduction lead for this existing runtime-operand owner, without broadening or claiming its implementation."
   "2026-10-27T22:08:35.773Z","harness:codex","Grouped delivery with pm-gh1614: derive runtime option checks from existing SDK-owned registration contracts and validate operands before any stdin, parsing or persistence. Preserve established unknown-key and bulk-duration error contracts. Add pre-fix controls for append object and numeric estimatedMinutes plus valid inputs and unchanged history."
@@ -33,14 +33,21 @@ comments[11]{created_at,author,text}:
   "2026-10-28T00:52:19.945Z","harness:codex","PR1616 review control reproduces raw TypeError from a direct public runCreate call carrying withCliMutationInput({title:42}). Added direct CLI-policy create/update cases to the existing typed-refusal matrix and complete no-write inventory checks. Direct canonical mutation values are now validated regardless of provenance; input policy controls interpretation, never admission. Both independent controls fail before the changes. Fresh linked/full/static and reviewed-head checks remain required."
   "2026-10-28T01:31:00.675Z","harness:codex","Complete revised-source validation exposed11 existing CLI/packed-first-run regressions after unconditional admission: Commander retains ac aliases as string arrays while the canonical acceptanceCriteria value is joined text. A separate actual update-many --ac control then exposed the valid scalar alias form. Admission now checks every value, recognizes declared repeatable CLI aliases as string-or-string-array transport, keeps canonical native SDK fields strict, and rejects mixed alias arrays. Existing CLI integration/packed tests and an added bulk alias control supply the independent compatibility contract; no whole-policy validation bypass was restored."
   "2026-10-28T02:12:43.958Z","harness:codex","The latest full run passes all11518 tests but exact coverage exposes the old create-ID type guard now bypassed by initial admission. Investigation confirms template expansion can introduce a numeric title, ID or duration after that admission; the new active-template control reproduces a raw TypeError for title42. Expanded options now pass the same native contract validation before further parsing. Explicit-ID validation also reuses the shared typed string assertion instead of a duplicate private guard. All164 template/native/extension-focused tests pass, including complete unchanged item/history snapshots for each malformed template field. Full revised coverage remains required; no exclusions or threshold changes are used."
-learnings[2]{created_at,author,text}:
+  "2026-10-28T08:33:51.586Z","harness:codex","PR1616 review4397825817 is valid: malformed reopen IDs produce rawId.trim TypeError. Moving ID admission into the common update pipeline covers both entrypoints. Adjacent recurrence controls additionally reproduce a serious malformed-reason path: runReopenUpdate with undefined reason changes a closed item to open before throwing reopen_receipt_missing. Native reopen reason/options also leak trim TypeErrors, while generic dispatch can coerce invalid values. Add typed pre-coercion checks for reopen ID/reason/options and guard the low-level reason before mutation. Independent failing-before logs retain both TypeError and durable closed-to-open evidence; only this implementation owner is in progress."
+  "2026-10-28T08:49:32.625Z","harness:codex","Review follow-up: moved the positional id guard into the shared update/reopen boundary. Failing-before controls also exposed raw TypeErrors from recurrence values and a missing reason that changed a closed item to open before reporting reopen_receipt_missing. Added pre-mutation native/client checks derived from the SDK item-reopen parameter contract, plus unchanged item/history inventory and closed-state regressions. Only pm-gh1606 is actively claimed; qualification is in progress."
+  "2026-10-28T14:26:29.296Z","harness:codex","Fresh complete-source qualification of the recurrence revision passed: 879 test files passed, 1 platform file skipped; 11,519 tests passed and 3 platform skips. Exact coverage remains 100/100/100/100 with 67,386 lines, 54,886 branches, 14,662 functions and 71,278 statements covered and zero uncovered counts. No exclusions, assertions, timeouts or coverage thresholds were weakened. Final static and packed-consumer qualification is running before closure."
+  "2026-10-28T14:47:42.078Z","harness:codex","Final recurrence qualification: all four linked groups passed and recorded run test-local-mvs83bkf-vq2etv. Complete source: 11,519 passed/3 platform skips, exact 100/100/100/100 and zero uncovered counts. Fresh packed npm/Node24 and Bun consumers pass both public SDK entrypoints, literal/CLI policy controls, mixed JSON flags, templates, array isolation, fourteen typed no-write refusals and actual npx/bunx execution. Typecheck, graph composition, record integrity, credential scan and bounded mutation gate pass (345 killed plus seven reviewed equivalent mutants; no unexpected survivors). Static dependency/schema/grammar/refusal/token/import gates pass; two qualified local transport samples fail unchanged budgets and remain preserved under the existing startup owner. Exact revised-head hosted static/performance/analyzer qualification and renewed full review are required before merge; no local timing failure is represented as a pass."
+  "2026-10-28T14:50:38.929Z","harness:codex","The configured package-owned changelog workflow resolved the newly published pm-changelog 2026.10.28 during final generation. Generation and check both pass with the same 2,788 included items and unchanged CHANGELOG.md bytes; the managed package receipt records version2026.10.28. No changelog formatter or upstream-package code was patched in this repository. Final post-close graph composition, record integrity, credential and defect-evidence checks pass; strict full corpus remains3146 readable records with no omissions and zero in-progress items."
+learnings[3]{created_at,author,text}:
   "2026-10-27T22:31:40.685Z","harness:codex","Runtime validation must precede coercing transport normalization and all durable side effects. TypeScript declarations do not protect JSON or JavaScript package callers. Reuse executable SDK contracts, retain append operand identity, and prove rejected calls preserve exact document/history state before testing valid retries."
   "2026-10-28T01:06:31.473Z","harness:codex",Transport policy selects input interpretation; it must never waive SDK runtime admission. Validate declared values independently for native and explicit CLI-policy callers before parsing or persistence.
-files[15]{path,scope}:
+  "2026-10-28T14:47:40.292Z","harness:codex","Place positional and recurrence guards at shared lifecycle boundaries before transport resolution or mutation. A missing low-level recurrence reason otherwise permits a durable status change before receipt validation; regression controls must compare stored state and history, not only the thrown error."
+files[17]{path,scope}:
   src/core/item/parse.ts,project
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project
   src/sdk/lifecycle/append.ts,project
   src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/reopen.ts,project
   src/sdk/lifecycle/update-many.ts,project
   src/sdk/lifecycle/update.ts,project
   src/sdk/runtime-input.ts,project
@@ -52,11 +59,13 @@ files[15]{path,scope}:
   tests/unit/commands/lifecycle/create-command.spec.ts,project
   tests/unit/scripts/release/packed-first-run.spec.ts,project
   tests/unit/sdk/lifecycle/literal-input.spec.ts,project
-tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/sdk/recovery/reopen.spec.ts,project
+tests[4]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts tests/unit/sdk/lifecycle/refusal-parity.spec.ts,project,600,"harness:codex","2026-10-27T22:22:52.657Z",local_mutation,fix/sdk-literal-runtime-inputs
   node scripts/run-tests.mjs test -- tests/integration/transactions/semantic-preview.integration.spec.ts,project,600,"harness:codex","2026-10-27T22:59:28.925Z",local_mutation,fix/sdk-literal-runtime-inputs
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/scripts/release/packed-first-run.spec.ts,project,600,"harness:codex","2026-10-28T01:31:39.332Z",local_mutation,fix/sdk-literal-runtime-inputs
-test_runs[4]:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/reopen.spec.ts,project,600,"harness:codex","2026-10-28T08:49:31.644Z",local_mutation,fix/sdk-literal-runtime-inputs
+test_runs[5]:
   - run_id: test-local-mvrccgym-80sxup
     kind: test
     status: passed
@@ -107,13 +116,27 @@ test_runs[4]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts tests/unit/sdk/lifecycle/refusal-parity.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/scripts/release/packed-first-run.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvs83bkf-vq2etv
+    kind: test
+    status: passed
+    started_at: "2026-10-28T14:39:32.993Z"
+    finished_at: "2026-10-28T14:41:47.342Z"
+    recorded_at: "2026-10-28T14:41:47.342Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/integration/sdk/mutation-admission.integration.spec.ts tests/unit/sdk/lifecycle/refusal-parity.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/scripts/release/packed-first-run.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/recovery/reopen.spec.ts,schema,schema,source,local_source_ref
 docs[2]:
   - path: CHANGELOG.md
     scope: project
     note: Package-generated reviewed delivery changelog
   - path: docs/SDK.md
     scope: project
-close_reason: "Completed unconditional typed runtime admission, CLI alias compatibility and expanded-template validation with independent no-write controls."
+close_reason: Implemented typed runtime mutation admission through shared update/reopen boundaries and verified unchanged durable state on refusal.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

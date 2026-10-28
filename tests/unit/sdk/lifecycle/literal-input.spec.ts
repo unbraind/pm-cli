@@ -3,7 +3,8 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { PmClient, PmCliError, withCliMutationInput, withLiteralMutationInput } from "../../../../src/sdk/runtime.js";
 import { runCreate } from "../../../../src/sdk/lifecycle/create.js";
-import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
+import { runReopenUpdate, runUpdate } from "../../../../src/sdk/lifecycle/update.js";
+import { runReopen } from "../../../../src/sdk/lifecycle/reopen.js";
 import { runAppend } from "../../../../src/sdk/lifecycle/append.js";
 import { runUpdateMany } from "../../../../src/sdk/lifecycle/update-many.js";
 import { itemDocumentToMutationOptions } from "../../../../src/sdk/structured-mutations.js";
@@ -162,6 +163,19 @@ describe("literal SDK mutation inputs (pm-gh1614, pm-gh1606)", () => {
         { action: "update", field: "comment", call: () => client.update(item.id, { comment: new Array<string>(1) }) },
         { action: "append", field: "options", call: () => client.append(item.id, "unchanged", null as never) },
         { action: "update", field: "id", call: () => runUpdate({ id: item.id } as never, { title: "unchanged" }, { path: pmPath }) },
+        { action: "update", field: "id", call: () => runReopenUpdate({ id: item.id } as never, { status: "open" }, { path: pmPath }, "Invalid ID must not mutate") },
+        { action: "update", field: "id", call: () => runReopenUpdate(42 as never, { status: "open" }, { path: pmPath }, "Invalid ID must not mutate") },
+        { action: "reopen", field: "reason", call: () => runReopen(item.id, 42 as never, {}, { path: pmPath }) },
+        { action: "reopen", field: "options", call: () => runReopen(item.id, "Reason", null as never, { path: pmPath }) },
+        { action: "reopen", field: "expectedResult", call: () => runReopen(item.id, "Reason", { expectedResult: 42 as never }, { path: pmPath }) },
+        { action: "reopen", field: "status", call: () => runReopen(item.id, "Reason", { status: 42 as never }, { path: pmPath }) },
+        { action: "reopen", field: "author", call: () => runReopen(item.id, "Reason", { author: 42 as never }, { path: pmPath }) },
+        { action: "reopen", field: "message", call: () => runReopen(item.id, "Reason", { message: 42 as never }, { path: pmPath }) },
+        { action: "reopen", field: "force", call: () => runReopen(item.id, "Reason", { force: "false" as never }, { path: pmPath }) },
+        { action: "reopen", field: "reason", call: () => runReopenUpdate(item.id, { status: "open" }, { path: pmPath }, undefined as never) },
+        { action: "reopen", field: "reason", call: () => client.reopen(item.id, 42 as never) },
+        { action: "reopen", field: "id", call: () => client.reopen(42 as never, "Reason") },
+        { action: "reopen", field: "force", call: () => client.reopen(item.id, "Reason", { force: "false" as never }) },
         { action: "create", field: "comment", call: () => runCreate({ type: "Task", title: "unchanged", comment: "scalar" as never }, { path: pmPath }) },
         { action: "create", field: "comment", call: () => runCreate({ type: "Task", title: "unchanged", comment: [1] as never }, { path: pmPath }) },
         { action: "create", field: "title", call: () => runCreate(withCliMutationInput({ type: "Task", title: 42 as never }), { path: pmPath }) },
@@ -179,6 +193,8 @@ describe("literal SDK mutation inputs (pm-gh1614, pm-gh1606)", () => {
       }
       expect(await client.get(item.id)).toEqual(document);
       expect(await readFile(historyPath, "utf8")).toBe(history);
+      await expect(client.run("item-reopen", { reason: "Missing ID" })).rejects.toThrow(/id/i);
+      await expect(client.run("item-reopen", { id: item.id })).rejects.toThrow(/reason/i);
       expect((await client.update(item.id, { estimatedMinutes: "2", priority: 2 })).item).toMatchObject({ estimated_minutes: 2, priority: 2 });
       expect((await client.append(item.id, "valid body")).appended).toBe("valid body");
     });

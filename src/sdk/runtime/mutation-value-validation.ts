@@ -5,15 +5,17 @@ import { asRecordClone } from "../../core/shared/primitives.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../cli-contracts/commander-mutation-options.js";
 import { TOOL_CREATE_OPTION_CONTRACTS, TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS, TOOL_UPDATE_OPTION_CONTRACTS } from "../cli-contracts/tool-option-contracts.js";
 import { PM_TOOL_PARAMETER_PROPERTIES } from "../cli-contracts/tool-parameter-tables.js";
+import { PM_TOOL_ACTION_PARAMETER_CONTRACTS } from "../cli-contracts/tool-schema.js";
 import type { CommanderOptionAliasContract } from "../cli-contracts/commander-types.js";
 import { preserveSdkMutationInput } from "../../core/item/parse.js";
 import { isCliMutationInput } from "../../core/item/literal-mutation-input.js";
 
-type MutationAction = "create" | "update" | "append";
+type MutationAction = "create" | "update" | "append" | "reopen";
 const MUTATION_INPUT_EXAMPLES: Record<MutationAction, string> = {
   create: 'client.create({ type: "Task", title: "Example", createMode: "progressive" })',
   update: 'client.update(id, { estimatedMinutes: "45", force: false })',
   append: 'client.append(id, "Body text")',
+  reopen: 'client.reopen(id, "The work recurred", { expectedResult: "Verified recovery" })',
 };
 
 /** Refuse invalid dynamic input without reflecting payload contents or beginning mutation work. */
@@ -39,6 +41,10 @@ export function assertMutationOptionBag(options: unknown, action: MutationAction
 /** Validate supplied item operands before generic dispatch can discard their runtime type. */
 export function assertMutationItemOperand(action: string | undefined, args: Record<string, unknown>): void {
   if ((action === "append" || action === "update") && args.id !== undefined) assertMutationStringOperand(args.id, action, "id");
+  if (action !== "item-reopen") return;
+  if (args.id !== undefined) assertMutationStringOperand(args.id, "reopen", "id");
+  if (args.reason !== undefined) assertMutationStringOperand(args.reason, "reopen", "reason");
+  if (args.options !== undefined) assertReopenMutationValues(args.options);
 }
 
 /** Validate append text, attribution and overrides before resolving its transport or writing history. */
@@ -48,6 +54,20 @@ export function assertAppendMutationValues(options: unknown): void {
     if (options[field] !== undefined) assertMutationStringOperand(options[field], "append", field);
   }
   if (options.force !== undefined && typeof options.force !== "boolean") refuseValue("append", "force", "a boolean");
+}
+
+/** Validate recurrence options before trimming, coercion or lifecycle state reads. */
+export function assertReopenMutationValues(options: unknown): void {
+  assertMutationOptionBag(options, "reopen");
+  for (const field of PM_TOOL_ACTION_PARAMETER_CONTRACTS["item-reopen"].optional!) {
+    const value = options[field];
+    if (value === undefined) continue;
+    if (asRecordClone(Reflect.get(PM_TOOL_PARAMETER_PROPERTIES, field)).type === "boolean") {
+      if (typeof value !== "boolean") refuseValue("reopen", field, "a boolean");
+    } else {
+      assertMutationStringOperand(value, "reopen", field);
+    }
+  }
 }
 
 /** Describe canonical SDK arrays separately from scalar-friendly action transport. */

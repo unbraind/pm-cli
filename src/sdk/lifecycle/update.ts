@@ -3163,6 +3163,7 @@ async function runUpdateWithContext(
   global: GlobalOptions,
   execution: UpdateExecutionContext = {},
 ): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
+  assertMutationStringOperand(id, "update", "id");
   options = await resolveUpdateTransportOptions(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
@@ -3538,7 +3539,6 @@ export async function runUpdate(
   options: UpdateCommandOptions,
   global: GlobalOptions,
 ): Promise<UpdateResult> {
-  assertMutationStringOperand(id, "update", "id");
   return runUpdateWithContext(id, options, global);
 }
 
@@ -3549,6 +3549,7 @@ export async function runReopenUpdate(
   global: GlobalOptions,
   recurrenceReason: string,
 ): Promise<ReopenUpdateResult> {
+  assertMutationStringOperand(recurrenceReason, "reopen", "reason");
   const result = await runUpdateWithContext(id, options, global, {
     recurrenceReason,
   });

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-28T06:51:20.268Z"
+updated_at: "2026-10-28T14:40:08.780Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[113]:
+comments[115]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -364,6 +364,12 @@ comments[113]:
   - created_at: "2026-10-28T06:51:20.268Z"
     author: "harness:codex"
     text: "Final local requalification completes pnpm quality:static with exit0 on the same array-isolation production source, including the unchanged transport floor and subsequent graph/record/mutation gates. Earlier qualified failures and the Btrfs controls remain failed historical observations; do not rewrite them as runner refusals or claim an established cause. The SDK source revision has full11519-test exact100coverage and fresh packed/linked proof; final hosted admission remains a delivery gate."
+  - created_at: "2026-10-28T14:38:46.780Z"
+    author: "harness:codex"
+    text: "PR #1616 recurrence-validation static qualification passed the dependency, import-cost, schema, grammar, refusal, token, tracker and gate-registry stages but the qualified Node24 transport sample failed unchanged product limits: get369>362ms, next455>440ms, create430>398ms and claim419>415ms; control median68ms<=106ms, host load5.7/10.54/10.63 on8 CPUs. Preserve this as a failed local admission, alongside the earlier variable samples and exact-head hosted checks. npm/Bun packed probes finished before the transport sample. No timeout, retry, qualification threshold or product budget changed; a focused recheck and remaining independent gates follow."
+  - created_at: "2026-10-28T14:40:08.780Z"
+    author: "harness:codex"
+    text: "The focused unchanged-budget recheck also failed qualified admission (control52<=106ms): get534>362, context437>433, next495>440, create431>398, claim462>415ms; host load increased4.91->7.94. Keep both failures visible and do not retry until green or represent old static evidence as qualifying the recurrence revision. Exact revised-head hosted performance/static qualification is required before merge; this open owner retains the local timing/qualification problem."
 files[12]:
   - path: .github/workflows/ci.yml
     scope: project

@@ -361,6 +361,14 @@ describe("runReopen", () => {
         code: "reopen_receipt_missing",
         exitCode: EXIT_CODE.GENERIC_FAILURE,
       });
+      const malformedReason = await runReopenUpdate(
+        created.item.id,
+        { status: "open" },
+        { path: context.pmPath },
+        undefined as never,
+      ).catch((error: unknown) => error);
+      expect((await runGet(created.item.id, { path: context.pmPath }, { full: true })).item.status).toBe("closed");
+      expect(malformedReason).toMatchObject({ code: "invalid_argument_value", exitCode: EXIT_CODE.USAGE, context: { field: "reason", changed: false } });
       history = await readHistoryEntries(
         getHistoryPath(context.pmPath, created.item.id),
         created.item.id,

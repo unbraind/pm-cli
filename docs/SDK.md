@@ -1184,7 +1184,7 @@ literal data, including `"none"` and `"null"`. Explicit CLI flags override
 document values and retain CLI interpretation, including legacy clear tokens.
 Use explicit clear/unset flags when the intent is to remove a field.
 
-Native create/update values are checked against the SDK-owned option contracts
+Native create/update/reopen values are checked against the SDK-owned option contracts
 before normalization and writes. A malformed append body or option value throws
 `PmCliError` with `code: "invalid_argument_value"`, usage exit code 2, the
 affected `context.field`, corrective guidance, and `context.changed: false`.
