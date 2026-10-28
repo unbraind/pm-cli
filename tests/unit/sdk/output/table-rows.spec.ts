@@ -4,6 +4,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { countTokens } from "gpt-tokenizer/encoding/o200k_base";
 import fc from "fast-check";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { createTestItemId } from "../../../helpers/itemFactory.js";
+import { runContext } from "../../../../src/sdk/query/context.js";
+import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import { describe, expect, it } from "vitest";
 import {
   formatBuiltInOutput,
@@ -157,6 +161,49 @@ function restoreCandidate(value: JsonValue): JsonValue {
 }
 
 describe("lossless SDK table cells", () => {
+  it("preserves native context agenda facts while reducing brief and standard output", async () => {
+    await withTempPmPath(async context => {
+      for (let index = 0; index < 10; index += 1) {
+        const id = createTestItemId(context, { title: `Agenda ${index}`, deadline: "2099-01-01T09:00:00Z", tags: "automation,ci,fleet,release" });
+        await runUpdate(id, { reminder: ["at=2099-01-02T09:00:00Z,text=Follow up"], event: ["start=2099-01-03T09:00:00Z,title=Review"] }, { path: context.pmPath });
+      }
+      for (const depth of ["brief", "standard", "full"]) {
+        const result = await runContext({ depth, limit: "20", tokenBudget: 100000 }, { path: context.pmPath });
+        const facts = JSON.parse(JSON.stringify({ agenda: result.agenda, low_level: result.low_level }));
+        const rendered = formatBuiltInOutput(facts, "toon");
+        expect(restoreTables(decode(rendered))).toEqual(facts);
+        expect(JSON.parse(formatBuiltInOutput(facts, "json"))).toEqual(facts);
+        expect(rendered).toContain("null_columns");
+        expect(countTokens(rendered)).toBeLessThan(countTokens(encode(facts)));
+      }
+    });
+  });
+
+  it("compacts agenda null columns and safe string lists with exact restoration", () => {
+    const rows = Array.from({ length: 10 }, (_, index) => ({
+      item_id: `pm-${index}`, kind: "deadline", event_title: null, event_end: null,
+      event_location: null, event_all_day: null, event_timezone: null,
+      event_recurring: null, event_recurrence_rule: null,
+      tags: index === 0 ? [] : ["automation", "ci", "fleet", "release"],
+    }));
+    const table = encodePmTableRows(rows, { compact: true });
+    expect(table.encoding.list_columns).toEqual({ tags: ";" });
+    expect(table.encoding.null_columns).toContain("event_title");
+    expect(table.rows[1]).toMatchObject({ tags: "automation;ci;fleet;release" });
+    expect(table.rows[0]).not.toHaveProperty("event_title");
+    expect(decodePmTableRows(table)).toEqual(rows);
+    const source = { agenda: { events: rows } };
+    const rendered = formatBuiltInOutput(source, "toon");
+    expect(restoreTables(decode(rendered))).toEqual(source);
+    expect(JSON.parse(formatBuiltInOutput(source, "json"))).toEqual(source);
+    expect(Buffer.byteLength(rendered)).toBeLessThan(Buffer.byteLength(encode(source)));
+    expect(countTokens(rendered)).toBeLessThan(countTokens(encode(source)));
+    for (const tags of [["a;b"], [""], [",", '"', "\\", "\n", "雪"], []]) {
+      const facts = [{ tags, nil: null }, { tags: ["normal"], nil: null }];
+      expect(decodePmTableRows(encodePmTableRows(facts, { compact: true }))).toEqual(facts);
+    }
+  });
+
   it("retains reserved JSON row keys through native and lean host projection", () => {
     const rows: Record<string, JsonValue>[] = JSON.parse('[{"id":"one","__proto__":{"value":1,"empty":[]},"constructor":[]},{"id":"two","__proto__":{"value":2,"nil":null},"constructor":{}}]');
     const before = structuredClone(rows);
@@ -187,10 +234,8 @@ describe("lossless SDK table cells", () => {
     };
     const text = formatBuiltInOutput(source, "toon");
     expect(restoreTables(decode(text))).toEqual(source);
-    expect(text).toContain(
-      "high_level[12]{id,title,assignee,parent,deadline,order}",
-    );
-    expect(text).not.toContain("high_level_encoding");
+    expect(text).toContain("null_columns");
+    expect(text).toContain("high_level[12]{id,title,parent}");
     expect(JSON.parse(formatBuiltInOutput(source, "json"))).toEqual(source);
     expect(
       JSON.parse(formatOutput(source, { json: true, lean: true })),
@@ -246,6 +291,7 @@ describe("lossless SDK table cells", () => {
         ),
         (rows) => {
           expect(decodePmTableRows(encodePmTableRows(rows))).toEqual(rows);
+          expect(decodePmTableRows(encodePmTableRows(rows, { compact: true }))).toEqual(rows);
         },
       ),
       { seed: 1401, numRuns: 100 },

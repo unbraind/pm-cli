@@ -53838,6 +53838,21 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "order": {
+            "description": "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
+            "enum": [
+              "oldest_first",
+              "newest_first"
+            ],
+            "examples": [
+              0,
+              1,
+              "2",
+              "asc",
+              "desc"
+            ],
+            "type": "string"
+          },
           "outputBudget": {
             "anyOf": [
               {

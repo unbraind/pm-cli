@@ -767,6 +767,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
     },
   },
   history: {
+    order: { type: "string", enum: ["oldest_first", "newest_first"] },
     harness: {
       anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
     },

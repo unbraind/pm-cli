@@ -656,8 +656,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   history: {
     why: "Inspects item mutation timeline and audit trail.",
+    tips: ["Compact/provenance default to newest_first; full defaults to oldest_first. --order overrides every projection; --limit selects the latest N without changing direction."],
     examples: [
-      "pm history pm-a1b2 --limit 20",
+      "pm history pm-a1b2 --limit 20 --order oldest_first",
       "pm history pm-a1b2 --full --verify",
     ],
   },

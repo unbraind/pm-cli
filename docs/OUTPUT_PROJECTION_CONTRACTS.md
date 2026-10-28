@@ -463,3 +463,22 @@ Continuation and compaction slice these receipts with the rows. Self-describing
 focus rows need no extra receipt. Semantic receipts are preserved during
 explanatory-string compaction, and corrupt alphabet or row-count mismatches are
 rejected.
+
+
+### Compact nested table metadata
+
+Tracked by [pm-gh1603](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1603.toon)
+(tracker record excluded from npm). The SDK `encodePmTableRows(rows, { compact: true })`
+can declare `list_columns` (column to delimiter) and `null_columns` alongside
+`json_columns` and `absent`. `decodePmTableRows` restores these facts exactly.
+A safe string-array column uses `;` between nonempty members; an empty cell means
+an empty array. Any empty member, delimiter collision, mixed type or nested value
+uses the existing JSON-column encoding instead. Null columns are omitted only
+when every row explicitly contains null; missing fields remain distinct.
+
+The TOON host selects compact tables only when they reduce rendered bytes.
+Agenda rows therefore share null-field declarations and tag arrays avoid repeated
+JSON escaping. JSON output and SDK query results retain their original values.
+Consumers of TOON tables must honor all declared encoding metadata or use the
+current SDK decoder. Whole-envelope budgets measure the actual serialized form,
+including decoding metadata.

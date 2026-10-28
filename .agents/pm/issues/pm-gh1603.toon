@@ -2,11 +2,13 @@ id: pm-gh1603
 title: "GH-1603: Reduce null agenda fields and escaped tag overhead in bounded context output"
 description: "## Problem\n\n`pm context` is the first command an agent runs, and its brief depth runs under a 1,600-token budget. Two encodings in that budget carry no information:\n\n1. **Null event fields on every agenda entry.** A plain deadline entry prints 8 `event_*` keys that only calendar events use, all `null`:\n\n   ```\n   events[1]:\n     - at: \"2026-11-01T00:00:00.000Z\"\n       date: 2026-11-01\n       kind: deadline\n       reminder_text: null\n       event_title: null\n       event_end: null\n       event_location: null\n       event_all_day: null\n       event_timezone: null\n       event_recurring: null\n       event_recurrence_rule: null\n       item_id: ...\n   ```\n\n   That is about 200 bytes per deadline or reminder. A tracker with 10 upcoming deadlines spends about 2 KB of a 6.4 KB brief response on nulls.\n\n2. **Tags as backslash-escaped JSON inside tabular rows.** `high_level[]` declares `json_columns: [tags]`, and each row then carries `\"[\\\"automation\\\",\\\"ci\\\",\\\"fleet\\\",\\\"release\\\"]\"`. On a real 1,300-item tracker, one `pm context --limit 10` response held 74 `\\\"` escapes, about 3% of the output, and agents have to unescape twice to read the tags.\n\n## Repro (pm-cli 2026.10.26)\n\n```bash\npm create --type Chore --title \"deadline probe\" --deadline 2026-11-01\npm context --limit 10 | grep -A12 '^  events'\npm context --limit 10 | grep -o '\\\\\"' | wc -l\n```\n\n## Proposal\n\n- Agenda entries omit `event_*` keys whose value is null (or only emit them for `kind: event`), at least at `brief` and `standard` depth. `--format json` and `--depth full` can keep the full shape for schema-stable consumers.\n- Tabular array columns use a delimiter-joined scalar that needs no escaping, declared once in the encoding header (e.g. `list_columns: {tags: \";\"}` → `automation;ci;fleet;release`). Tag values that contain the delimiter would fall back to the current JSON form.\n\nBoth changes keep the projection lossless and shrink the response that every agent session starts with.\n\n\nImplementation boundary: reproduce against the published and current hosts in an isolated tracker. Preserve SDK and full JSON data semantics, tabular codec round trips, receipts and output-budget accounting. Evaluate compact list encoding with explicit metadata and an unambiguous fallback; a delimiter proposal is not an accepted wire contract. Completed agenda deduplication and lossless JSON fixes remain delivered."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: agent-ux,context,github,output,sdk
 created_at: "2026-10-26T15:33:34.776Z"
-updated_at: "2026-10-26T15:33:34.776Z"
+updated_at: "2026-10-28T15:42:08.932Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#738f7d9b84aae278517b105a"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: "Native isolated deadline/reminder/event fixtures measure the actual byte and token reduction at brief and standard depth without weakening full JSON or SDK facts.; Tags round-trip through declared compact encoding with empty arrays, delimiters, commas, quotes, escapes, newlines and Unicode; ambiguous inputs retain a lossless fallback.; Serializer-aware whole-envelope budgets, omission receipts and CLI/MCP/SDK parity remain executable and unchanged."
@@ -18,7 +20,30 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4euctr,related,"2026-10-26T15:33:34.776Z","harness:codex","cli:create:dep",detected
   pm-5y05kq,related,"2026-10-26T15:33:34.776Z","harness:codex","cli:create:dep",detected
   pm-6m1i,related,"2026-10-26T15:33:34.776Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-26T15:33:34.776Z","harness:codex","Duplicate check: fresh measured orientation, request-specific agenda and TOON searches, open and in-progress inventories, and complete strict 3125-item all-status corpus found no open owner for this exact proposal. Full live data and histories confirm pm-6m1i, pm-4euctr and pm-5y05kq are completed related work; keep them closed. GH1603 arrived during PR1596 validation and is intake only, open and unclaimed."
+  "2026-10-28T15:28:08.718Z","harness:codex","Implementation decision: retain exact SDK/JSON facts. Extend the public table codec with optional compact string-list and all-null-column metadata; renderer selects it only when smaller than existing lossless rendering. Empty members or delimiter collisions fall back to JSON for the entire column. Decode restores every null and array."
+  "2026-10-28T15:42:08.932Z","harness:codex","Red/green proof: initial codec fixture fails on unchanged source because list_columns is absent. Compact codec and public renderer now preserve null, sparse and reserved-key facts, empty lists, delimiter collisions and arbitrary JSON. Native deadline/reminder/calendar context at brief, standard and full depth restores exactly and uses fewer tokens. Linked context/rendering/read-output cohort passes98tests. Full coverage/static and hosted admission remain pending."
+files[4]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/output/output.ts,project
+  src/sdk/output/table-rows.ts,project
+  tests/unit/sdk/output/table-rows.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts tests/unit/core/output/output.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,300,"harness:codex","2026-10-28T15:38:02.596Z",local_mutation,fix/context-read-contracts
+test_runs[1]:
+  - run_id: test-local-mvsa4s7s-o3ww2y
+    kind: test
+    status: passed
+    started_at: "2026-10-28T15:38:37.129Z"
+    finished_at: "2026-10-28T15:38:54.808Z"
+    recorded_at: "2026-10-28T15:38:54.808Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts tests/unit/core/output/output.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project
 escape_class: production_defect
 body: ""

@@ -1,0 +1,50 @@
+id: pm-gh1617
+title: "GH-1617: make history display order explicit and consistent across projections"
+description: "GitHub #1617 reports implicit history direction changes with limit and projection, breaking replay. Add a typed SDK/CLI/MCP order option with documented defaults, preserving latest-window selection, physical indices, diff alignment and continuation."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: agent-ux,github,history,sdk
+created_at: "2026-10-28T15:27:06.469Z"
+updated_at: "2026-10-28T15:42:07.989Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#738f7d9b84aae278517b105a"
+author: "harness:codex"
+estimated_minutes: 100
+acceptance_criteria: SDK validates order before history reads;CLI and MCP expose identical ordering;Every projection aligns row and diff order across limits;Document defaults and chronological replay compatibility
+parent: pm-mpbb
+expected_result: "Explicit oldest_first and newest_first align rows and diffs in every projection and latest-N window, with executable continuation and documented defaults."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1605,related,"2026-10-28T15:27:06.469Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-10-28T15:27:06.469Z","harness:codex","Duplicate check: complete strict 3146-item all-status corpus without omissions, history search and open/in-progress lists found no GH1617 owner. Completed pm-gh1605 remains closed; this is a display-contract follow-up."
+  "2026-10-28T15:28:07.749Z","harness:codex","Implementation decision: explicit order applies identically to compact, provenance and full rows plus value diffs. Preserve full/raw chronological default; compact/provenance default newest_first independent of limit. Document both defaults and require --order oldest_first for chronological compact replay. Latest-N selection remains independent of presentation."
+  "2026-10-28T15:42:07.989Z","harness:codex","Red/green proof: new persistent history fixture fails on unchanged source with newest_first versus requested oldest_first. Implemented explicit SDK validation and CLI/MCP enum, consistent latest-N presentation, aligned value diffs and documented compatibility. Linked history cohort passes48tests. Complete all-source coverage and static/current-head hosted admission remain pending."
+files[8]{path,scope}:
+  sdk/public-surface.json,project
+  src/cli/help-content.ts,project
+  src/cli/register-list-query.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/query/history.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/sdk/query/history-recency.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-recency.spec.ts tests/unit/commands/history/history-activity-command.spec.ts,project,300,"harness:codex","2026-10-28T15:37:59.418Z",local_mutation,fix/context-read-contracts
+test_runs[1]:
+  - run_id: test-local-mvsa5avb-ywgwnf
+    kind: test
+    status: passed
+    started_at: "2026-10-28T15:38:56.219Z"
+    finished_at: "2026-10-28T15:39:18.983Z"
+    recorded_at: "2026-10-28T15:39:18.983Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/query/history-recency.spec.ts tests/unit/commands/history/history-activity-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+escape_class: production_defect
+body: ""

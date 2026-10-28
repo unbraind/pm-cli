@@ -824,6 +824,7 @@ async function runHistoryAction(
     id,
     {
       limit: typeof options.limit === "string" ? options.limit : undefined,
+      order: options.order as "oldest_first" | "newest_first" | undefined,
       compact:
         options.full === true || options.provenance === true ? false : true,
       provenance: options.provenance === true,
@@ -1541,7 +1542,8 @@ export function registerListQueryCommands(
       .command("history")
       .enablePositionalOptions()
       .argument("<id>", "Item id")
-      .option("--limit <n>", "Latest n entries")
+      .option("--limit <n>", "Latest n entries; preserves display order")
+      .option("--order <value>", "oldest_first|newest_first; default newest for compact/provenance, oldest for full")
       .option("--compact", "Index, time, op, author, patch count, fields")
       .option("--full", "Full entries with JSON Patches")
       .option("--provenance", "Authors and provenance; no patches")
