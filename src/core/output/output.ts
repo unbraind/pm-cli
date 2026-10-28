@@ -223,30 +223,6 @@ function renderScalar(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Determine whether a nonempty object collection has uniform scalar columns. */
-function tabularObjectArray(
-  value: Record<string, unknown>[],
-): value is Record<string, JsonValue>[] {
-  const keys = Object.keys(value[0]!);
-  return (
-    keys.length > 0 &&
-    value.every(
-      (entry) =>
-        Object.keys(entry).length === keys.length &&
-        keys.every((key) => {
-          if (!Object.hasOwn(entry, key)) return false;
-          const cell = entry[key];
-          return (
-            cell === null ||
-            typeof cell === "string" ||
-            typeof cell === "number" ||
-            typeof cell === "boolean"
-          );
-        }),
-    )
-  );
-}
-
 /** Indent every line of an encoded block at the enclosing TOON nesting depth. */
 function indentToon(encoded: string, depth: number): string {
   const indent = "  ".repeat(depth);
@@ -286,18 +262,20 @@ function renderToonObjectEntry(
     const expanded = indentToon(encodeToon({ [key]: entry }), depth);
     if (
       allowNestedTable &&
-      entry.length >= 2 &&
+      entry.length >= 1 &&
       entry.every(isPlainObject) &&
-      !tabularObjectArray(entry) &&
       isNestedTableCandidateBounded(entry)
     ) {
-      const table = encodePmTableRows(entry as Record<string, JsonValue>[]);
-      const tabular = indentToon(
-        encodeToon({ [key]: table.rows, [`${key}_encoding`]: table.encoding }),
-        depth,
-      );
-      if (Buffer.byteLength(tabular) < Buffer.byteLength(expanded))
-        return tabular;
+      const candidates = [false, true].map(compact => {
+        const table = encodePmTableRows(entry as Record<string, JsonValue>[], { compact });
+        return indentToon(
+          encodeToon({ [key]: table.rows, [`${key}_encoding`]: table.encoding }),
+          depth,
+        );
+      });
+      return candidates.reduce((smallest, candidate) =>
+        Buffer.byteLength(candidate) < Buffer.byteLength(smallest) ? candidate : smallest,
+      expanded);
     }
     return expanded;
   }

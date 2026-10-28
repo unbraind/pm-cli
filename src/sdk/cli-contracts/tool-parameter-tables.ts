@@ -767,6 +767,7 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_PROPERTIES: Partial<
     },
   },
   history: {
+    order: { type: "string", enum: ["oldest_first", "newest_first"] },
     harness: {
       anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
     },
@@ -2246,7 +2247,10 @@ export const PM_TOOL_ACTION_SCOPED_PARAMETER_METADATA: Partial<
   "validate": { strictExit: { description: "Return non-zero when validation reports warnings." } },
   "extension-doctor": { strictExit: { description: "Return non-zero when extension diagnostics report warnings or a non-ok summary." } },
   "package-doctor": { strictExit: { description: "Return non-zero when package diagnostics report warnings or a non-ok summary." } },
-  "history": { strictExit: { description: "Return non-zero for history verification failures when verify is enabled." } },
+  history: {
+    strictExit: { description: "Return non-zero for history verification failures when verify is enabled." },
+    order: { description: "Display direction after selecting the latest matching entries; defaults to newest_first for compact/provenance and oldest_first for full history.", examples: ["oldest_first", "newest_first"] },
+  },
   extension: { strictExit: { description: "For doctor operations, return non-zero on warnings or a non-ok diagnostic summary." } },
   package: { strictExit: { description: "For doctor operations, return non-zero on warnings or a non-ok diagnostic summary." } },
   assurance: {

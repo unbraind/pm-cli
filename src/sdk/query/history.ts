@@ -54,6 +54,8 @@ export { verifyHistoryChain };
 export interface HistoryCommandOptions {
   /** Value that configures or reports limit for this contract. */
   limit?: string;
+  /** Display direction after selecting the latest entries; defaults by projection. */
+  order?: "oldest_first" | "newest_first";
   /** Value that configures or reports diff for this contract. */
   diff?: boolean;
   /** Restrict --diff to a single field's before/after transitions (implies --diff). */
@@ -232,7 +234,7 @@ function buildHistoryProjection(params: {
 }): HistoryResult {
   const { resolvedId, selectedHistory, options, limit, addressing, vocabulary, total } = params;
   const compact = options.compact === true;
-  const newestFirst = limit === undefined && (compact || options.provenance === true);
+  const newestFirst = (options.order ?? (compact || options.provenance === true ? "newest_first" : "oldest_first")) === "newest_first";
   const displayedHistory = newestFirst ? [...selectedHistory].reverse() : selectedHistory;
   const history = displayedHistory.map(({ entry }) => entry);
   const compactHistory = compact
@@ -285,6 +287,9 @@ export async function runHistory(
   options: HistoryCommandOptions,
   global: GlobalOptions,
 ): Promise<HistoryResult> {
+  if (options.order !== undefined && options.order !== "oldest_first" && options.order !== "newest_first") {
+    throw new PmCliError("--order must be oldest_first or newest_first", EXIT_CODE.USAGE);
+  }
   const limit = parseLimit(options.limit);
   const { historyPath, located, resolvedId, settings } =
     await resolveHistoryReadTarget(id, global);

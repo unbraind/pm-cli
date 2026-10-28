@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-28T06:37:31.561Z"
+updated_at: "2026-10-28T15:49:25.843Z"
 reminders[1]{at,text}:
   "2026-10-29T06:00:00.000Z",Verify the next eligible daily release and supported consumers after PR1616
 author: maintainer-agent
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[248]:
+comments[250]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -838,6 +838,12 @@ comments[248]:
   - created_at: "2026-10-28T06:37:31.561Z"
     author: "harness:codex"
     text: "Serviced the October28 release-health occurrence after its06:00UTC instant: successful parent/child workflows and the independent published2026.10.28 consumer receipt are verified. Replaced its sole reminder with October29 06:00UTC for the next eligible post-delivery cut. PR1616 remains under review; do not describe its SDK fixes as included in the already immutable October28 publication. No second automatic or manual release was requested by this continuation."
+  - created_at: "2026-10-28T15:37:36.031Z"
+    author: "harness:codex"
+    text: "Live October28 release evidence: v2026.10.28 publisher run40631211289 succeeded. Morning dispatcher40628452727 and native scheduled run40660287046 succeeded, with one immutable base-day tag. Repository verify-published-release.mjs --version2026.10.28 exits0, confirming public npm/npx/Bun/bunx consumers and GitHub publication. Current context-read changes postdate this release and are not published by it. The pending next-day reminder and reliability history remain separate."
+  - created_at: "2026-10-28T15:49:25.842Z"
+    author: "harness:codex"
+    text: Latest Release Reliability run40713600220 remains red at the rolling nightly recurrence step even though the publisher and public consumer verifier succeeded. The measurement implementation owner pm-2zjs0g is closed and remains completed. Historical original-attempt failures and sample sufficiency are not erased by current successful release evidence; retained GitHub nightly issue lineages remain linked.
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

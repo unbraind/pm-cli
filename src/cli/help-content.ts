@@ -655,9 +655,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   history: {
-    why: "Inspects item mutation timeline and audit trail.",
+    why: "Inspect recorded mutations.",
     examples: [
-      "pm history pm-a1b2 --limit 20",
+      "pm history pm-a1b2 --order oldest_first",
       "pm history pm-a1b2 --full --verify",
     ],
   },

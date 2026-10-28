@@ -765,6 +765,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       required: ["id"],
       optional: [
         "limit",
+        "order",
         "compact",
         "full",
         "provenance",

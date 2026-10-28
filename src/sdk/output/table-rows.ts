@@ -11,6 +11,12 @@ import type { JsonValue } from "@toon-format/toon";
 export interface PmTableCellEncoding {
   /** Columns whose every present cell contains a JSON-serialized value. */
   json_columns: string[];
+  /** String-array columns joined by a declared delimiter; empty cells restore empty arrays. */
+  list_columns?: Record<string, string>;
+  /** Columns omitted from every encoded row because every source value is explicit null. */
+  null_columns?: string[];
+  /** Original first-occurrence column order when omitted null columns need reinsertion. */
+  column_order?: string[];
   /** Missing field coordinates, expressed as [zero-based row, column name]. */
   absent: Array<[number, string]>;
 }
@@ -33,9 +39,18 @@ export interface PmEncodedTableRows {
  */
 export function encodePmTableRows(
   rows: readonly Record<string, JsonValue>[],
+  options: { compact?: boolean } = {},
 ): PmEncodedTableRows {
   const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))];
-  const jsonColumns = columns.filter((column) =>
+  const nullColumns = options.compact ? columns.filter(column => rows.every(row => Object.hasOwn(row, column) && row[column] === null)) : [];
+  const listColumns = options.compact ? columns.filter(column => rows.every(row => {
+    if (!Object.hasOwn(row, column)) return true;
+    const cell = row[column];
+    return Array.isArray(cell) && cell.every(value => typeof value === "string" && value !== "" && !value.includes(";"));
+  })) : [];
+  const lists = new Set(listColumns);
+  const nulls = new Set(nullColumns);
+  const jsonColumns = columns.filter((column) => !lists.has(column) &&
     rows.some((row) => {
       const cell = row[column];
       return cell !== null && typeof cell === "object";
@@ -46,17 +61,21 @@ export function encodePmTableRows(
   const encoded = rows.map(
     (row, index) =>
       Object.fromEntries(
-        columns.map((column) => {
+        columns.filter(column => !nulls.has(column)).map((column) => {
           if (!Object.hasOwn(row, column)) {
             absent.push([index, column]);
             return [column, null];
           }
           const cell = row[column]!;
+          if (lists.has(column)) return [column, (cell as string[]).join(";")];
           return [column, nested.has(column) ? JSON.stringify(cell) : cell];
         }),
       ) as PmEncodedTableRows["rows"][number],
   );
-  return { rows: encoded, encoding: { json_columns: jsonColumns, absent } };
+  return { rows: encoded, encoding: { json_columns: jsonColumns, absent,
+    ...(listColumns.length ? { list_columns: Object.fromEntries(listColumns.map(column => [column, ";"])) } : {}),
+    ...(nullColumns.length ? { null_columns: nullColumns, column_order: columns } : {}),
+  } };
 }
 
 /**
@@ -68,20 +87,23 @@ export function decodePmTableRows(
   table: PmEncodedTableRows,
 ): Record<string, JsonValue>[] {
   const nested = new Set(table.encoding.json_columns);
+  const delimiters = new Map(Object.entries(table.encoding.list_columns ?? {}));
   const absent = new Set(
     table.encoding.absent.map(([row, column]) => JSON.stringify([row, column])),
   );
-  return table.rows.map((row, index) =>
-    Object.fromEntries(
-      Object.entries(row).flatMap(([column, cell]) => {
+  return table.rows.map((row, index) => {
+    const cells = new Map<string, JsonValue>(
+      Object.entries(row).flatMap(([column, cell]): Array<[string, JsonValue]> => {
         if (absent.has(JSON.stringify([index, column]))) return [];
-        return [
-          [
-            column,
-            nested.has(column) ? (JSON.parse(String(cell)) as JsonValue) : cell,
-          ],
-        ];
+        const delimiter = delimiters.get(column);
+        const value = delimiter !== undefined
+          ? (cell === "" ? [] : String(cell).split(delimiter))
+          : nested.has(column) ? (JSON.parse(String(cell)) as JsonValue) : cell;
+        return [[column, value]];
       }),
-    ),
-  );
+    );
+    for (const column of table.encoding.null_columns ?? []) cells.set(column, null);
+    const columns = table.encoding.column_order ?? [...cells.keys()];
+    return Object.fromEntries(columns.filter(column => cells.has(column)).map(column => [column, cells.get(column)!]));
+  });
 }

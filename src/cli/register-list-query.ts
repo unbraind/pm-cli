@@ -824,6 +824,7 @@ async function runHistoryAction(
     id,
     {
       limit: typeof options.limit === "string" ? options.limit : undefined,
+      order: options.order as "oldest_first" | "newest_first" | undefined,
       compact:
         options.full === true || options.provenance === true ? false : true,
       provenance: options.provenance === true,
@@ -1541,24 +1542,25 @@ export function registerListQueryCommands(
       .command("history")
       .enablePositionalOptions()
       .argument("<id>", "Item id")
-      .option("--limit <n>", "Latest n entries")
-      .option("--compact", "Index, time, op, author, patch count, fields")
-      .option("--full", "Full entries with JSON Patches")
-      .option("--provenance", "Authors and provenance; no patches")
+      .option("--limit <n>", "Latest N; keeps order")
+      .option("--order <value>", "oldest_first|newest_first")
+      .option("--compact", "Summary (default newest_first)")
+      .option("--full", "Patches (default oldest_first)")
+      .option("--provenance", "Authors (default newest_first)")
       .option("--provenance-summary", "Count provenance completeness")
       .option(
         "--harness <value>",
-        "Recorded/resolved harness (repeatable)",
+        "Harness (repeatable)",
         collect,
       )
       .option(
         "--agent-instance <value>",
-        "Agent instance (repeatable)",
+        "Instance (repeatable)",
         collect,
       )
       .option(
         "--provenance-filter <dimension=value>",
-        "Exact provenance match (repeatable)",
+        "Provenance (repeatable)",
         collect,
       )
       .option("--diff", "Before/after field diffs")
@@ -1567,7 +1569,7 @@ export function registerListQueryCommands(
       .option("--strict-exit", "With --verify, fail on integrity errors")
       .option("--fail-on-warn", "Alias for --strict-exit")
       .option("--format <value>", "Output: json|toon")
-      .description("Show item history entries.")
+      .description("Read history.")
       .action(runHistoryAction);
     registerHistoryMaintenanceCommands(historyCommand, true);
     registerHistoryActivityCommand(historyCommand.command("activity"));

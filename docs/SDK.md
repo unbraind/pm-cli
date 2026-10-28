@@ -453,15 +453,22 @@ Promoted Plan links retain their graph semantics: `depends_on` canonicalizes to 
 
 ### Immutable history and rich item reads
 
-`runHistory(id, { compact: true }, global)` and `{ provenance: true }` return
-newest-first rows when no `limit` is supplied. The CLI and `runAction` history
-defaults use compact rows. The result declares `order` and a complete matching
-`total`; original row indices and durable versions stay unchanged. Apply the
-public read-output dimensions and carry `outputCursor` from their truncation
-receipt to traverse older entries. An explicit latest-entry `limit` retains
-chronological order, as do full SDK reads (`runHistory(id, {}, global)`) and
-`runAction` with `full: true`. Verification still consumes the full chain
-([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon); tracker record excluded from npm).
+`runHistory(id, { compact: true }, global)` and `{ provenance: true }` default
+to newest-first rows, with or without `limit`. Full SDK reads (`runHistory(id,
+{}, global)`) and `runAction` with `full: true` default to chronological rows.
+Set `order: "oldest_first"` or `order: "newest_first"` explicitly to use the same
+direction across every projection, including value diffs. `limit` selects the
+latest N matching entries before ordering; it never changes the direction.
+CLI and `runAction` defaults use compact rows. The result declares `order` and
+a complete matching `total`; physical indices and durable versions stay unchanged.
+Read-output continuations traverse the chosen order without changing it.
+Verification and value-diff reconstruction still consume the authoritative chain.
+
+Compatibility: compact/provenance reads with a limit previously returned
+chronological rows. Replay consumers must now request `order: "oldest_first"`
+(or CLI `--order oldest_first`) explicitly. Full reads retain their prior default.
+Tracked by [pm-gh1617](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1617.toon)
+(tracker record excluded from npm).
 
 Tracked: [pm-4a7m](../.agents/pm/features/pm-4a7m.toon),
 [pm-hib1](../.agents/pm/features/pm-hib1.toon),

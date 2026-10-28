@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runHistory } from "../../../../src/sdk/query/history.js";
+import { runHistory, type HistoryResult } from "../../../../src/sdk/query/history.js";
 import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
 import { runAction } from "../../../../src/sdk/runtime.js";
@@ -7,7 +7,46 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import { createTestItemId } from "../../../helpers/itemFactory.js";
 import { runWithHarnessDetectionSignals } from "../../../../src/core/shared/author.js";
 
+/** Compare physical coordinates for projected rows and timestamps for full entries. */
+function displayedCoordinates(result: HistoryResult) {
+  if (result.compact_history) return result.compact_history.map(row => row.index);
+  if (result.provenance_history) return result.provenance_history.map(row => row.version);
+  return result.history?.map(row => row.ts);
+}
+
 describe("recent history recovery", () => {
+  it("honors explicit display order for every projection and latest-entry window", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Ordered history" });
+      for (let n = 2; n <= 4; n += 1) {
+        await runUpdate(id, { title: `Title ${n}` }, { path: context.pmPath });
+      }
+      const cases = [{ compact: true }, { provenance: true }, { compact: false }].flatMap(mode =>
+        [undefined, "2"].flatMap(limit =>
+          (["oldest_first", "newest_first"] as const).map(order => ({ mode, limit, order }))));
+      for (const { mode, limit, order } of cases) {
+            const result = await runHistory(id, { ...mode, limit, order, diff: true }, { path: context.pmPath });
+            const indices = limit ? [3, 4] : [1, 2, 3, 4];
+            if (order === "newest_first") indices.reverse();
+            expect(result.order).toBe(order);
+            expect(result.diff?.map(row => row.index)).toEqual(indices);
+            expect(displayedCoordinates(result)).toEqual(result.history ? result.diff?.map(row => row.ts) : indices);
+      }
+      const limited = await runHistory(id, { compact: true, limit: "2" }, { path: context.pmPath });
+      expect(limited.compact_history?.map(row => row.index)).toEqual([4, 3]);
+      const args = ["history", id, "--diff", "--order", "oldest_first", "--limit", "2", "--json"];
+      const cli = context.runCli(args, { expectJson: true });
+      expect(cli.code).toBe(0);
+      expect(cli.json).toMatchObject({ order: "oldest_first", diff: [{ index: 3 }, { index: 4 }] });
+      expect(await runAction({ action: "history", id, path: context.pmPath, options: { order: "oldest_first", limit: "2", diff: true } }))
+        .toMatchObject({ order: "oldest_first", diff: [{ index: 3 }, { index: 4 }] });
+      expect(await runAction({ action: "history", id, path: context.pmPath, order: "oldest_first", options: { limit: "2", diff: true } }))
+        .toMatchObject({ order: "oldest_first", diff: [{ index: 3 }, { index: 4 }] });
+      await expect(runHistory(id, { order: "invalid" as "oldest_first" }, { path: "/nonexistent-order-validation" }))
+        .rejects.toThrow("--order must be oldest_first or newest_first");
+    });
+  });
+
   it("aligns filtered diffs with physical history while replaying excluded updates", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Filtered diff" });
@@ -76,7 +115,7 @@ describe("recent history recovery", () => {
       const diff = await runHistory(id, { compact: true, diff: true }, { path: context.pmPath });
       expect(diff.diff?.map((row) => row.index)).toEqual(received);
       const limited = await runHistory(id, { compact: true, limit: "5" }, { path: context.pmPath });
-      expect(limited.compact_history?.map((row) => row.index)).toEqual([247, 248, 249, 250, 251]);
+      expect(limited.compact_history?.map((row) => row.index)).toEqual([251, 250, 249, 248, 247]);
       const cliFull = context.runCli(["history", id, "--full", "--output-budget", "unbounded", "--json"], { expectJson: true });
       expect(cliFull.code).toBe(0);
       expect(cliFull.json).toMatchObject({ history: full.history, count: 251 });

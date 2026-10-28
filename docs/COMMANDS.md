@@ -1182,16 +1182,21 @@ unowned hooks. Default installation remains hook-free. See
 
 ## History and Recovery
 
-Compact and provenance history without `--limit` display newest entries first,
-so the latest handoff survives an output budget. The `order` receipt declares
-the display direction and `total` counts all matching entries before limits.
-Physical `index` values and durable version addresses retain their original
-meaning. Use the returned `output_budget_truncation` continuation with
-`--output-cursor` to read older rows without gaps or duplicates. Explicit
-`--limit N` keeps the latest N entries in chronological order; `--full
---output-budget unbounded` returns complete chronological entries. Verification
-always checks the full authoritative chain
-([pm-gh1605](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1605.toon); tracker record excluded from npm).
+Compact and provenance history default to newest-first, including reads with
+`--limit`. Full entries default to oldest-first. Use `--order oldest_first` or
+`--order newest_first` to choose the same direction for any projection and its
+value diffs. `--limit N` selects the latest N matching entries before ordering.
+The `order` receipt declares direction and `total` counts matches before limits.
+Physical indices and durable versions retain their original meaning. Use
+`--output-cursor` with the returned continuation to traverse the selected order.
+Verification always checks the full authoritative chain.
+
+Compatibility: a compact/provenance latest-N read used to flip to chronological
+order. Chronological consumers should explicitly use, for example,
+`pm history pm-a1b2 --diff --limit 20 --order oldest_first`.
+Full reads keep their chronological default.
+Tracked by [pm-gh1617](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1617.toon)
+(tracker record excluded from npm).
 
 After a branch merge that touched tracker history, preview and apply the
 one-command reconciliation gate:

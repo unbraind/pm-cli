@@ -5127,6 +5127,11 @@
           "flag": "--limit"
         },
         {
+          "flag": "--order",
+          "value_name": "value",
+          "value_type": "string"
+        },
+        {
           "flag": "--compact"
         },
         {
@@ -53837,6 +53842,18 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "order": {
+            "description": "Display direction after selecting the latest matching entries; defaults to newest_first for compact/provenance and oldest_first for full history.",
+            "enum": [
+              "oldest_first",
+              "newest_first"
+            ],
+            "examples": [
+              "oldest_first",
+              "newest_first"
+            ],
+            "type": "string"
           },
           "outputBudget": {
             "anyOf": [
