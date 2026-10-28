@@ -96,6 +96,7 @@ export const PM_WORKSPACE_HISTORY_OPERATIONS = [
   "telemetry:first_run_prompt",
   "telemetry:clear",
   "item_format:auto_select_default",
+  "transaction_abandon",
 ] as const;
 
 /** Retired writer spellings; readers preserve original bytes and may resolve aliases explicitly. */

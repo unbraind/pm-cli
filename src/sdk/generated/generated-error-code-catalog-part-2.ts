@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "merge_root_not_found",
-    meaning: "Merge root not found condition.",
-    stability: "stable",
-    exit_code: 3,
-    class: "not_found",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/merge/install.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "merge_root_not_found",
-    aliases: [],
-  },
-  {
     code: "merge_settlement_hook_conflict",
     meaning: "Merge settlement hook conflict condition.",
     stability: "provisional",
@@ -1576,6 +1563,32 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     ],
   },
   {
+    code: "transaction_abandoned",
+    meaning: "Transaction abandoned condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_abandoned",
+    aliases: [],
+  },
+  {
+    code: "transaction_committed",
+    meaning: "Transaction committed condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/workspace-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_committed",
+    aliases: [],
+  },
+  {
     code: "transaction_create_compensated",
     meaning: "Transaction create compensated condition.",
     stability: "provisional",
@@ -1664,6 +1677,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/item-transaction.ts"],
     emitting_commands: ["*"],
     canonical_code: "transaction_preview_snapshot_changed",
+    aliases: [],
+  },
+  {
+    code: "transaction_recovery_plan_missing",
+    meaning: "Transaction recovery plan missing condition.",
+    stability: "provisional",
+    exit_code: 4,
+    class: "conflict",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["sdk/item-transaction.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "transaction_recovery_plan_missing",
     aliases: [],
   },
   {

@@ -1091,6 +1091,7 @@ export async function deleteItem(params: {
   } = prepared;
 
   try {
+    assertItemMutationPreconditions(params.pmRoot, document);
     const extensionFieldNames = resolveActiveExtensionFieldNames(undefined);
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,

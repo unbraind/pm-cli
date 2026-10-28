@@ -2,11 +2,13 @@ id: pm-gh1597
 title: "GH-1597: expose host-bound item transaction status and safe abandonment or supersession"
 description: "GitHub https://github.com/unbraind/pm-cli/issues/1597 requests public recovery for interrupted item-mutation journals when a peer edit changes the retry plan. Existing bulk commit and guarded compensation are shipped; extend their public host-bound lifecycle rather than duplicating private journal storage or reviving completed implementation."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-26T04:54:49.262Z"
-updated_at: "2026-10-26T04:54:49.262Z"
+updated_at: "2026-10-28T20:39:10.736Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#568692524ccbb719c2f222a0"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: Expose typed host-bound journal state and applied/compensated step receipts with plan identity; Provide safe abandonment and supersession using proven apply markers and existing guarded compensation; never overwrite later peer edits or silently compensate committed work; Name executable public recovery in transaction-plan-mismatch guidance and verify non-Git crash/retry/peer-edit controls plus SDK contract documentation
@@ -17,6 +19,41 @@ expected_result: Extensions can inspect and recover interrupted batches through 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-10-26T04:54:49.262Z","harness:codex","cli:create:dep",detected
   pm-y9hq,discovered_from,"2026-10-26T04:54:49.262Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-26T04:54:49.262Z","harness:codex","Duplicate check: complete strict all-status corpus plus live request-specific searches and full terminal-lineage reads found no exact active owner. Existing SDK promotion and transaction/preview delivery remain completed; this item owns the newly requested public surface."
+  "2026-10-28T19:44:07.695Z","harness:codex","Implementation scope: retain original item plans in coordinator journals, expose read-only status and host-bound guarded abandonment/supersession, refuse committed and peer-edited work, preserve append-only compensation and audit evidence. Complete strict 3148-item all-status census has no omissions; 38 open GitHub issues each already have a canonical PM link comment. No open PRs or GitHub dependency/code/secret alerts at intake."
+  "2026-10-28T20:16:18.094Z","harness:codex","Native late-peer recovery oracle initially exposed a delete-store gap: the existing scoped item precondition was checked by update/close but not by locked deletion. Isolated candidate adds the same assertion before deletion policy/hooks and centralizes create compensation ownership checks. Close and delete both preserve a peer edit injected immediately before item-lock acquisition. Isolated focused proof passes51 tests; original checkout remains frozen for the in-flight full coverage run. Retirement intent is additionally retained before compensation to fence forward replay across recovery crashes."
+  "2026-10-28T20:39:10.736Z","harness:codex","Validation: linked recovery suite passed 65/65, including durable v2 retirement fencing, prepared/applied/recorded crash boundaries, interrupted compensation, audit deduplication, malformed/downgraded receipts and native peer-write races. Typecheck, ESLint, duplicate detection, registry audit and OSV passed. Full canonical coverage is running; no full-coverage success is claimed yet. First complete suite exposed contract snapshot/source-operation registration and preview clock comparison failures, now corrected; its npm package resolution failure was host NODE_PATH configuration, now explicitly set. Published 2026.10.28 verifier passed npm/npx/Bun/bunx and GitHub release checks; this does not imply publication of these branch changes."
+learnings[1]{created_at,author,text}:
+  "2026-10-28T20:16:19.379Z","harness:codex","Retiring an interrupted batch requires a durable intent before compensation, not only a terminal status afterward. Every destructive compensation must recheck ownership under the target item lock; a pre-lock history comparison alone does not protect a late peer edit."
+files[13]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/history/operation-contract.ts,project
+  src/core/store/item-store.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/item-transaction.ts,project
+  src/sdk/runtime.ts,project
+  src/sdk/workspace-transaction-gc.ts,project
+  src/sdk/workspace-transaction.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/types/item-transactions.test-d.ts,project
+  tests/unit/sdk/transactions/host-bound.spec.ts,project
+  tests/unit/sdk/workspace-transaction.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/workspace-transaction.spec.ts,project,300,"harness:codex","2026-10-28T19:50:40.616Z",local_mutation,feat/host-bound-item-transactions
+test_runs[1]:
+  - run_id: test-local-mvskr61r-dyaj7d
+    kind: test
+    status: passed
+    started_at: "2026-10-28T20:35:47.020Z"
+    finished_at: "2026-10-28T20:36:15.327Z"
+    recorded_at: "2026-10-28T20:36:15.327Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/workspace-transaction.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
 body: ""

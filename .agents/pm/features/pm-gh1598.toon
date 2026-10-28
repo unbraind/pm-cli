@@ -2,11 +2,13 @@ id: pm-gh1598
 title: "GH-1598: bind batch mutation APIs to PmClient and expose canonical staged preview records"
 description: "GitHub https://github.com/unbraind/pm-cli/issues/1598 requests native PmClient preview/commit methods bound to host root and author policy, plus canonical staged records for idempotent intent comparison. Current staged preview validation remains shipped; its result contains validation state, constraints and warnings rather than complete staged records."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-26T04:54:51.880Z"
-updated_at: "2026-10-26T04:54:51.880Z"
+updated_at: "2026-10-28T20:39:13.335Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#568692524ccbb719c2f222a0"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Expose typed PmClient previewItemMutations and commitItemMutations forwarding bound root and author policy to the existing SDK coordinator; Return per-mutation canonical staged ids, normalized metadata and bodies with generated-value provenance and explicit commit-time constraints; Prove preview/read-back equivalence for unchanged admitted plans and safe identical-intent replay versus typed changed-intent conflicts using native non-Git fixtures; preserve read-only previews and current guarded commit behavior"
@@ -17,6 +19,31 @@ expected_result: Packages can perform host-bound atomic batches and compare norm
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-10-26T04:54:51.880Z","harness:codex","cli:create:dep",detected
   pm-gh1370,discovered_from,"2026-10-26T04:54:51.880Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-26T04:54:51.880Z","harness:codex","Duplicate check: complete strict all-status corpus plus live request-specific searches and full terminal-lineage reads found no exact active owner. Existing SDK promotion and transaction/preview delivery remain completed; this item owns the newly requested public surface."
+  "2026-10-28T19:44:10.177Z","harness:codex","Implementation scope: typed root/author-bound PmClient preview and commit; canonical full staged item snapshots per executed mutation with explicit generated clock fields. Preserve committed replay semantics and read-only staging. Group with pm-gh1597 in one reviewed delivery; no other implementation items claimed."
+  "2026-10-28T20:39:13.335Z","harness:codex","Validation: linked SDK plus semantic-preview integration tests passed 49/49. Staged records retain canonical body, normalized tags, author and provenance with explicit clock-field pointers, final-batch state and applied/adopted execution receipts. Committed replay returns no newly validated records. Public declaration tests and SDK surface snapshot are current. Full canonical coverage is running; the earlier 197-test focused coverage diagnostic retained the full-source denominator and is not a global coverage pass."
+files[6]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/item-transaction.ts,project
+  src/sdk/runtime.ts,project
+  tests/integration/transactions/semantic-preview.integration.spec.ts,project
+  tests/types/item-transactions.test-d.ts,project
+  tests/unit/sdk/transactions/host-bound.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,project,300,"harness:codex","2026-10-28T19:50:42.784Z",local_mutation,feat/host-bound-item-transactions
+test_runs[1]:
+  - run_id: test-local-mvsks2km-d73z2v
+    kind: test
+    status: passed
+    started_at: "2026-10-28T20:36:16.186Z"
+    finished_at: "2026-10-28T20:36:57.477Z"
+    recorded_at: "2026-10-28T20:36:57.477Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
 body: ""

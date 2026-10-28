@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 431
+- Catalog error codes: 434
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 412
-- Coverage fraction: 0.044084
+- Uncovered error codes: 415
+- Coverage fraction: 0.043779
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -349,6 +349,8 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `tracker_root_missing` | `tracker_root_missing` | executable | owned_state | 1 |
 | `tracker_root_not_directory` | `tracker_root_not_directory` | executable | owned_state | 1 |
 | `tracker_root_unreadable` | `tracker_root_unreadable` | executable | owned_state | 1 |
+| `transaction_abandoned` | `transaction_abandoned` | uncovered | none | 0 |
+| `transaction_committed` | `transaction_committed` | uncovered | none | 0 |
 | `transaction_create_compensated` | `transaction_create_compensated` | uncovered | none | 0 |
 | `transaction_journal_invalid` | `transaction_journal_invalid` | uncovered | none | 0 |
 | `transaction_partial_mutation` | `transaction_partial_mutation` | uncovered | none | 0 |
@@ -356,6 +358,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `transaction_preview_external_schema` | `transaction_preview_external_schema` | uncovered | none | 0 |
 | `transaction_preview_non_regular_file` | `transaction_preview_non_regular_file` | uncovered | none | 0 |
 | `transaction_preview_snapshot_changed` | `transaction_preview_snapshot_changed` | uncovered | none | 0 |
+| `transaction_recovery_plan_missing` | `transaction_recovery_plan_missing` | uncovered | none | 0 |
 | `type_duplicate` | `type_duplicate` | uncovered | none | 0 |
 | `type_invalid` | `type_invalid` | uncovered | none | 0 |
 | `undeclared_observation` | `undeclared_observation` | uncovered | none | 0 |

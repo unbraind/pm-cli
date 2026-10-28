@@ -6,6 +6,9 @@
  */
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
+import { appendWorkspaceAuditEvent, getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../core/history/workspace-history.js";
+import { readHistoryEntries } from "./history-read.js";
 import { acquireLock } from "../core/lock/lock.js";
 import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { nowIso } from "../core/shared/time.js";
@@ -85,6 +88,8 @@ export interface CommitWorkspaceTransactionOptions {
   author: string;
   /** Ordered idempotent mutations; compensations run in reverse order. */
   steps: readonly WorkspaceTransactionStep[];
+  /** JSON plan retained for adapter-owned recovery; callers must not store secrets. */
+  recoveryData?: WorkspaceTransactionJsonValue;
   /** Lock lifetime in seconds; size this above the longest expected attempt. */
   lockTtlSeconds?: number;
   /** Maximum time to wait for the workspace writer lock. */
@@ -120,25 +125,44 @@ export class WorkspaceTransactionInterruptedError extends Error {
   }
 }
 
-type WorkspaceTransactionJournalStatus =
+/** Durable coordinator lifecycle, including explicitly retired identities. */
+export type WorkspaceTransactionJournalStatus =
   | "applying"
   | "compensating"
   | "compensated"
-  | "committed";
+  | "committed"
+  | "abandoned";
 
-interface WorkspaceTransactionJournal {
-  schemaVersion: 1;
+/** Durable coordinator receipt; step lists describe journaled progress, not a fresh domain inspection. */
+export interface WorkspaceTransactionJournal {
+  /** Version 2 fences older coordinators once explicit retirement begins. */
+  schemaVersion: 1 | 2;
+  /** Stable transaction identity. */
   transactionId: string;
+  /** Actor who prepared the attempt. */
   author: string;
+  /** Last durable lifecycle state. */
   status: WorkspaceTransactionJournalStatus;
+  /** One-based attempt number. */
   attempt: number;
+  /** Initial preparation timestamp. */
   createdAt: string;
+  /** Latest journal write timestamp. */
   updatedAt: string;
+  /** Ordered payload-bound step identifiers. */
   stepIds: string[];
+  /** Steps durably admitted before forward execution. */
   startedStepIds: string[];
+  /** Steps recorded as applied. */
   completedStepIds: string[];
+  /** Recorded results for completed steps. */
   results: Record<string, WorkspaceTransactionJsonValue>;
+  /** Captured pre-write recovery receipts. */
   compensationData: Record<string, WorkspaceTransactionJsonValue>;
+  /** Adapter-owned original plan, absent in legacy journals. */
+  recoveryData?: WorkspaceTransactionJsonValue;
+  /** Explicit retirement rationale and optional replacement identity. */
+  abandonment?: { reason: string; author: string; supersededBy?: string };
 }
 
 const WORKSPACE_TRANSACTION_LOCK_ID = "sdk-workspace-transaction";
@@ -204,8 +228,19 @@ function hasValidJournalMetadata(
     Number.isInteger(journal.attempt) &&
     typeof journal.author === "string" &&
     typeof journal.createdAt === "string" &&
-    typeof journal.updatedAt === "string"
+    typeof journal.updatedAt === "string" &&
+    hasValidAbandonment(journal)
   );
+}
+
+/** Retirement requests remain valid through interrupted compensation and fence forward replay. */
+function hasValidAbandonment(journal: Partial<WorkspaceTransactionJournal>): boolean {
+  const retirement = journal.abandonment;
+  if (retirement === undefined) return journal.schemaVersion === 1 && journal.status !== "abandoned";
+  if (journal.schemaVersion !== 2 || retirement === null || typeof retirement !== "object" || journal.status === "committed") return false;
+  return typeof retirement.reason === "string" && retirement.reason.trim().length > 0 &&
+    typeof retirement.author === "string" && retirement.author.trim().length > 0 &&
+    (retirement.supersededBy === undefined || (typeof retirement.supersededBy === "string" && TRANSACTION_ID_PATTERN.test(retirement.supersededBy) && retirement.supersededBy !== journal.transactionId));
 }
 
 function createResultMap(
@@ -301,7 +336,7 @@ function hasValidJournalLifecycle(
   if (journal.status === "committed")
     return stepIds.every((stepId) => completed.has(stepId));
   return (
-    journal.status !== "compensated" ||
+    !["compensated", "abandoned"].includes(journal.status ?? "") ||
     (completed.size === 0 && started.size === 0)
   );
 }
@@ -330,22 +365,28 @@ function journalPlanMismatch(transactionId: string): PmCliError {
     EXIT_CODE.CONFLICT,
     {
       code: "transaction_plan_mismatch",
-      required: "Replay the exact plan that started this transaction, or start a new transaction with a different id.",
+      required: "Replay the original plan or safely abandon the interrupted transaction before replacing it.",
       why: "A journal records the plan it is resuming; applying a different plan under the same id could skip or duplicate steps.",
       nextSteps: [
         "Re-run with the original document to resume or replay it.",
-        "Pass --transaction-id <new-id> (or a new transactionId over MCP) to commit the changed plan as its own transaction.",
+        "For item batches use client.itemTransactions.status(transactionId), then client.itemTransactions.abandon(transactionId, { reason }) before committing a changed plan with a new transactionId.",
         "Run pm ops gc --scope transactions --dry-run to inspect abandoned journals before pruning them.",
       ],
     },
   );
 }
 
+/** Status reads omit a requested plan; fully compensated attempts can be replanned. */
+function matchesJournalSteps(status: string, recorded: readonly string[], requested: readonly string[] | undefined): boolean {
+  return requested === undefined || status === "compensated" ||
+    (recorded.length === requested.length && recorded.every((id, index) => id === requested[index]));
+}
+
 /** Validate stored integrity independently of the caller's requested replay plan. */
 function parseJournal(
   raw: string,
   transactionId: string,
-  stepIds: readonly string[],
+  stepIds?: readonly string[],
 ): WorkspaceTransactionJournal {
   let parsed: unknown;
   try {
@@ -357,7 +398,7 @@ function parseJournal(
     throw invalidJournal(transactionId, "expected an object");
   const journal = parsed as Partial<WorkspaceTransactionJournal>;
   const identityMatches =
-    journal.schemaVersion === 1 && journal.transactionId === transactionId;
+    (journal.schemaVersion === 1 || journal.schemaVersion === 2) && journal.transactionId === transactionId;
   if (!identityMatches) throw invalidJournal(transactionId, "schema version or transaction id does not match the journal file");
   const recordedStepIds = journal.stepIds;
   if (
@@ -366,15 +407,12 @@ function parseJournal(
     !hasValidJournalLifecycle(journal, recordedStepIds) ||
     !hasValidJournalMetadata(journal) ||
     typeof journal.status !== "string" ||
-    !["applying", "compensating", "compensated", "committed"].includes(journal.status)
+    !["applying", "compensating", "compensated", "committed", "abandoned"].includes(journal.status)
   ) throw invalidJournal(transactionId, "invalid lifecycle, metadata, status or step ids");
   // A compensated attempt was rolled back step by step and holds nothing to
   // resume, so a re-planned document may start a fresh attempt under the same
   // id; every other status must replay the exact plan it recorded.
-  const stepsMatch =
-    journal.status === "compensated" ||
-    (recordedStepIds.length === stepIds.length &&
-      recordedStepIds.every((stepId, index) => stepId === stepIds[index]));
+  const stepsMatch = matchesJournalSteps(journal.status, recordedStepIds, stepIds);
   if (!stepsMatch) throw journalPlanMismatch(transactionId);
   return {
     ...(journal as WorkspaceTransactionJournal),
@@ -412,6 +450,7 @@ async function prepareJournalForApply(
       completedStepIds: [],
       results: createResultMap(),
       compensationData: createResultMap(),
+      ...(options.recoveryData === undefined ? {} : { recoveryData: cloneJournalValue(options.recoveryData, "Transaction recovery data") }),
     };
     await writeJournal(options.pmRoot, journal);
     await emitTransition(options, journal, "prepared");
@@ -501,7 +540,7 @@ async function applyPreparedTransaction(
 async function loadJournal(
   pmRoot: string,
   transactionId: string,
-  stepIds: readonly string[],
+  stepIds?: readonly string[],
 ): Promise<WorkspaceTransactionJournal | undefined> {
   try {
     return parseJournal(
@@ -653,6 +692,7 @@ export async function commitWorkspaceTransaction(
   );
   try {
     const existing = await loadJournal(pmRoot, transactionId, stepIds);
+    if (existing?.status === "abandoned" || existing?.abandonment !== undefined) throw retiredTransaction(transactionId);
     const recovered = existing !== undefined;
     if (existing?.status === "committed")
       return {
@@ -676,4 +716,75 @@ export async function commitWorkspaceTransaction(
   } finally {
     await release();
   }
+}
+
+/** Reject replay of a retired id without applying a new plan under that identity. */
+function retiredTransaction(transactionId: string): PmCliError {
+  return new PmCliError(`Transaction ${transactionId} has been abandoned`, EXIT_CODE.CONFLICT, {
+    code: "transaction_abandoned", required: "Use a new transactionId for the replacement plan.",
+    why: "An explicitly retired transaction identity cannot be resumed.",
+  });
+}
+
+/** Read an atomically published journal without changing tracker state; undefined means no retained receipt. */
+export async function readWorkspaceTransaction(pmRoot: string, transactionId: string): Promise<WorkspaceTransactionJournal | undefined> {
+  const identity = validateWorkspaceTransactionIdentity({ pmRoot, transactionId, author: "reader" });
+  return loadJournal(identity.pmRoot, identity.transactionId);
+}
+
+/** SHA-256 identity of the ordered, payload-bound step identifiers. */
+export function workspaceTransactionPlanDigest(journal: Pick<WorkspaceTransactionJournal, "stepIds">): string {
+  return createHash("sha256").update(JSON.stringify(journal.stepIds)).digest("hex");
+}
+
+/** Explicit recovery request; the adapter reconstructs compensation from the retained original plan under the coordinator lock. */
+export interface AbandonWorkspaceTransactionOptions extends Omit<CommitWorkspaceTransactionOptions, "steps" | "recoveryData"> {
+  /** Required human-readable recovery rationale. */
+  reason: string;
+  /** Optional fresh identity reserved by the caller for its replacement plan. */
+  supersededBy?: string;
+  /** Rebuild original steps without applying forward mutations. */
+  resolveSteps(journal: WorkspaceTransactionJournal): readonly WorkspaceTransactionStep[];
+}
+
+/** Compensate interrupted owned effects and permanently retire the id; committed work is never undone. */
+export async function abandonWorkspaceTransaction(options: AbandonWorkspaceTransactionOptions): Promise<WorkspaceTransactionJournal> {
+  const identity = validateWorkspaceTransactionIdentity(options);
+  const reason = requiredText(options.reason, "Abandonment reason");
+  const supersededBy = options.supersededBy === undefined ? undefined : requiredIdentifier(options.supersededBy, "Replacement transaction id");
+  if (supersededBy === identity.transactionId) throw new TypeError("Replacement transaction id must differ from the abandoned id");
+  const lockTtlSeconds = positiveInteger(options.lockTtlSeconds, DEFAULT_LOCK_TTL_SECONDS, "Transaction lock TTL");
+  const lockWaitMs = positiveInteger(options.lockWaitMs, DEFAULT_LOCK_WAIT_MS, "Transaction lock wait");
+  const release = await acquireLock(identity.pmRoot, WORKSPACE_TRANSACTION_LOCK_ID, lockTtlSeconds, identity.author, false, false, lockWaitMs);
+  try {
+    const journal = await loadJournal(identity.pmRoot, identity.transactionId);
+    if (journal === undefined) throw new PmCliError(`Transaction ${identity.transactionId} was not found`, EXIT_CODE.NOT_FOUND);
+    if (journal.status === "committed") throw new PmCliError(`Transaction ${identity.transactionId} is committed and cannot be abandoned`, EXIT_CODE.CONFLICT, { code: "transaction_committed", required: "Plan a separate explicit corrective mutation.", why: "Recovery cannot silently undo committed work." });
+    if (journal.abandonment !== undefined && journal.abandonment.supersededBy !== supersededBy) throw retiredTransaction(identity.transactionId);
+    if (journal.status === "abandoned") return journal;
+    if (supersededBy !== undefined && await loadJournal(identity.pmRoot, supersededBy) !== undefined) throw new PmCliError(`Replacement transaction ${supersededBy} already exists`, EXIT_CODE.CONFLICT);
+    const steps = options.resolveSteps(structuredClone(journal));
+    if (JSON.stringify(steps.map(step => step.id)) !== JSON.stringify(journal.stepIds)) throw journalPlanMismatch(identity.transactionId);
+    if (journal.abandonment === undefined) {
+      journal.schemaVersion = 2;
+      journal.abandonment = { reason, author: identity.author, ...(supersededBy === undefined ? {} : { supersededBy }) };
+      await writeJournal(identity.pmRoot, journal);
+    }
+    if (journal.status !== "compensated") await compensateAppliedSteps({ ...options, ...identity, steps }, journal);
+    await auditTransactionAbandonment(journal, identity.pmRoot, lockTtlSeconds, lockWaitMs);
+    journal.status = "abandoned";
+    await writeJournal(identity.pmRoot, journal);
+    return journal;
+  } finally {
+    await release();
+  }
+}
+
+/** Record one retirement per attempt even if the final journal write was interrupted after the audit append. */
+async function auditTransactionAbandonment(journal: WorkspaceTransactionJournal, pmRoot: string, lockTtlSeconds: number, lockWaitMs: number): Promise<void> {
+  const planDigest = workspaceTransactionPlanDigest(journal);
+  const history = await readHistoryEntries(getWorkspaceHistoryPath(pmRoot), WORKSPACE_HISTORY_ID);
+  if (history.some(entry => entry.op === "transaction_abandon" && entry.context?.transaction_id === journal.transactionId && entry.context?.attempt === journal.attempt && entry.context?.plan_digest === planDigest)) return;
+  const abandonment = journal.abandonment!;
+  await appendWorkspaceAuditEvent({ pmRoot, author: abandonment.author, lockTtlSeconds, lockWaitMs, op: "transaction_abandon", message: abandonment.reason, context: { transaction_id: journal.transactionId, attempt: journal.attempt, plan_digest: planDigest, ...(abandonment.supersededBy === undefined ? {} : { superseded_by: abandonment.supersededBy }) } });
 }

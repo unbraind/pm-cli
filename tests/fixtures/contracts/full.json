@@ -27061,6 +27061,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "transaction_abandoned",
+      "class": "conflict",
+      "code": "transaction_abandoned",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction abandoned condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "transaction_committed",
+      "class": "conflict",
+      "code": "transaction_committed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction committed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/workspace-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "transaction_create_compensated",
       "class": "conflict",
       "code": "transaction_create_compensated",
@@ -27171,6 +27205,23 @@
       ],
       "exit_code": 4,
       "meaning": "Transaction preview snapshot changed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/item-transaction.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "transaction_recovery_plan_missing",
+      "class": "conflict",
+      "code": "transaction_recovery_plan_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Transaction recovery plan missing condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
@@ -33438,7 +33489,8 @@
       "telemetry:install_id",
       "telemetry:first_run_prompt",
       "telemetry:clear",
-      "item_format:auto_select_default"
+      "item_format:auto_select_default",
+      "transaction_abandon"
     ]
   },
   "list_projections": [

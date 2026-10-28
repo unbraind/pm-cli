@@ -6,6 +6,7 @@
  * with correct-by-construction inspection and compensation wiring.
  */
 import crypto from "node:crypto";
+import { runGet, type GetResult } from "./query/get.js";
 import { constants, type Stats } from "node:fs";
 import { isFileMissingError, readRegularFile, transactionPreviewNonRegularFileError } from "../core/fs/fs-utils.js";
 import { cp, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
@@ -46,6 +47,11 @@ import {
 } from "./runtime.js";
 import {
   commitWorkspaceTransaction,
+  abandonWorkspaceTransaction,
+  readWorkspaceTransaction,
+  workspaceTransactionPlanDigest,
+  type WorkspaceTransactionJournal,
+  type AbandonWorkspaceTransactionOptions,
   validateWorkspaceTransactionIdentity,
   type CommitWorkspaceTransactionOptions,
   type WorkspaceTransactionJsonValue,
@@ -593,6 +599,7 @@ function buildCreateStep(
         mergeTransactionMutationOptions(mutation.options, {
           author: config.author,
           id: mutation.id,
+          message: bulkHistoryMarker(config.transactionId, stepId, "apply"),
         }),
         { pmRoot: config.pmRoot },
       );
@@ -602,33 +609,28 @@ function buildCreateStep(
       return { id: String(createdItem.id), op: "create" };
     },
     async compensate(): Promise<void> {
-      const snapshot = await readItemSnapshot(config.pmRoot, mutation.id);
-      if (snapshot === undefined) {
-        return;
-      }
-      if (config.createCompensation === "delete") {
-        await deleteItem(
-          mutation.id,
-          {
-            force: true,
-            author: config.author,
-            message: `Compensate interrupted bulk transaction ${config.transactionId}`,
-          },
-          { pmRoot: config.pmRoot },
-        );
-        return;
-      }
-      if (snapshot.closedAt !== undefined) {
-        return;
-      }
-      await close(
-        mutation.id,
-        `Compensated: interrupted bulk transaction ${config.transactionId}`,
-        { force: true, author: config.author },
-        { pmRoot: config.pmRoot },
-      );
+      await compensateCreatedItem(config, mutation.id, stepId);
     },
   };
+}
+
+/** Prove ownership and recheck the locked record before retiring a transaction-created item. */
+async function compensateCreatedItem(config: BulkMutationStepConfig, id: string, stepId: string): Promise<void> {
+  const snapshot = await readItemSnapshot(config.pmRoot, id);
+  if (snapshot === undefined || (config.createCompensation === "close" && snapshot.closedAt !== undefined)) return;
+  const history = await readHistoryEntries(path.join(config.pmRoot, "history", `${snapshot.id}.jsonl`), snapshot.id);
+  const applyMarker = bulkHistoryMarker(config.transactionId, stepId, "apply");
+  const compensationMarker = bulkHistoryMarker(config.transactionId, stepId, "compensate");
+  const latestMarker = history.filter(entry => entry.message === applyMarker || entry.message === compensationMarker).at(-1);
+  if (latestMarker?.message === compensationMarker) return;
+  if (latestMarker === undefined || !history.every(entry => isTransactionHistoryEntry(entry, config.transactionId))) throw partialMutationError(config, snapshot.id, stepId);
+  await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: snapshot.id, validate: document => {
+    if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, snapshot.id, stepId);
+  } }, async () => {
+    const options = { force: true, author: config.author, message: compensationMarker };
+    if (config.createCompensation === "delete") await deleteItem(id, options, { pmRoot: config.pmRoot });
+    else await close(id, `Compensated: interrupted bulk transaction ${config.transactionId}`, options, { pmRoot: config.pmRoot });
+  });
 }
 
 /** Build the workspace-transaction step for one item update. */
@@ -883,8 +885,21 @@ function assertValidBulkMutations(mutations: readonly BulkItemMutation[]): void 
   }
 }
 
+/** Freeze admitted intent before waiting on storage while retaining the caller's literal-input policy. */
+function snapshotBulkMutations(input: readonly BulkItemMutation[]): BulkItemMutation[] {
+  const mutations = [...input];
+  assertValidBulkMutations(mutations);
+  return mutations.map(mutation => {
+    const snapshot = structuredClone(mutation);
+    if (mutation.options !== undefined && snapshot.options !== undefined) transferMutationStdinTokenPolicy(mutation.options, snapshot.options);
+    return snapshot;
+  });
+}
+
 /** Evidence and explicit limits of a non-writing semantic transaction preview. */
 export interface ItemMutationPreviewValidation {
+  /** Final canonical staged records for each mutation; committed replays return no staged records. */
+  records: ItemMutationStagedRecord[];
   /** True when the coordinator executed staged validation; false for an already committed journal replay. */
   validated: boolean;
   /** Distinguishes newly staged execution from idempotent replay without fresh step validation. */
@@ -902,6 +917,32 @@ export interface ItemMutationPreviewValidation {
     /** Unmodified lifecycle warning tokens, including duplicate recovery hints. */
     warnings: readonly string[];
   }[];
+}
+
+/** Canonical preview record and the values that commit may regenerate. */
+export interface ItemMutationStagedRecord {
+  /** Zero-based position in the original mutation plan. */
+  index: number;
+  /** Canonical item id. */
+  id: string;
+  /** Lifecycle operation producing this snapshot. */
+  op: BulkItemMutation["op"];
+  /** Whether this staged run executed the mutation or adopted already-applied state. */
+  execution: "applied" | "adopted";
+  /** Full public get projection, including body, after the complete staged batch. */
+  item: GetResult["item"];
+  /** JSON pointers to clock fields; conservatively includes retained or caller-supplied timestamps. */
+  commit_time_fields: string[];
+}
+
+/** Enumerate potentially regenerated clocks without hiding metadata from the canonical record. */
+function previewClockFields(value: unknown, pointer = ""): string[] {
+  if (value === null || typeof value !== "object") return [];
+  return Object.entries(value).flatMap(([key, nested]) => {
+    const current = `${pointer}/${key.replaceAll("~", "~0").replaceAll("/", "~1")}`;
+    return /^(created_at|updated_at|closed_at|completed_at|timestamp)$/u.test(key)
+      ? [current] : previewClockFields(nested, current);
+  });
 }
 
 /** Attach the resolved batch position while preserving lifecycle error classification. */
@@ -1143,8 +1184,7 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string, regis
 /** Validate ordered mutations using apply's coordinator in a disposable tracker, without source writes, journals or extension hooks. */
 export async function previewItemMutations(options: Pick<CommitItemMutationsOptions, "pmRoot" | "transactionId" | "author" | "mutations">): Promise<ItemMutationPreviewValidation> {
   const identity = validateWorkspaceTransactionIdentity(options);
-  const mutations = [...options.mutations];
-  assertValidBulkMutations(mutations);
+  const mutations = snapshotBulkMutations(options.mutations);
   const registrations = getActiveExtensionRegistrations();
   const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
   const stagedRoot = path.join(root, "tracker");
@@ -1152,6 +1192,8 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
     await stagePreviewTracker(identity.pmRoot, stagedRoot, registrations);
     let validated = false;
     const warnings: ItemMutationPreviewValidation["warnings"] = [];
+    const records: ItemMutationStagedRecord[] = [];
+    const applied = new Set<number>();
     await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
       const config: BulkMutationStepConfig = { ...identity, pmRoot: stagedRoot, createCompensation: "close", uniqueIndex: createUniqueKeyIndex(stagedRoot) };
@@ -1163,12 +1205,20 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
           ...step,
           inspect: () => validateMutationOperation(mutation, index, () => step.inspect()),
           prepareCompensation: () => validateMutationOperation(mutation, index, async () => step.prepareCompensation?.()),
-          apply: () => validateMutationOperation(mutation, index, () => step.apply()),
+          apply: () => validateMutationOperation(mutation, index, async () => {
+            const outcome = await step.apply();
+            applied.add(index);
+            return outcome;
+          }),
         };
       });
       await commitWorkspaceTransaction({ ...identity, pmRoot: stagedRoot, steps, onTransition: ({ transition }) => { if (transition === "committed") validated = true; } });
+      if (validated) for (const [index, mutation] of mutations.entries()) {
+        const item = (await runGet(mutation.id, { path: stagedRoot }, { full: true })).item;
+        records.push({ index, id: String(item.id), op: mutation.op, execution: applied.has(index) ? "applied" : "adopted", item, commit_time_fields: previewClockFields(item) });
+      }
     });
-    return { validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", warnings, unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded"] };
+    return { records, validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", warnings, unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded", "generated_timestamps_and_provenance"] };
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -1188,8 +1238,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
 export async function commitItemMutations(
   options: CommitItemMutationsOptions,
 ): Promise<CommitItemMutationsResult> {
-  const mutations = [...options.mutations];
-  assertValidBulkMutations(mutations);
+  const mutations = snapshotBulkMutations(options.mutations);
   const createCompensation = options.createCompensation ?? "close";
   if (!["close", "delete"].includes(createCompensation)) {
     throw new TypeError(
@@ -1210,6 +1259,7 @@ export async function commitItemMutations(
     steps: mutations.map((mutation, index) =>
       buildStepForMutation(stepConfig, mutation, index),
     ),
+    recoveryData: JSON.parse(JSON.stringify({ kind: "item-mutations-v1", mutations, createCompensation })) as WorkspaceTransactionJsonValue,
     ...(options.lockTtlSeconds === undefined
       ? {}
       : { lockTtlSeconds: options.lockTtlSeconds }),
@@ -1332,3 +1382,39 @@ export const _testOnlyItemTransaction = {
   isUpdateMarkerApplied,
   readItemSnapshot,
 };
+
+/** Durable item-batch receipt with an ordered-plan fingerprint. */
+export interface ItemTransactionStatus {
+  /** Validated coordinator journal, including original recovery plan when available. */
+  journal: WorkspaceTransactionJournal;
+  /** SHA-256 identity of the ordered payload-bound steps. */
+  planDigest: string;
+}
+
+/** Read a retained item-batch journal without touching private storage paths or mutating state. */
+export async function readItemTransaction(pmRoot: string, transactionId: string): Promise<ItemTransactionStatus | undefined> {
+  const journal = await readWorkspaceTransaction(pmRoot, transactionId);
+  return journal === undefined ? undefined : { journal, planDigest: workspaceTransactionPlanDigest(journal) };
+}
+
+/** Host-independent recovery parameters for an interrupted item batch. */
+export type AbandonItemTransactionOptions = Omit<AbandonWorkspaceTransactionOptions, "resolveSteps">;
+
+/** Reconstruct only a retained item plan; legacy or foreign journals require their original adapter. */
+function recoveryItemSteps(options: AbandonItemTransactionOptions, journal: WorkspaceTransactionJournal): WorkspaceTransactionStep[] {
+  const data = journal.recoveryData;
+  if (data === null || typeof data !== "object" || Array.isArray(data) || data.kind !== "item-mutations-v1" || !Array.isArray(data.mutations) || !["close", "delete"].includes(String(data.createCompensation))) {
+    throw new PmCliError("Transaction has no supported item recovery plan", EXIT_CODE.CONFLICT, { code: "transaction_recovery_plan_missing", required: "Resume with the original plan and its original adapter.", why: "Legacy or foreign journals cannot safely reconstruct item compensation." });
+  }
+  const mutations = data.mutations as unknown as BulkItemMutation[];
+  assertValidBulkMutations(mutations);
+  const config: BulkMutationStepConfig = { ...options, createCompensation: data.createCompensation as "close" | "delete", uniqueIndex: createUniqueKeyIndex(options.pmRoot) };
+  return mutations.map((mutation, index) => buildStepForMutation(config, mutation, index));
+}
+
+/** Guardedly compensate an interrupted batch and retire its identity, optionally naming a fresh replacement. */
+export async function abandonItemTransaction(options: AbandonItemTransactionOptions): Promise<ItemTransactionStatus> {
+  const identity = validateWorkspaceTransactionIdentity(options);
+  const journal = await abandonWorkspaceTransaction({ ...options, ...identity, resolveSteps: receipt => recoveryItemSteps({ ...options, ...identity }, receipt) });
+  return { journal, planDigest: workspaceTransactionPlanDigest(journal) };
+}

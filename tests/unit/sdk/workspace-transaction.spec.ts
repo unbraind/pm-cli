@@ -740,6 +740,7 @@ describe("workspace SDK transactions", () => {
         { ...base, createdAt: null },
         { ...base, updatedAt: null },
         { ...base, status: "unknown" },
+        { ...base, status: undefined },
         { ...base, status: { toString: null } },
       ];
       for (const journal of malformed) {

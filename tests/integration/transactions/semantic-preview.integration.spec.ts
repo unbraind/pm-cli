@@ -3,7 +3,7 @@ import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../../src/mcp/server.js";
-import { buildItemCompletionMutations, commitItemMutations, previewItemMutations } from "../../../src/sdk/item-transaction.js";
+import { buildItemCompletionMutations, commitItemMutations, previewItemMutations, type ItemMutationPreviewValidation } from "../../../src/sdk/item-transaction.js";
 import { createEmptyExtensionHookRegistry, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
 import { runPmCli } from "../../../src/cli/main.js";
 import { runDirectDistCli, runInProcessDistCli } from "../../helpers/cliRunner.js";
@@ -31,6 +31,15 @@ async function durableSnapshot(root: string): Promise<Record<string, string>> {
   }
   await visit(root);
   return bytes;
+}
+
+/** Compare stable preview facts across processes while independently checking the two generated create clocks. */
+function previewWithClockMatchers(validation: ItemMutationPreviewValidation): ItemMutationPreviewValidation {
+  return { ...validation, records: validation.records.map(record => ({ ...record, item: {
+    ...record.item,
+    created_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u),
+    updated_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u),
+  } })) };
 }
 
 describe("semantic transaction previews (GH-1370)", () => {
@@ -62,7 +71,7 @@ describe("semantic transaction previews (GH-1370)", () => {
       expect(cli.code).toBe(0);
       const mcp = await handleRequest({ jsonrpc: "2.0", id: "managed-preview", method: "tools/call", params: { name: "pm_mutate", arguments: { path: context.pmPath, transactionId: "managed-preview", dryRun: true, mutations } } });
       expect(cli.json).toMatchObject({ validation: { validated: true, unresolved_commit_constraints: expect.arrayContaining(["derived_extension_dependencies_excluded"]) } });
-      expect(mcp?.structuredContent).toMatchObject({ result: { validation: (cli.json as { validation: unknown }).validation } });
+      expect(mcp?.structuredContent).toMatchObject({ result: { validation: previewWithClockMatchers((cli.json as { validation: ItemMutationPreviewValidation }).validation) } });
       expect(await readFile(settingsPath, "utf8")).toBe(before);
       expect(await readFile(sentinel, "utf8")).toBe("Unchanged external dependency");
       expect((await lstat(dependencyLink)).isSymbolicLink()).toBe(true);
@@ -88,8 +97,8 @@ describe("semantic transaction previews (GH-1370)", () => {
         expect(cli.code).toBe(0);
         const response = await mcp;
         if (!response?.structuredContent) throw new Error("MCP preview response must contain structured content.");
-        const receipt = response.structuredContent as { result: { rows: unknown[]; validation: unknown } };
-        expect(cli.json).toMatchObject({ rows: receipt.result.rows, validation: receipt.result.validation });
+        const receipt = response.structuredContent as { result: { rows: unknown[]; validation: ItemMutationPreviewValidation } };
+        expect(cli.json).toMatchObject({ rows: receipt.result.rows, validation: previewWithClockMatchers(receipt.result.validation) });
         for (const [index, ref] of ["original", "later"].entries()) {
           expect(receipt.result.rows[index]).toMatchObject({ index, ref, ...(mode === "advisory" ? { warnings: expect.arrayContaining([expect.stringContaining("likely_duplicates:pm-canonical")]) } : {}) });
           if (mode === "off") expect(receipt.result.rows[index]).not.toHaveProperty("warnings");
@@ -388,7 +397,7 @@ describe("semantic transaction previews (GH-1370)", () => {
       const beforeValid = await durableSnapshot(context.pmPath);
       const preview = context.runCli([...valid, "--dry-run"], { expectJson: true });
       expect(preview.code).toBe(0);
-      expect(preview.json).toMatchObject({ mutation_count: 3, validation: { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded"] } });
+      expect(preview.json).toMatchObject({ mutation_count: 3, validation: { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded", "generated_timestamps_and_provenance"] } });
       expect(await durableSnapshot(context.pmPath)).toEqual(beforeValid);
       expect(context.runCli(valid).code).toBe(0);
       expect(context.runCli(["get", "pm-complete", "--full", "--json"], { expectJson: true }).json).toMatchObject({ item: { status: "closed", resolution: "Delivered", comments: [expect.objectContaining({ text: "Staged completion evidence" })] } });
