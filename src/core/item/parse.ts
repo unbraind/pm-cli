@@ -5,6 +5,7 @@
  */
 import { PmCliError } from "../shared/errors.js";
 import { EXIT_CODE } from "../shared/constants.js";
+import { isCliMutationInput, preserveLiteralMutationInput, transferLiteralMutationInput } from "./literal-mutation-input.js";
 
 const STDIN_TOKEN = "-";
 const CONTINUABLE_VALUE_KEYS = new Set([
@@ -558,6 +559,11 @@ const literalStdinTokenFields = new WeakMap<
   typeof ALL_MUTATION_STDIN_FIELDS | ReadonlySet<PropertyKey>
 >();
 
+/** Default domain operations to literal SDK data; only CLI adapters opt into sentinel decoding. */
+export function preserveSdkMutationInput<T extends object>(options: T): T {
+  return isCliMutationInput(options) ? options : preserveLiteralMutationInput(preserveMutationStdinTokenLiterals({ ...options }));
+}
+
 /** Mark transport-decoded options whose dash values are data, not stdin tokens. */
 export function preserveMutationStdinTokenLiterals<T extends object>(
   options: T,
@@ -585,6 +591,7 @@ export function transferMutationStdinTokenPolicy<T extends object>(
   source: object,
   target: T,
 ): T {
+  transferLiteralMutationInput(source, target);
   const policy = literalStdinTokenFields.get(source);
   if (policy === undefined) return target;
   literalStdinTokenFields.set(
@@ -704,7 +711,7 @@ export async function resolveMutationStdinTokenFields<T extends object>(
       shouldResolveMutationStdinTokenField(options, field),
     );
   }
-  return preserveMutationStdinTokenLiterals(resolved as T);
+  return preserveMutationStdinTokenLiterals(transferMutationStdinTokenPolicy(options, resolved as T));
 }
 
 /** Implements create stdin token resolver for the public runtime surface of this module. */

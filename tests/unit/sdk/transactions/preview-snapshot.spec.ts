@@ -252,7 +252,7 @@ describe("semantic preview snapshot consistency", () => {
         } else await mkdir(sessionPath);
       }
       copying.change = mode;
-      const options = { pmRoot: context.pmPath, transactionId: "focused-preview", author: "snapshot-agent", mutations: [{ op: "create" as const, id: "pm-child", options: { title: "Focus-aware child", type: "Task", inheritFocus: true, ...(mode === "stale-parent" ? {} : { parent: "none" }) } }] };
+      const options = { pmRoot: context.pmPath, transactionId: "focused-preview", author: "snapshot-agent", mutations: [{ op: "create" as const, id: "pm-child", options: { title: "Focus-aware child", type: "Task", inheritFocus: true, ...(mode === "stale-parent" ? {} : { unset: ["parent"] }) } }] };
       const preview = previewItemMutations(options);
       if (mode === "stale-parent") {
         await expect(preview).rejects.toMatchObject({ exitCode: 2, context: { transaction_operation: { index: 0, op: "create", id: "pm-child" } } });

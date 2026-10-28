@@ -16,6 +16,7 @@ import {
   writeStdout,
   getSettingsPath,
   resolvePmRoot,
+  transferMutationStdinTokenPolicy,
   readSettings,
   runActiveServiceOverride,
   setActiveCommandResult,
@@ -467,7 +468,7 @@ export function normalizeCreateOptions(
     clearTypeOptions: optionTrue(commandOptions, "clearTypeOptions"),
   };
   copyUnknownOptions(normalized, commandOptions);
-  return normalized as CreateCommandOptions;
+  return transferMutationStdinTokenPolicy(commandOptions, normalized as CreateCommandOptions);
 }
 
 /** Implements normalize update options for the public runtime surface of this module. */
@@ -588,7 +589,7 @@ export function normalizeUpdateOptions(
     clearTypeOptions: optionTrue(commandOptions, "clearTypeOptions"),
   };
   copyUnknownOptions(normalized, commandOptions);
-  return normalized;
+  return transferMutationStdinTokenPolicy(commandOptions, normalized);
 }
 
 const UPDATE_MANY_CONTROL_OPTION_KEYS = new Set<string>([

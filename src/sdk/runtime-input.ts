@@ -9,6 +9,9 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { resolveCheckpointRollbackId } from "../core/checkpoint/mutation-checkpoint.js";
+import { withLiteralMutationInput } from "./lifecycle/cli-input.js";
+import { isCliMutationInput } from "../core/item/literal-mutation-input.js";
+import { assertMutationItemOperand, assertNativeMutationValueTypes } from "./runtime/mutation-value-validation.js";
 import {
   normalizeListOptions,
   normalizeCreateOptions,
@@ -32,6 +35,7 @@ import {
 } from "../core/item/parse.js";
 
 const MCP_MUTATION_TRANSPORT = Symbol("pm.mcp-mutation-transport");
+const LITERAL_MUTATION_ACTIONS = new Set(["create", "update", "append"]);
 
 const MCP_MUTATION_OPTION_CONTRACTS = {
   create: { parameters: TOOL_CREATE_OPTION_CONTRACTS, aliases: CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, strings: CREATE_COMMANDER_STRING_OPTION_CONTRACTS, repeatables: CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS },
@@ -503,7 +507,14 @@ function normalizedActionOptions(
     ...(mcpMutation ? hoistedMcpMutationOptions(action, args, nested) : hoisted),
     ...nested,
   };
+  if ((action === "create" || action === "update") && !mcpMutation) assertNativeMutationValueTypes(action, options, true, isRuntimeRecord(args.options) && isCliMutationInput(args.options));
   return mcpMutation ? checkedMcpMutationOptions(action, args, options) : normalizeMcpOptionsArrays(options, action);
+}
+
+/** Apply literal data policy to mutation actions while preserving every other action's options. */
+function literalActionOptions(action: string | undefined, options: Record<string, unknown>): Record<string, unknown> {
+  if (!LITERAL_MUTATION_ACTIONS.has(action ?? "") || isCliMutationInput(options)) return options;
+  return withLiteralMutationInput(options);
 }
 
 /** Merge hoisted top-level action arguments and author aliases into options. */
@@ -511,6 +522,7 @@ export function optionsWithAuthor(
   args: Record<string, unknown>,
   action?: string,
 ): Record<string, unknown> {
+  assertMutationItemOperand(action, args);
   const sourceOptions = isRuntimeRecord(args.options)
     ? args.options
     : undefined;
@@ -543,10 +555,11 @@ export function optionsWithAuthor(
   const stdinPolicySource = isMcpMutationTransportInput(args)
     ? args
     : (sourceOptions ?? args);
-  return preserveTransportLiteralOptions(
+  const resolved = preserveTransportLiteralOptions(
     stdinPolicySource,
     withResolvedAuthor(options, resolveMcpActionAuthor(args, options, action)),
   );
+  return literalActionOptions(action, resolved);
 }
 
 // GH-170 (pm-pfnx): the narrow pm_files/pm_docs tools spell the CLI --note flag

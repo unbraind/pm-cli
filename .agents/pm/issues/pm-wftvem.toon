@@ -1,0 +1,23 @@
+id: pm-wftvem
+title: Route project-schema keys to their declared flags in field refusals
+description: "Observed during SDK delivery: update with --field gate_evidence=<JSON> refuses that key as absent from active extension registrations and lists only unrelated extension fields. The same workspace declares gate_evidence as an object field with cli_flag --gate-evidence; schema show-field and update contracts expose it, and the dedicated flag succeeds. Extend field recovery to distinguish configured project-schema fields from extension item fields and provide the executable declared CLI/SDK route. Preserve extension-field admission and no-write refusals. This is a recovery/discovery gap, not a request to bypass schema validation or reinterpret arbitrary extension fields."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-27T22:32:59.271Z"
+updated_at: "2026-10-27T22:32:59.271Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: A rejected configured schema key names its declared CLI flag and supported SDK route; Unknown extension and reserved core keys retain distinct typed recovery; Native refused-call tests prove unchanged documents/history and execute the advertised correction
+parent: pm-f05lsg
+risk: low
+confidence: high
+expected_result: An agent can repair the rejected schema-field call using only its refusal and the actual declared field contract.
+actual_result: "The gate_evidence refusal names only unrelated active extension fields, while contracts and schema show-field reveal the successful --gate-evidence route."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2jtbl8,related,"2026-10-27T22:32:59.271Z","harness:codex","cli:create:dep",detected
+  pm-field-key-recovery,related,"2026-10-27T22:32:59.271Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-27T22:32:59.271Z","harness:codex","Duplicate check: complete strict3143-item corpus, refreshed open/in-progress lists, field schema extension recovery search, and full live closed pm-2jtbl8/pm-field-key-recovery metadata and comments. Those delivered owners cover built-in reserved keys and rejected-key identity, not configured project-schema flag routing. Intake only, left open and unclaimed."
+body: ""

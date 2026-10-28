@@ -4,6 +4,8 @@
  * Implements the pm append command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { assertAppendMutationValues, assertMutationStringOperand } from "../runtime/mutation-value-validation.js";
+import { preserveSdkMutationInput } from "../../core/item/parse.js";
 import {
   EXIT_CODE,
   type GlobalOptions,
@@ -47,6 +49,9 @@ export async function runAppend(
   options: AppendCommandOptions,
   global: GlobalOptions,
 ): Promise<AppendResult> {
+  assertAppendMutationValues(options);
+  assertMutationStringOperand(id, "append", "id");
+  options = preserveSdkMutationInput(options);
   if (options.body === undefined) {
     throw new PmCliError("Missing required --body text", EXIT_CODE.USAGE);
   }

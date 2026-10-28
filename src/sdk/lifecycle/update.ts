@@ -4,7 +4,9 @@
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
 import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
+import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import {
   COMMON_MUTATION_COMMAND_OPTION_KEYS,
   canonicalizeCommandOptionKey,
@@ -319,6 +321,7 @@ const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS =
 function normalizeLegacyNoneUpdateOptions(
   options: UpdateCommandOptions,
 ): UpdateCommandOptions {
+  if (isLiteralMutationInput(options)) return options;
   const normalized: UpdateCommandOptions = {
     ...options,
     unset: options.unset ? [...options.unset] : undefined,
@@ -338,6 +341,7 @@ function normalizeLegacyNoneUpdateOptions(
     "rank",
   ]);
   for (const optionKey of scalarOptionKeys) {
+    if (isLiteralMutationInput(options, optionKey)) continue;
     const candidate = normalized[optionKey];
     if (typeof candidate !== "string" || !isLegacyNoneToken(candidate)) {
       continue;
@@ -1503,6 +1507,7 @@ async function resolveStdinUpdateOptions(
 export async function resolveUpdateTransportOptions(
   options: UpdateCommandOptions,
 ): Promise<UpdateCommandOptions> {
+  options = prepareNativeMutationOptions("update", options);
   return shouldResolveMutationStdinTokens(options)
     ? await resolveStdinUpdateOptions(options)
     : normalizeLegacyNoneUpdateOptions(options);
@@ -1772,10 +1777,12 @@ function rejectUnsetScalarConflicts(
 }
 
 function rejectLegacyScalarTokens(options: UpdateCommandOptions): void {
+  if (isLiteralMutationInput(options)) return;
   const assertNoLegacyScalarToken = (
     value: string | undefined,
     optionKey: string,
   ): void => {
+    if (isLiteralMutationInput(options, optionKey)) return;
     const unsetField = UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey);
     const hint = unsetField
       ? `Use --unset ${unsetField} to clear this field.`
@@ -3156,6 +3163,7 @@ async function runUpdateWithContext(
   global: GlobalOptions,
   execution: UpdateExecutionContext = {},
 ): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
+  assertMutationStringOperand(id, "update", "id");
   options = await resolveUpdateTransportOptions(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
@@ -3541,6 +3549,7 @@ export async function runReopenUpdate(
   global: GlobalOptions,
   recurrenceReason: string,
 ): Promise<ReopenUpdateResult> {
+  assertMutationStringOperand(recurrenceReason, "reopen", "reason");
   const result = await runUpdateWithContext(id, options, global, {
     recurrenceReason,
   });

@@ -7,7 +7,8 @@
 import crypto from "node:crypto";
 import { ITEM_MUTATION_FACET_OPTION_MAPPINGS } from "./lifecycle/mutation-facet-contracts.js";
 import { normalizeItemId, normalizePrefix } from "../core/item/id.js";
-import { preserveMutationStdinTokenLiterals } from "../core/item/parse.js";
+import { preserveMutationStdinTokenFields, preserveMutationStdinTokenLiterals } from "../core/item/parse.js";
+import { preserveLiteralMutationInputFields } from "../core/item/literal-mutation-input.js";
 import {
   EXIT_CODE,
 } from "../core/shared/constants.js";
@@ -1331,6 +1332,27 @@ function appendItemDocumentEntry(
   ] = scalarItemOption(key, value);
 }
 
+/** Resolve explicit CLI aliases and schema fields to their logical option keys. */
+function explicitDocumentOptionKeys(explicitOptions: Record<string, unknown>, mode: "create" | "update", runtimeFields: readonly RuntimeFieldDefinitionResolved[]): Set<string> {
+  const explicitKeys = new Set(Object.entries(explicitOptions).filter(([, value]) => value !== undefined).map(([key]) => key));
+  const contracts = mode === "create" ? CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS : UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS;
+  for (const { target, keys } of contracts) {
+    if (keys.some((key) => explicitKeys.has(key))) explicitKeys.add(target);
+  }
+  for (const definition of runtimeFields) {
+    if (readRuntimeFieldOptionValue(explicitOptions, definition) !== undefined) explicitKeys.add(runtimeFieldOptionTarget(definition));
+  }
+  return explicitKeys;
+}
+
+/** Let explicit core aliases replace document defaults; custom field assignments merge by key later. */
+function removeOverriddenDocumentOptions(documentOptions: Record<string, unknown>, mode: "create" | "update", explicitKeys: ReadonlySet<string>): void {
+  const contracts = mode === "create" ? CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS : UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS;
+  for (const { target } of contracts) {
+    if (target !== "field" && explicitKeys.has(target)) delete documentOptions[target];
+  }
+}
+
 /**
  * Convert a direct item JSON document or `pm get --json` envelope into the
  * create/update option shape. Explicit CLI flags override document values.
@@ -1360,10 +1382,12 @@ export function itemDocumentToMutationOptions(
   }
   appendFacetOptions(documentOptions, item, mode === "update");
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
+  const explicitKeys = explicitDocumentOptionKeys(explicitOptions, mode, runtimeFields);
+  removeOverriddenDocumentOptions(documentOptions, mode, explicitKeys);
   if (mode === "update") {
     const annotations = Object.fromEntries(
       (["comments", "notes", "learnings"] as const)
-        .filter((key) => Object.hasOwn(item, key))
+        .filter((key) => Object.hasOwn(item, key) && !explicitKeys.has(key.slice(0, -1)))
         .map((key) => [
           key,
           (item[key] as unknown[]).filter(
@@ -1375,7 +1399,7 @@ export function itemDocumentToMutationOptions(
       documentOptions.documentAnnotationSnapshot = annotations;
     }
   }
-  return {
+  const merged = {
     ...documentOptions,
     ...Object.fromEntries(
       Object.entries(explicitOptions).filter(
@@ -1387,6 +1411,8 @@ export function itemDocumentToMutationOptions(
       : {}),
     stdinJson: undefined,
   };
+  const literalKeys = Object.keys(documentOptions).filter((key) => !explicitKeys.has(key));
+  return preserveMutationStdinTokenFields(preserveLiteralMutationInputFields(merged, literalKeys), literalKeys);
 }
 
 /** Validate an already-decoded MCP mutation array through the same strict parser as CLI stdin. */

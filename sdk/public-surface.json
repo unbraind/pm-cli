@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2022,
+    "covered_symbols": 2024,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2023
+    "required_symbols": 2025
   },
   "breaking_acknowledgements": [
     {
@@ -21573,6 +21573,12 @@
           "signature": "export interface WaivedBoundaryRecord { id: string; producer: string; consumer: string; format: string; waiver_reason: string; waiver_owner: string; waiver_expires_at: string; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "withCliMutationInput",
+          "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
+        },
+        {
           "classification": "contract_data",
           "kind": "function",
           "name": "withFlagAliasMetadata",
@@ -21583,6 +21589,12 @@
           "kind": "function",
           "name": "withHostEnvironmentBoundary",
           "signature": "<T>(operation: string, run: () => Promise<T>, options?: HostEnvironmentBoundaryOptions) => Promise<T> | calls: <T>(operation: string, run: () => Promise<T>, options?: HostEnvironmentBoundaryOptions) => Promise<T>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "withLiteralMutationInput",
+          "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
         },
         {
           "classification": "advanced_export",
@@ -36121,6 +36133,18 @@
           "kind": "interface",
           "name": "ValidateResult",
           "signature": "export interface ValidateResult { ok: boolean; has_warnings: boolean; checks: ValidateCheck[]; warnings: string[]; fixes?: ValidateFixesSummary; generated_at: string; projection: OutputProjectionDeclaration; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "withCliMutationInput",
+          "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "withLiteralMutationInput",
+          "signature": "<T extends object>(options: T) => T | calls: <T extends object>(options: T) => T"
         },
         {
           "classification": "supported",

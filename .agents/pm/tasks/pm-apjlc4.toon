@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: agent-ux,github,review
 created_at: "2026-10-20T06:14:19.977Z"
-updated_at: "2026-10-20T17:25:44.884Z"
+updated_at: "2026-10-28T05:44:30.157Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce or explicitly attribute the stalled native watcher using terminal and genuinely pending controls; define bounded liveness behavior without certifying readiness from timeout or unavailable data; retain exact-head required publisher and conversation evidence; preserve the completed predecessor scope and record any upstream CLI issue.
@@ -17,7 +17,10 @@ expected_result: A stuck transport wait is distinguishable from pending hosted w
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,discovered_from,"2026-10-20T06:14:19.977Z","harness:codex","cli:create:dep",detected
   pm-02z97f,related,"2026-10-20T17:25:43.639Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-20T06:14:19.977Z","harness:codex","Duplicate check: complete all-status intake and fresh keyword watch search plus open and in-progress inventories show no active exact liveness owner. Full live predecessor pm-jm7m3o is closed for separate fail-fast phase behavior. Intake only: open and unclaimed; implementation is outside the four context fixes in PR1515."
   "2026-10-20T17:25:44.884Z","harness:codex","Second independent recurrence during PR1523 on gh2.102.0: a native reviews watcher remained active for more than21minutes after the current head had no pending or failed checks; a fresh blocking reviews watch returned a passed exact-head receipt. Only the verified original read-only gh child was stopped after that fresh receipt, without canceling CI or bypassing requirements. A later final full review correctly returned three unresolved conversations, distinguishing completed hosted checks from merge readiness. Reuse this canonical liveness task; no duplicate created and no implementation claimed. The observed transport stall remains unexplained."
+  "2026-10-28T05:44:25.749Z","harness:codex","PR1616 adds a related readiness-receipt observation: watch --phase reviews returned outcome passed on a20864701 after all26 required checks were green, while the new free CodeRabbit request at05:11UTC only said Full review triggered. A timed fresh inventory at05:27 found its05:24 report with3 new actionable threads, including a real collection-alias bug. Preserve separate required-check completion, requested bot-review completion, reviewed head/range, unresolved threads and unavailable-provider receipts; a passed checkWatch phase alone must not be interpreted as bot approval. Two observers also exited on GraphQL EOF/TLS handshake timeout, with no corresponding workflow failure. Intake only on the existing liveness owner; no duplicate implementation item or new claim."
+files[1]{path,scope}:
+  scripts/reviews/pr-review-loop.mjs,project
 body: ""

@@ -37,6 +37,7 @@ import {
   stableValueEquals,
   nowIso,
   preserveMutationStdinTokenLiterals,
+  transferMutationStdinTokenPolicy,
   resolveIsoOrRelative,
   getActiveExtensionRegistrations,
   resolvePmRoot,
@@ -1139,11 +1140,11 @@ const applyUpdateManyRows = async (params: {
       continue;
     }
     try {
-      const rowUpdateOptions = preserveMutationStdinTokenLiterals({
+      const rowUpdateOptions = preserveMutationStdinTokenLiterals(transferMutationStdinTokenPolicy(params.options.update, {
         ...params.options.update,
         message: updateMessage,
         runtimeFieldCommands: ["update_many" as const],
-      });
+      }));
       const result = await withCheckpointMutation({
         pmRoot: params.pmRoot, itemId: item.id, checkpointId: params.checkpointId,
       }, () => runUpdate(item.id, rowUpdateOptions, params.global));

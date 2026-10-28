@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1606: Validate public SDK runtime operand values before mutation internals ([pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon))
+- GH-1614: keep typed SDK data literal across CLI sentinel inputs ([pm-gh1614](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1614.toon))
+
+### Other
+
+- Serialize cold transport and executable refusal gate fixtures during full validation ([pm-serial-cold-gates](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-serial-cold-gates.toon))
+
 ## 2026.10.28 - 2026-10-28
 
 ### Fixed

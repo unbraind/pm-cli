@@ -14,6 +14,7 @@ import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.j
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
+import { assertMutationStringOperand, assertReopenMutationValues } from "../runtime/mutation-value-validation.js";
 import {
   runReopenUpdate,
   type PreviousTerminalEvidence,
@@ -68,6 +69,9 @@ export async function runReopen(
   options: ReopenCommandOptions,
   global: GlobalOptions,
 ): Promise<ReopenResult> {
+  assertMutationStringOperand(id, "reopen", "id");
+  assertMutationStringOperand(reason, "reopen", "reason");
+  assertReopenMutationValues(options);
   const normalizedReason = reason.trim();
   if (normalizedReason.length === 0) {
     throw new PmCliError(

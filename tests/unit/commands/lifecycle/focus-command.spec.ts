@@ -200,7 +200,6 @@ describe("runCreate focus inheritance (GH-161)", () => {
         ["SDK opt out", { inheritFocus: false }, undefined, undefined],
         ["SDK opt in", { inheritFocus: true }, parentId, "focus"],
         ["SDK explicit", { inheritFocus: true, parent: otherId }, otherId, undefined],
-        ["SDK no parent", { inheritFocus: true, parent: "none" }, undefined, undefined],
         ["SDK unset", { inheritFocus: true, unset: ["parent"] as string[] }, undefined, undefined],
       ] as const) {
         const result = await client.create({ title, type: "Task", createMode: "progressive", ...options });
@@ -208,6 +207,7 @@ describe("runCreate focus inheritance (GH-161)", () => {
         expect(result.parent_source, title).toBe(source);
         expect((await client.get(result.item.id)).item.parent, title).toBe(expectedParent);
       }
+      await expect(client.create({ title: "Literal invalid parent", type: "Task", createMode: "progressive", inheritFocus: true, parent: "none" })).rejects.toThrow('Use --unset parent');
       for (const inheritFocus of [undefined, false, true]) {
         const mcp = await runAction({ action: "create", path: context.pmPath, noExtensions: true,
           options: { title: `MCP ${inheritFocus}`, type: "Task", createMode: "progressive", inheritFocus } });

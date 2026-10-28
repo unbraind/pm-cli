@@ -1909,6 +1909,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
       "sdk/lifecycle/update.ts",
       "sdk/runtime-input.ts",
       "sdk/runtime/mutation-admission.ts",
+      "sdk/runtime/mutation-value-validation.ts",
       "sdk/runtime/schema-preview.ts",
       "sdk/workspace.ts",
     ],

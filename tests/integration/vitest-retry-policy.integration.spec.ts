@@ -74,6 +74,8 @@ describe("Vitest CI retry policy", () => {
     const contracts = projects.find((project) => project.test.name === "contracts")!.test;
     const serial = projects.find((project) => project.test.name === "lifecycle-performance")!.test;
     for (const file of [
+      "tests/unit/scripts/cli-transport-floor.spec.ts",
+      "tests/unit/scripts/refusal-closure-gate.spec.ts",
       "tests/unit/commands/query/aggregate-set-members.spec.ts",
       "tests/unit/sdk/governance-read-performance.spec.ts",
       "tests/unit/scripts/release/surface-replication-gate.spec.ts",

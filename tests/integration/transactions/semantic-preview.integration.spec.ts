@@ -1,4 +1,4 @@
-import { lstat, mkdir, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
@@ -34,6 +34,19 @@ async function durableSnapshot(root: string): Promise<Record<string, string>> {
 }
 
 describe("semantic transaction previews (GH-1370)", () => {
+  it.skipIf(process.platform === "win32")("preserves native filesystem failures without writing the source tracker", async () => {
+    await withTempPmPath(async (context) => {
+      const id = `pm-${"x".repeat(300)}`;
+      const nativeFailure = await stat(path.join(context.pmPath, "history", `${id}.jsonl`)).catch((error: unknown) => error);
+      expect(nativeFailure).toMatchObject({ code: "ENAMETOOLONG" });
+      const before = await durableSnapshot(context.pmPath);
+      const failure = await previewItemMutations({ pmRoot: context.pmPath, transactionId: "native-filesystem-failure", author: "preview-agent", mutations: [{ op: "create", id, options: { type: "Task", title: "Filesystem failure", createMode: "progressive" } }] }).catch((error: unknown) => error);
+      expect(failure).toMatchObject({ code: "ENAMETOOLONG" });
+      expect(failure).not.toHaveProperty("exitCode");
+      expect(await durableSnapshot(context.pmPath)).toEqual(before);
+    });
+  });
+
   it.skipIf(process.platform === "win32")("shares dependency exclusion across CLI and MCP without following links or writing source", async () => {
     await withTempPmPath(async (context) => {
       const extension = path.join(context.pmPath, "extensions", "installed");
@@ -416,7 +429,9 @@ describe("semantic transaction previews (GH-1370)", () => {
       await expect(previewItemMutations({ ...options, transactionId: "../invalid" })).rejects.toThrow();
       await expect(previewItemMutations({ ...options, mutations: [{ op: "invalid", id: "x" } as never] })).rejects.toThrow("op must be");
       await expect(previewItemMutations({ ...options, pmRoot: path.join(context.tempRoot, "missing") })).rejects.toThrow();
-      await expect(previewItemMutations({ ...options, transactionId: "native-validation", mutations: [{ op: "create", id: "pm-native", options: { title: "Native validation", type: [] as never } }] })).rejects.toBeInstanceOf(TypeError);
+      const beforeInvalidType = await durableSnapshot(context.pmPath);
+      await expect(previewItemMutations({ ...options, transactionId: "native-validation", mutations: [{ op: "create", id: "pm-native", options: { title: "Native validation", type: [] as never } }] })).rejects.toMatchObject({ exitCode: 2, code: "invalid_argument_value", context: { field: "type", changed: false, transaction_operation: { index: 0, op: "create", id: "pm-native" } } });
+      expect(await durableSnapshot(context.pmPath)).toEqual(beforeInvalidType);
       const next = { ...options, transactionId: "changed-since-preview", mutations: [{ op: "update" as const, id: "pm-staged", options: { risk: "low" } }] };
       expect(await previewItemMutations(next)).toMatchObject({ validated: true });
       const refusedDelete = context.runCli(["delete", "pm-staged", "--reason", "Concurrent fixture change", "--json"]);

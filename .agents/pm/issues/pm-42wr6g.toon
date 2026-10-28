@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: "area:sdk",governance,linked-tests,merge-safety,trust,validate
 created_at: "2026-09-12T19:58:01.870Z"
-updated_at: "2026-09-28T15:32:24.754Z"
+updated_at: "2026-10-27T22:10:38.394Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Either a recorded, author-attributed acknowledgement (history entry carrying the exact fingerprint and reviewer) that a receiving clone may honour under project policy, or an explicit decision that trust is clone-local and the warning is partitioned out of workspace validation into a clone diagnostic; The 195-item backlog receives a disposition under the chosen model and validate command_references reaches ok on a fresh clone of main; A negative control proves a newly merged unreviewed linked command still warns and still fails closed on execution; The untrusted count is declared as an assurance measurement with a ceiling so growth is visible rather than absorbed"
@@ -20,7 +20,8 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-ed28wi,discovered_from,"2026-09-12T19:58:01.870Z","harness:claude-code","cli:create:dep",detected
   pm-w7ccmv,implements,"2026-09-12T19:58:01.870Z","harness:claude-code","cli:create:dep",detected
   pm-zw9188,discovered_from,"2026-09-12T20:05:09.461Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-09-12T19:58:05.326Z","harness:claude-code","Duplicate check: pm-ed28wi (closed) introduced clone-local trust and fail-closed execution; pm-44iu and pm-mf5z (closed) enforce runnable linked tests; pm-zw9188 (closed) partitioned the linked-file staleness check by holder lifecycle, the closest shape. No open item owns settlement or accounting of the untrusted population; validate-warning ownership requires one."
   "2026-09-28T15:32:24.754Z","harness:claude-code","Growth measured 2026-09-28: validate_linked_test_trust_unacknowledged is 988 on a full validate (379 on 2026-09-12), so the warning grows with every linked test agents add and is now the largest validate warning by count. The settlement this item asks for is not optional at this rate."
+  "2026-10-27T22:10:38.394Z","harness:codex","New consumer report GH-1615 https://github.com/unbraind/pm-cli/issues/1615 reproduces branch-name trust refusal on detached HEAD, merged main and fresh clones, and reports absolute source tracker paths in refusals. Reused this canonical open owner after all-status3143-item duplicate review and exact linked-test-trust search. Preserve fail-closed command execution; acceptance should cover link-on-feature to detached to merged-main to fresh-clone with unchanged reviewed command content, plus modified-command refusal. This is report intake only, with no claim or reproduced-fix assertion."
 body: ""

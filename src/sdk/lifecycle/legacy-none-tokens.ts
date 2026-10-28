@@ -4,6 +4,7 @@
  * Implements the pm legacy none tokens command surface and its agent-facing runtime behavior.
  */
 import { EXIT_CODE, PmCliError } from "../runtime-primitives.js";
+import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
 /**
  * Shared legacy "none"/"null" sentinel handling for the create and update
  * commands. These tokens used to mean "clear this field"; they are now
@@ -189,7 +190,7 @@ export function assertNoLegacyNoneTokens(
   flag: string,
   replacementHint?: string,
 ): void {
-  if (!values || values.length === 0) {
+  if (!values || values.length === 0 || isLiteralMutationInput(values)) {
     return;
   }
   const hasLegacyToken = values.some((value) => isLegacyNoneToken(value));
@@ -223,6 +224,7 @@ export function applyLegacyNoneCollectionNormalizers<
         EXIT_CODE.USAGE,
       );
     }
+    if (isLiteralMutationInput(candidate)) continue;
     const entries = candidate;
     const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
     if (!hasLegacy) {
