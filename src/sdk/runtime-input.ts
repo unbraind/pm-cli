@@ -507,7 +507,7 @@ function normalizedActionOptions(
     ...(mcpMutation ? hoistedMcpMutationOptions(action, args, nested) : hoisted),
     ...nested,
   };
-  if ((action === "create" || action === "update") && !mcpMutation) assertNativeMutationValueTypes(action, options);
+  if ((action === "create" || action === "update") && !mcpMutation) assertNativeMutationValueTypes(action, options, true, isRuntimeRecord(args.options) && isCliMutationInput(args.options));
   return mcpMutation ? checkedMcpMutationOptions(action, args, options) : normalizeMcpOptionsArrays(options, action);
 }
 

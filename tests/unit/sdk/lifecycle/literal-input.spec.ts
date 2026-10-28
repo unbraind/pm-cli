@@ -57,6 +57,8 @@ describe("literal SDK mutation inputs (pm-gh1614, pm-gh1606)", () => {
       await client.update(item.id, withLiteralMutationInput(cli));
       expect((await client.get(item.id)).item.assignee).toBe("none");
       expect(raw).toEqual({ assignee: "none" });
+      await client.update(item.id, withCliMutationInput({ acceptanceCriteria: "client CLI criteria", ac: ["client CLI criteria"] }));
+      expect((await client.get(item.id)).item.acceptance_criteria).toBe("client CLI criteria");
     });
   });
 
@@ -88,6 +90,10 @@ describe("literal SDK mutation inputs (pm-gh1614, pm-gh1606)", () => {
         { action: "update", field: "id", call: () => runUpdate({ id: item.id } as never, { title: "unchanged" }, { path: pmPath }) },
         { action: "create", field: "comment", call: () => runCreate({ type: "Task", title: "unchanged", comment: "scalar" as never }, { path: pmPath }) },
         { action: "create", field: "comment", call: () => runCreate({ type: "Task", title: "unchanged", comment: [1] as never }, { path: pmPath }) },
+        { action: "create", field: "title", call: () => runCreate(withCliMutationInput({ type: "Task", title: 42 as never }), { path: pmPath }) },
+        { action: "update", field: "estimatedMinutes", call: () => runUpdate(item.id, withCliMutationInput({ estimatedMinutes: 2 as never }), { path: pmPath }) },
+        { action: "create", field: "ac", call: () => runCreate(withCliMutationInput({ type: "Task", title: "unchanged", ac: [1] }), { path: pmPath }) },
+        { action: "update", field: "ac", call: () => client.update(item.id, withCliMutationInput({ acceptanceCriteria: "unchanged", ac: [1] })) },
       ];
       for (const { action, field, call } of fixtures) {
         const error: unknown = await call().catch((caught: unknown) => caught);
@@ -118,6 +124,9 @@ describe("literal SDK mutation inputs (pm-gh1614, pm-gh1606)", () => {
       expect(cli(["update", item.id, "--description", "-"], "piped description").code).toBe(0);
       expect(cli(["append", item.id, "-"], "piped body").code).toBe(0);
       expect(cli(["update-many", "--ids", item.id, "--assignee", "none"]).code).toBe(0);
+      const bulk = cli(["update-many", "--ids", item.id, "--ac", "bulk criteria"]);
+      expect(bulk.code, bulk.stderr + bulk.stdout).toBe(0);
+      expect((await client.get(item.id)).item.acceptance_criteria).toBe("bulk criteria");
       expect((await client.get(item.id)).item).toMatchObject({ description: "piped description", body: expect.stringContaining("piped body") });
       expect((await client.get(item.id)).item.assignee).toBeUndefined();
       const created = cli(["create", "--stdin-json", "--create-mode", "progressive"], JSON.stringify({ type: "Task", title: "JSON values", description: "-", body: "-", assignee: "none", goal: "null" }));

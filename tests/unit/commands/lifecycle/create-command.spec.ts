@@ -11,6 +11,7 @@ import {
   type CreateCommandOptions,
 } from "../../../../src/cli/commands/lifecycle/create.js";
 import { parseTypeOptionEntries } from "../../../../src/sdk/lifecycle/repeatable-metadata-parsers.js";
+import { runCreate as runSdkCreate } from "../../../../src/sdk/lifecycle/create.js";
 import { preserveMutationStdinTokenLiterals } from "../../../../src/sdk/runtime-primitives.js";
 import {
   clearActiveExtensionHooks,
@@ -4669,6 +4670,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
 
   it("merges template options resolved from an active templates show handler", async () => {
     await withTempPmPath(async (context) => {
+      let templateOptions: Record<string, unknown> = { description: "from template", tags: "template-tag" };
       setActiveExtensionRegistrations({
         commands: [
           {
@@ -4692,9 +4694,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
             layer: "project",
             name: "templates",
             command: "templates show",
-            run: () => ({
-              options: { description: "from template", tags: "template-tag" },
-            }),
+            run: () => ({ options: templateOptions }),
           },
         ],
       });
@@ -4705,11 +4705,24 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
           type: "Task",
           createMode: "progressive",
           template: "bug-report",
+          assignee: "none",
         },
         { path: context.pmPath },
       );
       expect(result.item.description).toBe("from template");
       expect(result.item.tags).toEqual(["template-tag"]);
+      expect(result.item.assignee).toBeUndefined();
+      for (const value of ["none", "null", "-"]) {
+        const literal = await runSdkCreate({ title: `SDK template ${value}`, type: "Task", createMode: "progressive", template: "bug-report", assignee: value, description: value, comment: [value] }, { path: context.pmPath });
+        expect(literal.item).toMatchObject({ assignee: value, description: value, comments: [expect.objectContaining({ text: value })], tags: ["template-tag"] });
+      }
+      const snapshot = async () => Promise.all(["tasks", "history"].map(async (folder) => Promise.all((await readdir(path.join(context.pmPath, folder))).sort().map(async (file) => [folder, file, await readFile(path.join(context.pmPath, folder, file), "utf8")]))));
+      const before = await snapshot();
+      for (const field of ["title", "id", "estimatedMinutes"]) {
+        templateOptions = { type: "Task", title: "Invalid template", [field]: 42 };
+        await expect(runSdkCreate({ template: "bug-report", createMode: "progressive" }, { path: context.pmPath })).rejects.toMatchObject({ code: "invalid_argument_value", exitCode: 2, context: { field, changed: false } });
+        expect(await snapshot()).toEqual(before);
+      }
     });
   });
 

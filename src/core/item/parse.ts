@@ -711,7 +711,7 @@ export async function resolveMutationStdinTokenFields<T extends object>(
       shouldResolveMutationStdinTokenField(options, field),
     );
   }
-  return preserveMutationStdinTokenLiterals(resolved as T);
+  return preserveMutationStdinTokenLiterals(transferMutationStdinTokenPolicy(options, resolved as T));
 }
 
 /** Implements create stdin token resolver for the public runtime surface of this module. */

@@ -5,7 +5,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
-import { prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
+import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import {
   assertNoAmbiguousBareCommaEntry,
@@ -1418,7 +1418,7 @@ function mergeCreateOptionsWithTemplate(
       merged[key] = Array.isArray(value) ? [...value] : value;
     }
   }
-  return merged as CreateCommandOptions;
+  return transferMutationStdinTokenPolicy(explicitOptions, merged as CreateCommandOptions);
 }
 
 function normalizeExtensionCommandPath(command: string): string {
@@ -1697,9 +1697,7 @@ async function resolveCreateItemId(params: {
       probeExisting: false,
     });
   }
-  if (typeof params.explicitId !== "string") {
-    throw new PmCliError("--id must be a string", EXIT_CODE.USAGE);
-  }
+  assertMutationStringOperand(params.explicitId, "create", "id");
   const trimmedId = params.explicitId.trim();
   if (trimmedId.length === 0 || isPlaceholderReferenceToken(trimmedId)) {
     throw new PmCliError(
@@ -1896,7 +1894,7 @@ async function resolveCreateTypeSelection(
       pmRoot,
     );
     resolvedOptions = normalizeLegacyNoneCreateOptions(
-      mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions),
+      prepareNativeMutationOptions("create", mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions)),
     );
   }
   if (resolvedOptions.type === undefined) {

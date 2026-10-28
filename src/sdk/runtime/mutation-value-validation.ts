@@ -7,7 +7,7 @@ import { TOOL_CREATE_OPTION_CONTRACTS, TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACT
 import { PM_TOOL_PARAMETER_PROPERTIES } from "../cli-contracts/tool-parameter-tables.js";
 import type { CommanderOptionAliasContract } from "../cli-contracts/commander-types.js";
 import { preserveSdkMutationInput } from "../../core/item/parse.js";
-import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
+import { isCliMutationInput } from "../../core/item/literal-mutation-input.js";
 
 type MutationAction = "create" | "update" | "append";
 const MUTATION_INPUT_EXAMPLES: Record<MutationAction, string> = {
@@ -77,13 +77,15 @@ function assertBooleanOptions(action: "create" | "update", options: Record<strin
 }
 
 /** Validate native option values before transport normalization can coerce or discard them. */
-export function assertNativeMutationValueTypes(action: "create" | "update", options: Record<string, unknown>, scalarRepeatables = true): void {
+export function assertNativeMutationValueTypes(action: "create" | "update", options: Record<string, unknown>, scalarRepeatables = true, cliAliases = false): void {
   const contracts = action === "create" ? CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS : UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS;
   for (const { target, keys, repeatable } of contracts) {
     if (asRecordClone(Reflect.get(PM_TOOL_PARAMETER_PROPERTIES, target)).type === "boolean") continue;
     for (const key of keys) {
-      // Commander joins repeated acceptance criteria before the native string-valued SDK option.
-      assertOptionValue(action, key, options[key], target, repeatable === true && target !== "acceptanceCriteria", scalarRepeatables);
+      // Commander retains repeatable aliases after joining the canonical SDK string.
+      const cliAlias = cliAliases && key !== target;
+      const list = repeatable === true && (target !== "acceptanceCriteria" || cliAlias);
+      assertOptionValue(action, key, options[key], target, list, scalarRepeatables || cliAlias);
     }
   }
   assertBooleanOptions(action, options, contracts);
@@ -93,6 +95,6 @@ export function assertNativeMutationValueTypes(action: "create" | "update", opti
 export function prepareNativeMutationOptions<T extends Record<string, unknown>>(action: "create" | "update", options: T): T {
   assertMutationOptionBag(options, action);
   const prepared = preserveSdkMutationInput(options);
-  if (isLiteralMutationInput(prepared)) assertNativeMutationValueTypes(action, prepared, false);
+  assertNativeMutationValueTypes(action, prepared, false, isCliMutationInput(prepared));
   return prepared;
 }
