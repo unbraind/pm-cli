@@ -6,29 +6,31 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-26T04:54:51.880Z"
-updated_at: "2026-10-28T22:07:25.991Z"
-closed_at: "2026-10-28T22:07:25.021Z"
-completed_at: "2026-10-28T22:07:25.021Z"
+updated_at: "2026-10-28T22:52:54.188Z"
+closed_at: "2026-10-28T22:52:53.234Z"
+completed_at: "2026-10-28T22:52:53.234Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "Expose typed PmClient previewItemMutations and commitItemMutations forwarding bound root and author policy to the existing SDK coordinator; Return per-mutation canonical staged ids, normalized metadata and bodies with generated-value provenance and explicit commit-time constraints; Prove preview/read-back equivalence for unchanged admitted plans and safe identical-intent replay versus typed changed-intent conflicts using native non-Git fixtures; preserve read-only previews and current guarded commit behavior"
 parent: pm-9rgaal
 risk: medium
 confidence: high
-resolution: "Implemented host-bound preview and commit methods with canonical final staged records, applied/adopted state, commit-time clock pointers and explicit replay constraints. Configuration-only bootstrap protects preview/status from optional-schema FIFO reads before staging."
-expected_result: Packages can use SDK-owned normalized preview records and bound identity while preserving read-only preview and replay safety.
-actual_result: "49/49 linked SDK/semantic-preview tests and full 11540-test exact-coverage run passed. Native unsafe-storage negative controls, type surface and Node/Bun packed artifact passed. Reviewed delivery is PR #1621; publication remains separate."
+resolution: Delivered bound batch preview and commit with canonical staged records and safe preview bootstrap.Replay guarantees explicitly depend on retaining committed journals; GC removal can admit the identity as new.
+expected_result: Packages can perform host-bound atomic batches and compare normalized intents using SDK-owned records instead of re-deriving roots or duplicating normalization.
+actual_result: "Final review remediation validation: full suite passed with exact 100/100/100/100 source coverage (statements 71421/71421; branches 55026/55026; functions 14707/14707; lines 67487/67487). Linked recovery 65/65 and SDK/semantic-preview 49/49 passed again, as did build, typecheck, ESLint, contracts, SDK surface and docs links. Final packed artifact passed Node and Bun including changed-plan refusal for retired identities. Five pre-fix native cases returned the wrong plan-mismatch code; the fixed cases return transaction_abandoned and preserve state. Previous reviewed head 512184eb9 passed every required GitHub check including macOS and both performance gates; this revision still requires its own hosted checks and renewed review before merge."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-10-26T04:54:51.880Z","harness:codex","cli:create:dep",detected
   pm-gh1370,discovered_from,"2026-10-26T04:54:51.880Z","harness:codex","cli:create:dep",detected
   pm-gh1597,related,"2026-10-28T21:37:27.052Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-10-26T04:54:51.880Z","harness:codex","Duplicate check: complete strict all-status corpus plus live request-specific searches and full terminal-lineage reads found no exact active owner. Existing SDK promotion and transaction/preview delivery remain completed; this item owns the newly requested public surface."
   "2026-10-28T19:44:10.177Z","harness:codex","Implementation scope: typed root/author-bound PmClient preview and commit; canonical full staged item snapshots per executed mutation with explicit generated clock fields. Preserve committed replay semantics and read-only staging. Group with pm-gh1597 in one reviewed delivery; no other implementation items claimed."
   "2026-10-28T20:39:13.335Z","harness:codex","Validation: linked SDK plus semantic-preview integration tests passed 49/49. Staged records retain canonical body, normalized tags, author and provenance with explicit clock-field pointers, final-batch state and applied/adopted execution receipts. Committed replay returns no newly validated records. Public declaration tests and SDK surface snapshot are current. Full canonical coverage is running; the earlier 197-test focused coverage diagnostic retained the full-source denominator and is not a global coverage pass."
   "2026-10-28T21:08:13.590Z","harness:codex","Investigation and regression proof: the initial host wrapper activated extensions using hydrated source settings before safe preview setup. Native installed-package and isolated integration negative controls timed out on optional-schema and settings FIFOs. Configuration-only activation for preview/status fixes both before source reads; the same four unsafe-path fixtures then pass. This remains within host-bound preview ownership. The full candidate run completed 11539 passing tests with one 30-second timeout in existing literal-input coverage; no canonical coverage receipt was produced. Focused retry and hosted full coverage remain required."
   "2026-10-28T21:37:28.300Z","harness:codex",Recorded the real related relationship to the grouped recovery feature. The graph-composition gate detected that this delivery relationship existed only in prose; the typed edge now represents the shared host-bound transaction surface without inventing dependency or hierarchy depth.
   "2026-10-28T22:07:22.006Z","harness:codex","Final candidate validation: full sandboxed source coverage passed 11540 tests (3 platform skips), 880 passing files and 1 skipped file, with exact 71421/71421 statements, 55025/55025 branches, 14707/14707 functions and 67487/67487 lines. Linked recovery 65/65 and SDK/semantic-preview 49/49 passed, along with typecheck, ESLint, duplicate checks, generated contracts/surface/catalogs, docs links, graph composition and record integrity. Bounded mutation lane: 345 killed and 7 equivalent of 352, no failures. Final packed npm tarball passed Node and Bun batch/replay/retirement/replacement and unsafe-preview bootstrap controls. Local transport performance also failed unchanged base; thresholds remain unchanged and the initial PR head passed both hosted performance gates. Final revised head must pass hosted checks before merge. New APIs are not yet claimed as published."
+  "2026-10-28T22:24:15.477Z","harness:codex",Second review cycle on PR #1621 clarified that identical-plan replay and changed-plan mismatch guarantees require retention of the committed journal. Existing GC may remove old committed receipts and the identity can then be treated as new; explicitly abandoned receipts remain protected. Documentation now states the boundary. Linked tests and full coverage are being rerun before reviewed closure.
+  "2026-10-28T22:52:52.365Z","harness:codex","Final review remediation validation: full suite passed with exact 100/100/100/100 source coverage (statements 71421/71421; branches 55026/55026; functions 14707/14707; lines 67487/67487). Linked recovery 65/65 and SDK/semantic-preview 49/49 passed again, as did build, typecheck, ESLint, contracts, SDK surface and docs links. Final packed artifact passed Node and Bun including changed-plan refusal for retired identities. Five pre-fix native cases returned the wrong plan-mismatch code; the fixed cases return transaction_abandoned and preserve state. Previous reviewed head 512184eb9 passed every required GitHub check including macOS and both performance gates; this revision still requires its own hosted checks and renewed review before merge."
 learnings[1]{created_at,author,text}:
   "2026-10-28T21:55:43.375Z","harness:codex","A read-only preview must protect the whole host bootstrap path, including configuration and extension setup. Staging guards alone are too late if bootstrap has already opened an optional-schema FIFO."
 files[6]{path,scope}:
@@ -40,7 +42,7 @@ files[6]{path,scope}:
   tests/unit/sdk/transactions/host-bound.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,project,300,"harness:codex","2026-10-28T19:50:42.784Z",local_mutation,feat/host-bound-item-transactions
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvsks2km-d73z2v
     kind: test
     status: passed
@@ -63,7 +65,18 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvson46t-8nw20g
+    kind: test
+    status: passed
+    started_at: "2026-10-28T22:24:17.796Z"
+    finished_at: "2026-10-28T22:25:04.757Z"
+    recorded_at: "2026-10-28T22:25:04.757Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
-close_reason: Implementation and regression evidence complete; closure travels with the reviewed delivery.
+close_reason: Implementation and review remediation verified; closure included in PR #1621.
 body: ""

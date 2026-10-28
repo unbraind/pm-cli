@@ -55,6 +55,8 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
       await client.itemTransactions.supersede("retired", "replacement", { reason: "Retry request" });
       expect(await readFile(path.join(pmPath, "transactions", "sdk", "retired.json"), "utf8")).toBe(journalBytes);
       await expect(client.commitItemMutations(options)).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
+      await expect(client.commitItemMutations({ ...options, mutations: [{ op: "update", id: original.id, options: { title: "Forbidden replan" } }] })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
+      expect((await client.get(original.id)).item.title).toBe("Original");
       await expect(client.itemTransactions.abandon("retired", { reason: "Different replacement" })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
       await client.commitItemMutations({ ...options, transactionId: "replacement", mutations: [{ op: "update", id: original.id, options: { title: "Replanned" } }] });
       expect((await client.get(original.id)).item.title).toBe("Replanned");
@@ -131,7 +133,7 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
       vi.restoreAllMocks();
       expect((await client.itemTransactions.status("compensation"))?.journal.schemaVersion).toBe(2);
       if (createCompensation === "close") await client.reopen("compensated", "Peer reopens after completed compensation");
-      await expect(client.commitItemMutations(options)).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
+      await expect(client.commitItemMutations({ ...options, mutations: [{ op: "create", id: "compensated", options: { title: "Forbidden replan", type: "Task" } }] })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
       expect((await client.itemTransactions.abandon("compensation", { reason: "Resume retirement" })).journal.status).toBe("abandoned");
       if (createCompensation === "close") expect((await client.get("compensated")).item.status).toBe("open");
       await client.create({ id: "later", title: "Later", type: "Task" });

@@ -378,9 +378,9 @@ function journalPlanMismatch(transactionId: string): PmCliError {
   );
 }
 
-/** Status reads omit a requested plan; fully compensated attempts can be replanned. */
-function matchesJournalSteps(status: string, recorded: readonly string[], requested: readonly string[] | undefined): boolean {
-  return requested === undefined || status === "compensated" ||
+/** Status reads omit a plan; retired ids reach their dedicated refusal and compensated attempts can be replanned. */
+function matchesJournalSteps(journal: Partial<WorkspaceTransactionJournal>, recorded: readonly string[], requested: readonly string[] | undefined): boolean {
+  return requested === undefined || journal.abandonment !== undefined || journal.status === "compensated" ||
     (recorded.length === requested.length && recorded.every((id, index) => id === requested[index]));
 }
 
@@ -413,8 +413,9 @@ function parseJournal(
   ) throw invalidJournal(transactionId, "invalid lifecycle, metadata, status or step ids");
   // A compensated attempt was rolled back step by step and holds nothing to
   // resume, so a re-planned document may start a fresh attempt under the same
-  // id; every other status must replay the exact plan it recorded.
-  const stepsMatch = matchesJournalSteps(journal.status, recordedStepIds, stepIds);
+  // id. Retired ids must instead reach the permanent retirement refusal,
+  // regardless of the requested plan; all other attempts replay the exact plan.
+  const stepsMatch = matchesJournalSteps(journal, recordedStepIds, stepIds);
   if (!stepsMatch) throw journalPlanMismatch(transactionId);
   return {
     ...(journal as WorkspaceTransactionJournal),

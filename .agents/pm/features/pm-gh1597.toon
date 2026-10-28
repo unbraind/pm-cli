@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-26T04:54:49.262Z"
-updated_at: "2026-10-28T22:07:24.128Z"
-closed_at: "2026-10-28T22:07:22.951Z"
-completed_at: "2026-10-28T22:07:22.951Z"
+updated_at: "2026-10-28T22:52:51.392Z"
+closed_at: "2026-10-28T22:52:50.315Z"
+completed_at: "2026-10-28T22:52:50.315Z"
 author: "harness:codex"
 estimated_minutes: 300
 acceptance_criteria: Expose typed host-bound journal state and applied/compensated step receipts with plan identity; Provide safe abandonment and supersession using proven apply markers and existing guarded compensation; never overwrite later peer edits or silently compensate committed work; Name executable public recovery in transaction-plan-mismatch guidance and verify non-Git crash/retry/peer-edit controls plus SDK contract documentation
 parent: pm-9rgaal
 risk: high
 confidence: high
-resolution: "Implemented bound status, abandon and supersede APIs with retained original plans, versioned durable retirement intent, idempotent audit and guarded compensation that preserves peer edits. Recovery normalizes identity before markers and can resume retirement after the replacement identity is used. Documented journal retention, redaction scope and the ordinary-writer isolation limit."
-expected_result: Packages can inspect and safely retire interrupted item batches through their configured client without rebuilding private journal rules.
-actual_result: "65/65 linked recovery tests and full 11540-test exact-coverage run passed; crash, peer-write, padded-identity and replacement-after-crash negative controls verified. Node and Bun packed artifact checks passed. Reviewed delivery is PR #1621; publication remains separate."
+resolution: Delivered host-bound transaction recovery with durable retirement and peer-safe compensation. Retired identities return actionable retirement guidance before plan comparison.
+expected_result: Extensions can inspect and recover interrupted batches through a supported root-bound API without reading private paths or recreating journal and compensation rules.
+actual_result: "Final review remediation validation: full suite passed with exact 100/100/100/100 source coverage (statements 71421/71421; branches 55026/55026; functions 14707/14707; lines 67487/67487). Linked recovery 65/65 and SDK/semantic-preview 49/49 passed again, as did build, typecheck, ESLint, contracts, SDK surface and docs links. Final packed artifact passed Node and Bun including changed-plan refusal for retired identities. Five pre-fix native cases returned the wrong plan-mismatch code; the fixed cases return transaction_abandoned and preserve state. Previous reviewed head 512184eb9 passed every required GitHub check including macOS and both performance gates; this revision still requires its own hosted checks and renewed review before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-9rgaal,implements,"2026-10-26T04:54:49.262Z","harness:codex","cli:create:dep",detected
   pm-y9hq,discovered_from,"2026-10-26T04:54:49.262Z","harness:codex","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-10-26T04:54:49.262Z","harness:codex","Duplicate check: complete strict all-status corpus plus live request-specific searches and full terminal-lineage reads found no exact active owner. Existing SDK promotion and transaction/preview delivery remain completed; this item owns the newly requested public surface."
   "2026-10-28T19:44:07.695Z","harness:codex","Implementation scope: retain original item plans in coordinator journals, expose read-only status and host-bound guarded abandonment/supersession, refuse committed and peer-edited work, preserve append-only compensation and audit evidence. Complete strict 3148-item all-status census has no omissions; 38 open GitHub issues each already have a canonical PM link comment. No open PRs or GitHub dependency/code/secret alerts at intake."
   "2026-10-28T20:16:18.094Z","harness:codex","Native late-peer recovery oracle initially exposed a delete-store gap: the existing scoped item precondition was checked by update/close but not by locked deletion. Isolated candidate adds the same assertion before deletion policy/hooks and centralizes create compensation ownership checks. Close and delete both preserve a peer edit injected immediately before item-lock acquisition. Isolated focused proof passes51 tests; original checkout remains frozen for the in-flight full coverage run. Retirement intent is additionally retained before compensation to fence forward replay across recovery crashes."
@@ -30,6 +30,8 @@ comments[8]{created_at,author,text}:
   "2026-10-28T21:31:47.832Z","harness:codex","Additional crash regression: a padded transaction id was normalized by the coordinator but not by item-history markers. The extended existing prepared/applied/recorded table proved that applied and recorded attempts could retire while leaving the forward value unchanged. Normalize identity once before building any item step, unique-key index or journal. Local transport admission remains failed; a separately built unchanged base commit also fails all six transport budgets on this host, while the isolated candidate SDK import-cost gate passes. Thresholds are unchanged; exact-head hosted transport admission is required."
   "2026-10-28T21:46:03.949Z","harness:codex","Hosted initial-head evidence: CI job 123098074387 on f705877b712850bb296f8c9ca519848c239d18df passed the SDK import-cost and six-operation CLI transport-floor gates with unchanged budgets. Its static failure was graph-composition prose-edge gaps 1234 > 1233, now corrected by the genuine related edge between the grouped features; local graph and record-integrity gates pass. Bounded mutation evidence is 352 classified mutants, 345 killed, 7 equivalent, no gate failures. Updated packed Node/Bun consumers and unsafe-source rejection passed. Final revised-head hosted checks remain required."
   "2026-10-28T22:07:21.136Z","harness:codex","Final candidate validation: full sandboxed source coverage passed 11540 tests (3 platform skips), 880 passing files and 1 skipped file, with exact 71421/71421 statements, 55025/55025 branches, 14707/14707 functions and 67487/67487 lines. Linked recovery 65/65 and SDK/semantic-preview 49/49 passed, along with typecheck, ESLint, duplicate checks, generated contracts/surface/catalogs, docs links, graph composition and record integrity. Bounded mutation lane: 345 killed and 7 equivalent of 352, no failures. Final packed npm tarball passed Node and Bun batch/replay/retirement/replacement and unsafe-preview bootstrap controls. Local transport performance also failed unchanged base; thresholds remain unchanged and the initial PR head passed both hosted performance gates. Final revised head must pass hosted checks before merge. New APIs are not yet claimed as published."
+  "2026-10-28T22:24:14.492Z","harness:codex","Second review cycle on PR #1621: five native recovery cases reproduced the retired-ID precedence defect, returning transaction_plan_mismatch for changed payloads after durable retirement or during interrupted compensation. Journal validation now preserves structural checks but defers plan comparison for valid retirement metadata so the coordinator returns transaction_abandoned before any forward step. Existing crash tables exercise unchanged items after refusal. Linked tests and exact full coverage are being rerun; this item is actively claimed only for this review remediation."
+  "2026-10-28T22:52:49.339Z","harness:codex","Final review remediation validation: full suite passed with exact 100/100/100/100 source coverage (statements 71421/71421; branches 55026/55026; functions 14707/14707; lines 67487/67487). Linked recovery 65/65 and SDK/semantic-preview 49/49 passed again, as did build, typecheck, ESLint, contracts, SDK surface and docs links. Final packed artifact passed Node and Bun including changed-plan refusal for retired identities. Five pre-fix native cases returned the wrong plan-mismatch code; the fixed cases return transaction_abandoned and preserve state. Previous reviewed head 512184eb9 passed every required GitHub check including macOS and both performance gates; this revision still requires its own hosted checks and renewed review before merge."
 learnings[2]{created_at,author,text}:
   "2026-10-28T20:16:19.379Z","harness:codex","Retiring an interrupted batch requires a durable intent before compensation, not only a terminal status afterward. Every destructive compensation must recheck ownership under the target item lock; a pre-lock history comparison alone does not protect a late peer edit."
   "2026-10-28T21:55:42.128Z","harness:codex",Normalize transaction identity before building both durable effects and journal receipts. Normalizing only the coordinator key can make recovery miss its own apply markers and falsely report compensation.
@@ -49,7 +51,7 @@ files[13]{path,scope}:
   tests/unit/sdk/workspace-transaction.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/workspace-transaction.spec.ts,project,300,"harness:codex","2026-10-28T19:50:40.616Z",local_mutation,feat/host-bound-item-transactions
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvskr61r-dyaj7d
     kind: test
     status: passed
@@ -72,8 +74,19 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/workspace-transaction.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvsom3bl-m6llz8
+    kind: test
+    status: passed
+    started_at: "2026-10-28T22:23:51.686Z"
+    finished_at: "2026-10-28T22:24:16.977Z"
+    recorded_at: "2026-10-28T22:24:16.977Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/host-bound.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/workspace-transaction.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   docs/SDK.md,project
-close_reason: Implementation and regression evidence complete; closure travels with the reviewed delivery.
+close_reason: Implementation and review remediation verified; closure included in PR #1621.
 body: ""

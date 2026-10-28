@@ -1676,9 +1676,12 @@ regenerated clocks, conservatively including existing or explicitly supplied
 clocks. These preview values are observations, not reserved commit values.
 Compare normalized intent separately from those clocks; commit still evaluates
 current state, attribution, extension policy and concurrency. A committed replay returns an empty
-`records` array, not a reconstruction of its original write values. Replaying
-the identical committed plan performs no item write; changing its ordered
-payload under the same id refuses with `transaction_plan_mismatch`.
+`records` array, not a reconstruction of its original write values. While the
+committed journal is retained, replaying the identical plan performs no item
+write; changing its ordered payload under the same id refuses with
+`transaction_plan_mismatch`. If transaction GC removes that committed journal,
+the coordinator can treat its id as new; replay guarantees do not survive that
+removal.
 
 The workspace transaction lock serializes transaction coordinators. Ordinary
 SDK and CLI item writers can still interleave between a step's read and write;
