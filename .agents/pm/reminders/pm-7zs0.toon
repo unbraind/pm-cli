@@ -6,17 +6,17 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-28T04:31:55.055Z"
+updated_at: "2026-10-28T06:37:31.561Z"
 reminders[1]{at,text}:
-  "2026-10-28T06:00:00.000Z",Verify the next eligible daily release and all supported consumers after PR1616
+  "2026-10-29T06:00:00.000Z",Verify the next eligible daily release and supported consumers after PR1616
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "At the existing October28 06:00UTC occurrence, verify the latest merged delivery and distinguish immutable publication, supported consumers and observability from historical reliability. If PR1616 lands after the occurrence, record it against the next eligible daily cut."
-actual_result: "October27 public npm latest and GitHub release are2026.10.27. Independent npm/npx/Bun/bunx, all bins and stateless MCP discovery/Skills/Apps acceptance pass. The daily dispatcher published this version; the later native schedule verified the existing publication before preparation and created no second version. This publication predates PR1608 and does not include its current fixes. Historical dispatch/nightly reliability remains a separate unresolved measure."
+expected_result: "At October29 06:00UTC verify the next eligible daily cut against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
+actual_result: "October28 morning Auto Release40628452727 and Release40631211289 succeed. Exactly v2026.10.28 is published; independent registry integrity, actual npx/bunx, all bins, MCP Skills/Apps and HTTP acceptance pass. This immutable release precedes PR1616 SDK changes. Fresh real read spans are accepted/indexed in Sentry; required observability gate passes with zero unresolved issues, zero missing error codes and5.91percent finish-error rate. Recent installation-scoped telemetry has28 matched starts/finishes, zero settled mismatches and empty broker queue. Historical reliability remains separate."
 dependencies[14]:
   - id: pm-7n5a
     kind: related
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[247]:
+comments[248]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -835,6 +835,9 @@ comments[247]:
   - created_at: "2026-10-28T04:31:55.055Z"
     author: "harness:codex"
     text: "PR1616 review: replaced only the delivery reference of the existing October28 06:00UTC occurrence from PR1608 to PR1616 through pm update --reminder. The scheduled instant is unchanged and no occurrence was added or re-armed. Morning dispatcher40628452727 prepared v2026.10.28 from main7d85bc8c1 and advanced main to release commitb5241ced0; downstream publication remains under observation. The pending SDK delivery postdates that immutable release and must not be described as already published."
+  - created_at: "2026-10-28T06:37:31.561Z"
+    author: "harness:codex"
+    text: "Serviced the October28 release-health occurrence after its06:00UTC instant: successful parent/child workflows and the independent published2026.10.28 consumer receipt are verified. Replaced its sole reminder with October29 06:00UTC for the next eligible post-delivery cut. PR1616 remains under review; do not describe its SDK fixes as included in the already immutable October28 publication. No second automatic or manual release was requested by this continuation."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

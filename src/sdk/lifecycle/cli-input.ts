@@ -4,7 +4,11 @@ import { preserveMutationStdinTokenLiterals, transferMutationStdinTokenPolicy } 
 
 /** Clone lifecycle options and opt a command adapter into CLI stdin and clear-token syntax. */
 export function withCliMutationInput<T extends object>(options: T): T {
-  return markCliMutationInput(transferMutationStdinTokenPolicy(options, { ...options }));
+  const cloned = { ...options };
+  for (const [key, value] of Object.entries(cloned)) {
+    if (Array.isArray(value)) Reflect.set(cloned, key, [...value]);
+  }
+  return markCliMutationInput(transferMutationStdinTokenPolicy(options, cloned));
 }
 
 /** Clone decoded data and keep every sentinel spelling literal, even inside a CLI adapter. */

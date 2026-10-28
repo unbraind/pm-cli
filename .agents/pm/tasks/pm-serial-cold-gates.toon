@@ -6,27 +6,28 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-27T22:54:59.559Z"
-updated_at: "2026-10-28T00:30:34.033Z"
-closed_at: "2026-10-28T00:30:33.120Z"
-completed_at: "2026-10-28T00:30:33.120Z"
+updated_at: "2026-10-28T05:38:10.660Z"
+closed_at: "2026-10-28T05:36:20.336Z"
+completed_at: "2026-10-28T05:36:20.336Z"
 author: "harness:codex"
 estimated_minutes: 45
 acceptance_criteria: "Both complete fixture files run in the existing serial validation cohort after parallel contracts; Original deadlines, retry policy, assertions and benchmark thresholds remain unchanged; Targeted qualification and complete-source coverage/static admission retain actual results and required hosted proof"
 parent: pm-bj7rq0
 risk: low
 confidence: high
-resolution: "Allocated CLI transport-floor and executable refusal-closure test files after parallel contract workers, extending the existing runner membership/order guard and documentation without changing assertions, deadlines, retries or benchmark budgets."
-expected_result: Both complete fixture files run in the serial cohort and complete-source validation preserves every original test and quality threshold.
-actual_result: "The original unchanged files pass28 isolated tests. The linked runner qualification passes, and the complete revised run passes11518 tests across879 passed files with exact100/100/100/100 coverage. Both serial files pass their original30second and360second deadlines. Static import/CLI transport admission and bounded mutation gate pass; final exact-head hosted coverage/static/windows validation remains required."
-comments[2]{created_at,author,text}:
+resolution: "Both complete cold-process files remain in the existing serial cohort after parallel contracts. Original assertions,30second/360second deadlines, retry policy and benchmark thresholds are unchanged. Qualification snapshots are explicitly distinguished."
+expected_result: The unchanged runner allocation retains complete source coverage/static and hosted platform proof with accurate immutable closure evidence.
+actual_result: "Earlier complete run:11518 tests before the mixed-input case was added. Later complete run:11519 tests including that case, with exact100/100/100/100 source coverage. Unchanged runner source is hosted-qualified on a20864701 by CI40633615811: all26 required contexts pass, including merged coverage, static and Windows; the original Windows receipt timeout and successful same-head rerun remain in CI history. Fresh linked runner qualification passes. Both cold files retain their original deadlines and assertions."
+comments[3]{created_at,author,text}:
   "2026-10-27T22:54:59.559Z","harness:codex","Duplicate check: fresh open/in-progress lists, full initial all-status3143-item corpus, exact refusal closure serial and transport floor serial searches, and full live pm-bj7rq0 metadata found no owner for these two newly observed file allocations. Related completed allocation tasks cover different fixtures. This finite child owns only vitest allocation and its documentation/verification."
   "2026-10-27T22:55:48.545Z","harness:codex","Qualified-before allocation control: unchanged Node24 files pass28 tests with one worker in123.85seconds, with the actual refusal probe105.2seconds and the transport file12.1seconds. Initial parallel full-run failures at original30second/360second deadlines remain failed evidence. Moved both entire files into the existing post-contract serial cohort and extended its existing ordering/membership/deadline guard. No fixture content, source corpus, deadline, retry, assertion or benchmark ceiling changed. Complete revised-source proof remains required."
+  "2026-10-28T05:38:10.659Z","harness:codex","PR1616 review4397162864/4397162875 is resolved in the new immutable closure event:11518 explicitly identifies the earlier complete run;11519 identifies the later run including mixed JSON input. CI40633615811 on a20864701 completed all26 required contexts, including exact coverage/static and Windows after one unchanged-head native rerun. Runner allocation, its guard and docs are byte-identical to that qualified head. Fresh linked runner qualification passes; closure no longer describes its required hosted proof as pending."
 files[2]{path,scope}:
   tests/integration/vitest-retry-policy.integration.spec.ts,project
   vitest.config.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts,project,600,"harness:codex","2026-10-27T22:55:47.400Z",local_mutation,fix/sdk-literal-runtime-inputs
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvrcf4v6-c1ygg1
     kind: test
     status: passed
@@ -38,11 +39,22 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvrol93x-hm5pxx
+    kind: test
+    status: passed
+    started_at: "2026-10-28T05:33:35.835Z"
+    finished_at: "2026-10-28T05:35:51.645Z"
+    recorded_at: "2026-10-28T05:35:51.645Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/vitest-retry-policy.integration.spec.ts tests/unit/scripts/cli-transport-floor.spec.ts tests/unit/scripts/refusal-closure-gate.spec.ts,schema,schema,source,local_source_ref
 docs[2]:
   - path: CHANGELOG.md
     scope: project
     note: Package-generated reviewed runner allocation entry
   - path: docs/TESTING.md
     scope: project
-close_reason: Qualified both unchanged cold-process fixture files in the existing serial validation cohort.
+close_reason: Recorded completed hosted qualification for unchanged runner allocation and reconciled both complete-source run contexts.
 body: ""

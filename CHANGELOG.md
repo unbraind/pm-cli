@@ -4,8 +4,8 @@
 
 ### Fixed
 
-- GH-1614: keep typed SDK data literal across CLI sentinel inputs ([pm-gh1614](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1614.toon))
 - GH-1606: Validate public SDK runtime operand values before mutation internals ([pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon))
+- GH-1614: keep typed SDK data literal across CLI sentinel inputs ([pm-gh1614](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1614.toon))
 
 ### Other
 

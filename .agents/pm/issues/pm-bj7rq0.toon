@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-27T20:03:07.933Z"
+updated_at: "2026-10-28T06:51:20.268Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[109]:
+comments[113]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -352,7 +352,19 @@ comments[109]:
   - created_at: "2026-10-27T20:03:07.933Z"
     author: "harness:codex"
     text: "Admission distinction: the unchanged strict hosted static job passes on1c534fce727cf29d22cc44c20db570d41a357712 (job122381186596), and every required check on that head is successful with verified publishers. This clears candidate delivery admission without waiving any threshold. Local isolated candidate create400ms vs398ms and original get419vs362/create440vs398 remain retained observations on this host; they do not establish patch causality. No timing threshold, retry count or benchmark baseline was altered."
-files[11]:
+  - created_at: "2026-10-28T05:46:08.057Z"
+    author: "harness:codex"
+    text: "PR1616 qualification observation: unchanged merge-receipt-settlement.integration.spec.ts exceeds its original30second test deadline on released baseline b5241ced0 in CI40631210889/job122629413161 and on SDK candidate a20864701 in CI40633615811/job122635932547. Both primary logs name the same durable-proof/stale-local-copy case. One unchanged-head failed-job rerun passes all26 required contexts. The candidate file is byte-identical to released main, and the earlier SDK head also passes Windows. Native where.exe startup exceeded its1second probe budget on the failing candidate runner. These are timing/pressure symptoms with unconfirmed root cause, not evidence of a new SDK data regression. Reuse this startup-qualification owner for supported-Windows stage/pressure controls and independent base comparison; preserve every existing assertion, retry, deadline and admission ratchet until an evidence-backed correction is reviewed. No duplicate item, threshold change or new implementation claim."
+  - created_at: "2026-10-28T06:14:31.029Z"
+    author: "harness:codex"
+    text: "Current array-isolation revision passes all11519 source tests and exact100/100/100/100 coverage. Full static reaches qualified CLI transport admission and fails only create at401ms versus the unchanged398ms ceiling; control median46ms is within106ms, so preserve this as a qualified product-budget failure. Source report records load averages12.1/11.23/10.81 before and10/10.82/10.68 after on8available CPUs. Compare immutable a20864701 in an isolated build with identical dependencies and original benchmark settings before assigning cause. Do not lower thresholds or relabel this failed sample as a pass."
+  - created_at: "2026-10-28T06:37:32.540Z"
+    author: "harness:codex"
+    text: "Controlled follow-up preserves failed samples: the first isolated baseline was on tmpfs and therefore not a fair filesystem comparison. A fresh sibling Btrfs checkout of a20864701 passes original budgets (next410ms/create389ms/claim391ms). Applying only the three array-policy runtime changes and rebuilding in that same path yields qualified failures (next512ms/create462ms/claim487ms), while get improves339ms to311ms. Current original checkout also has qualified next473ms/create407ms failures. No threshold, qualification rule or outcome is changed. Phase-varying timing and read-only next must be distinguished from mutation-code cost; require the final hosted static/floor gate, and retain this evidence without asserting an established root cause."
+  - created_at: "2026-10-28T06:51:20.268Z"
+    author: "harness:codex"
+    text: "Final local requalification completes pnpm quality:static with exit0 on the same array-isolation production source, including the unchanged transport floor and subsequent graph/record/mutation gates. Earlier qualified failures and the Btrfs controls remain failed historical observations; do not rewrite them as runner refusals or claim an established cause. The SDK source revision has full11519-test exact100coverage and fresh packed/linked proof; final hosted admission remains a delivery gate."
+files[12]:
   - path: .github/workflows/ci.yml
     scope: project
     note: Preserve Windows keepers in parallel bounded cohorts and fail-closed required aggregation
@@ -370,6 +382,8 @@ files[11]:
   - path: tests/integration/ci-workflow-contract.spec.ts
     scope: project
     note: Required cohort coverage and unsuccessful-outcome refusal
+  - path: tests/integration/workspace/merge-receipt-settlement.integration.spec.ts
+    scope: project
   - path: tests/unit/scripts/cli-transport-floor.spec.ts
     scope: project
   - path: tests/unit/scripts/point-read-costs.spec.ts

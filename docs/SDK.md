@@ -1199,10 +1199,12 @@ normalization before invoking those operations.
 
 Adapter authors can import `withCliMutationInput` and
 `withLiteralMutationInput` from the SDK root or runtime entrypoint. Both return
-cloned option bags with an in-process input policy. Use the first only for
-explicit CLI parsing, and the second for decoded JSON or other literal data
-inside that adapter. Existing literal data and already-resolved stdin fields
+cloned option bags and collection values with an in-process input policy. Use
+the first only for explicit CLI parsing, and the second for decoded JSON or
+other literal data inside that adapter. Existing literal data and already-resolved stdin fields
 retain their policy through the clone; no marker is serialized into an item.
+Reusing a collection in a fresh CLI option bag does not inherit literal policy
+from another call or modify the caller's collection.
 
 Create focus policy is tracked by [pm-gh1577](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1577.toon)
 (this tracker record is repository-only and excluded from npm).

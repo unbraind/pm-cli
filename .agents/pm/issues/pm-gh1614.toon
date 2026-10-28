@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T17:43:51.501Z"
-updated_at: "2026-10-28T04:39:10.431Z"
-closed_at: "2026-10-28T04:08:32.048Z"
-completed_at: "2026-10-28T04:08:32.048Z"
+updated_at: "2026-10-28T06:51:19.477Z"
+closed_at: "2026-10-28T06:51:18.695Z"
+completed_at: "2026-10-28T06:51:18.695Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Literal SDK text fields preserve sentinel spellings through create/update/append; SDK data calls do not implicitly consume stdin or read files; Explicit typed clear/unset and existing CLI transport semantics retain focused conformance tests
 parent: pm-9rgaal
 risk: high
 confidence: high
-resolution: "SDK strings stay literal through native calls, templates and bulk operations. JSON-derived fields carry both literal and decoded-stdin provenance through normalization, while explicit CLI scalar, alias, collection and annotation overrides retain their declared grammar. Runtime admission remains unconditional."
-expected_result: "Provider data preserves sentinel spellings without implicit IO; explicit CLI clearing and alias precedence remain compatible, including mixed JSON input."
-actual_result: "All11519 complete-source tests pass. Direct source SDK/structured controls57, all3 linked groups, typecheck, lint and AST analysis pass. Fresh packed Node24/npm and Bun installations pass both public entrypoints, mixed JSON flags and9 typed no-write refusals; actual npx/bunx execute. Revised-head exact100 coverage and full static/hosted review remain mandatory pre-merge gates; no thresholds or exclusions changed."
+resolution: "Native SDK data stays literal without implicit stdin/file interpretation. JSON provenance is field-specific and explicit CLI overrides keep their grammar. Literal registration owns cloned collections; fresh CLI bags also clone collections, and native SDK options are copied before policy registration so caller bags and arrays retain independent interpretation."
+expected_result: "SDK and JSON data preserve sentinel text, explicit unset/clear remains supported, and reusing caller arrays or option bags in a fresh CLI call cannot inherit policy from another invocation."
+actual_result: "Shared-array negative control fails before repair and passes after. All11519 complete-source tests pass with3platform skips and exact100/100/100/100 coverage:67372lines,54872branches,14661functions and71258statements. All3 linked SDK groups and fresh packed Node24/npm/Bun root/runtime controls pass, including original-bag reuse, field-specific arrays, explicit literal precedence, mixed JSON overrides and9typed no-write refusals. Full static requalification passes all original gates including transport floor, graph, record integrity and bounded mutation. Earlier qualified timing failures and controlled comparisons remain recorded without changed budgets."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-rl4e,related,"2026-10-27T18:11:15.727Z","harness:codex","cli:update:dep",detected
   pm-gh1606,related,"2026-10-28T00:06:31.789Z","harness:codex","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-27T17:43:51.501Z","harness:codex","Duplicate check: fresh sentinel and 1614 searches plus complete 3142-item corpus and live open/in-progress lists found no canonical GH-1614 item. Full live pm-rl4e/history confirms the older none-token migration is closed for its own accepted scope; this reproduces a new SDK boundary defect. Source reproduction ran in a new temporary project/global tracker with telemetry disabled; no real data was touched. Track as separate open SDK data-integrity work while the validated refusal/recovery delivery proceeds through review."
   "2026-10-27T18:12:31.904Z","harness:codex","Review remediation: assessed high risk/high confidence from the reproduced silent rewrites, added explicit three-part SDK/CLI conformance acceptance and180minute estimate, and linked completed pm-rl4e as related lineage. The complete repository tracker-context-quality gate now passes all47 assertions, including zero missing required active metadata and the semantic graph bounds. This is intake verification, not an implementation or closure claim."
   "2026-10-27T22:08:34.310Z","harness:codex","Grouped delivery with pm-gh1606: certify literal SDK inputs at the shared SDK mutation boundary while retaining explicit CLI decoding, typed unset directives and project field validation. Full all-status read covered3143 records without omissions; only these two implementation items are claimed. Baseline branch is current main7d85bc8c1. Add independent native-client and real transport regression controls before changing production code."
@@ -36,6 +36,8 @@ comments[14]{created_at,author,text}:
   "2026-10-28T04:00:40.685Z","harness:codex","Complete-source qualification passes all11,519 tests; four branch/statement counters remain because the new mixed-input controls execute the compiled CLI outside source instrumentation. Added direct SDK document-conversion/normalization/create/update controls for the same data-versus-clear behavior, including literal dash input. Document conversion now carries both field-level clear-token and stdin provenance. All57 direct SDK/structured-IO tests pass. Revised-head hosted coverage remains a mandatory exact100/100/100/100 gate; no thresholds, denominator exclusions or ignores are changed."
   "2026-10-28T04:31:55.839Z","harness:codex","Renewed review disposition: explicit withLiteralMutationInput is documented to preserve literal data even inside a CLI adapter; retaining that whole-object policy across withCliMutationInput clones is intentional. Fresh packed Node24 and Bun controls verify composed create/update, scalar/collection data, raw CLI clearing and mixed JSON flags. Rebutted only that finding in its existing inline thread. Hosted static reports stale CHANGELOG after new v2026.10.28 arrived during CI; integrate current main and regenerate using latest pm-changelog, without changing its implementation."
   "2026-10-28T04:39:10.430Z","harness:codex","Final source qualification on7a07600d5: hosted CI40630836884 passes all4 coverage shards and the merged exact100/100/100/100 gate with zero uncovered counts. All other jobs pass except stale CHANGELOG, which correctly detects new v2026.10.28 tag arrival. Integrated released mainb5241ced0 without production code changes and regenerated/checked CHANGELOG via latest pm-changelog; all3 delivery entries remain Unreleased. Fresh candidate2026.10.28 packed Node24/npm and Bun probes pass both public entrypoints, explicit literal precedence, mixed JSON overrides,9 typed no-write refusals and actual npx/bunx. Renewed exact-head CI and full bot review remain required before merge."
+  "2026-10-28T05:30:10.728Z","harness:codex","Renewed review4397162884 is a distinct valid aliasing case: literal registration marks shared arrays, so a later fresh CLI bag can inherit clear-token suppression. Add failing-before behavioral controls for public literal/native/field-specific arrays and isolate cloned collections at policy boundaries. Full-object explicit literal precedence remains intentional and unchanged. Only this SDK implementation owner is active."
+  "2026-10-28T05:36:22.313Z","harness:codex","The independent shared-array control fails before repair: a fresh CLI call appends a none comment instead of clearing. Clone collection values before registering literal provenance, copy native SDK option bags before marking, and clone CLI collections before transferring bag-level policy. This preserves explicit literal composition while preventing aliases of caller, helper-result and field-specific document arrays from inheriting policy in a fresh CLI bag. The initial field-specific control was corrected to use a bare clear token rather than the valid structured text=none encoding; no product behavior was weakened."
 notes[1]{created_at,author,text}:
   "2026-10-27T22:31:38.018Z","harness:codex","Design rationale: keep CLI transport syntax at thin adapters. Direct SDK lifecycle operations default to literal data, and unpersisted weak provenance follows internal option clones so stdin planning and legacy-clear normalization cannot reinterpret provider values. Explicit unset/clear directives remain domain operations and ordinary schema/value validation still runs. No new option flag, item field or serialized transport marker is introduced."
 learnings[3]{created_at,author,text}:
@@ -71,7 +73,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,600,"harness:codex","2026-10-27T22:22:49.661Z",local_mutation,fix/sdk-literal-runtime-inputs
   node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts,project,600,"harness:codex","2026-10-27T22:59:25.882Z",local_mutation,fix/sdk-literal-runtime-inputs
   node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/structured-mutations.spec.ts,project,600,"harness:codex","2026-10-28T03:21:53.084Z",local_mutation,fix/sdk-literal-runtime-inputs
-test_runs[6]:
+test_runs[7]:
   - run_id: test-local-mvrcbbrg-syd3x4
     kind: test
     status: passed
@@ -146,13 +148,26 @@ test_runs[6]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/structured-mutations.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvrqu8k1-e61bd3
+    kind: test
+    status: passed
+    started_at: "2026-10-28T06:37:38.879Z"
+    finished_at: "2026-10-28T06:38:50.065Z"
+    recorded_at: "2026-10-28T06:38:50.065Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/structured-mutations.spec.ts,schema,schema,source,local_source_ref
 docs[2]:
   - path: CHANGELOG.md
     scope: project
     note: Package-generated reviewed delivery changelog
   - path: docs/SDK.md
     scope: project
-close_reason: Delivered field-level JSON provenance and preserved explicit CLI override grammar in PR1616.
+close_reason: Completed literal SDK input preservation and isolated collection policy across repeated calls.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

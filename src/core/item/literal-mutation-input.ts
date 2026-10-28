@@ -17,8 +17,11 @@ export function isCliMutationInput(input: object): boolean {
 /** Keep SDK option strings and collection entries separate from CLI clear tokens. */
 export function preserveLiteralMutationInput<T extends object>(input: T): T {
   literalInputs.add(input);
-  for (const value of Object.values(input)) {
-    if (Array.isArray(value)) literalInputs.add(value);
+  for (const [key, value] of Object.entries(input)) {
+    if (!Array.isArray(value)) continue;
+    const owned = [...value];
+    Reflect.set(input, key, owned);
+    literalInputs.add(owned);
   }
   return input;
 }
@@ -34,7 +37,10 @@ export function preserveLiteralMutationInputFields<T extends object>(input: T, f
   literalFields.set(input, selected);
   for (const field of selected) {
     const value: unknown = Reflect.get(input, field);
-    if (Array.isArray(value)) literalInputs.add(value);
+    if (!Array.isArray(value)) continue;
+    const owned = [...value];
+    Reflect.set(input, field, owned);
+    literalInputs.add(owned);
   }
   return input;
 }

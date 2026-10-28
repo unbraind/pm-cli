@@ -561,7 +561,7 @@ const literalStdinTokenFields = new WeakMap<
 
 /** Default domain operations to literal SDK data; only CLI adapters opt into sentinel decoding. */
 export function preserveSdkMutationInput<T extends object>(options: T): T {
-  return isCliMutationInput(options) ? options : preserveLiteralMutationInput(preserveMutationStdinTokenLiterals(options));
+  return isCliMutationInput(options) ? options : preserveLiteralMutationInput(preserveMutationStdinTokenLiterals({ ...options }));
 }
 
 /** Mark transport-decoded options whose dash values are data, not stdin tokens. */
