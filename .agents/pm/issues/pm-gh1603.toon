@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,context,github,output,sdk
 created_at: "2026-10-26T15:33:34.776Z"
-updated_at: "2026-10-28T16:40:14.213Z"
+updated_at: "2026-10-28T17:21:59.330Z"
 closed_at: "2026-10-28T16:40:13.224Z"
 completed_at: "2026-10-28T16:40:13.224Z"
 author: "harness:codex"
@@ -22,12 +22,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4euctr,related,"2026-10-26T15:33:34.776Z","harness:codex","cli:create:dep",detected
   pm-5y05kq,related,"2026-10-26T15:33:34.776Z","harness:codex","cli:create:dep",detected
   pm-6m1i,related,"2026-10-26T15:33:34.776Z","harness:codex","cli:create:dep",detected
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-26T15:33:34.776Z","harness:codex","Duplicate check: fresh measured orientation, request-specific agenda and TOON searches, open and in-progress inventories, and complete strict 3125-item all-status corpus found no open owner for this exact proposal. Full live data and histories confirm pm-6m1i, pm-4euctr and pm-5y05kq are completed related work; keep them closed. GH1603 arrived during PR1596 validation and is intake only, open and unclaimed."
   "2026-10-28T15:28:08.718Z","harness:codex","Implementation decision: retain exact SDK/JSON facts. Extend the public table codec with optional compact string-list and all-null-column metadata; renderer selects it only when smaller than existing lossless rendering. Empty members or delimiter collisions fall back to JSON for the entire column. Decode restores every null and array."
   "2026-10-28T15:42:08.932Z","harness:codex","Red/green proof: initial codec fixture fails on unchanged source because list_columns is absent. Compact codec and public renderer now preserve null, sparse and reserved-key facts, empty lists, delimiter collisions and arbitrary JSON. Native deadline/reminder/calendar context at brief, standard and full depth restores exactly and uses fewer tokens. Linked context/rendering/read-output cohort passes98tests. Full coverage/static and hosted admission remain pending."
   "2026-10-28T15:47:47.224Z","harness:codex","Current operational verification: all39open GitHub issues have corresponding PM-link comments after GH1617 intake. GitHub reports no open PRs or security alerts; dependency advisory gate passes all567locked packages. Published2026.10.28 verification succeeds and pm-changelog latest is2026.10.28. Fresh hosted Sentry trace7444d794cc3946aa8b212afa6f4d2284 records real pm context at15:41UTC with pm.command root,7858.93ms duration and no errors. Seven-day aggregate telemetry rate remains independently above its unchanged6percent ceiling; no clean aggregate claim is made."
   "2026-10-28T16:28:11.878Z","harness:codex","Review remediation preserves first-occurrence column order when null columns are omitted, corrects earlier output documentation, and raises native agenda fixture limit to include/assert deadline, reminder, and scheduled event kinds. All 36 focused tests passed, including packed Node/Bun continuation and the previously timed-out scale benchmark with unchanged timeout. Packed npx/bunx smoke passed (9 packages). Broad local coverage remained unproven after its two host-sensitive failures; exact hosted coverage remains required."
+  "2026-10-28T17:20:23.552Z","harness:codex","Final source verification at 396f50b7c: full sandboxed coverage rerun completed with 879 passing files, 11522 passing tests and 3 platform skips. Statements, branches, functions and lines are exactly 100%, with zero uncovered counts. NODE_PATH exposed the installed npm module; no tests, timeouts or thresholds were weakened. CodeRabbit completed a fresh full review with no actionable findings, and Sourcery approved this head. Graph/record integrity and governed mutation checks pass; local transport-floor failure remains separately documented with an untouched-main comparison."
+  "2026-10-28T17:21:59.329Z","harness:codex","Hosted source admission: PR #1619 head 396f50b7c815c26f6042a3628082b401f845c46a is CLEAN with all required checks passing, zero unresolved threads and a passing exact-head analyzer gate. Both local exact coverage and hosted coverage are green for the implementation. Evidence-only follow-up commits remain subject to required checks before merge."
 learnings[1]{created_at,author,text}:
   "2026-10-28T15:47:49.882Z","harness:codex","Lossless output compression must distinguish absent keys, explicit nulls, empty arrays and empty array members. Declare codec metadata and compare complete encoded bytes; never infer arrays by parsing arbitrary scalar cell text."
 files[4]{path,scope}:
