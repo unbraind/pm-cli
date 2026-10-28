@@ -6,6 +6,8 @@ import { runCreate } from "../../../../src/sdk/lifecycle/create.js";
 import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import { runAppend } from "../../../../src/sdk/lifecycle/append.js";
 import { runUpdateMany } from "../../../../src/sdk/lifecycle/update-many.js";
+import { itemDocumentToMutationOptions } from "../../../../src/sdk/structured-mutations.js";
+import { normalizeCreateOptions, normalizeUpdateOptions } from "../../../../src/sdk/cli-contracts/registration-helpers.js";
 import { runDirectDistCli } from "../../../helpers/cliRunner.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
@@ -17,6 +19,53 @@ async function mutationBytes(pmPath: string) {
 }
 
 describe("literal SDK mutation inputs (pm-gh1614, pm-gh1606)", () => {
+  it("preserves JSON data while explicit CLI scalar, alias and collection flags still clear", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot, env }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const cli = (args: string[], input: object) => runDirectDistCli([...args, "--stdin-json", "--json", "--no-extensions"], { cwd: tempRoot, env, input: JSON.stringify(input), expectJson: true });
+      let id = "";
+      for (const token of ["none", "null"]) {
+        const created = cli(["create", "--create-mode", "progressive", "--assignee", token], { type: "Task", title: `Mixed JSON ${token}`, goal: token, tags: [token] });
+        expect(created.code, created.stderr).toBe(0);
+        const payload = JSON.parse(created.stdout);
+        id = payload.id ?? payload.item.id;
+        expect((await client.get(id)).item).toMatchObject({ goal: token, tags: [token] });
+        expect((await client.get(id)).item.assignee).toBeUndefined();
+        const updated = cli(["update", id, "--assignee", token], { assignee: "document owner", goal: token });
+        expect(updated.code, updated.stderr).toBe(0);
+        expect((await client.get(id)).item.assignee).toBeUndefined();
+        expect((await client.get(id)).item.goal).toBe(token);
+      }
+      const alias = cli(["update", id, "--ac", "none"], { acceptance_criteria: "document criteria", assignee: "none" });
+      expect(alias.code, alias.stderr).toBe(0);
+      expect((await client.get(id)).item).toMatchObject({ assignee: "none" });
+      expect((await client.get(id)).item.acceptance_criteria).toBeUndefined();
+      const empty = cli(["update", id, "--assignee", "none"], {});
+      expect(empty.code, empty.stderr).toBe(0);
+      expect((await client.get(id)).item.assignee).toBeUndefined();
+      const collection = cli(["create", "--create-mode", "progressive", "--comment", "none"], { type: "Task", title: "Mixed JSON collections", comments: [{ text: "none" }], notes: [{ text: "null" }] });
+      expect(collection.code, collection.stderr).toBe(0);
+      const payload = JSON.parse(collection.stdout);
+      const item = (await client.get(payload.id ?? payload.item.id, { full: true })).item;
+      expect(item.comments ?? []).toHaveLength(0);
+      expect(item.notes).toEqual([expect.objectContaining({ text: "null" })]);
+      await client.update(item.id, { comment: ["snapshot comment"] });
+      const document = (await client.get(item.id, { full: true })).item;
+      const restored = cli(["update", item.id, "--comment", "none"], document);
+      expect(restored.code, restored.stderr).toBe(0);
+      const after = (await client.get(item.id, { full: true })).item;
+      expect(after.comments ?? []).toHaveLength(0);
+      expect(after.notes).toEqual(document.notes);
+      const global = { path: pmPath };
+      const nativeCreated = await runCreate(withCliMutationInput(normalizeCreateOptions(itemDocumentToMutationOptions(JSON.stringify({ type: "Task", title: "SDK mixed document", description: "-", goal: "none", tags: ["none"], notes: [{ text: "null" }] }), "create", { assignee: "none", createMode: "progressive" }), { requireType: false })), global);
+      expect(nativeCreated.item).toMatchObject({ description: "-", goal: "none", tags: ["none"], notes: [expect.objectContaining({ text: "null" })] });
+      expect(nativeCreated.item.assignee).toBeUndefined();
+      const nativeUpdated = await runUpdate(nativeCreated.item.id, withCliMutationInput(normalizeUpdateOptions(itemDocumentToMutationOptions(JSON.stringify({ assignee: "document owner", goal: "null", tags: ["null"] }), "update", { assignee: "none" }))), global);
+      expect(nativeUpdated.item).toMatchObject({ goal: "null", tags: ["null"] });
+      expect(nativeUpdated.item.assignee).toBeUndefined();
+    });
+  });
+
   it("round-trips free text sentinels through native create, update and append without reading stdin", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });

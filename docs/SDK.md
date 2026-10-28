@@ -1180,8 +1180,9 @@ apply. Clear fields explicitly with `unset: ["assignee"]` or the declared
 `clear*` collection options; JavaScript `null` is not an unset directive.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
-literal data, including `"none"` and `"null"`; use explicit CLI clear/unset
-flags when the intent is to remove a field.
+literal data, including `"none"` and `"null"`. Explicit CLI flags override
+document values and retain CLI interpretation, including legacy clear tokens.
+Use explicit clear/unset flags when the intent is to remove a field.
 
 Native create/update values are checked against the SDK-owned option contracts
 before normalization and writes. A malformed append body or option value throws

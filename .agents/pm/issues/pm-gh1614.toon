@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T17:43:51.501Z"
-updated_at: "2026-10-28T02:38:36.281Z"
-closed_at: "2026-10-28T02:38:35.392Z"
-completed_at: "2026-10-28T02:38:35.392Z"
+updated_at: "2026-10-28T04:08:32.801Z"
+closed_at: "2026-10-28T04:08:32.048Z"
+completed_at: "2026-10-28T04:08:32.048Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Literal SDK text fields preserve sentinel spellings through create/update/append; SDK data calls do not implicitly consume stdin or read files; Explicit typed clear/unset and existing CLI transport semantics retain focused conformance tests
 parent: pm-9rgaal
 risk: high
 confidence: high
-resolution: "SDK mutations preserve literal values through every composed option bag. Explicit SDK-backed CLI policy retains stdin, clear tokens and repeatable aliases. Template and bulk clones now transfer policy, with documented public helpers and unchanged serialized item formats."
-expected_result: Native and template-backed SDK values round-trip as data; valid CLI single and bulk transports retain their grammar; explicit unset and JSON input remain deterministic.
-actual_result: "Final source passes 11,518 tests across 879 passed files and exact 100/100/100/100 coverage: 67,334 lines, 54,841 branches, 14,654 functions and 71,204 statements. Both linked test groups pass. Packed npm/Node and Bun consumers each verify both SDK entrypoints, template preservation, expanded template admission, CLI aliases and nine typed no-write refusals; actual npx/bunx execute the candidate. Typecheck, ESLint and source/import/complexity checks pass. PR https://github.com/unbraind/pm-cli/pull/1616 retains all closure and review evidence; revised-head composite static and hosted checks are mandatory merge gates."
+resolution: "SDK strings stay literal through native calls, templates and bulk operations. JSON-derived fields carry both literal and decoded-stdin provenance through normalization, while explicit CLI scalar, alias, collection and annotation overrides retain their declared grammar. Runtime admission remains unconditional."
+expected_result: "Provider data preserves sentinel spellings without implicit IO; explicit CLI clearing and alias precedence remain compatible, including mixed JSON input."
+actual_result: "All11519 complete-source tests pass. Direct source SDK/structured controls57, all3 linked groups, typecheck, lint and AST analysis pass. Fresh packed Node24/npm and Bun installations pass both public entrypoints, mixed JSON flags and9 typed no-write refusals; actual npx/bunx execute. Revised-head exact100 coverage and full static/hosted review remain mandatory pre-merge gates; no thresholds or exclusions changed."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-rl4e,related,"2026-10-27T18:11:15.727Z","harness:codex","cli:update:dep",detected
   pm-gh1606,related,"2026-10-28T00:06:31.789Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-10-27T17:43:51.501Z","harness:codex","Duplicate check: fresh sentinel and 1614 searches plus complete 3142-item corpus and live open/in-progress lists found no canonical GH-1614 item. Full live pm-rl4e/history confirms the older none-token migration is closed for its own accepted scope; this reproduces a new SDK boundary defect. Source reproduction ran in a new temporary project/global tracker with telemetry disabled; no real data was touched. Track as separate open SDK data-integrity work while the validated refusal/recovery delivery proceeds through review."
   "2026-10-27T18:12:31.904Z","harness:codex","Review remediation: assessed high risk/high confidence from the reproduced silent rewrites, added explicit three-part SDK/CLI conformance acceptance and180minute estimate, and linked completed pm-rl4e as related lineage. The complete repository tracker-context-quality gate now passes all47 assertions, including zero missing required active metadata and the semantic graph bounds. This is intake verification, not an implementation or closure claim."
   "2026-10-27T22:08:34.310Z","harness:codex","Grouped delivery with pm-gh1606: certify literal SDK inputs at the shared SDK mutation boundary while retaining explicit CLI decoding, typed unset directives and project field validation. Full all-status read covered3143 records without omissions; only these two implementation items are claimed. Baseline branch is current main7d85bc8c1. Add independent native-client and real transport regression controls before changing production code."
@@ -32,12 +32,15 @@ comments[10]{created_at,author,text}:
   "2026-10-28T00:52:18.517Z","harness:codex","PR1616 review control reproduces template data loss on the reviewed head: native template creation drops explicit assignee none and comment none after an unmarked merge. The real active template-handler fixture now also checks literal none/null/dash scalar and collection values, alongside CLI legacy clearing. Fixed the merge to transfer the explicit SDK input policy onto its cloned result before normalization. Original reviewed-head full static and hosted checks completed; this revision requires fresh proof."
   "2026-10-28T01:33:38.430Z","harness:codex","The additional real CLI bulk --ac control exposed a second option-composition boundary: per-item update-many bags preserved resolved stdin fields but discarded the CLI/literal input policy. Per-row cloning now transfers both policies before calling the canonical update operation. This keeps native bulk values literal and retains valid CLI alias grammar after unconditional runtime admission. The same end-to-end control failed with a dependency_failed row and now guards the composed path."
   "2026-10-28T01:38:19.155Z","harness:codex","The bulk control additionally located policy loss in the shared stdin resolver clone, before per-row options were built. Both clone boundaries now transfer interpretation policy; the same CLI bulk acceptance-criteria control passes. Native template values, explicit unset, literal JSON, CLI stdin and legacy clearing remain covered. The expanded public PmClient CLI-policy alias control also failed before dispatch was made provenance-aware and now passes. Final focused qualification:259 tests across five complete files; direct source/import/complexity analysis reports zero violations."
+  "2026-10-28T03:19:21.725Z","harness:codex","Renewed PR1616 review control reproduces mixed stdin JSON and CLI clear flags storing assignee none instead of clearing. Added real create/update controls for none/null scalar flags, empty JSON, repeatable aliases, collection flags and authoritative annotation round trips. Document conversion now tags only document-derived fields, resolves explicit aliases/schema keys, and removes overridden document defaults so aliases do not concatenate. Annotation snapshots omit explicitly overridden collections. Canonical option normalizers and every clone preserve field provenance; SDK data remains literal and native value admission is unchanged. All120 structured-input/registration/SDK tests pass after the fix, including exact mixed-input expectations."
+  "2026-10-28T04:00:40.685Z","harness:codex","Complete-source qualification passes all11,519 tests; four branch/statement counters remain because the new mixed-input controls execute the compiled CLI outside source instrumentation. Added direct SDK document-conversion/normalization/create/update controls for the same data-versus-clear behavior, including literal dash input. Document conversion now carries both field-level clear-token and stdin provenance. All57 direct SDK/structured-IO tests pass. Revised-head hosted coverage remains a mandatory exact100/100/100/100 gate; no thresholds, denominator exclusions or ignores are changed."
 notes[1]{created_at,author,text}:
   "2026-10-27T22:31:38.018Z","harness:codex","Design rationale: keep CLI transport syntax at thin adapters. Direct SDK lifecycle operations default to literal data, and unpersisted weak provenance follows internal option clones so stdin planning and legacy-clear normalization cannot reinterpret provider values. Explicit unset/clear directives remain domain operations and ordinary schema/value validation still runs. No new option flag, item field or serialized transport marker is introduced."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-10-27T18:11:16.886Z","harness:codex","After creating repository work, run the complete tracker-context-quality gate before pushing. Progressive intake still requires repository acceptance criteria, risk, confidence and estimated minutes, plus real semantic relationships; a passing gate predating the new item does not certify it."
   "2026-10-28T01:06:30.774Z","harness:codex","Input provenance follows object identity: every option merger, including template expansion, must transfer policy to cloned bags and their collection values. Round-trip semantic tests at the final creation boundary detect data loss that clone shape comparisons cannot."
-files[22]{path,scope}:
+  "2026-10-28T03:26:31.885Z","harness:codex","When JSON documents and explicit CLI flags share a mutation, literal provenance belongs to fields rather than the whole option bag. Resolve aliases before merging, discard overridden document defaults, and omit overridden annotation snapshots so explicit clearing cannot be undone by JSON replay."
+files[24]{path,scope}:
   sdk/public-surface.json,project
   src/cli/commands/lifecycle/append.ts,project
   src/cli/commands/lifecycle/create.ts,project
@@ -47,6 +50,7 @@ files[22]{path,scope}:
   src/cli/register-mutation.ts,project
   src/core/item/literal-mutation-input.ts,project
   src/core/item/parse.ts,project
+  src/sdk/cli-contracts/registration-helpers.ts,project
   src/sdk/lifecycle/append.ts,project
   src/sdk/lifecycle/cli-input.ts,project
   src/sdk/lifecycle/create.ts,project
@@ -56,14 +60,16 @@ files[22]{path,scope}:
   src/sdk/runtime-input.ts,project
   src/sdk/runtime-primitives.ts,project
   src/sdk/runtime.ts,project
+  src/sdk/structured-mutations.ts,project
   tests/unit/commands/lifecycle/create-command.spec.ts,project
   tests/unit/commands/lifecycle/focus-command.spec.ts,project
   tests/unit/sdk/lifecycle/literal-input.spec.ts,project
   tests/unit/sdk/transactions/preview-snapshot.spec.ts,project
-tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts,project,600,"harness:codex","2026-10-27T22:22:49.661Z",local_mutation,fix/sdk-literal-runtime-inputs
   node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts,project,600,"harness:codex","2026-10-27T22:59:25.882Z",local_mutation,fix/sdk-literal-runtime-inputs
-test_runs[4]:
+  node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/structured-mutations.spec.ts,project,600,"harness:codex","2026-10-28T03:21:53.084Z",local_mutation,fix/sdk-literal-runtime-inputs
+test_runs[6]:
   - run_id: test-local-mvrcbbrg-syd3x4
     kind: test
     status: passed
@@ -112,13 +118,39 @@ test_runs[4]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvrjuk40-f9em29
+    kind: test
+    status: passed
+    started_at: "2026-10-28T03:21:53.835Z"
+    finished_at: "2026-10-28T03:23:07.727Z"
+    recorded_at: "2026-10-28T03:23:07.727Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/structured-mutations.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvrl8dt6-c21u6v
+    kind: test
+    status: passed
+    started_at: "2026-10-28T04:00:41.463Z"
+    finished_at: "2026-10-28T04:01:52.362Z"
+    recorded_at: "2026-10-28T04:01:52.362Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/query/get-append-command.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/focus-command.spec.ts tests/unit/sdk/transactions/preview-snapshot.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/structured-mutation-io.integration.spec.ts tests/unit/cli/registration-helpers.spec.ts tests/unit/sdk/structured-mutations.spec.ts,schema,schema,source,local_source_ref
 docs[2]:
   - path: CHANGELOG.md
     scope: project
     note: Package-generated reviewed delivery changelog
   - path: docs/SDK.md
     scope: project
-close_reason: "Completed literal input provenance across native creation, templates, stdin resolution and bulk row composition; review regressions are covered."
+close_reason: Delivered field-level JSON provenance and preserved explicit CLI override grammar in PR1616.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

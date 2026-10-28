@@ -395,6 +395,7 @@ function normalizeLegacyNoneCreateOptions(
     "rank",
   ]);
   for (const optionKey of scalarOptionKeys) {
+    if (isLiteralMutationInput(options, optionKey)) continue;
     const candidate = normalized[optionKey];
     if (typeof candidate !== "string" || !isLegacyNoneToken(candidate)) {
       continue;
@@ -2171,6 +2172,7 @@ function assertNoLegacyCreateScalarTokens(
     value: string | undefined,
     optionKey: string,
   ): void => {
+    if (isLiteralMutationInput(resolvedOptions, optionKey)) return;
     const unsetField = CREATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey);
     const hint = unsetField
       ? `Use --unset ${unsetField} to clear this field.`

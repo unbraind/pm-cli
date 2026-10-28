@@ -224,6 +224,7 @@ export function applyLegacyNoneCollectionNormalizers<
         EXIT_CODE.USAGE,
       );
     }
+    if (isLiteralMutationInput(candidate)) continue;
     const entries = candidate;
     const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
     if (!hasLegacy) {
