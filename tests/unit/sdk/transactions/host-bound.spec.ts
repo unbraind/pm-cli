@@ -34,7 +34,7 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
       expect((await client.commitItemMutations(input)).recovered).toBe(true);
       expect(await readFile(historyPath, "utf8")).toBe(history);
       expect(await client.previewItemMutations(input)).toMatchObject({ validated: false, state: "replayed_committed_plan", records: [] });
-      await expect(client.commitItemMutations({ ...input, mutations: [{ op: "update", id: "staged", options: { title: "Changed intent" } }] })).rejects.toMatchObject({ context: { code: "transaction_plan_mismatch" } });
+      await expect(client.commitItemMutations({ ...input, mutations: [{ op: "update", id: "staged", options: { title: "Changed intent" } }] })).rejects.toMatchObject({ context: { code: "transaction_plan_mismatch", nextSteps: expect.arrayContaining([expect.stringContaining("client.itemTransactions.abandon")]) } });
       await expect(client.itemTransactions.abandon("canonical", { reason: "Cannot undo completed work" })).rejects.toMatchObject({ context: { code: "transaction_committed" } });
     });
   });
@@ -43,7 +43,7 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
     await withTempPmPath(async ({ pmPath }) => {
       const client = new PmClient({ pmRoot: pmPath, author: "recovery-actor", noExtensions: true });
       const original = (await client.create({ title: "Original", type: "Task" })).item;
-      const options = { transactionId: "retired", mutations: [{ op: "update", id: original.id, options: { title: "Forward" } }] satisfies BulkItemMutation[] };
+      const options = { transactionId: " retired ", mutations: [{ op: "update", id: original.id, options: { title: "Forward" } }] satisfies BulkItemMutation[] };
       await expect(client.commitItemMutations({ ...options, onTransition: event => { if (event.transition === transition) throw new WorkspaceTransactionInterruptedError("Crash"); } })).rejects.toThrow("Crash");
       const before = await client.itemTransactions.status("retired");
       expect(before?.journal.status).toBe("applying");
@@ -158,16 +158,17 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
         if (args[0] === file && String(args[1]).includes('"status": "abandoned"')) throw new Error("Final journal write failed");
         return write(...args);
       });
-      await expect(client.itemTransactions.abandon("audit", { reason: "Retire" })).rejects.toThrow("Final journal write failed");
+      await expect(client.itemTransactions.supersede("audit", "audit-replacement", { reason: "Retire" })).rejects.toThrow("Final journal write failed");
       vi.restoreAllMocks();
       const auditPath = path.join(pmPath, "history", "_workspace.jsonl");
       const audit = await readFile(auditPath, "utf8");
       await expect(client.commitItemMutations({ transactionId: "audit", mutations: [{ op: "update", id: "audit", options: { title: "Forward" } }] })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
       const collected = await runWorkspaceTransactionGc(pmPath, { dryRun: true, retentionDays: 0, now: Date.now() + 86400000 });
       expect(collected.retained).toContain("transactions/sdk/audit.json");
-      expect((await client.itemTransactions.abandon("audit", { reason: "Retry with another explanation" })).journal.abandonment?.reason).toBe("Retire");
+      await client.commitItemMutations({ transactionId: "audit-replacement", mutations: [{ op: "update", id: "audit", options: { title: "Replacement" } }] });
+      expect((await client.itemTransactions.supersede("audit", "audit-replacement", { reason: "Retry with another explanation" })).journal.abandonment?.reason).toBe("Retire");
       expect(await readFile(auditPath, "utf8")).toBe(audit);
-      expect((await client.get("audit")).item.title).toBe("Original");
+      expect((await client.get("audit")).item.title).toBe("Replacement");
     });
   });
 

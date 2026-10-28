@@ -1663,6 +1663,9 @@ await client.commitItemMutations(plan);
 const receipt = await client.itemTransactions.status("sync-42");
 ```
 
+Preview and status setup use configuration-only source reads, so activation
+does not open optional schema files before preview validates their storage.
+
 Each mutation in a newly staged batch contributes a `records` row with its
 original `index`, canonical `id`, operation, and full public `item` projection
 including body after the complete batch. Repeated targets therefore show the
@@ -1677,7 +1680,14 @@ current state, attribution, extension policy and concurrency. A committed replay
 the identical committed plan performs no item write; changing its ordered
 payload under the same id refuses with `transaction_plan_mismatch`.
 
+The workspace transaction lock serializes transaction coordinators. Ordinary
+SDK and CLI item writers can still interleave between a step's read and write;
+the lock does not provide a general read-decide-write critical section.
+
 New item journals retain their original mutation plan and compensation policy.
+History redaction does not rewrite transaction journals: values removed from
+item history can remain in interrupted or abandoned journals. GC retains those
+recovery receipts. Do not include secrets in batch mutations.
 The status receipt contains the validated journal and a SHA-256 `planDigest`
 over its ordered payload-bound step identifiers. Started/completed lists report
 persisted coordinator progress: a crash after apply but before recording can
@@ -1701,7 +1711,7 @@ intent instead of silently resuming it.
 `supersede(id, newId, { reason })` performs that retirement and records the
 replacement identity; it does not atomically commit the replacement plan or
 reserve its id. Repeating the same retirement is idempotent. Committed journals
-cannot be abandoned. A later peer edit refuses with
+cannot be abandoned. During compensation, a later peer edit refuses with
 `transaction_partial_mutation` and retains recovery data; it is never silently
 overwritten. Legacy journals without a retained item plan require the original
 plan and adapter for replay. Abandoned receipts remain retained by transaction

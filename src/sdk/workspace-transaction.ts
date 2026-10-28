@@ -221,6 +221,7 @@ async function writeJournal(
   await writeFileAtomic(target, `${JSON.stringify(journal, null, 2)}\n`);
 }
 
+/** Require attributable attempt metadata and a retirement receipt consistent with its schema version. */
 function hasValidJournalMetadata(
   journal: Partial<WorkspaceTransactionJournal>,
 ): boolean {
@@ -311,6 +312,7 @@ function hasUniqueKnownStepIds(
   );
 }
 
+/** Reject progress receipts whose ownership sets disagree or whose terminal state retains active steps. */
 function hasValidJournalLifecycle(
   journal: Partial<WorkspaceTransactionJournal>,
   stepIds: readonly string[],
@@ -370,7 +372,7 @@ function journalPlanMismatch(transactionId: string): PmCliError {
       nextSteps: [
         "Re-run with the original document to resume or replay it.",
         "For item batches use client.itemTransactions.status(transactionId), then client.itemTransactions.abandon(transactionId, { reason }) before committing a changed plan with a new transactionId.",
-        "Run pm ops gc --scope transactions --dry-run to inspect abandoned journals before pruning them.",
+        "Run pm ops gc --scope transactions --dry-run to inspect retention; active and explicitly abandoned journals remain protected.",
       ],
     },
   );
@@ -421,6 +423,7 @@ function parseJournal(
   };
 }
 
+/** Resume matching progress or start a fresh compensated attempt with a copied recovery plan. */
 async function prepareJournalForApply(
   options: CommitWorkspaceTransactionOptions,
   transactionId: string,
@@ -741,7 +744,7 @@ export function workspaceTransactionPlanDigest(journal: Pick<WorkspaceTransactio
 export interface AbandonWorkspaceTransactionOptions extends Omit<CommitWorkspaceTransactionOptions, "steps" | "recoveryData"> {
   /** Required human-readable recovery rationale. */
   reason: string;
-  /** Optional fresh identity reserved by the caller for its replacement plan. */
+  /** Optional fresh identity chosen by the caller for its replacement plan; this does not reserve it. */
   supersededBy?: string;
   /** Rebuild original steps without applying forward mutations. */
   resolveSteps(journal: WorkspaceTransactionJournal): readonly WorkspaceTransactionStep[];
@@ -762,10 +765,10 @@ export async function abandonWorkspaceTransaction(options: AbandonWorkspaceTrans
     if (journal.status === "committed") throw new PmCliError(`Transaction ${identity.transactionId} is committed and cannot be abandoned`, EXIT_CODE.CONFLICT, { code: "transaction_committed", required: "Plan a separate explicit corrective mutation.", why: "Recovery cannot silently undo committed work." });
     if (journal.abandonment !== undefined && journal.abandonment.supersededBy !== supersededBy) throw retiredTransaction(identity.transactionId);
     if (journal.status === "abandoned") return journal;
-    if (supersededBy !== undefined && await loadJournal(identity.pmRoot, supersededBy) !== undefined) throw new PmCliError(`Replacement transaction ${supersededBy} already exists`, EXIT_CODE.CONFLICT);
     const steps = options.resolveSteps(structuredClone(journal));
     if (JSON.stringify(steps.map(step => step.id)) !== JSON.stringify(journal.stepIds)) throw journalPlanMismatch(identity.transactionId);
     if (journal.abandonment === undefined) {
+      if (supersededBy !== undefined && await loadJournal(identity.pmRoot, supersededBy) !== undefined) throw new PmCliError(`Replacement transaction ${supersededBy} already exists`, EXIT_CODE.CONFLICT);
       journal.schemaVersion = 2;
       journal.abandonment = { reason, author: identity.author, ...(supersededBy === undefined ? {} : { supersededBy }) };
       await writeJournal(identity.pmRoot, journal);

@@ -13,7 +13,7 @@ import { resolveExtensionMigrationStatePath } from "../../../src/sdk/extension/m
 import { EXIT_CODE, setFocusedItem } from "../../../src/sdk/runtime-primitives.js";
 import { readSettings } from "../../../src/core/store/settings.js";
 import { waitForPendingFlush } from "../../../src/core/telemetry/runtime.js";
-import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
 /** Snapshot durable tracker bytes, including session and telemetry state but excluding queues, caches, and locks. */
 async function durableSnapshot(root: string): Promise<Record<string, string>> {
@@ -40,6 +40,22 @@ function previewWithClockMatchers(validation: ItemMutationPreviewValidation): It
     created_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u),
     updated_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u),
   } })) };
+}
+
+/** Exercise host-bound bootstrap in a native child so an unsafe FIFO read fails by a bounded timeout. */
+function assertUnsafeHostPreview(context: TempPmContext, command: string, noExtensions: boolean, kind: string): void {
+  if (command !== "mutate") return;
+  const entrypoint = new URL("../../../dist/sdk/index.js", import.meta.url).href;
+  const script = `import { PmClient } from ${JSON.stringify(entrypoint)};
+    try {
+      const client = new PmClient({ pmRoot: process.env.PM_PATH, noExtensions: ${noExtensions} });
+      ${kind === "pipe" ? 'if (await client.itemTransactions.status("missing") !== undefined) throw new Error("Unexpected journal");' : ""}
+      await client.previewItemMutations({ transactionId: "unsafe-sdk", mutations: [{ op: "update", id: "pm-unsafe", options: { title: "Staged title" } }] });
+    } catch (error) { console.log(JSON.stringify({ code: error.context?.code })); process.exitCode = 2; }`;
+  const sdk = spawnSync(process.execPath, ["--input-type=module", "-e", script], { env: context.env, encoding: "utf8", timeout: 10_000 });
+  expect(sdk.error).toBeUndefined();
+  expect(sdk.status).toBe(2);
+  expect(JSON.parse(sdk.stdout)).toMatchObject({ code: "transaction_preview_non_regular_file" });
 }
 
 describe("semantic transaction previews (GH-1370)", () => {
@@ -184,6 +200,7 @@ describe("semantic transaction previews (GH-1370)", () => {
           expect(result.status).toBe(2);
           expect(JSON.parse(result.stderr)).toMatchObject({ code: "transaction_preview_non_regular_file", preview_storage: { relative_entry: entry, entry_redacted: false }, next_steps: expect.arrayContaining([expect.stringContaining("retry the original dry-run")]) });
           expect(result.stderr).not.toContain(context.pmPath);
+          assertUnsafeHostPreview(context, command, noExtensions, kind);
           if (kind === "settings-pipe") expect((await lstat(settingsPath)).isFIFO()).toBe(true);
           else expect(await readFile(settingsPath, "utf8")).toBe(beforeSettings);
           expect(await readFile(itemPath, "utf8")).toBe(beforeItem);

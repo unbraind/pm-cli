@@ -312,7 +312,7 @@ export interface CommitItemMutationsOptions {
   transactionId: string;
   /** Attributable actor recorded in the journal and forwarded to mutations. */
   author: string;
-  /** Ordered item mutations; compensations run in reverse order. */
+  /** Ordered mutations retained in the journal, outside history redaction; do not include secrets. Compensations run in reverse order. */
   mutations: readonly BulkItemMutation[];
   /**
    * Compensation strategy for created items: `close` (default) preserves the
@@ -1238,6 +1238,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
 export async function commitItemMutations(
   options: CommitItemMutationsOptions,
 ): Promise<CommitItemMutationsResult> {
+  const identity = validateWorkspaceTransactionIdentity(options);
   const mutations = snapshotBulkMutations(options.mutations);
   const createCompensation = options.createCompensation ?? "close";
   if (!["close", "delete"].includes(createCompensation)) {
@@ -1246,19 +1247,16 @@ export async function commitItemMutations(
     );
   }
   const stepConfig: BulkMutationStepConfig = {
-    pmRoot: options.pmRoot,
-    author: options.author,
-    transactionId: options.transactionId,
+    ...identity,
     createCompensation,
-    uniqueIndex: createUniqueKeyIndex(options.pmRoot),
+    uniqueIndex: createUniqueKeyIndex(identity.pmRoot),
   };
   const committed = await commitWorkspaceTransaction({
-    pmRoot: options.pmRoot,
-    transactionId: options.transactionId,
-    author: options.author,
+    ...identity,
     steps: mutations.map((mutation, index) =>
       buildStepForMutation(stepConfig, mutation, index),
     ),
+    // Recovery values remain in interrupted and abandoned journals; history redaction does not rewrite this plan.
     recoveryData: JSON.parse(JSON.stringify({ kind: "item-mutations-v1", mutations, createCompensation })) as WorkspaceTransactionJsonValue,
     ...(options.lockTtlSeconds === undefined
       ? {}

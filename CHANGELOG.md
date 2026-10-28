@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- GH-1598: bind batch mutation APIs to PmClient and expose canonical staged preview records ([pm-gh1598](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1598.toon))
+- GH-1597: expose host-bound item transaction status and safe abandonment or supersession ([pm-gh1597](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1597.toon))
+
 ### Fixed
 
 - GH-1617: make history display order explicit and consistent across projections ([pm-gh1617](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1617.toon))
