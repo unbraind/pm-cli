@@ -153,7 +153,8 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
 
   it("rolls back prepared proof on audit failure while preserving unrelated staged work", async () => {
     await withTempPmPath(async (context) => {
-      const { git, relative, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
+      const { git, receipt, relative, receiptPath, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
+      const valid = await readFile(receiptPath, "utf8");
       const preview = await runMergeReconcile({ dryRun: true }, { path: context.pmPath });
       await writeFile(path.join(context.tempRoot, "preserve.txt"), "Unrelated staged work\n"); git("add", "preserve.txt");
       const priorIndex = git("diff", "--cached", "--raw", "-z");
@@ -161,6 +162,11 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
       expect(git("diff", "--cached", "--raw", "-z")).toBe(priorIndex);
       expect(git("ls-files", "--", relative)).toBe("");
       expect(await readFile(historyPath, "utf8")).toBe(before);
+      expect(await readFile(receiptPath, "utf8")).toBe(valid);
+      git("add", relative);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).durable_receipt_ids).toContain(receipt.id);
+      expect((await runMergeReconcile({ stage: true }, { path: context.pmPath })).ok).toBe(true);
+      expect(git("diff", "--cached", "--name-only")).toContain("preserve.txt");
     });
   });
 

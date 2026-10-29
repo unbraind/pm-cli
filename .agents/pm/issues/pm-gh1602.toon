@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: agent-ux,ci,github,output,windows
 created_at: "2026-10-26T22:10:10.109Z"
-updated_at: "2026-10-29T09:17:26.303Z"
+updated_at: "2026-10-29T09:39:52.309Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
 author: "harness:codex"
@@ -19,7 +19,7 @@ expected_result: Agents receive a parseable structured extension-handler failure
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,discovered_from,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
   pm-gh1366,related,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-26T22:10:10.109Z","harness:codex","Duplicate check: complete strict 3130-item all-status corpus and live warning/JSON stderr searches found completed related output-format and recurrence work but no exact active owner for this observed Windows failure. Intake only, open and unclaimed."
   "2026-10-26T22:10:48.773Z","harness:codex",The current continuation independently read the complete hosted failure log and linked the source alert. A later local Linux full-suite run passes the existing handler-error test; that does not establish the native Windows warning producer or a fix. Reproduction and native hosted proof remain necessary. No implementation claim is taken.
   "2026-10-29T08:28:16.039Z","harness:codex","Nightly run 40837931196 at 2016f0e6870b4631bf2e0f4bfb0fbe983556c3ea reproduces the existing Windows shard 3/4 warning:se prefix before the extension handler JSON refusal; exit status remains 1. Investigating the actual producer and retaining full synthetic-fixture stderr in the next native run before attributing cause. Required PR checks otherwise passed except the separately corrected tracker expected-result gate."
@@ -27,6 +27,10 @@ comments[7]{created_at,author,text}:
   "2026-10-29T09:02:56.608Z","harness:codex","A real CLI negative control now reproduces the framing failure deterministically on Linux: pass a synthetic Windows home file path to the same throwing extension handler. The native-path control passes; windows-home emits warning:secret_guard_detected:1:rules=absolute_home_path followed by the otherwise correct command_failed envelope and exit1. The public SDK evaluateMutationGuard independently returns that same advisory for the path. Implementing invocation-scoped deferred preflight warnings so JSON failures keep one envelope with warnings and handler detail, while successful invocations retain a structured warning diagnostic."
   "2026-10-29T09:16:24.646Z","harness:codex","The completed focused CLI cohort passes254 tests across four files, including the deterministic Windows-home refusal and a successful guarded mutation. Deferred warnings retain stable codes plus additional remediation text in warning_details, preserve existing diagnostics, and remain isolated across nested/concurrent invocations. Typecheck ESLint and docstring checks pass. The first local full run exposed two test expectation issues (nested create item ID and retaining settings remediation); both were corrected without weakening behavior."
   "2026-10-29T09:17:26.302Z","harness:codex","Native provenance is now confirmed: completed Windows Node24 shard3/4 job123349964084 in run40844923634 exposes warning:secret_guard_detected:1:rules=absolute_home_path before the JSON command_failed refusal on both attempts. This matches the deterministic Windows-home negative control exactly; no settings-read or Sentry cause is inferred. The guarded path is a synthetic fixture under the Windows runner home. The pending revised native run must prove the complete cohort with the transport fix."
+  "2026-10-29T09:28:09.234Z","harness:codex",Current source943470bca is dispatched as Nightly40849657299. The previous watcher exited on GitHub REST quota exhaustion while Windows shard1 remained unfinished; it was not an all-jobs completion receipt. The new dispatch supersedes the old workflow under its existing concurrency rule. Completed Windows shard3 failure evidence remains retained; acceptance requires the full revised native cohort to finish successfully.
+  "2026-10-29T09:38:20.808Z","harness:codex",Updated linked-test execution test-local-mvtcjlk5-ic30gx passes both commands after the transport fix. Graph-composition and record-integrity assurance pass; the bounded mutation gate retains345 killed and7 documented equivalent mutants with no unexplained survivors. Repository validation reports zero history drift across3151 items while retaining170 historical closure-metadata warnings; those historical records were not fabricated or mass-rewritten.
+learnings[1]{created_at,author,text}:
+  "2026-10-29T09:39:52.308Z","harness:codex","A truncated warning prefix is insufficient to attribute a native JSON failure. Preserve complete synthetic stderr first, reproduce the Windows home-path input independently, and retain the advisory with the command error instead of dropping it or weakening JSON parsing. Invocation-scoped buffering must preserve remediation text and isolate nested/concurrent CLI calls."
 files[5]{path,scope}:
   src/cli/main.ts,project
   src/cli/migration-gates.ts,project
@@ -36,7 +40,7 @@ files[5]{path,scope}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,600,"harness:codex","2026-10-29T08:30:35.320Z",local_mutation,fix/lock-crash-recovery
   node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,600,"harness:codex","2026-10-29T09:16:23.560Z",local_mutation,fix/lock-crash-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvtb8khl-2udh8g
     kind: test
     status: passed
@@ -48,6 +52,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtcjlk5-ic30gx
+    kind: test
+    status: passed
+    started_at: "2026-10-29T09:33:00.696Z"
+    finished_at: "2026-10-29T09:34:11.429Z"
+    recorded_at: "2026-10-29T09:34:11.429Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/CONFIGURATION.md,project

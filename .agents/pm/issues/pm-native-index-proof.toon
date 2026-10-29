@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-29T08:28:14.112Z"
-updated_at: "2026-10-29T08:56:58.789Z"
+updated_at: "2026-10-29T10:25:02.884Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
 author: "harness:codex"
@@ -19,11 +19,13 @@ expected_result: Complete Windows shard1 passes all independent indexed-proof co
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-89297t,related,"2026-10-29T08:28:14.112Z","harness:codex","cli:create:dep",detected
   pm-gh1558,related,"2026-10-29T08:28:14.112Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-10-29T08:28:14.112Z","harness:codex","Duplicate check: complete all-status corpus, live open and in_progress lists, request-specific search and full pm-89297t data show the serial allocation repair is already closed and shipped. This new leaf owns the repeated compound-test timeout on current native evidence, not the completed allocation or the distinct raw-rename fixture defect."
   "2026-10-29T08:29:47.767Z","harness:codex","Split the compound native test into unstaged refusal, four independently named invalid-index variants, rollback preservation, and junction settlement. Each retains real Git setup and the unchanged 30000ms deadline; every original assertion remains and each invalid variant now also verifies staged-settlement refusal without history mutation. This increases case attribution without changing serial partitioning or job limits."
   "2026-10-29T08:30:33.667Z","harness:codex","The original native failure remains run40837931196/job123327040143: the same indexed-proof case failed both attempts at30000ms. Closed pm-89297t already moved this file into the serial phase; that shipped fix remains intact. Current work separates independently observable refusal and preservation contracts and requires a complete native rerun for acceptance."
   "2026-10-29T08:32:42.380Z","harness:codex","Focused source run passes all22 real-Git LF/CRLF cases after separating independent contracts, alongside lock and packed Node/Bun continuation tests. Full selected cohort:9files195tests pass. Native Windows proof remains pending; the old timeout is retained as failed evidence."
+  "2026-10-29T10:05:12.783Z","harness:codex","CodeRabbit review 5695929096 identified that splitting rollback and junction scenarios lost same-fixture receipt re-authentication after rollback. Restore byte-for-byte receipt preservation and restaging/authentication assertions inside the rollback scenario, retaining the independent junction contract and unchanged 30-second deadlines."
+  "2026-10-29T10:25:02.884Z","harness:codex","Restored same-fixture rollback acceptance: preserve receipt bytes, re-stage the identical receipt, authenticate its durable ID, successfully settle it, and retain unrelated staged work. All 22 LF/CRLF real-Git cases pass within unchanged per-test limits as part of the 166-test final review-fix cohort. The isolated junction scenario remains intact."
 files[1]{path,scope}:
   tests/integration/workspace/merge-portability.integration.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

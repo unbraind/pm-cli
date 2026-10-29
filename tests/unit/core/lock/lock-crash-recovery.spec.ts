@@ -5,7 +5,7 @@ import {
   acquireLockLease,
   acquireStaleCleanupGate,
 } from "../../../../src/core/lock/lock.js";
-import { captureLockOwnerIdentity } from "../../../../src/core/lock/lock-owner.js";
+import * as lockOwner from "../../../../src/core/lock/lock-owner.js";
 import { getLockPath } from "../../../../src/core/store/paths.js";
 import { withTempDir } from "../../../helpers/temp.js";
 
@@ -14,13 +14,60 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+it.skipIf(process.platform !== "linux")(
+  "preserves a replacement when dead-owner and age-based recoverers overlap",
+  async () => {
+    await withTempDir("pm-gate-mixed-recovery-", async (root) => {
+      const { lockPath, gatePath, receipt } = await deadGate(root);
+      const old = new Date(Date.now() - 120_000);
+      await fs.utimes(gatePath, old, old);
+      vi.spyOn(lockOwner, "inspectLockOwner")
+        .mockResolvedValueOnce("dead")
+        .mockResolvedValue("unknown");
+      const rename = fs.rename.bind(fs);
+      const writeFile = fs.writeFile.bind(fs);
+      let observed!: () => void;
+      const firstObserved = new Promise<void>((resolve) => { observed = resolve; });
+      let published!: () => void;
+      const replacementPublished = new Promise<void>((resolve) => { published = resolve; });
+      vi.spyOn(fs, "writeFile").mockImplementation(async (...args) => {
+        const result = await writeFile(...args);
+        if (args[0] === path.join(gatePath, "owner.json")) published();
+        return result;
+      });
+      let arrived = 0;
+      vi.spyOn(fs, "rename").mockImplementation(async (...args) => {
+        if (args[0] === gatePath && ++arrived === 1) {
+          observed();
+          await replacementPublished;
+        }
+        return rename(...args);
+      });
+      const first = acquireStaleCleanupGate(lockPath, "shared");
+      await firstObserved;
+      const results = await Promise.all([first, acquireStaleCleanupGate(lockPath, "shared")]);
+      const held = results.filter((release) => release !== null);
+      try {
+        expect(held).toHaveLength(1);
+        expect(arrived).toBe(2);
+        const entries = await fs.readdir(path.join(root, "locks", "recoveries"));
+        expect(entries).toHaveLength(1);
+        expect(await fs.readFile(path.join(root, "locks", "recoveries", entries[0]!, "owner.json"), "utf8")).toBe(receipt);
+        expect(JSON.parse(await fs.readFile(path.join(gatePath, "owner.json"), "utf8")).token).not.toBe("dead-generation");
+      } finally {
+        for (const release of held) await release();
+      }
+    });
+  },
+);
+
 /** Publish a fresh gate with verifiable local PID-reuse evidence. */
 async function deadGate(root: string) {
   const lockPath = getLockPath(root, "shared");
   const gatePath = `${lockPath}.stale-cleanup`;
   await fs.mkdir(gatePath, { recursive: true });
   const receipt = JSON.stringify({
-    ...(await captureLockOwnerIdentity()),
+    ...(await lockOwner.captureLockOwnerIdentity()),
     pid: process.pid,
     process_start_identity: "0",
     token: "dead-generation",
@@ -102,7 +149,7 @@ it.each(["live", "foreign", "legacy"])(
   async (kind) => {
     await withTempDir("pm-gate-retain-", async (root) => {
       const { lockPath, gatePath } = await deadGate(root);
-      const identity = await captureLockOwnerIdentity();
+      const identity = await lockOwner.captureLockOwnerIdentity();
       const receipt = JSON.stringify({
         ...(kind === "legacy" ? {} : identity),
         pid: process.pid,
@@ -152,7 +199,7 @@ it.skipIf(process.platform !== "linux").each(["replacement", "removed"])(
       const { lockPath, gatePath } = await deadGate(root);
       const mkdir = fs.mkdir.bind(fs);
       const replacement = JSON.stringify({
-        ...(await captureLockOwnerIdentity()),
+        ...(await lockOwner.captureLockOwnerIdentity()),
         pid: process.pid,
         token: "live-replacement",
       });

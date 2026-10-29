@@ -801,11 +801,11 @@ async function tryCreateStaleCleanupGate(
 }
 
 /**
- * Atomically retain a dead gate as recovery evidence. Its nonempty, generation-
+ * Atomically retain an eligible gate as recovery evidence. Its nonempty, generation-
  * specific destination is never removed: two recoverers observing the same dead
  * owner cannot move a replacement live gate after the first recovery wins.
  */
-async function retireDeadCleanupGate(
+async function retireCleanupGateGeneration(
   gatePath: string,
   token: string,
 ): Promise<boolean> {
@@ -813,8 +813,8 @@ async function retireDeadCleanupGate(
   const generation = createHash("sha256").update(token).digest("hex");
   try {
     await fs.mkdir(recoveries, { recursive: true });
-    // The observed owner may have released its gate before it died. Re-read
-    // after proving death; only that same generation may be retired.
+    // The observed owner may have released its gate before recovery. Re-read
+    // after checking eligibility; only that same generation may be retired.
     if ((await readStaleCleanupGateOwner(gatePath))?.token !== token)
       return false;
     await fs.rename(gatePath, path.join(recoveries, `gate-${generation}`));
@@ -838,7 +838,7 @@ async function removeExpiredStaleCleanupGate(
   const owner = await readStaleCleanupGateOwner(gatePath);
   if (owner === undefined) return false;
   if (owner !== null && (await inspectLockOwner(owner)) === "dead") {
-    return retireDeadCleanupGate(gatePath, owner.token);
+    return retireCleanupGateGeneration(gatePath, owner.token);
   }
   if (gateAgeMs <= STALE_CLEANUP_GATE_STALE_MS) return false;
   if (
@@ -851,7 +851,9 @@ async function removeExpiredStaleCleanupGate(
   ) {
     return false;
   }
-  return removeStaleCleanupGateDirectory(gatePath);
+  return owner !== null
+    ? retireCleanupGateGeneration(gatePath, owner.token)
+    : removeStaleCleanupGateDirectory(gatePath);
 }
 
 /** Fence lock publication, release and garbage collection under one cleanup owner. */
