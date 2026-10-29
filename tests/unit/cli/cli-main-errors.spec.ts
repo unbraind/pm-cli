@@ -906,14 +906,25 @@ describe("CLI bootstrap and usage helper tails", () => {
 });
 
 describe("CLI settings-read warning surfacing", () => {
-  it("surfaces settings_read_invalid_schema on stderr while keeping stdout JSON clean", async () => {
+  it.each([
+    ["--json"],
+    ["--output-format", "json"],
+    ["--format", "json"],
+    ["--format=JSON"],
+    ["--format", " json "],
+  ])("preserves structured settings warnings with JSON output flags %j", async (...flags) => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       await writeFile(settingsPath, `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`, "utf8");
 
-      const result = context.runCli(["list", "--json"], { expectJson: true });
+      const result = context.runCli(["list", ...flags], { expectJson: true });
       expect(result.stderr).toContain("settings_read_invalid_schema");
       expect(result.stderr).toContain("run pm health for remediation");
+      expect(JSON.parse(result.stderr)).toMatchObject({
+        type: "warning",
+        warnings: ["settings_read_invalid_schema"],
+        warning_details: [{ code: "settings_read_invalid_schema", message: expect.stringContaining("run pm health for remediation") }],
+      });
       // stdout stays clean machine-readable JSON despite the stderr warning.
       expect(result.code).toBe(0);
       expect(result.stdout).not.toContain("settings_read_invalid_schema");

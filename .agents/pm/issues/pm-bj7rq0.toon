@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-29T09:40:12.262Z"
+updated_at: "2026-10-29T16:40:36.413Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[122]:
+comments[123]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -391,6 +391,9 @@ comments[122]:
   - created_at: "2026-10-29T09:40:12.262Z"
     author: "harness:codex"
     text: "Final bounded transport recheck remains a qualified local failure: best get364ms versus362ms, context443ms versus433ms, and next484ms versus440ms. Stop local timing retries and retain this operational limitation separately from hosted acceptance. The earlier detached untouched-main control also failed create405ms versus398ms. No budget, assertion, retry policy or deadline changed."
+  - created_at: "2026-10-29T16:40:36.413Z"
+    author: "harness:codex"
+    text: "Additional bounded local runner observation on 2026-10-29: a complete final-review coverage attempt passed 11,587 tests but timed out the unchanged compound test-all PM-context/assertion-policy case at its existing 30,000 ms limit; coverage reporting therefore did not complete. The identical case passes alone in 6,797 ms. This establishes context-sensitive timing, not its cause or a production regression. A full rerun uses four workers without changing source, test membership, assertions, timeouts, retries or exact coverage thresholds. Hosted required acceptance remains independently necessary."
 files[12]:
   - path: .github/workflows/ci.yml
     scope: project
