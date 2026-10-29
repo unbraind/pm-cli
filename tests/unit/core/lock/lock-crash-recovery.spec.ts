@@ -286,6 +286,34 @@ it.skipIf(process.platform !== "linux").each(["replacement", "removed"])(
 );
 
 it.each(["EACCES", "EBUSY"])(
+  "releases its gate after a transient owner read failure: %s",
+  async (code) => {
+    await withTempDir("pm-gate-release-retry-", async (root) => {
+      const lockPath = getLockPath(root, "shared");
+      await fs.mkdir(path.dirname(lockPath), { recursive: true });
+      const release = await acquireStaleCleanupGate(lockPath, "shared");
+      expect(release).not.toBeNull();
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const ownerPath = path.join(gatePath, "owner.json");
+      const readFile = fs.readFile.bind(fs);
+      let transientFailure = true;
+      vi.spyOn(fs, "readFile").mockImplementation(async (...args) => {
+        if (args[0] === ownerPath && transientFailure) {
+          transientFailure = false;
+          throw Object.assign(new Error("Owner temporarily unreadable"), { code });
+        }
+        return readFile(...args);
+      });
+      await release!();
+      await expect(fs.stat(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+      const nextRelease = await acquireStaleCleanupGate(lockPath, "shared");
+      expect(nextRelease).not.toBeNull();
+      await nextRelease!();
+    });
+  },
+);
+
+it.each(["EACCES", "EBUSY"])(
   "retains an unreadable live gate during recovery and release: %s",
   async (code) => {
     await withTempDir("pm-gate-unreadable-", async (root) => {

@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T03:16:18.150Z"
-updated_at: "2026-10-29T15:15:13.935Z"
-closed_at: "2026-10-29T15:15:13.066Z"
-completed_at: "2026-10-29T15:15:13.066Z"
+updated_at: "2026-10-29T19:40:11.991Z"
+closed_at: "2026-10-29T19:40:10.997Z"
+completed_at: "2026-10-29T19:40:10.997Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce the real-wall-clock SIGKILL sequence in disposable non-Git trackers on the reported old and current versions; If confirmed fix preserves mutation fencing and audit history with negative controls for live and unknown owners; Separate monotonic acquisition deadlines from owner liveness and verify Node and Bun public SDK behavior
 parent: pm-02z97f
 risk: high
 confidence: high
-resolution: "Retire only safely abandoned cleanup generations into retained nonempty recovery receipts, revalidate the observed token, retain read failures and live or unverified host identities, and use monotonic wait budgets. Document exclusive operator quarantine and preserve mandatory CI Node/Bun fixtures."
-expected_result: "A provably dead writer is recovered safely after an interrupted commit, and bounded acquisition does not hang under a frozen wall clock; live or ambiguous ownership retains protection."
-actual_result: Linked run test-local-mvtohakk-4bugut passes; 151 focused controls and full source05a34455f pass11578 tests with3 platform skips and exact100/100/100/100. Both new release/replacement and foreign-host controls fail before the fix. Mutation gate has345 killed and7 documented equivalent mutants with0 unexplained survivors. Local missing-Bun control passes3 cases; CI missing-Bun control fails exactly the required Bun case. Final PR1623 review and hosted gates remain merge requirements; no release publication is claimed.
+resolution: "Preserve crashed-writer recovery and bounded monotonic waits; retry inconclusive release reads up to three times, remove only matching owner tokens, retain persistent faults and replacement ownership."
+expected_result: A transient EACCES or EBUSY read cannot leave a live SDK host holding its own cleanup gate; ambiguous and replacement gates remain protected.
+actual_result: Both new regressions fail before the change. Linked run test-local-mvty638u-mw6emq passes150 tests across7 files. Fresh PR1623 exact-head checks and refreshed AI reviews remain merge requirements; no publication claim.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-10-27T03:16:19.265Z","harness:codex","cli:update:dep",detected
   pm-gh1622,related,"2026-10-29T08:53:15.765Z","harness:codex","cli:update:dep",detected
-comments[22]:
+comments[23]:
   - created_at: "2026-10-27T03:16:18.150Z"
     author: "harness:codex"
     text: "Duplicate check: complete3135-item strict full all-status corpus has no exact GH1609 owner, no unreadable items and no omissions. Request-specific search, open and zero-in-progress inventories were read. Full live pm-02z97f data confirms its earlier audited dead-owner recovery is closed/completed, not newly outstanding. This newly reported crash-inside-fence scenario is a bounded follow-up. Current source includes both owner_dead_recovery_attempt and the independent commit fence in src/core/lock/lock.ts; the report has not yet been independently reproduced. Keep this intake open/unclaimed; do not treat reported symptoms as a proven root cause."
@@ -89,6 +89,9 @@ comments[22]:
   - created_at: "2026-10-29T15:04:36.840Z"
     author: "harness:codex"
     text: "Review follow-up verification: all4 killed-owner/live-owner integration cases pass with Bun installed. An isolated PATH without Bun passes3 applicable cases locally; the same PATH with CI=1 fails exactly the Bun case with spawn bun ENOENT, proving hosted membership remains mandatory. Typecheck, ESLint and packaged docs links pass. Configuration guidance now explains explicit operator quarantine only after all writers are stopped and original-owner death is independently established, preserving gate bytes and recovery receipts without overriding lease TTL. No production source changed after the11578-test exact-coverage pass."
+  - created_at: "2026-10-29T19:40:07.584Z"
+    author: "harness:codex"
+    text: "Review4416668051 independently reproduced with EACCES and EBUSY owner-file read faults: both new release regressions fail before the implementation change (13 existing controls pass). The owner now retries at most three inconclusive reads with the existing short jittered delay, then retains ambiguous metadata; a different token is never removed. Actual linked run test-local-mvty638u-mw6emq passes150 tests across7 files, including persistent read failures, token replacements, killed writers, monotonic wait, and Node/Bun public SDK cases. Full exact-head hosted gates remain required before merge."
 learnings[2]{created_at,author,text}:
   "2026-10-29T07:45:23.237Z","harness:codex","Owner-death recovery must cover every coordination layer held by a writer, including the commit gate. A short writer budget cannot recover a gate whose owner is only inspected after a longer age grace. Preserve the retired generation so simultaneous recoverers cannot remove its live replacement, and measure wait deadlines independently of wall-clock lease timestamps."
   "2026-10-29T10:46:55.208Z","harness:codex","A generation-retirement fence is safe only when every eligible removal path for a readable token participates in it. Test mixed liveness outcomes between concurrent recoverers, pause one after its token check until the other publishes a replacement, and prove exactly one holder plus unchanged original recovery evidence. A passing two-dead-owner race alone does not cover the age-policy fallback."
@@ -103,7 +106,7 @@ files[8]{path,scope}:
   tests/unit/core/lock/lock-owner.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/lock tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/integration/locking/lock-owner-recovery.integration.spec.ts,project,600,"harness:codex","2026-10-29T07:38:00.609Z",local_mutation,fix/lock-crash-recovery
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvtb54p8-wgh291
     kind: test
     status: passed
@@ -126,11 +129,22 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/lock tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/integration/locking/lock-owner-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvty638u-mw6emq
+    kind: test
+    status: passed
+    started_at: "2026-10-29T19:38:59.760Z"
+    finished_at: "2026-10-29T19:39:32.718Z"
+    recorded_at: "2026-10-29T19:39:32.718Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/lock tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/integration/locking/lock-owner-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[3]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/SDK.md,project
   docs/TESTING.md,project
-close_reason: Recover killed commit owners while preserving live and unverifiable gates.
+close_reason: Recover transient owner read failures during cleanup-gate release.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

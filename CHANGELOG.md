@@ -13,10 +13,10 @@
 
 ### Fixed
 
+- GH-1609: recover killed commit owners and bound lock waits with a monotonic clock ([pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon))
 - Bound independent native receipt regression cases ([pm-native-index-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-native-index-proof.toon))
 - GH-1602: keep preflight warnings inside JSON error envelopes ([pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon))
 - GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions ([pm-gh1558](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1558.toon))
-- GH-1609: recover killed commit owners and bound lock waits with a monotonic clock ([pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon))
 - GH-1617: make history display order explicit and consistent across projections ([pm-gh1617](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1617.toon))
 - GH-1603: Reduce null agenda fields and escaped tag overhead in bounded context output ([pm-gh1603](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1603.toon))
 - GH-1606: Validate public SDK runtime operand values before mutation internals ([pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon))
