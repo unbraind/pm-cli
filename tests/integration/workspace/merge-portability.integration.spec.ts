@@ -146,7 +146,7 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
       expect((await inspectMergeReceiptEvidence(context.tempRoot)).durable_receipt_ids).not.toContain(receipt.id);
       await expect(runMergeReconcile({}, { path: context.pmPath })).rejects.toMatchObject({ context: { code: "merge_receipt_not_portable" } });
       expect(await readFile(historyPath, "utf8")).toBe(before);
-      await expect(runMergeReconcile({ stage: true }, { path: context.pmPath })).rejects.toMatchObject({ context: { code: "merge_settlement_review_required" } });
+      await expect(runMergeReconcile({ stage: true }, { path: context.pmPath })).rejects.toMatchObject({ message: expect.stringContaining("reconciliation paths have unstaged edits"), context: { code: "merge_settlement_review_required" } });
       expect(await readFile(historyPath, "utf8")).toBe(before);
     });
   });

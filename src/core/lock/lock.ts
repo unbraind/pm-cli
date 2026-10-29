@@ -763,7 +763,11 @@ async function releaseStaleCleanupGate(
   gatePath: string,
   token: string,
 ): Promise<void> {
-  const owner = await readStaleCleanupGateOwner(gatePath);
+  let owner = await readStaleCleanupGateOwner(gatePath);
+  for (let attempt = 0; owner === undefined && attempt < 3; attempt += 1) {
+    await sleepWithJitter(LOCK_WAIT_INITIAL_DELAY_MS);
+    owner = await readStaleCleanupGateOwner(gatePath);
+  }
   if (!owner || owner.token !== token) {
     return;
   }
