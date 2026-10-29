@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[5]: agent-ux,ci,github,output,windows
 created_at: "2026-10-26T22:10:10.109Z"
-updated_at: "2026-10-29T11:11:42.620Z"
+updated_at: "2026-10-29T13:33:02.053Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
 author: "harness:codex"
@@ -19,7 +19,7 @@ expected_result: Agents receive a parseable structured extension-handler failure
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,discovered_from,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
   pm-gh1366,related,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
-comments[11]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-10-26T22:10:10.109Z","harness:codex","Duplicate check: complete strict 3130-item all-status corpus and live warning/JSON stderr searches found completed related output-format and recurrence work but no exact active owner for this observed Windows failure. Intake only, open and unclaimed."
   "2026-10-26T22:10:48.773Z","harness:codex",The current continuation independently read the complete hosted failure log and linked the source alert. A later local Linux full-suite run passes the existing handler-error test; that does not establish the native Windows warning producer or a fix. Reproduction and native hosted proof remain necessary. No implementation claim is taken.
   "2026-10-29T08:28:16.039Z","harness:codex","Nightly run 40837931196 at 2016f0e6870b4631bf2e0f4bfb0fbe983556c3ea reproduces the existing Windows shard 3/4 warning:se prefix before the extension handler JSON refusal; exit status remains 1. Investigating the actual producer and retaining full synthetic-fixture stderr in the next native run before attributing cause. Required PR checks otherwise passed except the separately corrected tracker expected-result gate."
@@ -31,6 +31,7 @@ comments[11]{created_at,author,text}:
   "2026-10-29T09:38:20.808Z","harness:codex",Updated linked-test execution test-local-mvtcjlk5-ic30gx passes both commands after the transport fix. Graph-composition and record-integrity assurance pass; the bounded mutation gate retains345 killed and7 documented equivalent mutants with no unexplained survivors. Repository validation reports zero history drift across3151 items while retaining170 historical closure-metadata warnings; those historical records were not fabricated or mass-rewritten.
   "2026-10-29T10:35:41.322Z","harness:codex","Native Windows proof at 943470bca: Nightly run 40849657299, Windows Node 24 shard 3/4 job 123368461234 passed 3123 tests across 221 files, with 20 platform skips. The 78-test CLI integration file passed, including the previously failing extension-handler JSON framing scenario and its Windows-home control. All four Windows shards passed on this source. The whole superseded workflow was later canceled because other shards were canceled by the newer dispatch; this is a bounded native-job receipt, not a complete final-head workflow claim."
   "2026-10-29T11:11:42.620Z","harness:codex","CodeRabbit review5696693853 identified npm-package-relative tracker links in the new configuration guidance. Both new references now use canonical public GitHub file URLs and explicitly state that tracker records are excluded from npm, preserving usable documentation in an installed package."
+  "2026-10-29T13:33:02.052Z","harness:codex","The latest Windows shard3 run40864851705/job123416907459 again passes the78-test CLI integration cohort, including the real Windows-home advisory/error envelope. The whole shard fails solely because the unrelated compound receipt-settlement case exceeds30000ms on both attempts; this is not a full-shard pass and the original log is retained. CodeRabbit completed its full review of053da6b1c at12:11 UTC with no new findings."
 learnings[2]{created_at,author,text}:
   "2026-10-29T09:39:52.308Z","harness:codex","A truncated warning prefix is insufficient to attribute a native JSON failure. Preserve complete synthetic stderr first, reproduce the Windows home-path input independently, and retain the advisory with the command error instead of dropping it or weakening JSON parsing. Invocation-scoped buffering must preserve remediation text and isolate nested/concurrent CLI calls."
   "2026-10-29T10:46:57.439Z","harness:codex","Reproduce machine-readable transport failures with the actual warning producer and native path form. Keep advisory codes and remediation text inside an invocation-scoped collector, consume them into the existing failure envelope, and test nested/concurrent isolation, successful advisories, unchanged exit codes and human output. Truncated warning prefixes identify framing failure, not its cause."

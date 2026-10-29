@@ -13,46 +13,83 @@ import { runMergeReconcile } from "../../../src/sdk/merge/reconcile.js";
 import { inspectMergeReceiptEvidence } from "../../../src/sdk/merge/receipts.js";
 import type { HistoryEntry } from "../../../src/types/index.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
-import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+import { type TempPmContext, withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+/** Build a pending durable receipt through two independent real Git worktrees. */
+async function createPendingReceipt(context: TempPmContext) {
+  const git = (cwd: string, ...args: string[]): string =>
+    execFileSync("git", args, {
+      cwd,
+      env: context.env,
+      encoding: "utf8",
+    });
+  git(context.tempRoot, "init", "-q", "-b", "main");
+  git(context.tempRoot, "config", "core.autocrlf", "false");
+  git(context.tempRoot, "config", "core.eol", "lf");
+  git(context.tempRoot, "config", "user.name", "Receipt Test");
+  git(context.tempRoot, "config", "user.email", "receipt@example.invalid");
+  expect(context.runCli(["merge", "install"], { cwd: context.tempRoot }).code).toBe(0);
+  const id = createTestItemId(context, { title: "Shared receipt settlement" });
+  git(context.tempRoot, "add", ".");
+  git(context.tempRoot, "commit", "-qm", "Seed shared tracker");
+  const observer = path.join(context.tempRoot, "observer");
+  const observerPmRoot = path.join(observer, ".agents", "pm");
+  git(context.tempRoot, "worktree", "add", "-q", "-b", "observer", observer);
+  expect(context.runCli(["update", id, "--description", "Main change", "--tags", "main"]).code).toBe(0);
+  git(context.tempRoot, "add", ".agents");
+  git(context.tempRoot, "commit", "-qm", "Main item change");
+  expect(context.runCli([
+    "--pm-path", observerPmRoot, "update", id, "--tags", "observer",
+  ], { cwd: observer }).code).toBe(0);
+  git(observer, "add", ".agents");
+  git(observer, "commit", "-qm", "Observer item change");
+  git(context.tempRoot, "merge", "--no-edit", "observer");
+  const pending = await inspectMergeReceiptEvidence(context.tempRoot);
+  expect(pending.invalid_evidence_count).toBe(0);
+  expect(pending.receipts).toHaveLength(1);
+  const receipt = pending.receipts[0]!;
+  git(context.tempRoot, "add", ".agents");
+  git(context.tempRoot, "commit", "-qm", "Retain durable merge receipt");
+  git(observer, "merge", "--ff-only", "main");
+
+  return { context, git, id, receipt, observer, observerPmRoot };
+}
+
+/** Commit the audited settlement and capture its stale clone-local counterpart. */
+async function commitReceiptSettlement(fixture: Awaited<ReturnType<typeof createPendingReceipt>>) {
+  const { context, git, id, receipt, observer } = fixture;
+  git(observer, "add", ".agents");
+  git(observer, "commit", "-qm", "Commit audited receipt settlement");
+  git(context.tempRoot, "merge", "--ff-only", "observer");
+
+  const localPath = git(context.tempRoot, "rev-parse", "--path-format=absolute", "--git-path", "pm-merge-receipts").trim();
+  const staleLocal = await readFile(path.join(localPath, `${receipt.id}.json`), "utf8");
+  expect(JSON.parse(staleLocal)).toHaveProperty("state", "pending");
+  expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toEqual([]);
+  const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+  const durablePath = path.join(context.pmPath, "merge-receipts", `${receipt.id}.json`);
+  const settledHistory = await readFile(historyPath, "utf8");
+  const settledReceipt = await readFile(durablePath, "utf8");
+  const settledEntries = settledHistory.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+  const audit = settledEntries.at(-1)!;
+  expect(audit.op).toBe("merge_reconcile");
+  return { ...fixture, localPath, staleLocal, historyPath, durablePath, settledHistory, settledReceipt, settledEntries, audit };
+}
+
+/** Give each authentication/recovery contract its own committed settlement. */
+async function createSettledReceipt(context: TempPmContext) {
+  const fixture = await createPendingReceipt(context);
+  const repaired = await runMergeReconcile({}, { path: fixture.observerPmRoot });
+  expect(repaired.ok).toBe(true);
+  expect(repaired.receipts).toMatchObject({ pending_before: 1, reconciled: 1, abandoned: 0 });
+  return commitReceiptSettlement(fixture);
+}
 
 describe("merge receipt settlement across worktrees", () => {
   it("attributes durable proof and never reopens committed settlement from a stale local copy", async () => {
     await withTempPmPath(async (context) => {
-      const git = (cwd: string, ...args: string[]): string =>
-        execFileSync("git", args, {
-          cwd,
-          env: context.env,
-          encoding: "utf8",
-        });
-      git(context.tempRoot, "init", "-q", "-b", "main");
-      git(context.tempRoot, "config", "core.autocrlf", "false");
-      git(context.tempRoot, "config", "core.eol", "lf");
-      git(context.tempRoot, "config", "user.name", "Receipt Test");
-      git(context.tempRoot, "config", "user.email", "receipt@example.invalid");
-      expect(context.runCli(["merge", "install"], { cwd: context.tempRoot }).code).toBe(0);
-      const id = createTestItemId(context, { title: "Shared receipt settlement" });
-      git(context.tempRoot, "add", ".");
-      git(context.tempRoot, "commit", "-qm", "Seed shared tracker");
-      const observer = path.join(context.tempRoot, "observer");
-      const observerPmRoot = path.join(observer, ".agents", "pm");
-      git(context.tempRoot, "worktree", "add", "-q", "-b", "observer", observer);
-      expect(context.runCli(["update", id, "--description", "Main change", "--tags", "main"]).code).toBe(0);
-      git(context.tempRoot, "add", ".agents");
-      git(context.tempRoot, "commit", "-qm", "Main item change");
-      expect(context.runCli([
-        "--pm-path", observerPmRoot, "update", id, "--tags", "observer",
-      ], { cwd: observer }).code).toBe(0);
-      git(observer, "add", ".agents");
-      git(observer, "commit", "-qm", "Observer item change");
-      git(context.tempRoot, "merge", "--no-edit", "observer");
-      const pending = await inspectMergeReceiptEvidence(context.tempRoot);
-      expect(pending.invalid_evidence_count).toBe(0);
-      expect(pending.receipts).toHaveLength(1);
-      const receipt = pending.receipts[0]!;
-      git(context.tempRoot, "add", ".agents");
-      git(context.tempRoot, "commit", "-qm", "Retain durable merge receipt");
-      git(observer, "merge", "--ff-only", "main");
-
+      const fixture = await createPendingReceipt(context);
+      const { id, receipt, observer, observerPmRoot } = fixture;
       const observerEvidence = await inspectMergeReceiptEvidence(observer, { pmRoot: observerPmRoot });
       expect(observerEvidence.receipts).toMatchObject([
         { id: receipt.id, evidence_source: "durable", state: "pending" },
@@ -105,27 +142,19 @@ describe("merge receipt settlement across worktrees", () => {
       expect(repaired.ok).toBe(true);
       expect(repaired.receipts).toMatchObject({ pending_before: 1, reconciled: 1, abandoned: 0 });
       if (interruptedHistory !== undefined) expect(await readFile(observerHistoryPath, "utf8")).toBe(interruptedHistory);
-      git(observer, "add", ".agents");
-      git(observer, "commit", "-qm", "Commit audited receipt settlement");
-      git(context.tempRoot, "merge", "--ff-only", "observer");
-
-      const localPath = git(context.tempRoot, "rev-parse", "--path-format=absolute", "--git-path", "pm-merge-receipts").trim();
-      const staleLocal = await readFile(path.join(localPath, `${receipt.id}.json`), "utf8");
-      expect(JSON.parse(staleLocal)).toHaveProperty("state", "pending");
-      expect((await inspectMergeReceiptEvidence(context.tempRoot)).receipts).toEqual([]);
-      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
-      const durablePath = path.join(context.pmPath, "merge-receipts", `${receipt.id}.json`);
-      const settledHistory = await readFile(historyPath, "utf8");
-      const settledReceipt = await readFile(durablePath, "utf8");
+      const { localPath, staleLocal, historyPath, durablePath, settledHistory, settledReceipt } = await commitReceiptSettlement(fixture);
       const repeated = await runMergeReconcile({}, { path: context.pmPath });
       expect(repeated.ok).toBe(true);
       expect(repeated.receipts).toMatchObject({ pending_before: 0, reconciled: 0, abandoned: 0 });
       expect(await readFile(historyPath, "utf8")).toBe(settledHistory);
       expect(await readFile(durablePath, "utf8")).toBe(settledReceipt);
       expect(await readFile(path.join(localPath, `${receipt.id}.json`), "utf8")).toBe(staleLocal);
-      const settledEntries = settledHistory.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
-      const audit = settledEntries.at(-1)!;
-      expect(audit.op).toBe("merge_reconcile");
+    });
+  });
+
+  it("rejects sealed audits without the exact receipt disposition", async () => {
+    await withTempPmPath(async (context) => {
+      const { receipt, historyPath, settledEntries, audit } = await createSettledReceipt(context);
       for (const changedAudit of [
         { ...audit, op: "update" },
         { ...audit, context: undefined },
@@ -142,6 +171,12 @@ describe("merge receipt settlement across worktrees", () => {
           { id: receipt.id, state: "pending" },
         ]);
       }
+    });
+  });
+
+  it("rejects corrupt or unauthenticated settlement history", async () => {
+    await withTempPmPath(async (context) => {
+      const { receipt, historyPath, settledEntries, audit } = await createSettledReceipt(context);
       const { record_hash: _recordHash, record_hash_version: _recordVersion, ...unsealedAudit } = audit;
       for (const invalidHistory of [
         "invalid JSON\n",
@@ -154,6 +189,13 @@ describe("merge receipt settlement across worktrees", () => {
           { id: receipt.id, state: "pending" },
         ]);
       }
+    });
+  });
+
+  it("reanchors legacy settlement once and requires matching durable proof", async () => {
+    await withTempPmPath(async (context) => {
+      const { receipt, historyPath, durablePath, settledHistory, settledReceipt, settledEntries, audit } = await createSettledReceipt(context);
+      const { record_hash: _recordHash, record_hash_version: _recordVersion, ...unsealedAudit } = audit;
       const legacyEntries = [...settledEntries.slice(0, -1), unsealedAudit];
       expect(verifyHistoryChainWithVersion(legacyEntries).ok).toBe(true);
       const legacyHistory = `${legacyEntries.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
