@@ -1513,12 +1513,8 @@ async function loadCreateTemplateOptionsFromRuntime(
   });
   if (!handlerResult.handled) {
     if (Object.hasOwn(handlerResult, "cause")) throw createExtensionCommandError("templates show", handlerResult);
-    const warningSuffix =
-      handlerResult.warnings.length > 0
-        ? ` (${handlerResult.warnings.join(", ")})`
-        : "";
     throw new PmCliError(
-      `Unable to resolve template "${templateName}" via templates package. Run "pm templates show ${templateName}" for details.${warningSuffix}`,
+      `Unable to resolve template "${templateName}" via templates package. Run "pm templates show ${templateName}" for details.`,
       EXIT_CODE.USAGE,
     );
   }

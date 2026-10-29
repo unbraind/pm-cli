@@ -4663,9 +4663,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining(
-          'Unable to resolve template "missing-template"',
-        ),
+        message: 'Unable to resolve template "missing-template" via templates package. Run "pm templates show missing-template" for details.',
       });
     });
   });

@@ -685,7 +685,7 @@ import {
   parseMutationReceipt,
   estimatePmOutputTokens,
   resolvePmCommandOutputBudget,
-} from "@unbraind/pm-cli/sdk/contracts";
+} from "@unbrained/pm-cli/sdk/contracts";
 
 const compactRead = definePmCommandOutputBudget({
   command: "get",
