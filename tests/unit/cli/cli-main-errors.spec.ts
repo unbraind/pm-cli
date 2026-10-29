@@ -20,6 +20,7 @@ vi.mock("node:module", async (importOriginal) => {
 });
 
 import { _testOnly } from "../../../src/cli/main.js";
+import { emitPreflightWarning, runWithPreflightWarnings } from "../../../src/cli/preflight-warnings.js";
 import {
   clearActiveExtensionHooks,
   getActiveCommandResult,
@@ -906,6 +907,35 @@ describe("CLI bootstrap and usage helper tails", () => {
 });
 
 describe("CLI settings-read warning surfacing", () => {
+  it.each(["usage", "help"])("accounts for preflight warnings emitted by the %s refusal handler", async (kind) => {
+    await withTempPmPath(async (context) => {
+      const previousExitCode = process.exitCode;
+      const invocationArgv = kind === "help"
+        ? ["--no-extensions", "missing-help-target", "--help", "--json", "--token-accounting"]
+        : ["--no-extensions", "list", "--definitely-missing", "--json", "--token-accounting"];
+      const errorContext = {
+        error: { message: "error: unknown option '--definitely-missing'" }, invocationArgv,
+        bootstrapGlobal: parseBootstrapGlobalOptions(invocationArgv), jsonErrors: true,
+        bootstrapPmRoot: context.pmPath, attemptedCommand: "list",
+        emitTelemetryCommandError: async () => ({ errorCategory: "usage", commandResolution: "invalid_usage" }),
+      };
+      try {
+        const stderr = await captureStderrAsync(() => runWithPreflightWarnings(true, async () => {
+          emitPreflightWarning("settings_read_invalid_schema", "Run pm health for remediation.");
+          if (kind === "help") await _testOnly.handleUnknownHelpCommandError(errorContext as never, "commander.helpDisplayed");
+          else await _testOnly.handleRunPmCliCommanderUsageError(errorContext as never, "commander.unknownOption");
+        }));
+        expect(process.exitCode).toBe(EXIT_CODE.USAGE);
+        const { token_accounting: accounting, ...payload } = JSON.parse(stderr);
+        expect(payload.warnings).toContain("settings_read_invalid_schema");
+        expect(payload.warning_details).toEqual(expect.arrayContaining([expect.objectContaining({ code: "settings_read_invalid_schema" })]));
+        const bytes = Buffer.byteLength(`${JSON.stringify(payload, null, 2)}\n`);
+        expect(accounting.total_bytes).toBe(bytes);
+        expect(accounting.accounting_receipt_bytes).toBe(Buffer.byteLength(stderr) - bytes);
+      } finally { process.exitCode = previousExitCode; }
+    });
+  });
+
   it.each([
     ["--json"],
     ["--output-format", "json"],
