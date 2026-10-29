@@ -1,0 +1,21 @@
+id: pm-gh1626
+title: "GH-1626: offer same-command replay corrections for brief completeness spellings"
+description: "https://github.com/unbraind/pm-cli/issues/1626\n\nReported behavior on published2026.10.28; current-source reproduction and implementation are pending. Preserve the completed predecessor scope when evaluating this report.\n\nFound while using pm 2026.10.28 as an agent (plain-directory tracker, no git).\n\nSeverity: low–medium (routine agent friction; fails closed, but every miss costs a help read and a retry).\n\n#1528 fixed the `--full` ↔ `--depth full` spelling for `pm context`: the unknown-option recovery now ends with `Replay with suggested correction: pm context --depth full`. The brief spelling of the same completeness matrix did not get that correction:\n\n```bash\npm get <id> --brief            # Unknown option --brief\n#   Next steps: --brief is accepted by list, ops health. ...   (no replay suggestion)\n#   pm get accepts --depth brief\npm list --depth brief          # Unknown option --depth\n#   Next steps: --depth is accepted by context, plan, get. ...  (no replay suggestion)\n#   pm list accepts --brief\npm search probe --depth brief  # same as list\n```\n\nExpected: the same `Replay with suggested correction:` line #1528 added, for every equivalent pair of completeness flags in the read-command matrix (`--brief` ↔ `--depth brief`, `--full` ↔ `--depth full` on `list`/`search`, `--depth standard` on commands whose default already is standard). A table-driven contract test over all read commands, generated from the registered command options, would keep new read commands from reopening this.\n\nWhy it matters for agents: agents switch between `get`, `list`, `search` and `context` in one turn and carry the spelling from the last command. The current recovery points them at other commands instead of telling them the one flag that does what they meant on this command.\n"
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,github,sdk
+created_at: "2026-10-29T20:35:40.829Z"
+updated_at: "2026-10-29T20:35:40.829Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce all reported spellings on current and published hosts; Derive read-command equivalences from runtime contracts; Preserve operands and reject ambiguous or conflicting rewrites; Prove fixes with table-driven CLI/SDK controls and pre-fix negatives
+parent: pm-mpbb
+risk: medium
+confidence: medium
+expected_result: "Equivalent brief/depth spellings receive an unambiguous replay correction on the attempted read command, preserving operands and unrelated options."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7gpx34,related,"2026-10-29T20:35:40.829Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-29T20:35:40.829Z","harness:codex","Duplicate check: complete strict all-status corpus3157 with no omissions or unreadable records, request-specific GH-number and semantic searches, current open/in_progress inventories, and full live predecessor data/comments/history. The predecessor scope is delivered; this report names a distinct boundary. New intake is open and unclaimed. Source report: https://github.com/unbraind/pm-cli/issues/1626"
+body: ""
