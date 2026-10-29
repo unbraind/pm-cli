@@ -1310,6 +1310,39 @@ describe("CLI bootstrap entrypoints", () => {
     });
   });
 
+  it("attributes early machine-readable failures on a TTY using their bootstrap flags", async () => {
+    const previousEnv = process.env;
+    const previousExitCode = process.exitCode;
+    const descriptors = [process.stdin, process.stdout].map((stream) => Object.getOwnPropertyDescriptor(stream, "isTTY"));
+    const helpers = await import("../../../src/core/sentry/helpers.js");
+    const contextSpy = vi.spyOn(helpers, "sentrySetCommandContext").mockImplementation(() => {});
+    const logSpy = vi.spyOn(helpers, "sentryLogCliUsageError").mockImplementation(() => {});
+    try {
+      process.env = { ...previousEnv, PM_SENTRY_DISABLED: "1", PM_TELEMETRY_DISABLED: "1" };
+      for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_TEST_CONTEXT", "NODE_ENV", "CI", "PM_TELEMETRY_SOURCE_CONTEXT"]) delete process.env[key];
+      for (const stream of [process.stdin, process.stdout]) Object.defineProperty(stream, "isTTY", { configurable: true, value: true });
+      for (const bootstrapGlobal of [{ json: true }, { quiet: true }]) {
+        await captureStderrAsync(() => _testOnly.handleGenericRunPmCliError({
+          error: new Error("early failure"), attemptedCommand: "probe", bootstrapGlobal: bootstrapGlobal as never,
+          emitTelemetryCommandError: async () => ({ errorCategory: "runtime", commandResolution: "runtime_failed" }),
+        }));
+        expect(contextSpy).toHaveBeenLastCalledWith("probe", [], {}, expect.objectContaining({ source_context: "automation" }));
+        await _testOnly.maybeLogHandledCliErrorToSentry({ command: "probe", error_code: "early_fault", error_category: "runtime", exit_code: 1, error_message: "early failure" }, bootstrapGlobal as never);
+        expect(logSpy).toHaveBeenLastCalledWith(expect.objectContaining({ source_context: "automation" }));
+      }
+    } finally {
+      contextSpy.mockRestore();
+      logSpy.mockRestore();
+      process.env = previousEnv;
+      process.exitCode = previousExitCode;
+      [process.stdin, process.stdout].forEach((stream, index) => {
+        const descriptor = descriptors[index];
+        if (descriptor) Object.defineProperty(stream, "isTTY", descriptor);
+        else delete (stream as { isTTY?: boolean }).isTTY;
+      });
+    }
+  });
+
   it("renders generic runPmCli failures through JSON and display handlers", async () => {
     const previousExitCode = process.exitCode;
     const emitTelemetryCommandError = vi.fn(async () => ({

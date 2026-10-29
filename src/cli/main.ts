@@ -499,12 +499,12 @@ async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): P
   }
 }
 
-async function ensureSentryForErrorReporting(attemptedCommand: string): Promise<void> {
+async function ensureSentryForErrorReporting(attemptedCommand: string, bootstrapGlobal?: GlobalOptions): Promise<void> {
   await ensureSentryInit();
   const runtime = activeTelemetryCommandContext;
   const hook = activeExtensionHookContext;
   const command = runtime?.command ?? hook?.commandName ?? attemptedCommand;
-  const attribution = runtime ?? resolveTelemetrySourceAttribution(hook?.globalOptions);
+  const attribution = runtime ?? resolveTelemetrySourceAttribution(hook?.globalOptions ?? bootstrapGlobal);
   const source = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(command))?.source;
   sentrySetCommandContext(command, hook?.commandArgs ?? [], { ...hook?.commandOptions, ...hook?.globalOptions }, {
     source_context: attribution.source_context,
@@ -534,12 +534,12 @@ async function maybeLogHandledCliErrorToSentry(params: {
   command_resolution?: TelemetryCommandResolution;
   resolution_stage?: TelemetryResolutionStage;
   source_context?: string;
-}): Promise<boolean> {
+}, bootstrapGlobal?: GlobalOptions): Promise<boolean> {
   if (!shouldLogHandledErrorToSentry(params.exit_code)) {
     return false;
   }
-  await ensureSentryForErrorReporting(params.command);
-  sentryLogCliUsageError(params);
+  await ensureSentryForErrorReporting(params.command, bootstrapGlobal);
+  sentryLogCliUsageError({ ...params, source_context: params.source_context ?? resolveTelemetrySourceAttribution(bootstrapGlobal).source_context });
   return true;
 }
 
@@ -571,7 +571,7 @@ async function handleGenericRunPmCliError(params: {
   let errorCategory: TelemetryErrorCategory = "runtime";
   let commandResolution: TelemetryCommandResolution = "runtime_failed";
   try {
-    await ensureSentryForErrorReporting(params.attemptedCommand);
+    await ensureSentryForErrorReporting(params.attemptedCommand, params.bootstrapGlobal);
     sentryCaptureCliError(params.error);
     const telemetry = await params.emitTelemetryCommandError({
       command: params.attemptedCommand,
@@ -1878,7 +1878,7 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
     command_resolution: commandResolution,
     resolution_stage: "execute",
     source_context: activeTelemetryCommandContext?.source_context,
-  });
+  }, context.bootstrapGlobal);
   await finishRunPmCliFailure({
     errorMessage,
     exitCode,
@@ -1938,7 +1938,7 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     error_message: classification.detail,
     command_resolution: commandResolution,
     resolution_stage: "parse",
-  });
+  }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
     ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors, context.bootstrapGlobal.lean === true, { failedExtensions }, context.invocationArgv)
     : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.invocationArgv);
@@ -2004,7 +2004,7 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     command_resolution: commandResolution,
     resolution_stage: "parse",
     source_context: activeTelemetryCommandContext?.source_context,
-  });
+  }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
     ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors, context.bootstrapGlobal.lean === true, {}, context.invocationArgv)
     : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.invocationArgv);

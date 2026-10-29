@@ -2862,7 +2862,9 @@ delivered to the registered positional arguments unchanged.
 Unicode output policy ([pm-gh1624](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1624.toon), tracker record excluded from npm):
 the built-in JSON and TOON formatters refuse unpaired UTF-16 surrogates in
 structured output values or object keys with `text_unpaired_surrogate` and a
-field path. Valid astral characters and caller data are preserved. Extension
+field path. Custom `toJSON()` values are materialized once per render and the
+resulting snapshot is validated and shared by both formatters. Valid astral
+characters and caller data are preserved. Extension
 producers can call `assertWellFormedOutputText(value)` before returning
 JSON-compatible data. When replacing malformed external text is intentional,
 use `toWellFormedText(text)` from `@unbrained/pm-cli/sdk/core` (also available from
@@ -2945,7 +2947,10 @@ an unexpected fault. Sentry error attribution uses the same bounded source
 context as telemetry without requiring telemetry delivery or command tracing, with host version
 and the registered command owner's manifest version. Noninteractive traffic
 uses `automation`; explicit `test`/`dogfood` contexts retain their own environments.
-Error events tagged `user` use `production`, including when CI was inferred at initialization.
+Error events and usage logs tagged `user` use `production`, including when CI was inferred at initialization.
+Early errors retain `--json` and `--quiet` automation attribution. Original
+extension causes remain available locally through the SDK; Sentry's extra error
+data integration does not copy cause payload fields into diagnostic contexts.
 Explicit `SENTRY_ENVIRONMENT`, consent and test isolation remain authoritative.
 Sequential commands clear previous extension attribution. Tracked by
 [pm-gh1625](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1625.toon)

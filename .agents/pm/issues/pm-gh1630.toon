@@ -1,0 +1,22 @@
+id: pm-gh1630
+title: "GH-1630: bound selective linked-test receipts to the selected collection"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1630 reproduces pm test --run --only-last printing every linked test record despite selecting one command. Keep selection and skipped-count facts while bounding default receipt collections; preserve an explicit route to full linked evidence and avoid redundant successful-selection warning prose. This is a receipt/context-budget enhancement distinct from completed selector execution and ordering work."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-29T22:37:33.033Z"
+updated_at: "2026-10-29T22:37:33.033Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Cover only-last and other selectors on a multi-test item through CLI and SDK; preserve complete stored evidence and skipped counts; document the full-evidence restore path and measured receipt-token reduction.
+parent: pm-5t33or
+risk: medium
+confidence: high
+expected_result: A selected run emits selected evidence and complete selection/count metadata by default; explicit full reads restore the whole collection without weakening immutable run history.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-p86h,related,"2026-10-29T22:37:33.033Z","harness:codex","cli:create:dep",detected
+  pm-x2vx,related,"2026-10-29T22:37:33.033Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-29T22:37:33.033Z","harness:codex","Duplicate check: hybrid linked-test search plus complete keyword only-last search returned completed selector execution/order lineage but no owner for selected-receipt verbosity; live open and in-progress lists checked; current issue report not yet reproduced on this source."
+body: ""

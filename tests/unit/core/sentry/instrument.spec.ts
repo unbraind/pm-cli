@@ -74,14 +74,25 @@ describe("instrument residual branches", () => {
     const options = requireSentryInitOptions<{
       beforeSend: (event: Record<string, unknown>) => Record<string, unknown>;
       beforeSendTransaction: (event: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendLog: (log: Record<string, unknown>) => { attributes: Record<string, unknown> };
     }>();
+    const envelopeHook = sentryNodeMock.on.mock.calls[0]![1] as (envelope: unknown) => void;
     for (const source of ["automation", "test", "dogfood", "user"]) {
       for (const send of [options.beforeSend, options.beforeSendTransaction]) {
         expect(send({ environment: "ci", tags: { "pm.source_context": source } }).environment).toBe(source === "user" ? "production" : source);
       }
+      const environment = source === "user" ? "production" : source;
+      expect(options.beforeSendLog({ message: "safe", attributes: { "pm.source_context": source, "sentry.environment": "ci" } }).attributes["sentry.environment"]).toBe(environment);
+      const log = { body: "safe", attributes: { "pm.source_context": { type: "string", value: source }, "sentry.environment": { type: "string", value: "ci" } } };
+      envelopeHook([{}, [[{ type: "log" }, { items: [log] }]]]);
+      expect(log.attributes["sentry.environment"].value).toBe(environment);
     }
     process.env.SENTRY_ENVIRONMENT = "preview";
     expect(options.beforeSend({ environment: "preview", tags: { "pm.source_context": "automation" } }).environment).toBe("preview");
+    expect(options.beforeSendLog({ message: "safe", attributes: { "pm.source_context": "automation", "sentry.environment": "preview" } }).attributes["sentry.environment"]).toBe("preview");
+    const log = { body: "safe", attributes: { "pm.source_context": { type: "string", value: "automation" }, "sentry.environment": { type: "string", value: "preview" } } };
+    envelopeHook([{}, [[{ type: "log" }, { items: [log] }]]]);
+    expect(log.attributes["sentry.environment"].value).toBe("preview");
   });
 
   it("validates original expected-error contracts instead of trusting a reported exception name", async () => {

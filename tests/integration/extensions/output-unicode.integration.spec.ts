@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 import { writeTestExtension } from "../../helpers/extensions.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
+const runtimes = process.env.CI || spawnSync("bun", ["--version"], { stdio: "ignore", timeout: 5000 }).status === 0
+  ? ["node", "bun"] : ["node"];
+
 function assertUnicodeOutcome(completed: SpawnSyncReturns<string>, kind: string, format: string): void {
   expect(completed.error).toBeUndefined();
   if (kind === "valid") {
@@ -20,7 +23,7 @@ function assertUnicodeOutcome(completed: SpawnSyncReturns<string>, kind: string,
 }
 
 describe("extension output Unicode policy (pm-gh1624)", () => {
-  it.each(["node", "bun"])("refuses malformed output consistently on %s and preserves valid pairs", async (runtime) => {
+  it.each(runtimes)("refuses malformed output consistently on %s and preserves valid pairs", async (runtime) => {
     await withTempPmPath(async (context) => {
       await writeTestExtension({
         root: path.join(context.pmPath, "extensions"),
@@ -32,11 +35,12 @@ describe("extension output Unicode policy (pm-gh1624)", () => {
           api.registerCommand({ name: "unicode probe", arguments: [{ name: "mode", required: true }], run: ({ args }) => args[0] === "valid"
             ? { sibling: "kept", nested: ["😀"] }
             : args[0] === "key" ? { nested: [{ ["bad\\udc00"]: "kept" }] }
+            : args[0] === "serialized-value" ? { nested: [{ toJSON() { return { value: "bad\\ud800" }; } }] }
             : { sibling: "kept", nested: [{ value: "bad\\ud800" }] } });
         }`,
       });
       for (const format of ["json", "toon"]) {
-        for (const kind of ["value", "key", "valid"]) {
+        for (const kind of ["value", "key", "serialized-value", "valid"]) {
           const completed = spawnSync(runtime === "node" ? process.execPath : "bun", [
             path.resolve("dist/cli.js"), "unicode", "probe", kind, "--output-format", format,
           ], { cwd: context.tempRoot, env: context.env, encoding: "utf8" });

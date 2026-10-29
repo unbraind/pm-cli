@@ -41,14 +41,34 @@ function findIllFormedOutputText(value: unknown, field: string, seen: WeakSet<ob
   return undefined;
 }
 
-/**
- * Refuse malformed strings or keys in JSON-compatible output with a typed field
- * diagnostic. This never changes the caller's data. Use toWellFormedText at an
- * external text boundary when replacement is the producer's intended policy.
- */
-export function assertWellFormedOutputText(value: unknown): void {
-  const malformed = findIllFormedOutputText(value, "$", new WeakSet());
-  if (!malformed) return;
+/** Materialize custom JSON serializers once, preserving ordinary shared/circular data. */
+function snapshotOutputText(value: unknown, key: string, seen: WeakMap<object, unknown>): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (typeof (value as { toJSON?: unknown }).toJSON === "function") {
+    // The wrapper supplies the same key argument as JSON.stringify at this position.
+    return (JSON.parse(JSON.stringify({ [key]: value })) as Record<string, unknown>)[key];
+  }
+  if (seen.has(value)) return seen.get(value);
+  const snapshot = Array.isArray(value) ? new Array(value.length) : {};
+  seen.set(value, snapshot);
+  for (const [childKey, entry] of Object.entries(value)) {
+    Object.defineProperty(snapshot, childKey, {
+      value: snapshotOutputText(entry, childKey, seen), enumerable: true, configurable: true, writable: true,
+    });
+  }
+  return snapshot;
+}
+
+/** Build the validated snapshot used by both native formatters, without a second toJSON call. */
+export function prepareWellFormedOutputText(value: unknown): unknown {
+  const snapshot = snapshotOutputText(value, "", new WeakMap());
+  const malformed = findIllFormedOutputText(snapshot, "$", new WeakSet());
+  if (malformed) throwIllFormedOutputText(malformed);
+  return snapshot;
+}
+
+/** Raise the shared typed diagnostic without including the malformed value. */
+function throwIllFormedOutputText(malformed: IllFormedOutputText): never {
   throw new PmCliError(
     `Output field ${malformed.field} contains an unpaired surrogate code unit at index ${malformed.index}; structured output requires well-formed Unicode.`,
     EXIT_CODE.USAGE,
@@ -59,4 +79,13 @@ export function assertWellFormedOutputText(value: unknown): void {
       nextSteps: ["Repair the producer's text before returning output; use toWellFormedText from @unbrained/pm-cli/sdk when replacement is intended."],
     },
   );
+}
+
+/**
+ * Refuse malformed strings or keys in JSON-compatible output with a typed field
+ * diagnostic. This never changes the caller's data. Use toWellFormedText at an
+ * external text boundary when replacement is the producer's intended policy.
+ */
+export function assertWellFormedOutputText(value: unknown): void {
+  prepareWellFormedOutputText(value);
 }

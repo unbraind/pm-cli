@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -10,9 +10,12 @@ import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
 
 const execute = promisify(execFile);
+const runtimes = process.env.CI || spawnSync("bun", ["--version"], { stdio: "ignore", timeout: 5000 }).status === 0
+  ? ["node", "bun"] : ["node"];
 
-it.each(["node", "bun"])("keeps declared refusals separate from unexpected extension faults and attributes %s errors without tracing", async (runtime) => {
+it.each(runtimes)("keeps declared refusals separate from unexpected extension faults and attributes %s errors without tracing", async (runtime) => {
   const events: Array<Record<string, unknown>> = [];
+  const logs: Array<{ attributes: Record<string, { value: unknown }> }> = [];
   const telemetry: Array<Record<string, unknown>> = [];
   const server = createServer(async (request, response) => {
     const chunks: Buffer[] = [];
@@ -23,7 +26,9 @@ it.each(["node", "bun"])("keeps declared refusals separate from unexpected exten
     else {
       const lines = body.trim().split("\n");
       for (let index = 1; index + 1 < lines.length; index += 2) {
-        if (JSON.parse(lines[index]!).type === "event") events.push(JSON.parse(lines[index + 1]!));
+        const type = JSON.parse(lines[index]!).type;
+        if (type === "event") events.push(JSON.parse(lines[index + 1]!));
+        if (type === "log") logs.push(...JSON.parse(lines[index + 1]!).items);
       }
     }
     response.writeHead(200).end("{}");
@@ -42,7 +47,7 @@ it.each(["node", "bun"])("keeps declared refusals separate from unexpected exten
         root: context.pmPath, placement: "projectRoot", directory: "error-probe", entryFilename: "index.mjs",
         manifest: { name: "error-probe", version: "1.2.3", capabilities: ["commands"] },
         entrySource: `export function activate(api) { api.registerCommand({ name: "error probe", arguments: [{ name: "mode", required: true }], run: ({ args }) => {
-          if (args[0] === "untyped") throw new Error("unexpected untyped handler fault");
+          if (args[0] === "untyped") throw Object.assign(new Error("unexpected untyped handler fault"), { privateDocument: "synthetic-private-cause-payload" });
           if (args[0] === "misnamed") throw Object.assign(new Error("invalid refusal shape"), { name: "PmCliError", code: "not_a_contract" });
           throw Object.assign(new Error("producer refusal"), args[0] === "expected"
             ? { name: "PmCliError", exitCode: 1, code: "probe_expected", context: { code: "probe_expected", nextSteps: ["Use a supported input."] } }
@@ -66,6 +71,7 @@ it.each(["node", "bun"])("keeps declared refusals separate from unexpected exten
           "pm.extension.version": "1.2.3", "pm.error_code": "sdk_unavailable", "pm.version": expect.any(String),
         } });
         expect(telemetry.filter((event) => event.event_type === "command_finish").at(-1)).toMatchObject({ payload: { source_context: source } });
+        expect(logs.at(-1)?.attributes["sentry.environment"]?.value).toBe(source === "user" ? "production" : source);
       }
       for (const mode of ["untyped", "misnamed"]) {
         const before = events.length;
@@ -84,6 +90,8 @@ it.each(["node", "bun"])("keeps declared refusals separate from unexpected exten
       expect(JSON.parse(expected.stderr).next_steps).toContain("Use a supported input.");
       expect(events.slice(before).filter((event) => event.exception)).toEqual([]);
       expect(JSON.stringify(events)).not.toContain(context.tempRoot);
+      expect(JSON.stringify(events)).not.toContain("synthetic-private-cause-payload");
+      expect(JSON.stringify(logs)).not.toContain("synthetic-private-cause-payload");
       expect(telemetry.length).toBeGreaterThan(0);
       await writeSettings(globalPath, { ...settings, telemetry: { ...settings.telemetry, enabled: false } });
       const beforeDisabled = events.length;

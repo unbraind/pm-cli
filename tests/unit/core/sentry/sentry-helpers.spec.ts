@@ -405,7 +405,7 @@ describe("ensureSentryInit", () => {
 
     expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
     expect(sentryNodeMock.init).toHaveBeenCalledTimes(1);
-    expect(sentryNodeMock.extraErrorDataIntegration).toHaveBeenCalledWith({ depth: 4 });
+    expect(sentryNodeMock.extraErrorDataIntegration).toHaveBeenCalledWith({ depth: 4, captureErrorCause: false });
     expect(sentryNodeMock.captureConsoleIntegration).toHaveBeenCalledWith({ levels: ["warn", "error"] });
 
     const options = sentryNodeMock.init.mock.calls[0]?.[0] as {
