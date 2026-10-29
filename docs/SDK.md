@@ -280,9 +280,13 @@ async function writePackageState(pmRoot: string, write: () => Promise<void>) {
 The built-in provider automatically recovers a provably dead original Linux
 owner before TTL, including an owner killed inside its commit fence. Recovery
 retains the gate generation as evidence so concurrent recoverers cannot
-remove its replacement, including recovery admitted by the existing age policy.
-An unreadable gate owner is retained even after the age
-threshold; failed reads do not prove abandonment. Acquisition, commit-gate and release wait budgets use
+remove its replacement, including recovery after the age grace when a dead PID
+or verified PID reuse establishes abandonment. A readable gate with a live PID
+and unavailable start identity is retained regardless of age. An unreadable
+gate owner is also retained; age and failed reads do not prove abandonment.
+Recorded host coordinates must be verified; a local PID comparison cannot
+authorize recovery of foreign or unverifiable host evidence.
+Acquisition, commit-gate and release wait budgets use
 a monotonic clock; wall-clock adjustments do not extend those budgets.
 Unknown owners retain the existing lease policy. Conflicts
 expose the lock identity, observed process state, `waited_ms`, observed

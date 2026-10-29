@@ -74,8 +74,21 @@ export interface PmRefusalEnvelope {
   exit_code: number;
 }
 
+/** Structured preflight advisories retained alongside a machine-readable outcome. */
+export interface PreflightWarningDiagnostics {
+  /** Stable advisory codes emitted before command execution. */
+  warnings?: string[];
+  /** Additional actionable guidance that accompanies an advisory code. */
+  warning_details?: Array<{
+    /** Stable code identifying the advisory. */
+    code: string;
+    /** Human-readable remediation retained for this code. */
+    message: string;
+  }>;
+}
+
 /** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
-export interface JsonErrorEnvelope {
+export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
   /** Completed durable writes, with paths relative to the selected tracker. */
   side_effects?: PmCliErrorContext["side_effects"];
   /** Verified admission refusal before any mutation. */

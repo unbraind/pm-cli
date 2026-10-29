@@ -1292,7 +1292,7 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("retains a recent live cleanup owner when process identity is unavailable", async () => {
+  it("retains an old live cleanup owner when process identity is unavailable", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-unavailable-process-identity";
       const lockPath = getLockPath(pmPath, id);
@@ -1307,7 +1307,7 @@ describe("core/lock/lock additional branch coverage", () => {
         })}\n`,
         "utf8",
       );
-      const expiredAt = new Date(Date.now() - 20_000);
+      const expiredAt = new Date(Date.now() - 2 * 60 * 60_000);
       await fs.utimes(gatePath, expiredAt, expiredAt);
       const realReadFile = fs.readFile.bind(fs);
       const readFileSpy = vi
@@ -1349,7 +1349,7 @@ describe("core/lock/lock additional branch coverage", () => {
         `${JSON.stringify({
           pid: process.pid,
           token: "abandoned-owner",
-          process_start_identity: `${currentIdentity}-previous`,
+          process_start_identity: String(BigInt(currentIdentity) + 1n),
         })}\n`,
         "utf8",
       );
@@ -1365,7 +1365,7 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("bounds recovery for live legacy owners without process identity", async () => {
+  it("retains old live legacy owners without process identity", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-stale-cleanup-legacy-max-age";
       const lockPath = getLockPath(pmPath, id);
@@ -1380,10 +1380,9 @@ describe("core/lock/lock additional branch coverage", () => {
       await fs.utimes(gatePath, orphanedAt, orphanedAt);
 
       const release = await lockInternals.acquireStaleCleanupGate(lockPath, id);
-      expect(release).not.toBeNull();
-      await release?.();
-      await expect(fs.access(gatePath)).rejects.toMatchObject({
-        code: "ENOENT",
+      expect(release).toBeNull();
+      expect(JSON.parse(await fs.readFile(`${gatePath}/owner.json`, "utf8"))).toEqual({
+        pid: process.pid, token: "legacy-owner",
       });
     });
   });

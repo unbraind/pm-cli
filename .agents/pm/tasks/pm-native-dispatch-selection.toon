@@ -1,0 +1,24 @@
+id: pm-native-dispatch-selection
+title: Allow bounded manual native-cohort dispatch without weakening full validation
+description: "Manual Nightly Validation currently has no workflow_dispatch inputs, so a focused Windows receipt-test repair requires all fourteen native legs plus quality again. During PR1623, required jobs waited for runner assignment for more than an hour, and multiple repair iterations repeated the full manual matrix. Add an explicit bounded selection for diagnostic native reruns using the canonical matrix and exact-head evidence. Preserve the complete scheduled/default matrix and every required PR gate; a selected run must never certify full-matrix success. Runner-delay causation is not established by this observation."
+type: Task
+status: open
+priority: 3
+tags: []
+created_at: "2026-10-29T13:44:59.324Z"
+updated_at: "2026-10-29T13:46:18.545Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Default and scheduled dispatch retain the complete current matrix and unchanged deadlines; Manual selection accepts only canonical declared cohorts and rejects invalid selections; Evidence names the selected scope and exact revision and cannot be mistaken for full-matrix acceptance; Negative contract controls protect complete default membership and required-check policy
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: An operator can validate one explicitly selected affected native cohort with clearly scoped exact-head evidence while complete scheduled/default and required PR validation remain unchanged.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-native-index-proof,discovered_from,"2026-10-29T13:44:59.324Z","harness:codex","cli:create:dep",detected
+  pm-tzwy,related,"2026-10-29T13:44:59.324Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-29T13:44:59.324Z","harness:codex","Duplicate check: the complete live 3152-item all-status corpus has zero omissions or unreadable records. Request-specific search and fresh open/in_progress inventories found no active selected-dispatch owner. Full live pm-tzwy metadata comments and history confirm its earlier CI optimization is completed. Current nightly.yml declares no manual inputs. This intake remains open and unclaimed; it does not change workflows or excuse any pending native acceptance."
+files[1]{path,scope}:
+  .github/workflows/nightly.yml,project
+body: ""

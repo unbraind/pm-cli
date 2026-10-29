@@ -14,8 +14,69 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+it("preserves a replacement when an aged unverifiable owner releases its gate", async () => {
+  await withTempDir("pm-gate-release-race-", async (root) => {
+    const lockPath = getLockPath(root, "shared");
+    const gatePath = `${lockPath}.stale-cleanup`;
+    await fs.mkdir(path.dirname(lockPath), { recursive: true });
+    vi.spyOn(lockOwner, "captureProcessIdentity").mockResolvedValue({ pid: process.pid });
+    const releaseOriginal = await acquireStaleCleanupGate(lockPath, "shared");
+    expect(releaseOriginal).not.toBeNull();
+    const old = new Date(Date.now() - 2 * 60 * 60_000);
+    await fs.utimes(gatePath, old, old);
+    const rename = fs.rename.bind(fs);
+    let observed!: () => void;
+    const retirementObserved = new Promise<void>((resolve) => { observed = resolve; });
+    let resume!: () => void;
+    const resumed = new Promise<void>((resolve) => { resume = resolve; });
+    vi.spyOn(fs, "rename").mockImplementation(async (...args) => {
+      if (args[0] === gatePath) {
+        observed();
+        await resumed;
+      }
+      return rename(...args);
+    });
+    const recovering = acquireStaleCleanupGate(lockPath, "shared");
+    let replacement: (() => Promise<void>) | null = null;
+    let recovered: (() => Promise<void>) | null = null;
+    try {
+      // A safe refusal finishes immediately; the old implementation pauses
+      // after token revalidation so a real release and replacement can win.
+      await Promise.race([recovering, retirementObserved]);
+      await releaseOriginal!();
+      replacement = await acquireStaleCleanupGate(lockPath, "shared");
+      expect(replacement).not.toBeNull();
+      const replacementOwner = await fs.readFile(path.join(gatePath, "owner.json"), "utf8");
+      resume();
+      recovered = await recovering;
+      expect(recovered).toBeNull();
+      expect(await fs.readFile(path.join(gatePath, "owner.json"), "utf8")).toBe(replacementOwner);
+    } finally {
+      resume();
+      recovered ??= await recovering;
+      await recovered?.();
+      await replacement?.();
+      await releaseOriginal?.();
+    }
+  });
+});
+
+it.skipIf(process.platform !== "linux")("retains an aged foreign gate despite a different local PID identity", async () => {
+  await withTempDir("pm-gate-foreign-aged-", async (root) => {
+    const { lockPath, gatePath } = await deadGate(root);
+    const receipt = JSON.stringify({
+      pid: process.pid, process_start_identity: "0", host_identity: "foreign-host", token: "foreign-owner",
+    });
+    await fs.writeFile(path.join(gatePath, "owner.json"), receipt);
+    const old = new Date(Date.now() - 120_000);
+    await fs.utimes(gatePath, old, old);
+    expect(await acquireStaleCleanupGate(lockPath, "shared")).toBeNull();
+    expect(await fs.readFile(path.join(gatePath, "owner.json"), "utf8")).toBe(receipt);
+  });
+});
+
 it.skipIf(process.platform !== "linux")(
-  "preserves a replacement when dead-owner and age-based recoverers overlap",
+  "refuses an uncertain owner while a proven-dead recoverer waits to retire it",
   async () => {
     await withTempDir("pm-gate-mixed-recovery-", async (root) => {
       const { lockPath, gatePath, receipt } = await deadGate(root);
@@ -25,31 +86,29 @@ it.skipIf(process.platform !== "linux")(
         .mockResolvedValueOnce("dead")
         .mockResolvedValue("unknown");
       const rename = fs.rename.bind(fs);
-      const writeFile = fs.writeFile.bind(fs);
       let observed!: () => void;
       const firstObserved = new Promise<void>((resolve) => { observed = resolve; });
-      let published!: () => void;
-      const replacementPublished = new Promise<void>((resolve) => { published = resolve; });
-      vi.spyOn(fs, "writeFile").mockImplementation(async (...args) => {
-        const result = await writeFile(...args);
-        if (args[0] === path.join(gatePath, "owner.json")) published();
-        return result;
-      });
+      let resume!: () => void;
+      const resumed = new Promise<void>((resolve) => { resume = resolve; });
       let arrived = 0;
       vi.spyOn(fs, "rename").mockImplementation(async (...args) => {
         if (args[0] === gatePath && ++arrived === 1) {
           observed();
-          await replacementPublished;
+          await resumed;
         }
         return rename(...args);
       });
       const first = acquireStaleCleanupGate(lockPath, "shared");
       await firstObserved;
-      const results = await Promise.all([first, acquireStaleCleanupGate(lockPath, "shared")]);
+      const results = await Promise.all([
+        first, acquireStaleCleanupGate(lockPath, "shared").finally(resume),
+      ]);
+      const second = results[1];
       const held = results.filter((release) => release !== null);
       try {
         expect(held).toHaveLength(1);
-        expect(arrived).toBe(2);
+        expect(second).toBeNull();
+        expect(arrived).toBe(1);
         const entries = await fs.readdir(path.join(root, "locks", "recoveries"));
         expect(entries).toHaveLength(1);
         expect(await fs.readFile(path.join(root, "locks", "recoveries", entries[0]!, "owner.json"), "utf8")).toBe(receipt);

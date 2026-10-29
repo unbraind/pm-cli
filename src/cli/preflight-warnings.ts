@@ -1,6 +1,7 @@
 /** Preserve preflight advisories without prefixing a JSON failure envelope. */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { printError, writeStderr } from "../sdk/runtime-primitives.js";
+import type { PreflightWarningDiagnostics } from "./error-guidance.js";
 
 const pendingWarnings = new AsyncLocalStorage<
   Map<string, string> | undefined
@@ -21,7 +22,7 @@ export function emitPreflightWarning(
 }
 
 /** Consume pending advisories into the failure while preserving existing diagnostics. */
-export function attachPreflightWarnings<T extends object>(envelope: T): T {
+export function attachPreflightWarnings<T extends object>(envelope: T): T & PreflightWarningDiagnostics {
   const warnings = pendingWarnings.getStore();
   if (!warnings?.size) return envelope;
   const existing = Reflect.get(envelope, "warnings");

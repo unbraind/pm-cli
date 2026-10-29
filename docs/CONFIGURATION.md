@@ -115,8 +115,13 @@ immediately, before its ordinary age threshold. Its original owner receipt is
 retained in `locks/recoveries/gate-<generation-hash>/owner.json`. These nonempty
 generation directories prevent concurrent recoverers from retiring a replacement
 gate and must be retained while writers may still hold observations of that
-generation. Age-based recovery of a readable owner token uses the same retained
-generation protocol. Non-missing owner-file read errors retain the gate regardless of age.
+generation. Recovery after the age grace requires a dead PID or verified PID
+reuse for a readable owner, and uses the same retained generation protocol.
+A live PID with unavailable start identity keeps its gate regardless of age;
+elapsed time alone cannot safely distinguish a paused writer from abandonment.
+Recorded host coordinates must be verified before recovery; a foreign host or
+unavailable host evidence cannot be replaced by a local PID comparison.
+Non-missing owner-file read errors also retain the gate regardless of age.
 Lock wait durations use a monotonic clock independently of the
 wall-clock timestamps used for TTL policy. This recovery is tracked by
 [pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon)

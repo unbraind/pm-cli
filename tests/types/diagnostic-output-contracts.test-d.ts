@@ -13,6 +13,21 @@ import {
 } from "@unbrained/pm-cli/sdk/contracts";
 import { isPmTokenBudgetRecovery, type PmTokenBudgetRecovery } from "@unbrained/pm-cli/sdk";
 import { isPmTokenBudgetRecovery as coreBudgetGuard, type PmTokenBudgetRecovery as CoreBudgetRecovery } from "@unbrained/pm-cli/sdk/core";
+import type { JsonErrorEnvelope } from "../../src/cli/error-guidance.js";
+import { attachPreflightWarnings } from "../../src/cli/preflight-warnings.js";
+
+const withPreflight = attachPreflightWarnings({ code: "command_failed" });
+const preflightCode: string = withPreflight.code;
+const preflightWarnings: JsonErrorEnvelope["warnings"] = withPreflight.warnings;
+const preflightDetails: JsonErrorEnvelope["warning_details"] = withPreflight.warning_details;
+const preflightMessage: string | undefined = withPreflight.warning_details?.[0]?.message;
+// @ts-expect-error advisory codes must remain machine-readable strings
+const invalidWarningCode: JsonErrorEnvelope["warnings"] = [123];
+void preflightCode;
+void preflightWarnings;
+void preflightDetails;
+void preflightMessage;
+void invalidWarningCode;
 
 const budgetRecovery: PmTokenBudgetRecovery = {
   requested_tokens: 1, feasible_tokens: 500, minimum_feasible_tokens: null,

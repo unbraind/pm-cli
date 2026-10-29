@@ -389,7 +389,6 @@ const STALE_CLEANUP_GATE_OWNER_FILE = "owner.json";
 const STALE_CLEANUP_GATE_STALE_MS = 10_000;
 const LOCK_RELEASE_GATE_WAIT_MS =
   STALE_CLEANUP_GATE_STALE_MS + LOCK_WAIT_MAX_DELAY_MS;
-const STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS = 60 * 60_000;
 
 function parseNonNegativeIntegerWaitMs(
   value: string | number | undefined,
@@ -837,8 +836,13 @@ async function removeExpiredStaleCleanupGate(
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
   if (owner === undefined) return false;
-  if (owner !== null && (await inspectLockOwner(owner)) === "dead") {
-    return retireCleanupGateGeneration(gatePath, owner.token);
+  if (owner !== null) {
+    if ((await inspectLockOwner(owner)) === "dead") {
+      return retireCleanupGateGeneration(gatePath, owner.token);
+    }
+    // A recorded host coordinate must be verified. Local PID probes cannot
+    // establish abandonment on a foreign host or when that evidence is denied.
+    if (owner.host_identity !== undefined) return false;
   }
   if (gateAgeMs <= STALE_CLEANUP_GATE_STALE_MS) return false;
   if (
@@ -846,7 +850,9 @@ async function removeExpiredStaleCleanupGate(
     (await isProcessIdentityAlive(
       owner,
       gateAgeMs,
-      STALE_CLEANUP_GATE_MAX_UNVERIFIED_MS,
+      // Age cannot prove that a live, unverifiable process abandoned its gate.
+      // It could still release after our token check and admit a replacement.
+      Number.POSITIVE_INFINITY,
     ))
   ) {
     return false;
