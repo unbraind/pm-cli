@@ -8,9 +8,9 @@ import { runDirectDistCli } from "../../helpers/cliRunner.js";
 import { runHealth } from "../../../src/sdk/governance/health.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
-it.skipIf(process.platform !== "linux")(
-  "recovers a killed SDK owner before TTL through health, GC and ordinary CLI writes",
-  async () => {
+it.skipIf(process.platform !== "linux").each([["acquired", process.execPath], ["fenced", process.execPath], ["fenced", "bun"]])(
+  "recovers a killed SDK owner at %s with %s before TTL through health, GC and ordinary CLI writes",
+  async (phase, runtime) => {
     await withTempPmPath(async ({ pmPath, tempRoot, env, runCli }) => {
       const id = "pm-crash-owner";
       const created = runCli(
@@ -29,15 +29,20 @@ it.skipIf(process.platform !== "linux")(
       expect(created.code).toBe(0);
       const sdkUrl = pathToFileURL(path.resolve("dist/cli-bundle/sdk.js")).href;
       const holder = spawn(
-        process.execPath,
+        runtime!,
         [
           "--input-type=module",
           "-e",
           `
-      import { acquireLock } from ${JSON.stringify(sdkUrl)};
-      await acquireLock(process.argv[1], process.argv[2], 3600, "crash-holder");
-      process.send("held");
-      setInterval(() => {}, 1000);
+      import { acquireLockLease } from ${JSON.stringify(sdkUrl)};
+      const lease = await acquireLockLease(process.argv[1], process.argv[2], 3600, "crash-holder");
+      const hold = async () => {
+        process.send("held");
+        setInterval(() => {}, 1000);
+        await new Promise(() => {});
+      };
+      if (${JSON.stringify(phase)} === "fenced") await lease.fence(hold);
+      else await hold();
     `,
           pmPath,
           id,
@@ -110,10 +115,13 @@ it.skipIf(process.platform !== "linux")(
         const audits = await fs.readdir(
           path.join(pmPath, "locks", "recoveries"),
         );
-        expect(audits).toHaveLength(1);
+        const gateAudits = audits.filter((entry) => entry.startsWith("gate-"));
+        expect(gateAudits).toHaveLength(phase === "fenced" ? 1 : 0);
+        const lockAudits = audits.filter((entry) => entry.endsWith(".json"));
+        expect(lockAudits).toHaveLength(1);
         const audit = JSON.parse(
           await fs.readFile(
-            path.join(pmPath, "locks", "recoveries", audits[0]!),
+            path.join(pmPath, "locks", "recoveries", lockAudits[0]!),
             "utf8",
           ),
         ) as Record<string, unknown>;

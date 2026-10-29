@@ -1140,7 +1140,7 @@ describe("core/lock/lock additional branch coverage", () => {
             forceRequiredForStaleLock: false,
             staleRemovals: 0,
             waitBudgetMs: 10,
-            startedAtMs: Date.now(),
+            startedAtMs: performance.now(),
             fallbackLockInfo,
           }),
         ).resolves.toEqual({
@@ -1837,7 +1837,7 @@ describe("core/lock/lock additional branch coverage", () => {
             forceRequiredForStaleLock: false,
             staleRemovals: 0,
             waitBudgetMs: 10,
-            startedAtMs: Date.now(),
+            startedAtMs: performance.now(),
             fallbackLockInfo,
           }),
         ).resolves.toEqual({
@@ -1875,7 +1875,7 @@ describe("core/lock/lock additional branch coverage", () => {
           forceRequiredForStaleLock: false,
           staleRemovals: 0,
           waitBudgetMs: 10,
-          startedAtMs: Date.now(),
+          startedAtMs: performance.now(),
           fallbackLockInfo,
         }),
       ).resolves.toEqual({
@@ -1911,7 +1911,7 @@ describe("core/lock/lock additional branch coverage", () => {
         forceRequiredForStaleLock: false,
         staleRemovals: 0,
         waitBudgetMs: 10,
-        startedAtMs: Date.now(),
+        startedAtMs: performance.now(),
         fallbackLockInfo: {
           info: {
             id,
@@ -1961,7 +1961,7 @@ describe("core/lock/lock additional branch coverage", () => {
           forceRequiredForStaleLock: false,
           staleRemovals: 3,
           waitBudgetMs: 10,
-          startedAtMs: Date.now() - 25,
+          startedAtMs: performance.now() - 25,
           fallbackLockInfo,
         }),
       ).rejects.toMatchObject({

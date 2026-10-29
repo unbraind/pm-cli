@@ -193,16 +193,22 @@ it.skipIf(process.platform !== "linux").each(["gc", "acquire"])(
         JSON.stringify({ ...receipt, process_start_identity: "0" }),
       );
       const readlink = fs.readlink.bind(fs);
-      const probe = vi.spyOn(fs, "readlink")
-        .mockRejectedValue(new Error("Host identity temporarily unavailable"))
-        .mockImplementationOnce((...args) => readlink(...args));
+      const mkdir = fs.mkdir.bind(fs);
+      let recordingRecovery = false;
+      vi.spyOn(fs, "mkdir").mockImplementation((...args) => {
+        if (String(args[0]) === path.join(root, "locks/recoveries")) recordingRecovery = true;
+        return mkdir(...args);
+      });
+      vi.spyOn(fs, "readlink").mockImplementation((...args) => {
+        if (recordingRecovery) return Promise.reject(new Error("Host identity temporarily unavailable"));
+        return readlink(...args);
+      });
       let recoveredRelease: (() => Promise<void>) | undefined;
       if (operation === "gc") {
         expect((await runLockGc(root, { dryRun: false })).removed).toEqual([
           "locks/shared.lock",
         ]);
       } else {
-        probe.mockImplementationOnce((...args) => readlink(...args));
         recoveredRelease = await acquireLock(root, "shared", 3600, "next", true);
       }
       const auditDir = path.join(root, "locks/recoveries");

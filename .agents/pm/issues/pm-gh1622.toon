@@ -1,0 +1,18 @@
+id: pm-gh1622
+title: "GH-1622: investigate pm-presets SDK-loading fault blocking daily release"
+description: Auto Release run 40813895480 on 2026-10-29 stops at Sentry PM-CLI-3Q. Two SimulationRefusal sdk_unavailable events originate in the pm-presets package SDK loader on pm-cli 2026.10.25. Investigate package resolution and refusal classification without clearing the alert or bypassing release gates before verification.
+type: Issue
+status: open
+priority: 1
+tags: []
+created_at: "2026-10-29T07:38:03.082Z"
+updated_at: "2026-10-29T07:38:03.082Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Identify and verify the package SDK-loading cause; repair in the owning package and verify the installed consumer; resolve the Sentry issue only with remediation evidence; run the ordinary release gates and preserve one automatic cut per UTC day
+parent: pm-5oj5
+risk: medium
+confidence: high
+comments[1]{created_at,author,text}:
+  "2026-10-29T07:38:03.082Z","harness:codex","Duplicate check: complete strict 3148-item all-status corpus without omissions and pm-presets sdk_unavailable search found no owner of this specific event. All open GitHub issue comments were inspected. Release-health pm-7zs0 has the initial live failure receipt. GitHub source pm-presets/src/sdk-loader.ts throws SimulationRefusal when none of its supplied anchors resolve @unbrained/pm-cli/sdk. Existing pm-presets PR170 is independently active; no ownership or implementation there is assumed. Intake open/unclaimed."
+body: ""

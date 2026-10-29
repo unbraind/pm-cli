@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-28T15:49:25.843Z"
+updated_at: "2026-10-29T07:43:31.423Z"
 reminders[1]{at,text}:
   "2026-10-29T06:00:00.000Z",Verify the next eligible daily release and supported consumers after PR1616
 author: maintainer-agent
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[250]:
+comments[252]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -844,6 +844,12 @@ comments[250]:
   - created_at: "2026-10-28T15:49:25.842Z"
     author: "harness:codex"
     text: Latest Release Reliability run40713600220 remains red at the rolling nightly recurrence step even though the publisher and public consumer verifier succeeded. The measurement implementation owner pm-2zjs0g is closed and remains completed. Historical original-attempt failures and sample sufficiency are not erased by current successful release evidence; retained GitHub nightly issue lineages remain linked.
+  - created_at: "2026-10-29T07:33:56.363Z"
+    author: "harness:codex"
+    text: "2026-10-29 live audit: Auto Release run 40813895480 failed at sentry-telemetry-gate before a new release. GitHub issue #1622 and Sentry PM-CLI-3Q (156996397) identify pm-presets SimulationRefusal sdk_unavailable, first seen 03:07Z, last seen 03:11Z, two events. Separate package fault investigation required; no gate bypass or alert resolution performed. GitHub has zero open PRs and zero open Dependabot, code-scanning or secret-scanning alerts. All 38 open GitHub issues inspected for PM links; only newly created #1622 lacked one."
+  - created_at: "2026-10-29T07:43:31.423Z"
+    author: "harness:codex"
+    text: "Public-distribution verifier passed for existing release2026.10.28: npm integrity, npx and bunx executors, all declared bins, MCP surfaces and negative controls, plus nondraft/nonprerelease GitHub release. This confirms the existing published release only; it predates the lock-recovery branch and today Auto Release remains separately blocked by PM-CLI-3Q."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

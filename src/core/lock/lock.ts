@@ -7,7 +7,7 @@ import { isFileMissingError } from "../fs/fs-utils.js";
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
@@ -58,6 +58,7 @@ interface StaleLockRemovalResult {
 }
 
 interface StaleCleanupGateOwner extends ProcessIdentity {
+  host_identity?: unknown;
   token: string;
 }
 
@@ -290,7 +291,7 @@ async function releaseOwnedLock(
   owner: string,
   token: string,
 ): Promise<void> {
-  const startedAtMs = Date.now();
+  const startedAtMs = performance.now();
   let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
   for (;;) {
     const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
@@ -309,7 +310,7 @@ async function releaseOwnedLock(
     if (!isOwnedLock(current.info, id, owner, token)) {
       return;
     }
-    const elapsedMs = Date.now() - startedAtMs;
+    const elapsedMs = performance.now() - startedAtMs;
     if (elapsedMs >= LOCK_RELEASE_GATE_WAIT_MS) {
       return;
     }
@@ -443,6 +444,7 @@ async function buildLockConflictError(
   waitedMs: number,
   ownerHandoffs = 0,
 ): Promise<PmCliError> {
+  waitedMs = Math.floor(waitedMs);
   const ownerState = await inspectLockOwner(info);
   const handoffSuffix =
     ownerHandoffs > 0 ? ` across ${ownerHandoffs} owner handoff(s)` : "";
@@ -484,14 +486,14 @@ interface LockWaitObservation {
  * while the total wait stays bounded by `totalCeilingMs`.
  */
 function createLockWaitTracker(waitBudgetMs: number, totalCeilingMs: number) {
-  const startedAtMs = Date.now();
+  const startedAtMs = performance.now();
   let stallStartedAtMs = startedAtMs;
   let observedGeneration: string | undefined;
   let ownerHandoffs = 0;
   return {
     startedAtMs,
     observe(info: LockInfo | null): LockWaitObservation {
-      const nowMs = Date.now();
+      const nowMs = performance.now();
       const generation = lockGenerationKey(info);
       if (
         observedGeneration !== undefined &&
@@ -610,12 +612,12 @@ export async function waitForStaleCleanupGate(
   lockPath: string,
   id: string,
 ): Promise<(() => Promise<void>) | null> {
-  const startedAtMs = Date.now();
+  const startedAtMs = performance.now();
   let backoffMs = LOCK_WAIT_INITIAL_DELAY_MS;
   for (;;) {
     const releaseCleanupGate = await acquireStaleCleanupGate(lockPath, id);
     if (releaseCleanupGate !== null) return releaseCleanupGate;
-    const elapsedMs = Date.now() - startedAtMs;
+    const elapsedMs = performance.now() - startedAtMs;
     if (elapsedMs >= LOCK_RELEASE_GATE_WAIT_MS) return null;
     await sleepWithJitter(
       Math.min(backoffMs, LOCK_RELEASE_GATE_WAIT_MS - elapsedMs),
@@ -723,6 +725,7 @@ function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
   return {
     pid,
     token,
+    host_identity: candidate.host_identity,
     ...(typeof processStartIdentity === "string"
       ? { process_start_identity: processStartIdentity }
       : {}),
@@ -779,6 +782,7 @@ async function tryCreateStaleCleanupGate(
   }
   const owner: StaleCleanupGateOwner = {
     ...(await captureProcessIdentity()),
+    host_identity: (await captureLockOwnerIdentity()).host_identity,
     token: randomUUID(),
   };
   try {
@@ -794,6 +798,27 @@ async function tryCreateStaleCleanupGate(
   return owner;
 }
 
+/**
+ * Atomically retain a dead gate as recovery evidence. Its nonempty, generation-
+ * specific destination is never removed: two recoverers observing the same dead
+ * owner cannot move a replacement live gate after the first recovery wins.
+ */
+async function retireDeadCleanupGate(
+  gatePath: string,
+  token: string,
+): Promise<boolean> {
+  const recoveries = path.join(path.dirname(gatePath), "recoveries");
+  const generation = createHash("sha256").update(token).digest("hex");
+  try {
+    await fs.mkdir(recoveries, { recursive: true });
+    await fs.rename(gatePath, path.join(recoveries, `gate-${generation}`));
+    return true;
+  } catch {
+    // Fail closed on inaccessible storage, a competing recovery, or disappearance.
+    return false;
+  }
+}
+
 async function removeExpiredStaleCleanupGate(
   gatePath: string,
 ): Promise<boolean> {
@@ -801,13 +826,14 @@ async function removeExpiredStaleCleanupGate(
   try {
     const stats = await fs.stat(gatePath);
     gateAgeMs = Date.now() - stats.mtimeMs;
-    if (gateAgeMs <= STALE_CLEANUP_GATE_STALE_MS) {
-      return false;
-    }
   } catch (error: unknown) {
     return isFileMissingError(error);
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
+  if (owner !== null && (await inspectLockOwner(owner)) === "dead") {
+    return retireDeadCleanupGate(gatePath, owner.token);
+  }
+  if (gateAgeMs <= STALE_CLEANUP_GATE_STALE_MS) return false;
   if (
     owner !== null &&
     (await isProcessIdentityAlive(
@@ -911,7 +937,7 @@ async function removeConfirmedStaleLock(params: {
       throw await buildLockConflictError(
         params.id,
         currentLockInfo.info,
-        Date.now() - params.startedAtMs,
+        performance.now() - params.startedAtMs,
       );
     }
     if (ownerDead)

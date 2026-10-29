@@ -278,7 +278,11 @@ async function writePackageState(pmRoot: string, write: () => Promise<void>) {
 ```
 
 The built-in provider automatically recovers a provably dead original Linux
-owner before TTL. Unknown owners retain the existing lease policy. Conflicts
+owner before TTL, including an owner killed inside its commit fence. Recovery
+retains the dead gate generation as evidence so concurrent recoverers cannot
+remove its replacement. Acquisition, commit-gate and release wait budgets use
+a monotonic clock; wall-clock adjustments do not extend those budgets.
+Unknown owners retain the existing lease policy. Conflicts
 expose the lock identity, observed process state, `waited_ms`, observed
 `owner_handoffs` and wait advice through `PmCliError.context`. The wait budget
 is a fixed total by default. Pass `{ waitPolicy: "progress" }` in the options

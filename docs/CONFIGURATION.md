@@ -110,7 +110,16 @@ capture an opaque boot/PID-namespace coordinate and the owner's process start
 tick. A matching host can reclaim a provably dead original owner before TTL,
 including when its PID has been reused. Foreign hosts, legacy receipts, denied
 process probes and unavailable identity remain subject to the existing TTL
-policy. Early recovery writes an immutable `locks/recoveries/*.json` intent
+policy. A commit gate with a provably dead same-host owner can also be recovered
+immediately, before its ordinary age threshold. Its original owner receipt is
+retained in `locks/recoveries/gate-<generation-hash>/owner.json`. These nonempty
+generation directories prevent concurrent recoverers from retiring a replacement
+gate and must be retained while writers may still hold observations of that
+generation. Lock wait durations use a monotonic clock independently of the
+wall-clock timestamps used for TTL policy. This recovery is tracked by
+[pm-gh1609](../.agents/pm/issues/pm-gh1609.toon).
+
+Early recovery writes an immutable `locks/recoveries/*.json` intent
 receipt before removal; it records the original owner and is an attempted
 recovery audit, not proof that a later mutation committed. Keep these local
 runtime receipts out of version control.
