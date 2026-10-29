@@ -23,7 +23,7 @@ import {
   locateItem,
   readLocatedItem,
 } from "../sdk/runtime-primitives.js";
-import { emitPreflightWarning } from "./preflight-warnings.js";
+import { emitPreflightWarning, resolvePreflightJsonMode } from "./preflight-warnings.js";
 /** Documents the mandatory migration blocker payload exchanged by command, SDK, and package integrations. */
 export interface MandatoryMigrationBlocker {
   /** Value that configures or reports layer for this contract. */
@@ -348,7 +348,7 @@ export async function enforceMutationGuardPreflight(
     return;
   }
   const settings = await readSettingsWithMetadata(pmRoot);
-  if (global.json !== true) {
+  if (!resolvePreflightJsonMode(global.json === true)) {
     await warnForUnclaimedInProgressUpdate(
       commandPath,
       commandArgs,
