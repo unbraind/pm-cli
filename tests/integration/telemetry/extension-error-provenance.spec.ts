@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
 import path from "node:path";
 import { promisify } from "node:util";
+import { pathToFileURL } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { expect, it } from "vitest";
 import { writeTestExtension } from "../../helpers/extensions.js";
@@ -13,9 +14,38 @@ const execute = promisify(execFile);
 const runtimes = process.env.CI || spawnSync("bun", ["--version"], { stdio: "ignore", timeout: 5000 }).status === 0
   ? ["node", "bun"] : ["node"];
 
+interface CollectedLog {
+  body?: string;
+  attributes: Record<string, { value: unknown }>;
+}
+
+async function assertSequentialSdkSources(runtime: string, cwd: string, env: NodeJS.ProcessEnv,
+  logs: CollectedLog[], events: Array<Record<string, unknown>>): Promise<void> {
+  const sdkUrl = pathToFileURL(path.resolve("dist/cli-bundle/sdk.js")).href;
+  await execute(runtime === "node" ? process.execPath : "bun", ["--input-type=module", "-e", `
+    const { ensureSentryInit, sentrySetCommandContext, sentryCaptureCliError } = await import(${JSON.stringify(sdkUrl)});
+    const sentry = await ensureSentryInit();
+    for (const source of ["automation", "dogfood", "user"]) {
+      sentrySetCommandContext("sdk probe", [], {}, { source_context: source, source_context_source: "inferred", pm_version: "scope-host-version" });
+      sentry.logger.warn("generic SDK scoped log " + source);
+      sentryCaptureCliError(new Error("generic SDK scoped fault " + source));
+    }
+    await sentry.close(2000);
+  `], { cwd, env: { ...env, PM_TELEMETRY_SOURCE_CONTEXT: "user" }, timeout: 15_000 });
+  for (const source of ["automation", "dogfood", "user"]) {
+    const log = logs.find((entry) => entry.body === `generic SDK scoped log ${source}`);
+    expect(log?.attributes["pm.source_context"]?.value).toBe(source);
+    expect(log?.attributes["sentry.environment"]?.value).toBe(source === "user" ? "production" : source);
+    const event = events.find((entry) => JSON.stringify(entry.exception ?? {}).includes(`generic SDK scoped fault ${source}`));
+    expect(event).toMatchObject({ environment: source === "user" ? "production" : source, tags: {
+      "pm.source_context": source, "pm.source_context_source": "inferred", "pm.version": "scope-host-version",
+    } });
+  }
+}
+
 it.each(runtimes)("keeps declared refusals separate from unexpected extension faults and attributes %s errors without tracing", async (runtime) => {
   const events: Array<Record<string, unknown>> = [];
-  const logs: Array<{ attributes: Record<string, { value: unknown }> }> = [];
+  const logs: CollectedLog[] = [];
   const telemetry: Array<Record<string, unknown>> = [];
   const server = createServer(async (request, response) => {
     const chunks: Buffer[] = [];
@@ -105,6 +135,7 @@ it.each(runtimes)("keeps declared refusals separate from unexpected extension fa
       }) })]);
       expect(telemetry).toHaveLength(telemetryBefore);
       expect((await readSettings(globalPath)).telemetry.installation_id).toBe(settings.telemetry.installation_id);
+      await assertSequentialSdkSources(runtime, context.tempRoot, env, logs, events);
     });
   } finally {
     await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

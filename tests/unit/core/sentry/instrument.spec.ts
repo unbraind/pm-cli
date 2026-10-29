@@ -12,6 +12,8 @@ const sentryNodeMock = vi.hoisted(() => {
   const on = vi.fn();
   return {
   init: vi.fn(),
+  setTags: vi.fn(),
+  setAttribute: vi.fn(),
   on,
   getClient: vi.fn<() => { on: typeof on } | undefined>(() => ({ on })),
   withStreamedSpan: vi.fn((callback: unknown) => callback),

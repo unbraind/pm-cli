@@ -515,9 +515,6 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
       tags: {
         "cli.name": "pm-cli",
         "cli.version": release,
-        "pm.version": release,
-        "pm.source_context": resolveTelemetrySourceAttribution().source_context,
-        "pm.source_context_source": resolveTelemetrySourceAttribution().source_context_source,
         "runtime.node": process.version,
         "runtime.platform": process.platform,
         "runtime.arch": process.arch,
@@ -533,6 +530,12 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 
   const client = SentryModule.getClient();
   if (!client) return undefined;
+  // Mutable command defaults belong to the isolation scope. Initial/current
+  // scope values would shadow subsequent setTag/setAttribute command updates.
+  const attribution = resolveTelemetrySourceAttribution();
+  SentryModule.setTags({ "pm.version": release, "pm.source_context": attribution.source_context,
+    "pm.source_context_source": attribution.source_context_source });
+  SentryModule.setAttribute("pm.source_context", attribution.source_context);
   client.on("beforeEnvelope", scrubSentryLogEnvelope);
   _sentry = SentryModule;
   return SentryModule;

@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sentryNodeMock = vi.hoisted(() => ({
   init: vi.fn(),
+  setTags: vi.fn(),
+  setAttribute: vi.fn(),
   getClient: vi.fn(() => ({ on: vi.fn() })),
   withStreamedSpan: vi.fn((callback: unknown) => callback),
   extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
@@ -606,6 +608,7 @@ function buildFakeSpan(): FakeSpan {
 function buildFakeSentry(span: FakeSpan, options?: { logger?: { warn: ReturnType<typeof vi.fn> } }) {
   return {
     setTag: vi.fn(),
+    setAttribute: vi.fn(),
     setContext: vi.fn(),
     addBreadcrumb: vi.fn(),
     startInactiveSpan: vi.fn(() => span),

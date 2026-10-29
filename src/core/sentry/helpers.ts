@@ -117,6 +117,7 @@ export function sentrySetCommandContext(
     metadata.source_context.trim().length > 0
   ) {
     Sentry.setTag("pm.source_context", metadata.source_context);
+    Sentry.setAttribute("pm.source_context", metadata.source_context);
   }
 
   const safeArgs = args.map(() => "[redacted]");
