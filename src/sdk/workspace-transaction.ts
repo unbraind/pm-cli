@@ -696,7 +696,7 @@ export async function commitWorkspaceTransaction(
   );
   try {
     const existing = await loadJournal(pmRoot, transactionId, stepIds);
-    if (existing?.status === "abandoned" || existing?.abandonment !== undefined) throw retiredTransaction(transactionId);
+    if (existing?.status === "abandoned" || existing?.abandonment !== undefined) throw retiredTransaction(existing);
     const recovered = existing !== undefined;
     if (existing?.status === "committed")
       return {
@@ -722,11 +722,17 @@ export async function commitWorkspaceTransaction(
   }
 }
 
-/** Reject replay of a retired id without applying a new plan under that identity. */
-function retiredTransaction(transactionId: string): PmCliError {
-  return new PmCliError(`Transaction ${transactionId} has been abandoned`, EXIT_CODE.CONFLICT, {
-    code: "transaction_abandoned", required: "Use a new transactionId for the replacement plan.",
-    why: "An explicitly retired transaction identity cannot be resumed.",
+/** Explain a validated retirement fence, preserving the recorded replacement while retirement is incomplete. */
+function retiredTransaction(journal: WorkspaceTransactionJournal): PmCliError {
+  const pending = journal.status !== "abandoned";
+  const supersededBy = journal.abandonment!.supersededBy;
+  const retry = supersededBy === undefined
+    ? `Retry abandonment without supersededBy to finish retirement of ${JSON.stringify(journal.transactionId)}.`
+    : `Retry abandonment with supersededBy ${JSON.stringify(supersededBy)} to finish retirement of ${JSON.stringify(journal.transactionId)}.`;
+  return new PmCliError(pending ? `Transaction ${journal.transactionId} retirement is incomplete` : `Transaction ${journal.transactionId} has been abandoned`, EXIT_CODE.CONFLICT, {
+    code: "transaction_abandoned", required: pending ? retry : "Use a new transactionId for the replacement plan.",
+    why: pending ? "Forward replay is fenced, but the recorded retirement has not finished. Preserve its replacement identity." : "An explicitly retired transaction identity cannot be resumed.",
+    ...(pending ? { retirement: { state: "pending", superseded_by: supersededBy ?? null }, nextSteps: [retry] } : {}),
   });
 }
 
@@ -764,7 +770,7 @@ export async function abandonWorkspaceTransaction(options: AbandonWorkspaceTrans
     const journal = await loadJournal(identity.pmRoot, identity.transactionId);
     if (journal === undefined) throw new PmCliError(`Transaction ${identity.transactionId} was not found`, EXIT_CODE.NOT_FOUND);
     if (journal.status === "committed") throw new PmCliError(`Transaction ${identity.transactionId} is committed and cannot be abandoned`, EXIT_CODE.CONFLICT, { code: "transaction_committed", required: "Plan a separate explicit corrective mutation.", why: "Recovery cannot silently undo committed work." });
-    if (journal.abandonment !== undefined && journal.abandonment.supersededBy !== supersededBy) throw retiredTransaction(identity.transactionId);
+    if (journal.abandonment !== undefined && journal.abandonment.supersededBy !== supersededBy) throw retiredTransaction(journal);
     if (journal.status === "abandoned") return journal;
     const steps = options.resolveSteps(structuredClone(journal));
     if (JSON.stringify(steps.map(step => step.id)) !== JSON.stringify(journal.stepIds)) throw journalPlanMismatch(identity.transactionId);

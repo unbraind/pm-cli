@@ -1714,7 +1714,11 @@ intent instead of silently resuming it.
 `supersede(id, newId, { reason })` performs that retirement and records the
 replacement identity; it does not atomically commit the replacement plan or
 reserve its id. Repeating the same retirement is idempotent. Committed journals
-cannot be abandoned. During compensation, a later peer edit refuses with
+cannot be abandoned. A pending-retirement refusal keeps the
+`transaction_abandoned` code, reports `retirement.state: "pending"` and the
+recorded `superseded_by` value (`null` for abandonment without a replacement),
+and explains how to retry the original intent. Finish that retirement before
+re-planning. During compensation, a later peer edit refuses with
 `transaction_partial_mutation` and retains recovery data; it is never silently
 overwritten. Legacy journals without a retained item plan require the original
 plan and adapter for replay. Abandoned receipts remain retained by transaction

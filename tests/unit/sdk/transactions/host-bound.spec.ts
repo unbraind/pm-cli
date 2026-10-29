@@ -54,7 +54,7 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
       const journalBytes = await readFile(path.join(pmPath, "transactions", "sdk", "retired.json"), "utf8");
       await client.itemTransactions.supersede("retired", "replacement", { reason: "Retry request" });
       expect(await readFile(path.join(pmPath, "transactions", "sdk", "retired.json"), "utf8")).toBe(journalBytes);
-      await expect(client.commitItemMutations(options)).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
+      await expect(client.commitItemMutations(options)).rejects.toMatchObject({ message: "Transaction retired has been abandoned", context: { code: "transaction_abandoned", required: "Use a new transactionId for the replacement plan." } });
       await expect(client.commitItemMutations({ ...options, mutations: [{ op: "update", id: original.id, options: { title: "Forbidden replan" } }] })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
       expect((await client.get(original.id)).item.title).toBe("Original");
       await expect(client.itemTransactions.abandon("retired", { reason: "Different replacement" })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
@@ -132,8 +132,9 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
       await expect(client.itemTransactions.abandon("compensation", { reason: "Retire" })).rejects.toThrow("Stop compensation");
       vi.restoreAllMocks();
       expect((await client.itemTransactions.status("compensation"))?.journal.schemaVersion).toBe(2);
+      await expect(client.itemTransactions.supersede("compensation", "wrong-replacement", { reason: "Wrong retry" })).rejects.toMatchObject({ message: "Transaction compensation retirement is incomplete", context: { code: "transaction_abandoned", required: expect.stringContaining("without supersededBy"), retirement: { state: "pending", superseded_by: null } } });
       if (createCompensation === "close") await client.reopen("compensated", "Peer reopens after completed compensation");
-      await expect(client.commitItemMutations({ ...options, mutations: [{ op: "create", id: "compensated", options: { title: "Forbidden replan", type: "Task" } }] })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
+      await expect(client.commitItemMutations({ ...options, mutations: [{ op: "create", id: "compensated", options: { title: "Forbidden replan", type: "Task" } }] })).rejects.toMatchObject({ context: { code: "transaction_abandoned", retirement: { state: "pending", superseded_by: null } } });
       expect((await client.itemTransactions.abandon("compensation", { reason: "Resume retirement" })).journal.status).toBe("abandoned");
       if (createCompensation === "close") expect((await client.get("compensated")).item.status).toBe("open");
       await client.create({ id: "later", title: "Later", type: "Task" });
@@ -164,6 +165,9 @@ describe("host-bound item batches and recovery (pm-gh1597, pm-gh1598)", () => {
       vi.restoreAllMocks();
       const auditPath = path.join(pmPath, "history", "_workspace.jsonl");
       const audit = await readFile(auditPath, "utf8");
+      const pendingJournal = await readFile(file, "utf8");
+      await expect(client.itemTransactions.abandon("audit", { reason: "Wrong retry" })).rejects.toMatchObject({ message: "Transaction audit retirement is incomplete", context: { code: "transaction_abandoned", required: expect.stringContaining('supersededBy "audit-replacement"'), retirement: { state: "pending", superseded_by: "audit-replacement" } } });
+      expect(await readFile(file, "utf8")).toBe(pendingJournal);
       await expect(client.commitItemMutations({ transactionId: "audit", mutations: [{ op: "update", id: "audit", options: { title: "Forward" } }] })).rejects.toMatchObject({ context: { code: "transaction_abandoned" } });
       const collected = await runWorkspaceTransactionGc(pmPath, { dryRun: true, retentionDays: 0, now: Date.now() + 86400000 });
       expect(collected.retained).toContain("transactions/sdk/audit.json");
