@@ -1,6 +1,7 @@
 /** Preserve preflight advisories without prefixing a JSON failure envelope. */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { printError, writeStderr } from "../sdk/runtime-primitives.js";
+import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import type { PreflightWarningDiagnostics } from "./error-guidance.js";
 
 const pendingWarnings = new AsyncLocalStorage<
@@ -58,8 +59,11 @@ export function attachPreflightWarnings<T extends object>(envelope: T): T & Pref
 /** Attach advisories to an already-rendered Commander JSON refusal. */
 export function attachSerializedPreflightWarnings(envelope: string): string {
   if (!pendingWarnings.getStore()?.size) return envelope;
+  const { token_accounting: priorAccounting, ...payload } = attachPreflightWarnings(
+    JSON.parse(envelope) as Record<string, unknown>,
+  );
   return JSON.stringify(
-    attachPreflightWarnings(JSON.parse(envelope) as object),
+    priorAccounting === undefined ? payload : attachOutputTokenAccounting(payload, (value) => `${JSON.stringify(value, null, 2)}\n`),
     null,
     2,
   );

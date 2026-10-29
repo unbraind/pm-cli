@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { attachOutputTokenAccounting } from "../../../src/sdk/output-token-accounting.js";
 import {
   attachPreflightWarnings,
   attachSerializedPreflightWarnings,
@@ -81,6 +82,21 @@ it("attaches warnings to a serialized usage refusal without a second diagnostic"
     });
   });
   expect(output).not.toHaveBeenCalled();
+});
+
+it("accounts for the complete warned refusal without counting its old receipt", async () => {
+  const render = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+  const prior = attachOutputTokenAccounting({ code: "invalid_command_usage", exit_code: 2 }, render);
+  await runWithPreflightWarnings(true, async () => {
+    emitPreflightWarning("settings_read_fs_error", "Run pm health for remediation.");
+    const result = JSON.parse(attachSerializedPreflightWarnings(JSON.stringify(prior)));
+    const { token_accounting: accounting, ...payload } = result;
+    const bytes = Buffer.byteLength(render(payload));
+    expect(accounting.total_bytes).toBe(bytes);
+    expect(accounting.total_estimated_tokens).toBe(Math.ceil(bytes / 4));
+    expect(accounting.accounting_receipt_bytes).toBe(Buffer.byteLength(render(result)) - bytes);
+    expect(bytes).toBeGreaterThan(prior.token_accounting.total_bytes);
+  });
 });
 
 it("isolates nested and concurrent invocations while emitting successful JSON advisories once", async () => {
