@@ -811,6 +811,10 @@ async function retireDeadCleanupGate(
   const generation = createHash("sha256").update(token).digest("hex");
   try {
     await fs.mkdir(recoveries, { recursive: true });
+    // The observed owner may have released its gate before it died. Re-read
+    // after proving death; only that same generation may be retired.
+    if ((await readStaleCleanupGateOwner(gatePath))?.token !== token)
+      return false;
     await fs.rename(gatePath, path.join(recoveries, `gate-${generation}`));
     return true;
   } catch {

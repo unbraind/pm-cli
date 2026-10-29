@@ -394,8 +394,9 @@ describe("progress-aware lock waiting (GH-1516)", () => {
         lease = await acquireLockLease(root, "shared", 60, "waiter", false, false, 1_000, { waitPolicy: "progress" });
         expect(Date.now() - startedAt).toBeGreaterThanOrEqual(1_800);
       } finally {
-        expect(await handoffs).toEqual({ ok: true });
+        const outcome = await handoffs;
         await lease?.release();
+        expect(outcome).toEqual({ ok: true });
       }
     });
   });

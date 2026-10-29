@@ -35,6 +35,16 @@ it.skipIf(process.platform !== "linux")(
     await withTempDir("pm-gate-race-", async (root) => {
       const { lockPath, gatePath, receipt } = await deadGate(root);
       const rename = fs.rename.bind(fs);
+      const writeFile = fs.writeFile.bind(fs);
+      let published!: () => void;
+      const replacementPublished = new Promise<void>((resolve) => {
+        published = resolve;
+      });
+      vi.spyOn(fs, "writeFile").mockImplementation(async (...args) => {
+        const result = await writeFile(...args);
+        if (args[0] === path.join(gatePath, "owner.json")) published();
+        return result;
+      });
       let arrived = 0;
       let resume!: () => void;
       const bothObserved = new Promise<void>((resolve) => {
@@ -42,8 +52,10 @@ it.skipIf(process.platform !== "linux")(
       });
       vi.spyOn(fs, "rename").mockImplementation(async (...args) => {
         if (args[0] === gatePath) {
-          if (++arrived === 2) resume();
+          const ordinal = ++arrived;
+          if (ordinal === 2) resume();
           await bothObserved;
+          if (ordinal === 2) await replacementPublished;
         }
         return rename(...args);
       });
@@ -132,3 +144,37 @@ it("bounds acquisition on a frozen wall clock and preserves the live holder", as
     }
   });
 });
+
+it.skipIf(process.platform !== "linux").each(["replacement", "removed"])(
+  "does not retire a gate %s after the dead-owner observation",
+  async (change) => {
+    await withTempDir("pm-gate-replaced-", async (root) => {
+      const { lockPath, gatePath } = await deadGate(root);
+      const mkdir = fs.mkdir.bind(fs);
+      const replacement = JSON.stringify({
+        ...(await captureLockOwnerIdentity()),
+        pid: process.pid,
+        token: "live-replacement",
+      });
+      vi.spyOn(fs, "mkdir").mockImplementation(async (...args) => {
+        if (args[0] === path.join(root, "locks", "recoveries")) {
+          await fs.rm(gatePath, { recursive: true });
+          if (change === "replacement") {
+            await mkdir(gatePath);
+            await fs.writeFile(path.join(gatePath, "owner.json"), replacement);
+          }
+        }
+        return mkdir(...args);
+      });
+      expect(await acquireStaleCleanupGate(lockPath, "shared")).toBeNull();
+      if (change === "replacement")
+        expect(
+          await fs.readFile(path.join(gatePath, "owner.json"), "utf8"),
+        ).toBe(replacement);
+      else
+        await expect(fs.stat(gatePath)).rejects.toMatchObject({
+          code: "ENOENT",
+        });
+    });
+  },
+);

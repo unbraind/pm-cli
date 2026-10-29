@@ -1,12 +1,12 @@
 id: pm-gh1609
-title: "GH-1609: investigate dead-writer recovery after a process is killed inside a commit fence"
+title: "GH-1609: recover killed commit owners and bound lock waits with a monotonic clock"
 description: "New GitHub report https://github.com/unbraind/pm-cli/issues/1609 compares Linux Node24.19.0 plain non-Git tracker behavior: a strace-injected SIGKILL at the first rename, followed by another writer, reportedly succeeds4/4 on2026.10.21 but fails3/4 on2026.10.26 with lock_conflict and owner process dead after roughly3seconds. The report dates the change to2026.10.23 commit fencing and describes a separate frozen-clock downstream timeout. Reproduce independently and compare the owner-death reclaim and commit-fence cleanup gates, preserving live/unknown owner and stale-writer safety. Do not infer a root cause or bypass fences from the report alone."
 type: Issue
 status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-27T03:16:18.150Z"
-updated_at: "2026-10-29T07:46:29.737Z"
+updated_at: "2026-10-29T08:29:50.793Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
 author: "harness:codex"
@@ -14,16 +14,20 @@ estimated_minutes: 180
 acceptance_criteria: Reproduce the real-wall-clock SIGKILL sequence in disposable non-Git trackers on the reported old and current versions; If confirmed fix preserves mutation fencing and audit history with negative controls for live and unknown owners; Separate monotonic acquisition deadlines from owner liveness and verify Node and Bun public SDK behavior
 parent: pm-02z97f
 risk: high
-confidence: low
+confidence: high
 expected_result: "A provably dead writer is recovered safely after an interrupted commit, and bounded acquisition does not hang under a frozen wall clock; live or ambiguous ownership retains protection."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-10-27T03:16:19.265Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-27T03:16:18.150Z","harness:codex","Duplicate check: complete3135-item strict full all-status corpus has no exact GH1609 owner, no unreadable items and no omissions. Request-specific search, open and zero-in-progress inventories were read. Full live pm-02z97f data confirms its earlier audited dead-owner recovery is closed/completed, not newly outstanding. This newly reported crash-inside-fence scenario is a bounded follow-up. Current source includes both owner_dead_recovery_attempt and the independent commit fence in src/core/lock/lock.ts; the report has not yet been independently reproduced. Keep this intake open/unclaimed; do not treat reported symptoms as a proven root cause."
   "2026-10-27T04:08:08.403Z","harness:codex","Hosted tracker-context-quality correctly identified missing risk/confidence metadata on the new intake. Both fields are supplied through pm (high risk for interrupted-commit safety, low confidence until independent reproduction). Full local tracker-context-quality, graph composition and record integrity now pass their unchanged gates. The item remains open/unclaimed and no reported runtime behavior is claimed fixed."
   "2026-10-29T07:37:58.331Z","harness:codex","Independent negative control on 2026-10-29: extended the existing real-child SDK recovery integration fixture to terminate the owner while acquireLockLease.fence holds the commit gate. Pre-fix run: acquired-owner and live-owner controls pass, fenced-owner restart fails with lock_conflict (exit 4), 1 failed / 2 passed. Production source gates owner inspection behind a 10-second mtime threshold, longer than the ordinary writer budget. Implementing same-host proven-death gate retirement with retained generation evidence and monotonic duration budgets; preserving live/foreign/legacy owner policy and lease fencing."
   "2026-10-29T07:45:21.906Z","harness:codex","Focused validation passed all141 tests across7 files, including real killed-owner Node and Bun SDK processes and ordinary CLI restart/history verification. Exact first-rename kill probe (Node builtin rename interception with SIGKILL): published2026.10.21 restart exit0 in0.425s; published2026.10.26 restart exit4 lock_conflict in3.432s; patched checkout restart exit0 in0.428s. Strict history verification passed in all three trackers. Fixtures are outside the repository with isolated local/global PM roots and telemetry disabled. Full coverage/static and hosted verification are next."
   "2026-10-29T07:46:29.735Z","harness:codex","Isolated baseline negative controls at5f1540b56: Node and Bun fenced-owner restart both fail lock_conflict, and frozen-clock wait exceeds1.5s instead of staying below1s for a100ms budget. The baseline acquired-owner control passes. Same tests on the patched tree passed in the141-test focused run. No test threshold or lease TTL was weakened."
+  "2026-10-29T07:58:42.264Z","harness:codex","Self-review found a further observation race: an observed owner can release its gate before dying, so the path may contain a replacement by the time death is proven. Add a generation re-read after death proof and before retirement. The retained nonempty destination then protects the later interleaving between that re-read and rename. A deterministic fixture now pauses the second recoverer until the replacement owner has published, and separate controls replace or remove the gate before revalidation. Full coverage is running on this revision."
+  "2026-10-29T08:11:20.133Z","harness:codex","The added replacement-observation negative control fails on PR first head2016f0e68: acquireStaleCleanupGate returns a release function after moving the injected live replacement. Revalidation fix is staged for the next review revision. Evidence also records an explicit two-recoverer schedule where the second rename waits until the first replacement owner has published, exercising the nonempty retained-generation fence rather than relying on scheduler timing."
+  "2026-10-29T08:15:24.679Z","harness:codex","Delivery scope: SDK lock primitives own the recovery and timing semantics; CLI and MCP inherit them without duplicate policy. Public signatures remain unchanged. Gate retirement retains original ownership evidence and rejects live replacements, absent generations, foreign hosts and unverifiable fresh receipts. Lease timestamps and TTL policy remain wall-clock based; only bounded wait durations use the monotonic clock."
+  "2026-10-29T08:29:50.792Z","harness:codex","First-head PR coverage passed exact 100/100/100/100 and all required runtime, packed-consumer, security and analyzer checks; static failed only on a missing expected_result in new intake pm-gh1622, now corrected. Full local suite retained 2 failures among 11554 tests: missing Homebrew npm module resolution in composed-continuation and one semantic-preview child timeout. Re-running with NODE_PATH from npm root -g and four workers without changing deadlines, membership or coverage thresholds. Added a pre-retirement owner-token recheck after a negative race control proved a live replacement could otherwise be retired."
 learnings[1]{created_at,author,text}:
   "2026-10-29T07:45:23.237Z","harness:codex","Owner-death recovery must cover every coordination layer held by a writer, including the commit gate. A short writer budget cannot recover a gate whose owner is only inspected after a longer age grace. Preserve the retired generation so simultaneous recoverers cannot remove its live replacement, and measure wait deadlines independently of wall-clock lease timestamps."
 files[8]{path,scope}:
@@ -41,4 +45,11 @@ docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/SDK.md,project
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-gh1609
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-crash-recovery.spec.ts tests/integration/locking/lock-owner-recovery.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs coverage
+  hosted_checks[3]: Gates (coverage),Gates (static),"Nightly (windows-latest, Node 24, shard 1/4)"
 body: ""

@@ -1,0 +1,41 @@
+id: pm-native-index-proof
+title: Bound independent native indexed-receipt regression cases
+description: "Nightly 40837931196 Windows Node24 shard1/4 at 2016f0e68 times out the compound merge-portability indexed-proof case at its unchanged 30000ms limit. It serially combines ordinary refusal, four invalid-index variants, rollback, and junction settlement. Separate independent contracts into isolated cases while preserving assertions, actual Git boundaries, serial allocation, retries and deadlines."
+type: Issue
+status: in_progress
+priority: 1
+tags: []
+created_at: "2026-10-29T08:28:14.112Z"
+updated_at: "2026-10-29T08:32:42.380Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Retain all refusal rollback preservation and junction assertions; Isolate independent indexed-proof scenarios without increasing deadlines or weakening coverage; Run the complete affected native cohort successfully
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: Complete Windows shard1 passes all independent indexed-proof contracts within unchanged per-test and job deadlines.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-89297t,related,"2026-10-29T08:28:14.112Z","harness:codex","cli:create:dep",detected
+  pm-gh1558,related,"2026-10-29T08:28:14.112Z","harness:codex","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-10-29T08:28:14.112Z","harness:codex","Duplicate check: complete all-status corpus, live open and in_progress lists, request-specific search and full pm-89297t data show the serial allocation repair is already closed and shipped. This new leaf owns the repeated compound-test timeout on current native evidence, not the completed allocation or the distinct raw-rename fixture defect."
+  "2026-10-29T08:29:47.767Z","harness:codex","Split the compound native test into unstaged refusal, four independently named invalid-index variants, rollback preservation, and junction settlement. Each retains real Git setup and the unchanged 30000ms deadline; every original assertion remains and each invalid variant now also verifies staged-settlement refusal without history mutation. This increases case attribution without changing serial partitioning or job limits."
+  "2026-10-29T08:30:33.667Z","harness:codex","The original native failure remains run40837931196/job123327040143: the same indexed-proof case failed both attempts at30000ms. Closed pm-89297t already moved this file into the serial phase; that shipped fix remains intact. Current work separates independently observable refusal and preservation contracts and requires a complete native rerun for acceptance."
+  "2026-10-29T08:32:42.380Z","harness:codex","Focused source run passes all22 real-Git LF/CRLF cases after separating independent contracts, alongside lock and packed Node/Bun continuation tests. Full selected cohort:9files195tests pass. Native Windows proof remains pending; the old timeout is retained as failed evidence."
+files[1]{path,scope}:
+  tests/integration/workspace/merge-portability.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,project,600,"harness:codex","2026-10-29T08:29:43.001Z",local_mutation,fix/lock-crash-recovery
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-native-index-proof
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts
+  hosted_checks[2]: "Nightly (windows-latest, Node 24, shard 1/4)",Gates (coverage)
+body: ""

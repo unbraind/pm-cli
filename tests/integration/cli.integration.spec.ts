@@ -5636,6 +5636,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const imported = context.runCli(["beads", "import", "--json", "--file", path.join(context.tempRoot, "missing.jsonl")]);
       expect(imported.code).toBe(1);
+      // Retain the complete synthetic fixture output when native warnings corrupt JSON.
+      expect(() => JSON.parse(imported.stderr), imported.stderr).not.toThrow();
       const importedEnvelope = expectJsonErrorEnvelope(imported.stderr, {
         code: "command_failed",
         exit_code: 1,
