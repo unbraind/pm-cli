@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-27T03:16:18.150Z"
-updated_at: "2026-10-29T10:25:02.085Z"
+updated_at: "2026-10-29T11:21:03.385Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
 author: "harness:codex"
@@ -19,7 +19,7 @@ expected_result: "A provably dead writer is recovered safely after an interrupte
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-10-27T03:16:19.265Z","harness:codex","cli:update:dep",detected
   pm-gh1622,related,"2026-10-29T08:53:15.765Z","harness:codex","cli:update:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-27T03:16:18.150Z","harness:codex","Duplicate check: complete3135-item strict full all-status corpus has no exact GH1609 owner, no unreadable items and no omissions. Request-specific search, open and zero-in-progress inventories were read. Full live pm-02z97f data confirms its earlier audited dead-owner recovery is closed/completed, not newly outstanding. This newly reported crash-inside-fence scenario is a bounded follow-up. Current source includes both owner_dead_recovery_attempt and the independent commit fence in src/core/lock/lock.ts; the report has not yet been independently reproduced. Keep this intake open/unclaimed; do not treat reported symptoms as a proven root cause."
   "2026-10-27T04:08:08.403Z","harness:codex","Hosted tracker-context-quality correctly identified missing risk/confidence metadata on the new intake. Both fields are supplied through pm (high risk for interrupted-commit safety, low confidence until independent reproduction). Full local tracker-context-quality, graph composition and record integrity now pass their unchanged gates. The item remains open/unclaimed and no reported runtime behavior is claimed fixed."
   "2026-10-29T07:37:58.331Z","harness:codex","Independent negative control on 2026-10-29: extended the existing real-child SDK recovery integration fixture to terminate the owner while acquireLockLease.fence holds the commit gate. Pre-fix run: acquired-owner and live-owner controls pass, fenced-owner restart fails with lock_conflict (exit 4), 1 failed / 2 passed. Production source gates owner inspection behind a 10-second mtime threshold, longer than the ordinary writer budget. Implementing same-host proven-death gate retirement with retained generation evidence and monotonic duration budgets; preserving live/foreign/legacy owner policy and lease fencing."
@@ -35,8 +35,10 @@ comments[15]{created_at,author,text}:
   "2026-10-29T08:53:18.789Z","harness:codex","Related release verification intake: the lock-recovery delivery discovered the independently tracked Sentry release blocker. The structured related edge makes that existing narrative reference navigable; it is not a prerequisite for safe lock implementation and does not imply remediation of the upstream package fault."
   "2026-10-29T10:05:10.227Z","harness:codex","CodeRabbit current-head review 5695929096 identifies a second competing-recovery path: a valid old generation whose liveness probe is unknown can enter the age fallback without creating the generation tombstone. That permits a dead-owner recoverer paused after its token check to move the age recoverer replacement. Preparing a deterministic mixed-probe negative control and routing readable age-expired generations through the same retained retirement protocol. No source edits will overlap the running coverage process."
   "2026-10-29T10:25:02.084Z","harness:codex","Review remediation evidence: the deterministic mixed dead-owner/age-based recovery control admitted two holders before the fix and exactly one afterward, retaining the original generation receipt. All readable age-eligible tokens now use the same generation retirement protocol. Complete local coverage on source 943470bca passed 11572 tests with 3 platform skips and exact 100/100/100/100 (zero uncovered counts). The subsequent retirement-path and rollback-assertion delta passes all 166 focused tests across seven files; typecheck, ESLint, docstrings and defect evidence pass. Hosted final-head validation remains required."
-learnings[1]{created_at,author,text}:
+  "2026-10-29T11:21:03.385Z","harness:codex","Final production source 7aef94d8a passes complete local coverage: 11573 tests passed, three platform skips, exact 100/100/100/100 and zero uncovered counts. The bounded mutation gate also passes 345 killed plus seven documented equivalent mutants out of 352, with no unexplained survivor. Required hosted jobs have not yet received runners; Chrome confirms Waiting for a runner to pick up this job. No required check is bypassed."
+learnings[2]{created_at,author,text}:
   "2026-10-29T07:45:23.237Z","harness:codex","Owner-death recovery must cover every coordination layer held by a writer, including the commit gate. A short writer budget cannot recover a gate whose owner is only inspected after a longer age grace. Preserve the retired generation so simultaneous recoverers cannot remove its live replacement, and measure wait deadlines independently of wall-clock lease timestamps."
+  "2026-10-29T10:46:55.208Z","harness:codex","A generation-retirement fence is safe only when every eligible removal path for a readable token participates in it. Test mixed liveness outcomes between concurrent recoverers, pause one after its token check until the other publishes a replacement, and prove exactly one holder plus unchanged original recovery evidence. A passing two-dead-owner race alone does not cover the age-policy fallback."
 files[8]{path,scope}:
   src/core/lock/lock-gc.ts,project
   src/core/lock/lock-owner.ts,project

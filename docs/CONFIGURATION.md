@@ -119,7 +119,8 @@ generation. Age-based recovery of a readable owner token uses the same retained
 generation protocol. Non-missing owner-file read errors retain the gate regardless of age.
 Lock wait durations use a monotonic clock independently of the
 wall-clock timestamps used for TTL policy. This recovery is tracked by
-[pm-gh1609](../.agents/pm/issues/pm-gh1609.toon).
+[pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon)
+(repository tracker record excluded from npm).
 
 Early recovery writes an immutable `locks/recoveries/*.json` intent
 receipt before removal; it records the original owner and is an attempted
@@ -407,7 +408,9 @@ array on stderr, preserving one parseable error and its original exit code.
 Additional explanatory or remediation text is retained in `warning_details`.
 A successful command emits one `{ "type": "warning", "warnings": [...] }`
 diagnostic on stderr when needed; its result remains on stdout. Human output
-keeps immediate warning text. See [pm-gh1602](../.agents/pm/issues/pm-gh1602.toon).
+keeps immediate warning text. See
+[pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon)
+(repository tracker record excluded from npm).
 
 `--output-format json|toon` selects encoding on both reads and mutations.
 Item collection and lifecycle commands accept `--format json|toon` as a

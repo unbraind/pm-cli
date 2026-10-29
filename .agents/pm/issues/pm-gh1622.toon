@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags: []
 created_at: "2026-10-29T07:38:03.082Z"
-updated_at: "2026-10-29T07:57:39.854Z"
+updated_at: "2026-10-29T10:42:41.994Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Identify and verify the package SDK-loading cause; repair in the owning package and verify the installed consumer; resolve the Sentry issue only with remediation evidence; run the ordinary release gates and preserve one automatic cut per UTC day
@@ -16,8 +16,9 @@ confidence: high
 expected_result: "Package SDK resolution and typed refusal handling are verified in the owning package, Sentry shows no recurrence after remediation, and normal release preparation passes without weakening the one-auto-release-per-day guard."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,related,"2026-10-29T07:50:41.455Z","harness:codex","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-29T07:38:03.082Z","harness:codex","Duplicate check: complete strict 3148-item all-status corpus without omissions and pm-presets sdk_unavailable search found no owner of this specific event. All open GitHub issue comments were inspected. Release-health pm-7zs0 has the initial live failure receipt. GitHub source pm-presets/src/sdk-loader.ts throws SimulationRefusal when none of its supplied anchors resolve @unbrained/pm-cli/sdk. Existing pm-presets PR170 is independently active; no ownership or implementation there is assumed. Intake open/unclaimed."
   "2026-10-29T07:50:40.710Z","harness:codex","Upstream source inspection: pm-presets PR170 head a251c073bef06c90cf9e8400e1b3fafb97a3cf30 now canonicalizes SDK anchors with realpathSync and catches SDK-loading failure in parameterSafeApi, returning the host typed refusal-result contract. This matches the observed earlier development-worktree stack and is promising remediation, but PR170 is still open and its package publication/deployment has not been independently verified here. Retain the unresolved Sentry event and release blocker until that verification; do not bypass the core gate or take over the independently active package PR."
   "2026-10-29T07:53:18.513Z","harness:codex","Independent 2026-10-29 full observability gate completed: Sentry API access succeeds and exactly one high unresolved issue blocks the zero-high threshold, PM-CLI-3Q unexpected_fault. Telemetry independently passes: weighted seven-day finish error rate5.89 percent and zero failure rows missing error codes. CLI telemetry flush drains the local queue to zero bytes. No suppression or gate-threshold change was made."
+  "2026-10-29T10:42:41.994Z","harness:codex","At 10:40 UTC the independently progressing pm-presets PR170 is still OPEN and now at 640600bd2df867f670587dda691bfd036de77816, with GitHub mergeStateStatus BLOCKED while its new remote validation runs. Its published PR evidence describes canonical SDK anchors and typed host refusals, but no merged/published remediation has been verified. The current core observability gate still identifies only PM-CLI-3Q as its release blocker; recent real core command spans and delivery pairs pass independently. Retain this open intake and the automated release issue until upstream acceptance and real producer verification."
 body: ""
