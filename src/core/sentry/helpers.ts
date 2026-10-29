@@ -5,6 +5,8 @@
  */
 import { getSentry } from "./instrument.js";
 import { PmCliError } from "../shared/errors.js";
+import { isPmCliExpectedError } from "../../sdk/errors.js";
+import { ExtensionCommandError } from "../../sdk/error-runtime.js";
 import { EXIT_CODE, type TelemetryErrorCategory } from "../shared/constants.js";
 import {
   deriveTelemetryCommandResolution,
@@ -94,6 +96,8 @@ export function sentrySetCommandContext(
   metadata?: {
     source_context?: string;
     source_context_source?: string;
+    pm_version?: string;
+    extension?: { name: string; version?: string; layer: string };
   },
 ): void {
   const Sentry = getSentry();
@@ -103,6 +107,11 @@ export function sentrySetCommandContext(
   Sentry.setTag("pm.command", command);
   Sentry.setTag("pm.command_root", taxonomy.command_root);
   Sentry.setTag("pm.command_family", taxonomy.command_family);
+  setSentryTagIfPresent(Sentry, "pm.version", metadata?.pm_version);
+  setSentryTagIfPresent(Sentry, "pm.source_context_source", metadata?.source_context_source);
+  Sentry.setTag("pm.extension.name", metadata?.extension?.name);
+  Sentry.setTag("pm.extension.version", metadata?.extension?.version);
+  Sentry.setTag("pm.extension.layer", metadata?.extension?.layer);
   if (
     typeof metadata?.source_context === "string" &&
     metadata.source_context.trim().length > 0
@@ -345,7 +354,8 @@ export function sentryLogCliUsageError(params: {
 
 /** Implements should capture cli error for the public runtime surface of this module. */
 export function shouldCaptureCliError(error: unknown): boolean {
-  if (error instanceof PmCliError) {
+  if (error instanceof ExtensionCommandError) return true;
+  if (error instanceof PmCliError || isPmCliExpectedError(error)) {
     return false;
   }
   if (

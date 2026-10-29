@@ -2992,6 +2992,7 @@ describe("extension loader", () => {
         layer: "project",
         name: "command-schema-metadata",
         source_package: undefined,
+        source_version: "1.0.0",
         command: "migrate-asset",
         action: "migrate-asset",
         description: "Migrate asset descriptors between schema versions.",
@@ -4302,6 +4303,7 @@ describe("extension loader", () => {
   });
 
   it("contains command handler lookup and failure cases", async () => {
+    const originalFault = new Error("boom");
     const registry = {
       overrides: [],
       handlers: [
@@ -4310,7 +4312,7 @@ describe("extension loader", () => {
           name: "handler-boom-ext",
           command: "beads import",
           run: () => {
-            throw new Error("boom");
+            throw originalFault;
           },
         },
       ],
@@ -4354,8 +4356,7 @@ describe("extension loader", () => {
       warnings: [],
     });
 
-    expect(
-      await runCommandHandler(registry, {
+    const failure = await runCommandHandler(registry, {
         command: "beads import",
         args: ["--file", "source.jsonl"],
         options: { file: "source.jsonl" },
@@ -4366,8 +4367,9 @@ describe("extension loader", () => {
           profile: false,
         },
         pm_root: "/tmp/project",
-      }),
-    ).toEqual({
+      });
+    expect(failure.cause).toBe(originalFault);
+    expect(JSON.parse(JSON.stringify(failure))).toEqual({
       handled: false,
       result: null,
       warnings: ["extension_command_handler_failed:project:handler-boom-ext:beads import"],

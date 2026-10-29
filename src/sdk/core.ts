@@ -175,3 +175,4 @@ export type {
 } from "../types/index.js";
 
 export type { CloseCompletionReceipt, CloseEvidenceFollowUp } from "./lifecycle-policy.js";
+export { assertWellFormedOutputText, toWellFormedText } from "../core/shared/output-unicode.js";

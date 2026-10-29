@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-29T14:47:48.858Z"
-updated_at: "2026-10-29T17:44:43.402Z"
+updated_at: "2026-10-29T19:43:17.960Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#6bf23ca256a5142e59ec9539"
 author: "harness:codex"
@@ -20,25 +20,99 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-745epp,related,"2026-10-29T14:47:48.858Z","harness:codex","cli:create:dep",detected
   pm-dqtzva,related,"2026-10-29T14:47:48.858Z","harness:codex","cli:create:dep",detected
   pm-gh1622,related,"2026-10-29T14:47:48.858Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-10-29T14:47:48.858Z","harness:codex","Duplicate check: complete live 3153-item all-status corpus plus request-specific search and live open/in_progress inventories found no GH1625 producer-contract owner. Full live pm-gh1622 and completed pm-745epp and pm-dqtzva metadata, comments and history distinguish upstream SDK loading, inferred-test suppression and gate classification. This intake remains open and unclaimed; the existing release blocker remains intact."
   "2026-10-29T17:37:03.080Z","harness:codex","Investigation: the documented package refusal is createPmCliExpectedError (name PmCliError, finite exitCode, context), not an arbitrary class exposing code and remediation. Preserve unexpected SimulationRefusal admission. Current source sets command source context only when optional command tracing starts; reproduce with tracing disabled and repair error-event provenance independently of tracing, retaining explicit consent, host/package versions and non-production classification."
   "2026-10-29T17:42:56.086Z","harness:codex","Independent pre-fix Node/Bun loopback consumers both reproduce production-environment events missing source, host and extension attribution with command tracing disabled. Corrected source passes real Unicode and error-provenance consumers; 303 of the initial304 focused cases pass, with the remaining legacy test expecting the intentionally superseded noninteractive production default. Updated that expectation and retained explicit user production coverage. Arbitrary SimulationRefusal with sdk_unavailable remains a captured exception; a separately bundled PmCliError shape retains expected-error handling and structured context."
   "2026-10-29T17:44:43.401Z","harness:codex","The final304-test cohort passes with real Node/Bun exported events in automation, test, dogfood and explicit user contexts, extension version1.2.3 and host-version attribution. Separately bundled expected errors retain their context and produce no exception event. The shared attribution resolver preserves telemetry inference and rejects invalid overrides without recording their contents. Existing consent and Vitest isolation tests remain green. Root release admission remains blocked by the independently tracked upstream event, without suppression."
-files[11]{path,scope}:
-  src/cli/extension-command-help.ts,project
-  src/cli/main.ts,project
-  src/core/extensions/extension-types.ts,project
-  src/core/extensions/loader.ts,project
-  src/core/sentry/helpers.ts,project
-  src/core/sentry/instrument.ts,project
-  src/core/telemetry/policy.ts,project
-  src/core/telemetry/runtime.ts,project
-  tests/integration/telemetry/extension-error-provenance.spec.ts,project
-  tests/unit/core/sentry/sentry-control-flow.spec.ts,project
-  tests/unit/core/sentry/sentry-helpers.spec.ts,project
+  "2026-10-29T17:48:54.233Z","harness:codex","Repository hygiene refresh: all40 open GitHub issues have canonical PM-link comments, and PR1623 now has its missing canonical linkage comment without duplicating status information. Dependabot, code-scanning and secret-scanning open-alert inventories are empty. pnpm audit reports zero vulnerabilities across567 dependency records. Public2026.10.28 verifier passes npm metadata, npx/bunx CLI and MCP discovery/Skills/Apps, package/bin coverage and GitHub Release. These published-consumer results do not include the current unmerged fixes."
+  "2026-10-29T18:10:19.726Z","harness:codex","Additional public-SDK counterfactual: a Sentry event tagged automation retains environment production when initialization saw user context. The real installed SDK beforeSend hook reproduces the mismatch. Refine per-event environment selection and clear previous extension tags for sequential host use while preserving explicit environment overrides and unexpected-fault capture."
+  "2026-10-29T19:17:12.584Z","harness:codex","The final expanded cohort passes684 tests across26 files. Valid Node/Bun host controls first reproduced missing exception events for bare handler faults, then missing command/extension attribution with telemetry disabled. The repairs retain the original non-enumerable cause, use ExtensionCommandError consistently in CLI/SDK/template delegation, validate the original refusal contract before filtering, and derive attribution without telemetry delivery or identity creation. Independent pre-fix SDK action/template controls both fail as intended. A failed template leaves item and history snapshots unchanged. Initial undeclared-argument fixture refusals are excluded from defect evidence; all final fixtures declare their arguments and run from isolated directories."
+  "2026-10-29T19:37:40.451Z","harness:codex","Static gate identified a stale CLI refusal disposition (3 constructions before extraction, 2 now). The removed occurrence is the unexpected extension-handler wrapper now shared by CLI and SDK create/action hosts through createExtensionCommandError. Remaining CLI-owned refusals are unavailable extension command and empty --author transport input. Updating the exact inventory and rationale preserves complete occurrence coverage; no gate threshold is waived."
+  "2026-10-29T19:43:17.960Z","harness:codex","Final SDK parity negative controls against4bc8fb4f fail exactly2 assertions: custom action and delegated create-template faults previously become usage2 PmCliError rather than runtime1 ExtensionCommandError with original cause. Real Node/Bun untyped handler probes independently fail before the fix (zero exception events), and a second diagnostic control isolates missing command/owner attribution when telemetry is disabled. Current public-host cohort passes684 tests across26 files. Package-owned pm-changelog already throws typed expected errors for stale generation and option validation; no package code workaround or Sentry suppression was added."
+learnings[1]{created_at,author,text}:
+  "2026-10-29T17:57:29.404Z","harness:codex",Command tracing is optional; error attribution must use the same pure source-context resolver as telemetry. A producer-owned code and remedy alone do not declare an expected refusal across an extension boundary.
+files[23]:
+  - path: scripts/release/surface-replication-sets.json
+    scope: project
+    note: Update exact CLI refusal ownership after shared SDK runtime fault factory extraction
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/cli/extension-command-help.ts
+    scope: project
+  - path: src/cli/main.ts
+    scope: project
+  - path: src/core/extensions/extension-hook-runtime.ts
+    scope: project
+  - path: src/core/extensions/extension-types.ts
+    scope: project
+  - path: src/core/extensions/loader.ts
+    scope: project
+  - path: src/core/sentry/helpers.ts
+    scope: project
+  - path: src/core/sentry/instrument.ts
+    scope: project
+  - path: src/core/telemetry/policy.ts
+    scope: project
+  - path: src/core/telemetry/runtime.ts
+    scope: project
+  - path: src/sdk/error-runtime.ts
+    scope: project
+  - path: src/sdk/lifecycle/create.ts
+    scope: project
+  - path: src/sdk/runtime-primitives.ts
+    scope: project
+  - path: src/sdk/runtime.ts
+    scope: project
+  - path: tests/integration/read-output/extension.integration.spec.ts
+    scope: project
+  - path: tests/integration/telemetry/extension-error-provenance.spec.ts
+    scope: project
+  - path: tests/types/diagnostic-output-contracts.test-d.ts
+    scope: project
+  - path: tests/unit/commands/lifecycle/create-command.spec.ts
+    scope: project
+  - path: tests/unit/core/sentry/instrument.spec.ts
+    scope: project
+  - path: tests/unit/core/sentry/sentry-control-flow.spec.ts
+    scope: project
+  - path: tests/unit/core/sentry/sentry-helpers.spec.ts
+    scope: project
+  - path: tests/unit/extensions/extension-loader.spec.ts
+    scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry tests/integration/telemetry/extension-error-provenance.spec.ts,project,240,"harness:codex","2026-10-29T17:44:38.727Z",local_mutation,fix/lock-crash-recovery
+  node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry tests/integration/telemetry/extension-error-provenance.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/integration/read-output/extension.integration.spec.ts,project,300,"harness:codex","2026-10-29T19:26:19.919Z",local_mutation,fix/extension-boundary-contracts
+test_runs[2]:
+  - run_id: test-local-mvtvoq7q-j0go0y
+    kind: test
+    status: passed
+    started_at: "2026-10-29T18:29:13.393Z"
+    finished_at: "2026-10-29T18:30:03.445Z"
+    recorded_at: "2026-10-29T18:30:03.445Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry tests/integration/telemetry/extension-error-provenance.spec.ts tests/unit/extensions/extension-loader.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtxqdgu-w0vymm
+    kind: test
+    status: passed
+    started_at: "2026-10-29T19:26:39.959Z"
+    finished_at: "2026-10-29T19:27:19.470Z"
+    recorded_at: "2026-10-29T19:27:19.470Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry tests/integration/telemetry/extension-error-provenance.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/integration/read-output/extension.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
-  docs/EXTENSIONS.md,project
+  docs/SDK.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-gh1625
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/telemetry/extension-error-provenance.spec.ts tests/integration/read-output/extension.integration.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs coverage,"pnpm quality:static",pnpm typecheck
+  hosted_checks[3]: Gates (coverage),Gates (static),Gates (typecheck)
 body: ""

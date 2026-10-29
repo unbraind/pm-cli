@@ -6,7 +6,8 @@
 import { createRequire } from "node:module";
 import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
-import { resolveTelemetryEnvironmentPolicy } from "../telemetry/policy.js";
+import { resolveTelemetryEnvironmentPolicy, resolveTelemetrySourceAttribution } from "../telemetry/policy.js";
+import { isPmCliExpectedError } from "../../sdk/errors.js";
 import { scrubInlineSensitiveAssignments, SENSITIVE_KEY_PATTERN } from "./sensitive-assignments.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -232,7 +233,8 @@ function isExpectedCliErrorEvent(event: {
   message?: string;
   extra?: Record<string, unknown>;
   logger?: string;
-}): boolean {
+}, originalException?: unknown): boolean {
+  if (originalException instanceof Error) return isPmCliExpectedError(originalException);
   if (event.exception?.values?.some((ex) => ex.type === "PmCliError"))
     return true;
 
@@ -289,7 +291,8 @@ function resolveEnvironment(): string {
   )
     return "test";
   if (process.env.CI) return "ci";
-  return "production";
+  const source = resolveTelemetrySourceAttribution().source_context;
+  return source === "user" ? "production" : source;
 }
 
 const DEFAULT_TRACES_SAMPLE_RATE = 0.2;
@@ -373,8 +376,16 @@ function scrubSentryRecordField(event: object, key: string): void {
   }
 }
 
-const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event) => {
-  if (isExpectedCliErrorEvent(event) || isKnownNoisyConsoleEvent(event)) return null;
+/** Apply command attribution after scope tags merge, preserving explicit environment configuration. */
+function applySourceContextEnvironment(event: { environment?: string; tags?: Record<string, unknown> }): void {
+  if (process.env.SENTRY_ENVIRONMENT?.trim()) return;
+  const source = event.tags?.["pm.source_context"];
+  if (source === "automation" || source === "test" || source === "dogfood") event.environment = source;
+}
+
+const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event, hint) => {
+  if (isExpectedCliErrorEvent(event, hint?.originalException) || isKnownNoisyConsoleEvent(event)) return null;
+  applySourceContextEnvironment(event);
   if (isNodeRuntimeWarningEvent(event)) {
     event.level = "warning";
     event.tags = {
@@ -393,6 +404,7 @@ const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event) => {
 };
 
 const beforeSendTransaction: NonNullable<NodeOptions["beforeSendTransaction"]> = (event) => {
+  applySourceContextEnvironment(event);
   if (event.breadcrumbs) {
     event.breadcrumbs = event.breadcrumbs.filter(
       (breadcrumb) => !isPmCliErrorBreadcrumb(breadcrumb) && !isKnownNoisyConsoleBreadcrumb(breadcrumb),
@@ -486,6 +498,9 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
       tags: {
         "cli.name": "pm-cli",
         "cli.version": release,
+        "pm.version": release,
+        "pm.source_context": resolveTelemetrySourceAttribution().source_context,
+        "pm.source_context_source": resolveTelemetrySourceAttribution().source_context_source,
         "runtime.node": process.version,
         "runtime.platform": process.platform,
         "runtime.arch": process.arch,

@@ -23,6 +23,7 @@ import {
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 import { encodePmTableRows } from "../../sdk/output/table-rows.js";
 import { projectPmBriefListEnvelope } from "../../sdk/output/list-envelope.js";
+import { assertWellFormedOutputText } from "../shared/output-unicode.js";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
 
@@ -541,6 +542,7 @@ export function formatBuiltInOutput(
   format: "json" | "toon",
   lean = false,
 ): string {
+  assertWellFormedOutputText(result);
   if (format === "json") {
     const value = lean ? projectLeanJsonValue(result) : result;
     const briefList = isPlainObject(result) && isPlainObject(result.projection) &&

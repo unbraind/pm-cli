@@ -1,0 +1,22 @@
+id: pm-y4v90c
+title: Preserve surrogate pairs in bounded extension error diagnostics
+description: "describeHandlerError and readHandlerStringField in src/core/extensions/extension-hook-runtime.ts currently bound normalized message/code/remediation with UTF-16 slice. A valid emoji starting at the cutoff becomes a lone high surrogate (298 ASCII characters plus an emoji for the 299-unit message prefix, or 299 ASCII characters plus an emoji for 300-unit metadata). Reuse the shared Unicode-safe prefix primitive without changing field length budgets or mutating the original error. This is a separate diagnostic truncation boundary from pm-gh1624 raw output admission."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-29T19:42:21.007Z"
+updated_at: "2026-10-29T19:50:14.882Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Prove valid astral characters survive cutoff boundaries through the public extension test harness; Preserve 300-unit diagnostic bounds and the original error; Retain no-handler and typed refusal contracts
+parent: pm-5t33or
+risk: medium
+confidence: high
+expected_result: "Bounded extension diagnostics retain valid surrogate pairs, preserve existing unit limits, and leave the original thrown error unchanged."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1478,related,"2026-10-29T19:42:21.007Z","harness:codex","cli:create:dep",detected
+  pm-gh1624,related,"2026-10-29T19:42:21.007Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-29T19:42:21.007Z","harness:codex","Duplicate check: live all-state corpus3155 records plus request-specific searches for extension diagnostic Unicode truncation and surrogate truncation, current open/in_progress inventories, and full pm-gh1478 data/comments/history. Closed pm-gh1478 implements bounded output prefixes; active pm-gh1624 owns raw output admission. Neither owns these two extension-hook diagnostic slices. Static boundary reproduction produces a lone surrogate from valid emoji text; no source change or claim is included in this follow-up."
+body: ""

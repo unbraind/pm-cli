@@ -1470,6 +1470,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       }
 
       const registration: RegisteredExtensionCommandDefinition = {
+        source_version: this.#loadedExtension.version,
         read_output: readOutput,
         layer: this.#loadedExtension.layer,
         name: this.#loadedExtension.name,

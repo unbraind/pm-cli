@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags: []
 created_at: "2026-10-29T14:47:42.900Z"
-updated_at: "2026-10-29T17:44:41.197Z"
+updated_at: "2026-10-29T19:43:17.172Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#6bf23ca256a5142e59ec9539"
 author: "harness:codex"
@@ -19,19 +19,59 @@ expected_result: "Extension output has a documented consistent Unicode policy an
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1478,related,"2026-10-29T14:47:42.900Z","harness:codex","cli:create:dep",detected
   pm-jsm9im,related,"2026-10-29T14:47:42.900Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-29T14:47:42.900Z","harness:codex","Duplicate check: complete live 3153-item all-status corpus has zero unreadable records and zero omissions; fresh request-specific search and open/in_progress lists found no GH1624 owner. Full live metadata, comments and history of pm-gh1478 and pm-jsm9im confirm their completed narrower scopes. New report is recorded open and unclaimed while PR1623 finishes."
   "2026-10-29T17:33:36.945Z","harness:codex","Begin extension-output Unicode contract implementation in an isolated checkout while PR1623 completes checks. Reuse existing persisted-text and valid-pair compaction lineage; preserve typed field diagnostics, valid astral pairs and input immutability across JSON and TOON."
   "2026-10-29T17:40:48.450Z","harness:codex",Independent clean pre-fix checkout runs the corrected real extension fixture on Node and Bun; both fail because JSON exits successfully for malformed output. The original fixture setup omission was corrected before this counterfactual and is not counted as defect evidence. Typed rejection preserves valid pairs and input; public helpers expose deliberate boundary normalization and output validation.
   "2026-10-29T17:44:41.196Z","harness:codex","Focused final cohort passes304 tests across23 files including Node/Bun host probes, Unicode policy unit cases and existing telemetry/Sentry contracts. The formatter refuses malformed strings and keys consistently; the normalization helper only changes lone surrogate code units. Full coverage and package/surface/static verification are underway in the isolated checkout."
-files[5]{path,scope}:
+  "2026-10-29T18:10:18.817Z","harness:codex","Additional compiled-SDK counterfactual found during review: an invalid object key was correctly refused but its diagnostic field path still contained the lone surrogate. Independent public-SDK assertion fails for both field-path and message well-formedness. Escape non-identifier key coordinates in the diagnostic without modifying producer data; finish the currently running immutable source cohort before applying this refinement."
+  "2026-10-29T19:17:13.319Z","harness:codex","Unicode diagnostics now use printable escaped coordinates for malformed object keys, retain valid astral pairs and leave input unchanged. Helpers are available through the stable core SDK. Node/Bun compiled-consumer controls pass. The full initial cohort passed11592 tests but exposed folder/doc budgets, a metadata fixture and ambient npm lookup; those are corrected without changing their limits. Expanded verification passes684 tests, and the final docs/text recheck passes43. Full final-source coverage and repository-wide gates remain pending."
+  "2026-10-29T19:43:17.171Z","harness:codex","Final valid-argument pre-fix control on detached4bc8fb4f: Node and Bun both fail the new real extension-host policy test because malformed JSON output exits0 instead of typed usage2. The declared mode argument eliminates earlier fixture setup mistakes. Current compiled SDK additionally passes malformed-key diagnostic well-formedness checks on Node and Bun; JSON/TOON output refuses malformed values and keys without modifying inputs, preserves valid emoji, shared values and serializer-owned cycle admission."
+learnings[1]{created_at,author,text}:
+  "2026-10-29T17:57:28.255Z","harness:codex",Keep malformed-output validation independent of rendering format. Producer-owned normalization must happen before object-key construction so replacement cannot silently merge distinct keys.
+files[9]{path,scope}:
+  sdk/public-surface.json,project
   src/core/output/output.ts,project
   src/core/shared/output-unicode.ts,project
+  src/sdk/core.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
   src/sdk/output.ts,project
-  tests/integration/extension-output-unicode.integration.spec.ts,project
-  tests/unit/sdk/output-unicode.spec.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/extensions/output-unicode.integration.spec.ts,project
+  tests/unit/sdk/output/unicode.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/sdk/output-unicode.spec.ts tests/unit/sdk/read-output/unicode.spec.ts tests/integration/extension-output-unicode.integration.spec.ts,project,240,"harness:codex","2026-10-29T17:44:34.718Z",local_mutation,fix/lock-crash-recovery
+  node scripts/run-tests.mjs test -- tests/unit/sdk/output/unicode.spec.ts tests/unit/sdk/read-output/unicode.spec.ts tests/integration/extensions/output-unicode.integration.spec.ts,project,240,"harness:codex","2026-10-29T18:24:13.729Z",local_mutation,fix/extension-boundary-contracts
+test_runs[2]:
+  - run_id: test-local-mvtvnml9-3a4pi5
+    kind: test
+    status: passed
+    started_at: "2026-10-29T18:28:49.131Z"
+    finished_at: "2026-10-29T18:29:12.093Z"
+    recorded_at: "2026-10-29T18:29:12.093Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/unicode.spec.ts tests/unit/sdk/read-output/unicode.spec.ts tests/integration/extensions/output-unicode.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtxpii0-lm0z54
+    kind: test
+    status: passed
+    started_at: "2026-10-29T19:26:20.635Z"
+    finished_at: "2026-10-29T19:26:39.336Z"
+    recorded_at: "2026-10-29T19:26:39.336Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/output/unicode.spec.ts tests/unit/sdk/read-output/unicode.spec.ts tests/integration/extensions/output-unicode.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-gh1624
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/output-unicode.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs coverage,"pnpm quality:static",pnpm typecheck
+  hosted_checks[3]: Gates (coverage),Gates (static),Gates (typecheck)
 body: ""

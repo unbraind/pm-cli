@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { shouldCaptureCliError } from "../../../../src/core/sentry/helpers.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { ExtensionCommandError, createExtensionCommandError } from "../../../../src/sdk/error-runtime.js";
 
 describe("Sentry CLI control-flow classification", () => {
   it("keeps typed pm and package command outcomes out of exception groups", () => {
@@ -20,6 +21,23 @@ describe("Sentry CLI control-flow classification", () => {
       name: "CommandError",
     });
     expect(shouldCaptureCliError(untypedPackageFailure)).toBe(true);
+    const declared = Object.assign(new Error("separately bundled refusal"), {
+      name: "PmCliError", exitCode: 1, context: { code: "package_refusal" },
+    });
+    expect(shouldCaptureCliError(declared)).toBe(false);
+    expect(shouldCaptureCliError(Object.assign(new Error("unexpected"), {
+      name: "SimulationRefusal", code: "sdk_unavailable", exitCode: 1,
+    }))).toBe(true);
+    const cause = new Error("handler defect");
+    const failure = new ExtensionCommandError("host diagnostic", { code: "command_failed" }, cause);
+    expect(shouldCaptureCliError(failure)).toBe(true);
+    expect(failure.cause).toBe(cause);
+    expect(Object.keys(failure)).not.toContain("cause");
+    expect(createExtensionCommandError("probe", { warnings: [] })).toMatchObject({ code: "command_failed", exitCode: 1 });
+    expect(createExtensionCommandError("probe", { warnings: ["provider_fault"], errorMessage: " fault ", errorCode: "provider_fault", remediation: "Repair input.", cause })).toMatchObject({
+      message: 'Command "probe" failed in extension handler (provider_fault). fault',
+      context: { code: "provider_fault", nextSteps: ["Repair input."] }, cause,
+    });
   });
 
   it("suppresses explicit user interrupts without hiding unrelated aborts", () => {

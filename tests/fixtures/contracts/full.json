@@ -26930,7 +26930,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/item/item-format.ts"
+        "core/item/item-format.ts",
+        "core/shared/output-unicode.ts"
       ],
       "stability": "provisional"
     },

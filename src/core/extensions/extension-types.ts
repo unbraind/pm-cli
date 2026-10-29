@@ -1556,6 +1556,8 @@ export interface RegisteredExtensionFlagDefinitions {
 
 /** Documents the registered extension command definition payload exchanged by command, SDK, and package integrations. */
 export interface RegisteredExtensionCommandDefinition {
+  /** Manifest version of the extension that owns this command. */
+  source_version?: string;
   /** Validated read-only output declaration, snapshotted during activation. */
   read_output?: ExtensionCommandReadOutput;
   /** Value that configures or reports layer for this contract. */
@@ -2056,6 +2058,8 @@ export interface CommandOverrideResult {
 
 /** Documents the command handler result payload exchanged by command, SDK, and package integrations. */
 export interface CommandHandlerResult {
+  /** Original thrown value on failure; non-enumerable so serialized diagnostics stay bounded. */
+  readonly cause?: unknown;
   /** Value that configures or reports handled for this contract. */
   handled: boolean;
   /** Value that configures or reports result for this contract. */

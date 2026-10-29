@@ -352,7 +352,7 @@ export async function runCommandHandler(
     if (typeof exitCode === "number" && Number.isFinite(exitCode)) {
       throw error;
     }
-    return {
+    return Object.defineProperty({
       handled: false,
       result: null,
       warnings: [
@@ -365,7 +365,7 @@ export async function runCommandHandler(
           ["remediation", readHandlerStringField(error, "remediation")],
         ].filter((entry) => entry[1] !== undefined),
       ),
-    };
+    }, "cause", { value: error, configurable: true });
   }
 }
 

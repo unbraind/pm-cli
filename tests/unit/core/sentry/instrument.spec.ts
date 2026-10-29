@@ -68,6 +68,33 @@ describe("instrument residual branches", () => {
     rootMock.resolvePmCliVersion.mockReturnValue(null);
   });
 
+  it("uses event source attribution after initialization and preserves explicit environments", async () => {
+    process.env.PM_TELEMETRY_SOURCE_CONTEXT = "user";
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      beforeSend: (event: Record<string, unknown>) => Record<string, unknown>;
+      beforeSendTransaction: (event: Record<string, unknown>) => Record<string, unknown>;
+    }>();
+    for (const source of ["automation", "test", "dogfood"]) {
+      for (const send of [options.beforeSend, options.beforeSendTransaction]) {
+        expect(send({ environment: "production", tags: { "pm.source_context": source } }).environment).toBe(source);
+      }
+    }
+    expect(options.beforeSend({ environment: "production", tags: { "pm.source_context": "user" } }).environment).toBe("production");
+    process.env.SENTRY_ENVIRONMENT = "preview";
+    expect(options.beforeSend({ environment: "preview", tags: { "pm.source_context": "automation" } }).environment).toBe("preview");
+  });
+
+  it("validates original expected-error contracts instead of trusting a reported exception name", async () => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      beforeSend: (event: Record<string, unknown>, hint: Record<string, unknown>) => Record<string, unknown> | null;
+    }>();
+    const event = { exception: { values: [{ type: "PmCliError", value: "invalid refusal" }] } };
+    expect(options.beforeSend(event, { originalException: Object.assign(new Error("invalid refusal"), { name: "PmCliError" }) })).not.toBeNull();
+    expect(options.beforeSend(event, { originalException: Object.assign(new Error("expected"), { name: "PmCliError", exitCode: 2 }) })).toBeNull();
+  });
+
   afterEach(() => {
     process.env = { ...originalEnv };
     resetSentryStateForTests();

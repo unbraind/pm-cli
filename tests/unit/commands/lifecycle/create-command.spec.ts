@@ -4233,7 +4233,7 @@ describe("create command helper coverage", () => {
     expect(_testOnlyCreateCommand.hasTemplatesShowHandler()).toBe(true);
   });
 
-  it("surfaces templates package handler warnings when template resolution is unhandled", async () => {
+  it("preserves unexpected template-handler failures as runtime faults", async () => {
     setActiveExtensionRegistrations({
       commands: [
         {
@@ -4271,7 +4271,9 @@ describe("create command helper coverage", () => {
         "/tmp/pm-root",
       ),
     ).rejects.toMatchObject<PmCliError>({
-      exitCode: EXIT_CODE.USAGE,
+      name: "ExtensionCommandError",
+      exitCode: EXIT_CODE.GENERIC_FAILURE,
+      cause: expect.objectContaining({ message: "template missing" }),
       message: expect.stringContaining(
         "extension_command_handler_failed:project:templates:templates show",
       ),
@@ -4670,6 +4672,7 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
 
   it("merges template options resolved from an active templates show handler", async () => {
     await withTempPmPath(async (context) => {
+      let handlerFault = false;
       let templateOptions: Record<string, unknown> = { description: "from template", tags: "template-tag" };
       setActiveExtensionRegistrations({
         commands: [
@@ -4694,7 +4697,10 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
             layer: "project",
             name: "templates",
             command: "templates show",
-            run: () => ({ options: templateOptions }),
+            run: () => {
+              if (handlerFault) throw new Error("template provider defect");
+              return { options: templateOptions };
+            },
           },
         ],
       });
@@ -4723,6 +4729,11 @@ describe("runCreate c8-exposed coverage gaps (pm-eifq)", () => {
         await expect(runSdkCreate({ template: "bug-report", createMode: "progressive" }, { path: context.pmPath })).rejects.toMatchObject({ code: "invalid_argument_value", exitCode: 2, context: { field, changed: false } });
         expect(await snapshot()).toEqual(before);
       }
+      handlerFault = true;
+      await expect(runSdkCreate({ title: "provider failed", template: "bug-report", createMode: "progressive" }, { path: context.pmPath })).rejects.toMatchObject({
+        name: "ExtensionCommandError", exitCode: EXIT_CODE.GENERIC_FAILURE, cause: expect.objectContaining({ message: "template provider defect" }),
+      });
+      expect(await snapshot()).toEqual(before);
     });
   });
 

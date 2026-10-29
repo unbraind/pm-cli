@@ -1476,7 +1476,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["core/item/item-format.ts"],
+    sources: ["core/item/item-format.ts", "core/shared/output-unicode.ts"],
     emitting_commands: ["*"],
     canonical_code: "text_unpaired_surrogate",
     aliases: [],
