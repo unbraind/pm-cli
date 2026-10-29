@@ -2,6 +2,7 @@
  * @module cli/main
  * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
+import { attachPreflightWarnings, attachSerializedPreflightWarnings, emitPreflightWarning, runWithPreflightWarnings } from "./preflight-warnings.js";
 import { Command,CommanderError } from "commander";
 import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
@@ -548,7 +549,7 @@ async function handleGenericRunPmCliError(params: {
   const message = describeUnknownError(params.error);
   const classification = classifyUnknownError(message);
   if (params.bootstrapGlobal.json) {
-    printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
+    printError(JSON.stringify(attachPreflightWarnings(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE)), null, 2));
   } else {
     printError(message);
   }
@@ -793,7 +794,7 @@ function buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot: string): string 
 function emitSettingsReadWarnings(warnings: readonly string[]): void {
   for (const warning of warnings) {
     if (warning.startsWith("settings_read_")) {
-      printError(`[pm] warning: ${warning} — settings.json could not be loaded and pm fell back to defaults; run pm health for remediation.`);
+      emitPreflightWarning(warning, `[pm] warning: ${warning} — settings.json could not be loaded and pm fell back to defaults; run pm health for remediation.`);
     }
   }
 }
@@ -1840,9 +1841,9 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   const rawContext = context.error instanceof PmCliError ? context.error.context : undefined;
   const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
   const classification = classifyPmCliError(errorMessage, enrichedContext);
-  const jsonErrorPayload = context.bootstrapGlobal.lean
+  const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean
     ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))
-    : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext);
+    : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext));
   const renderedError = context.jsonErrors
     ? JSON.stringify(
         context.bootstrapGlobal.tokenAccounting ? attachOutputTokenAccounting(jsonErrorPayload, (value) => `${JSON.stringify(value, null, 2)}\n`) : jsonErrorPayload,
@@ -1944,7 +1945,7 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     commandResolution,
     resolutionStage: "parse",
   });
-  if (context.jsonErrors) writeStderr(`${renderedUsage}\n`);
+  if (context.jsonErrors) writeStderr(`${attachSerializedPreflightWarnings(renderedUsage)}\n`);
   else printError(renderedUsage);
   if (loggedHandledErrorToSentry) {
     await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
@@ -2016,7 +2017,7 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     commandResolution,
     resolutionStage: "parse",
   });
-  if (context.jsonErrors) writeStderr(`${renderedUsage}\n`);
+  if (context.jsonErrors) writeStderr(`${attachSerializedPreflightWarnings(renderedUsage)}\n`);
   else printError(renderedUsage);
   if (loggedHandledErrorToSentry) {
     await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
@@ -2227,13 +2228,13 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   const settingsPolicy = { configurationOnly: preview !== undefined };
   const isConfigurationOnly = (): boolean => settingsPolicy.configurationOnly;
   /** Keep bootstrap, execution and error cleanup within the selected settings policy. */
-  const runInvocation = async (): Promise<void> => {
+  const runInvocation = (): Promise<void> => runWithPreflightWarnings(parseBootstrapGlobalOptions(invocationArgv).json, async () => {
     try {
       await runWithReproducibleProcessEnvironment(process.env, () => runPmCliInReproducibleContext(rawArgv, settingsPolicy));
     } catch (error: unknown) {
       await handleRunPmCliError({ error, invocationArgv: [...rawArgv] });
     }
-  };
+  });
   if (preview !== undefined) {
     const bootstrapRoot = resolvePmRoot(process.cwd(), parseBootstrapGlobalOptions(invocationArgv).path);
     const actionRoot = resolvePmRoot(process.cwd(), preview.path);

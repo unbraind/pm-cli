@@ -400,6 +400,14 @@ pm get <id> --full --json
 pm contracts --json
 ```
 
+With JSON output, preflight advisories are deferred until the command outcome.
+A failed command includes their stable codes in the error envelope's `warnings`
+array on stderr, preserving one parseable error and its original exit code.
+Additional explanatory or remediation text is retained in `warning_details`.
+A successful command emits one `{ "type": "warning", "warnings": [...] }`
+diagnostic on stderr when needed; its result remains on stdout. Human output
+keeps immediate warning text. See [pm-gh1602](../.agents/pm/issues/pm-gh1602.toon).
+
 `--output-format json|toon` selects encoding on both reads and mutations.
 Item collection and lifecycle commands accept `--format json|toon` as a
 compatibility alias, before or after the command:

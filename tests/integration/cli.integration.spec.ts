@@ -5594,7 +5594,19 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
-  it("returns generic failure when a matched extension command handler throws", async () => {
+  it("preserves a structured advisory after a successful guarded JSON mutation", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "task", String.raw`C:\Users\fixture\private-work`, "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      expect(created.json).toHaveProperty("item.id");
+      expect(JSON.parse(created.stderr)).toMatchObject({
+        type: "warning",
+        warnings: expect.arrayContaining([expect.stringMatching(/^secret_guard_detected:\d+:rules=absolute_home_path$/)]),
+      });
+    });
+  });
+
+  it.each(["native", "windows-home"])("returns generic failure when a matched extension command handler throws: %s", async (fixturePath) => {
     await withTempPmPath(async (context) => {
       const extensionDir = path.join(context.tempRoot, "beads-command-handler-fail-ext");
       await mkdir(extensionDir, { recursive: true });
@@ -5634,7 +5646,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const install = context.runCli(["extension", "install", extensionDir, "--project", "--json"], { expectJson: true });
       expect(install.code).toBe(0);
 
-      const imported = context.runCli(["beads", "import", "--json", "--file", path.join(context.tempRoot, "missing.jsonl")]);
+      const filePath = fixturePath === "windows-home" ? String.raw`C:\Users\fixture\AppData\Local\Temp\missing.jsonl` : path.join(context.tempRoot, "missing.jsonl");
+      const imported = context.runCli(["beads", "import", "--json", "--file", filePath]);
       expect(imported.code).toBe(1);
       // Retain the complete synthetic fixture output when native warnings corrupt JSON.
       expect(() => JSON.parse(imported.stderr), imported.stderr).not.toThrow();
@@ -5648,6 +5661,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       );
       // The underlying handler error message is surfaced so agents/CI see the real cause.
       expect(importedEnvelope.detail).toContain("handler-boom");
+      if (fixturePath === "windows-home" || process.platform === "win32") {
+        expect(JSON.parse(imported.stderr).warnings).toContain("secret_guard_detected:1:rules=absolute_home_path");
+      }
     });
   });
 

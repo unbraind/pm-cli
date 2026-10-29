@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-29T08:28:14.112Z"
-updated_at: "2026-10-29T08:32:42.380Z"
+updated_at: "2026-10-29T08:56:58.789Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
 author: "harness:codex"
@@ -28,6 +28,18 @@ files[1]{path,scope}:
   tests/integration/workspace/merge-portability.integration.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,project,600,"harness:codex","2026-10-29T08:29:43.001Z",local_mutation,fix/lock-crash-recovery
+test_runs[1]:
+  - run_id: test-local-mvtb7qu4-p8uiwf
+    kind: test
+    status: passed
+    started_at: "2026-10-29T08:55:20.953Z"
+    finished_at: "2026-10-29T08:56:58.780Z"
+    recorded_at: "2026-10-29T08:56:58.780Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   CHANGELOG.md,project
 escape_class: nightly_regression

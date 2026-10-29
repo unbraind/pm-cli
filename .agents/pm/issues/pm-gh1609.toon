@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags: []
 created_at: "2026-10-27T03:16:18.150Z"
-updated_at: "2026-10-29T08:48:52.309Z"
+updated_at: "2026-10-29T08:54:56.789Z"
 assignee: "harness:codex"
 claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
 author: "harness:codex"
@@ -16,9 +16,10 @@ parent: pm-02z97f
 risk: high
 confidence: high
 expected_result: "A provably dead writer is recovered safely after an interrupted commit, and bounded acquisition does not hang under a frozen wall clock; live or ambiguous ownership retains protection."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-10-27T03:16:19.265Z","harness:codex","cli:update:dep",detected
-comments[12]{created_at,author,text}:
+  pm-gh1622,related,"2026-10-29T08:53:15.765Z","harness:codex","cli:update:dep",detected
+comments[13]{created_at,author,text}:
   "2026-10-27T03:16:18.150Z","harness:codex","Duplicate check: complete3135-item strict full all-status corpus has no exact GH1609 owner, no unreadable items and no omissions. Request-specific search, open and zero-in-progress inventories were read. Full live pm-02z97f data confirms its earlier audited dead-owner recovery is closed/completed, not newly outstanding. This newly reported crash-inside-fence scenario is a bounded follow-up. Current source includes both owner_dead_recovery_attempt and the independent commit fence in src/core/lock/lock.ts; the report has not yet been independently reproduced. Keep this intake open/unclaimed; do not treat reported symptoms as a proven root cause."
   "2026-10-27T04:08:08.403Z","harness:codex","Hosted tracker-context-quality correctly identified missing risk/confidence metadata on the new intake. Both fields are supplied through pm (high risk for interrupted-commit safety, low confidence until independent reproduction). Full local tracker-context-quality, graph composition and record integrity now pass their unchanged gates. The item remains open/unclaimed and no reported runtime behavior is claimed fixed."
   "2026-10-29T07:37:58.331Z","harness:codex","Independent negative control on 2026-10-29: extended the existing real-child SDK recovery integration fixture to terminate the owner while acquireLockLease.fence holds the commit gate. Pre-fix run: acquired-owner and live-owner controls pass, fenced-owner restart fails with lock_conflict (exit 4), 1 failed / 2 passed. Production source gates owner inspection behind a 10-second mtime threshold, longer than the ordinary writer budget. Implementing same-host proven-death gate retirement with retained generation evidence and monotonic duration budgets; preserving live/foreign/legacy owner policy and lease fencing."
@@ -31,6 +32,7 @@ comments[12]{created_at,author,text}:
   "2026-10-29T08:47:24.055Z","harness:codex","CodeRabbit review5695009040 identified a pre-existing but reachable cleanup hazard: non-missing owner read errors were treated as ownerless and aged gates removed. Recovery now distinguishes unreadable owners and fails closed; missing/malformed initialization fallback and best-effort release remain unchanged. Added EACCES/EBUSY controls preserving the live receipt through recovery and release, then allowing normal cleanup after the fault clears."
   "2026-10-29T08:47:47.252Z","harness:codex","Review reference correction: the verified CodeRabbit review is https://github.com/unbraind/pm-cli/pull/1623#pullrequestreview-5694901848; the numeric review reference in the preceding comment was mistyped. Negative control on the pre-fix source fails both EACCES and EBUSY live-owner preservation cases as intended."
   "2026-10-29T08:48:52.308Z","harness:codex","Review remediation passes all143 focused lock/recovery tests. Before the fix, both injected owner-read failures incorrectly admitted a new holder; after the fix the original gate receipt remains unchanged until readable release succeeds. Static validation passed through tracker context and SDK export parity, then failed the qualified SDK import budget at535ms versus500ms; that original failed attempt is retained and an unchanged-threshold recheck is running."
+  "2026-10-29T08:53:18.789Z","harness:codex","Related release verification intake: the lock-recovery delivery discovered the independently tracked Sentry release blocker. The structured related edge makes that existing narrative reference navigable; it is not a prerequisite for safe lock implementation and does not imply remediation of the upstream package fault."
 learnings[1]{created_at,author,text}:
   "2026-10-29T07:45:23.237Z","harness:codex","Owner-death recovery must cover every coordination layer held by a writer, including the commit gate. A short writer budget cannot recover a gate whose owner is only inspected after a longer age grace. Preserve the retired generation so simultaneous recoverers cannot remove its live replacement, and measure wait deadlines independently of wall-clock lease timestamps."
 files[8]{path,scope}:
@@ -44,6 +46,18 @@ files[8]{path,scope}:
   tests/unit/core/lock/lock-owner.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/lock tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/integration/locking/lock-owner-recovery.integration.spec.ts,project,600,"harness:codex","2026-10-29T07:38:00.609Z",local_mutation,fix/lock-crash-recovery
+test_runs[1]:
+  - run_id: test-local-mvtb54p8-wgh291
+    kind: test
+    status: passed
+    started_at: "2026-10-29T08:54:35.530Z"
+    finished_at: "2026-10-29T08:54:56.780Z"
+    recorded_at: "2026-10-29T08:54:56.780Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/lock tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/item/lock-initialization-race.spec.ts tests/integration/locking/lock-owner-recovery.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/SDK.md,project
