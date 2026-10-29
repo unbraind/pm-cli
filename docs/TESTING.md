@@ -58,6 +58,14 @@ node scripts/run-tests.mjs test
 node scripts/run-tests.mjs coverage
 ```
 
+The Linux killed-owner integration suite always exercises Node. Its additional
+Bun case runs locally when `bun --version` succeeds; CI requires Bun and retains
+the case even when the executable is missing, so a broken CI setup fails visibly.
+Install Bun before claiming local Node-and-Bun recovery coverage. This fixture
+policy is tracked by
+[pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon)
+(repository tracker record excluded from npm).
+
 For the exact ordered local preflight used to make release-readiness claims,
 run the registry-owned entrypoint:
 

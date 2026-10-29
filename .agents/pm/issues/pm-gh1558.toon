@@ -2,13 +2,13 @@ id: pm-gh1558
 title: "GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions"
 description: The Oct24 Windows Node24 shard1/4 passed2598 tests but failed with one unhandled EPERM rejection from the test-only publishGeneration raw rename in lock-lease-fencing.spec.ts. Its source is unchanged through the current candidate. The public alert links only the completed recurrence meter and completed production progress-wait work; neither owns this remaining fixture repair. Preserve the original Oct23 merge-portability timeout as a different signature.
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[4]: bug,ci,nightly,windows
 created_at: "2026-10-26T23:50:33.633Z"
-updated_at: "2026-10-29T13:33:01.187Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
+updated_at: "2026-10-29T15:15:18.002Z"
+closed_at: "2026-10-29T15:15:17.212Z"
+completed_at: "2026-10-29T15:15:17.212Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Preserve atomic generation publication and original timing/fencing assertions; capture and settle background rejections promptly; prove regression sensitivity and pass the complete affected native Windows Node24 shard with zero unhandled errors; retain both historical failed attempts.
@@ -16,8 +16,9 @@ parent: pm-u9d0
 risk: medium
 confidence: high
 severity: medium
+resolution: Use the production atomic-write retry path for generation publication and eagerly handle then await background fixture promises without weakening lease-progress or maximum-wait assertions.
 expected_result: Generation publication remains atomic and all existing progress/hard-ceiling assertions complete with every background rejection handled and settled; the affected native Windows shard reports zero unhandled errors.
-actual_result: Nightly40079265521 attempt1 at b8f98ff8 passed215 files and2598 tests with105 skips but exited1 on an unhandled EPERM raw rename from publishGeneration while the explicit maxWaitMs-ceiling control ran. No fixture repair or new reproduction is claimed.
+actual_result: "Linked run test-local-mvtojtc1-d2kh93 passes all17 lease-fencing cases. Complete Windows shard1 job123480968644 passes2695 tests with106 platform skips and no unhandled errors, including all17 cases. Pre-fix Windows rename rejection and background failure controls establish sensitivity. Earlier failed native attempts remain in immutable item history; no timeout or assertion was relaxed."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,related,"2026-10-26T23:50:33.633Z","harness:codex","cli:create:dep",detected
   pm-bj7rq0,related,"2026-10-26T23:50:33.633Z","harness:codex","cli:create:dep",detected
@@ -33,7 +34,7 @@ files[2]{path,scope}:
   tests/unit/core/lock/lock-lease-fencing.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,project,240,"harness:codex","2026-10-26T23:50:33.633Z",local_mutation,fix/agent-history-and-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvtb5mqi-v3rrwe
     kind: test
     status: passed
@@ -45,6 +46,18 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,schema,schema,source,acknowledged
+  - run_id: test-local-mvtojtc1-d2kh93
+    kind: test
+    status: passed
+    started_at: "2026-10-29T15:09:54.449Z"
+    finished_at: "2026-10-29T15:10:16.896Z"
+    recorded_at: "2026-10-29T15:10:16.896Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-lease-fencing.spec.ts,schema,schema,source,acknowledged
+close_reason: Publish Windows lock fixtures atomically and settle every background operation.
 escape_class: nightly_regression
 gate_evidence:
   disposition: gate_strengthened

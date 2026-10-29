@@ -127,6 +127,21 @@ wall-clock timestamps used for TTL policy. This recovery is tracked by
 [pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon)
 (repository tracker record excluded from npm).
 
+If a reboot, PID-namespace change or tracker relocation leaves an unverifiable
+`locks/<lock-file>.stale-cleanup` gate, automatic age-based recovery intentionally
+refuses it. `pm gc --scope locks` does not remove these gate directories.
+For manual recovery, first stop every CLI, MCP server, watcher and service that
+can write this tracker, including writers on other hosts when storage is shared.
+Independently establish that the recorded original owner cannot still run; a
+different host hash or an old timestamp alone is insufficient. While exclusive
+access is maintained, preserve the complete gate directory and its `owner.json`
+receipt by moving it to a unique backup location outside `locks`, without
+overwriting any existing backup. Keep `locks/recoveries` evidence intact. Then
+retry the original command, run `pm health --check-only`, and verify the affected
+item's history with `pm history <id> --verify --strict-exit`. If exclusive access
+or owner death cannot be established, retain the gate and investigate ownership.
+This procedure does not override the remaining lease's TTL or ownership checks.
+
 Early recovery writes an immutable `locks/recoveries/*.json` intent
 receipt before removal; it records the original owner and is an attempted
 recovery audit, not proof that a later mutation committed. Keep these local

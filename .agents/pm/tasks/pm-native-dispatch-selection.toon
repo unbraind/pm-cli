@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags: []
 created_at: "2026-10-29T13:44:59.324Z"
-updated_at: "2026-10-29T13:46:18.545Z"
+updated_at: "2026-10-29T15:08:39.378Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Default and scheduled dispatch retain the complete current matrix and unchanged deadlines; Manual selection accepts only canonical declared cohorts and rejects invalid selections; Evidence names the selected scope and exact revision and cannot be mistaken for full-matrix acceptance; Negative contract controls protect complete default membership and required-check policy
@@ -17,8 +17,9 @@ expected_result: An operator can validate one explicitly selected affected nativ
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-native-index-proof,discovered_from,"2026-10-29T13:44:59.324Z","harness:codex","cli:create:dep",detected
   pm-tzwy,related,"2026-10-29T13:44:59.324Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-29T13:44:59.324Z","harness:codex","Duplicate check: the complete live 3152-item all-status corpus has zero omissions or unreadable records. Request-specific search and fresh open/in_progress inventories found no active selected-dispatch owner. Full live pm-tzwy metadata comments and history confirm its earlier CI optimization is completed. Current nightly.yml declares no manual inputs. This intake remains open and unclaimed; it does not change workflows or excuse any pending native acceptance."
+  "2026-10-29T15:08:39.378Z","harness:codex","Operational evidence from PR1623: new Nightly40894940536 stayed pending after automatic concurrency cancellation of40883494351. The superseded run retained a queued aggregate job although all native jobs were terminal (both macOS and all4 Windows successful; Linux legs canceled). Force-canceling only that superseded owned run releases its concurrency slot; all useful logs are retained. A selected dispatch improvement must retain exact-head and complete-default semantics and should document this separate stale-run recovery behavior."
 files[1]{path,scope}:
   .github/workflows/nightly.yml,project
 body: ""

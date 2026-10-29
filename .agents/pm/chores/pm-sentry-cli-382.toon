@@ -1,21 +1,23 @@
 id: pm-sentry-cli-382
-title: Refresh Sentry CLI 3.8.2 after seven-day cooldown
+title: Update Sentry CLI to 3.8.2 after seven-day cooldown
 description: "Finite eligible leaf of the existing tooling cohort. Primary registry metadata publishes Sentry CLI 3.8.2 at 2026-10-22T11:03:02.416Z; it reached the enforced seven-day cooldown during PR1623 validation. Upgrade the compatible development CLI and native lockfile packages, retain supported runtime and public package contracts, and verify the real sourcemap tool without uploading test data."
 type: Chore
-status: in_progress
+status: closed
 priority: 3
 tags: []
 created_at: "2026-10-29T11:07:06.885Z"
-updated_at: "2026-10-29T11:31:23.340Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
+updated_at: "2026-10-29T15:19:01.321Z"
+closed_at: "2026-10-29T15:15:20.908Z"
+completed_at: "2026-10-29T15:15:20.908Z"
 author: "harness:codex"
 estimated_minutes: 30
 acceptance_criteria: Adopt only the now-eligible Sentry CLI 3.8.2 and its corresponding native packages; Verify version and real sourcemap injection in an isolated fixture plus dependency audit and policy gates; Retain existing runtime contracts and obtain passing hosted validation with generated changelog
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: "Refresh only Sentry CLI and synchronized native packages to3.8.2 after the seven-day cooldown, preserving runtime requirements and package boundaries."
 expected_result: The release sourcemap tooling uses the mature compatible Sentry CLI release with synchronized native dependencies and zero advisory regressions.
+actual_result: "Linked development-dependency run test-local-mvton2py-25twzx passes. Installed CLI reports3.8.2; real isolated source-map injection produces matching debug IDs and the instrumented bundle executes42. Audit reports0 advisories across567 dependencies; cooldown, runtime-lock, package-boundary, typecheck and full production-source coverage pass. Both macOS and all4 Windows jobs at3c5367550 pass with these dependencies. Final generated changelog and reviewed-head hosted acceptance remain part of PR1623; publication is separate."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-ogzvx6,discovered_from,"2026-10-29T11:07:06.885Z","harness:codex","cli:create:dep",detected
 comments[4]{created_at,author,text}:
@@ -28,7 +30,7 @@ files[2]{path,scope}:
   pnpm-lock.yaml,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/check-development-dependencies.mjs,project,"harness:codex","2026-10-29T11:09:07.935Z",local_mutation,fix/lock-crash-recovery
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvtfzzyc-1yvcz2
     kind: test
     status: passed
@@ -40,4 +42,16 @@ test_runs[1]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/check-development-dependencies.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mvton2py-25twzx
+    kind: test
+    status: passed
+    started_at: "2026-10-29T15:12:48.721Z"
+    finished_at: "2026-10-29T15:12:49.030Z"
+    recorded_at: "2026-10-29T15:12:49.030Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/check-development-dependencies.mjs,schema,schema,source,local_source_ref
+close_reason: Adopt eligible Sentry CLI3.8.2 with native package and sourcemap proof.
 body: ""

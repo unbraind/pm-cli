@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -8,7 +8,14 @@ import { runDirectDistCli } from "../../helpers/cliRunner.js";
 import { runHealth } from "../../../src/sdk/governance/health.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
-it.skipIf(process.platform !== "linux").each([["acquired", process.execPath], ["fenced", process.execPath], ["fenced", "bun"]])(
+const recoveryCases = [["acquired", process.execPath], ["fenced", process.execPath]];
+// Hosted validation requires Bun; local Node-only checkouts can run the Node cases.
+if (process.env.CI || (process.platform === "linux" &&
+  spawnSync("bun", ["--version"], { stdio: "ignore", timeout: 5000 }).status === 0)) {
+  recoveryCases.push(["fenced", "bun"]);
+}
+
+it.skipIf(process.platform !== "linux").each(recoveryCases)(
   "recovers a killed SDK owner at %s with %s before TTL through health, GC and ordinary CLI writes",
   async (phase, runtime) => {
     await withTempPmPath(async ({ pmPath, tempRoot, env, runCli }) => {

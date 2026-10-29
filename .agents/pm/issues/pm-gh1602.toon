@@ -1,21 +1,23 @@
 id: pm-gh1602
-title: "GH-1602: Windows extension-handler refusal has warning bytes before its JSON error envelope"
+title: "GH-1602: keep preflight warnings inside JSON error envelopes"
 description: "Hosted Nightly Validation 40303228148 at 46fd91415c6e1009cff69f64c24fc17186a2af81 failed Windows Node 24 shard 3/4. The existing CLI integration control for a matched extension handler throwing reached expectJsonErrorEnvelope at cli.integration.spec.ts:5639, but JSON.parse of stderr began with warning:se and failed. The log does not expose enough of the prefix to identify its producer. Other results: 3086 passed, 19 skipped. This is a concrete transport framing failure signature, not evidence of a Sentry, settings or product cause. Source: https://github.com/unbraind/pm-cli/issues/1602 and https://github.com/unbraind/pm-cli/actions/runs/40303228148. Preserve the completed recurrence meter and prior distinct platform failures."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: agent-ux,ci,github,output,windows
 created_at: "2026-10-26T22:10:10.109Z"
-updated_at: "2026-10-29T14:37:59.499Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#1326c2a1b31ee2f18421aa9e"
+updated_at: "2026-10-29T15:19:00.282Z"
+closed_at: "2026-10-29T15:15:15.020Z"
+completed_at: "2026-10-29T15:15:15.020Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Identify the exact warning producer through an isolated native control before selecting a fix; Machine-readable stderr remains one parseable JSON envelope while meaningful warnings remain represented and handler details remain intact; Preserve exit 1 and obtain a clean affected Windows regression cohort without erasing recurrence observations
 parent: pm-u9d0
 risk: medium
 confidence: medium
+resolution: "Use invocation-scoped warning collection so JSON failures remain one parseable envelope with typed optional advisory codes and remediation details. Preserve human warnings, successful stdout, nested/concurrent isolation and failure exit codes."
 expected_result: Agents receive a parseable structured extension-handler failure on Windows without warning bytes preceding its JSON envelope.
+actual_result: "All3 linked commands pass in test-local-mvtojbi3-wihj89, including real CLI integration and compile-time warning contracts. The Windows-home prefix control and previous-type TS2339 control fail before repair. Complete Windows shard3 job123480968782 passes3126 tests with20 platform skips, including78 CLI cases. Full revised production source passes11578 tests and exact100/100/100/100; final reviewed-head checks remain required before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,discovered_from,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
   pm-gh1366,related,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
@@ -49,7 +51,7 @@ tests[3]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,project,600,"harness:codex","2026-10-29T08:30:35.320Z",local_mutation,fix/lock-crash-recovery
   node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,project,600,"harness:codex","2026-10-29T09:16:23.560Z",local_mutation,fix/lock-crash-recovery
   pnpm typecheck,project,600,"harness:codex","2026-10-29T14:22:33.498Z",local_mutation,fix/lock-crash-recovery
-test_runs[2]:
+test_runs[3]:
   - run_id: test-local-mvtb8khl-2udh8g
     kind: test
     status: passed
@@ -73,9 +75,23 @@ test_runs[2]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtojbi3-wihj89
+    kind: test
+    status: passed
+    started_at: "2026-10-29T15:08:20.417Z"
+    finished_at: "2026-10-29T15:09:53.787Z"
+    recorded_at: "2026-10-29T15:09:53.787Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   CHANGELOG.md,project
   docs/CONFIGURATION.md,project
+close_reason: Preserve preflight warnings inside structured CLI outcomes.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
