@@ -1649,6 +1649,84 @@ the same durable coordinator, restoring annotations, linked artifacts,
 lifecycle fields, and claim ownership on failure. It is the SDK primitive
 behind `pm item complete`.
 
+Host-bound batch and recovery APIs are tracked by
+[pm-gh1598](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1598.toon) and
+[pm-gh1597](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1597.toon)
+(tracker records excluded from npm). A `PmClient` acquired from an
+extension host supports the same batch coordinator without reconstructing its
+tracker root or overriding the host author policy:
+
+```ts
+const plan = { transactionId: "sync-42", mutations };
+const preview = await client.previewItemMutations(plan);
+await client.commitItemMutations(plan);
+const receipt = await client.itemTransactions.status("sync-42");
+```
+
+Preview and status setup use configuration-only source reads, so activation
+does not open optional schema files before preview validates their storage.
+
+Each mutation in a newly staged batch contributes a `records` row with its
+original `index`, canonical `id`, operation, and full public `item` projection
+including body after the complete batch. Repeated targets therefore show the
+same final staged state. `execution` distinguishes a newly `applied` mutation
+from `adopted` existing state; adopted values do not certify the unused create
+options. `commit_time_fields` lists JSON pointers to potentially
+regenerated clocks, conservatively including existing or explicitly supplied
+clocks. These preview values are observations, not reserved commit values.
+Compare normalized intent separately from those clocks; commit still evaluates
+current state, attribution, extension policy and concurrency. A committed replay returns an empty
+`records` array, not a reconstruction of its original write values. While the
+committed journal is retained, replaying the identical plan performs no item
+write; changing its ordered payload under the same id refuses with
+`transaction_plan_mismatch`. If transaction GC removes that committed journal,
+the coordinator can treat its id as new; replay guarantees do not survive that
+removal.
+
+The workspace transaction lock serializes transaction coordinators. Ordinary
+SDK and CLI item writers can still interleave between a step's read and write;
+the lock does not provide a general read-decide-write critical section.
+
+New item journals retain their original mutation plan and compensation policy.
+History redaction does not rewrite transaction journals: values removed from
+item history can remain in interrupted or abandoned journals. GC retains those
+recovery receipts. Do not include secrets in batch mutations.
+The status receipt contains the validated journal and a SHA-256 `planDigest`
+over its ordered payload-bound step identifiers. Started/completed lists report
+persisted coordinator progress: a crash after apply but before recording can
+leave an applied step listed only as started. Recovery re-inspects durable item
+history before compensation. No retained journal returns `undefined`; corrupt
+journals refuse instead of appearing absent.
+
+```ts
+await client.itemTransactions.supersede("interrupted-sync", "sync-43", {
+  reason: "Re-plan against the current item revision",
+});
+// Read current items and build the replacement only after retirement succeeds.
+await client.commitItemMutations({ transactionId: "sync-43", mutations: replanned });
+```
+
+`abandon(id, { reason })` durably fences forward replay before compensating
+interrupted owned effects in reverse order,
+records a workspace audit event, and marks the identity `abandoned`. Retirement
+upgrades the journal to schema version 2 so older coordinators refuse the pending
+intent instead of silently resuming it.
+`supersede(id, newId, { reason })` performs that retirement and records the
+replacement identity; it does not atomically commit the replacement plan or
+reserve its id. Repeating the same retirement is idempotent. Committed journals
+cannot be abandoned. A pending-retirement refusal keeps the
+`transaction_abandoned` code, reports `retirement.state: "pending"` and the
+recorded `superseded_by` value (`null` for abandonment without a replacement),
+and explains how to retry the original intent. Finish that retirement before
+re-planning. During compensation, a later peer edit refuses with
+`transaction_partial_mutation` and retains recovery data; it is never silently
+overwritten. Legacy journals without a retained item plan require the original
+plan and adapter for replay. Abandoned receipts remain retained by transaction
+GC, including pending retirement intents, so their identities cannot silently
+become reusable. Mutation inputs are copied before coordinator admission; later
+caller edits cannot change the payload whose identity and recovery plan were
+recorded.
+
 `previewItemMutations` validates an ordered plan with the same transaction
 coordinator and lifecycle primitives as apply, using a disposable copy of the
 tracker. Earlier staged creates, evidence updates and closures participate in

@@ -37,7 +37,9 @@ import { assertMutationOptionBag } from "./runtime/mutation-value-validation.js"
 export { withCliMutationInput, withLiteralMutationInput } from "./lifecycle/cli-input.js";
 import { createAsyncReadWriteGate } from "../core/shared/serial-queue.js";
 import { getSettingsPath,resolvePmRoot } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
+import { readSettings, runWithConfigurationOnlySettings } from "../core/store/settings.js";
+import { resolveAuthor } from "../core/shared/author.js";
+import type { CommitItemMutationsOptions, CommitItemMutationsResult, ItemMutationPreviewValidation, ItemTransactionStatus, AbandonItemTransactionOptions } from "./item-transaction.js";
 import type { ItemMetadata } from "../types/index.js";
 import {
   type AcknowledgeUnknownAuthorEventsOptions,
@@ -743,6 +745,42 @@ export class PmClient {
     args: PmClientRunArgs = {},
   ): Promise<Result> {
     return this.run(action, args) as Promise<Result>;
+  }
+
+  /** Execute a direct transaction using the bound root, author policy and active extension host. */
+  private async withItemTransactionContext<T>(run: (identity: { pmRoot: string; author: string }) => Promise<T>, configurationOnly = false): Promise<T> {
+    const pmRoot = resolvePmRoot(this.defaults.cwd ?? process.cwd(), this.defaults.path);
+    const execute = async () => {
+      const settings = await runWithConfigurationOnlySettings(pmRoot, () => readSettings(pmRoot));
+      return run({ pmRoot, author: resolveAuthor(this.defaults.author, settings.author_default) });
+    };
+    if (this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] === true || activeExtensionScope.getStore() === true) return execute();
+    const activate = () => runWithActiveExtensions({ ...this.defaults, path: pmRoot }, execute);
+    return configurationOnly ? runWithConfigurationOnlySettings(pmRoot, activate) : activate();
+  }
+
+  /** Validate a batch in disposable state and return normalized staged records under this host's identity. */
+  previewItemMutations(options: Pick<CommitItemMutationsOptions, "transactionId" | "mutations">): Promise<ItemMutationPreviewValidation> {
+    return this.withItemTransactionContext(async identity => (await import("./item-transaction.js")).previewItemMutations({ ...options, ...identity }), true);
+  }
+
+  /** Commit or replay a batch using the bound tracker and author, without per-call root overrides. */
+  commitItemMutations(options: Omit<CommitItemMutationsOptions, "pmRoot" | "author">): Promise<CommitItemMutationsResult> {
+    return this.withItemTransactionContext(async identity => (await import("./item-transaction.js")).commitItemMutations({ ...options, ...identity }));
+  }
+
+  /** Inspect or explicitly retire this host's interrupted item transactions. Supersession retires the old id before a separately planned commit. */
+  get itemTransactions(): {
+    status: (transactionId: string) => Promise<ItemTransactionStatus | undefined>;
+    abandon: (transactionId: string, options: Omit<AbandonItemTransactionOptions, "pmRoot" | "author" | "transactionId">) => Promise<ItemTransactionStatus>;
+    supersede: (transactionId: string, newId: string, options: Omit<AbandonItemTransactionOptions, "pmRoot" | "author" | "transactionId" | "supersededBy">) => Promise<ItemTransactionStatus>;
+  } {
+    const abandon = (transactionId: string, options: Omit<AbandonItemTransactionOptions, "pmRoot" | "author" | "transactionId">) => this.withItemTransactionContext(async identity => (await import("./item-transaction.js")).abandonItemTransaction({ ...options, ...identity, transactionId }));
+    return {
+      status: transactionId => this.withItemTransactionContext(async identity => (await import("./item-transaction.js")).readItemTransaction(identity.pmRoot, transactionId), true),
+      abandon,
+      supersede: (transactionId, newId, options) => abandon(transactionId, { ...options, supersededBy: newId }),
+    };
   }
 
   /** Return the same context snapshot produced by `pm context`. */

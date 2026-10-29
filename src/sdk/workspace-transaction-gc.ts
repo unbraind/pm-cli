@@ -82,7 +82,7 @@ function readJournalStatusAndTimestamp(raw: string): {
   }
   const record = parsed as Record<string, unknown>;
   return {
-    status: typeof record.status === "string" ? record.status : null,
+    status: record.abandonment !== undefined ? "abandoned" : (typeof record.status === "string" ? record.status : null),
     updatedAt: typeof record.updatedAt === "string" ? record.updatedAt : null,
   };
 }
