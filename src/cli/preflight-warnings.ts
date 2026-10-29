@@ -4,8 +4,14 @@ import { printError, writeStderr } from "../sdk/runtime-primitives.js";
 import type { PreflightWarningDiagnostics } from "./error-guidance.js";
 
 const pendingWarnings = new AsyncLocalStorage<
-  Map<string, string> | undefined
+  Map<string, string> | null
 >();
+
+/** Prefer the invocation renderer while preserving direct callers without a scope. */
+export function resolvePreflightJsonMode(fallback: boolean): boolean {
+  const scope = pendingWarnings.getStore();
+  return scope === undefined ? fallback : scope !== null;
+}
 
 /** Emit human diagnostics immediately or retain codes in the current JSON invocation. */
 export function emitPreflightWarning(
@@ -65,7 +71,7 @@ export async function runWithPreflightWarnings(
   run: () => Promise<void>,
 ): Promise<void> {
   if (!json) {
-    await pendingWarnings.run(undefined, run);
+    await pendingWarnings.run(null, run);
     return;
   }
   const warnings = new Map<string, string>();

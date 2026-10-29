@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { enforceMutationGuardPreflight } from "../../../src/cli/migration-gates.js";
+import { runWithPreflightWarnings } from "../../../src/cli/preflight-warnings.js";
 import { _testOnly as mcpTestOnly } from "../../../src/mcp/server.js";
 import { runInit } from "../../../src/sdk/index.js";
 import {
@@ -322,6 +323,29 @@ describe("CLI and MCP mutation guard adapters", () => {
     expect(released.stderr).toContain(
       `warning:in_progress_item_unclaimed:${id}:claim_with=pm claim ${id}`,
     );
+
+    for (const [jsonMode, legacyJson] of [[true, false], [false, true]]) {
+      const scopedStderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        await runWithPreflightWarnings(jsonMode!, () => enforceMutationGuardPreflight(
+          "update", [id], { status: "in_progress" }, { author: "agent", json: legacyJson }, pmRoot,
+        ));
+        if (jsonMode) expect(scopedStderr).not.toHaveBeenCalled();
+        else expect(scopedStderr).toHaveBeenCalledWith(`warning:in_progress_item_unclaimed:${id}:claim_with=pm claim ${id}\n`);
+      } finally {
+        scopedStderr.mockRestore();
+      }
+    }
+
+    for (const selector of [["--output-format=json"], ["--output-format", "json"]]) {
+      const formattedUpdate = await runInProcessDistCli(
+        ["update", id, "--status", "in_progress", ...selector],
+        { env: environment, expectJson: true },
+      );
+      expect(formattedUpdate.status).toBe(0);
+      expect(formattedUpdate.stderr).toBe("");
+      expect(formattedUpdate.json).toBeTypeOf("object");
+    }
 
     const jsonUpdate = await runInProcessDistCli(
       [
