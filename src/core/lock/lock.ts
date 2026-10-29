@@ -734,7 +734,7 @@ function parseStaleCleanupGateOwner(raw: string): StaleCleanupGateOwner | null {
 
 async function readStaleCleanupGateOwner(
   gatePath: string,
-): Promise<StaleCleanupGateOwner | null> {
+): Promise<StaleCleanupGateOwner | null | undefined> {
   try {
     return parseStaleCleanupGateOwner(
       await fs.readFile(
@@ -742,8 +742,10 @@ async function readStaleCleanupGateOwner(
         "utf8",
       ),
     );
-  } catch {
-    return null;
+  } catch (error) {
+    // Missing metadata may be abandoned initialization. An unreadable owner
+    // is unknown, so recovery must not vacate a potentially live gate.
+    return isFileMissingError(error) ? null : undefined;
   }
 }
 
@@ -763,7 +765,7 @@ async function releaseStaleCleanupGate(
   token: string,
 ): Promise<void> {
   const owner = await readStaleCleanupGateOwner(gatePath);
-  if (owner === null || owner.token !== token) {
+  if (!owner || owner.token !== token) {
     return;
   }
   await removeStaleCleanupGateDirectory(gatePath);
@@ -834,6 +836,7 @@ async function removeExpiredStaleCleanupGate(
     return isFileMissingError(error);
   }
   const owner = await readStaleCleanupGateOwner(gatePath);
+  if (owner === undefined) return false;
   if (owner !== null && (await inspectLockOwner(owner)) === "dead") {
     return retireDeadCleanupGate(gatePath, owner.token);
   }

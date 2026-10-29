@@ -178,3 +178,39 @@ it.skipIf(process.platform !== "linux").each(["replacement", "removed"])(
     });
   },
 );
+
+it.each(["EACCES", "EBUSY"])(
+  "retains an unreadable live gate during recovery and release: %s",
+  async (code) => {
+    await withTempDir("pm-gate-unreadable-", async (root) => {
+      const lockPath = getLockPath(root, "shared");
+      await fs.mkdir(path.dirname(lockPath), { recursive: true });
+      const release = await acquireStaleCleanupGate(lockPath, "shared");
+      expect(release).not.toBeNull();
+      const gatePath = `${lockPath}.stale-cleanup`;
+      const ownerPath = path.join(gatePath, "owner.json");
+      const before = await fs.readFile(ownerPath, "utf8");
+      const old = new Date(Date.now() - 120_000);
+      await fs.utimes(gatePath, old, old);
+      const readFile = fs.readFile.bind(fs);
+      const fault = vi
+        .spyOn(fs, "readFile")
+        .mockImplementation(async (...args) => {
+          if (args[0] === ownerPath)
+            throw Object.assign(new Error("Owner temporarily unreadable"), {
+              code,
+            });
+          return readFile(...args);
+        });
+      try {
+        expect(await acquireStaleCleanupGate(lockPath, "shared")).toBeNull();
+        await release!();
+        expect(await readFile(ownerPath, "utf8")).toBe(before);
+      } finally {
+        fault.mockRestore();
+        await release!();
+      }
+      await expect(fs.stat(gatePath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  },
+);

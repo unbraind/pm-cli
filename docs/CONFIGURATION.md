@@ -115,7 +115,8 @@ immediately, before its ordinary age threshold. Its original owner receipt is
 retained in `locks/recoveries/gate-<generation-hash>/owner.json`. These nonempty
 generation directories prevent concurrent recoverers from retiring a replacement
 gate and must be retained while writers may still hold observations of that
-generation. Lock wait durations use a monotonic clock independently of the
+generation. Non-missing owner-file read errors retain the gate regardless of age.
+Lock wait durations use a monotonic clock independently of the
 wall-clock timestamps used for TTL policy. This recovery is tracked by
 [pm-gh1609](../.agents/pm/issues/pm-gh1609.toon).
 
