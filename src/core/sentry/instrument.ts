@@ -380,7 +380,7 @@ function scrubSentryRecordField(event: object, key: string): void {
 function applySourceContextEnvironment(event: { environment?: string; tags?: Record<string, unknown> }): void {
   if (process.env.SENTRY_ENVIRONMENT?.trim()) return;
   const source = event.tags?.["pm.source_context"];
-  if (source === "automation" || source === "test" || source === "dogfood") event.environment = source;
+  if (source === "automation" || source === "test" || source === "dogfood" || source === "user") event.environment = source === "user" ? "production" : source;
 }
 
 const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event, hint) => {

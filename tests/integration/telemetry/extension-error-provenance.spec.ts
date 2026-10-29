@@ -49,7 +49,7 @@ it.each(["node", "bun"])("keeps declared refusals separate from unexpected exten
             : { name: "SimulationRefusal", exitCode: 1, code: "sdk_unavailable", remediation: "Install the SDK." });
         } }); }`,
       });
-      const env: NodeJS.ProcessEnv = { ...context.env, PM_SENTRY_DISABLED: "0", PM_TELEMETRY_DISABLED: "0", PM_NO_TELEMETRY: "0", DO_NOT_TRACK: "0",
+      const env: NodeJS.ProcessEnv = { ...context.env, CI: "true", PM_SENTRY_DISABLED: "0", PM_TELEMETRY_DISABLED: "0", PM_NO_TELEMETRY: "0", DO_NOT_TRACK: "0",
         PM_TELEMETRY_INLINE_FLUSH: "1", PM_TELEMETRY_PROMPT: "0",
         SENTRY_DSN: `http://public@127.0.0.1:${address.port}/1`, SENTRY_TRACES_SAMPLE_RATE: "0" };
       for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_TEST_CONTEXT", "NODE_ENV", "PM_SENTRY_TRACE_COMMANDS", "SENTRY_ENVIRONMENT"]) delete env[key];

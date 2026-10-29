@@ -75,12 +75,11 @@ describe("instrument residual branches", () => {
       beforeSend: (event: Record<string, unknown>) => Record<string, unknown>;
       beforeSendTransaction: (event: Record<string, unknown>) => Record<string, unknown>;
     }>();
-    for (const source of ["automation", "test", "dogfood"]) {
+    for (const source of ["automation", "test", "dogfood", "user"]) {
       for (const send of [options.beforeSend, options.beforeSendTransaction]) {
-        expect(send({ environment: "production", tags: { "pm.source_context": source } }).environment).toBe(source);
+        expect(send({ environment: "ci", tags: { "pm.source_context": source } }).environment).toBe(source === "user" ? "production" : source);
       }
     }
-    expect(options.beforeSend({ environment: "production", tags: { "pm.source_context": "user" } }).environment).toBe("production");
     process.env.SENTRY_ENVIRONMENT = "preview";
     expect(options.beforeSend({ environment: "preview", tags: { "pm.source_context": "automation" } }).environment).toBe("preview");
   });

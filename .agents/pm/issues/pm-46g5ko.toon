@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-29T18:25:58.735Z"
-updated_at: "2026-10-29T19:50:14.164Z"
+updated_at: "2026-10-29T21:19:50.645Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: A real abandoned build-lease fixture refuses before executing a test; SDK CLI and MCP evidence classify it as infrastructure rather than assertion failure; Unrelated assertion failures and ambiguous or live owners retain their existing behavior; Recovery preserves lease evidence and never steals by age.
@@ -14,9 +14,10 @@ parent: pm-u9d0
 risk: medium
 confidence: high
 expected_result: Linked-test evidence identifies pre-execution build-lease refusals as infrastructure failures while preserving original ownership protection and refusing to claim any test ran.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2irc1p,related,"2026-10-29T18:25:58.735Z","harness:codex","cli:create:dep",detected
   pm-63i8nr,related,"2026-10-29T18:25:58.735Z","harness:codex","cli:create:dep",detected
+  pm-xjy565,related,"2026-10-29T21:19:50.316Z","harness:codex","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-10-29T18:25:58.735Z","harness:codex","Duplicate check: complete3155-item all-status corpus, fresh request-specific searches and open/in_progress inventories, and full live pm-63i8nr pm-xjy565 pm-2irc1p ownership distinguish early diagnosis, shutdown cleanup and narrow lock_conflict classification from this absent build-owner case. Observed in linked run test-local-mvtumafj-344oew, which recorded assertion_failure before Vitest started. This follow-up remains open and unclaimed."
 body: ""

@@ -2945,6 +2945,7 @@ an unexpected fault. Sentry error attribution uses the same bounded source
 context as telemetry without requiring telemetry delivery or command tracing, with host version
 and the registered command owner's manifest version. Noninteractive traffic
 uses `automation`; explicit `test`/`dogfood` contexts retain their own environments.
+Error events tagged `user` use `production`, including when CI was inferred at initialization.
 Explicit `SENTRY_ENVIRONMENT`, consent and test isolation remain authoritative.
 Sequential commands clear previous extension attribution. Tracked by
 [pm-gh1625](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1625.toon)
