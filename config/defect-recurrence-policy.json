@@ -270,7 +270,7 @@
           "CI / Gates (static)",
           "CI / Gates (coverage)",
           "CI / Windows regression (Node 24)",
-          "CI / Runtime smoke (macos-latest, Node 24)"
+          "CI / Packed runtime (macos-latest)"
         ]
       },
       "negative_control": { "files": ["src/sdk/item-transaction.ts"] },

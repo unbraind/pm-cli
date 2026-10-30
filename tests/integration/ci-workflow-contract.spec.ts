@@ -255,7 +255,9 @@ describe("GitHub workflow contract", () => {
   it("requires complete Windows partitions and refuses unsuccessful aggregate outcomes", async () => {
     const workflow = parse(await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8"));
     const cohorts = workflow.jobs["windows-regression-cohorts"];
-    expect(cohorts.strategy).toMatchObject({ "fail-fast": false, "max-parallel": 2 });
+    expect(cohorts.strategy).toMatchObject({ "fail-fast": false });
+    // pm-m6ig79: a parallelism cap queued the native cohort behind a script shard.
+    expect(cohorts.strategy["max-parallel"]).toBeUndefined();
     const partitions: { cohort: string; shard: string }[] = cohorts.strategy.matrix.include ?? [];
     expect(partitions).toHaveLength(3);
     expect(partitions.filter((row) => row.cohort === "scripts").map((row) => row.shard).sort()).toEqual(["1/2", "2/2"]);
@@ -348,7 +350,7 @@ describe("GitHub workflow contract", () => {
     const lintIndex = steps.findIndex((step) => step.run?.includes("pnpm lint"));
     expect(lintIndex).toBeGreaterThanOrEqual(0);
     expect(steps.indexOf(upload)).toBeGreaterThan(lintIndex);
-    for (const gate of ["static", "typecheck", "compat", "smokes"]) {
+    for (const gate of ["static", "smokes"]) {
       for (const failed of [false, true]) {
         const condition = (upload.if ?? "true").replace(/^\$\{\{\s*|\s*\}\}$/gu, "");
         const hasStatusCheck = /\b(always|success|failure|cancelled)\s*\(/u.test(condition);
@@ -457,20 +459,16 @@ describe("GitHub workflow contract", () => {
       "coverage:",
       "windows-regression:",
       "name: Build foundation (Ubuntu, Node 24)",
-      "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
+      "name: Packed runtime (${{ matrix.os }})",
       "name: Gates (${{ matrix.gate }})",
       "name: Coverage shard ${{ matrix.shard }}/4",
       "name: Gates (coverage)",
       "name: Windows regression (Node 24)",
       "needs: build-foundation",
       "gate:",
-      "- typecheck",
       "- static",
-      "- compat",
       "- smokes",
-      "if: matrix.gate == 'typecheck'",
       "if: matrix.gate == 'static'",
-      "if: matrix.gate == 'compat'",
       "if: matrix.gate == 'smokes'",
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
@@ -583,10 +581,11 @@ describe("GitHub workflow contract", () => {
       coverageJob.indexOf("node scripts/release/coverage-threshold-gate.mjs"),
     );
     expectContainsAll(runtimeSmokeJob, [
-      "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
+      "name: Packed runtime (${{ matrix.os }})",
       "needs: build-foundation",
       "runs-on: ${{ matrix.os }}",
-      "node-version: ${{ matrix.node }}",
+      "node-version: 22.18.0",
+      "node-version: 24",
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.setupNode,
       PINNED_ACTIONS.downloadArtifact,
@@ -594,7 +593,7 @@ describe("GitHub workflow contract", () => {
       "run: node dist/cli.js --version",
     ]);
     expect(runtimeSmokeJob).toMatch(
-      /matrix:\n\s+include:\n\s+- os: ubuntu-latest\n\s+node: 22\n\s+- os: macos-latest\n\s+node: 24\n\s+- os: ubuntu-latest\n\s+node: 24/,
+      /matrix:\n\s+os: \[ubuntu-latest, macos-latest, windows-latest\]/,
     );
     expectContainsNone(runtimeSmokeJob, [
       "cache: pnpm",
@@ -623,18 +622,25 @@ describe("GitHub workflow contract", () => {
       }
     ).jobs;
     const runtimeSteps = runtimeJobs["build-test"].steps;
-    const nativeShellSteps = runtimeSteps.filter(
-      (step) =>
-        step.uses?.startsWith("pnpm/action-setup@") ||
-        step.run?.includes("pnpm install"),
-    );
-    expect(nativeShellSteps).toHaveLength(2);
-    for (const step of nativeShellSteps) {
-      expect(step.if).toBe("matrix.os == 'macos-latest'");
+    // pm-m6ig79: one pnpm setup serves every OS; each dependency install is
+    // platform-scoped and follows both isolated packed first runs.
+    const pnpmSetups = runtimeSteps.filter((step) => step.uses?.startsWith("pnpm/action-setup@"));
+    expect(pnpmSetups).toHaveLength(1);
+    expect(pnpmSetups[0]!.if).toBeUndefined();
+    const dependencyInstalls = runtimeSteps.filter((step) => step.run?.includes("pnpm install"));
+    expect(dependencyInstalls.map((step) => step.if)).toEqual([
+      "matrix.os == 'ubuntu-latest'",
+      "matrix.os == 'macos-latest'",
+      "matrix.os == 'windows-latest'",
+    ]);
+    const lastFirstRun = runtimeSteps.map((step) => Boolean(step.run?.includes("packed-first-run.mjs"))).lastIndexOf(true);
+    for (const step of [...pnpmSetups, ...dependencyInstalls]) {
+      expect(runtimeSteps.indexOf(step)).toBeGreaterThan(lastFirstRun);
       expect(step["continue-on-error"]).toBeUndefined();
     }
-    expect(nativeShellSteps[1].env).toEqual({ PM_RUN_TESTS_SKIP_BUILD: "1" });
-    expect(nativeShellSteps[1].run?.trim().split("\n")).toEqual([
+    const nativeShellSteps = dependencyInstalls.filter((step) => step.if === "matrix.os == 'macos-latest'");
+    expect(nativeShellSteps[0].env).toEqual({ PM_RUN_TESTS_SKIP_BUILD: "1" });
+    expect(nativeShellSteps[0].run?.trim().split("\n")).toEqual([
       "pnpm install --frozen-lockfile",
       "node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts",
     ]);
@@ -705,16 +711,16 @@ describe("GitHub workflow contract", () => {
       ),
     );
     expectExactValidationCacheSteps(ciWorkflow, 3);
-    const node22Job = runtimeJobs["node22-telemetry"];
+    const node22Job = runtimeJobs["build-test"];
     expect(node22Job).toMatchObject({
-      name: "Telemetry regression (Node 22)",
+      name: "Packed runtime (${{ matrix.os }})",
       needs: "build-foundation",
     });
     expect(
       node22Job.steps.find((step) =>
-        step.uses?.startsWith("actions/setup-node@"),
-      )?.with,
-    ).toMatchObject({ "node-version": 22 });
+        step.uses?.startsWith("actions/setup-node@") && step.with?.["node-version"] === 22,
+      ),
+    ).toMatchObject({ if: "matrix.os == 'ubuntu-latest'" });
     const snapshotSteps = node22Job.steps.filter(
       (step) =>
         step.name === "Verify linked snapshot target handling on Node 22",
@@ -722,6 +728,7 @@ describe("GitHub workflow contract", () => {
     expect(snapshotSteps).toEqual([
       {
         name: "Verify linked snapshot target handling on Node 22",
+        if: "matrix.os == 'ubuntu-latest'",
         env: { PM_RUN_TESTS_SKIP_BUILD: "1" },
         run: "node scripts/run-tests.mjs test -- tests/integration/linked-test-context-trust.integration.spec.ts tests/unit/sdk/test/workspace-snapshot.spec.ts",
       },

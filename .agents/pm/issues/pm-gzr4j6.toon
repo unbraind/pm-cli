@@ -1,0 +1,23 @@
+id: pm-gzr4j6
+title: "Ecosystem Daily Release jobs hold a hosted runner for up to 360 minutes waiting on their own release PR's queued CI, and ecosystem CI never cancels superseded runs, so the account's 20 runner slots starve every repository"
+description: "About 30 ecosystem repositories (pm-rl, pm-ops, pm-presets, pm-swarm, pm-ts-starter, pm-changelog, ...) schedule release.yml at the same cron minute (23 3 * * *, pm-changelog 17 3). Its release job opens a release PR and then waits in-job (merge wait 60-120 minutes, job timeout 360) for that PR's CI, holding a GitHub-hosted runner while the CI it waits for is queued behind the same held runners. Ecosystem ci.yml has no concurrency group, so every push to a PR branch queues another full Node 22/26 (and sometimes Windows) matrix without cancelling the superseded run. All repositories share the personal account's 20 concurrent-job cap, so this starves pm-cli and every other repository for hours. The fix belongs in the ecosystem release and CI templates, not in pm-cli."
+type: Issue
+status: open
+priority: 1
+tags[5]: ci,ecosystem,github-actions,release,runner-queue
+created_at: "2026-10-30T15:20:19.395Z"
+updated_at: "2026-10-30T15:27:21.127Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: No ecosystem release workflow job polls or sleeps for its release PR's checks while holding a runner; publication is triggered by the merge event; Every ecosystem ci.yml declares concurrency group per workflow and ref with cancel-in-progress for pull_request events; Ecosystem release crons are spread over distinct minutes so no two repositories start a release in the same 5-minute window; An account-wide snapshot one hour after the release window shows no in-progress Daily Release run waiting on its own PR
+parent: pm-doxj
+risk: medium
+confidence: high
+severity: high
+environment: GitHub Free personal account unbraind shared by about 30 public repositories
+expected_result: "A daily release never holds a runner while waiting for review or CI: the release job enables auto-merge (or exits) and a separate pull_request closed/workflow_run trigger publishes; ecosystem CI declares concurrency with cancel-in-progress for pull_request refs; release crons are staggered across repositories."
+actual_result: "Snapshot 2026-10-30T15:08Z: 60 active workflow runs across the account, 47 queued; 5 Daily Release runs in progress since 10:09-13:37Z all inside 'Run release checks' / merge wait, 7 more queued; pm-ts-starter had 3 CI runs queued for one PR branch (fix/min-sdk-drift-check). pm-cli PR #1629 waited 94 minutes for its first job."
+component: ecosystem-release
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-m6ig79,related,"2026-10-30T15:20:19.395Z","harness:claude-code","cli:create:dep",detected
+body: ""

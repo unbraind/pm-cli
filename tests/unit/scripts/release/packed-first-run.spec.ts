@@ -112,21 +112,30 @@ describe("packed first run", () => {
         string,
         {
           needs?: string;
-          strategy?: { matrix: { os: string[]; node: Array<string | number> } };
-          steps: Array<{ run?: string; with?: Record<string, unknown> }>;
+          strategy?: { matrix: { os: string[] } };
+          steps: Array<{ name?: string; uses?: string; run?: string; env?: Record<string, string>; with?: Record<string, unknown> }>;
         }
       >;
     };
-    const job = workflow.jobs["first-run"];
+    // pm-m6ig79: one runtime job per OS runs both Node versions in sequence.
+    const job = workflow.jobs["build-test"];
     expect(job.needs).toBe("build-foundation");
     expect(job.strategy?.matrix).toEqual({
       os: ["ubuntu-latest", "macos-latest", "windows-latest"],
-      node: ["22.18.0", 24],
     });
     expect(
       job.steps.some((step) => step.with?.name === "packed-first-run"),
     ).toBe(true);
-    const run = job.steps.map((step) => step.run ?? "").join("\n");
+    const firstRuns = job.steps.filter((step) => step.run?.includes("packed-first-run.mjs"));
+    expect(firstRuns.map((step) => step.env?.PM_FIRST_RUN_NODE)).toEqual(["22.18.0", "24"]);
+    for (const firstRun of firstRuns) {
+      const setup = job.steps.slice(0, job.steps.indexOf(firstRun)).filter((step) => step.uses?.startsWith("actions/setup-node@")).at(-1);
+      expect(String(setup?.with?.["node-version"])).toBe(firstRun.env?.PM_FIRST_RUN_NODE);
+      // Each Node version starts from its own empty prefix, cache and home.
+      expect(firstRun.run).toContain('first_run_root="${RUNNER_TEMP}/pm-first-run-node${PM_FIRST_RUN_NODE}"');
+    }
+    expect(job.steps.findIndex((step) => step.run?.includes("pnpm install"))).toBeGreaterThan(job.steps.indexOf(firstRuns[1]!));
+    const run = firstRuns[0]!.run ?? "";
     expect(run).toContain("npm install --global --ignore-scripts");
     expect(run).toContain(
       'node scripts/release/packed-first-run.mjs "${package_root}"',

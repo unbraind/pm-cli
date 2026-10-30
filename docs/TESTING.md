@@ -264,6 +264,26 @@ node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
 
 Use focused runs while iterating, then run coverage before closure when risk or scope warrants it.
 
+## CI Job Layout and Runner Budget
+
+Every pull-request push draws from the account-wide hosted-runner pool (20
+concurrent jobs, 5 on macOS, shared by every repository on the account), so the
+required CI asks for as few runners as the proofs allow
+([pm-m6ig79](../.agents/pm/issues/pm-m6ig79.toon)):
+
+| Job | Runs |
+| --- | --- |
+| `Build foundation (Ubuntu, Node 24)` | Build, `dist` artifact, packed tarball. |
+| `Packed runtime (<os>)` × 3 | Packed first run on Node 22.18.0 and 24 in isolated prefixes, dist version smoke; Ubuntu adds the Node 22 telemetry and snapshot regressions, macOS the native shell and portability checks, Windows the full npm npx and Bun bunx acceptance. |
+| `Gates (static)` | Typecheck, version, changelog, secret scan, `pnpm lint` (`quality:static`), package artifact, token budgets, tracker merge-safety and assurance gates. |
+| `Gates (smokes)` | Shell completion, npx/plugin smokes, host isolation, context evaluation, compatibility migration and published workspace compatibility. |
+| `Coverage shard N/4` × 4, `Gates (coverage)` | Sharded coverage, then the merged 100% threshold. |
+| `Windows regression cohort` × 3, `Windows regression (Node 24)` | Script and native Windows cohorts, all running at once, then their aggregate. |
+
+Add a proof as a step inside the job that owns its platform and runtime rather
+than as a new job: a sub-minute job still waits in the shared queue before it
+starts.
+
 ## CI Retry and Timeout Diagnostics
 
 The required `Gates (coverage)` job runs after the coverage matrix settles and
@@ -759,8 +779,9 @@ pm test <item-id> --run --workspace-context snapshot --override-linked-workspace
   Node 24 releases retain the same dangling-link behavior; the async `stat`
   `throwIfNoEntry` option was added in
   [Node 24.15](https://nodejs.org/download/release/v24.20.0/docs/api/fs.html#fspromisesstatpath-options).
-  The real filesystem and CLI snapshot suite runs in the required Node 22
-  telemetry regression job and native Windows regression job before merge.
+  The real filesystem and CLI snapshot suite runs on Node 22 in the required
+  `Packed runtime (ubuntu-latest)` job and in the native Windows regression job
+  before merge.
 
   Windows execution is tracked by [pm-bj7rq0](../.agents/pm/issues/pm-bj7rq0.toon).
   Script and native keeper cohorts run independently on Windows Node 24. Their

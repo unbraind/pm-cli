@@ -6,7 +6,8 @@ Trackers: [pm-ygli86](../.agents/pm/tasks/pm-ygli86.toon),
 [pm-p5u6](../.agents/pm/chores/pm-p5u6.toon).
 
 CI globally installs one tarball in isolated npm prefixes on Ubuntu/macOS/Windows
-with Node 22.18.0 and 24, runs the installed `pm` shim, then invokes:
+with Node 22.18.0 and 24, one `Packed runtime (<os>)` job per OS with a fresh
+prefix, cache and home per Node version, runs the installed `pm` shim, then invokes:
 
 ```bash
 node scripts/release/packed-first-run.mjs /path/to/installed/@unbrained/pm-cli
