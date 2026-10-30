@@ -1,0 +1,49 @@
+id: pm-4oc353
+title: Text refusals drop the specific What happened detail when an echoed argv overflows the diagnostic ceiling
+description: "The JSON diagnostic projection walks the declared ladder (full, omit_explanation, limit_collections, compact_recovery, action_only), but the human text path jumped straight from full to action_only. A refusal whose recovery bundle echoed a long attempted command (for example a 400-word --description) therefore printed only the generic title, the generic What is required line and an overflow notice, and dropped the one sentence that said what was wrong. Reproduced on 2026.10.30 with strict create plus --unset assignee: the short invocation names the problem, the long one does not. The same refusal also claimed --clear-* directives cannot satisfy required options, while repeatable options such as --clear-deps do satisfy them."
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,diagnostics,output-budget
+created_at: "2026-10-30T23:41:34.002Z"
+updated_at: "2026-10-30T23:42:57.819Z"
+closed_at: "2026-10-30T23:42:57.794Z"
+completed_at: "2026-10-30T23:42:57.794Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: A text refusal whose full rendering exceeds the error text ceiling keeps the What happened detail and the missing flags whenever a ladder stage fits; it drops the attempted_command echo before the detail; it names the omission and points to --json; an oversized detail is bounded rather than removed; short refusals are byte-identical; the strict create refusal states the scalar/repeatable rule accurately; regression tests fail without the fix
+parent: pm-5t33or
+risk: low
+confidence: high
+resolution: "renderBoundedGuidanceMessage compacts Why, collections and the recovery echo before falling back to action-only, bounds an oversized detail, and names the omission; strict create states the scalar/repeatable clear rule accurately."
+expected_result: Agents reading text refusals see what was wrong even when their own long input overflows the diagnostic ceiling.
+actual_result: "The 2026.10.30 reproduction (strict create, 400-word --description, --unset assignee) now prints What happened, missing: --assignee and the omission notice within 768 tokens; the two regression tests fail without the fix; short refusals are unchanged (875 CLI and diagnostic tests pass)."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cha95z,discovered_from,"2026-10-30T23:41:34.002Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope,note}:
+  src/cli/error-guidance.ts,project,renderBoundedGuidanceMessage walks the diagnostic ladder for text
+  src/sdk/lifecycle/create.ts,project,accurate strict-create scalar clear refusal
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/cli/error-guidance.spec.ts,project,"harness:claude-code","2026-10-30T23:41:34.002Z",local_mutation,feat/agent-same-command-corrections
+test_runs[1]:
+  - run_id: test-local-mvvmay5t-0r9giv
+    kind: test
+    status: passed
+    started_at: "2026-10-30T23:42:49.563Z"
+    finished_at: "2026-10-30T23:42:56.369Z"
+    recorded_at: "2026-10-30T23:42:56.369Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/cli/error-guidance.spec.ts,schema,schema,source,local_source_ref
+close_reason: Text refusals walk the declared diagnostic ladder and keep the specific detail
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-4oc353
+  gate_id: tests/unit/cli/error-guidance.spec.ts text ladder regressions
+  negative_control: "Point formatPmCliErrorForDisplay and formatCommanderErrorForDisplay back at renderGuidanceMessage: both new tests fail (2 failed, 54 passed)"
+  local_checks[5]: error-guidance spec 56/56,CLI unit and diagnostic integration suites 875/875,typecheck,eslint,built CLI reproduces the long strict-create refusal with What happened retained
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: "Fix in src/cli/error-guidance.ts: renderBoundedGuidanceMessage renders progressively compacted candidates following the declared ladder (drop Why, limit collections, compact the recovery bundle to suggested_retry under 400 bytes plus missing/allowed values/next_best_command, then bound the What happened text to 320 code points) and appends an omission notice; only text that still overflows falls through to the SDK action-only projection. The public projectPmDiagnosticText contract is unchanged. src/sdk/lifecycle/create.ts now says --unset cannot satisfy a required scalar option and that only repeatable options accept an explicit --clear-* empty set."

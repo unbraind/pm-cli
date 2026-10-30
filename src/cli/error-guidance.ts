@@ -11,8 +11,10 @@ import {
 } from "../sdk/runtime-primitives.js";
 import { resolveRecoveryCommandName } from "../sdk/agent/command-recovery.js";
 import {
+  estimatePmOutputTokens,
   projectPmDiagnosticOutput,
   projectPmDiagnosticText,
+  resolvePmDiagnosticOutputBudget,
   type PmDiagnosticOutputReceipt,
   type PmProjectedDiagnostic,
 } from "../sdk/cli-contracts/agent-output-contracts.js";
@@ -721,6 +723,71 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
     lines.push(...recoveryLines);
   }
   return lines.join("\n");
+}
+
+const TEXT_DIAGNOSTIC_OMISSION_NOTICE =
+  "Some guidance was omitted to fit the diagnostic token ceiling; rerun with --json for the full recovery envelope.";
+const TEXT_RECOVERY_RETRY_MAX_BYTES = 400;
+const TEXT_HAPPENED_MAX_CODE_POINTS = 320;
+
+/** Keep the retry coordinates once the full bundle, which echoes the attempted argv, no longer fits. */
+function compactTextRecovery(
+  recovery: PmCliErrorRecoveryPayload | undefined,
+): PmCliErrorRecoveryPayload | undefined {
+  const normalized = normalizeRecoveryPayload(recovery);
+  if (!normalized) return undefined;
+  const compact: PmCliErrorRecoveryPayload = {};
+  if (
+    normalized.suggested_retry &&
+    Buffer.byteLength(normalized.suggested_retry, "utf8") <= TEXT_RECOVERY_RETRY_MAX_BYTES
+  ) {
+    compact.suggested_retry = normalized.suggested_retry;
+  }
+  for (const key of ["missing", "missing_required_fields", "allowed_values"] as const) {
+    const values = normalized[key];
+    if (values && values.length > 0) compact[key] = values.slice(0, 3);
+  }
+  if (normalized.next_best_command) compact.next_best_command = normalized.next_best_command;
+  return Object.keys(compact).length > 0 ? compact : undefined;
+}
+
+/**
+ * Walk the declared diagnostic ladder (explanation, collections, recovery) so
+ * the specific "What happened" line survives an oversized echo; only text that
+ * still overflows falls through to the action-only projection.
+ */
+function renderBoundedGuidanceMessage(message: GuidanceMessage): string {
+  const full = renderGuidanceMessage(message);
+  const budget =
+    resolvePmDiagnosticOutputBudget("error").default_max_estimated_tokens_by_format.text;
+  const fits = (text: string): boolean =>
+    estimatePmOutputTokens(Buffer.byteLength(text, "utf8")) <= budget;
+  if (fits(full)) return full;
+  const withoutExplanation: GuidanceMessage = { ...message, why: undefined };
+  const limitedCollections: GuidanceMessage = {
+    ...withoutExplanation,
+    examples: message.examples?.slice(0, 1),
+    nextSteps: message.nextSteps?.slice(0, 1),
+    verificationErrors: message.verificationErrors?.slice(0, 3),
+  };
+  const compactRecovery: GuidanceMessage = {
+    ...limitedCollections,
+    recovery: compactTextRecovery(message.recovery),
+  };
+  const happenedCodePoints = Array.from(message.happened);
+  const boundedHappened: GuidanceMessage = {
+    ...compactRecovery,
+    examples: undefined,
+    happened:
+      happenedCodePoints.length > TEXT_HAPPENED_MAX_CODE_POINTS
+        ? `${happenedCodePoints.slice(0, TEXT_HAPPENED_MAX_CODE_POINTS).join("")}...`
+        : message.happened,
+  };
+  for (const candidate of [withoutExplanation, limitedCollections, compactRecovery, boundedHappened]) {
+    const text = `${renderGuidanceMessage(candidate)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
+    if (fits(text)) return text;
+  }
+  return full;
 }
 
 /** Attach item-scoped tombstone and lost-lease evidence with the item identity. */
@@ -2265,7 +2332,7 @@ export function formatPmCliErrorForDisplay(
     ].join("\n");
   }
   return projectPmDiagnosticText(
-    renderGuidanceMessage(guidance),
+    renderBoundedGuidanceMessage(guidance),
     guidance.required,
   ).output;
 }
@@ -2304,7 +2371,7 @@ export function formatCommanderErrorForDisplay(
     context,
   );
   return projectPmDiagnosticText(
-    renderGuidanceMessage(guidance),
+    renderBoundedGuidanceMessage(guidance),
     guidance.required,
   ).output;
 }

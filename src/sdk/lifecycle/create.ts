@@ -1044,7 +1044,7 @@ function assertNoStrictRequiredOptionClears(
   ].sort((left, right) => left.localeCompare(right));
   /* c8 ignore next -- strict clear conflict envelope is covered by policy integration scenarios. */
   throw new PmCliError(
-    `Strict create mode requires concrete values for ${requiredFlags.join(", ")}; --unset/--clear-* directives cannot satisfy required options`,
+    `Strict create mode requires concrete values for ${requiredFlags.join(", ")}; --unset cannot satisfy a required scalar option (only repeatable options accept an explicit --clear-* empty set)`,
     EXIT_CODE.USAGE,
   );
 }

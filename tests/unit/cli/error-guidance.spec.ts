@@ -453,6 +453,38 @@ describe("pm cli error guidance context plumbing", () => {
     expect(text).toContain("github.com/unbraind/pm-brief");
   });
 
+  it("keeps the specific refusal when an oversized argv echo overflows the text ceiling", () => {
+    const detail =
+      "Strict create mode requires concrete values for --assignee; --unset cannot satisfy a required scalar option (only repeatable options accept an explicit --clear-* empty set)";
+    const attempted = `pm create --type Issue --title probe --description "${"word ".repeat(1_200)}" --unset assignee`;
+    const text = formatPmCliErrorForDisplay(detail, {
+      code: "invalid_argument_value",
+      recovery: {
+        attempted_command: attempted,
+        suggested_retry: `${attempted} --assignee "<value>"`,
+        provided_fields: ["--type", "--title", "--description", "--unset"],
+        missing: ["--assignee"],
+      },
+    });
+
+    expect(text).toContain("What happened:");
+    expect(text).toContain(detail);
+    expect(text).toContain("missing: --assignee");
+    expect(text).not.toContain("attempted_command:");
+    expect(text).toContain("rerun with --json for the full recovery envelope");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
+  it("bounds an oversized refusal detail instead of dropping it", () => {
+    const detail = `Value rejected: ${"segment ".repeat(1_500)}`;
+    const text = formatPmCliErrorForDisplay(detail, { code: "invalid_argument_value" });
+
+    expect(text).toContain("What happened:");
+    expect(text).toContain("Value rejected: segment");
+    expect(text).toContain("...");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
   it("surfaces nearest options and cross-command flag hints for unknown options", () => {
     const envelope = formatCommanderErrorForJson(
       "unknown option '--type'",
