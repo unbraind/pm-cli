@@ -1,0 +1,22 @@
+id: pm-gh1631
+title: "GH-1631: expose bounded extension-owned diagnostics on expected SDK errors"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1631 requests a namespaced JSON-compatible extension diagnostics slot on PmCliErrorContext and createPmCliExpectedError. Its concrete producer is pm-changelog issue 302: selection_report loses structure through host-owned prose fields. Design typed SDK and CLI/TOON/JSON contracts with size bounds and explicit exclusion from telemetry/Sentry; avoid widening arbitrary error payload capture."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-10-29T22:37:34.363Z"
+updated_at: "2026-10-29T22:37:34.363Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Cover public SDK typing and separately bundled expected errors; preserve nested safe JSON diagnostics in JSON and TOON; enforce bounded output and prove telemetry/Sentry exclusion with real local collectors; coordinate pm-changelog producer adoption in its own repository.
+parent: pm-doxj
+risk: high
+confidence: medium
+expected_result: "Extensions return actionable structured refusal facts through a documented namespaced SDK field, with deterministic budgets and no diagnostic payload entering telemetry or Sentry."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5t33or,related,"2026-10-29T22:37:34.363Z","harness:codex","cli:create:dep",detected
+  pm-gh1625,related,"2026-10-29T22:37:34.363Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-29T22:37:34.363Z","harness:codex","Duplicate check: hybrid expected-error diagnostics search plus complete PmCliErrorContext keyword search found existing host-specific contracts but no open extension-owned payload slot; checked live open and in-progress lists; related active provenance work retains its current scope."
+body: ""

@@ -1,24 +1,211 @@
 id: pm-gh1602
-title: "GH-1602: Windows extension-handler refusal has warning bytes before its JSON error envelope"
+title: "GH-1602: keep preflight warnings inside JSON error envelopes"
 description: "Hosted Nightly Validation 40303228148 at 46fd91415c6e1009cff69f64c24fc17186a2af81 failed Windows Node 24 shard 3/4. The existing CLI integration control for a matched extension handler throwing reached expectJsonErrorEnvelope at cli.integration.spec.ts:5639, but JSON.parse of stderr began with warning:se and failed. The log does not expose enough of the prefix to identify its producer. Other results: 3086 passed, 19 skipped. This is a concrete transport framing failure signature, not evidence of a Sentry, settings or product cause. Source: https://github.com/unbraind/pm-cli/issues/1602 and https://github.com/unbraind/pm-cli/actions/runs/40303228148. Preserve the completed recurrence meter and prior distinct platform failures."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,ci,github,output,windows
 created_at: "2026-10-26T22:10:10.109Z"
-updated_at: "2026-10-26T22:10:48.774Z"
+updated_at: "2026-10-29T23:15:55.926Z"
+closed_at: "2026-10-29T23:15:55.038Z"
+completed_at: "2026-10-29T23:15:55.038Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Identify the exact warning producer through an isolated native control before selecting a fix; Machine-readable stderr remains one parseable JSON envelope while meaningful warnings remain represented and handler details remain intact; Preserve exit 1 and obtain a clean affected Windows regression cohort without erasing recurrence observations
 parent: pm-u9d0
 risk: medium
 confidence: medium
-expected_result: Agents receive a parseable structured extension-handler failure on Windows without warning bytes preceding its JSON envelope.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Deliver invocation-scoped JSON warnings, normalized renderer aliases and scope-aware preflight advisories; reaccount Commander refusals after attaching warnings and warning_details through the SDK primitive."
+expected_result: JSON refusals remain one parseable envelope with all preflight diagnostics; opt-in receipts measure all emitted payload bytes and exclude only their own receipt.
+actual_result: "All five linked commands pass in test-local-mvu5str1-qavq67, covering CLI integration, warning/error regressions, selectors, guard/scope behavior and TypeScript. Three pre-fix byte controls fail as intended and pass after correction; ESLint passes."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,discovered_from,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
   pm-gh1366,related,"2026-10-26T22:10:10.109Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+  pm-bj7rq0,related,"2026-10-29T17:21:05.322Z","harness:codex","cli:update:dep",detected
+comments[23]{created_at,author,text}:
   "2026-10-26T22:10:10.109Z","harness:codex","Duplicate check: complete strict 3130-item all-status corpus and live warning/JSON stderr searches found completed related output-format and recurrence work but no exact active owner for this observed Windows failure. Intake only, open and unclaimed."
   "2026-10-26T22:10:48.773Z","harness:codex",The current continuation independently read the complete hosted failure log and linked the source alert. A later local Linux full-suite run passes the existing handler-error test; that does not establish the native Windows warning producer or a fix. Reproduction and native hosted proof remain necessary. No implementation claim is taken.
+  "2026-10-29T08:28:16.039Z","harness:codex","Nightly run 40837931196 at 2016f0e6870b4631bf2e0f4bfb0fbe983556c3ea reproduces the existing Windows shard 3/4 warning:se prefix before the extension handler JSON refusal; exit status remains 1. Investigating the actual producer and retaining full synthetic-fixture stderr in the next native run before attributing cause. Required PR checks otherwise passed except the separately corrected tracker expected-result gate."
+  "2026-10-29T08:31:54.598Z","harness:codex","Added an assertion message containing complete synthetic-fixture stderr before JSON parsing. The test still requires exactly one JSON envelope, command_failed, exit1 and handler-boom; this is diagnostic evidence only, not a claimed fix. No warning producer has yet been established from the native log."
+  "2026-10-29T09:02:56.608Z","harness:codex","A real CLI negative control now reproduces the framing failure deterministically on Linux: pass a synthetic Windows home file path to the same throwing extension handler. The native-path control passes; windows-home emits warning:secret_guard_detected:1:rules=absolute_home_path followed by the otherwise correct command_failed envelope and exit1. The public SDK evaluateMutationGuard independently returns that same advisory for the path. Implementing invocation-scoped deferred preflight warnings so JSON failures keep one envelope with warnings and handler detail, while successful invocations retain a structured warning diagnostic."
+  "2026-10-29T09:16:24.646Z","harness:codex","The completed focused CLI cohort passes254 tests across four files, including the deterministic Windows-home refusal and a successful guarded mutation. Deferred warnings retain stable codes plus additional remediation text in warning_details, preserve existing diagnostics, and remain isolated across nested/concurrent invocations. Typecheck ESLint and docstring checks pass. The first local full run exposed two test expectation issues (nested create item ID and retaining settings remediation); both were corrected without weakening behavior."
+  "2026-10-29T09:17:26.302Z","harness:codex","Native provenance is now confirmed: completed Windows Node24 shard3/4 job123349964084 in run40844923634 exposes warning:secret_guard_detected:1:rules=absolute_home_path before the JSON command_failed refusal on both attempts. This matches the deterministic Windows-home negative control exactly; no settings-read or Sentry cause is inferred. The guarded path is a synthetic fixture under the Windows runner home. The pending revised native run must prove the complete cohort with the transport fix."
+  "2026-10-29T09:28:09.234Z","harness:codex",Current source943470bca is dispatched as Nightly40849657299. The previous watcher exited on GitHub REST quota exhaustion while Windows shard1 remained unfinished; it was not an all-jobs completion receipt. The new dispatch supersedes the old workflow under its existing concurrency rule. Completed Windows shard3 failure evidence remains retained; acceptance requires the full revised native cohort to finish successfully.
+  "2026-10-29T09:38:20.808Z","harness:codex",Updated linked-test execution test-local-mvtcjlk5-ic30gx passes both commands after the transport fix. Graph-composition and record-integrity assurance pass; the bounded mutation gate retains345 killed and7 documented equivalent mutants with no unexplained survivors. Repository validation reports zero history drift across3151 items while retaining170 historical closure-metadata warnings; those historical records were not fabricated or mass-rewritten.
+  "2026-10-29T10:35:41.322Z","harness:codex","Native Windows proof at 943470bca: Nightly run 40849657299, Windows Node 24 shard 3/4 job 123368461234 passed 3123 tests across 221 files, with 20 platform skips. The 78-test CLI integration file passed, including the previously failing extension-handler JSON framing scenario and its Windows-home control. All four Windows shards passed on this source. The whole superseded workflow was later canceled because other shards were canceled by the newer dispatch; this is a bounded native-job receipt, not a complete final-head workflow claim."
+  "2026-10-29T11:11:42.620Z","harness:codex","CodeRabbit review5696693853 identified npm-package-relative tracker links in the new configuration guidance. Both new references now use canonical public GitHub file URLs and explicitly state that tracker records are excluded from npm, preserving usable documentation in an installed package."
+  "2026-10-29T13:33:02.052Z","harness:codex","The latest Windows shard3 run40864851705/job123416907459 again passes the78-test CLI integration cohort, including the real Windows-home advisory/error envelope. The whole shard fails solely because the unrelated compound receipt-settlement case exceeds30000ms on both attempts; this is not a full-shard pass and the original log is retained. CodeRabbit completed its full review of053da6b1c at12:11 UTC with no new findings."
+  "2026-10-29T14:13:54.667Z","harness:codex","Review 5698771333 also identified missing TypeScript diagnostics fields. Added a shared preflight-warning shape to JsonErrorEnvelope and the attachment helper return type, plus compile-time consumer checks for stable string codes and structured remediation. This is an additive type correction; the wire representation and invocation behavior are unchanged."
+  "2026-10-29T14:37:59.499Z","harness:codex",The direct TypeScript negative control against 3c5367550 fails with TS2339 for warnings and warning_details on JsonErrorEnvelope and the helper return type. Current typecheck passes with the additive optional diagnostics interface and preserves the original payload fields. The focused runtime cohort passes; no warning wire shape or exit code changed.
+  "2026-10-29T16:05:10.942Z","harness:codex","Final review regression: local --format json emitted a human settings warning. The added real CLI fixture fails before repair with JSON.parse stderr Unexpected token p. SDK selection now recognizes normalized local JSON format while retaining canonical --output-format toon precedence. A mixed-format negative control established that the canonical renderer wins, so this change preserves that existing contract."
+  "2026-10-29T16:09:55.911Z","harness:codex","Native evidence after the final lock-policy repair: Windows shard1 job123534212697 passes2695 tests plus106 skips; shard3 job123534212770 passes3126 plus20 skips, including78 real CLI and4 settlement cases. The remaining manual05a matrix was canceled after these affected groups passed because later reviewed changes supersede its head and queued duplicate work competes with required final-PR checks. This is bounded native evidence, not a green complete workflow."
+  "2026-10-29T16:40:38.046Z","harness:codex","The structured-warning regression cohort passes 284 tests. The first complete final-review run passes 11,587 tests with three platform skips but one unchanged test-all policy case reaches 30 seconds, so no full coverage pass is claimed from that attempt. Its unchanged isolated replay passes in 6.8 seconds; the operational observation is linked to existing pm-bj7rq0. Full coverage is being rerun at four workers with all original assertions, deadlines and exact thresholds retained."
+  "2026-10-29T17:10:25.021Z","harness:codex","The four-worker full-source run passes the previously timed-out policy case and 11,587 tests overall, but its real published-workspace acceptance test encounters npm registry ETIMEDOUT during npm view. No assertion failure or lowered threshold is involved; the network failure prevents the exact coverage report, so this attempt is also not a coverage pass. Isolated published-compatibility replay and linked checks follow. Final-head hosted coverage remains a mandatory merge gate."
+  "2026-10-29T17:16:33.093Z","harness:codex","The real published workspace compatibility replay passes both tests, including all four artifact/native-Git matrix rows, unchanged after the npm registry timeout. All four linked verifications now pass, including CLI integration, structured warnings/errors, SDK bootstrap aliases and all typecheck projects. The bounded mutation policy also passes with 345 killed mutants, seven documented equivalents and zero unexplained survivors. Final-head hosted exact coverage is still required before merge; the earlier 100/100/100/100 result applies to production revision05a34455f, before this final JSON-selector fix."
+  "2026-10-29T20:37:28.671Z","harness:codex","Outside-diff review5704275852 reproduced independently: with a JSON invocation scope and legacy json=false, the unclaimed-item guard wrote human stderr (new regression fails,13 existing cases pass). A scoped renderer now overrides that legacy boolean; direct guard callers retain fallback compatibility, and an explicit human scope wins over legacy json=true. Actual run test-local-mvu0353r-4c8tao passes all5 linked commands, including CLI integration, warning/selector controls, all TypeScript projects, direct scope parity, and both real --output-format JSON spellings. No JSON warning envelope or human advice is discarded outside its established renderer policy."
+  "2026-10-29T23:02:13.393Z","harness:codex","CodeRabbit full review at d4ba22c identified receipt ordering: Commander usage JSON is accounted before warnings and warning_details are attached. Existing structured renderer-selection and successful-warning fixes remain verified; this additional edge needs a regression on actual emitted UTF-8 bytes for unknown help and invalid-option refusals, preserving opt-in accounting and one JSON stderr envelope."
+  "2026-10-29T23:11:17.416Z","harness:codex","The valid pre-fix regressions fail at independent byte comparisons: usage-handler receipt1413 versus actual1605 bytes, unknown-help receipt888 versus actual1080, and the standalone warned-envelope receipt56 versus actual236. Both real refusal handlers are exercised through their existing source test surface with a preflight warning, and stderr parsing proves a single complete JSON refusal. Earlier malformed-settings CLI fixtures did not create warnings on these early parse paths; those setup failures are excluded from the behavioral negative-control claim. Recompute the existing opt-in receipt after warning attachment and remove the previous receipt from the measurement input."
+  "2026-10-29T23:15:51.301Z","harness:codex","Accounting review fix passes all five linked verification commands in test-local-mvu5str1-qavq67, including CLI integration, warning/error tests, renderer selectors, guard/scope coverage and all four TypeScript projects; focused ESLint also passes. Three valid pre-fix controls failed on exact emitted UTF-8 bytes. The serialized-warning boundary now removes the prior opt-in receipt, attaches all warning fields, and uses the shared SDK accounting primitive to measure the complete refusal. Warning-free, human and non-accounted behavior retain their existing coverage."
+learnings[4]{created_at,author,text}:
+  "2026-10-29T09:39:52.308Z","harness:codex","A truncated warning prefix is insufficient to attribute a native JSON failure. Preserve complete synthetic stderr first, reproduce the Windows home-path input independently, and retain the advisory with the command error instead of dropping it or weakening JSON parsing. Invocation-scoped buffering must preserve remediation text and isolate nested/concurrent CLI calls."
+  "2026-10-29T10:46:57.439Z","harness:codex","Reproduce machine-readable transport failures with the actual warning producer and native path form. Keep advisory codes and remediation text inside an invocation-scoped collector, consume them into the existing failure envelope, and test nested/concurrent isolation, successful advisories, unchanged exit codes and human output. Truncated warning prefixes identify framing failure, not its cause."
+  "2026-10-29T20:37:27.816Z","harness:codex",Presentation guards must resolve the invocation renderer scope before falling back to legacy json booleans; output-format aliases and explicit TOON precedence otherwise diverge even when payload rendering is correct.
+  "2026-10-29T23:15:52.087Z","harness:codex","Any adapter that adds fields after a token receipt must strip the old receipt and recompute using the transport actual renderer. Measure emitted refusal bytes independently; malformed-settings fixtures need not reach preflight on early parse paths, so validate the intended warning path before treating failures as behavioral controls."
+files[11]:
+  - path: src/cli/error-guidance.ts
+    scope: project
+  - path: src/cli/main.ts
+    scope: project
+  - path: src/cli/migration-gates.ts
+    scope: project
+  - path: src/cli/preflight-warnings.ts
+    scope: project
+  - path: src/sdk/cli-bootstrap.ts
+    scope: project
+  - path: tests/integration/cli.integration.spec.ts
+    scope: project
+  - path: tests/types/diagnostic-output-contracts.test-d.ts
+    scope: project
+  - path: tests/unit/cli/bootstrap-args.spec.ts
+    scope: project
+  - path: tests/unit/cli/cli-main-errors.spec.ts
+    scope: project
+  - path: tests/unit/cli/preflight-warnings.spec.ts
+    scope: project
+  - path: tests/unit/sdk/mutation-guard-adapters.spec.ts
+    scope: project
+    note: Prove renderer-scope precedence and real JSON-selector parity for unclaimed-item advice
+tests[5]:
+  - command: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-29T08:30:35.320Z"
+      source_kind: local_mutation
+      source_ref: fix/lock-crash-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-29T09:16:23.560Z"
+      source_kind: local_mutation
+      source_ref: fix/lock-crash-recovery
+  - command: pnpm typecheck
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-29T14:22:33.498Z"
+      source_kind: local_mutation
+      source_ref: fix/lock-crash-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/sdk/cli-contracts/output-format-alias.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-29T16:04:32.756Z"
+      source_kind: local_mutation
+      source_ref: fix/lock-crash-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/cli/migration-gates.spec.ts tests/unit/cli/preflight-warnings.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-10-29T20:29:40.186Z"
+      source_kind: local_mutation
+      source_ref: fix/lock-crash-recovery
+test_runs[6]:
+  - run_id: test-local-mvtb8khl-2udh8g
+    kind: test
+    status: passed
+    started_at: "2026-10-29T08:56:59.464Z"
+    finished_at: "2026-10-29T08:57:37.209Z"
+    recorded_at: "2026-10-29T08:57:37.209Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtcjlk5-ic30gx
+    kind: test
+    status: passed
+    started_at: "2026-10-29T09:33:00.696Z"
+    finished_at: "2026-10-29T09:34:11.429Z"
+    recorded_at: "2026-10-29T09:34:11.429Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtojbi3-wihj89
+    kind: test
+    status: passed
+    started_at: "2026-10-29T15:08:20.417Z"
+    finished_at: "2026-10-29T15:09:53.787Z"
+    recorded_at: "2026-10-29T15:09:53.787Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtt0odp-57pn2d
+    kind: test
+    status: passed
+    started_at: "2026-10-29T17:13:15.451Z"
+    finished_at: "2026-10-29T17:15:22.093Z"
+    recorded_at: "2026-10-29T17:15:22.093Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/sdk/cli-contracts/output-format-alias.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvu0353r-4c8tao
+    kind: test
+    status: passed
+    started_at: "2026-10-29T20:30:46.763Z"
+    finished_at: "2026-10-29T20:33:14.391Z"
+    recorded_at: "2026-10-29T20:33:14.391Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/sdk/cli-contracts/output-format-alias.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/cli/migration-gates.spec.ts tests/unit/cli/preflight-warnings.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvu5str1-qavq67
+    kind: test
+    status: passed
+    started_at: "2026-10-29T23:11:18.124Z"
+    finished_at: "2026-10-29T23:13:10.813Z"
+    recorded_at: "2026-10-29T23:13:10.813Z"
+    passed: 5
+    failed: 0
+    skipped: 0
+    executions[5]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/cli/registration-helpers.spec.ts,schema,schema,source,local_source_ref
+      pnpm typecheck,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/sdk/cli-contracts/output-format-alias.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/sdk/mutation-guard-adapters.spec.ts tests/unit/cli/migration-gates.spec.ts tests/unit/cli/preflight-warnings.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  CHANGELOG.md,project
+  docs/CONFIGURATION.md,project
+close_reason: Preserve complete structured warning refusals and their exact token receipts.
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-gh1602
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts -t \"windows-home|preserves structured settings warnings\""
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/preflight-warnings.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/integration/cli.integration.spec.ts,node scripts/run-tests.mjs test -- tests/unit/cli/bootstrap-args.spec.ts tests/unit/sdk/cli-contracts/output-format-alias.spec.ts,pnpm typecheck
+  hosted_checks[2]: "Nightly (windows-latest, Node 24, shard 3/4)",Gates (coverage)
 body: ""

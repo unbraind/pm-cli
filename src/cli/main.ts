@@ -2,12 +2,14 @@
  * @module cli/main
  * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
+import { attachPreflightWarnings, attachSerializedPreflightWarnings, emitPreflightWarning, runWithPreflightWarnings } from "./preflight-warnings.js";
 import { Command,CommanderError } from "commander";
 import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
-import { describeUnknownError,isCommanderError,normalizeThrownExitCode,readThrownExitCode,wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
+import { createExtensionCommandError,describeUnknownError,isCommanderError,normalizeThrownExitCode,readThrownExitCode,wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
 import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
+import { isPmCliExpectedError } from "../sdk/errors.js";
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
@@ -17,6 +19,7 @@ import {
 } from "../sdk/read-output-contracts.js";
 import { runWithReproducibleProcessEnvironment } from "../sdk/reproducibility/process.js";
 import {
+  resolveTelemetrySourceAttribution,
   type ActiveExtensionHookContext,
   type ActiveTelemetryCommand,
   type ExtensionCommandRegistry,
@@ -496,8 +499,19 @@ async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): P
   }
 }
 
-async function ensureSentryForErrorReporting(): Promise<void> {
+async function ensureSentryForErrorReporting(attemptedCommand: string, bootstrapGlobal?: GlobalOptions): Promise<void> {
   await ensureSentryInit();
+  const runtime = activeTelemetryCommandContext;
+  const hook = activeExtensionHookContext;
+  const command = runtime?.command ?? hook?.commandName ?? attemptedCommand;
+  const attribution = runtime ?? resolveTelemetrySourceAttribution(hook?.globalOptions ?? bootstrapGlobal);
+  const source = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(command))?.source;
+  sentrySetCommandContext(command, hook?.commandArgs ?? [], { ...hook?.commandOptions, ...hook?.globalOptions }, {
+    source_context: attribution.source_context,
+    source_context_source: attribution.source_context_source,
+    pm_version: runtime?.pm_version ?? CLI_VERSION,
+    extension: source,
+  });
 }
 
 function envFlagEnabled(key: string): boolean {
@@ -520,12 +534,12 @@ async function maybeLogHandledCliErrorToSentry(params: {
   command_resolution?: TelemetryCommandResolution;
   resolution_stage?: TelemetryResolutionStage;
   source_context?: string;
-}): Promise<boolean> {
+}, bootstrapGlobal?: GlobalOptions): Promise<boolean> {
   if (!shouldLogHandledErrorToSentry(params.exit_code)) {
     return false;
   }
-  await ensureSentryForErrorReporting();
-  sentryLogCliUsageError(params);
+  await ensureSentryForErrorReporting(params.command, bootstrapGlobal);
+  sentryLogCliUsageError({ ...params, source_context: params.source_context ?? resolveTelemetrySourceAttribution(bootstrapGlobal).source_context });
   return true;
 }
 
@@ -548,7 +562,7 @@ async function handleGenericRunPmCliError(params: {
   const message = describeUnknownError(params.error);
   const classification = classifyUnknownError(message);
   if (params.bootstrapGlobal.json) {
-    printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
+    printError(JSON.stringify(attachPreflightWarnings(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE)), null, 2));
   } else {
     printError(message);
   }
@@ -557,7 +571,7 @@ async function handleGenericRunPmCliError(params: {
   let errorCategory: TelemetryErrorCategory = "runtime";
   let commandResolution: TelemetryCommandResolution = "runtime_failed";
   try {
-    await ensureSentryForErrorReporting();
+    await ensureSentryForErrorReporting(params.attemptedCommand, params.bootstrapGlobal);
     sentryCaptureCliError(params.error);
     const telemetry = await params.emitTelemetryCommandError({
       command: params.attemptedCommand,
@@ -793,7 +807,7 @@ function buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot: string): string 
 function emitSettingsReadWarnings(warnings: readonly string[]): void {
   for (const warning of warnings) {
     if (warning.startsWith("settings_read_")) {
-      printError(`[pm] warning: ${warning} — settings.json could not be loaded and pm fell back to defaults; run pm health for remediation.`);
+      emitPreflightWarning(warning, `[pm] warning: ${warning} — settings.json could not be loaded and pm fell back to defaults; run pm health for remediation.`);
     }
   }
 }
@@ -1086,14 +1100,7 @@ async function runRequiredExtensionCommand(
   }
   if (!extensionCommandResult.handled) {
     if (extensionCommandResult.warnings.length > 0) {
-      const warningCode = extensionCommandResult.warnings[0];
-      const cause = extensionCommandResult.errorMessage?.trim();
-      /* c8 ignore next */
-      const causeSuffix = cause ? ` ${cause}` : "";
-      throw new PmCliError(`Command "${commandPath}" failed in extension handler (${warningCode}).${causeSuffix}`, EXIT_CODE.GENERIC_FAILURE, {
-        code: extensionCommandResult.errorCode ?? "command_failed",
-        nextSteps: extensionCommandResult.remediation ? [extensionCommandResult.remediation] : undefined,
-      });
+      throw createExtensionCommandError(commandPath, extensionCommandResult);
     }
     throw new PmCliError(`Command "${commandPath}" is provided by extensions and is not currently available.`, EXIT_CODE.NOT_FOUND);
   }
@@ -1837,12 +1844,12 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   }
   const errorMessage = describeUnknownError(context.error);
   const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
-  const rawContext = context.error instanceof PmCliError ? context.error.context : undefined;
+  const rawContext = context.error instanceof PmCliError || isPmCliExpectedError(context.error) ? context.error.context : undefined;
   const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
   const classification = classifyPmCliError(errorMessage, enrichedContext);
-  const jsonErrorPayload = context.bootstrapGlobal.lean
+  const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean
     ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))
-    : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext);
+    : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext));
   const renderedError = context.jsonErrors
     ? JSON.stringify(
         context.bootstrapGlobal.tokenAccounting ? attachOutputTokenAccounting(jsonErrorPayload, (value) => `${JSON.stringify(value, null, 2)}\n`) : jsonErrorPayload,
@@ -1871,7 +1878,7 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
     command_resolution: commandResolution,
     resolution_stage: "execute",
     source_context: activeTelemetryCommandContext?.source_context,
-  });
+  }, context.bootstrapGlobal);
   await finishRunPmCliFailure({
     errorMessage,
     exitCode,
@@ -1931,7 +1938,7 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     error_message: classification.detail,
     command_resolution: commandResolution,
     resolution_stage: "parse",
-  });
+  }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
     ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors, context.bootstrapGlobal.lean === true, { failedExtensions }, context.invocationArgv)
     : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.invocationArgv);
@@ -1944,7 +1951,7 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     commandResolution,
     resolutionStage: "parse",
   });
-  if (context.jsonErrors) writeStderr(`${renderedUsage}\n`);
+  if (context.jsonErrors) writeStderr(`${attachSerializedPreflightWarnings(renderedUsage)}\n`);
   else printError(renderedUsage);
   if (loggedHandledErrorToSentry) {
     await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
@@ -1997,7 +2004,7 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     command_resolution: commandResolution,
     resolution_stage: "parse",
     source_context: activeTelemetryCommandContext?.source_context,
-  });
+  }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
     ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors, context.bootstrapGlobal.lean === true, {}, context.invocationArgv)
     : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.invocationArgv);
@@ -2016,7 +2023,7 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     commandResolution,
     resolutionStage: "parse",
   });
-  if (context.jsonErrors) writeStderr(`${renderedUsage}\n`);
+  if (context.jsonErrors) writeStderr(`${attachSerializedPreflightWarnings(renderedUsage)}\n`);
   else printError(renderedUsage);
   if (loggedHandledErrorToSentry) {
     await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
@@ -2227,13 +2234,13 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   const settingsPolicy = { configurationOnly: preview !== undefined };
   const isConfigurationOnly = (): boolean => settingsPolicy.configurationOnly;
   /** Keep bootstrap, execution and error cleanup within the selected settings policy. */
-  const runInvocation = async (): Promise<void> => {
+  const runInvocation = (): Promise<void> => runWithPreflightWarnings(parseBootstrapGlobalOptions(invocationArgv).json, async () => {
     try {
       await runWithReproducibleProcessEnvironment(process.env, () => runPmCliInReproducibleContext(rawArgv, settingsPolicy));
     } catch (error: unknown) {
       await handleRunPmCliError({ error, invocationArgv: [...rawArgv] });
     }
-  };
+  });
   if (preview !== undefined) {
     const bootstrapRoot = resolvePmRoot(process.cwd(), parseBootstrapGlobalOptions(invocationArgv).path);
     const actionRoot = resolvePmRoot(process.cwd(), preview.path);

@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Update Sentry CLI to 3.8.2 after seven-day cooldown ([pm-sentry-cli-382](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-sentry-cli-382.toon))
+
+### Fixed
+
+- GH-1609: recover killed commit owners and bound lock waits with a monotonic clock ([pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon))
+- GH-1624: define typed Unicode handling for extension output across JSON and TOON ([pm-gh1624](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1624.toon))
+- GH-1625: align extension-refusal Sentry capture with declared contracts and telemetry source context ([pm-gh1625](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1625.toon))
+- GH-1602: keep preflight warnings inside JSON error envelopes ([pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon))
+- Bound independent native receipt regression cases ([pm-native-index-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-native-index-proof.toon))
+- GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions ([pm-gh1558](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1558.toon))
+- GH-1622: investigate pm-presets SDK-loading fault blocking daily release ([pm-gh1622](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1622.toon))
+
 ## 2026.10.30 - 2026-10-30
 
 ### Added

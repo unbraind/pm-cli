@@ -12,6 +12,7 @@ import {
   acquireLockLease,
   captureProcessIdentity,
 } from "../../../../src/core/lock/lock.js";
+import { writeFileAtomic } from "../../../../src/core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { getHistoryPath, getLockPath } from "../../../../src/core/store/paths.js";
 import { deleteItem, locateItem, mutateItem } from "../../../../src/core/store/item-store.js";
@@ -20,6 +21,13 @@ import { distCliPath } from "../../../helpers/cliRunner.js";
 import { withTempDir } from "../../../helpers/temp.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import type { TempPmContext } from "../../../helpers/withTempPmPath.js";
+
+// Forward the named native export through the same fault boundary as default
+// imports so the real atomic writer and the fixture observe identical IO faults.
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, rename: (...args: Parameters<typeof actual.rename>) => actual.default.rename(...args) };
+});
 
 afterEach(() => {
   clearActiveExtensionHooks();
@@ -55,10 +63,33 @@ async function publishGeneration(pmRoot: string, id: string, owner: string): Pro
   const payload = await lockTestOnly.buildLockPayload(id, owner, 60);
   const lockPath = getLockPath(pmRoot, id);
   await fs.mkdir(path.dirname(lockPath), { recursive: true });
-  const tempPath = `${lockPath}.${payload.token}.tmp`;
-  await fs.writeFile(tempPath, `${JSON.stringify(payload)}\n`, "utf8");
-  await fs.rename(tempPath, lockPath);
+  await writeFileAtomic(lockPath, `${JSON.stringify(payload)}\n`);
 }
+
+it("publishes an atomic fixture generation across a transient Windows sharing violation", async () => {
+  await withTempDir("pm-generation-retry-", async (root) => {
+    await publishGeneration(root, "shared", "before");
+    const lockPath = getLockPath(root, "shared");
+    const before = await fs.readFile(lockPath, "utf8");
+    const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
+    const rename = fs.rename.bind(fs);
+    let attempts = 0;
+    try {
+      Object.defineProperty(process, "platform", { value: "win32" });
+      vi.spyOn(fs, "rename").mockImplementation(async (...args) => {
+        expect(await fs.readFile(lockPath, "utf8")).toBe(before);
+        if (++attempts === 1) throw Object.assign(new Error("sharing violation"), { code: "EPERM" });
+        return rename(...args);
+      });
+      await publishGeneration(root, "shared", "after");
+      expect(attempts).toBe(2);
+      expect(JSON.parse(await fs.readFile(lockPath, "utf8")).owner).toBe("after");
+      expect(await fs.readdir(path.dirname(lockPath))).toEqual(["shared.lock"]);
+    } finally {
+      Object.defineProperty(process, "platform", descriptor);
+    }
+  });
+});
 
 describe("lock lease fencing (GH-1549)", () => {
   it("refuses a stale commit after its expired lease is taken over and runs nothing", async () => {
@@ -119,10 +150,10 @@ describe("lock lease fencing (GH-1549)", () => {
         `${JSON.stringify({ ...(await captureProcessIdentity()), token: "live-gate-owner" })}\n`,
         "utf8",
       );
-      const realNow = Date.now.bind(Date);
+      const realNow = performance.now.bind(performance);
       let calls = 0;
       // Jump past the bounded gate wait after the first observation.
-      vi.spyOn(Date, "now").mockImplementation(() => realNow() + (calls++ === 0 ? 0 : 60_000));
+      vi.spyOn(performance, "now").mockImplementation(() => realNow() + (calls++ === 0 ? 0 : 60_000));
       const commit = vi.fn(async () => "written");
       await expect(lease.fence(commit)).rejects.toMatchObject({
         code: "lock_lost",
@@ -355,15 +386,18 @@ describe("progress-aware lock waiting (GH-1516)", () => {
         }
         await sleep(120);
         await fs.rm(getLockPath(root, "shared"));
-      })();
+      })().then(() => ({ ok: true }), (error: unknown) => ({ ok: false, error }));
       const startedAt = Date.now();
-      // The 1 s window tolerates event-loop stalls between handoffs yet is far
-      // shorter than the ~2 s queue, so a fixed deadline would refuse; each
-      // observed handoff restarts the window.
-      const lease = await acquireLockLease(root, "shared", 60, "waiter", false, false, 1_000, { waitPolicy: "progress" });
-      expect(Date.now() - startedAt).toBeGreaterThanOrEqual(1_800);
-      await handoffs;
-      await lease.release();
+      // The 1 s window remains shorter than the ~2 s queue.
+      let lease: Awaited<ReturnType<typeof acquireLockLease>> | undefined;
+      try {
+        lease = await acquireLockLease(root, "shared", 60, "waiter", false, false, 1_000, { waitPolicy: "progress" });
+        expect(Date.now() - startedAt).toBeGreaterThanOrEqual(1_800);
+      } finally {
+        const outcome = await handoffs;
+        await lease?.release();
+        expect(outcome).toEqual({ ok: true });
+      }
     });
   });
 
@@ -398,7 +432,7 @@ describe("progress-aware lock waiting (GH-1516)", () => {
           await sleep(60);
           await publishGeneration(root, "shared", `writer-${index}`);
         }
-      })();
+      })().then(() => ({ ok: true }), (error: unknown) => ({ ok: false, error }));
       try {
         const error = await acquireLockLease(root, "shared", 60, "waiter", false, false, 200, { maxWaitMs: 400, waitPolicy: "progress" }).catch(
           (caught: unknown) => caught,
@@ -409,7 +443,7 @@ describe("progress-aware lock waiting (GH-1516)", () => {
         expect(recovery.waited_ms).toBeLessThan(10_000);
       } finally {
         running = false;
-        await handoffs;
+        expect(await handoffs).toEqual({ ok: true });
       }
     });
   });
@@ -424,14 +458,14 @@ describe("progress-aware lock waiting (GH-1516)", () => {
           await sleep(60);
           await publishGeneration(root, "shared", `writer-${index}`);
         }
-      })();
+      })().then(() => ({ ok: true }), (error: unknown) => ({ ok: false, error }));
       try {
         const error = await acquireLockLease(root, "shared", 60, "waiter", false, false, 300).catch((caught: unknown) => caught);
         expect(error).toMatchObject({ code: "lock_conflict" });
         expect((error as { context: { recovery: { owner_handoffs: number } } }).context.recovery.owner_handoffs).toBeGreaterThan(0);
       } finally {
         running = false;
-        await handoffs;
+        expect(await handoffs).toEqual({ ok: true });
       }
     });
   });

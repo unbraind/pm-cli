@@ -448,3 +448,4 @@ export {
   finishTelemetryCommand,
   startTelemetryCommand,
 } from "../core/telemetry/runtime.js";
+export { resolveTelemetrySourceAttribution } from "../core/telemetry/policy.js";

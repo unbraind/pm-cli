@@ -116,9 +116,9 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
     });
   });
 
-  it("refuses ordinary audit writes until indexed proof matches and rolls back prepared receipts on failure", async () => {
+  it("refuses unstaged audit proof without writing history", async () => {
     await withTempPmPath(async (context) => {
-      const { git, scan, receipt, relative, receiptPath, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
+      const { scan, receipt, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
       expect(scan.durable_receipt_ids).not.toContain(receipt.id);
       expect(scan.unstaged_durable_receipt_ids).toContain(receipt.id);
       for (const options of [{}, { force: true }]) {
@@ -128,25 +128,52 @@ describe.each([false, true])("portable Git merge recovery (autocrlf: %s)", (auto
       const preview = await runMergeReconcile({ dryRun: true }, { path: context.pmPath });
       expect(preview.receipts.unstaged_durable_receipt_ids).toContain(receipt.id);
       expect(await readFile(historyPath, "utf8")).toBe(before);
+    });
+  });
 
+  it.each(["malformed", "empty", "identity", "timestamp"] as const)("refuses %s indexed proof despite a valid worktree receipt", async (variant) => {
+    await withTempPmPath(async (context) => {
+      const { git, receipt, relative, receiptPath, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
       const valid = await readFile(receiptPath, "utf8");
-      for (const invalidIndex of ["not a receipt\n", "{}", JSON.stringify({ ...JSON.parse(valid), id: randomUUID() }), JSON.stringify({ ...JSON.parse(valid), created_at: "2026-01-01T00:00:00.000Z" })]) {
-        await writeFile(receiptPath, invalidIndex); git("add", relative);
-        await writeFile(receiptPath, valid);
-        expect((await inspectMergeReceiptEvidence(context.tempRoot)).durable_receipt_ids).not.toContain(receipt.id);
-        await expect(runMergeReconcile({}, { path: context.pmPath })).rejects.toMatchObject({ context: { code: "merge_receipt_not_portable" } });
-        expect(await readFile(historyPath, "utf8")).toBe(before);
-      }
-      await expect(runMergeReconcile({ stage: true }, { path: context.pmPath })).rejects.toMatchObject({ context: { code: "merge_settlement_review_required" } });
-      git("reset", "--quiet", "--", relative);
+      const invalidIndex = {
+        malformed: "not a receipt\n",
+        empty: "{}",
+        identity: JSON.stringify({ ...JSON.parse(valid), id: randomUUID() }),
+        timestamp: JSON.stringify({ ...JSON.parse(valid), created_at: "2026-01-01T00:00:00.000Z" }),
+      }[variant]!;
+      await writeFile(receiptPath, invalidIndex); git("add", relative);
+      await writeFile(receiptPath, valid);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).durable_receipt_ids).not.toContain(receipt.id);
+      await expect(runMergeReconcile({}, { path: context.pmPath })).rejects.toMatchObject({ context: { code: "merge_receipt_not_portable" } });
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+      await expect(runMergeReconcile({ stage: true }, { path: context.pmPath })).rejects.toMatchObject({ message: expect.stringContaining("reconciliation paths have unstaged edits"), context: { code: "merge_settlement_review_required" } });
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+    });
+  });
 
+  it("rolls back prepared proof on audit failure while preserving unrelated staged work", async () => {
+    await withTempPmPath(async (context) => {
+      const { git, receipt, relative, receiptPath, historyPath, before } = await createUnstagedReceiptFixture(context, autocrlf);
+      const valid = await readFile(receiptPath, "utf8");
+      const preview = await runMergeReconcile({ dryRun: true }, { path: context.pmPath });
       await writeFile(path.join(context.tempRoot, "preserve.txt"), "Unrelated staged work\n"); git("add", "preserve.txt");
       const priorIndex = git("diff", "--cached", "--raw", "-z");
       await expect(stageLosslessMergeReconciliation({ preview, dryRun: false, global: { path: context.pmPath }, apply: async () => { throw new Error("blocked audit"); } })).rejects.toThrow("blocked audit");
       expect(git("diff", "--cached", "--raw", "-z")).toBe(priorIndex);
       expect(git("ls-files", "--", relative)).toBe("");
       expect(await readFile(historyPath, "utf8")).toBe(before);
+      expect(await readFile(receiptPath, "utf8")).toBe(valid);
+      git("add", relative);
+      expect((await inspectMergeReceiptEvidence(context.tempRoot)).durable_receipt_ids).toContain(receipt.id);
+      expect((await runMergeReconcile({ stage: true }, { path: context.pmPath })).ok).toBe(true);
+      expect(git("diff", "--cached", "--name-only")).toContain("preserve.txt");
+    });
+  });
 
+  it("settles indexed proof through a junction while preserving unrelated staged work", async () => {
+    await withTempPmPath(async (context) => {
+      const { git, receipt, relative } = await createUnstagedReceiptFixture(context, autocrlf);
+      await writeFile(path.join(context.tempRoot, "preserve.txt"), "Unrelated staged work\n"); git("add", "preserve.txt");
       git("add", relative);
       expect((await inspectMergeReceiptEvidence(context.tempRoot)).durable_receipt_ids).toContain(receipt.id);
       const alias = path.join(context.tempRoot, ".git", "tracker-alias");

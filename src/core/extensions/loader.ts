@@ -1470,6 +1470,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
       }
 
       const registration: RegisteredExtensionCommandDefinition = {
+        source_version: this.#loadedExtension.version,
         read_output: readOutput,
         layer: this.#loadedExtension.layer,
         name: this.#loadedExtension.name,
@@ -1973,6 +1974,7 @@ class ExtensionApiRegistrar implements ExtensionApi {
     this.registerImportExportCommandFlags(method, commandPath, resolvedOptions);
 
     const registration: RegisteredExtensionCommandDefinition = {
+      source_version: this.#loadedExtension.version,
       layer: this.#loadedExtension.layer,
       name: this.#loadedExtension.name,
       source_package: this.#loadedExtension.source_package,

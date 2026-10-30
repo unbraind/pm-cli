@@ -6,7 +6,8 @@
 import { createRequire } from "node:module";
 import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
-import { resolveTelemetryEnvironmentPolicy } from "../telemetry/policy.js";
+import { resolveTelemetryEnvironmentPolicy, resolveTelemetrySourceAttribution } from "../telemetry/policy.js";
+import { isPmCliExpectedError } from "../../sdk/errors.js";
 import { scrubInlineSensitiveAssignments, SENSITIVE_KEY_PATTERN } from "./sensitive-assignments.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -232,7 +233,8 @@ function isExpectedCliErrorEvent(event: {
   message?: string;
   extra?: Record<string, unknown>;
   logger?: string;
-}): boolean {
+}, originalException?: unknown): boolean {
+  if (originalException instanceof Error) return isPmCliExpectedError(originalException);
   if (event.exception?.values?.some((ex) => ex.type === "PmCliError"))
     return true;
 
@@ -289,7 +291,8 @@ function resolveEnvironment(): string {
   )
     return "test";
   if (process.env.CI) return "ci";
-  return "production";
+  const source = resolveTelemetrySourceAttribution().source_context;
+  return source === "user" ? "production" : source;
 }
 
 const DEFAULT_TRACES_SAMPLE_RATE = 0.2;
@@ -373,8 +376,22 @@ function scrubSentryRecordField(event: object, key: string): void {
   }
 }
 
-const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event) => {
-  if (isExpectedCliErrorEvent(event) || isKnownNoisyConsoleEvent(event)) return null;
+/** Resolve command environments consistently for event tags and log attributes. */
+function sourceContextEnvironment(source: unknown): string | undefined {
+  if (process.env.SENTRY_ENVIRONMENT?.trim()) return undefined;
+  if (source === "automation" || source === "test" || source === "dogfood" || source === "user") return source === "user" ? "production" : source;
+  return undefined;
+}
+
+/** Apply command attribution after scope tags merge, preserving explicit environment configuration. */
+function applySourceContextEnvironment(event: { environment?: string; tags?: Record<string, unknown> }): void {
+  const environment = sourceContextEnvironment(event.tags?.["pm.source_context"]);
+  if (environment) event.environment = environment;
+}
+
+const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event, hint) => {
+  if (isExpectedCliErrorEvent(event, hint?.originalException) || isKnownNoisyConsoleEvent(event)) return null;
+  applySourceContextEnvironment(event);
   if (isNodeRuntimeWarningEvent(event)) {
     event.level = "warning";
     event.tags = {
@@ -393,6 +410,7 @@ const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event) => {
 };
 
 const beforeSendTransaction: NonNullable<NodeOptions["beforeSendTransaction"]> = (event) => {
+  applySourceContextEnvironment(event);
   if (event.breadcrumbs) {
     event.breadcrumbs = event.breadcrumbs.filter(
       (breadcrumb) => !isPmCliErrorBreadcrumb(breadcrumb) && !isKnownNoisyConsoleBreadcrumb(breadcrumb),
@@ -411,9 +429,19 @@ const beforeSendSpan: Parameters<SentryLike["withStreamedSpan"]>[0] = (span) => 
 /** Apply the same privacy boundary to usage logs, which bypass event hooks. */
 const beforeSendLog: NonNullable<NodeOptions["beforeSendLog"]> = (log) => {
   log.message = scrubString(log.message);
-  if (log.attributes) log.attributes = scrubEventData(log.attributes) as typeof log.attributes;
+  if (log.attributes) {
+    const environment = sourceContextEnvironment(log.attributes["pm.source_context"]);
+    if (environment) log.attributes["sentry.environment"] = environment;
+    log.attributes = scrubEventData(log.attributes) as typeof log.attributes;
+  }
   return log;
 };
+
+/** Attribute serialized log environments after the SDK merges scope attributes. */
+function applySerializedLogEnvironment(attributes: NonNullable<LogEnvelopeItem[1]["items"][number]["attributes"]>): void {
+  const environment = sourceContextEnvironment(attributes["pm.source_context"]?.value);
+  if (environment) attributes["sentry.environment"] = { type: "string", value: environment };
+}
 
 /** Scrub complete serialized logs after the SDK merges scope attributes. */
 function scrubSentryLogEnvelope(envelope: SentryEnvelope): void {
@@ -423,6 +451,7 @@ function scrubSentryLogEnvelope(envelope: SentryEnvelope): void {
       log.body = scrubString(log.body);
       const attributes = log.attributes;
       if (!attributes) continue;
+      applySerializedLogEnvironment(attributes);
       for (const [key, attribute] of Object.entries(attributes)) {
         const value = scrubEventData({ [key]: attribute.value })[key];
         if (typeof value === "string") attributes[key] = { type: "string", value };
@@ -478,7 +507,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     serverName: undefined,
 
     integrations: [
-      SentryModule.extraErrorDataIntegration({ depth: 4 }),
+      SentryModule.extraErrorDataIntegration({ depth: 4, captureErrorCause: false }),
       SentryModule.captureConsoleIntegration({ levels: ["warn", "error"] }),
     ],
 
@@ -501,6 +530,12 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 
   const client = SentryModule.getClient();
   if (!client) return undefined;
+  // Mutable command defaults belong to the isolation scope. Initial/current
+  // scope values would shadow subsequent setTag/setAttribute command updates.
+  const attribution = resolveTelemetrySourceAttribution();
+  SentryModule.setTags({ "pm.version": release, "pm.source_context": attribution.source_context,
+    "pm.source_context_source": attribution.source_context_source });
+  SentryModule.setAttribute("pm.source_context", attribution.source_context);
   client.on("beforeEnvelope", scrubSentryLogEnvelope);
   _sentry = SentryModule;
   return SentryModule;

@@ -3,6 +3,7 @@
  * Provides the public client and coordinates isolated extension lifecycles.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { createExtensionCommandError } from "./error-runtime.js";
 import { capturePmCommandScope } from "./command-line.js";
 import {
   createEmptyExtensionCommandRegistry,
@@ -2830,6 +2831,7 @@ async function dispatchActiveExtensionAction(
     ),
   });
   if (!handlerResult.handled) {
+    if (Object.hasOwn(handlerResult, "cause")) throw createExtensionCommandError(command, handlerResult);
     const suffix =
       handlerResult.warnings.length > 0
         ? ` (${handlerResult.warnings.join(", ")})`

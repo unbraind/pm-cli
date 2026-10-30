@@ -13,6 +13,7 @@ describe("package read-output transport parity", () => {
           read_output: { row_keys: ['items'] }, run: () => ({ items: Array.from({length: 8}, (_, i) => ({ id: 'row-' + i, title: 'Title ' + i, detail: 'x'.repeat(1000) })), count: 8, total: 8 }) });
         api.registerCommand({ name: 'probe singleton', read_output: { row_keys: [] }, run: () => ({ ok: true, message: 'single' }) });
         api.registerCommand({ name: 'probe write', run: () => ({ ok: true }) });
+        api.registerCommand({ name: 'probe fault', run: () => { throw new Error('provider defect'); } });
         api.registerCommand({ name: 'list-writer', run: () => ({ ok: true }) });
         api.registerFlags('probe rows', [{long:'--output-style', value_type:'string'}]);
         api.registerCommand({ name: 'collision', action: 'other-action', run: () => ({source:'path'}) });
@@ -26,6 +27,7 @@ describe("package read-output transport parity", () => {
         expect(output.read_output.command).toBe(`extension:${path.join(" ")}`);
       }
       const client = new PmClient({ pmRoot: context.pmPath });
+      await expect(client.run("probe-fault")).rejects.toMatchObject({ name: "ExtensionCommandError", exitCode: 1, code: "command_failed", cause: expect.objectContaining({ message: "provider defect" }) });
       const inProcess = await context.runCliInProcess(["probe", "rows", "--output-limit", "1", "--output-budget", "unbounded", "--json"], { expectJson: true });
       expect(inProcess.code, inProcess.stderr).toBe(0);
       expect((inProcess.json as {items: unknown[]}).items).toHaveLength(1);

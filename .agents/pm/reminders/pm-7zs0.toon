@@ -6,16 +6,16 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-28T15:49:25.843Z"
+updated_at: "2026-10-30T17:18:07.453Z"
 reminders[1]{at,text}:
-  "2026-10-29T06:00:00.000Z",Verify the next eligible daily release and supported consumers after PR1616
+  "2026-10-31T06:00:00.000Z",Verify the next daily release and npm/npx/Bun/bunx consumers; retain pm-gh1622 until installed-producer remediation and publication are verified
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "At October29 06:00UTC verify the next eligible daily cut against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
+expected_result: "At October 31 06:00 UTC verify the next eligible daily cut against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
 actual_result: "October28 morning Auto Release40628452727 and Release40631211289 succeed. Exactly v2026.10.28 is published; independent registry integrity, actual npx/bunx, all bins, MCP Skills/Apps and HTTP acceptance pass. This immutable release precedes PR1616 SDK changes. Fresh real read spans are accepted/indexed in Sentry; required observability gate passes with zero unresolved issues, zero missing error codes and5.91percent finish-error rate. Recent installation-scoped telemetry has28 matched starts/finishes, zero settled mismatches and empty broker queue. Historical reliability remains separate."
 dependencies[14]:
   - id: pm-7n5a
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[250]:
+comments[257]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -844,6 +844,27 @@ comments[250]:
   - created_at: "2026-10-28T15:49:25.842Z"
     author: "harness:codex"
     text: Latest Release Reliability run40713600220 remains red at the rolling nightly recurrence step even though the publisher and public consumer verifier succeeded. The measurement implementation owner pm-2zjs0g is closed and remains completed. Historical original-attempt failures and sample sufficiency are not erased by current successful release evidence; retained GitHub nightly issue lineages remain linked.
+  - created_at: "2026-10-29T07:33:56.363Z"
+    author: "harness:codex"
+    text: "2026-10-29 live audit: Auto Release run 40813895480 failed at sentry-telemetry-gate before a new release. GitHub issue #1622 and Sentry PM-CLI-3Q (156996397) identify pm-presets SimulationRefusal sdk_unavailable, first seen 03:07Z, last seen 03:11Z, two events. Separate package fault investigation required; no gate bypass or alert resolution performed. GitHub has zero open PRs and zero open Dependabot, code-scanning or secret-scanning alerts. All 38 open GitHub issues inspected for PM links; only newly created #1622 lacked one."
+  - created_at: "2026-10-29T07:43:31.423Z"
+    author: "harness:codex"
+    text: "Public-distribution verifier passed for existing release2026.10.28: npm integrity, npx and bunx executors, all declared bins, MCP surfaces and negative controls, plus nondraft/nonprerelease GitHub release. This confirms the existing published release only; it predates the lock-recovery branch and today Auto Release remains separately blocked by PM-CLI-3Q."
+  - created_at: "2026-10-29T09:28:10.108Z"
+    author: "harness:codex"
+    text: "Fresh opt-in Sentry tracing is verified for a real context command: pm.command span8977cba2deef6fa2 started2026-10-29T09:25:31Z with duration7973ms. Querying recent spans without the earlier incorrect field filter returns the record. Telemetry flush at the same checkpoint drained its queued event to zero. The separate unresolved PM-CLI-3Q package fault still blocks release; upstream pm-presets PR170 remains open at a251c073."
+  - created_at: "2026-10-29T09:51:46.134Z"
+    author: "harness:codex"
+    text: "Final source-head observability check on October 29 retained access to Sentry and production telemetry. Sentry has zero critical and one high event group, PM-CLI-3Q, still blocking release under canonical pm-gh1622. Required telemetry mode passes: seven-day finish error rate 5.86 percent and zero failures missing error codes. A fresh real context command span was verified earlier at 09:25:31 UTC. No event was fabricated, suppressed or resolved to clear the gate."
+  - created_at: "2026-10-29T10:05:16.856Z"
+    author: "harness:codex"
+    text: "CodeRabbit reminder review addressed through pm update: next release-health occurrence is October 30 at 06:00 UTC. The October 28 actual_result remains a historical release receipt; append-only October 29 comments retain the current Sentry blocker and current telemetry evidence."
+  - created_at: "2026-10-29T10:35:43.003Z"
+    author: "harness:codex"
+    text: "After final source 7aef94d8a, a real context invocation at 10:30:04 UTC produced Sentry span 9177319b593ddd55 (pm.command, pm context). Production telemetry contains its matched start/finish pair at 10:30:16 UTC; the two other recent context sessions also have one start and one finish each. Explicit flush drained one pending entry to zero at 10:30:17 UTC, and the broker reported zero messages, ready messages and unacknowledged messages. This delivery proof does not resolve the separate PM-CLI-3Q release fault."
+  - created_at: "2026-10-30T08:48:39.145Z"
+    author: "harness:codex"
+    text: "October30 checkpoint: dispatcher run40999107873 at03:45UTC failed before publication on PM-CLI-3Q unexpected_fault; npm and latest GitHub release remain2026.10.28. The existing pm-gh1622 owns the blocker. Upstream PR170 handoff is now actively resumed and its runtime validation passes323 tests with100% across35 required source files; publication and installed-producer remediation are still pending. Rearmed exactly one daily reminder for2026-10-31T06:00Z; today recovery continues in the active release work."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

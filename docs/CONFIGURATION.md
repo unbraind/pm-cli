@@ -110,7 +110,43 @@ capture an opaque boot/PID-namespace coordinate and the owner's process start
 tick. A matching host can reclaim a provably dead original owner before TTL,
 including when its PID has been reused. Foreign hosts, legacy receipts, denied
 process probes and unavailable identity remain subject to the existing TTL
-policy. Early recovery writes an immutable `locks/recoveries/*.json` intent
+policy. A commit gate with a provably dead same-host owner can also be recovered
+immediately, before its ordinary age threshold. Its original owner receipt is
+retained in `locks/recoveries/gate-<generation-hash>/owner.json`. These nonempty
+generation directories prevent concurrent recoverers from retiring a replacement
+gate and must be retained while writers may still hold observations of that
+generation. Recovery after the age grace requires a dead PID or verified PID
+reuse for a readable owner, and uses the same retained generation protocol.
+A live PID with unavailable start identity keeps its gate regardless of age;
+elapsed time alone cannot safely distinguish a paused writer from abandonment.
+Recorded host coordinates must be verified before recovery; a recorded foreign
+host or unavailable recorded host evidence cannot be replaced by a local PID
+comparison. Legacy receipts without `host_identity` use a local PID probe after
+the grace period. On shared storage, that probe can retire a gate owned by a
+writer on another host whose PID appears dead locally; these legacy receipts
+do not provide cross-host recovery safety.
+Non-missing owner-file read errors also retain the gate regardless of age.
+Lock wait durations use a monotonic clock independently of the
+wall-clock timestamps used for TTL policy. This recovery is tracked by
+[pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon)
+(repository tracker record excluded from npm).
+
+If a reboot, PID-namespace change or tracker relocation leaves an unverifiable
+`locks/<lock-file>.stale-cleanup` gate, automatic age-based recovery intentionally
+refuses it. `pm gc --scope locks` does not remove these gate directories.
+For manual recovery, first stop every CLI, MCP server, watcher and service that
+can write this tracker, including writers on other hosts when storage is shared.
+Independently establish that the recorded original owner cannot still run; a
+different host hash or an old timestamp alone is insufficient. While exclusive
+access is maintained, preserve the complete gate directory and its `owner.json`
+receipt by moving it to a unique backup location outside `locks`, without
+overwriting any existing backup. Keep `locks/recoveries` evidence intact. Then
+retry the original command, run `pm health --check-only`, and verify the affected
+item's history with `pm history <id> --verify --strict-exit`. If exclusive access
+or owner death cannot be established, retain the gate and investigate ownership.
+This procedure does not override the remaining lease's TTL or ownership checks.
+
+Early recovery writes an immutable `locks/recoveries/*.json` intent
 receipt before removal; it records the original owner and is an attempted
 recovery audit, not proof that a later mutation committed. Keep these local
 runtime receipts out of version control.
@@ -389,6 +425,16 @@ pm get <id> --json
 pm get <id> --full --json
 pm contracts --json
 ```
+
+With JSON output, preflight advisories are deferred until the command outcome.
+A failed command includes their stable codes in the error envelope's `warnings`
+array on stderr, preserving one parseable error and its original exit code.
+Additional explanatory or remediation text is retained in `warning_details`.
+A successful command emits one `{ "type": "warning", "warnings": [...] }`
+diagnostic on stderr when needed; its result remains on stdout. Human output
+keeps immediate warning text. See
+[pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon)
+(repository tracker record excluded from npm).
 
 `--output-format json|toon` selects encoding on both reads and mutations.
 Item collection and lifecycle commands accept `--format json|toon` as a

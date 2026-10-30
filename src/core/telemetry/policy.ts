@@ -10,6 +10,23 @@ const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood"] as const;
 const SOURCE_CONTEXTS = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
 
+/** Resolve privacy-bounded execution attribution without consent, identity or network work. */
+export function resolveTelemetrySourceAttribution(
+  options: { json?: boolean; quiet?: boolean } = {},
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  interactive = process.stdin.isTTY === true && process.stdout.isTTY === true,
+): { source_context: typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES[number]; source_context_source: "env_override" | "inferred" | "env_override_rejected" } {
+  const override = (env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim().toLowerCase();
+  if (SOURCE_CONTEXTS.has(override)) return {
+    source_context: override as typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES[number],
+    source_context_source: "env_override",
+  };
+  const source = override ? "env_override_rejected" : "inferred";
+  if (isTelemetryTestEnvironment(env)) return { source_context: "test", source_context_source: source };
+  const automated = !interactive || telemetryEnvironmentFlag("CI", env) || options.json === true || options.quiet === true;
+  return { source_context: automated ? "automation" : "user", source_context_source: source };
+}
+
 /** Share native and package test signals across consent, attribution and flush lifetime. */
 export function isTelemetryTestEnvironment(
   env: Readonly<Record<string, string | undefined>> = process.env,

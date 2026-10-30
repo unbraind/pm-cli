@@ -23,6 +23,7 @@ import {
   locateItem,
   readLocatedItem,
 } from "../sdk/runtime-primitives.js";
+import { emitPreflightWarning, resolvePreflightJsonMode } from "./preflight-warnings.js";
 /** Documents the mandatory migration blocker payload exchanged by command, SDK, and package integrations. */
 export interface MandatoryMigrationBlocker {
   /** Value that configures or reports layer for this contract. */
@@ -330,7 +331,7 @@ async function warnForUnclaimedInProgressUpdate(
 
 /**
  * Apply SDK-owned provenance and secret policy to one parsed CLI invocation.
- * Advisory output is stderr-only so JSON/TOON result envelopes stay unchanged.
+ * Advisories use invocation diagnostics so JSON failures remain parseable.
  */
 export async function enforceMutationGuardPreflight(
   commandPath: string,
@@ -347,7 +348,7 @@ export async function enforceMutationGuardPreflight(
     return;
   }
   const settings = await readSettingsWithMetadata(pmRoot);
-  if (global.json !== true) {
+  if (!resolvePreflightJsonMode(global.json === true)) {
     await warnForUnclaimedInProgressUpdate(
       commandPath,
       commandArgs,
@@ -363,7 +364,7 @@ export async function enforceMutationGuardPreflight(
     force: global.force === true || options.force === true,
   });
   for (const warning of result.warnings) {
-    printError(`warning:${warning}`);
+    emitPreflightWarning(warning);
   }
 }
 
@@ -419,7 +420,7 @@ export async function enforceItemFormatWriteGateAndPreflightMigration(
   const { settings, metadata, warnings } =
     await readSettingsWithMetadata(pmRoot);
   for (const warning of warnings) {
-    printError(`warning:${warning}`);
+    emitPreflightWarning(warning);
   }
   if (decision.enforce_item_format_gate && !metadata.has_explicit_item_format) {
     persistSelectedItemFormat(settings);

@@ -20,6 +20,7 @@ vi.mock("node:module", async (importOriginal) => {
 });
 
 import { _testOnly } from "../../../src/cli/main.js";
+import { emitPreflightWarning, runWithPreflightWarnings } from "../../../src/cli/preflight-warnings.js";
 import {
   clearActiveExtensionHooks,
   getActiveCommandResult,
@@ -906,14 +907,54 @@ describe("CLI bootstrap and usage helper tails", () => {
 });
 
 describe("CLI settings-read warning surfacing", () => {
-  it("surfaces settings_read_invalid_schema on stderr while keeping stdout JSON clean", async () => {
+  it.each(["usage", "help"])("accounts for preflight warnings emitted by the %s refusal handler", async (kind) => {
+    await withTempPmPath(async (context) => {
+      const previousExitCode = process.exitCode;
+      const invocationArgv = kind === "help"
+        ? ["--no-extensions", "missing-help-target", "--help", "--json", "--token-accounting"]
+        : ["--no-extensions", "list", "--definitely-missing", "--json", "--token-accounting"];
+      const errorContext = {
+        error: { message: "error: unknown option '--definitely-missing'" }, invocationArgv,
+        bootstrapGlobal: parseBootstrapGlobalOptions(invocationArgv), jsonErrors: true,
+        bootstrapPmRoot: context.pmPath, attemptedCommand: "list",
+        emitTelemetryCommandError: async () => ({ errorCategory: "usage", commandResolution: "invalid_usage" }),
+      };
+      try {
+        const stderr = await captureStderrAsync(() => runWithPreflightWarnings(true, async () => {
+          emitPreflightWarning("settings_read_invalid_schema", "Run pm health for remediation.");
+          if (kind === "help") await _testOnly.handleUnknownHelpCommandError(errorContext as never, "commander.helpDisplayed");
+          else await _testOnly.handleRunPmCliCommanderUsageError(errorContext as never, "commander.unknownOption");
+        }));
+        expect(process.exitCode).toBe(EXIT_CODE.USAGE);
+        const { token_accounting: accounting, ...payload } = JSON.parse(stderr);
+        expect(payload.warnings).toContain("settings_read_invalid_schema");
+        expect(payload.warning_details).toEqual(expect.arrayContaining([expect.objectContaining({ code: "settings_read_invalid_schema" })]));
+        const bytes = Buffer.byteLength(`${JSON.stringify(payload, null, 2)}\n`);
+        expect(accounting.total_bytes).toBe(bytes);
+        expect(accounting.accounting_receipt_bytes).toBe(Buffer.byteLength(stderr) - bytes);
+      } finally { process.exitCode = previousExitCode; }
+    });
+  });
+
+  it.each([
+    ["--json"],
+    ["--output-format", "json"],
+    ["--format", "json"],
+    ["--format=JSON"],
+    ["--format", " json "],
+  ])("preserves structured settings warnings with JSON output flags %j", async (...flags) => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       await writeFile(settingsPath, `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`, "utf8");
 
-      const result = context.runCli(["list", "--json"], { expectJson: true });
+      const result = context.runCli(["list", ...flags], { expectJson: true });
       expect(result.stderr).toContain("settings_read_invalid_schema");
       expect(result.stderr).toContain("run pm health for remediation");
+      expect(JSON.parse(result.stderr)).toMatchObject({
+        type: "warning",
+        warnings: ["settings_read_invalid_schema"],
+        warning_details: [{ code: "settings_read_invalid_schema", message: expect.stringContaining("run pm health for remediation") }],
+      });
       // stdout stays clean machine-readable JSON despite the stderr warning.
       expect(result.code).toBe(0);
       expect(result.stdout).not.toContain("settings_read_invalid_schema");
@@ -1297,6 +1338,39 @@ describe("CLI bootstrap entrypoints", () => {
       exit_code: EXIT_CODE.USAGE,
       recovery: { missing_required_fields: ["PM_SEED"] },
     });
+  });
+
+  it("attributes early machine-readable failures on a TTY using their bootstrap flags", async () => {
+    const previousEnv = process.env;
+    const previousExitCode = process.exitCode;
+    const descriptors = [process.stdin, process.stdout].map((stream) => Object.getOwnPropertyDescriptor(stream, "isTTY"));
+    const helpers = await import("../../../src/core/sentry/helpers.js");
+    const contextSpy = vi.spyOn(helpers, "sentrySetCommandContext").mockImplementation(() => {});
+    const logSpy = vi.spyOn(helpers, "sentryLogCliUsageError").mockImplementation(() => {});
+    try {
+      process.env = { ...previousEnv, PM_SENTRY_DISABLED: "1", PM_TELEMETRY_DISABLED: "1" };
+      for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_TEST_CONTEXT", "NODE_ENV", "CI", "PM_TELEMETRY_SOURCE_CONTEXT"]) delete process.env[key];
+      for (const stream of [process.stdin, process.stdout]) Object.defineProperty(stream, "isTTY", { configurable: true, value: true });
+      for (const bootstrapGlobal of [{ json: true }, { quiet: true }]) {
+        await captureStderrAsync(() => _testOnly.handleGenericRunPmCliError({
+          error: new Error("early failure"), attemptedCommand: "probe", bootstrapGlobal: bootstrapGlobal as never,
+          emitTelemetryCommandError: async () => ({ errorCategory: "runtime", commandResolution: "runtime_failed" }),
+        }));
+        expect(contextSpy).toHaveBeenLastCalledWith("probe", [], {}, expect.objectContaining({ source_context: "automation" }));
+        await _testOnly.maybeLogHandledCliErrorToSentry({ command: "probe", error_code: "early_fault", error_category: "runtime", exit_code: 1, error_message: "early failure" }, bootstrapGlobal as never);
+        expect(logSpy).toHaveBeenLastCalledWith(expect.objectContaining({ source_context: "automation" }));
+      }
+    } finally {
+      contextSpy.mockRestore();
+      logSpy.mockRestore();
+      process.env = previousEnv;
+      process.exitCode = previousExitCode;
+      [process.stdin, process.stdout].forEach((stream, index) => {
+        const descriptor = descriptors[index];
+        if (descriptor) Object.defineProperty(stream, "isTTY", descriptor);
+        else delete (stream as { isTTY?: boolean }).isTTY;
+      });
+    }
   });
 
   it("renders generic runPmCli failures through JSON and display handlers", async () => {

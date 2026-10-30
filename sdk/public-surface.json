@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2024,
+    "covered_symbols": 2026,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2025
+    "required_symbols": 2027
   },
   "breaking_acknowledgements": [
     {
@@ -2879,6 +2879,22 @@
       ],
       "package_version": "2026.10.28",
       "reason": "Host-bound batch and recovery additions retain existing calls; preview receipt constructors must supply records, and journal readers must recognize version 2 retirement fences."
+    },
+    {
+      "changes": [
+        "signature ./sdk:RegisteredExtensionCommandDefinition",
+        "signature ./sdk:sentrySetCommandContext"
+      ],
+      "package_version": "2026.10.28",
+      "reason": "Add optional command manifest version and Sentry attribution metadata plus output Unicode helpers; existing callers remain valid and public consumers are verified."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CommandHandlerResult",
+        "signature ./sdk/authoring:CommandHandlerResult"
+      ],
+      "package_version": "2026.10.28",
+      "reason": "Add optional handler cause and command/Sentry provenance fields, expose Unicode and pure attribution helpers, and preserve unexpected extension faults as structured runtime failures across hosts."
     }
   ],
   "entrypoints": {
@@ -3976,6 +3992,12 @@
           "kind": "function",
           "name": "assertTestMeasurementRun",
           "signature": "(id: string, options: TestCommandOptions, global: GlobalOptions, pmRoot: string, background?: boolean) => void | calls: (id: string, options: TestCommandOptions, global: GlobalOptions, pmRoot: string, background?: boolean) => void"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "assertWellFormedOutputText",
+          "signature": "(value: unknown) => void | calls: (value: unknown) => void"
         },
         {
           "classification": "supported",
@@ -5475,7 +5497,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandHandlerResult",
-          "signature": "export interface CommandHandlerResult { handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; exitCode?: number; errorCode?: string; remediation?: string; }"
+          "signature": "export interface CommandHandlerResult { readonly cause?: unknown; handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; exitCode?: number; errorCode?: string; remediation?: string; }"
         },
         {
           "classification": "advanced_export",
@@ -6316,6 +6338,12 @@
           "kind": "function",
           "name": "createEmptyExtensionRegistrationRegistry",
           "signature": "() => ExtensionRegistrationRegistry | calls: () => ExtensionRegistrationRegistry"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "createExtensionCommandError",
+          "signature": "(command: string, result: Pick<CommandHandlerResult, \"cause\" | \"errorCode\" | \"errorMessage\" | \"remediation\" | \"warnings\">) => ExtensionCommandError | calls: (command: string, result: Pick<CommandHandlerResult, \"warnings\" | \"errorMessage\" | \"errorCode\" | \"remediation\" | \"cause\">) => ExtensionCommandError"
         },
         {
           "classification": "advanced_export",
@@ -8194,6 +8222,12 @@
           "kind": "interface",
           "name": "ExtensionCommandClaimant",
           "signature": "export interface ExtensionCommandClaimant { name: string; layer: ExtensionLayer; winner: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "class",
+          "name": "ExtensionCommandError",
+          "signature": "export declare class ExtensionCommandError extends PmCliError { constructor(message: string, context: PmCliErrorContext, cause: unknown); }"
         },
         {
           "classification": "advanced_export",
@@ -16419,7 +16453,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "RegisteredExtensionCommandDefinition",
-          "signature": "export interface RegisteredExtensionCommandDefinition { read_output?: ExtensionCommandReadOutput; layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
+          "signature": "export interface RegisteredExtensionCommandDefinition { source_version?: string; read_output?: ExtensionCommandReadOutput; layer: ExtensionLayer; name: string; source_package?: string; command: string; action: string; description?: string; intent?: string; examples: string[]; failure_hints: string[]; arguments: ExtensionCommandArgumentDefinition[]; tier?: \"core\" | \"standard\" | \"full\" | \"internal\"; family?: ExtensionCommandCapabilityFamily; }"
         },
         {
           "classification": "supported",
@@ -18172,6 +18206,12 @@
           "kind": "function",
           "name": "resolveTelemetryErrorCategory",
           "signature": "(errorCode: string | undefined) => TelemetryErrorCategory | calls: (errorCode: string | undefined) => TelemetryErrorCategory"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveTelemetrySourceAttribution",
+          "signature": "(options?: { json?: boolean; quiet?: boolean; }, env?: Readonly<Record<string, string | undefined>>, interactive?: boolean) => { source_context: (typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES)[number]; source_context_source: \"env_override_rejected\" | \"env_override\" | \"inferred\"; } | calls: (options?: { json?: boolean; quiet?: boolean; }, env?: Readonly<Record<string, string | undefined>>, interactive?: boolean) => { source_context: (typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES)[number]; source_context_source: \"env_override\" | \"inferred\" | \"env_override_rejected\"; }"
         },
         {
           "classification": "advanced_export",
@@ -19947,7 +19987,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "sentrySetCommandContext",
-          "signature": "(command: string, args: string[], options: Record<string, unknown>, metadata?: { source_context?: string; source_context_source?: string; }) => void | calls: (command: string, args: string[], options: Record<string, unknown>, metadata?: { source_context?: string; source_context_source?: string; }) => void"
+          "signature": "(command: string, args: string[], options: Record<string, unknown>, metadata?: { source_context?: string; source_context_source?: string; pm_version?: string; extension?: { name: string; version?: string; layer: string; }; }) => void | calls: (command: string, args: string[], options: Record<string, unknown>, metadata?: { source_context?: string; source_context_source?: string; pm_version?: string; extension?: { name: string; version?: string; layer: string; }; }) => void"
         },
         {
           "classification": "advanced_export",
@@ -21106,6 +21146,12 @@
           "kind": "function",
           "name": "toReplayDocument",
           "signature": "(document: ItemDocument) => ReplayDocument | calls: (document: ItemDocument) => ReplayDocument"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toWellFormedText",
+          "signature": "(value: string) => string | calls: (value: string) => string"
         },
         {
           "classification": "advanced_export",
@@ -22305,7 +22351,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "CommandHandlerResult",
-          "signature": "export interface CommandHandlerResult { handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; exitCode?: number; errorCode?: string; remediation?: string; }"
+          "signature": "export interface CommandHandlerResult { readonly cause?: unknown; handled: boolean; result: unknown; warnings: string[]; errorMessage?: string; exitCode?: number; errorCode?: string; remediation?: string; }"
         },
         {
           "classification": "supported",
@@ -26305,6 +26351,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "assertWellFormedOutputText",
+          "signature": "(value: unknown) => void | calls: (value: unknown) => void"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "AssuranceActionInput",
           "signature": "export interface AssuranceActionInput { action: string; kind?: string; id?: string; definition?: unknown; trigger?: string; tree?: string; gate?: string; limit?: number | string; dry_run?: boolean; fullChangedFields?: boolean; idOnly?: boolean; author?: string; message?: string; preset?: string; owner?: string; apply?: boolean; enforcement?: string; }"
@@ -27442,6 +27494,12 @@
           "kind": "function",
           "name": "summarizeAgentProvenance",
           "signature": "(entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], dimensions?: readonly string[], minimumExplicitSample?: number) => AgentProvenanceDimensionCoverage[] | calls: (entries: readonly Pick<HistoryEntry, \"agent_harness\" | \"agent_model\" | \"agent_provenance\">[], dimensions?: readonly string[], minimumExplicitSample?: number) => AgentProvenanceDimensionCoverage[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "toWellFormedText",
+          "signature": "(value: string) => string | calls: (value: string) => string"
         },
         {
           "classification": "supported",

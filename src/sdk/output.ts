@@ -21,6 +21,8 @@ export {
 
 export { projectPmBriefListEnvelope } from "./output/list-envelope.js";
 
+export { assertWellFormedOutputText, toWellFormedText } from "../core/shared/output-unicode.js";
+
 /**
  * Serialize object rows as newline-delimited JSON without adding a trailing
  * newline. CLI hosts can append their final newline while SDK consumers can

@@ -4,6 +4,7 @@
  * Implements the pm create command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { createExtensionCommandError } from "../error-runtime.js";
 import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
@@ -1511,12 +1512,9 @@ async function loadCreateTemplateOptionsFromRuntime(
     pm_root: pmRoot,
   });
   if (!handlerResult.handled) {
-    const warningSuffix =
-      handlerResult.warnings.length > 0
-        ? ` (${handlerResult.warnings.join(", ")})`
-        : "";
+    if (Object.hasOwn(handlerResult, "cause")) throw createExtensionCommandError("templates show", handlerResult);
     throw new PmCliError(
-      `Unable to resolve template "${templateName}" via templates package. Run "pm templates show ${templateName}" for details.${warningSuffix}`,
+      `Unable to resolve template "${templateName}" via templates package. Run "pm templates show ${templateName}" for details.`,
       EXIT_CODE.USAGE,
     );
   }

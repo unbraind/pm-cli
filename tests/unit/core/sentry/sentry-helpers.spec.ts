@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sentryNodeMock = vi.hoisted(() => ({
   init: vi.fn(),
+  setTags: vi.fn(),
+  setAttribute: vi.fn(),
   getClient: vi.fn(() => ({ on: vi.fn() })),
   withStreamedSpan: vi.fn((callback: unknown) => callback),
   extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
@@ -405,7 +407,7 @@ describe("ensureSentryInit", () => {
 
     expect(sentryLoaderMock).toHaveBeenCalledTimes(1);
     expect(sentryNodeMock.init).toHaveBeenCalledTimes(1);
-    expect(sentryNodeMock.extraErrorDataIntegration).toHaveBeenCalledWith({ depth: 4 });
+    expect(sentryNodeMock.extraErrorDataIntegration).toHaveBeenCalledWith({ depth: 4, captureErrorCause: false });
     expect(sentryNodeMock.captureConsoleIntegration).toHaveBeenCalledWith({ levels: ["warn", "error"] });
 
     const options = sentryNodeMock.init.mock.calls[0]?.[0] as {
@@ -543,7 +545,7 @@ describe("ensureSentryInit", () => {
     expect(JSON.stringify(breadcrumb)).not.toContain("abc.def");
   });
 
-  it("sanitizes transactions and falls back to ci, test, and production environments", async () => {
+  it("sanitizes transactions and distinguishes ci, test, automation and user environments", async () => {
     process.env.CI = "true";
     await ensureSentryInit();
     let options = sentryNodeMock.init.mock.calls[0]?.[0] as {
@@ -579,6 +581,12 @@ describe("ensureSentryInit", () => {
     delete process.env.NODE_ENV;
     await ensureSentryInit();
     options = sentryNodeMock.init.mock.calls[0]?.[0] as { environment: string };
+    expect(options.environment).toBe("automation");
+    resetSentryStateForTests();
+    sentryNodeMock.init.mockClear();
+    process.env.PM_TELEMETRY_SOURCE_CONTEXT = "user";
+    await ensureSentryInit();
+    options = sentryNodeMock.init.mock.calls[0]?.[0] as { environment: string };
     expect(options.environment).toBe("production");
   });
 });
@@ -600,6 +608,7 @@ function buildFakeSpan(): FakeSpan {
 function buildFakeSentry(span: FakeSpan, options?: { logger?: { warn: ReturnType<typeof vi.fn> } }) {
   return {
     setTag: vi.fn(),
+    setAttribute: vi.fn(),
     setContext: vi.fn(),
     addBreadcrumb: vi.fn(),
     startInactiveSpan: vi.fn(() => span),
@@ -655,11 +664,15 @@ describe("sentry command runtime helpers", () => {
       "schema add-type",
       ["private item body", "--workflow=draft,open", "--token", "private-value", "--json"],
       { json: true, workflow: "draft,open" },
-      { source_context: "mcp", source_context_source: "env" },
+      { source_context: "mcp", source_context_source: "env", pm_version: "2026.10.28", extension: { name: "archive", version: "1.2.3", layer: "project" } },
     );
 
     expect(sentry.setTag).toHaveBeenCalledWith("pm.command", "schema add-type");
     expect(sentry.setTag).toHaveBeenCalledWith("pm.source_context", "mcp");
+    expect(sentry.setTag).toHaveBeenCalledWith("pm.version", "2026.10.28");
+    expect(sentry.setTag).toHaveBeenCalledWith("pm.extension.name", "archive");
+    expect(sentry.setTag).toHaveBeenCalledWith("pm.extension.version", "1.2.3");
+    expect(sentry.setTag).toHaveBeenCalledWith("pm.extension.layer", "project");
     const context = sentry.setContext.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(context.args).toEqual(Array.from({ length: 5 }, () => "[redacted]"));
     expect(JSON.stringify(sentry.setContext.mock.calls)).not.toContain("private");
@@ -668,6 +681,10 @@ describe("sentry command runtime helpers", () => {
     expect(sentry.addBreadcrumb).toHaveBeenCalledWith(
       expect.objectContaining({ category: "pm.command", message: "pm schema add-type" }),
     );
+    sentrySetCommandContext("list", [], {});
+    for (const key of ["name", "version", "layer"]) {
+      expect(sentry.setTag).toHaveBeenCalledWith(`pm.extension.${key}`, undefined);
+    }
   });
 
   it("starts and finishes a command span with status, tags, and attributes", () => {

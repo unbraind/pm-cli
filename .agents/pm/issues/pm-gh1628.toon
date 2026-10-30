@@ -1,0 +1,22 @@
+id: pm-gh1628
+title: "GH-1628: preserve terminal timestamps for identical forced SDK updates"
+description: "https://github.com/unbraind/pm-cli/issues/1628\n\nReported behavior on published2026.10.28; current-source reproduction and implementation are pending. Preserve the completed predecessor scope when evaluating this report.\n\nWith `@unbrained/pm-cli@2026.10.28`, updating an already closed item with the same title, status and close reason and `force: true` changes both `closed_at` and `updated_at`. The same operation on an open item is a no-op. The behavior also occurs through `commitItemMutations`, independently of pm-github.\n\nThis makes retries change the recorded closure time. An importer that restores the source closure time afterwards can leave only `updated_at` changed, causing daily repeat-import verification to fail.\n\nReproduction in a fresh non-git directory with the package installed:\n\n```js\nimport { mkdtempSync, rmSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { execFileSync } from 'node:child_process';\nimport { create, update, get } from '@unbrained/pm-cli/sdk';\nconst root = mkdtempSync(join(tmpdir(), 'sdk-noop-'));\ntry {\n  execFileSync('pm', ['--path', root, 'init', 'fixture']);\n  const options = { pmRoot: root, noExtensions: true };\n  const { item } = await create({ title: 'Synthetic issue', type: 'Issue',\n    status: 'closed', closeReason: 'Synthetic closure' }, options);\n  const before = (await get(item.id, {}, options)).item;\n  await update(item.id, { title: before.title, status: before.status,\n    closeReason: before.close_reason, force: true }, options);\n  const after = (await get(item.id, {}, options)).item;\n  console.log({ closureChanged: before.closed_at !== after.closed_at,\n    clockChanged: before.updated_at !== after.updated_at });\n  // Observed: { closureChanged: true, clockChanged: true }\n} finally { rmSync(root, { recursive: true, force: true }); }\n```\n\nExpected: applying identical normalized fields to an item already in the requested terminal status preserves its closure timestamp and mutation clock. Force should permit a required transition without creating a new closure when no transition is needed.\n\nThe package-side fix will independently compare normalized desired fields before invoking either update path, including mixed batches. Duplicate searches covered `updated_at no-op`, `force closed update`, `closed_at force`, `terminal idempotent` and `updated_at unchanged`; #597 concerns a different empty-append operation.\n"
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,github,sdk
+created_at: "2026-10-29T20:35:42.930Z"
+updated_at: "2026-10-29T20:35:42.930Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Reproduce direct SDK update and commitItemMutations in isolated non-Git trackers; Preserve both closure and mutation clocks for semantic no-ops; Retain legitimate terminal transitions and required force/ownership protection; Cover mixed batches retry idempotency and no-write negatives
+parent: pm-doxj
+risk: high
+confidence: medium
+expected_result: A forced identical normalized update of an already terminal item preserves closure time mutation time and audit history across direct SDK and transaction paths.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-45mb,related,"2026-10-29T20:35:42.930Z","harness:codex","cli:create:dep",detected
+  pm-gh1597,related,"2026-10-29T20:35:42.930Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-29T20:35:42.930Z","harness:codex","Duplicate check: complete strict all-status corpus3157 with no omissions or unreadable records, request-specific GH-number and semantic searches, current open/in_progress inventories, and full live predecessor data/comments/history. The predecessor scope is delivered; this report names a distinct boundary. New intake is open and unclaimed. Source report: https://github.com/unbraind/pm-cli/issues/1628"
+body: ""

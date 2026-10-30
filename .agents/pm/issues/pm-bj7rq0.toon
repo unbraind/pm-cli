@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-28T23:19:03.932Z"
+updated_at: "2026-10-30T08:20:14.604Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[119]:
+comments[127]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -382,6 +382,30 @@ comments[119]:
   - created_at: "2026-10-28T23:19:03.931Z"
     author: "harness:codex"
     text: "PR #1621 validation recurrence: head 4d2a20af11734e3eddc41a6cf5b7fc25375af195 initially failed Windows script cohort 2/2 in CI run 40783675212, job 123152027862. The unchanged scale-benchmark custom-manifest keeper exceeded its 30000ms timeout and fixed product targets (SDK create p95 2367ms and claim 3051ms, each ceiling 1000ms). The benchmark, test and workflow have no diff from preceding head 512184eb9, where all required checks passed. After the complete run finished, one failed-jobs retry on the same head passed all required checks with no source, timeout, qualification or budget changes. Preserve the first failed admission; retry success does not establish its cause. Current local transport also failed on candidate and untouched base f8ca152d, while both tested PR heads passed hosted static/performance admission. This existing diagnosis remains open and unclaimed; no duplicate issue or performance fix is claimed. Evidence: https://github.com/unbraind/pm-cli/actions/runs/40783675212"
+  - created_at: "2026-10-29T08:53:05.656Z"
+    author: "harness:codex"
+    text: "Retained October29 evidence from the current recovery delivery: qualified SDK import median535ms failed the unchanged500ms ceiling, then its isolated recheck passed. CLI transport-floor admission also failed on the working branch. A separate detached untouched-main5f1540b56 control on the same runtime failed create best405ms versus398ms with a qualified40ms bare-Node control. This reproduces the existing local admission limitation independently of this branch; it does not establish cause or relax any budget. Hosted exact-head performance gates remain required. No implementation claim is taken on this investigation."
+  - created_at: "2026-10-29T09:38:19.861Z"
+    author: "harness:codex"
+    text: "After the broader local validation finished, sequential isolated SDK import-cost runs pass on both current943470bca and untouched main5f1540b56 with unchanged budgets. Earlier qualified failures remain retained; this establishes variation between attempts, not a causal diagnosis. No performance implementation or gate exception is introduced by this delivery."
+  - created_at: "2026-10-29T09:40:12.262Z"
+    author: "harness:codex"
+    text: "Final bounded transport recheck remains a qualified local failure: best get364ms versus362ms, context443ms versus433ms, and next484ms versus440ms. Stop local timing retries and retain this operational limitation separately from hosted acceptance. The earlier detached untouched-main control also failed create405ms versus398ms. No budget, assertion, retry policy or deadline changed."
+  - created_at: "2026-10-29T16:40:36.413Z"
+    author: "harness:codex"
+    text: "Additional bounded local runner observation on 2026-10-29: a complete final-review coverage attempt passed 11,587 tests but timed out the unchanged compound test-all PM-context/assertion-policy case at its existing 30,000 ms limit; coverage reporting therefore did not complete. The identical case passes alone in 6,797 ms. This establishes context-sensitive timing, not its cause or a production regression. A full rerun uses four workers without changing source, test membership, assertions, timeouts, retries or exact coverage thresholds. Hosted required acceptance remains independently necessary."
+  - created_at: "2026-10-29T20:43:33.301Z"
+    author: "harness:codex"
+    text: "Current SDK boundary validation retained two qualified product-budget failures: governance332ms above327ms during the static pipeline, then core462ms above423ms during a replay overlapping another checkout changelog generation. Both controls qualified; neither result is reclassified as an unqualified runner. After that work finished, a serial paired check on unchanged pre-fix4bc8fb4f and current056b8d208 passes all10 entrypoint budgets in both checkouts. No latency/RSS ceiling or scheduler margin changed. These bounded local results do not replace fresh exact-head hosted checks."
+  - created_at: "2026-10-29T21:27:19.714Z"
+    author: "harness:codex"
+    text: "Combined51a6a9fdf static verification passes the SDK import-cost gate, then the qualified CLI transport floor refuses get382/362ms context434/433ms next475/440ms create480/398ms claim453/415ms. A serial pre-fix4bc8fb4f control also refuses all6 operations (get734ms, list755ms, context731ms, next464ms, create458ms, claim460ms); its control median95ms still qualifies. Current51a6a9fdf replay qualifies at49ms and refuses get368/362ms next446/440ms create418/398ms while list/context/claim pass. These results do not isolate the cause or waive product admission; no ceiling or scheduler margin changes. Functional, mutation, artifact and coverage checks continue independently, and the unchanged required hosted static check remains a merge gate."
+  - created_at: "2026-10-29T22:40:33.638Z"
+    author: "harness:codex"
+    text: "Fresh review-change static run passed repository-static assurance, 47 tracker-context assertions, contract/catalog/surface checks and gate registry, then failed the qualified SDK import-cost gate: sdk/testing median 463ms exceeds unchanged 461ms (control max61ms within106ms). This is a real failed local gate; no threshold or qualification change and no blanket static-pass claim. Earlier paired predecessor controls remain separate evidence. CodSpeed report on PR1629 head51a6a9f versus d4ba22c also reports encodeQueryCursor212 to215.1us (-1.47 percent); source pagination.ts, pagination benchmark and lockfile have zero diff for those commits. This preserves the report without causal attribution or acknowledging it away; reassess the eventual reviewed head separately."
+  - created_at: "2026-10-30T08:20:14.604Z"
+    author: "harness:codex"
+    text: "The documented Homebrew npm/package.json discovery limitation recurred during final Unicode source validation:11605 passed,2 failed,3 skipped; no coverage receipt. Exposing the installed npm root through NODE_PATH makes both the packed-continuation and deps-query suites pass unchanged. Preserve the failed full-run receipt and require final exact-head hosted100% coverage; no deadline, assertion, source denominator or threshold changed."
 files[12]:
   - path: .github/workflows/ci.yml
     scope: project

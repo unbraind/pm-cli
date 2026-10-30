@@ -1,0 +1,69 @@
+id: pm-sentry-cli-382
+title: Update Sentry CLI to 3.8.2 after seven-day cooldown
+description: "Finite eligible leaf of the existing tooling cohort. Primary registry metadata publishes Sentry CLI 3.8.2 at 2026-10-22T11:03:02.416Z; it reached the enforced seven-day cooldown during PR1623 validation. Upgrade the compatible development CLI and native lockfile packages, retain supported runtime and public package contracts, and verify the real sourcemap tool without uploading test data."
+type: Chore
+status: closed
+priority: 3
+tags: []
+created_at: "2026-10-29T11:07:06.885Z"
+updated_at: "2026-10-29T16:12:16.414Z"
+closed_at: "2026-10-29T16:12:14.218Z"
+completed_at: "2026-10-29T16:12:14.218Z"
+author: "harness:codex"
+estimated_minutes: 30
+acceptance_criteria: Adopt only the now-eligible Sentry CLI 3.8.2 and its corresponding native packages; Verify version and real sourcemap injection in an isolated fixture plus dependency audit and policy gates; Retain existing runtime contracts and obtain passing hosted validation with generated changelog
+parent: pm-u9d0
+risk: low
+confidence: high
+resolution: Update Sentry CLI and synchronized native packages to mature version3.8.2 and use an exact manifest constraint so future resolutions cannot silently select a different release tool.
+expected_result: Release sourcemap tooling uses exactly the reviewed compatible version and unchanged native dependency graph.
+actual_result: "Linked run test-local-mvtqolbx-ds5i43 passes; development bundle, seven-day cooldown and42-package runtime-lock gates pass. Earlier executable sourcemap fixture validates matching debug IDs and result42. Only the manifest and importer specifier changed in this final pin; all resolved versions and integrity hashes remain unchanged."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ogzvx6,discovered_from,"2026-10-29T11:07:06.885Z","harness:codex","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-10-29T11:07:06.885Z","harness:codex","Duplicate check: the complete all-status corpus and fresh Sentry CLI 3.8.2 search identify pm-ogzvx6 as the open ongoing cohort. Live open and in-progress inventories and full cohort comments were read. This finite version-specific leaf covers the newly eligible Sentry update while that existing cohort retains the remaining future candidates. No other matching active leaf was found."
+  "2026-10-29T11:11:39.888Z","harness:codex","Registry cutoff passed at 11:03:02 UTC on October 29. Installed Sentry CLI 3.8.2 and synchronized only its native packages in pnpm-lock.yaml; supported Node engine remains >=18. Actual binary reports 3.8.2. In an isolated temporary JavaScript/source-map fixture, sourcemaps inject produced matching debug IDs and the instrumented bundle still executed with expected output 42. No fixture was uploaded. The linked development-dependency integrity check passes; production code and runtime dependency versions are unchanged."
+  "2026-10-29T11:21:04.081Z","harness:codex","Post-upgrade build, dependency cooldown policy, 42-package runtime-lock check, package-boundary audit and linked development-dependency integrity check pass. pnpm audit reports zero info/low/moderate/high/critical advisories across the unchanged 567-dependency inventory. Lockfile inspection limits the upgrade to Sentry CLI and its platform binaries. Current core source separately passes the full 11573-test exact-coverage suite; final hosted acceptance remains pending."
+  "2026-10-29T11:31:23.339Z","harness:codex","The tracker-context gate caught a missing estimated_minutes value on this new active leaf. Supplied the 30-minute estimate through pm; graph composition, record integrity and full history validation already pass. Rechecking the unchanged context gate before final closeout."
+  "2026-10-29T16:05:11.823Z","harness:codex","Final review hardening: pin the manifest exactly to 3.8.2, matching the already-reviewed frozen lockfile and unchanged native package graph. This prevents a future lock refresh from selecting another credential-bearing release-tool version through a broad range."
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/check-development-dependencies.mjs,project,"harness:codex","2026-10-29T11:09:07.935Z",local_mutation,fix/lock-crash-recovery
+test_runs[3]:
+  - run_id: test-local-mvtfzzyc-1yvcz2
+    kind: test
+    status: passed
+    started_at: "2026-10-29T11:10:55.182Z"
+    finished_at: "2026-10-29T11:10:55.428Z"
+    recorded_at: "2026-10-29T11:10:55.428Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/check-development-dependencies.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mvton2py-25twzx
+    kind: test
+    status: passed
+    started_at: "2026-10-29T15:12:48.721Z"
+    finished_at: "2026-10-29T15:12:49.030Z"
+    recorded_at: "2026-10-29T15:12:49.030Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/check-development-dependencies.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtqolbx-ds5i43
+    kind: test
+    status: passed
+    started_at: "2026-10-29T16:09:57.950Z"
+    finished_at: "2026-10-29T16:09:59.036Z"
+    recorded_at: "2026-10-29T16:09:59.036Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/check-development-dependencies.mjs,schema,schema,source,local_source_ref
+close_reason: Pin reviewed Sentry CLI 3.8.2 in the manifest and frozen lockfile.
+body: ""

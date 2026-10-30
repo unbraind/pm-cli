@@ -16,6 +16,16 @@ import {
 } from "../../../src/cli/bootstrap-args.js";
 
 describe("parseBootstrapGlobalOptions", () => {
+  it.each([
+    { argv: ["list", "--format", "json"], json: true },
+    { argv: ["list", "--format= JSON "], json: true },
+    { argv: ["list", "--output-format", "toon", "--format", "json"], json: false },
+    { argv: ["list", "--format", "toon"], json: false },
+    { argv: ["list", "--format", "json", "--format", "table"], json: false },
+    { argv: ["list", "--", "--format", "json"], json: false },
+  ])("selects JSON diagnostics for $argv", ({ argv, json }) => {
+    expect(parseBootstrapGlobalOptions(argv).json).toBe(json);
+  });
   it("recognizes opt-in token accounting before or after the command", () => {
     expect(
       parseBootstrapGlobalOptions(["--token-accounting", "list"])

@@ -18,6 +18,7 @@ import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   isTelemetryTestEnvironment,
   resolveTelemetryEnvironmentPolicy,
+  resolveTelemetrySourceAttribution,
 } from "./policy.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
@@ -97,7 +98,6 @@ const PM_TELEMETRY_OTEL_DISABLED_ENV = "PM_TELEMETRY_OTEL_DISABLED";
 const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_INLINE_FLUSH_ENV = "PM_TELEMETRY_INLINE_FLUSH";
 const PM_TELEMETRY_FLUSH_CHILD_ENV = "PM_TELEMETRY_FLUSH_CHILD";
-const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
 const PM_TELEMETRY_HTTP_TIMEOUT_MS_ENV = "PM_TELEMETRY_HTTP_TIMEOUT_MS";
 const NATIVE_FETCH = globalThis.fetch;
 export { PM_TELEMETRY_SOURCE_CONTEXT_VALUES } from "./policy.js";
@@ -112,9 +112,6 @@ export async function waitForPendingFlush(): Promise<void> {
   await _lastFlushPromise;
   await _queueMutationPromise;
 }
-const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
-  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
-);
 const BOOLEAN_TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const TELEMETRY_HARNESSES = new Set([
   "claude-code", "codex", "pi", "opencode", "cursor", "aider", "gemini-cli", "ci",
@@ -827,42 +824,15 @@ function normalizeTelemetryErrorCategory(params: {
 function resolveTelemetrySourceContext(
   globalOptions: GlobalOptions,
 ): ResolvedTelemetrySourceContext {
-  const override = (process.env[PM_TELEMETRY_SOURCE_CONTEXT_ENV] ?? "")
-    .trim()
-    .toLowerCase();
-  if (PM_TELEMETRY_SOURCE_CONTEXT_SET.has(override)) {
-    return {
-      source_context: override as TelemetrySourceContext,
-      source_context_source: "env_override",
-    };
-  }
-  const source = override.length > 0 ? "env_override_rejected" : "inferred";
-  if (source === "env_override_rejected" && !sourceContextWarningEmitted &&
+  const resolved = resolveTelemetrySourceAttribution(globalOptions);
+  if (resolved.source_context_source === "env_override_rejected" && !sourceContextWarningEmitted &&
     !globalOptions.quiet) {
     sourceContextWarningEmitted = true;
     process.stderr.write(
       `[pm] warning: PM_TELEMETRY_SOURCE_CONTEXT is not one of ${PM_TELEMETRY_SOURCE_CONTEXT_VALUES.join("|")}; ignoring override.\n`,
     );
   }
-  return {
-    source_context: inferTelemetrySourceContext(globalOptions),
-    source_context_source: source,
-  };
-}
-
-/** Infer test, automated, or interactive execution from the process and output mode. */
-function inferTelemetrySourceContext(globalOptions: GlobalOptions): TelemetrySourceContext {
-  if (isTelemetryTestEnvironment()) {
-    return "test";
-  }
-  const nonTty = process.stdin.isTTY !== true || process.stdout.isTTY !== true;
-  const ci = parseBooleanTrueLike(process.env.CI);
-  const scriptLikeMode =
-    globalOptions.json === true || globalOptions.quiet === true;
-  if (nonTty || ci || scriptLikeMode) {
-    return "automation";
-  }
-  return "user";
+  return resolved;
 }
 
 /** Hash a value with installation-specific salt so telemetry can correlate local context without publishing the original value. */

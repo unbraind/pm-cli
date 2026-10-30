@@ -195,8 +195,13 @@ export function isPmCliExpectedError(
     return false;
   }
   const candidate = error as Partial<PmCliExpectedError>;
+  // A refusal declares its context; a bare name plus exit code is a fault that
+  // must stay visible to crash reporting.
   return (
     typeof candidate.exitCode === "number" &&
-    Number.isFinite(candidate.exitCode)
+    Number.isFinite(candidate.exitCode) &&
+    typeof candidate.context === "object" &&
+    candidate.context !== null &&
+    !Array.isArray(candidate.context)
   );
 }

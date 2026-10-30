@@ -1,0 +1,21 @@
+id: pm-gh1627
+title: "GH-1627: bound the entire next response and compact optional TOON sections losslessly"
+description: "https://github.com/unbraind/pm-cli/issues/1627\n\nReported behavior on published2026.10.28; current-source reproduction and implementation are pending. Preserve the completed predecessor scope when evaluating this report.\n\nFound while orienting an agent session with pm 2026.10.28 on a real tracker (~400 items, 95 ready).\n\nSeverity: medium (paid on every `pm next`, the first command an agent runs to pick work).\n\n`pm next --limit 5` (TOON, default) prints **6,847 bytes / 72 lines** while its own `filters.token_budget` says **640**. `--token-budget` is documented as bounding only \"the ranked ready\" rows; every other section is unbudgeted and the total cost is never reported. Measured bytes by section:\n\n| Section | Bytes |\n| --- | ---: |\n| `blocked[5]` | 1,821 |\n| `containers[5]` | 1,469 |\n| `ready[5]` (the budgeted part) | 1,331 |\n| `decision_needed[3]` | 947 |\n| `recommended` | 397 |\n| `summary` + `filters` + `held_by_others` + four `*_encoding` blocks | ~780 |\n\nThree avoidable costs inside that:\n\n1. **Side sections ignore the budget and the include flags.** `filters` reports `include_decisions: false` and `include_containers: false`, yet `decision_needed[3]` and `containers[5]` are printed in full (15–18 columns each). Agents read the false flags and the printed sections as a contradiction.\n2. **Escaped tag JSON in TOON rows.** 162 `\\\"` sequences, e.g. `\"[\\\"hosted\\\",\\\"tests\\\",\\\"website\\\"]\"`, plus a `json_columns` `*_encoding` block per section. #1603 removed this from `pm context`; `pm next` still has it.\n3. **All-null columns.** 63 `,null` cells (`order`, `deadline`, `assignee`, `parent` are null in almost every row) across the four tables.\n\nExpected (same contract #1401 gave `pm context`): one budget covers the whole response, or the response reports its own total `estimated_tokens` with a per-section breakdown. Side sections collapse to counts plus ids unless explicitly requested (`--include-decisions` / `--include-containers` / `--blocked-limit`). Tags render as TOON arrays, and columns that are null in every row are omitted with an absent-columns receipt. A contract test that `pm next` output stays within `--token-budget` (± a declared envelope) on a large fixture would keep this from regressing.\n"
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,github,sdk
+created_at: "2026-10-29T20:35:41.836Z"
+updated_at: "2026-10-29T20:35:41.836Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Independently measure the reported large ready-work fixture; Account for every response section and total output cost; Honor explicit side-section includes and preserve resumability; Verify lossless tag encoding null-column receipts and JSON/TOON contracts
+parent: pm-5t33or
+risk: medium
+confidence: medium
+expected_result: "The complete next response discloses and obeys its effective budget, respects include controls, and preserves tags/null omission receipts without changing full SDK data."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1603,related,"2026-10-29T20:35:41.836Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-29T20:35:41.836Z","harness:codex","Duplicate check: complete strict all-status corpus3157 with no omissions or unreadable records, request-specific GH-number and semantic searches, current open/in_progress inventories, and full live predecessor data/comments/history. The predecessor scope is delivered; this report names a distinct boundary. New intake is open and unclaimed. Source report: https://github.com/unbraind/pm-cli/issues/1627"
+body: ""

@@ -631,11 +631,11 @@
     },
     {
       "path": "src/cli/main.ts",
-      "expected_count": 3,
+      "expected_count": 2,
       "rule_ownership": "all_occurrences",
       "owner": "pm-0xmajx",
       "disposition": "transport_validation",
-      "reason": "Root command dispatch, plugin resolution, and process-level usage failures are CLI host responsibilities."
+      "reason": "Unavailable extension command dispatch and empty --author input are CLI host responsibilities. Unexpected extension-handler faults moved to the shared SDK createExtensionCommandError factory (pm-gh1625), used by CLI, action, and template-provider hosts."
     },
     {
       "path": "src/cli/register-setup.ts",

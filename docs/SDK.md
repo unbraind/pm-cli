@@ -278,7 +278,17 @@ async function writePackageState(pmRoot: string, write: () => Promise<void>) {
 ```
 
 The built-in provider automatically recovers a provably dead original Linux
-owner before TTL. Unknown owners retain the existing lease policy. Conflicts
+owner before TTL, including an owner killed inside its commit fence. Recovery
+retains the gate generation as evidence so concurrent recoverers cannot
+remove its replacement, including recovery after the age grace when a dead PID
+or verified PID reuse establishes abandonment. A readable gate with a live PID
+and unavailable start identity is retained regardless of age. An unreadable
+gate owner is also retained; age and failed reads do not prove abandonment.
+Recorded host coordinates must be verified; a local PID comparison cannot
+authorize recovery of foreign or unverifiable host evidence.
+Acquisition, commit-gate and release wait budgets use
+a monotonic clock; wall-clock adjustments do not extend those budgets.
+Unknown owners retain the existing lease policy. Conflicts
 expose the lock identity, observed process state, `waited_ms`, observed
 `owner_handoffs` and wait advice through `PmCliError.context`. The wait budget
 is a fixed total by default. Pass `{ waitPolicy: "progress" }` in the options
@@ -675,7 +685,7 @@ import {
   parseMutationReceipt,
   estimatePmOutputTokens,
   resolvePmCommandOutputBudget,
-} from "@unbraind/pm-cli/sdk/contracts";
+} from "@unbrained/pm-cli/sdk/contracts";
 
 const compactRead = definePmCommandOutputBudget({
   command: "get",
@@ -2849,6 +2859,19 @@ delivered to the registered positional arguments unchanged.
 
 ## Output Ownership
 
+Unicode output policy ([pm-gh1624](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1624.toon), tracker record excluded from npm):
+the built-in JSON and TOON formatters refuse unpaired UTF-16 surrogates in
+structured output values or object keys with `text_unpaired_surrogate` and a
+field path. Custom `toJSON()` values and boxed primitives are materialized once
+per render using their native JSON semantics; the resulting snapshot is validated
+and shared by both formatters. Valid astral characters and caller data are preserved. Extension
+producers can call `assertWellFormedOutputText(value)` before returning
+JSON-compatible data. When replacing malformed external text is intentional,
+use `toWellFormedText(text)` from `@unbrained/pm-cli/sdk/core` (also available from
+`@unbrained/pm-cli/sdk`); it replaces lone
+surrogates with U+FFFD without splitting valid pairs. Apply normalization before
+constructing object keys so the producer can handle possible key collisions.
+
 Command handlers should normally return structured data and let the host select
 TOON, JSON, service, or registered renderer output. A renderer override returns a
 string when it owns the matching payload and `null` to fall back to native
@@ -2914,6 +2937,34 @@ closed for TypeScript authors and validated again at activation for JavaScript.
 A typo fails activation with a did-you-mean hint (e.g. `type: "strnig"` →
 `Did you mean "string"?`) instead of silently passing and failing opaquely at use
 time.
+
+## Package Error Provenance
+
+Expected package errors retain their structured `context` across separately
+bundled SDK copies. Use `createPmCliExpectedError` to declare an expected refusal.
+A custom exception carrying only `code`, `exitCode: 1` and `remediation` remains
+an unexpected fault. Sentry error attribution uses the same bounded source
+context as telemetry without requiring telemetry delivery or command tracing, with host version
+and the registered command owner's manifest version. Noninteractive traffic
+uses `automation`; explicit `test`/`dogfood` contexts retain their own environments.
+Error events and usage logs tagged `user` use `production`, including when CI was inferred at initialization.
+Early errors retain `--json` and `--quiet` automation attribution. Original
+extension causes remain available locally through the SDK; Sentry's extra error
+data integration does not copy cause payload fields into diagnostic contexts.
+Explicit `SENTRY_ENVIRONMENT`, consent and test isolation remain authoritative.
+Sequential commands clear previous extension attribution. Tracked by
+[pm-gh1625](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1625.toon)
+(tracker record excluded from npm).
+
+`resolveTelemetrySourceAttribution(options?, env?, interactive?)` exposes that
+same pure attribution policy to custom SDK hosts without reading configuration,
+creating an installation identity, or sending data. Expected refusals use
+`createPmCliExpectedError`; unexpected handler failures retain their original
+non-enumerable `cause` in `CommandHandlerResult` and become
+`ExtensionCommandError` in the CLI host. The host preserves structured diagnostics
+and reports these faults as exceptions. An exception name alone cannot declare
+an expected refusal when the original error violates the public contract.
+SDK extension actions and delegated template reads retain the same failure kind.
 
 ## Expected CLI Errors
 

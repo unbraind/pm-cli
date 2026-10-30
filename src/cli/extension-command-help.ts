@@ -55,6 +55,7 @@ export interface ExtensionCommandHelpDescriptor {
     layer: "global" | "project";
     name: string;
     package?: string;
+    version?: string;
   };
 }
 
@@ -372,6 +373,7 @@ function collectExtensionDefinitionsByCommand(
         layer: definition.layer,
         name: definition.name,
         package: definition.source_package,
+        version: definition.source_version,
       },
     });
   }

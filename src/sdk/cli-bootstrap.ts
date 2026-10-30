@@ -129,6 +129,15 @@ function consumeBootstrapGlobalToken(
   return consumesValue ? 2 : 1;
 }
 
+/** Select structured diagnostics while preserving the canonical TOON override. */
+function isBootstrapJsonOutput(state: BootstrapGlobalParseState): boolean {
+  return state.outputValues.get("--output-format") !== "toon" && (
+    state.booleanFlags.has("--json") ||
+    state.outputValues.get("--output-format") === "json" ||
+    state.pathValues.get("--format")?.trim().toLowerCase() === "json"
+  );
+}
+
 /** Implements parse bootstrap global options for the public runtime surface of this module. */
 export function parseBootstrapGlobalOptions(
   argv: string[],
@@ -151,9 +160,7 @@ export function parseBootstrapGlobalOptions(
         parseBootstrapCommandPathName(argv) ?? "",
       ),
     noPager: state.booleanFlags.has("--no-pager"),
-    json: state.booleanFlags.has("--json")
-      ? state.outputValues.get("--output-format") !== "toon"
-      : state.outputValues.get("--output-format") === "json",
+    json: isBootstrapJsonOutput(state),
     quiet: state.booleanFlags.has("--quiet"),
     lean: state.booleanFlags.has("--lean"),
     tokenAccounting: state.booleanFlags.has("--token-accounting"),

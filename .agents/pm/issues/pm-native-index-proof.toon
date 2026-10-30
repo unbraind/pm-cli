@@ -1,0 +1,115 @@
+id: pm-native-index-proof
+title: Bound independent native receipt regression cases
+description: "Two compound native receipt keepers exceed their unchanged 30000ms test deadlines: indexed proof in Windows shard1 run40837931196 and cross-worktree receipt settlement in Windows shard3 run40864851705. Separate independent contracts while preserving real Git boundaries, all refusal/preservation/retry assertions, serial allocation, retries and deadlines."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-10-29T08:28:14.112Z"
+updated_at: "2026-10-29T18:10:22.020Z"
+closed_at: "2026-10-29T18:10:21.116Z"
+completed_at: "2026-10-29T18:10:21.116Z"
+author: "harness:codex"
+estimated_minutes: 120
+acceptance_criteria: Retain every indexed-proof and worktree-settlement assertion with same-fixture recovery and idempotence; Separate independent cases without extending deadlines or weakening coverage; Pass the complete affected Windows shard1 and shard3 cohorts
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "Require the stage=true refusal to identify unstaged reconciliation paths, while retaining all independent indexed-proof and history-preservation assertions."
+expected_result: The actual sandboxed portability suite passes and staging refusal identifies its unstaged-edit cause.
+actual_result: "After confirming absent lease ownership and consumers, preserving the old lease and rebuilding, the linked real-Git portability command completed successfully with exit0. Earlier refused execution and evidence correction remain in immutable history."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-89297t,related,"2026-10-29T08:28:14.112Z","harness:codex","cli:create:dep",detected
+  pm-gh1558,related,"2026-10-29T08:28:14.112Z","harness:codex","cli:create:dep",detected
+  pm-gh1390,related,"2026-10-29T13:24:01.543Z","harness:codex","cli:update:dep",detected
+comments[14]{created_at,author,text}:
+  "2026-10-29T08:28:14.112Z","harness:codex","Duplicate check: complete all-status corpus, live open and in_progress lists, request-specific search and full pm-89297t data show the serial allocation repair is already closed and shipped. This new leaf owns the repeated compound-test timeout on current native evidence, not the completed allocation or the distinct raw-rename fixture defect."
+  "2026-10-29T08:29:47.767Z","harness:codex","Split the compound native test into unstaged refusal, four independently named invalid-index variants, rollback preservation, and junction settlement. Each retains real Git setup and the unchanged 30000ms deadline; every original assertion remains and each invalid variant now also verifies staged-settlement refusal without history mutation. This increases case attribution without changing serial partitioning or job limits."
+  "2026-10-29T08:30:33.667Z","harness:codex","The original native failure remains run40837931196/job123327040143: the same indexed-proof case failed both attempts at30000ms. Closed pm-89297t already moved this file into the serial phase; that shipped fix remains intact. Current work separates independently observable refusal and preservation contracts and requires a complete native rerun for acceptance."
+  "2026-10-29T08:32:42.380Z","harness:codex","Focused source run passes all22 real-Git LF/CRLF cases after separating independent contracts, alongside lock and packed Node/Bun continuation tests. Full selected cohort:9files195tests pass. Native Windows proof remains pending; the old timeout is retained as failed evidence."
+  "2026-10-29T10:05:12.783Z","harness:codex","CodeRabbit review 5695929096 identified that splitting rollback and junction scenarios lost same-fixture receipt re-authentication after rollback. Restore byte-for-byte receipt preservation and restaging/authentication assertions inside the rollback scenario, retaining the independent junction contract and unchanged 30-second deadlines."
+  "2026-10-29T10:25:02.884Z","harness:codex","Restored same-fixture rollback acceptance: preserve receipt bytes, re-stage the identical receipt, authenticate its durable ID, successfully settle it, and retain unrelated staged work. All 22 LF/CRLF real-Git cases pass within unchanged per-test limits as part of the 166-test final review-fix cohort. The isolated junction scenario remains intact."
+  "2026-10-29T10:35:42.176Z","harness:codex","Native Windows proof before the final review assertions: run 40849657299 at 943470bca, shard 1/4 job 123368461427 passed 2695 tests across 221 files with 106 platform skips. The separated portability file passed all 22 LF/CRLF cases, preserving each 30-second deadline. The later 7aef94d8a same-fixture rollback assertions pass locally and await the new exact-head matrix."
+  "2026-10-29T13:24:00.403Z","harness:codex","Current native Windows shard3 at source 1a242f11f fails the separate merge-receipt-settlement keeper twice at its unchanged 30000ms deadline (run40864851705/job123416907459). All 3122 other tests pass, including the 78-test CLI JSON cohort. Full live predecessor reads confirm the serial allocation and authoritative receipt fixes remain completed. Reuse this active native-receipt proof leaf to separate independent attribution, invalid-audit, corrupt-history and legacy-recovery contracts while preserving real worktrees, every assertion, same-fixture retry/idempotence, serial allocation and deadlines."
+  "2026-10-29T13:33:00.274Z","harness:codex","Both linked native-receipt commands pass on the revised test tree: 22 indexed-proof cases and four independent worktree-settlement cases. An AST assertion inventory retains all 41 original settlement assertions; each case owns isolated real worktrees, and the first keeps interrupted persistence, retry, commit and stale-copy idempotence together. Typecheck, ESLint, docstrings and duplicate detection pass. Current-source Windows shard1 run40864851705/job123416907376 passes all2695 applicable tests, including all22 portability cases and17 lease-fencing cases, with no unhandled errors. The shard3 JSON cohort passes but its original compound settlement test times out twice; the revised four-case native acceptance remains pending."
+  "2026-10-29T14:49:27.162Z","harness:codex","Native acceptance at 3c5367550: Nightly40883494351 Windows shard1 job123480968644 passes all2695 tests with106 platform skips, including22 indexed-proof and17 lease cases. Windows shard3 job123480968782 passes all3126 tests with20 skips, including all4 settlement cases and78 CLI integration tests. Both files retain their original assertions and deadlines. A new full native run40894940536 validates the subsequent production lock-policy review repair; these completed receipts do not assert that newer full matrix is green."
+  "2026-10-29T17:59:41.511Z","harness:codex",CodeRabbit inline4415799522 correctly identifies that stage=true reaches the unstaged-edit guard after valid worktree bytes replace invalid staged bytes. The existing assertion already uses merge_settlement_review_required; refine its message evidence rather than changing the independent merge_receipt_not_portable proof assertions. Reopen the canonical item for this bounded reviewed test change; retain original completed implementation evidence.
+  "2026-10-29T18:03:16.760Z","harness:codex","Review refinement verified: the stage=true assertion now requires the unstaged-edit message as well as merge_settlement_review_required. Independent evidence scanning, ordinary reconciliation refusal and all no-history-write assertions remain unchanged. The sandboxed linked merge-portability command passes all22 cases with the original deadlines and Git LF/CRLF variants."
+  "2026-10-29T18:06:00.482Z","harness:codex","Correction to18:03 evidence and closure: linked run test-local-mvtumafj-344oew failed before executing Vitest because the build lease recorded an absent owner PID. No new22-case pass was established by that run. Preserve this correction and original failure receipt; inspect and quarantine only abandoned build coordination after proving producer and consumers stopped, rebuild, and rerun before closure."
+  "2026-10-29T18:10:17.260Z","harness:codex","Corrected verification now completed successfully after preservation-first lease recovery. The owner was absent, zero live processes retained its consumer token, and the original lease was quarantined without deleting its evidence. The full required bootstrap then completed, and the sandboxed linked merge-portability run exited0. This supersedes the explicitly corrected premature pass claim and retains the original refused run."
+files[2]{path,scope}:
+  tests/integration/workspace/merge-portability.integration.spec.ts,project
+  tests/integration/workspace/merge-receipt-settlement.integration.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,project,600,"harness:codex","2026-10-29T08:29:43.001Z",local_mutation,fix/lock-crash-recovery
+  node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts,project,600,"harness:codex","2026-10-29T13:24:04.853Z",local_mutation,fix/lock-crash-recovery
+test_runs[5]:
+  - run_id: test-local-mvtb7qu4-p8uiwf
+    kind: test
+    status: passed
+    started_at: "2026-10-29T08:55:20.953Z"
+    finished_at: "2026-10-29T08:56:58.780Z"
+    recorded_at: "2026-10-29T08:56:58.780Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtl0y25-tlyckh
+    kind: test
+    status: passed
+    started_at: "2026-10-29T13:28:02.243Z"
+    finished_at: "2026-10-29T13:31:37.708Z"
+    recorded_at: "2026-10-29T13:31:37.708Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvton1vf-5gxm5p
+    kind: test
+    status: passed
+    started_at: "2026-10-29T15:10:17.665Z"
+    finished_at: "2026-10-29T15:12:47.931Z"
+    recorded_at: "2026-10-29T15:12:47.931Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-receipt-settlement.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtumafj-344oew
+    kind: test
+    status: failed
+    started_at: "2026-10-29T18:00:08.622Z"
+    finished_at: "2026-10-29T18:00:10.063Z"
+    recorded_at: "2026-10-29T18:00:10.063Z"
+    passed: 0
+    failed: 1
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvtuyij8-8yowzn
+    kind: test
+    status: passed
+    started_at: "2026-10-29T18:07:40.597Z"
+    finished_at: "2026-10-29T18:09:40.436Z"
+    recorded_at: "2026-10-29T18:09:40.436Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  CHANGELOG.md,project
+close_reason: Verify the staging guard clarification after real linked-test execution.
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-native-index-proof
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/workspace/merge-portability.integration.spec.ts tests/integration/workspace/merge-receipt-settlement.integration.spec.ts
+  hosted_checks[3]: "Nightly (windows-latest, Node 24, shard 1/4)","Nightly (windows-latest, Node 24, shard 3/4)",Gates (coverage)
+body: ""
