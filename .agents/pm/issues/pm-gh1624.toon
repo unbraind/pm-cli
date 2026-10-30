@@ -2,24 +2,26 @@ id: pm-gh1624
 title: "GH-1624: define typed Unicode handling for extension output across JSON and TOON"
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1624 describes an unpaired UTF-16 surrogate from extension output causing an untyped TOON TypeError while JSON succeeds. Reproduce through the public host command boundary, then define consistent field-aware refusal or explicitly documented normalization and a reusable SDK primitive. This concerns already-malformed external output, distinct from completed persisted-input validation and valid-pair compaction fixes."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-29T14:47:42.900Z"
-updated_at: "2026-10-30T01:42:22.502Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#6bf23ca256a5142e59ec9539"
+updated_at: "2026-10-30T08:20:16.068Z"
+closed_at: "2026-10-30T08:20:15.399Z"
+completed_at: "2026-10-30T08:20:15.399Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce nested values and object keys through the actual extension host on Node and Bun; Preserve valid astral pairs and input immutability; Publish the SDK contract and JSON/TOON parity with pre-fix negative controls
 parent: pm-5t33or
 risk: medium
 confidence: medium
-expected_result: "Malformed UTF-16 values and keys refuse consistently; JSON scalar semantics survive materialization for boxed primitives, including cross-realm values, on Node and Bun."
+resolution: "Expose reusable SDK Unicode validation and repair helpers; render one validated JSON-compatible snapshot across JSON and TOON, preserving boxed primitives across realms, custom serializers, valid astral characters and caller data."
+expected_result: "Malformed strings and keys receive actionable typed refusals; valid JSON data, boxed scalar semantics and custom serialization survive native Node/Bun output."
+actual_result: "Linked receipt test-local-mvuaket2-bjn9nf passes13 tests; SDK, Node and Bun boxed-value controls fail before the fix and pass after it. All four TypeScript projects and the complete static pipeline pass. Both full-run failures pass unchanged with corrected npm lookup. The unsuccessful full-run receipt is retained; exact updated-head hosted coverage and review remain merge requirements."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1478,related,"2026-10-29T14:47:42.900Z","harness:codex","cli:create:dep",detected
   pm-jsm9im,related,"2026-10-29T14:47:42.900Z","harness:codex","cli:create:dep",detected
-comments[14]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-10-29T14:47:42.900Z","harness:codex","Duplicate check: complete live 3153-item all-status corpus has zero unreadable records and zero omissions; fresh request-specific search and open/in_progress lists found no GH1624 owner. Full live metadata, comments and history of pm-gh1478 and pm-jsm9im confirm their completed narrower scopes. New report is recorded open and unclaimed while PR1623 finishes."
   "2026-10-29T17:33:36.945Z","harness:codex","Begin extension-output Unicode contract implementation in an isolated checkout while PR1623 completes checks. Reuse existing persisted-text and valid-pair compaction lineage; preserve typed field diagnostics, valid astral pairs and input immutability across JSON and TOON."
   "2026-10-29T17:40:48.450Z","harness:codex",Independent clean pre-fix checkout runs the corrected real extension fixture on Node and Bun; both fail because JSON exits successfully for malformed output. The original fixture setup omission was corrected before this counterfactual and is not counted as defect evidence. Typed rejection preserves valid pairs and input; public helpers expose deliberate boundary normalization and output validation.
@@ -34,6 +36,8 @@ comments[14]{created_at,author,text}:
   "2026-10-30T01:24:29.886Z","harness:codex","Review control on b25c1dc6: native JSON retains boxed Number(3), Boolean(true) and String(text) as scalar values; the new snapshot currently emits empty objects or indexed character objects. The b25 full-coverage run was interrupted at ten minutes before any edits; its log is preserved. Fix this regression in the existing Unicode lineage, with cross-realm wrapper and malformed boxed-string coverage. Node and Bun both support the native isBoxedPrimitive helper."
   "2026-10-30T01:26:16.384Z","harness:codex","Independent b25c1dc6 worktree control: the new wrapper regression fails in exactly three cases (SDK cross-realm, real Node extension and real Bun extension), while the six prior Unicode cases pass. Boxed valid emoji were incorrectly split into indexed UTF-16 halves. The fix uses the native cross-realm boxed-primitive predicate and delegates materialization to JSON serialization, preserving scalar values and typed refusal for malformed boxed strings."
   "2026-10-30T01:42:22.502Z","harness:codex","Corrected source passes all13 linked Unicode tests (test-local-mvuaket2-bjn9nf), all four TypeScript projects, and the entire static quality pipeline, including unchanged SDK/CLI budgets, dependency feeds, generated-contract drift and mutation checks. No thresholds or source exclusions changed. Begin canonical all-source coverage on this verified source before terminal closeout."
+  "2026-10-30T08:18:28.138Z","harness:codex","Full local source run at33da25180 completed with11605 passed,2 failures and3 intentional skips. No coverage receipt was produced: the packed-continuation fixture could not resolve the installed global npm package, and one deps-query case hit its unchanged30-second limit. Preserve /tmp/pm-boxed-final-full-coverage.log. Expose the actual npm root through NODE_PATH and rerun the two affected suites; do not alter timeouts or weaken coverage. Exact updated-head hosted coverage remains mandatory for merge."
+  "2026-10-30T08:20:13.897Z","harness:codex","Corrected environment rerun PASSED both previously failing suites without source, timeout or assertion changes. The packed continuation matrix exercises the installed public SDK on Node and Bun; the deps-query retry also passes. The earlier full-run failure remains retained and is not described as a coverage pass. Latest source also retains13 linked Unicode passes, four TypeScript project passes and the complete static gate. Require exact updated-head hosted coverage and review before merging."
 learnings[1]{created_at,author,text}:
   "2026-10-29T17:57:28.255Z","harness:codex",Keep malformed-output validation independent of rendering format. Producer-owned normalization must happen before object-key construction so replacement cannot silently merge distinct keys.
 files[9]{path,scope}:
@@ -106,6 +110,7 @@ test_runs[5]:
       node scripts/run-tests.mjs test -- tests/unit/sdk/output/unicode.spec.ts tests/unit/sdk/read-output/unicode.spec.ts tests/integration/extensions/output-unicode.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
+close_reason: Deliver typed Unicode output with native scalar and custom serialization semantics.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
