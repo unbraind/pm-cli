@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,linked-tests,token-efficiency
 created_at: "2026-10-30T13:12:13.481Z"
-updated_at: "2026-10-30T14:06:28.071Z"
+updated_at: "2026-10-30T23:44:24.911Z"
 closed_at: "2026-10-30T14:06:27.219Z"
 completed_at: "2026-10-30T14:06:27.219Z"
 author: "harness:claude-code"
@@ -46,4 +46,12 @@ test_runs[1]:
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
 close_reason: "Lean receipts for passing, mismatch-free linked-test runs omit non-actionable sandbox plumbing with a restore path."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-covpax
+  gate_id: tests/unit/core/output/output.spec.ts lean linked-test receipt projection
+  negative_control: "Reverse-apply the src/core/output/output.ts hunk of 287f669d8: output.spec fails the lean-success case (1 failed, 40 passed)"
+  local_checks[2]: output.spec and linked-test-context-trust integration (linked test run passed),58-test --only-last lean receipt measured 2178 to 865 bytes TOON
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
