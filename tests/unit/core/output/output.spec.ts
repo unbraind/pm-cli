@@ -344,17 +344,41 @@ describe("core/output/output", () => {
       ),
     ).toBe(true);
 
+    const zeroCategories = { assertion_failure: 0, timeout: 0 };
     const lean = JSON.parse(
-      formatOutput(payload, { json: true, lean: true, command: "test" }),
+      formatOutput({ ...payload, failure_categories: zeroCategories }, { json: true, lean: true, command: "test" }),
     ) as Record<string, unknown>;
-    expect(lean.execution_context).toMatchObject({
+    // pm-covpax: a passing, mismatch-free lean receipt keeps only modes, trust and a restore path.
+    expect(lean.execution_context).toEqual({
       pm_context_mode: "schema",
-      mismatch_detected: false,
+      workspace_context_mode: context.workspace_context_mode,
+      restore_with: "rerun without --lean",
     });
+    expect(lean).not.toHaveProperty("failure_categories");
     expect(lean.run_results).toEqual([
       { command: "node --version", status: "passed", exit_code: 0 },
       { command: "node --help", status: "passed", exit_code: 0 },
     ]);
+    const trusted = { ...context, trust: { trusted: true, reason: "local_mutation" } };
+    const trustedRows = payload.run_results.map((row) => ({ ...row, execution_context: trusted }));
+    const withTrust = JSON.parse(
+      formatOutput({ ...payload, run_results: trustedRows }, { json: true, lean: true, command: "test" }),
+    ) as Record<string, Record<string, unknown>>;
+    expect(withTrust.execution_context?.trust_reason).toBe("local_mutation");
+
+    for (const variant of [
+      { ...payload, ok: false, failure_categories: { assertion_failure: 1 } },
+      { ...payload, failure_categories: { assertion_failure: 1 } },
+      { ...payload, run_results: payload.run_results.map((row) => ({ ...row, execution_context: { ...context, mismatch_detected: true } })) },
+      { ...payload, run_results: [payload.run_results[0], { ...payload.run_results[1], status: "skipped" }] },
+    ]) {
+      const kept = JSON.parse(formatOutput(variant, { json: true, lean: true, command: "test" })) as Record<string, Record<string, unknown>>;
+      expect(kept.execution_context).toHaveProperty("sandbox_project_pm_path", "/sandbox/project");
+    }
+    const failedCategories = JSON.parse(
+      formatOutput({ ...payload, failure_categories: { assertion_failure: 1 } }, { json: true, lean: true, command: "test" }),
+    ) as Record<string, unknown>;
+    expect(failedCategories.failure_categories).toEqual({ assertion_failure: 1 });
   });
 
   it("preserves heterogeneous linked-test contexts and non-result payloads", () => {

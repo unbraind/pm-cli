@@ -499,11 +499,44 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
     }
     return rest;
   });
+  const quietSuccess =
+    lean &&
+    value.ok === true &&
+    isPlainObject(sharedContext) &&
+    sharedContext.mismatch_detected === false &&
+    rows.every((row) => row.status === "passed") &&
+    !(isPlainObject(value.failure_categories) && Object.values(value.failure_categories).some((count) => count !== 0));
+  if (quietSuccess) return projectQuietLinkedTestSuccess(value, sharedContext, runResults);
   return {
     ...value,
     ...(sharedContext === undefined
       ? {}
       : { execution_context: sharedContext }),
+    run_results: runResults,
+  };
+}
+
+/**
+ * Lean receipts for a passing, mismatch-free run with no failure category keep
+ * only the sandbox modes and trust reason that explain what the tests saw; the
+ * paths, item counts and all-zero failure categories return without --lean
+ * (pm-covpax).
+ */
+function projectQuietLinkedTestSuccess(
+  value: Record<string, unknown>,
+  context: Record<string, unknown>,
+  runResults: unknown[],
+): Record<string, unknown> {
+  const { failure_categories: _zeroCategories, ...rest } = value;
+  const trust = isPlainObject(context.trust) ? context.trust.reason : undefined;
+  return {
+    ...rest,
+    execution_context: {
+      pm_context_mode: context.pm_context_mode,
+      workspace_context_mode: context.workspace_context_mode,
+      ...(trust === undefined ? {} : { trust_reason: trust }),
+      restore_with: "rerun without --lean",
+    },
     run_results: runResults,
   };
 }

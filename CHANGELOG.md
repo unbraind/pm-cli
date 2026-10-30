@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Successful linked-test receipts carry non-actionable execution_context and all-zero failure_categories, even under --lean ([pm-covpax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-covpax.toon))
 - Unknown-option recovery drops a dash-leading prose value: the advertised replay closes, comments or creates without the user's text ([pm-stq61b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-stq61b.toon))
 - GH-1633: accept comma-separated --unset field lists with per-field validation ([pm-gh1633](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1633.toon))
 - GH-1630: bound selective linked-test receipts to the selected collection ([pm-gh1630](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1630.toon))
