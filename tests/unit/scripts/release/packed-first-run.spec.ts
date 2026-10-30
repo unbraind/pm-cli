@@ -133,6 +133,10 @@ describe("packed first run", () => {
       expect(String(setup?.with?.["node-version"])).toBe(firstRun.env?.PM_FIRST_RUN_NODE);
       // Each Node version starts from its own empty prefix, cache and home.
       expect(firstRun.run).toContain('first_run_root="${RUNNER_TEMP}/pm-first-run-node${PM_FIRST_RUN_NODE}"');
+      expect(firstRun.run).toContain('export npm_config_prefix="${first_run_root}/prefix"');
+      expect(firstRun.run).toContain('export npm_config_cache="${first_run_root}/cache"');
+      expect(firstRun.run).toContain('export HOME="${first_run_root}/home"');
+      expect(firstRun.run).toContain('export USERPROFILE="${HOME}"');
     }
     expect(job.steps.findIndex((step) => step.run?.includes("pnpm install"))).toBeGreaterThan(job.steps.indexOf(firstRuns[1]!));
     const run = firstRuns[0]!.run ?? "";

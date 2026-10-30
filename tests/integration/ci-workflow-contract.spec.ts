@@ -725,6 +725,12 @@ describe("GitHub workflow contract", () => {
       (step) =>
         step.name === "Verify linked snapshot target handling on Node 22",
     );
+    // The snapshot proof must run on the Node 22 runtime, not a later setup.
+    const lastSetupBeforeSnapshot = node22Job.steps
+      .slice(0, node22Job.steps.indexOf(snapshotSteps[0]!))
+      .filter((step) => step.uses?.startsWith("actions/setup-node@"))
+      .at(-1);
+    expect(lastSetupBeforeSnapshot?.with).toMatchObject({ "node-version": 22 });
     expect(snapshotSteps).toEqual([
       {
         name: "Verify linked snapshot target handling on Node 22",
