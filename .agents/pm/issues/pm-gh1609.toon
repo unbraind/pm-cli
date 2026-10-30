@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T03:16:18.150Z"
-updated_at: "2026-10-29T19:40:11.991Z"
+updated_at: "2026-10-30T00:57:01.259Z"
 closed_at: "2026-10-29T19:40:10.997Z"
 completed_at: "2026-10-29T19:40:10.997Z"
 author: "harness:codex"
@@ -21,7 +21,7 @@ actual_result: Both new regressions fail before the change. Linked run test-loca
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-10-27T03:16:19.265Z","harness:codex","cli:update:dep",detected
   pm-gh1622,related,"2026-10-29T08:53:15.765Z","harness:codex","cli:update:dep",detected
-comments[23]:
+comments[24]:
   - created_at: "2026-10-27T03:16:18.150Z"
     author: "harness:codex"
     text: "Duplicate check: complete3135-item strict full all-status corpus has no exact GH1609 owner, no unreadable items and no omissions. Request-specific search, open and zero-in-progress inventories were read. Full live pm-02z97f data confirms its earlier audited dead-owner recovery is closed/completed, not newly outstanding. This newly reported crash-inside-fence scenario is a bounded follow-up. Current source includes both owner_dead_recovery_attempt and the independent commit fence in src/core/lock/lock.ts; the report has not yet been independently reproduced. Keep this intake open/unclaimed; do not treat reported symptoms as a proven root cause."
@@ -92,6 +92,9 @@ comments[23]:
   - created_at: "2026-10-29T19:40:07.584Z"
     author: "harness:codex"
     text: "Review4416668051 independently reproduced with EACCES and EBUSY owner-file read faults: both new release regressions fail before the implementation change (13 existing controls pass). The owner now retries at most three inconclusive reads with the existing short jittered delay, then retains ambiguous metadata; a different token is never removed. Actual linked run test-local-mvty638u-mw6emq passes150 tests across7 files, including persistent read failures, token replacements, killed writers, monotonic wait, and Node/Bun public SDK cases. Full exact-head hosted gates remain required before merge."
+  - created_at: "2026-10-30T00:57:01.259Z"
+    author: "harness:codex"
+    text: "Current full-review suggestion to restore a finite stale-cleanup owner fallback was assessed against the live completed safety contract, documented recovery policy and existing release/replacement race regression. A live PID without start identity cannot prove original-owner death; after a token read, its release can admit a replacement before a pending retirement rename. Age-based retirement reintroduces that race. Retained the existing policy and replied once to the inline finding with the documented exclusive-access recovery procedure; no automatic ownership override or lock-source change was made."
 learnings[2]{created_at,author,text}:
   "2026-10-29T07:45:23.237Z","harness:codex","Owner-death recovery must cover every coordination layer held by a writer, including the commit gate. A short writer budget cannot recover a gate whose owner is only inspected after a longer age grace. Preserve the retired generation so simultaneous recoverers cannot remove its live replacement, and measure wait deadlines independently of wall-clock lease timestamps."
   "2026-10-29T10:46:55.208Z","harness:codex","A generation-retirement fence is safe only when every eligible removal path for a readable token participates in it. Test mixed liveness outcomes between concurrent recoverers, pause one after its token check until the other publishes a replacement, and prove exactly one holder plus unchanged original recovery evidence. A passing two-dead-owner race alone does not cover the age-policy fallback."

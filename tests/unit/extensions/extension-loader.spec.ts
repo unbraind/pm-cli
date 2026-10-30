@@ -3488,6 +3488,7 @@ describe("extension loader", () => {
     // Auto-created command paths gain full command definitions when metadata is supplied.
     expect(activation.registrations.commands).toEqual([
       {
+        source_version: "1.0.0",
         layer: "project",
         name: "registration-rich",
         source_package: undefined,
@@ -3500,6 +3501,7 @@ describe("extension loader", () => {
         intent: "ingest external task records",
       },
       {
+        source_version: "1.0.0",
         layer: "project",
         name: "registration-rich",
         command: "jsonl export",

@@ -19,6 +19,22 @@ interface CollectedLog {
   attributes: Record<string, { value: unknown }>;
 }
 
+async function assertAdapterCommandSources(runtime: string, cwd: string, env: NodeJS.ProcessEnv,
+  events: Array<Record<string, unknown>>): Promise<void> {
+  const observed = [];
+  for (const direction of ["import", "export"]) {
+    const before = events.length;
+    const result = await execute(runtime === "node" ? process.execPath : "bun", [path.resolve("dist/cli.js"), "error-data", direction, "--json"], {
+      cwd, env: { ...env, PM_TELEMETRY_SOURCE_CONTEXT: "test" }, timeout: 15_000,
+    }).catch((error) => error);
+    expect(result.code, result.stderr).toBe(1);
+    observed.push(...events.slice(before).filter((event) => event.exception));
+  }
+  expect(observed).toEqual(["import", "export"].map((direction) => expect.objectContaining({ tags: expect.objectContaining({
+    "pm.command": `error-data ${direction}`, "pm.extension.name": "error-probe", "pm.extension.version": "1.2.3",
+  }) })));
+}
+
 async function assertSequentialSdkSources(runtime: string, cwd: string, env: NodeJS.ProcessEnv,
   logs: CollectedLog[], events: Array<Record<string, unknown>>): Promise<void> {
   const sdkUrl = pathToFileURL(path.resolve("dist/cli-bundle/sdk.js")).href;
@@ -75,14 +91,17 @@ it.each(runtimes)("keeps declared refusals separate from unexpected extension fa
         installation_id: randomUUID(), endpoint: `http://127.0.0.1:${address.port}/events` } });
       await writeTestExtension({
         root: context.pmPath, placement: "projectRoot", directory: "error-probe", entryFilename: "index.mjs",
-        manifest: { name: "error-probe", version: "1.2.3", capabilities: ["commands"] },
+        manifest: { name: "error-probe", version: "1.2.3", capabilities: ["commands", "importers"] },
         entrySource: `export function activate(api) { api.registerCommand({ name: "error probe", arguments: [{ name: "mode", required: true }], run: ({ args }) => {
           if (args[0] === "untyped") throw Object.assign(new Error("unexpected untyped handler fault"), { privateDocument: "synthetic-private-cause-payload" });
           if (args[0] === "misnamed") throw Object.assign(new Error("invalid refusal shape"), { name: "PmCliError", code: "not_a_contract" });
           throw Object.assign(new Error("producer refusal"), args[0] === "expected"
             ? { name: "PmCliError", exitCode: 1, code: "probe_expected", context: { code: "probe_expected", nextSteps: ["Use a supported input."] } }
             : { name: "SimulationRefusal", exitCode: 1, code: "sdk_unavailable", remediation: "Install the SDK." });
-        } }); }`,
+        } });
+          api.registerImporter("error-data", () => { throw new Error("unexpected importer fault"); });
+          api.registerExporter("error-data", () => { throw new Error("unexpected exporter fault"); });
+        }`,
       });
       const env: NodeJS.ProcessEnv = { ...context.env, CI: "true", PM_SENTRY_DISABLED: "0", PM_TELEMETRY_DISABLED: "0", PM_NO_TELEMETRY: "0", DO_NOT_TRACK: "0",
         PM_TELEMETRY_INLINE_FLUSH: "1", PM_TELEMETRY_PROMPT: "0",
@@ -111,6 +130,7 @@ it.each(runtimes)("keeps declared refusals separate from unexpected extension fa
         expect(result.code, result.stderr).toBe(1);
         expect(events.slice(before).filter((event) => event.exception)).toHaveLength(1);
       }
+      await assertAdapterCommandSources(runtime, context.tempRoot, env, events);
       const before = events.length;
       const expected = await execute(runtime === "node" ? process.execPath : "bun", [path.resolve("dist/cli.js"), "error", "probe", "expected", "--json"], {
         cwd: context.tempRoot, env: { ...env, PM_TELEMETRY_SOURCE_CONTEXT: "test" }, timeout: 15_000,
