@@ -52,9 +52,10 @@ function snapshotOutputText(value: unknown, key: string, seen: WeakMap<object, u
   if (seen.has(value)) return seen.get(value);
   const snapshot = Array.isArray(value) ? new Array(value.length) : {};
   seen.set(value, snapshot);
-  for (const [childKey, entry] of Object.entries(value)) {
+  // Read each child just before snapshotting it, as JSON.stringify does, so an earlier toJSON can change a later sibling.
+  for (const childKey of Object.keys(value)) {
     Object.defineProperty(snapshot, childKey, {
-      value: snapshotOutputText(entry, childKey, seen), enumerable: true, configurable: true, writable: true,
+      value: snapshotOutputText((value as Record<string, unknown>)[childKey], childKey, seen), enumerable: true, configurable: true, writable: true,
     });
   }
   return snapshot;

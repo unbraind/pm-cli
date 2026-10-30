@@ -70,4 +70,15 @@ describe("public output Unicode policy", () => {
       expect(formatBuiltInOutput({ date: new Date("2026-10-29T00:00:00.000Z"), missing: { toJSON: () => undefined } }, format)).toContain("2026-10-29T00:00:00.000Z");
     }
   });
+
+  it("reads each sibling after earlier serializers run, matching native JSON.stringify", () => {
+    const build = (): Record<string, unknown> => {
+      const value: Record<string, unknown> = { first: { toJSON: () => { value.second = "updated"; delete value.third; return "first"; } }, second: "original", third: "removed" };
+      return value;
+    };
+    const native = JSON.parse(JSON.stringify(build())) as Record<string, unknown>;
+    expect(native).toEqual({ first: "first", second: "updated" });
+    expect(JSON.parse(formatBuiltInOutput(build(), "json"))).toEqual(native);
+    expect(formatBuiltInOutput(build(), "toon")).toBe(formatBuiltInOutput(native, "toon"));
+  });
 });
