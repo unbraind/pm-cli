@@ -121,4 +121,24 @@ describe("same-command read option recovery (GH-1528)", () => {
       expect(await authoritativeFiles(context.pmPath)).toEqual(before);
     });
   }, 180_000);
+
+  it("replays a dash-leading close reason and comment without losing the text (pm-stq61b)", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "Task", "Dash-leading values", "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      const id = created.json?.item?.id as string;
+      const prefix = ["--pm-path", context.pmPath, "--no-extensions"];
+      for (const args of [["comments", id, "--flag style comment"], ["close", id, "--unset is now a list"]]) {
+        const refused = context.runCli([...prefix, "--json", ...args], { expectJson: true });
+        expect(refused.code, args.join(" ")).toBe(2);
+        const retry = (JSON.parse(refused.stderr) as { recovery: { suggested_retry_args?: string[] } }).recovery.suggested_retry_args;
+        expect(retry?.slice(-2)).toEqual(["--", args[2]]);
+        const replayed = context.runCli(retry!);
+        expect(replayed.code, replayed.stderr).toBe(0);
+      }
+      const read = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(read.json?.item).toMatchObject({ status: "closed", close_reason: "--unset is now a list" });
+      expect(JSON.stringify(context.runCli(["comments", id, "--json"], { expectJson: true }).json)).toContain("--flag style comment");
+    });
+  });
 });

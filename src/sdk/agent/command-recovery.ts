@@ -11,7 +11,7 @@ import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-
 import { findBootstrapCommandTokenIndex, parseBootstrapCommandName } from "../cli-contracts/bootstrap-command-scanner.js";
 import { READ_OUTPUT_DIMENSION_FLAGS, READ_OUTPUT_COMPOSITION_FLAGS } from "../read-output/options.js";
 import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
-import { PM_READ_OUTPUT_SURFACE_CONTRACTS, resolveReadOutputSurface } from "../read-output-contracts.js";
+import { readOutputIncludeModeOptionsForSurface, resolveNativeReadOutputSurface } from "../read-output/surfaces.js";
 
 const READ_PROJECTION_FLAGS = new Set<string>([...Object.values(READ_OUTPUT_DIMENSION_FLAGS), ...READ_OUTPUT_COMPOSITION_FLAGS, "--full", "--brief", "--compact", "--summary", "--fields", "--section", "--token-budget"]);
 const MUTATION_RECEIPT_FLAGS = new Set(["--full-changed-fields", "--no-changed-fields", "--id-only"]);
@@ -58,12 +58,11 @@ const COMPLETENESS_CONFLICT_FLAGS = ["--depth", "--output-include", "--fields", 
 
 /** Resolve the completeness spellings a read command accepts, so recovery never guesses from another command's vocabulary. */
 export function resolveReadCompletenessControls(commandName: string): ReadCompletenessControls | undefined {
-  const surface = resolveReadOutputSurface(commandName);
-  const contract = PM_READ_OUTPUT_SURFACE_CONTRACTS.find((entry) => entry.command === surface);
-  if (surface === undefined || contract === undefined) return undefined;
+  const surface = resolveNativeReadOutputSurface(resolvePmCommandOperation(commandName.trim().toLowerCase()));
+  if (surface === undefined) return undefined;
   const flags = resolveSubcommandFlagContractsForCommand(surface);
   const declared = flags.flatMap((entry) => [entry.flag, ...(entry.aliases ?? [])]);
-  const modes = (contract.projection_modes ?? []).filter((mode) => declared.includes(`--${mode}`));
+  const modes = [...readOutputIncludeModeOptionsForSurface(surface).keys()].filter((mode) => declared.includes(`--${mode}`));
   const depthValues = [...(flags.find((entry) => entry.flag === "--depth")?.values ?? [])];
   if (modes.length === 0 && depthValues.length === 0) return undefined;
   return { command: surface, modes, depth_values: depthValues, declared_flags: declared };
@@ -118,7 +117,7 @@ function resolveInvokedCommand(argv: readonly string[]): string | undefined {
 /** Derive a same-command read retry for known completeness and encoding mistakes without discarding intent. */
 export function resolveReadOptionRetryArgs(commandName: string, invocationArgv: readonly string[], unknownOption: string): string[] | undefined {
   const command = commandName === "ctx" ? "context" : resolvePmCommandOperation(commandName);
-  if (resolveReadOutputSurface(command) === undefined || invocationArgv.includes("--")) return undefined;
+  if (resolveNativeReadOutputSurface(command) === undefined || invocationArgv.includes("--")) return undefined;
   if (resolveInvokedCommand(invocationArgv) !== command) return undefined;
   const flag = unknownOption.split("=", 1)[0]!;
   const indices = invocationArgv.flatMap((token, index) => token === flag || token.startsWith(`${flag}=`) ? [index] : []);

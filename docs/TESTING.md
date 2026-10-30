@@ -886,6 +886,10 @@ pm test <item-id> --run --only-index 2
 pm test <item-id> --run --only-last
 ```
 
+A selective run's receipt lists only the tests it selected. Run
+`pm test <item-id> --list`, which the receipt's `tests_omitted.restore_with`
+names, to read the whole stored collection.
+
 Linked-command stdout and stderr are captured through temporary regular files,
 then read back with the 20 MiB per-stream retention bound. This keeps inherited
 descriptors blocking for Bun, Rust, and other runtimes that treat `EAGAIN` on a

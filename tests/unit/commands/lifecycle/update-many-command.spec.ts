@@ -2197,7 +2197,7 @@ describe("comma-separated --unset field lists (GH-1633)", () => {
       expect(scalarFields(context, repeatedId)).toEqual(scalarFields(context, commaId));
 
       expect(context.runCli(["update", commaId, ...seeded]).code).toBe(0);
-      const preview = await runUpdateMany({ list: { ids: commaId }, update: { unset: ["deadline, assignee"] }, dryRun: true }, { path: context.pmPath });
+      const preview = await runUpdateMany({ list: { ids: commaId }, update: { unset: ["deadline, assignee", "sprint"] }, dryRun: true }, { path: context.pmPath });
       expect(preview.item_plans?.[0]?.changes.map((change) => change.field).sort()).toEqual(["assignee", "deadline"]);
       const bulk = context.runCli(["update", "many", "--ids", commaId, "--unset", "deadline,assignee", "--json"], { expectJson: true });
       expect(bulk.code, bulk.stderr).toBe(0);

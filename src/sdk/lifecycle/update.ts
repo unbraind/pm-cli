@@ -367,11 +367,11 @@ function normalizeLegacyNoneUpdateOptions(
 
 /** Refuse unsupported or empty `--unset` field names before a bulk plan can skip items silently. */
 export function assertUpdateUnsetFieldsSupported(
-  raw: readonly string[] | undefined,
+  raw: readonly string[],
   runtimeFieldRegistry: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[],
 ): void {
-  parseUpdateUnsetTargets(raw === undefined ? undefined : [...raw], runtimeFieldRegistry, extensionFieldNames);
+  parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames);
 }
 
 function parseUpdateUnsetTargets(

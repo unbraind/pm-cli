@@ -1,0 +1,24 @@
+id: pm-covpax
+title: "Successful linked-test receipts carry non-actionable execution_context and all-zero failure_categories, even under --lean"
+description: "Found while delivering pm-gh1630. After a selective run's tests[] was bounded to the selected entries, the remaining cost of a successful pm test --run receipt is mostly constant plumbing. On a 1-test --only-last run that passed: default TOON 2198 bytes, --lean 2178, --json 2685, --lean --json 2645. Every variant contains the full execution_context block (about 1.2 KB): requested and actual pm_context_mode, source and sandbox project and global paths, item counts, extension seeding flags, workspace roots and the trust fingerprint. It also contains a 9-row failure_categories map of zeros. When the run passed and mismatch_detected is false, an agent cannot act on any of it.\n\npm-fqdmbf (closed) hoisted the execution context to once per invocation and made --lean drop successful empty streams. Its acceptance criterion 'Lean structured output omits non-actionable successful-run sandbox plumbing while failures retain enough provenance' was delivered for streams only. This item covers the remaining boundary: what a successful, mismatch-free receipt must say about its sandbox, and whether all-zero failure categories need to be printed at all."
+type: Issue
+status: open
+priority: 3
+tags[3]: agent-ux,linked-tests,token-efficiency
+created_at: "2026-10-30T13:12:13.481Z"
+updated_at: "2026-10-30T13:12:13.481Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Measure the default, lean and JSON receipts for passing and failing runs, with and without a context mismatch; Define which execution_context fields are actionable on success and project the rest behind an explicit restore path, keeping full provenance on failure, refusal or mismatch; Render failure_categories compactly when every count is zero, without losing the counts on failure; Keep CLI, SDK and MCP shapes consistent and record the measured byte reduction"
+parent: pm-5t33or
+risk: low
+confidence: high
+severity: low
+expected_result: "A passing, mismatch-free linked-test receipt omits non-actionable sandbox plumbing and zero-count categories by default or under --lean, with a documented way to restore them; failures keep full diagnostic provenance."
+component: cli
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fqdmbf,related,"2026-10-30T13:12:13.481Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1630,discovered_from,"2026-10-30T13:12:13.481Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-30T13:12:13.481Z","harness:claude-code","Duplicate check: a semantic search for execution_context and linked-test receipt verbosity, and a keyword search for execution_context. Closed pm-fqdmbf is the nearest owner. Its resolution records hoisting plus lean removal of successful streams only, and the live CLI shows execution_context in every variant, so this is a distinct, still-open boundary rather than a recurrence. Measured on this branch (feat/agent-same-command-corrections) in an isolated tracker."
+body: ""

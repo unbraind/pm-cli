@@ -2254,9 +2254,12 @@ describe("runTest", () => {
         selected_count: 1,
         skipped_count: 2,
       });
-      expect(matched.warnings?.[0]).toContain(
-        "linked_test_selection:match=beta",
-      );
+      // GH-1630: a narrowed run lists only what it selected and names the full-collection read.
+      expect(matched.tests.map((test) => test.command)).toEqual([
+        "node -e \"process.stdout.write('beta')\"",
+      ]);
+      expect(matched.tests_omitted).toEqual({ count: 2, restore_with: `pm test ${id} --list` });
+      expect(matched.warnings).toBeUndefined();
 
       const indexed = await runTest(
         id,
@@ -2264,6 +2267,7 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(indexed.run_results[0]?.stdout).toBe("alpha");
+      expect(indexed.tests).toHaveLength(1);
 
       const last = await runTest(
         id,
@@ -2271,6 +2275,19 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(last.run_results[0]?.stdout).toBe("gamma");
+      expect(last.tests_omitted?.count).toBe(2);
+
+      const restored = await runTest(id, { list: true }, { path: context.pmPath });
+      expect(restored.tests).toHaveLength(3);
+      expect(restored.tests_omitted).toBeUndefined();
+      const unselected = await runTest(id, { run: true }, { path: context.pmPath });
+      expect(unselected.tests).toHaveLength(3);
+      expect(unselected.tests_omitted).toBeUndefined();
+
+      const cli = context.runCli(["test", id, "--run", "--only-last", "--json"], { expectJson: true });
+      expect(cli.code, cli.stderr).toBe(0);
+      expect(cli.json).toMatchObject({ count: 3, tests: [{ command: "node -e \"process.stdout.write('gamma')\"" }], tests_omitted: { count: 2, restore_with: `pm test ${id} --list` } });
+      expect((cli.json as { tests: unknown[] }).tests).toHaveLength(1);
     });
   });
 

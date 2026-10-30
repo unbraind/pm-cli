@@ -1949,7 +1949,7 @@ export function registerMutationCommands(
     )
     .option(
       "--unset <field>",
-      "Clear scalar metadata fields by name (repeatable or comma-separated)",
+      "Clear scalar fields by name (repeatable or csv)",
       collect,
     )
     .option("--clear-deps", "Clear dependency entries")

@@ -2903,6 +2903,13 @@
       ],
       "package_version": "2026.10.28",
       "reason": "pm-gh1626: CliFlagContract gains the optional readonly values domain; existing contract objects remain assignable and no member was removed or narrowed"
+    },
+    {
+      "changes": [
+        "signature ./sdk:TestResult"
+      ],
+      "package_version": "2026.10.28",
+      "reason": "pm-gh1630: TestResult gains the optional tests_omitted receipt; a selector-narrowed run now lists only its selected tests while count, selection and pm test --list keep the full collection"
     }
   ],
   "entrypoints": {
@@ -20829,7 +20836,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestResult",
-          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; evidence_recording?: { recorded: boolean; reason: \"recorded\" | \"tracking_disabled\" | \"write_failed\"; run_id: string; recovery_command?: string; }; count: number; removed?: number; updated_index?: number; updated_fields?: string[]; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
+          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; tests_omitted?: { count: number; restore_with: string; }; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; evidence_recording?: { recorded: boolean; reason: \"recorded\" | \"tracking_disabled\" | \"write_failed\"; run_id: string; recovery_command?: string; }; count: number; removed?: number; updated_index?: number; updated_fields?: string[]; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
         },
         {
           "classification": "advanced_export",

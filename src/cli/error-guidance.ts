@@ -1730,9 +1730,11 @@ function buildUnknownOptionNextSteps(
     proseCommands.length
       ? `${optionName} is accepted by ${proseCommands.join(", ")}${proseRemainderText}. Inspect those command contracts only if you intended a different operation.`
       : undefined,
-    candidateContext.optionScope === "declared_nowhere"
-      ? `${optionName} is not declared on any command path. Use a nearest supported option on ${commandName ?? "the attempted command"}, or inspect that command's help.`
-      : undefined,
+    isDashLeadingValue(optionName)
+      ? `"${optionName}" contains spaces, so it is a value that starts with --, not an option. Pass it after a -- separator at the end of the command, or through the command's named value flag.`
+      : candidateContext.optionScope === "declared_nowhere"
+        ? `${optionName} is not declared on any command path. Use a nearest supported option on ${commandName ?? "the attempted command"}, or inspect that command's help.`
+        : undefined,
     retryCommand
       ? `Replay with suggested correction: ${retryCommand}`
       : undefined,
@@ -1761,12 +1763,30 @@ function resolveReadIntentRetry(
   return [...READ_COMPLETENESS_SPELLINGS, "--toon", ...(commandName === "activity" ? ["--since"] : [])].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
 }
 
+/** A rejected "option" containing whitespace is a value that starts with `--`, never an option spelling. */
+function isDashLeadingValue(optionName: string): boolean {
+  return /\s/u.test(optionName);
+}
+
+/** Pass a dash-leading value after `--`, only when every later token is an option so order and values survive. */
+function resolveDashLeadingValueRetry(
+  args: string[] | undefined,
+  optionName: string,
+): { retryCommand?: string; suggestedRetryArgs?: string[] } {
+  const index = args?.indexOf(optionName) ?? -1;
+  if (args === undefined || index < 0 || args.includes("--") || args.lastIndexOf(optionName) !== index) return {};
+  if (args.slice(index + 1).some((token) => !token.startsWith("-"))) return {};
+  const suggestedRetryArgs = [...stripGlobalBootstrapTokens(args.filter((_, position) => position !== index)), "--", optionName];
+  return { retryCommand: renderPmCommand(suggestedRetryArgs), suggestedRetryArgs };
+}
+
 /** Keep unknown-option fallbacks from dropping presentation or preview intent. */
 function resolveUnknownOptionRetry(
   context: CommanderGuidanceContext,
   optionName: string,
   commandName: string | undefined,
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } {
+  if (isDashLeadingValue(optionName)) return resolveDashLeadingValueRetry(context.normalizedInvocationArgs, optionName);
   if (
     ["--dry-run", "--check", "--check-only", "--plan", "--preview"].includes(
       optionName.split("=", 1)[0],

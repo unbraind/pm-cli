@@ -382,6 +382,8 @@ export interface TestResult {
   failure_categories: Record<LinkedTestFailureCategory, number>;
   /** Value that configures or reports selection for this contract. */
   selection?: Omit<LinkedTestRunSelection, "selected">;
+  /** Present when a run selector narrowed `tests` to the selected entries; counts the stored tests left out and names the read that restores them. */
+  tests_omitted?: { count: number; restore_with: string };
   /** Value that configures or reports fail on skipped triggered for this contract. */
   fail_on_skipped_triggered?: boolean;
   /** Value that configures or reports warnings for this contract. */
@@ -3304,15 +3306,9 @@ async function executeSelectedLinkedTests(params: {
 
 function buildTestWarnings(
   options: TestCommandOptions,
-  runSelection: LinkedTestRunSelection | undefined,
   runResults: TestRunResult[],
 ): string[] {
   const warnings: string[] = [];
-  if (runSelection && runSelection.selector !== null) {
-    warnings.push(
-      `linked_test_selection:${runSelection.selector}=${runSelection.requested};selected=${runSelection.selected_count};skipped=${runSelection.skipped_count};indexes=${runSelection.selected_indexes.join(",")}`,
-    );
-  }
   if (options.run === true && options.checkContext === true) {
     const preflight = summarizeContextPreflight(runResults);
     warnings.push(
@@ -3516,12 +3512,14 @@ function projectTestResult(input: {
     recording,
     measurementProjection,
   } = input;
+  const narrowed = runSelection !== undefined && runSelection.selector !== null && runSelection.skipped_count > 0;
   return {
     ok:
       runResults.every((entry) => entry.status !== "failed" && entry.status !== "refused") &&
       failOnSkippedTriggered !== true,
     id: item.itemId,
-    tests: item.tests,
+    tests: narrowed ? runSelection.selected : item.tests,
+    ...(narrowed ? { tests_omitted: { count: item.tests.length - runSelection.selected.length, restore_with: `pm test ${item.itemId} --list` } } : {}),
     run_results: runResults,
     failure_categories: failureCategories,
     selection: runSelection
@@ -3619,11 +3617,7 @@ export async function runTest(
     options.run === true &&
     options.failOnSkipped === true &&
     runResults.some((entry) => entry.status === "skipped");
-  const warnings = buildTestWarnings(
-    options,
-    runOptions.runSelection,
-    runResults,
-  );
+  const warnings = buildTestWarnings(options, runResults);
   if (trustAcknowledgement) {
     warnings.push(
       `linked_test_trust_acknowledged:${trustAcknowledgement.acknowledged}`,

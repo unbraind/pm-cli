@@ -13,6 +13,10 @@
 
 ### Fixed
 
+- Unknown-option recovery drops a dash-leading prose value: the advertised replay closes, comments or creates without the user's text ([pm-stq61b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-stq61b.toon))
+- GH-1633: accept comma-separated --unset field lists with per-field validation ([pm-gh1633](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1633.toon))
+- GH-1630: bound selective linked-test receipts to the selected collection ([pm-gh1630](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1630.toon))
+- GH-1626: offer same-command replay corrections for brief completeness spellings ([pm-gh1626](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1626.toon))
 - GH-1609: recover killed commit owners and bound lock waits with a monotonic clock ([pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon))
 - GH-1624: define typed Unicode handling for extension output across JSON and TOON ([pm-gh1624](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1624.toon))
 - GH-1625: align extension-refusal Sentry capture with declared contracts and telemetry source context ([pm-gh1625](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1625.toon))

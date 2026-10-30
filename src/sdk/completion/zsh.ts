@@ -126,7 +126,7 @@ const ZSH_MUTATION_COLLECTION_ARGUMENT_SPECS = [
   "'--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder'",
   "'--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event'",
   "'--type-option[Type option key=value or key=<name>,value=<value>]:type_option'",
-  "'--unset[Clear scalar metadata fields by name (repeatable or comma-separated)]:field'",
+  "'--unset[Clear scalar fields by name (repeatable or csv)]:field'",
   "'--replace-files[Atomically replace linked files with provided --file values]'",
   "'--replace-docs[Atomically replace linked docs with provided --doc values]'",
   "'--clear-deps[Clear dependency entries]'",
@@ -461,7 +461,7 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
-            '--unset[Clear scalar metadata fields by name (repeatable or comma-separated)]:field' \\
+            '--unset[Clear scalar fields by name (repeatable or csv)]:field' \\
             '--replace-deps[Atomically replace dependencies with provided --dep values]' \\
             '--replace-tests[Atomically replace linked tests with provided --test values]' \\
             '--clear-deps[Clear dependency entries]' \\

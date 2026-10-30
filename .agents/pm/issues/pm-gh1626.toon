@@ -2,26 +2,29 @@ id: pm-gh1626
 title: "GH-1626: offer same-command replay corrections for brief completeness spellings"
 description: "https://github.com/unbraind/pm-cli/issues/1626\n\nReported behavior on published2026.10.28; current-source reproduction and implementation are pending. Preserve the completed predecessor scope when evaluating this report.\n\nFound while using pm 2026.10.28 as an agent (plain-directory tracker, no git).\n\nSeverity: low–medium (routine agent friction; fails closed, but every miss costs a help read and a retry).\n\n#1528 fixed the `--full` ↔ `--depth full` spelling for `pm context`: the unknown-option recovery now ends with `Replay with suggested correction: pm context --depth full`. The brief spelling of the same completeness matrix did not get that correction:\n\n```bash\npm get <id> --brief            # Unknown option --brief\n#   Next steps: --brief is accepted by list, ops health. ...   (no replay suggestion)\n#   pm get accepts --depth brief\npm list --depth brief          # Unknown option --depth\n#   Next steps: --depth is accepted by context, plan, get. ...  (no replay suggestion)\n#   pm list accepts --brief\npm search probe --depth brief  # same as list\n```\n\nExpected: the same `Replay with suggested correction:` line #1528 added, for every equivalent pair of completeness flags in the read-command matrix (`--brief` ↔ `--depth brief`, `--full` ↔ `--depth full` on `list`/`search`, `--depth standard` on commands whose default already is standard). A table-driven contract test over all read commands, generated from the registered command options, would keep new read commands from reopening this.\n\nWhy it matters for agents: agents switch between `get`, `list`, `search` and `context` in one turn and carry the spelling from the last command. The current recovery points them at other commands instead of telling them the one flag that does what they meant on this command.\n"
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-29T20:35:40.829Z"
-updated_at: "2026-10-30T13:03:37.753Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#7b0e58428f53e3aaeaafb372"
+updated_at: "2026-10-30T13:53:12.463Z"
+closed_at: "2026-10-30T13:53:11.799Z"
+completed_at: "2026-10-30T13:53:11.799Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce all reported spellings on current and published hosts; Derive read-command equivalences from runtime contracts; Preserve operands and reject ambiguous or conflicting rewrites; Prove fixes with table-driven CLI/SDK controls and pre-fix negatives
 parent: pm-mpbb
 risk: medium
 confidence: medium
+resolution: "Added the optional CliFlagContract.values domain on get/context/plan --depth and resolveReadCompletenessControls, which joins it with each read surface's projection modes. resolveReadOptionRetryArgs maps --<level> and --depth <level> only into flags the attempted command declares, drops --depth standard, replays aliased reads on their noun-first path, and declines conflicting or foreign rewrites. Refusals with no equivalent list the command's own controls. The native surface tables moved into the dependency-free read-output/surfaces module so recovery stays off the formatter import path."
 expected_result: "Equivalent brief/depth spellings receive an unambiguous replay correction on the attempted read command, preserving operands and unrelated options."
+actual_result: "Generated probe over 12 declaring surfaces: 38/38 misspellings corrected and every advertised retry exits 0, against 7/38 on base d9c4a0bca. search --depth brief lists 'Completeness controls accepted by pm search: --compact, --full.' 76 generated SDK cases, the CLI integration test, the runtime-boundary no-deps --version test and linked tests all pass. Full suite 11,666 passed; the remaining failure is environmental and passes with NODE_PATH."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-7gpx34,related,"2026-10-29T20:35:40.829Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-29T20:35:40.829Z","harness:codex","Duplicate check: complete strict all-status corpus3157 with no omissions or unreadable records, request-specific GH-number and semantic searches, current open/in_progress inventories, and full live predecessor data/comments/history. The predecessor scope is delivered; this report names a distinct boundary. New intake is open and unclaimed. Source report: https://github.com/unbraind/pm-cli/issues/1626"
   "2026-10-30T13:03:37.753Z","harness:claude-code","Implementation evidence: the correction is now derived from runtime contracts rather than a hand list. resolveReadCompletenessControls joins each read-output surface's declared projection modes with the new CliFlagContract.values domain on --depth (get/context brief|standard|deep|full; plan brief|standard|deep). --<level> maps to --depth <level> only when the domain declares the level, --depth <level> maps to --<level> only for a declared projection mode, and --depth standard on a command without --depth replays without the flag. Aliased reads (deps, health) normalise to noun-first argv; the resolver maps item deps/ops health back to the read surface and replays on the canonical path. Same-command operands and globals are preserved. Conflicting --fields/--output-include/--section/--for or a second completeness flag, inline boolean values, and foreign commands get no retry. When no equivalent exists, for example search --depth brief, the refusal lists that command's own controls instead of pointing at other commands. Negative control, using a generated probe over every declaring surface (38 misspellings across 12 surfaces): the pre-fix build d9c4a0bca corrected 7/38; this build corrects 38/38 and every advertised retry executes with exit 0. One probe failure was its own spawnSync 1 MiB buffer on contracts --full, rerun with a larger buffer. Tests: 76 SDK cases generated from PM_READ_OUTPUT_SURFACE_CONTRACTS, plus a CLI integration test that executes one generated correction per surface and checks authoritative tracker bytes are unchanged. ESLint passes; contracts and SDK surface snapshots were updated, with the optional CliFlagContract.values acknowledged as a signature change."
-files[10]{path,scope}:
+  "2026-10-30T13:33:45.540Z","harness:claude-code","Full-suite finding, fixed before close: the first full run (11,669 tests) caught a bootstrap regression introduced by this change. command-recovery imported read-output-contracts to read projection modes. That module transitively loads the TOON formatter, and commander-usage puts command-recovery on the boot path, so 'pm --version' from a dist copy without node_modules failed with ERR_MODULE_NOT_FOUND @toon-format/toon (runtime-compatibility-boundary.spec.ts). The native surface table, legacy-flag tables, projection-mode derivation and native surface resolver moved verbatim into the dependency-free src/sdk/read-output/surfaces.ts. read-output-contracts imports them back, so its exports and contracts are unchanged (sdk surface 0 classified changes, contract snapshot current). command-recovery now imports only the light module. Verified that a no-deps dist copy prints 2026.10.28 and imports command-recovery and error-guidance without dependencies. The runtime-boundary spec now passes and is linked as this item's second test. The remaining full-suite failure, composed-continuation, is environmental on this host: Linuxbrew Node 26 cannot resolve npm/package.json. It fails identically on base d9c4a0bca and passes with NODE_PATH=$(npm root -g)."
+files[12]{path,scope}:
   sdk/public-surface.json,project
   src/cli/error-guidance.ts,project
   src/sdk/agent/command-recovery.ts,project
@@ -29,12 +32,37 @@ files[10]{path,scope}:
   src/sdk/lifecycle/plan.ts,project
   src/sdk/query/get.ts,project
   src/sdk/query/projection-contracts.ts,project
+  src/sdk/read-output-contracts.ts,project
+  src/sdk/read-output/surfaces.ts,project
   tests/fixtures/contracts/full.json,project
   tests/integration/read-output/option-recovery.integration.spec.ts,project
   tests/unit/sdk/agent/read-option-recovery.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test tests/unit/sdk/agent/read-option-recovery.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts,project,240,"harness:claude-code","2026-10-30T13:00:30.387Z",local_mutation,feat/agent-same-command-corrections
+  node scripts/run-tests.mjs test tests/unit/cli/runtime-compatibility-boundary.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts,project,240,"harness:claude-code","2026-10-30T13:32:51.077Z",local_mutation,feat/agent-same-command-corrections
+test_runs[1]:
+  - run_id: test-local-mvv0iuf4-yx6kin
+    kind: test
+    status: passed
+    started_at: "2026-10-30T13:32:51.670Z"
+    finished_at: "2026-10-30T13:33:13.215Z"
+    recorded_at: "2026-10-30T13:33:13.215Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/sdk/agent/read-option-recovery.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts tests/unit/cli/nonmutating-option-guidance.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test tests/unit/cli/runtime-compatibility-boundary.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/READ_OUTPUT_CONTRACTS.md,project
   docs/SDK.md,project
+close_reason: Same-command completeness corrections are derived from runtime contracts on every declaring read surface.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-gh1626
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/agent/read-option-recovery.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts tests/unit/cli/runtime-compatibility-boundary.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
