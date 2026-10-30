@@ -6,22 +6,22 @@ status: closed
 priority: 1
 tags: []
 created_at: "2026-10-27T03:16:18.150Z"
-updated_at: "2026-10-30T00:57:01.259Z"
-closed_at: "2026-10-29T19:40:10.997Z"
-completed_at: "2026-10-29T19:40:10.997Z"
+updated_at: "2026-10-30T08:48:53.279Z"
+closed_at: "2026-10-30T08:48:52.146Z"
+completed_at: "2026-10-30T08:48:52.146Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Reproduce the real-wall-clock SIGKILL sequence in disposable non-Git trackers on the reported old and current versions; If confirmed fix preserves mutation fencing and audit history with negative controls for live and unknown owners; Separate monotonic acquisition deadlines from owner liveness and verify Node and Bun public SDK behavior
 parent: pm-02z97f
 risk: high
 confidence: high
-resolution: "Preserve crashed-writer recovery and bounded monotonic waits; retry inconclusive release reads up to three times, remove only matching owner tokens, retain persistent faults and replacement ownership."
-expected_result: A transient EACCES or EBUSY read cannot leave a live SDK host holding its own cleanup gate; ambiguous and replacement gates remain protected.
-actual_result: Both new regressions fail before the change. Linked run test-local-mvty638u-mw6emq passes150 tests across7 files. Fresh PR1623 exact-head checks and refreshed AI reviews remain merge requirements; no publication claim.
+resolution: "Preserve dead-owner recovery, token-fenced generations, monotonic waits and bounded transient release-read retries; document that legacy receipts lacking host_identity cannot guarantee cross-host recovery safety."
+expected_result: Runtime mutual exclusion and conservative verified-owner recovery remain intact; documentation distinguishes recorded host evidence from the legacy local-PID fallback.
+actual_result: "Existing150-test linked recovery receipt and prior fully green hosted runtime remain retained. This review changes documentation only; build, focused wording and local-link checks pass. Exact updated-head hosted checks remain required before merge."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-10-27T03:16:19.265Z","harness:codex","cli:update:dep",detected
   pm-gh1622,related,"2026-10-29T08:53:15.765Z","harness:codex","cli:update:dep",detected
-comments[24]:
+comments[25]:
   - created_at: "2026-10-27T03:16:18.150Z"
     author: "harness:codex"
     text: "Duplicate check: complete3135-item strict full all-status corpus has no exact GH1609 owner, no unreadable items and no omissions. Request-specific search, open and zero-in-progress inventories were read. Full live pm-02z97f data confirms its earlier audited dead-owner recovery is closed/completed, not newly outstanding. This newly reported crash-inside-fence scenario is a bounded follow-up. Current source includes both owner_dead_recovery_attempt and the independent commit fence in src/core/lock/lock.ts; the report has not yet been independently reproduced. Keep this intake open/unclaimed; do not treat reported symptoms as a proven root cause."
@@ -95,6 +95,9 @@ comments[24]:
   - created_at: "2026-10-30T00:57:01.259Z"
     author: "harness:codex"
     text: "Current full-review suggestion to restore a finite stale-cleanup owner fallback was assessed against the live completed safety contract, documented recovery policy and existing release/replacement race regression. A live PID without start identity cannot prove original-owner death; after a token read, its release can admit a replacement before a pending retirement rename. Age-based retirement reintroduces that race. Retained the existing policy and replied once to the inline finding with the documented exclusive-access recovery procedure; no automatic ownership override or lock-source change was made."
+  - created_at: "2026-10-30T08:48:39.906Z"
+    author: "harness:codex"
+    text: "Valid review4421833403: qualify the configuration documentation. Receipts with recorded host coordinates fail closed when foreign or unverifiable; legacy receipts without host_identity still use post-grace local PID probes and cannot establish cross-host safety. Clarify that limit without changing runtime recovery or weakening the retained-generation and live-owner rules."
 learnings[2]{created_at,author,text}:
   "2026-10-29T07:45:23.237Z","harness:codex","Owner-death recovery must cover every coordination layer held by a writer, including the commit gate. A short writer budget cannot recover a gate whose owner is only inspected after a longer age grace. Preserve the retired generation so simultaneous recoverers cannot remove its live replacement, and measure wait deadlines independently of wall-clock lease timestamps."
   "2026-10-29T10:46:55.208Z","harness:codex","A generation-retirement fence is safe only when every eligible removal path for a readable token participates in it. Test mixed liveness outcomes between concurrent recoverers, pause one after its token check until the other publishes a replacement, and prove exactly one holder plus unchanged original recovery evidence. A passing two-dead-owner race alone does not cover the age-policy fallback."
@@ -147,7 +150,7 @@ docs[3]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/SDK.md,project
   docs/TESTING.md,project
-close_reason: Recover transient owner read failures during cleanup-gate release.
+close_reason: Deliver crash-safe gate recovery and accurately document legacy host evidence.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

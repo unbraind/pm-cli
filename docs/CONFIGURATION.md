@@ -119,8 +119,12 @@ generation. Recovery after the age grace requires a dead PID or verified PID
 reuse for a readable owner, and uses the same retained generation protocol.
 A live PID with unavailable start identity keeps its gate regardless of age;
 elapsed time alone cannot safely distinguish a paused writer from abandonment.
-Recorded host coordinates must be verified before recovery; a foreign host or
-unavailable host evidence cannot be replaced by a local PID comparison.
+Recorded host coordinates must be verified before recovery; a recorded foreign
+host or unavailable recorded host evidence cannot be replaced by a local PID
+comparison. Legacy receipts without `host_identity` use a local PID probe after
+the grace period. On shared storage, that probe can retire a gate owned by a
+writer on another host whose PID appears dead locally; these legacy receipts
+do not provide cross-host recovery safety.
 Non-missing owner-file read errors also retain the gate regardless of age.
 Lock wait durations use a monotonic clock independently of the
 wall-clock timestamps used for TTL policy. This recovery is tracked by
