@@ -19,7 +19,10 @@ it("preserves a replacement when an aged unverifiable owner releases its gate", 
     const lockPath = getLockPath(root, "shared");
     const gatePath = `${lockPath}.stale-cleanup`;
     await fs.mkdir(path.dirname(lockPath), { recursive: true });
+    // Without host or start identity the owner is unverifiable on every platform,
+    // so recovery reaches the age-based liveness check this race depends on.
     vi.spyOn(lockOwner, "captureProcessIdentity").mockResolvedValue({ pid: process.pid });
+    vi.spyOn(lockOwner, "captureLockOwnerIdentity").mockResolvedValue({});
     const releaseOriginal = await acquireStaleCleanupGate(lockPath, "shared");
     expect(releaseOriginal).not.toBeNull();
     const old = new Date(Date.now() - 2 * 60 * 60_000);

@@ -104,7 +104,8 @@ describe("instrument residual branches", () => {
     }>();
     const event = { exception: { values: [{ type: "PmCliError", value: "invalid refusal" }] } };
     expect(options.beforeSend(event, { originalException: Object.assign(new Error("invalid refusal"), { name: "PmCliError" }) })).not.toBeNull();
-    expect(options.beforeSend(event, { originalException: Object.assign(new Error("expected"), { name: "PmCliError", exitCode: 2 }) })).toBeNull();
+    expect(options.beforeSend(event, { originalException: Object.assign(new Error("undeclared fault"), { name: "PmCliError", exitCode: 1 }) })).not.toBeNull();
+    expect(options.beforeSend(event, { originalException: Object.assign(new Error("expected"), { name: "PmCliError", exitCode: 2, context: { code: "invalid_argument_value" } }) })).toBeNull();
   });
 
   afterEach(() => {
