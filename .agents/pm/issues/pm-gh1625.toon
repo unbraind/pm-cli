@@ -2,26 +2,28 @@ id: pm-gh1625
 title: "GH-1625: align extension-refusal Sentry capture with declared contracts and telemetry source context"
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1625 identifies handled pm-presets SimulationRefusal events from host2026.10.25 in production Sentry without telemetry source_context. Investigate the documented extension-refusal boundary and provenance propagation; distinguish authorized declared refusals from unexpected exceptions instead of suppressing every object with a code. Retain unknown/unhandled fault admission and verify the actual emitting host/package versions. This producer concern is separate from upstream SDK resolution and the release-blocker investigation."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags: []
 created_at: "2026-10-29T14:47:48.858Z"
-updated_at: "2026-10-29T23:10:12.469Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#6bf23ca256a5142e59ec9539"
+updated_at: "2026-10-30T00:16:33.270Z"
+closed_at: "2026-10-29T23:35:29.681Z"
+completed_at: "2026-10-29T23:35:29.681Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce through real extension host and classify only validated declared refusal contracts; Preserve capture of unknown codes mismatched contracts and unexpected or unhandled exceptions; Verify privacy-safe source_context host version and extension version propagation; Prove test isolation and fresh live telemetry without resolving historical faults solely to clear a gate
 parent: pm-5oj5
 risk: high
 confidence: medium
-expected_result: "Sentry distinguishes documented expected extension refusals from unexpected faults and carries privacy-safe source context and version provenance consistent with telemetry, without weakening release fault detection."
+resolution: Preserve separately bundled expected refusals; wrap unknown handler failures as unexpected runtime errors with local causes; share CLI/action/template failure construction; attach owner/version/source context without tracing and keep mutable SDK log/event context in the isolation scope.
+expected_result: "Declared SDK refusals retain their contract, unexpected faults stay observable with actionable provenance, and Node/Bun CLI and embedded hosts honor source attribution, consent and diagnostic privacy."
+actual_result: "Latest linked receipt test-local-mvu69wd6-3pipra passes 687 tests, with four TypeScript projects and focused ESLint passing. Actual Node/Bun loopback controls reproduced the prior capture, privacy and scope bugs; corrected collectors and clean installed packed-SDK probes pass, including sequential generic logs and exceptions."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-745epp,related,"2026-10-29T14:47:48.858Z","harness:codex","cli:create:dep",detected
   pm-dqtzva,related,"2026-10-29T14:47:48.858Z","harness:codex","cli:create:dep",detected
   pm-gh1622,related,"2026-10-29T14:47:48.858Z","harness:codex","cli:create:dep",detected
   pm-bj7rq0,related,"2026-10-29T21:34:52.973Z","harness:codex","cli:update:dep",detected
-comments[18]{created_at,author,text}:
+comments[22]{created_at,author,text}:
   "2026-10-29T14:47:48.858Z","harness:codex","Duplicate check: complete live 3153-item all-status corpus plus request-specific search and live open/in_progress inventories found no GH1625 producer-contract owner. Full live pm-gh1622 and completed pm-745epp and pm-dqtzva metadata, comments and history distinguish upstream SDK loading, inferred-test suppression and gate classification. This intake remains open and unclaimed; the existing release blocker remains intact."
   "2026-10-29T17:37:03.080Z","harness:codex","Investigation: the documented package refusal is createPmCliExpectedError (name PmCliError, finite exitCode, context), not an arbitrary class exposing code and remediation. Preserve unexpected SimulationRefusal admission. Current source sets command source context only when optional command tracing starts; reproduce with tracing disabled and repair error-event provenance independently of tracing, retaining explicit consent, host/package versions and non-production classification."
   "2026-10-29T17:42:56.086Z","harness:codex","Independent pre-fix Node/Bun loopback consumers both reproduce production-environment events missing source, host and extension attribution with command tracing disabled. Corrected source passes real Unicode and error-provenance consumers; 303 of the initial304 focused cases pass, with the remaining legacy test expecting the intentionally superseded noninteractive production default. Updated that expectation and retained explicit user production coverage. Arbitrary SimulationRefusal with sdk_unavailable remains a captured exception; a separately bundled PmCliError shape retains expected-error handling and structured context."
@@ -40,6 +42,10 @@ comments[18]{created_at,author,text}:
   "2026-10-29T22:42:40.727Z","harness:codex","Review remediation: actual Node and Bun loopback collectors reproduced the synthetic private cause payload leak before the change. Sentry ExtraErrorData now disables retained cause-data extraction while SDK cause identity/non-enumerability remain intact. Event and serialized log environments share source mapping and preserve explicit SENTRY_ENVIRONMENT. Early generic and handled errors use bootstrap JSON/quiet flags even on a TTY. Real error and usage-log envelopes are asserted under CI=true for all four sources. Linked receipt test-local-mvu46ol8-pgaba1 passed 685 tests; final focused checks and TypeScript pass. Qualified static import-cost failure remains explicitly owned by pm-bj7rq0; no gate threshold changed."
   "2026-10-29T22:55:03.734Z","harness:codex","A separate actual-SDK local collector probe found that generic logger calls without explicit source attributes still retained initialization environment after sentrySetCommandContext changed source. The first review fix covered usage logs with their own attributes, not this scope-merge case. The probe failed with production instead of automation. Stopped only my coverage runner via verified PID/cwd with SIGINT; exit130 and its partial log are retained, not counted as a pass. Adding scope attributes and real Node/Bun sequential generic-log coverage before final verification."
   "2026-10-29T23:10:11.852Z","harness:codex","The long-lived SDK collector regression now passes on Node and Bun for sequential automation, dogfood and user commands, asserting both generic log envelopes and exception events. It exposed Sentry scope precedence: initialization/current-scope tags and attributes shadow later isolation-scope setters. Mutable host-version/source/provenance defaults now initialize in the isolation scope, and command source also updates log attributes. All 693 focused tests and four TypeScript projects pass; extracted collector assertions pass ESLint. Independent actual-SDK before/after probes fail before and pass after on both runtimes. The active full-source run remains pending the concurrent root PR accounting review fix."
+  "2026-10-29T23:25:32.663Z","harness:codex","Delivery consolidation: the existing writer-recovery and structured-diagnostic PR ancestry, including the fresh refusal-accounting correction and reviewed tracker closure, is preserved in this branch. The new main-based PR1629 will carry the complete implementation and PM evidence under one required-check inventory. PR1623 will be closed as superseded only after the combined branch is pushed. This does not claim the queued hosted checks have passed."
+  "2026-10-29T23:35:28.850Z","harness:codex","Combined-source linked receipt test-local-mvu69wd6-3pipra passes 687 tests. The official packed distribution installed cleanly with npm, and both Node and Bun pass runtime-cause identity/non-enumerability, expected-versus-unexpected SDK guards, pure source attribution, owner-tag clearing and actual generic-log source/environment collector probes. Real CLI and SDK collectors cover all four source classes, telemetry disabled, CI inference and sequential embedded commands. The historical local qualified timing failure and interrupted full runs remain explicit evidence; current full-source/hosted checks are still required before merge."
+  "2026-10-30T00:00:31.112Z","harness:codex","Final static attempt stopped at advisory collection when registry and OSV feeds were unavailable; the original failed receipt is preserved. Public endpoint probes returned HTTP200, and a direct fresh run of the actual adapters then completed: registry zero at every severity and OSV all567 locked packages covered. Retrying the unchanged gate once after that observed availability change; no receipt was fabricated and no unavailable feed is treated as clean."
+  "2026-10-30T00:16:33.269Z","harness:codex","Final combined-source quality: pnpm typecheck and the complete pnpm quality:static pipeline pass, including all10 SDK entrypoint budgets, all6 CLI transport operations, tracker-context/graph/integrity checks and the mutation gate (345 killed;7 documented equivalents;zero unexplained survivors). Fresh registry evidence is complete with zero vulnerabilities at every severity and OSV covers all567 locked packages. Final package artifact budget passes; npx and bunx packed smoke passes all9 packages. The original unavailable-feed receipt and earlier qualified timing failures remain preserved as historical attempts. Strict all-state census is3162 with no unreadable records or omissions and zero in_progress; live validation confirms zero history drift and the documented legacy residual."
 learnings[3]{created_at,author,text}:
   "2026-10-29T17:57:29.404Z","harness:codex",Command tracing is optional; error attribution must use the same pure source-context resolver as telemetry. A producer-owned code and remedy alone do not declare an expected refusal across an extension boundary.
   "2026-10-29T21:45:09.435Z","harness:codex","Observability fixtures should declare CI=true when verifying explicit source attribution. Test callbacks against an environment different from the expected one, so an unchanged event cannot satisfy a mapping assertion accidentally."
@@ -94,7 +100,7 @@ files[23]:
     scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry tests/integration/telemetry/extension-error-provenance.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/integration/read-output/extension.integration.spec.ts,project,300,"harness:codex","2026-10-29T19:26:19.919Z",local_mutation,fix/extension-boundary-contracts
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mvtvoq7q-j0go0y
     kind: test
     status: passed
@@ -128,8 +134,20 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry tests/integration/telemetry/extension-error-provenance.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/integration/read-output/extension.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvu69wd6-3pipra
+    kind: test
+    status: passed
+    started_at: "2026-10-29T23:25:54.273Z"
+    finished_at: "2026-10-29T23:26:27.354Z"
+    recorded_at: "2026-10-29T23:26:27.354Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/sentry tests/unit/core/telemetry tests/integration/telemetry/extension-error-provenance.spec.ts tests/unit/extensions/extension-loader.spec.ts tests/unit/cli/cli-main-errors.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts tests/unit/sdk/runtime-extended-actions.spec.ts tests/integration/read-output/extension.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
+close_reason: Deliver SDK-first extension fault provenance and command-source attribution.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
