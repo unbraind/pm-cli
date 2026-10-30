@@ -3,6 +3,7 @@
  *
  * Applies the host's format-independent Unicode policy to structured output.
  */
+import { isBoxedPrimitive } from "node:util/types";
 import { EXIT_CODE } from "./constants.js";
 import { PmCliError } from "./errors.js";
 
@@ -41,10 +42,10 @@ function findIllFormedOutputText(value: unknown, field: string, seen: WeakSet<ob
   return undefined;
 }
 
-/** Materialize custom JSON serializers once, preserving ordinary shared/circular data. */
+/** Materialize boxed primitives and custom JSON serializers once, preserving shared/circular data. */
 function snapshotOutputText(value: unknown, key: string, seen: WeakMap<object, unknown>): unknown {
   if (value === null || typeof value !== "object") return value;
-  if (typeof (value as { toJSON?: unknown }).toJSON === "function") {
+  if (isBoxedPrimitive(value) || typeof (value as { toJSON?: unknown }).toJSON === "function") {
     // The wrapper supplies the same key argument as JSON.stringify at this position.
     return (JSON.parse(JSON.stringify({ [key]: value })) as Record<string, unknown>)[key];
   }

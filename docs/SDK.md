@@ -2862,9 +2862,9 @@ delivered to the registered positional arguments unchanged.
 Unicode output policy ([pm-gh1624](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1624.toon), tracker record excluded from npm):
 the built-in JSON and TOON formatters refuse unpaired UTF-16 surrogates in
 structured output values or object keys with `text_unpaired_surrogate` and a
-field path. Custom `toJSON()` values are materialized once per render and the
-resulting snapshot is validated and shared by both formatters. Valid astral
-characters and caller data are preserved. Extension
+field path. Custom `toJSON()` values and boxed primitives are materialized once
+per render using their native JSON semantics; the resulting snapshot is validated
+and shared by both formatters. Valid astral characters and caller data are preserved. Extension
 producers can call `assertWellFormedOutputText(value)` before returning
 JSON-compatible data. When replacing malformed external text is intentional,
 use `toWellFormedText(text)` from `@unbrained/pm-cli/sdk/core` (also available from

@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
+import { runInNewContext } from "node:vm";
 import { assertWellFormedOutputText, toWellFormedText } from "../../../../src/sdk/core.js";
 import { formatBuiltInOutput } from "../../../../src/core/output/output.js";
 
 describe("public output Unicode policy", () => {
+  it("preserves native scalar serialization of boxed primitives across realms", () => {
+    const value: unknown = runInNewContext('({ count: Object(3), enabled: Object(true), text: Object("😀") })');
+    const expected = { count: 3, enabled: true, text: "😀" };
+    expect(JSON.parse(formatBuiltInOutput(value, "json"))).toEqual(expected);
+    expect(formatBuiltInOutput(value, "toon")).toBe(formatBuiltInOutput(expected, "toon"));
+    for (const format of ["json", "toon"] as const) {
+      expect(() => formatBuiltInOutput({ text: Object("bad\ud800") }, format)).toThrow(
+        expect.objectContaining({ code: "text_unpaired_surrogate", context: expect.objectContaining({ field: "$.text" }) }),
+      );
+    }
+  });
+
   it.each([
     ["\ud800", "$", 0],
     [{ nested: [{ value: "a\udc00" }] }, "$.nested[0].value", 1],

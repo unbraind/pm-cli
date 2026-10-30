@@ -13,6 +13,11 @@ function assertUnicodeOutcome(completed: SpawnSyncReturns<string>, kind: string,
     expect(completed.status, completed.stderr).toBe(0);
     expect(completed.stdout).toContain("😀");
     expect(completed.stdout).toContain("kept");
+    if (format === "json") expect(JSON.parse(completed.stdout)).toEqual({ sibling: "kept", nested: ["😀"], count: 3, enabled: true });
+    else {
+      expect(completed.stdout).toContain("count: 3");
+      expect(completed.stdout).toContain("enabled: true");
+    }
     return;
   }
   expect(completed.status).toBe(2);
@@ -33,7 +38,7 @@ describe("extension output Unicode policy (pm-gh1624)", () => {
         entryFilename: "index.mjs",
         entrySource: `export function activate(api) {
           api.registerCommand({ name: "unicode probe", arguments: [{ name: "mode", required: true }], run: ({ args }) => args[0] === "valid"
-            ? { sibling: "kept", nested: ["😀"] }
+            ? { sibling: Object("kept"), nested: [Object("😀")], count: Object(3), enabled: Object(true) }
             : args[0] === "key" ? { nested: [{ ["bad\\udc00"]: "kept" }] }
             : args[0] === "serialized-value" ? { nested: [{ toJSON() { return { value: "bad\\ud800" }; } }] }
             : { sibling: "kept", nested: [{ value: "bad\\ud800" }] } });
