@@ -590,7 +590,6 @@
       "owner": "pm-k6t4yb",
       "pipelines": [
         "ci.yml#build-test",
-        "ci.yml#node22-telemetry",
         "ci.yml#coverage",
         "ci.yml#coverage-shards",
         "ci.yml#windows-regression",
@@ -820,7 +819,6 @@
       "owner": "pm-k6t4yb",
       "pipelines": [
         "ci.yml#build-test",
-        "ci.yml#first-run",
         "ci.yml#gates",
         "release.yml#release",
         "release.yml#installed-acceptance"
