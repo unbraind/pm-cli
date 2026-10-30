@@ -1,11 +1,6 @@
 # Changelog
 
-## 2026.10.30 - 2026-10-30
-
-### Added
-
-- GH-1597: expose host-bound item transaction status and safe abandonment or supersession ([pm-gh1597](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1597.toon))
-- GH-1598: bind batch mutation APIs to PmClient and expose canonical staged preview records ([pm-gh1598](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1598.toon))
+## Unreleased
 
 ### Changed
 
@@ -24,6 +19,17 @@
 - GH-1602: keep preflight warnings inside JSON error envelopes ([pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon))
 - Bound independent native receipt regression cases ([pm-native-index-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-native-index-proof.toon))
 - GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions ([pm-gh1558](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1558.toon))
+- GH-1622: investigate pm-presets SDK-loading fault blocking daily release ([pm-gh1622](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1622.toon))
+
+## 2026.10.30 - 2026-10-30
+
+### Added
+
+- GH-1597: expose host-bound item transaction status and safe abandonment or supersession ([pm-gh1597](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1597.toon))
+- GH-1598: bind batch mutation APIs to PmClient and expose canonical staged preview records ([pm-gh1598](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1598.toon))
+
+### Fixed
+
 - GH-1617: make history display order explicit and consistent across projections ([pm-gh1617](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1617.toon))
 - GH-1603: Reduce null agenda fields and escaped tag overhead in bounded context output ([pm-gh1603](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1603.toon))
 - GH-1606: Validate public SDK runtime operand values before mutation internals ([pm-gh1606](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1606.toon))

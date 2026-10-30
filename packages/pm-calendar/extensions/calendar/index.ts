@@ -20,6 +20,7 @@ const CALENDAR_VIEW_NAMES = ["agenda", "day", "week", "month"] as const;
 // not leak into Sentry as crashes.
 class PmCliError extends Error {
   exitCode: number;
+  context: Record<string, unknown> = {};
   constructor(message: string, exitCode: number) {
     super(message);
     this.name = "PmCliError";

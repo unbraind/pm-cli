@@ -4,6 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
+import { findSecretRuleMatches, SECRET_RULES } from "../../src/core/shared/secret-rules.js";
 import { distCliPath, runDirectDistCli } from "../helpers/cliRunner.js";
 import { expectJsonErrorEnvelope, parseJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -5661,8 +5662,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       );
       // The underlying handler error message is surfaced so agents/CI see the real cause.
       expect(importedEnvelope.detail).toContain("handler-boom");
-      if (fixturePath === "windows-home" || process.platform === "win32") {
-        expect(JSON.parse(imported.stderr).warnings).toContain("secret_guard_detected:1:rules=absolute_home_path");
+      // A native temp root is a home path only when the guard's own rule says so (TEMP may be C:\Temp).
+      const homePathRule = SECRET_RULES.find((rule) => rule.mutationRule === "absolute_home_path")!;
+      const warnings: unknown = JSON.parse(imported.stderr).warnings ?? [];
+      const homePathWarning = "secret_guard_detected:1:rules=absolute_home_path";
+      if (fixturePath === "windows-home" || [...findSecretRuleMatches(homePathRule, filePath)].length > 0) {
+        expect(warnings).toContain(homePathWarning);
+      } else {
+        expect(warnings).not.toContain(homePathWarning);
       }
     });
   });

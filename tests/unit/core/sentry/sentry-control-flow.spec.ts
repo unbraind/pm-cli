@@ -25,6 +25,9 @@ describe("Sentry CLI control-flow classification", () => {
       name: "PmCliError", exitCode: 1, context: { code: "package_refusal" },
     });
     expect(shouldCaptureCliError(declared)).toBe(false);
+    expect(shouldCaptureCliError(Object.assign(new Error("fault"), {
+      name: "PmCliError", exitCode: 1,
+    }))).toBe(true);
     expect(shouldCaptureCliError(Object.assign(new Error("unexpected"), {
       name: "SimulationRefusal", code: "sdk_unavailable", exitCode: 1,
     }))).toBe(true);
