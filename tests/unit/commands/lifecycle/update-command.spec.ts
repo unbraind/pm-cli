@@ -182,6 +182,13 @@ describe("update command helper coverage", () => {
     expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["missing"], registry)).toThrow(
       expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
     );
+
+    const commaList = _testOnlyUpdateCommand.parseUpdateUnsetTargets(["deadline, gh-url", "external-field"], registry, ["external_field"]);
+    expect(commaList).toEqual(parsed);
+    expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["deadline,missing"], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining('field "missing"') }),
+    );
+    expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["deadline,,gh-url"], registry)).toThrow(/must not be empty/);
   });
 
   it("builds audit-scope errors with replacement examples only for matching flags", () => {

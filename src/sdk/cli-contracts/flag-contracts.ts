@@ -10,6 +10,8 @@ import { resolvePmHistoryOperation } from "./command-aliases.js";
 import { normalizeUniqueStringList } from "./string-lists.js";
 import { GRAPH_QUERY_DEFAULTS } from "../graph/query-contracts.js";
 import { RESERVED_EXTENSION_HOST_FLAGS } from "../../core/extensions/reserved-host-flags.js";
+import { CONTEXT_DEPTH_VALUES } from "../../types.js";
+import { GET_DEPTH_INPUT_VALUES, PLAN_SHOW_DEPTH_VALUES } from "../query/projection-contracts.js";
 import {
   PM_POSITIONAL_ACTION_CONTRACTS,
   type PmPositionalActionContract,
@@ -39,6 +41,8 @@ export interface CliFlagContract {
   default?: string | number | boolean | Array<string | number | boolean>;
   /** Explicit argv value-token grammar. When absent, legacy core vocabulary inference applies. */
   value_arity?: "none" | "required" | "optional";
+  /** Closed value domain the flag accepts, when the command declares one (for example `--depth brief|standard|deep|full`). */
+  values?: readonly string[];
   /** Marks a presentation-only flag that may change paging or rendering without invalidating continuation. Omission means the flag is query-semantic. */
   cursor_semantics?: "presentation";
   /** Host reservation boundary: inherited flags are forbidden on extensions; root-only flags may have command-local meanings. */
@@ -633,7 +637,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--validation-text", aliases: ["--validation_text", "--validation"] },
   { flag: "--validation-command", aliases: ["--validation_command"] },
   { flag: "--validation-expected", aliases: ["--validation_expected"] },
-  { flag: "--depth" },
+  { flag: "--depth", values: PLAN_SHOW_DEPTH_VALUES },
   { flag: "--field" },
   { flag: "--fields", list: true },
   { flag: "--steps" },
@@ -1339,7 +1343,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--file", aliases: ["--linked-file"] },
   { flag: "--test", aliases: ["--linked-test"] },
   { flag: "--doc" },
-  { flag: "--unset" },
+  { flag: "--unset", list: true },
   { flag: "--clear-deps" },
   { flag: "--clear-comments" },
   { flag: "--clear-notes" },
@@ -1462,7 +1466,7 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--type-option" },
   { flag: "--type_option" },
   { flag: "--field" },
-  { flag: "--unset" },
+  { flag: "--unset", list: true },
   { flag: "--clear-deps" },
   { flag: "--clear-comments" },
   { flag: "--clear-notes" },
@@ -1572,7 +1576,7 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--event" },
   { flag: "--type-option" },
   { flag: "--type_option" },
-  { flag: "--unset" },
+  { flag: "--unset", list: true },
   { flag: "--clear-deps" },
   { flag: "--clear-comments" },
   { flag: "--clear-notes" },
@@ -1675,7 +1679,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = withCursorSemantics(
     { flag: "--limit", aliases: ["--max-items"] },
     { flag: "--after" },
     { flag: "--format" },
-    { flag: "--depth" },
+    { flag: "--depth", values: CONTEXT_DEPTH_VALUES },
     { flag: "--fields", list: true },
     { flag: "--section" },
     { flag: "--activity-limit" },
@@ -1706,7 +1710,7 @@ export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--id", value_name: "item-id" },
   { flag: "--for", value_name: "intent" },
   { flag: "--token-budget", aliases: ["--token_budget"] },
-  { flag: "--depth" },
+  { flag: "--depth", values: GET_DEPTH_INPUT_VALUES },
   { flag: "--full", value_type: "boolean" },
   { flag: "--fields", list: true },
   { flag: "--at" },

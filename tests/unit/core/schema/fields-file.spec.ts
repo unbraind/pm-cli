@@ -42,6 +42,12 @@ describe("normalizeAddFieldInput", () => {
     expect(() => normalizeAddFieldInput({ key: "   " })).toThrow(/Field key must not be empty/);
   });
 
+  it("rejects commas in keys and flags because commas separate list-flag values (GH-1633)", () => {
+    expect(() => normalizeAddFieldInput({ key: "foo,bar" })).toThrow(/must not contain commas/);
+    expect(() => normalizeAddFieldInput({ key: "owner", cliFlag: "own,er" })).toThrow(/Field flag "own,er" must not contain commas/);
+    expect(normalizeAddFieldInput({ key: "owner_team" }).key).toBe("owner_team");
+  });
+
   it("rejects a key that shadows a built-in field", () => {
     expect(() => normalizeAddFieldInput({ key: "status" })).toThrow(/collides with built-in item metadata/);
     expect(() => normalizeAddFieldInput({ key: "customer-impact" })).toThrow(/collides with built-in item metadata/);

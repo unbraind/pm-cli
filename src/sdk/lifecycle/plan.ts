@@ -58,6 +58,7 @@ import type {
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
+import { PLAN_SHOW_DEPTH_VALUES } from "../query/projection-contracts.js";
 import { buildPlanMutationReceipt, type PlanMutationReceipt } from "./plan-mutation-receipt.js";
 
 /** Public contract for plan subcommands, shared by SDK and presentation-layer consumers. */
@@ -82,8 +83,7 @@ export const PLAN_SUBCOMMANDS = [
 /** Restricts plan subcommand values accepted by command, SDK, and storage contracts. */
 export type PlanSubcommand = (typeof PLAN_SUBCOMMANDS)[number];
 
-/** Supported values accepted by the plan show depth contract. */
-export const PLAN_SHOW_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+export { PLAN_SHOW_DEPTH_VALUES };
 /** Restricts plan show depth values accepted by command, SDK, and storage contracts. */
 export type PlanShowDepth = (typeof PLAN_SHOW_DEPTH_VALUES)[number];
 

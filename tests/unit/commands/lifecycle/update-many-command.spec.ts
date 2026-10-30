@@ -1863,7 +1863,6 @@ describe("runUpdateMany", () => {
               "deadline",
               "estimate",
               "acceptance-criteria",
-              "missing-field",
             ],
             removeTags: ["legacy"],
             comment: ["author=seed-author,text=new comment"],
@@ -1905,9 +1904,6 @@ describe("runUpdateMany", () => {
             }),
           }),
         ]),
-      );
-      expect(changes.some((change) => change.field === "missing-field")).toBe(
-        false,
       );
     });
   });
@@ -2174,5 +2170,59 @@ describe("mutation-checkpoint shared module", () => {
       },
       { id: "pm-fail", status: "failed", error: "restore blew up" },
     ]);
+  });
+});
+
+describe("comma-separated --unset field lists (GH-1633)", () => {
+  /** Read the stored scalar fields a test clears. */
+  function scalarFields(context: TempPmContext, id: string): Record<string, unknown> {
+    const read = context.runCli(["get", id, "--json"], { expectJson: true });
+    expect(read.code, read.stderr).toBe(0);
+    const item = (read.json as { item: Record<string, unknown> }).item;
+    return { deadline: item.deadline, assignee: item.assignee, release: item.release };
+  }
+
+  it("clears every listed field on create, update and update many exactly like repeated flags", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Comma unset create", "--type", "Task", "--create-mode", "progressive", "--unset", "parent,release", "--json"], { expectJson: true });
+      expect(created.code, created.stderr).toBe(0);
+
+      const seeded = ["--deadline", "2030-01-01", "--assignee", "amy", "--release", "v1"];
+      const commaId = createTask(context, "comma-unset");
+      const repeatedId = createTask(context, "repeated-unset");
+      for (const id of [commaId, repeatedId]) expect(context.runCli(["update", id, ...seeded]).code).toBe(0);
+      expect(context.runCli(["update", commaId, "--unset", "deadline,assignee", "--unset", "release"]).code).toBe(0);
+      expect(context.runCli(["update", repeatedId, "--unset", "deadline", "--unset", "assignee", "--unset", "release"]).code).toBe(0);
+      expect(scalarFields(context, commaId)).toEqual({ deadline: undefined, assignee: undefined, release: undefined });
+      expect(scalarFields(context, repeatedId)).toEqual(scalarFields(context, commaId));
+
+      expect(context.runCli(["update", commaId, ...seeded]).code).toBe(0);
+      const preview = await runUpdateMany({ list: { ids: commaId }, update: { unset: ["deadline, assignee"] }, dryRun: true }, { path: context.pmPath });
+      expect(preview.item_plans?.[0]?.changes.map((change) => change.field).sort()).toEqual(["assignee", "deadline"]);
+      const bulk = context.runCli(["update", "many", "--ids", commaId, "--unset", "deadline,assignee", "--json"], { expectJson: true });
+      expect(bulk.code, bulk.stderr).toBe(0);
+      expect(scalarFields(context, commaId)).toEqual({ deadline: undefined, assignee: undefined, release: "v1" });
+    });
+  });
+
+  it("refuses each unknown or empty part by name on update and before update many can skip items", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comma-unset-refusal");
+      expect(context.runCli(["update", id, "--deadline", "2030-01-01"]).code).toBe(0);
+      const unknown = context.runCli(["update", id, "--unset", "deadline,parnt"]);
+      expect(unknown.code).toBe(EXIT_CODE.USAGE);
+      expect(unknown.stderr).toContain('Unsupported --unset field "parnt"');
+      expect(unknown.stderr).not.toContain('Unsupported --unset field "deadline,parnt"');
+      const empty = context.runCli(["update", id, "--unset", "deadline,"]);
+      expect(empty.code).toBe(EXIT_CODE.USAGE);
+      expect(empty.stderr).toContain("--unset values must not be empty");
+      for (const dryRun of [true, false]) {
+        await expect(runUpdateMany({ list: { ids: id }, update: { unset: ["bogus"] }, dryRun }, { path: context.pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringContaining('Unsupported --unset field "bogus"'),
+        });
+      }
+      expect(scalarFields(context, id).deadline).toBe("2030-01-01T00:00:00.000Z");
+    });
   });
 });

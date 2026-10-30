@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2026,
+    "covered_symbols": 2027,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2027
+    "required_symbols": 2028
   },
   "breaking_acknowledgements": [
     {
@@ -2895,6 +2895,14 @@
       ],
       "package_version": "2026.10.28",
       "reason": "Add optional handler cause and command/Sentry provenance fields, expose Unicode and pure attribution helpers, and preserve unexpected extension faults as structured runtime failures across hosts."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CliFlagContract",
+        "signature ./sdk/contracts:CliFlagContract"
+      ],
+      "package_version": "2026.10.28",
+      "reason": "pm-gh1626: CliFlagContract gains the optional readonly values domain; existing contract objects remain assignable and no member was removed or narrowed"
     }
   ],
   "entrypoints": {
@@ -5185,7 +5193,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagContract",
-          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; default?: string | number | boolean | Array<string | number | boolean>; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
+          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; default?: string | number | boolean | Array<string | number | boolean>; value_arity?: \"none\" | \"required\" | \"optional\"; values?: readonly string[]; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
         },
         {
           "classification": "contract_data",
@@ -7296,6 +7304,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "describeReadCompletenessControls",
+          "signature": "(controls: ReadCompletenessControls) => string | calls: (controls: ReadCompletenessControls) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "describeUnknownError",
           "signature": "(error: unknown) => string | calls: (error: unknown) => string"
         },
@@ -9122,6 +9136,12 @@
           "kind": "function",
           "name": "get",
           "signature": "<Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult & PmReadOutputMetadata, Options> | calls: <Options extends ReadOptions<GetOptions> = GetOptions>(id: string, options?: Options, clientOptions?: PmClientOptions) => ReadPromise<GetResult & PmReadOutputMetadata, Options>"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "GET_DEPTH_INPUT_VALUES",
+          "signature": "readonly [\"brief\", \"standard\", \"deep\", \"full\"]"
         },
         {
           "classification": "supported",
@@ -16012,6 +16032,12 @@
           "signature": "(options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined | calls: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReadCompletenessControls",
+          "signature": "export interface ReadCompletenessControls { command: string; modes: string[]; depth_values: string[]; declared_flags: string[]; }"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "readContextUsageAffinity",
@@ -18062,6 +18088,12 @@
           "kind": "function",
           "name": "resolveQueryCursorStart",
           "signature": "<T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number | calls: <T>(rows: readonly T[], cursor: string | undefined, fingerprint: string, readId: (row: T) => string, cursorFlag?: \"--after\" | \"--cursor\") => number"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveReadCompletenessControls",
+          "signature": "(commandName: string) => ReadCompletenessControls | undefined | calls: (commandName: string) => ReadCompletenessControls | undefined"
         },
         {
           "classification": "advanced_export",
@@ -23791,7 +23823,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "CliFlagContract",
-          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; default?: string | number | boolean | Array<string | number | boolean>; value_arity?: \"none\" | \"required\" | \"optional\"; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
+          "signature": "export interface CliFlagContract { flag: string; short?: string; aliases?: string[]; description?: string; required?: boolean; repeatable?: boolean; list?: boolean; value_name?: string; value_type?: \"string\" | \"number\" | \"boolean\"; default?: string | number | boolean | Array<string | number | boolean>; value_arity?: \"none\" | \"required\" | \"optional\"; values?: readonly string[]; cursor_semantics?: \"presentation\"; reservation_scope?: \"inherited\" | \"root_only\"; }"
         },
         {
           "classification": "contract_data",
@@ -32234,6 +32266,12 @@
           "kind": "function",
           "name": "formatVectorIndexRecoveryWarnings",
           "signature": "(staleCount: number, recovery: VectorIndexRecovery) => string[] | calls: (staleCount: number, recovery: VectorIndexRecovery) => string[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "GET_DEPTH_INPUT_VALUES",
+          "signature": "readonly [\"brief\", \"standard\", \"deep\", \"full\"]"
         },
         {
           "classification": "supported",

@@ -2050,6 +2050,19 @@ contract compact and fail-safe for newly added flags. Use
 package-authored query surface. `encodeQueryCursor`, `decodeQueryCursorState`, and
 `paginateQueryRows` remain the transport-neutral continuation primitives.
 
+A flag with a closed value domain declares it in `CliFlagContract.values`. For
+example, `get` and `context` declare `--depth brief|standard|deep|full`, and
+`plan` declares `--depth brief|standard|deep`, so `pm contracts --command <c>
+--flags-only --json` shows the accepted spellings without parsing help prose.
+`resolveReadCompletenessControls(command)` combines that domain with the
+command's read-output projection modes. `resolveReadOptionRetryArgs` uses the
+result to correct a completeness spelling only into a flag the attempted
+command declares
+([pm-gh1626](../.agents/pm/issues/pm-gh1626.toon)). A flag that accepts a
+comma-separated value list declares `list: true`. `--unset` on create, update
+and update-many does, so repeated flags and comma lists reach the parser as the
+same field set ([pm-gh1633](../.agents/pm/issues/pm-gh1633.toon)).
+
 `decodeQueryCursorEnvelope`, `decodeQueryCursorState`, and
 `resolveQueryCursorStart` accept an optional final `cursorFlag` argument
 (`"--after"`, the default, or `"--cursor"`) so package-authored queries can

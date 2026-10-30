@@ -221,12 +221,30 @@ Read-option recovery is tracked by
 use `--output-format toon|json` across read commands. Completeness uses
 `--output-include full` on list, search and get; context detail depth uses
 `--depth full`. These controls retain the normal row and token ceilings.
-When `context --full`, `list/search --depth full`, or `--toon` on list, search,
-context or get is refused,
-the error provides `recovery.suggested_retry_args` for the same command with the
-supported spelling. The SDK's `resolveReadOptionRetryArgs` exposes the same
-token-preserving correction. Conflicting controls or ambiguous operands do not
-receive a guessed retry.
+When a completeness spelling is refused on a read command that has an
+equivalent spelling of its own, the error provides
+`recovery.suggested_retry_args` for that same command. Examples are
+`get/context --brief`, which becomes `--depth brief`, and
+`list/search/history --depth full`, which becomes `--full`. The same applies to
+`--toon` on list, search, context or get, which becomes `--output-format toon`.
+The correction is derived from runtime contracts, not from a hand-maintained
+list. A boolean `--<level>` maps to `--depth <level>` only when that command's
+`--depth` flag contract declares the level in its `values` domain. A
+`--depth <level>` maps to `--<level>` only when the level is one of the
+command's declared read-output projection modes. `--depth standard` on a
+command without `--depth` replays without the flag, because standard is every
+command's default level. Aliased paths such as `deps` and `health` replay on
+their canonical noun-first path (`pm item deps`, `pm ops health`). When a
+command has no equivalent, for example `search --depth brief`, no retry is
+guessed. The refusal instead lists the controls that command accepts: for
+search, `Completeness controls accepted by pm search: --compact, --full.`
+([pm-gh1626](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1626.toon);
+repository-only tracker record excluded from npm). The SDK's
+`resolveReadOptionRetryArgs` exposes the same token-preserving correction, and
+`resolveReadCompletenessControls` returns each command's declared vocabulary.
+Conflicting controls such as `--fields`, `--output-include`, `--section`, `--for`
+or another completeness flag, and ambiguous operands, do not receive a guessed
+retry.
 An explicit `--json` conflicts with `--toon`, so that invocation receives no
 encoding-changing retry. Non-conflicting TOON refusals include the corrected
 command in human output without requiring JSON diagnostics.

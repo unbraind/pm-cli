@@ -3,7 +3,7 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
-import { isReadProjectionRecoveryFlag, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
+import { describeReadCompletenessControls, isReadProjectionRecoveryFlag, resolveReadCompletenessControls, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
 import { isPmTokenBudgetRecovery } from "../sdk/errors.js";
 import {
   type PmCliErrorContext,
@@ -1726,6 +1726,7 @@ function buildUnknownOptionNextSteps(
     suggestions.length
       ? `Nearest supported options: ${suggestions.join(", ")}`
       : undefined,
+    retryCommand ? undefined : describeSameCommandCompleteness(optionName, commandName),
     proseCommands.length
       ? `${optionName} is accepted by ${proseCommands.join(", ")}${proseRemainderText}. Inspect those command contracts only if you intended a different operation.`
       : undefined,
@@ -1738,6 +1739,17 @@ function buildUnknownOptionNextSteps(
   ].filter((entry): entry is string => typeof entry === "string");
 }
 
+const READ_COMPLETENESS_SPELLINGS = ["--brief", "--compact", "--standard", "--deep", "--full", "--summary", "--depth"];
+
+/** Name the completeness controls the attempted read command accepts when no equivalent spelling exists there. */
+function describeSameCommandCompleteness(optionName: string, commandName: string | undefined): string | undefined {
+  if (commandName === undefined || !READ_COMPLETENESS_SPELLINGS.includes(optionName.split("=", 1)[0]!)) return undefined;
+  const controls = resolveReadCompletenessControls(commandName);
+  return controls === undefined
+    ? undefined
+    : `Completeness controls accepted by pm ${controls.command}: ${describeReadCompletenessControls(controls)}.`;
+}
+
 /** Recover read intent before lexical fallbacks can replace or discard it. */
 function resolveReadIntentRetry(
   context: CommanderGuidanceContext,
@@ -1746,7 +1758,7 @@ function resolveReadIntentRetry(
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } | undefined {
   const retry = resolveReadOptionRetryArgs(commandName ?? "", context.normalizedInvocationArgs ?? [], optionName);
   if (retry) return { retryCommand: renderPmCommand(retry), suggestedRetryArgs: retry };
-  return ["--full", "--depth", "--toon", ...(commandName === "activity" ? ["--since"] : [])].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
+  return [...READ_COMPLETENESS_SPELLINGS, "--toon", ...(commandName === "activity" ? ["--since"] : [])].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
 }
 
 /** Keep unknown-option fallbacks from dropping presentation or preview intent. */

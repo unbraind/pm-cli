@@ -4,6 +4,7 @@
  * Implements the pm update many command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { expandUnsetFieldTokens } from "./shared-unset-fields.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
 import { rollbackMutationCheckpoint } from "./checkpoint-rollback.js";
@@ -40,6 +41,7 @@ import {
   transferMutationStdinTokenPolicy,
   resolveIsoOrRelative,
   getActiveExtensionRegistrations,
+  collectRegisteredItemFieldNames,
   resolvePmRoot,
   readSettings,
   resolveAuthor,
@@ -56,6 +58,7 @@ import {
 } from "../query/list.js";
 import {
   assertUpdateMutationOptionCombinations,
+  assertUpdateUnsetFieldsSupported,
   parseDependencyAdditions,
   resolveUpdateTransportOptions,
   runUpdate,
@@ -681,7 +684,7 @@ const appendUnsetMutationPlans = (
   row: Record<string, unknown>,
   unset: string[] | undefined,
 ): void => {
-  for (const rawUnsetField of unset ?? []) {
+  for (const rawUnsetField of expandUnsetFieldTokens(unset)) {
     const field = normalizeUnsetField(rawUnsetField);
     const before = row[field];
     if (before !== undefined) {
@@ -768,6 +771,15 @@ const PLANNED_UPDATE_VALIDATORS: PlannedUpdateValidator[] = [
   ({ update }) => {
     if (update.priority !== undefined) {
       resolvePriority(update.priority);
+    }
+  },
+  ({ update, settings }) => {
+    if (update.unset !== undefined && update.unset.length > 0) {
+      assertUpdateUnsetFieldsSupported(
+        update.unset,
+        resolveRuntimeFieldRegistry(settings.schema),
+        collectRegisteredItemFieldNames(getActiveExtensionRegistrations()),
+      );
     }
   },
   ({ update, settings, pmRoot }) => {

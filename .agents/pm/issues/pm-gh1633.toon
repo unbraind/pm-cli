@@ -1,0 +1,48 @@
+id: pm-gh1633
+title: "GH-1633: accept comma-separated --unset field lists with per-field validation"
+description: "https://github.com/unbraind/pm-cli/issues/1633\n\nReported on published 2026.10.28 in a fresh pm init --defaults workspace. pm create/update take --unset <field> once per field. A comma list such as --unset parent,release is refused as one unknown field name, and the refusal neither explains the repeat-the-flag form nor offers a corrected command. Neighbouring list flags on the same commands (--tags a,b) accept commas, so agents carry that spelling over and lose one round-trip per progressive create.\n\nThe report offers two options: (1) accept comma lists, because no field name contains a comma, validating each part and refusing unknown names one by one; (2) keep the single-field contract and add a replay correction. This item adopts option 1 if field-key validation proves commas cannot occur in a field name, and declares the flag as a list in the flag contracts so contracts, help, and recovery agree."
+type: Issue
+status: in_progress
+priority: 2
+tags[3]: agent-ux,github,sdk
+created_at: "2026-10-30T12:44:36.870Z"
+updated_at: "2026-10-30T13:03:38.409Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#7b0e58428f53e3aaeaafb372"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Reproduce the reported refusal on current source and the published host; Prove field keys cannot contain commas before splitting; Accept comma lists on create, update and update-many, with every part validated and unknown or empty parts refused individually; Declare --unset as a list in flag contracts, help and docs; Cover CLI and SDK controls, including mixed repeated and comma forms, with a pre-fix negative"
+parent: pm-mpbb
+risk: low
+confidence: high
+reporter: unbraind
+severity: low
+expected_result: "pm create/update --unset parent,release clears both fields exactly as repeated --unset flags do, and an unknown or empty part is refused by name."
+affected_version: 2026.10.28
+component: cli
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1626,related,"2026-10-30T12:44:36.870Z","harness:claude-code","cli:create:dep",detected
+  pm-gknu,discovered_from,"2026-10-30T12:44:36.870Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-30T12:44:36.870Z","harness:claude-code","Duplicate check: semantic search for --unset comma lists (top hits pm-evav, pm-ltbr, pm-hu92i3, pm-cf1u, pm-klqo, pm-kfq5, pm-nc94mk, pm-gknu, all closed), a keyword search for --unset replay corrections, and the 28 open agent-ux items. None of them owns --unset comma handling. The nearest owners are pm-gknu (closed, multi-value filter grammar) and pm-gh1626 (open, sibling same-command correction). Source report: https://github.com/unbraind/pm-cli/issues/1633"
+  "2026-10-30T13:03:38.409Z","harness:claude-code","Implementation evidence: option 1 was adopted after proving its precondition. Pre-fix, pm schema add-field \"foo,bar\" registered a comma key and advertised an unusable --foo,bar flag (reproduced on d9c4a0bca), so field keys could contain commas. normalizeAddFieldInput now refuses comma keys and comma flags, which makes the split unambiguous. --unset is declared list: true on create, update and update-many, so argv normalisation coalesces repeats and the shared parser expands comma lists (expandUnsetFieldTokens). Each part is validated and refused by name: an unknown part gives 'Unsupported --unset field \"parnt\"', an empty part gives 'must not be empty'. Separate pre-existing defect fixed in the same seam: update many --unset <unknown> exited 0 with outcome no_effect in both dry run and apply, on both pre-fix and current builds, while update refused it. The bulk preview skipped absent fields and never called the validator. A planned-update validator now refuses it before planning. The legacy dry-run test that encoded the silent acceptance of missing-field was updated. Help, zsh/fish completion, the MCP unset parameter description, COMMANDS.md and SDK.md say 'repeatable or comma-separated'. Negative control: pre-fix create --unset parent,release refused 'Unsupported --unset field \"parent,release\"'; this build creates the item."
+files[13]{path,scope}:
+  src/cli/register-mutation.ts,project
+  src/core/schema/fields-file.ts,project
+  src/sdk/cli-contracts/commander-mutation-options.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/completion/fish.ts,project
+  src/sdk/completion/zsh.ts,project
+  src/sdk/lifecycle/shared-unset-fields.ts,project
+  src/sdk/lifecycle/update-many.ts,project
+  src/sdk/lifecycle/update.ts,project
+  tests/unit/commands/lifecycle/update-command.spec.ts,project
+  tests/unit/commands/lifecycle/update-many-command.spec.ts,project
+  tests/unit/core/schema/fields-file.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/commands/lifecycle/update-many-command.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/core/schema/fields-file.spec.ts,project,240,"harness:claude-code","2026-10-30T13:00:37.644Z",local_mutation,feat/agent-same-command-corrections
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+body: ""

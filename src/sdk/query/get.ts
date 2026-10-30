@@ -60,10 +60,12 @@ import type {
 import { runList } from "./list.js";
 import { registerOutputMaterialFieldGroups } from "../output-projection.js";
 import {
+  GET_DEPTH_INPUT_VALUES,
   GET_DEPTH_VALUES,
   listGetProjectionFields,
 } from "./projection-contracts.js";
 export {
+  GET_DEPTH_INPUT_VALUES,
   GET_DEPTH_VALUES,
   listGetProjectionFields,
 } from "./projection-contracts.js";
@@ -305,7 +307,7 @@ function parseGetDepth(raw: string | undefined): GetDepth {
   throw new PmCliError(
     "Get --depth must be one of brief|standard|deep|full",
     EXIT_CODE.USAGE,
-    { field: "depth", value: raw, recovery: { allowed_values: [...GET_DEPTH_VALUES, "full"] } },
+    { field: "depth", value: raw, recovery: { allowed_values: [...GET_DEPTH_INPUT_VALUES] } },
   );
 }
 

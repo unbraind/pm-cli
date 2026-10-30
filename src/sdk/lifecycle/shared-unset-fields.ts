@@ -270,6 +270,11 @@ export type CommandUnsetTargetResolver = (
   trimmedToken: string,
 ) => RuntimeUnsetFieldDefinition | undefined;
 
+/** Expand repeated and comma-separated `--unset` values into one token per field; field keys cannot contain commas. */
+export function expandUnsetFieldTokens(raw: readonly string[] | undefined): string[] {
+  return (raw ?? []).flatMap((entry) => entry.split(","));
+}
+
 /** Parse and validate common command `--unset` tokens while preserving command-specific field resolution. */
 export function parseCommandUnsetTargets(options: {
   readonly raw: readonly string[] | undefined;
@@ -282,10 +287,13 @@ export function parseCommandUnsetTargets(options: {
     return { metadataKeys, optionKeys };
   }
 
-  for (const entry of options.raw) {
+  for (const entry of expandUnsetFieldTokens(options.raw)) {
     const trimmed = entry.trim().toLowerCase();
     if (!trimmed) {
-      throw new PmCliError("--unset values must not be empty", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--unset values must not be empty; name each field once, for example --unset parent,release",
+        EXIT_CODE.USAGE,
+      );
     }
     if (isLegacyNoneToken(trimmed)) {
       throw new PmCliError(
