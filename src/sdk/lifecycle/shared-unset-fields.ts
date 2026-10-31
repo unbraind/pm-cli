@@ -277,11 +277,11 @@ export type CommandUnsetTargetResolver = (
  * stays clearable; only unresolved entries split on commas.
  */
 export function expandUnsetFieldTokens(
-  raw: readonly string[] | undefined,
-  resolvesWhole?: (entry: string) => boolean,
+  raw: readonly string[],
+  resolvesWhole: (entry: string) => boolean,
 ): string[] {
-  return (raw ?? []).flatMap((entry) =>
-    entry.includes(",") && resolvesWhole?.(entry) === true ? [entry] : entry.split(","),
+  return raw.flatMap((entry) =>
+    entry.includes(",") && resolvesWhole(entry) ? [entry] : entry.split(","),
   );
 }
 
