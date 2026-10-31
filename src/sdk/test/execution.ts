@@ -7,7 +7,9 @@ import { readJsonPathValue, splitJsonPathSegments } from "./json-path.js";
 import {
   detectEmptyLinkedTestRun,
   findLinkedTestExecutionReceipt,
-  renderTrackerPathFlag,
+  renderLinkedTestRestoreCommand,
+  resolveLinkedTestRestoreScope,
+  type LinkedTestRestoreScope,
 } from "./execution-receipts.js";
 import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { detectLinkedTestCommandNotFound } from "./command-resolution.js";
@@ -3502,8 +3504,8 @@ function projectTestResult(input: {
   warnings: string[];
   recording: Awaited<ReturnType<typeof recordTestRunSummary>>;
   measurementProjection: ReturnType<typeof buildTestMeasurementProjection>;
-  /** Explicit tracker root of the invocation, so the restore command targets the same tracker. */
-  trackerPath?: string;
+  /** Tracker and extension scope of the invocation, so the restore command reproduces it. */
+  restoreScope: LinkedTestRestoreScope;
 }): TestResult {
   const {
     item,
@@ -3514,10 +3516,10 @@ function projectTestResult(input: {
     warnings,
     recording,
     measurementProjection,
-    trackerPath,
+    restoreScope,
   } = input;
   const narrowed = runSelection !== undefined && runSelection.selector !== null && runSelection.skipped_count > 0;
-  const restoreWith = `pm test ${item.itemId} --list${renderTrackerPathFlag(trackerPath)}`;
+  const restoreWith = renderLinkedTestRestoreCommand(item.itemId, restoreScope);
   return {
     ok:
       runResults.every((entry) => entry.status !== "failed" && entry.status !== "refused") &&
@@ -3656,7 +3658,7 @@ export async function runTest(
     warnings,
     recording,
     measurementProjection,
-    trackerPath: global.path,
+    restoreScope: resolveLinkedTestRestoreScope(global, pmRoot),
   });
 }
 /* c8 ignore stop */

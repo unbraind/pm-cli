@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runUpdate } from "../../../../src/cli/commands/lifecycle/update.js";
+import { runUpdate, type UpdateCommandOptions } from "../../../../src/cli/commands/lifecycle/update.js";
 import {
   _testOnlyUpdateManyCommand,
   runUpdateMany,
@@ -205,12 +205,6 @@ describe("update-many command helper coverage", () => {
       _testOnlyUpdateManyCommand.toComparablePreviewValue("title", undefined),
     ).toBeUndefined();
 
-    expect(
-      _testOnlyUpdateManyCommand.normalizeUnsetField("acceptance-criteria"),
-    ).toBe("acceptance_criteria");
-    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("custom-field")).toBe(
-      "custom_field",
-    );
     expect(
       _testOnlyUpdateManyCommand.normalizeCollectionBeforeValue(
         "type_options",
@@ -481,6 +475,41 @@ describe("runUpdateMany", () => {
           after: "https://example.test/new",
         },
       ]);
+    });
+  });
+
+  it("plans and applies an aliased runtime-field unset under its stored metadata key", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        {
+          key: "githubUrl",
+          metadata_key: "github_url",
+          type: "string",
+          cli_flag: "gh-url",
+          commands: ["update", "update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings);
+      const id = createTask(context, "update-many-aliased-unset", { tags: "aliased-unset" });
+      // Runtime options are keyed by the camel-cased CLI flag, so the seed writes through `ghUrl`.
+      const seeded = await runUpdate(id, { ghUrl: "https://example.test/pr/1" } as UpdateCommandOptions, { path: context.pmPath });
+      expect(seeded.changed_fields).toEqual(["github_url"]);
+
+      const preview = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["gh-url"] }, dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(preview.item_plans?.[0]?.changes).toEqual([
+        { field: "github_url", before: "https://example.test/pr/1", after: null },
+      ]);
+      const applied = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["gh-url"] } },
+        { path: context.pmPath },
+      );
+      expect(applied.updated_count).toBe(1);
+      const persisted = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((persisted.json as { item: Record<string, unknown> }).item.github_url).toBeUndefined();
     });
   });
 
