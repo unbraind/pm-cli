@@ -370,13 +370,20 @@ function normalizeLegacyNoneUpdateOptions(
   );
 }
 
-/** Refuse unsupported or empty `--unset` field names before a bulk plan can skip items silently. */
+/**
+ * Refuse unsupported or empty `--unset` field names before a bulk plan can
+ * skip items silently, returning the stored metadata keys they resolve to so
+ * planning checks the same fields validation accepted.
+ */
 export function assertUpdateUnsetFieldsSupported(
   raw: readonly string[],
   runtimeFieldRegistry: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[],
-): void {
-  parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames);
+): string[] {
+  return [
+    ...parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames)
+      .metadataKeys,
+  ];
 }
 
 function parseUpdateUnsetTargets(

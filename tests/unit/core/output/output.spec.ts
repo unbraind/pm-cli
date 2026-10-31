@@ -297,6 +297,7 @@ describe("core/output/output", () => {
     const context = {
       requested_pm_context_mode: "schema",
       pm_context_mode: "schema",
+      workspace_context_mode: "snapshot",
       auto_pm_context_applied: false,
       is_pm_command: false,
       is_pm_tracker_read_command: false,
@@ -351,7 +352,7 @@ describe("core/output/output", () => {
     // pm-covpax: a passing, mismatch-free lean receipt keeps only modes, trust and a restore path.
     expect(lean.execution_context).toEqual({
       pm_context_mode: "schema",
-      workspace_context_mode: context.workspace_context_mode,
+      workspace_context_mode: "snapshot",
       restore_with: "rerun without --lean",
     });
     expect(lean).not.toHaveProperty("failure_categories");
