@@ -192,7 +192,7 @@ Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI
 ## Ownership Rules
 
 - Claim before heavy edits.
-- `pm claim <id>` is an atomic test-and-set. A non-terminal item already held by a different principal refuses with `already_claimed_by`; the same principal re-claiming is a no-op.
+- `pm claim <id>` is an atomic test-and-set. A non-terminal item already held by a different principal refuses with `already_claimed_by` and names the holder in typed fields (`claimed_by`, `claim_source`, `claimed_at`); the same principal re-claiming is a no-op.
 - Pass `--if-available` to treat a held item as a skip (`skipped: true`, exit 0) instead of a failure, for example when several agents pull from one queue. The terminal check runs first, so a terminal item still refuses without `--force` even when `--if-available` is set.
 - Use `--force` only for a coordinated takeover of another owner's claim; it is also required to claim terminal items, and to override stale locks when the `governance.force_required_for_stale_lock` policy is enabled (the `minimal` and custom governance presets can disable it). Never force a takeover without explicit approval.
 - Release when pausing, handing off, or after close.

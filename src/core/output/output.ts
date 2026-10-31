@@ -473,17 +473,7 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
     return value;
   }
   const rows = value.run_results;
-  const contexts = rows
-    .map((row) => row.execution_context)
-    .filter((context) => context !== undefined);
-  const sharedContext =
-    contexts.length === rows.length &&
-    contexts.length > 0 &&
-    contexts.every(
-      (context) => JSON.stringify(context) === JSON.stringify(contexts[0]),
-    )
-      ? contexts[0]
-      : undefined;
+  const sharedContext = resolveSharedExecutionContext(rows);
   const runResults = rows.map((row) => {
     const {
       execution_context: _executionContext,
@@ -499,11 +489,71 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
     }
     return rest;
   });
+  if (lean && isQuietLinkedTestSuccess(value, sharedContext, rows)) {
+    return projectQuietLinkedTestSuccess(value, sharedContext, runResults);
+  }
   return {
     ...value,
     ...(sharedContext === undefined
       ? {}
       : { execution_context: sharedContext }),
+    run_results: runResults,
+  };
+}
+
+/** The one execution context every result row shares, or undefined when rows differ or lack one. */
+function resolveSharedExecutionContext(
+  rows: Record<string, unknown>[],
+): unknown {
+  const contexts = rows
+    .map((row) => row.execution_context)
+    .filter((context) => context !== undefined);
+  if (contexts.length !== rows.length || contexts.length === 0) return undefined;
+  const first = JSON.stringify(contexts[0]);
+  return contexts.every((context) => JSON.stringify(context) === first)
+    ? contexts[0]
+    : undefined;
+}
+
+/** A passing, mismatch-free run whose failure categories are all zero. */
+function isQuietLinkedTestSuccess(
+  value: Record<string, unknown>,
+  sharedContext: unknown,
+  rows: Record<string, unknown>[],
+): sharedContext is Record<string, unknown> {
+  if (value.ok !== true || !isPlainObject(sharedContext)) return false;
+  if (sharedContext.mismatch_detected !== false) return false;
+  if (!rows.every((row) => row.status === "passed")) return false;
+  const categories = value.failure_categories;
+  return !(isPlainObject(categories) && Object.values(categories).some((count) => count !== 0));
+}
+
+/**
+ * Lean receipts for a passing, mismatch-free run with no failure category keep
+ * the sandbox modes, the mismatch and trust booleans and the trust reason that
+ * explain what the tests saw; a passing run can still be untrusted under an
+ * explicit override, so `trusted: false` is never dropped. The sandbox paths,
+ * item counts and all-zero failure categories are not retained by this
+ * receipt. The hint never tells the caller to rerun, because a rerun repeats
+ * any mutating flags of the original invocation (pm-covpax).
+ */
+function projectQuietLinkedTestSuccess(
+  value: Record<string, unknown>,
+  context: Record<string, unknown>,
+  runResults: unknown[],
+): Record<string, unknown> {
+  const { failure_categories: _zeroCategories, ...rest } = value;
+  const trust = isPlainObject(context.trust) ? context.trust : {};
+  return {
+    ...rest,
+    execution_context: {
+      pm_context_mode: context.pm_context_mode,
+      workspace_context_mode: context.workspace_context_mode,
+      mismatch_detected: false,
+      ...(typeof trust.trusted === "boolean" ? { trusted: trust.trusted } : {}),
+      ...(trust.reason === undefined ? {} : { trust_reason: trust.reason }),
+      restore_with: "not retained; a run without --lean reports the full context",
+    },
     run_results: runResults,
   };
 }

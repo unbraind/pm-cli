@@ -1058,6 +1058,17 @@ describe("listAliasPluralKeys", () => {
   });
 });
 
+describe("repeated --unset entries", () => {
+  it("keeps each --unset occurrence separate so a whole comma entry is never merged with its neighbours", () => {
+    // Commander collects repeated --unset values; bootstrap must not join them, or a
+    // legacy comma-named field entry ("parent,release") would be re-split with "assignee".
+    for (const command of [["update", "pm-1"], ["create", "--title", "t"], ["update", "many", "--ids", "pm-1"]]) {
+      const argv = [...command, "--unset", "parent,release", "--unset", "assignee"];
+      expect(normalizeBootstrapInvocation(argv).argv).toEqual(argv);
+    }
+  });
+});
+
 describe("coalesceRepeatedListFlags", () => {
   it("returns argv unchanged when no list flags are configured", () => {
     const result = coalesceRepeatedListFlags(

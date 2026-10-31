@@ -1,0 +1,19 @@
+id: pm-4zpq71
+title: "pm config set on a schema-invalid settings.json writes the fallback defaults as the whole file, deleting unrelated settings"
+description: "When `settings.json` is valid JSON but fails schema validation (for example an unknown value in a validated enum such as `context.next_ranking_policy`, `validation.parent_reference` or `item_format`), `readSettingsWithMetadata` returns `buildFallbackSettingsReadResult(\"settings_read_invalid_schema\")`. That result is the full default settings with no persistence snapshot. A following `pm config project set <key> <value>` then writes those defaults as the complete document, silently removing every unrelated stored setting. The existing write guard refuses only malformed JSON (`settings_read_invalid_json`), not schema-invalid JSON.\n\npm-x2aplf fixed the same overwrite for valid sparse files (persist only the changed key). Its acceptance criteria do not cover the invalid-schema read path. CodeRabbit found this on PR #1638: the new `context.next_ranking_policy` enum adds one more way to reach it, but the behaviour predates that change and applies to every validated setting."
+type: Issue
+status: open
+priority: 1
+tags[4]: config,data-integrity,review,settings
+created_at: "2026-10-31T16:19:52.261Z"
+updated_at: "2026-10-31T16:19:52.261Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A config write against a settings.json that fails schema validation is refused with a code naming the invalid field (no write), or preserves the original document and changes only the requested key; a regression test seeds a schema-invalid settings.json with unrelated keys, runs pm config project set, and asserts the unrelated keys survive or the write is refused; the same holds for SDK config writers"
+parent: pm-o2kc
+risk: high
+confidence: high
+expected_result: No configuration write ever replaces a stored settings.json with fallback defaults; schema-invalid settings are refused with a field-naming error or preserved byte-for-byte outside the written key.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-x2aplf,related,"2026-10-31T16:19:52.261Z","harness:claude-code","cli:create:dep",detected
+body: ""

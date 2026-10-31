@@ -275,6 +275,12 @@ export interface PmCliErrorContext {
     /** Latest available history timestamp, or null for an empty stream. */
     last_timestamp: string | null;
   };
+  /** Principal that currently holds the item behind an `already_claimed_by` refusal. */
+  claimed_by?: string;
+  /** When that holder took the item, from the latest assignee change in history; null when history is unavailable. */
+  claimed_at?: string | null;
+  /** Whether the holder arrived through an explicit claim or a metadata assignment; `unknown` when history cannot say. */
+  claim_source?: "claim" | "assignment" | "unknown";
   /** Lease a refused `lock_lost` commit held when it tried to commit. */
   lease?: {
     /** Principal recorded as the lease owner. */

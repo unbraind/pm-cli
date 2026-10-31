@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runUpdate } from "../../../../src/cli/commands/lifecycle/update.js";
+import { runUpdate, type UpdateCommandOptions } from "../../../../src/cli/commands/lifecycle/update.js";
 import {
   _testOnlyUpdateManyCommand,
   runUpdateMany,
@@ -205,12 +205,6 @@ describe("update-many command helper coverage", () => {
       _testOnlyUpdateManyCommand.toComparablePreviewValue("title", undefined),
     ).toBeUndefined();
 
-    expect(
-      _testOnlyUpdateManyCommand.normalizeUnsetField("acceptance-criteria"),
-    ).toBe("acceptance_criteria");
-    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("custom-field")).toBe(
-      "custom_field",
-    );
     expect(
       _testOnlyUpdateManyCommand.normalizeCollectionBeforeValue(
         "type_options",
@@ -481,6 +475,80 @@ describe("runUpdateMany", () => {
           after: "https://example.test/new",
         },
       ]);
+    });
+  });
+
+  it("plans and applies an aliased runtime-field unset under its stored metadata key", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        {
+          key: "githubUrl",
+          metadata_key: "github_url",
+          type: "string",
+          cli_flag: "gh-url",
+          commands: ["update", "update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings);
+      const id = createTask(context, "update-many-aliased-unset", { tags: "aliased-unset" });
+      // Runtime options are keyed by the camel-cased CLI flag, so the seed writes through `ghUrl`.
+      const seeded = await runUpdate(id, { ghUrl: "https://example.test/pr/1" } as UpdateCommandOptions, { path: context.pmPath });
+      expect(seeded.changed_fields).toEqual(["github_url"]);
+
+      const preview = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["gh-url"] }, dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(preview.item_plans?.[0]?.changes).toEqual([
+        { field: "github_url", before: "https://example.test/pr/1", after: null },
+      ]);
+      const applied = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["gh-url"] } },
+        { path: context.pmPath },
+      );
+      expect(applied.updated_count).toBe(1);
+      const persisted = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((persisted.json as { item: Record<string, unknown> }).item.github_url).toBeUndefined();
+    });
+  });
+
+  it("unsets a runtime field declared only for update_many through the bulk scope and refuses it on plain update", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        {
+          key: "batchLabel",
+          metadata_key: "batch_label",
+          type: "string",
+          cli_flag: "batch-label",
+          commands: ["update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings);
+      const id = createTask(context, "update-many-only-unset", { tags: "bulk-only-unset" });
+      const seeded = await runUpdateMany(
+        { list: { ids: id }, update: { batchLabel: "wave-1" } as UpdateCommandOptions },
+        { path: context.pmPath },
+      );
+      expect(seeded.updated_count).toBe(1);
+
+      const preview = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["batch-label"] }, dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(preview.item_plans?.[0]?.changes).toEqual([{ field: "batch_label", before: "wave-1", after: null }]);
+      const applied = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["batch-label"] } },
+        { path: context.pmPath },
+      );
+      expect(applied.updated_count).toBe(1);
+      const persisted = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((persisted.json as { item: Record<string, unknown> }).item.batch_label).toBeUndefined();
+      await expect(runUpdate(id, { unset: ["batch-label"] }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('Unsupported --unset field "batch-label"'),
+      });
     });
   });
 
@@ -1863,7 +1931,6 @@ describe("runUpdateMany", () => {
               "deadline",
               "estimate",
               "acceptance-criteria",
-              "missing-field",
             ],
             removeTags: ["legacy"],
             comment: ["author=seed-author,text=new comment"],
@@ -1905,9 +1972,6 @@ describe("runUpdateMany", () => {
             }),
           }),
         ]),
-      );
-      expect(changes.some((change) => change.field === "missing-field")).toBe(
-        false,
       );
     });
   });
@@ -2174,5 +2238,59 @@ describe("mutation-checkpoint shared module", () => {
       },
       { id: "pm-fail", status: "failed", error: "restore blew up" },
     ]);
+  });
+});
+
+describe("comma-separated --unset field lists (GH-1633)", () => {
+  /** Read the stored scalar fields a test clears. */
+  function scalarFields(context: TempPmContext, id: string): Record<string, unknown> {
+    const read = context.runCli(["get", id, "--json"], { expectJson: true });
+    expect(read.code, read.stderr).toBe(0);
+    const item = (read.json as { item: Record<string, unknown> }).item;
+    return { deadline: item.deadline, assignee: item.assignee, release: item.release };
+  }
+
+  it("clears every listed field on create, update and update many exactly like repeated flags", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Comma unset create", "--type", "Task", "--create-mode", "progressive", "--unset", "parent,release", "--json"], { expectJson: true });
+      expect(created.code, created.stderr).toBe(0);
+
+      const seeded = ["--deadline", "2030-01-01", "--assignee", "amy", "--release", "v1"];
+      const commaId = createTask(context, "comma-unset");
+      const repeatedId = createTask(context, "repeated-unset");
+      for (const id of [commaId, repeatedId]) expect(context.runCli(["update", id, ...seeded]).code).toBe(0);
+      expect(context.runCli(["update", commaId, "--unset", "deadline,assignee", "--unset", "release"]).code).toBe(0);
+      expect(context.runCli(["update", repeatedId, "--unset", "deadline", "--unset", "assignee", "--unset", "release"]).code).toBe(0);
+      expect(scalarFields(context, commaId)).toEqual({ deadline: undefined, assignee: undefined, release: undefined });
+      expect(scalarFields(context, repeatedId)).toEqual(scalarFields(context, commaId));
+
+      expect(context.runCli(["update", commaId, ...seeded]).code).toBe(0);
+      const preview = await runUpdateMany({ list: { ids: commaId }, update: { unset: ["deadline, assignee", "sprint"] }, dryRun: true }, { path: context.pmPath });
+      expect(preview.item_plans?.[0]?.changes.map((change) => change.field).sort()).toEqual(["assignee", "deadline"]);
+      const bulk = context.runCli(["update", "many", "--ids", commaId, "--unset", "deadline,assignee", "--json"], { expectJson: true });
+      expect(bulk.code, bulk.stderr).toBe(0);
+      expect(scalarFields(context, commaId)).toEqual({ deadline: undefined, assignee: undefined, release: "v1" });
+    });
+  });
+
+  it("refuses each unknown or empty part by name on update and before update many can skip items", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comma-unset-refusal");
+      expect(context.runCli(["update", id, "--deadline", "2030-01-01"]).code).toBe(0);
+      const unknown = context.runCli(["update", id, "--unset", "deadline,parnt"]);
+      expect(unknown.code).toBe(EXIT_CODE.USAGE);
+      expect(unknown.stderr).toContain('Unsupported --unset field "parnt"');
+      expect(unknown.stderr).not.toContain('Unsupported --unset field "deadline,parnt"');
+      const empty = context.runCli(["update", id, "--unset", "deadline,"]);
+      expect(empty.code).toBe(EXIT_CODE.USAGE);
+      expect(empty.stderr).toContain("--unset values must not be empty");
+      for (const dryRun of [true, false]) {
+        await expect(runUpdateMany({ list: { ids: id }, update: { unset: ["bogus"] }, dryRun }, { path: context.pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringContaining('Unsupported --unset field "bogus"'),
+        });
+      }
+      expect(scalarFields(context, id).deadline).toBe("2030-01-01T00:00:00.000Z");
+    });
   });
 });

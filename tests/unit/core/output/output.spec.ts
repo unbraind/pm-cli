@@ -297,6 +297,7 @@ describe("core/output/output", () => {
     const context = {
       requested_pm_context_mode: "schema",
       pm_context_mode: "schema",
+      workspace_context_mode: "snapshot",
       auto_pm_context_applied: false,
       is_pm_command: false,
       is_pm_tracker_read_command: false,
@@ -344,17 +345,51 @@ describe("core/output/output", () => {
       ),
     ).toBe(true);
 
+    const zeroCategories = { assertion_failure: 0, timeout: 0 };
     const lean = JSON.parse(
-      formatOutput(payload, { json: true, lean: true, command: "test" }),
+      formatOutput({ ...payload, failure_categories: zeroCategories }, { json: true, lean: true, command: "test" }),
     ) as Record<string, unknown>;
-    expect(lean.execution_context).toMatchObject({
+    // pm-covpax: a passing, mismatch-free lean receipt keeps modes, the mismatch boolean and a
+    // non-rerun restore hint (a rerun would repeat any mutating flags of the invocation).
+    expect(lean.execution_context).toEqual({
       pm_context_mode: "schema",
+      workspace_context_mode: "snapshot",
       mismatch_detected: false,
+      restore_with: "not retained; a run without --lean reports the full context",
     });
+    expect(lean).not.toHaveProperty("failure_categories");
     expect(lean.run_results).toEqual([
       { command: "node --version", status: "passed", exit_code: 0 },
       { command: "node --help", status: "passed", exit_code: 0 },
     ]);
+    const trusted = { ...context, trust: { trusted: true, reason: "local_mutation" } };
+    const trustedRows = payload.run_results.map((row) => ({ ...row, execution_context: trusted }));
+    const withTrust = JSON.parse(
+      formatOutput({ ...payload, run_results: trustedRows }, { json: true, lean: true, command: "test" }),
+    ) as Record<string, Record<string, unknown>>;
+    expect(withTrust.execution_context?.trust_reason).toBe("local_mutation");
+    expect(withTrust.execution_context?.trusted).toBe(true);
+    // A pass under an explicit override can be untrusted; lean output must keep that false.
+    const untrusted = { ...context, trust: { trusted: false, reason: "foreign_source_ref" } };
+    const untrustedRows = payload.run_results.map((row) => ({ ...row, execution_context: untrusted }));
+    const withoutTrust = JSON.parse(
+      formatOutput({ ...payload, run_results: untrustedRows }, { json: true, lean: true, command: "test" }),
+    ) as Record<string, Record<string, unknown>>;
+    expect(withoutTrust.execution_context).toMatchObject({ trusted: false, trust_reason: "foreign_source_ref" });
+
+    for (const variant of [
+      { ...payload, ok: false, failure_categories: { assertion_failure: 1 } },
+      { ...payload, failure_categories: { assertion_failure: 1 } },
+      { ...payload, run_results: payload.run_results.map((row) => ({ ...row, execution_context: { ...context, mismatch_detected: true } })) },
+      { ...payload, run_results: [payload.run_results[0], { ...payload.run_results[1], status: "skipped" }] },
+    ]) {
+      const kept = JSON.parse(formatOutput(variant, { json: true, lean: true, command: "test" })) as Record<string, Record<string, unknown>>;
+      expect(kept.execution_context).toHaveProperty("sandbox_project_pm_path", "/sandbox/project");
+    }
+    const failedCategories = JSON.parse(
+      formatOutput({ ...payload, failure_categories: { assertion_failure: 1 } }, { json: true, lean: true, command: "test" }),
+    ) as Record<string, unknown>;
+    expect(failedCategories.failure_categories).toEqual({ assertion_failure: 1 });
   });
 
   it("preserves heterogeneous linked-test contexts and non-result payloads", () => {

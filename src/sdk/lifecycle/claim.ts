@@ -19,7 +19,7 @@ import {
   normalizeStatusForRegistry,
 } from "../runtime-primitives.js";
 import { wrapOwnershipConflict } from "../annotations.js";
-import { describeItemOwnershipConflict } from "../ownership-source.js";
+import { resolveItemOwnershipConflict } from "../ownership-source.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import {
   runNext,
@@ -208,16 +208,20 @@ export async function runClaim(
           return { changedFields: [] };
         }
         if (!force) {
-          const ownershipPhrase = await describeItemOwnershipConflict(
+          const ownership = await resolveItemOwnershipConflict(
             pmRoot,
             document.metadata.id,
             currentAssigneeText,
           );
           throw new PmCliError(
-            `Item ${document.metadata.id} is already ${ownershipPhrase}. Use --force to take over, or --if-available to skip without failing.`,
+            `Item ${document.metadata.id} is already ${ownership.phrase}. Use --force to take over, or --if-available to skip without failing.`,
             EXIT_CODE.CONFLICT,
             {
               code: "already_claimed_by",
+              item_id: document.metadata.id,
+              claimed_by: ownership.holder,
+              claimed_at: ownership.since,
+              claim_source: ownership.source,
               why: "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.",
               nextSteps: [
                 "Run pm next to pick a different unclaimed item.",

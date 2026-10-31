@@ -2,7 +2,22 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { renderPmCommand } from "../../../src/sdk/command-line.js";
+import { resolveReadCompletenessControls } from "../../../src/sdk/agent/command-recovery.js";
+import { PM_READ_OUTPUT_SURFACE_CONTRACTS } from "../../../src/sdk/read-output-contracts.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+/** One misspelled completeness control per declaring read surface, generated from the runtime contracts. */
+function completenessMisspellings(id: string): string[][] {
+  const operands: Record<string, string[]> = { get: [id], deps: [id], history: [id], graph: ["analyze"], search: ["Whitespace query", "--mode", "keyword"] };
+  return PM_READ_OUTPUT_SURFACE_CONTRACTS.flatMap(({ command }) => {
+    const controls = resolveReadCompletenessControls(command);
+    if (controls === undefined) return [];
+    const level = controls.depth_values.find((value) => !controls.declared_flags.includes(`--${value}`));
+    const spelling = level === undefined ? ["--depth", controls.modes[0]!] : [`--${level}`];
+    return [[command, ...(operands[command] ?? []), ...spelling], [command, ...(operands[command] ?? []), "--depth", "standard"]]
+      .filter((args) => level === undefined || args.at(-1) !== "standard");
+  });
+}
 
 /** Snapshot authoritative bytes while excluding regenerable runtime/search caches. */
 async function authoritativeFiles(root: string): Promise<Record<string, string>> {
@@ -78,6 +93,52 @@ describe("same-command read option recovery (GH-1528)", () => {
         expect(error.recovery?.suggested_retry).toBeUndefined();
       }
       expect(await authoritativeFiles(context.pmPath)).toEqual(before);
+    });
+  });
+
+  it("executes the contract-derived completeness correction on every declaring read surface (GH-1626)", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "Task", "Whitespace query", "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      const id = created.json?.item?.id as string;
+      const prefix = ["--pm-path", context.pmPath, "--no-extensions"];
+      const before = await authoritativeFiles(context.pmPath);
+      const cases = completenessMisspellings(id);
+      expect(cases.length).toBeGreaterThanOrEqual(20);
+      for (const args of cases) {
+        const refused = context.runCli([...prefix, "--json", ...args], { expectJson: true });
+        expect(refused.code, args.join(" ")).toBe(2);
+        const error = JSON.parse(refused.stderr) as { recovery: { suggested_retry_args?: string[] } };
+        const retry = error.recovery.suggested_retry_args;
+        expect(retry, `${args.join(" ")}: ${refused.stderr}`).toBeDefined();
+        const recovered = context.runCli(retry!);
+        expect(recovered.code, `${renderPmCommand(retry!)}: ${recovered.stderr}`).toBe(0);
+      }
+      const unmatched = context.runCli([...prefix, "search", "Whitespace query", "--depth", "brief"]);
+      expect(unmatched.code).toBe(2);
+      expect(unmatched.stderr).toContain("Completeness controls accepted by pm search: --compact, --full.");
+      expect(unmatched.stderr).not.toContain("Replay with suggested correction");
+      expect(await authoritativeFiles(context.pmPath)).toEqual(before);
+    });
+  }, 180_000);
+
+  it("replays a dash-leading close reason and comment without losing the text (pm-stq61b)", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "Task", "Dash-leading values", "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      const id = created.json?.item?.id as string;
+      const prefix = ["--pm-path", context.pmPath, "--no-extensions"];
+      for (const args of [["comments", id, "--flag style comment"], ["close", id, "--unset is now a list"]]) {
+        const refused = context.runCli([...prefix, "--json", ...args], { expectJson: true });
+        expect(refused.code, args.join(" ")).toBe(2);
+        const retry = (JSON.parse(refused.stderr) as { recovery: { suggested_retry_args?: string[] } }).recovery.suggested_retry_args;
+        expect(retry?.slice(-2)).toEqual(["--", args[2]]);
+        const replayed = context.runCli(retry!);
+        expect(replayed.code, replayed.stderr).toBe(0);
+      }
+      const read = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(read.json?.item).toMatchObject({ status: "closed", close_reason: "--unset is now a list" });
+      expect(JSON.stringify(context.runCli(["comments", id, "--json"], { expectJson: true }).json)).toContain("--flag style comment");
     });
   });
 });

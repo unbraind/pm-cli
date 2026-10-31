@@ -2,20 +2,61 @@ id: pm-gh1627
 title: "GH-1627: bound the entire next response and compact optional TOON sections losslessly"
 description: "https://github.com/unbraind/pm-cli/issues/1627\n\nReported behavior on published2026.10.28; current-source reproduction and implementation are pending. Preserve the completed predecessor scope when evaluating this report.\n\nFound while orienting an agent session with pm 2026.10.28 on a real tracker (~400 items, 95 ready).\n\nSeverity: medium (paid on every `pm next`, the first command an agent runs to pick work).\n\n`pm next --limit 5` (TOON, default) prints **6,847 bytes / 72 lines** while its own `filters.token_budget` says **640**. `--token-budget` is documented as bounding only \"the ranked ready\" rows; every other section is unbudgeted and the total cost is never reported. Measured bytes by section:\n\n| Section | Bytes |\n| --- | ---: |\n| `blocked[5]` | 1,821 |\n| `containers[5]` | 1,469 |\n| `ready[5]` (the budgeted part) | 1,331 |\n| `decision_needed[3]` | 947 |\n| `recommended` | 397 |\n| `summary` + `filters` + `held_by_others` + four `*_encoding` blocks | ~780 |\n\nThree avoidable costs inside that:\n\n1. **Side sections ignore the budget and the include flags.** `filters` reports `include_decisions: false` and `include_containers: false`, yet `decision_needed[3]` and `containers[5]` are printed in full (15–18 columns each). Agents read the false flags and the printed sections as a contradiction.\n2. **Escaped tag JSON in TOON rows.** 162 `\\\"` sequences, e.g. `\"[\\\"hosted\\\",\\\"tests\\\",\\\"website\\\"]\"`, plus a `json_columns` `*_encoding` block per section. #1603 removed this from `pm context`; `pm next` still has it.\n3. **All-null columns.** 63 `,null` cells (`order`, `deadline`, `assignee`, `parent` are null in almost every row) across the four tables.\n\nExpected (same contract #1401 gave `pm context`): one budget covers the whole response, or the response reports its own total `estimated_tokens` with a per-section breakdown. Side sections collapse to counts plus ids unless explicitly requested (`--include-decisions` / `--include-containers` / `--blocked-limit`). Tags render as TOON arrays, and columns that are null in every row are omitted with an absent-columns receipt. A contract test that `pm next` output stays within `--token-budget` (± a declared envelope) on a large fixture would keep this from regressing.\n"
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-29T20:35:41.836Z"
-updated_at: "2026-10-29T20:35:41.836Z"
+updated_at: "2026-10-31T16:19:21.843Z"
+closed_at: "2026-10-31T01:51:58.329Z"
+completed_at: "2026-10-31T01:51:58.329Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Independently measure the reported large ready-work fixture; Account for every response section and total output cost; Honor explicit side-section includes and preserve resumability; Verify lossless tag encoding null-column receipts and JSON/TOON contracts
 parent: pm-5t33or
 risk: medium
 confidence: medium
-expected_result: "The complete next response discloses and obeys its effective budget, respects include controls, and preserves tags/null omission receipts without changing full SDK data."
+resolution: "The TOON codec records omitted null columns by position (null_column_index) instead of repeating the full column list, so the compact table wins for ready and containers and every pm next section list-encodes tags. --token-budget on next is no longer a read-output cost alias, so the universal default ceiling keeps binding the complete response; requesting a selection budget audits the whole envelope (read_output with budget_source default, budget_tokens and estimated_tokens beside truncation.ready_budget) unless an enforced intent receipt already discloses it; filters.token_budget echoes the requested selection ceiling or null. SDK surface snapshot acknowledges NextResult.filters.token_budget (number|null) and PmTableCellEncoding.null_column_index; docs/COMMANDS.md and docs/AGENT_OUTPUT_ENCODINGS.md describe the two budget scopes."
+expected_result: Requesting a selection budget on pm next keeps the universal ceiling binding the complete response and discloses its cost; filters.token_budget is null unless requested; tags and omitted null columns stay lossless without changing full SDK data. Default runs carry no receipt and side sections keep their rows; include flags remain dispatch opt-ins.
+actual_result: "Measured on the real tracker (229 open, 112 ready): pm next --limit 5 TOON 9,148 -> 8,718 bytes, escaped-quote sequences 182 -> 76 (the remainder is the blockers object column on blocked/containers rows), null cells 30 -> 15, all four sections list-encode tags; --token-budget 640 --json now carries read_output {budget_source: default, budget_tokens: 6000, estimated_tokens: 4119, within_budget: true} and filters.token_budget 640; the default run reports token_budget null and no receipt. Include flags remain dispatch opt-ins, documented as such. Token-budget gate (32 surfaces), context-intent calibration, flag-lexicon/parity/grammar gates and the linked test run pass; negative control fails 3 of 3 new tests before the fix."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1603,related,"2026-10-29T20:35:41.836Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-29T20:35:41.836Z","harness:codex","Duplicate check: complete strict all-status corpus3157 with no omissions or unreadable records, request-specific GH-number and semantic searches, current open/in_progress inventories, and full live predecessor data/comments/history. The predecessor scope is delivered; this report names a distinct boundary. New intake is open and unclaimed. Source report: https://github.com/unbraind/pm-cli/issues/1627"
+  "2026-10-31T00:44:50.340Z","harness:claude-code","Independent measurement on current source (229 open items, 112 ready) before the fix: pm next --limit 5 TOON 9,148 bytes / 83 lines, 182 escaped-quote sequences, 30 null cells, 4 *_encoding blocks; filters.token_budget reported 640 while nothing enforced it and no read_output receipt was emitted. --token-budget 640 trimmed only recommended+ready (ready_budget estimated 628 within_budget true) and the response stayed 8,879 bytes: the legacy cost alias replaced the universal default ceiling (4000 TOON / 6000 JSON) and resolveBindingReadOutputBudget ignores legacy cost outside context, so the whole-response ceiling was removed rather than applied. The canonical --output-budget 640 omitted the entire result (requested_budget_infeasible; floor of one row per collection + envelope = 1,251 tokens). Codec probe: the compact table candidate lost for ready (1,634 vs 1,592 bytes) and containers (1,805 vs 1,767) only because omitting one all-null column emitted a 15-name column_order list, so those sections fell back to escaped tag JSON; decision_needed and blocked already used list columns."
+  "2026-10-31T00:44:50.845Z","harness:claude-code","Fix: (1) PmTableCellEncoding emits null_column_index (original position per omitted null column) instead of the full column_order list; decoders still accept legacy column_order. (2) --token-budget is no longer a read-output cost alias for next, so the universal default ceiling keeps binding the complete response. (3) A requested selection budget always audits the complete envelope: read_output now reports budget_source default, budget_tokens and estimated_tokens beside truncation.ready_budget; an enforced --for intent receipt suppresses the duplicate audit. (4) filters.token_budget is the requested selection ceiling or null. After the fix on the same tracker: TOON default 8,718 bytes (-430), escaped quotes 76 (-106; the remainder is the blockers object column on blocked/containers rows), null cells 15, every section list-encodes tags; pm next --limit 5 --token-budget 640 --json carries read_output {budget_source: default, budget_tokens: 6000, estimated_tokens: 4119, within_budget: true} and filters.token_budget 640; the default run reports token_budget null and no receipt. Gates: token-budget gate (32 surfaces) and context-intent calibration pass; SDK surface snapshot updated with an acknowledgement for NextResult.filters.token_budget (number|null) and the new codec field. Negative control: with the four source files stashed the three new tests fail (expected 640 to be null; null_column_index undefined; legacy order b,a,c)."
+  "2026-10-31T08:39:03.580Z","harness:claude-code","Hosted coverage on PR #1637 found two branches only reached through spawned CLI processes (not instrumented): `requiresNextSelectionBudgetAudit` past its command and budget guards, and the null-column restore for columns without a recorded position. Both now have in-process tests: `tests/unit/sdk/read-output-contracts.spec.ts` asserts the audit for `tokenBudget` and the snake-case `token_budget` spelling, no audit without a selection budget, and suppression when an enforced intent receipt already discloses the cost; `tests/unit/sdk/output/table-rows.spec.ts` decodes a partial `null_column_index` and a legacy encoding with neither positions nor `column_order`.\n"
+files[7]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/output/table-rows.ts,project
+  src/sdk/query/next.ts,project
+  src/sdk/read-output-contracts.ts,project
+  src/sdk/read-output/surfaces.ts,project
+  tests/unit/commands/query/next-command.spec.ts,project
+  tests/unit/sdk/output/table-rows.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/sdk/output/table-rows.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,"harness:claude-code","2026-10-31T00:44:49.705Z",local_mutation,fix/terminal-noop-and-bounded-next
+test_runs[1]:
+  - run_id: test-local-mvvqmtbo-77p7fp
+    kind: test
+    status: passed
+    started_at: "2026-10-31T01:43:56.646Z"
+    finished_at: "2026-10-31T01:44:08.436Z"
+    recorded_at: "2026-10-31T01:44:08.436Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/sdk/output/table-rows.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/AGENT_OUTPUT_ENCODINGS.md,project
+  docs/COMMANDS.md,project
+close_reason: "pm next audits the complete response under the universal ceiling when a selection budget is requested, and encodes tags and null columns losslessly"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1627
+  gate_id: tests/unit/commands/query/next-command.spec.ts selection budget audit (GH-1627) + tests/unit/sdk/output/table-rows.spec.ts null_column_index
+  negative_control: "git stash push src/sdk/output/table-rows.ts src/sdk/read-output/surfaces.ts src/sdk/read-output-contracts.ts src/sdk/query/next.ts && node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/sdk/output/table-rows.spec.ts -t \"GH-1627|legacy column_order\"; git stash pop (3 fail before the fix)"
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/sdk/output/table-rows.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,node scripts/release/token-budget-gate.mjs,node scripts/release/context-intent-calibration-gate.mjs,node scripts/sdk-surface-snapshot.mjs --check
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

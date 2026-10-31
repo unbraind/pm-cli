@@ -13,12 +13,12 @@
       "active_ownership",
       "workspace_state"
     ],
-    "measured_winner_tokens": 1087,
+    "measured_winner_tokens": 1051,
     "protocols": [
       {
         "task_id": "orientation-context-intent",
         "command_count": 1,
-        "estimated_tokens": 1087,
+        "estimated_tokens": 1051,
         "capabilities": [
           "actionable_work",
           "active_ownership",
@@ -48,7 +48,7 @@
       {
         "task_id": "orientation-operating-rules",
         "command_count": 4,
-        "estimated_tokens": 2139,
+        "estimated_tokens": 2067,
         "capabilities": [
           "actionable_work",
           "active_ownership",
@@ -78,7 +78,7 @@
       {
         "task_id": "orientation-contracts-next",
         "command_count": 2,
-        "estimated_tokens": 5203,
+        "estimated_tokens": 5213,
         "capabilities": [
           "actionable_work",
           "active_ownership",
@@ -110,18 +110,18 @@
   "tasks": [
     {
       "id": "orientation-context-intent",
-      "max_estimated_tokens": 1087,
+      "max_estimated_tokens": 1051,
       "steps": [
         {
           "id": "context",
-          "max_estimated_tokens": 1087,
+          "max_estimated_tokens": 1051,
           "accounting_mode": "self_reported"
         }
       ]
     },
     {
       "id": "orientation-contracts-next",
-      "max_estimated_tokens": 5203,
+      "max_estimated_tokens": 5213,
       "steps": [
         {
           "id": "contracts",
@@ -130,18 +130,18 @@
         },
         {
           "id": "next",
-          "max_estimated_tokens": 722,
+          "max_estimated_tokens": 732,
           "accounting_mode": "self_reported"
         }
       ]
     },
     {
       "id": "orientation-operating-rules",
-      "max_estimated_tokens": 2139,
+      "max_estimated_tokens": 2067,
       "steps": [
         {
           "id": "context",
-          "max_estimated_tokens": 1087,
+          "max_estimated_tokens": 1015,
           "accounting_mode": "self_reported"
         },
         {
@@ -163,7 +163,7 @@
     },
     {
       "id": "context-bootstrap",
-      "max_estimated_tokens": 2077,
+      "max_estimated_tokens": 2005,
       "steps": [
         {
           "id": "triage",
@@ -172,7 +172,7 @@
         },
         {
           "id": "orient",
-          "max_estimated_tokens": 1087,
+          "max_estimated_tokens": 1015,
           "accounting_mode": "self_reported"
         },
         {
@@ -216,7 +216,7 @@
     },
     {
       "id": "lifecycle-mutation",
-      "max_estimated_tokens": 888,
+      "max_estimated_tokens": 873,
       "steps": [
         {
           "id": "create",
@@ -230,7 +230,7 @@
         },
         {
           "id": "close",
-          "max_estimated_tokens": 107,
+          "max_estimated_tokens": 92,
           "accounting_mode": "self_reported"
         },
         {
@@ -242,7 +242,7 @@
     },
     {
       "id": "bulk-effect-outcomes",
-      "max_estimated_tokens": 406,
+      "max_estimated_tokens": 392,
       "steps": [
         {
           "id": "create-bulk-target",
@@ -251,7 +251,7 @@
         },
         {
           "id": "partial-effect",
-          "max_estimated_tokens": 254,
+          "max_estimated_tokens": 240,
           "accounting_mode": "self_reported"
         },
         {
@@ -288,5 +288,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 13832
+  "composite_max_estimated_tokens": 13633
 }

@@ -64,6 +64,12 @@ export function listListProjectionFields(
 /** Canonical get depth values. The CLI also accepts full as an alias for deep. */
 export const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
 
+/** Every get `--depth` spelling the CLI accepts, including the full alias. */
+export const GET_DEPTH_INPUT_VALUES = [...GET_DEPTH_VALUES, "full"] as const;
+
+/** Supported values accepted by the plan show depth contract. */
+export const PLAN_SHOW_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+
 const GET_ROOT_PROJECTION_FIELDS = [
   "body",
   "linked",

@@ -39,6 +39,33 @@ describe("agent command guidance", () => {
     ]);
     expect(refusal.recovery?.suggested_retry).toContain("pm context --depth full");
   });
+  it("lists the attempted read command's own completeness controls when no equivalent exists (GH-1626)", () => {
+    const refusal = formatCommanderErrorForJson("unknown option '--depth'", "search", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["search", "probe", "--depth", "brief", "--json"],
+    });
+    expect(refusal.recovery?.suggested_retry_args).toBeUndefined();
+    expect(refusal.next_steps).toContain("Completeness controls accepted by pm search: --compact, --full.");
+    const nonRead = formatCommanderErrorForJson("unknown option '--brief'", "create", "Task|Issue", 2, {
+      normalizedInvocationArgs: ["create", "Work", "--brief"],
+    });
+    expect(nonRead.next_steps?.some((step) => step.startsWith("Completeness controls"))).toBe(false);
+  });
+  it.each([
+    ["close", ["close", "pm-one", "--unset is now a list"], ["close", "pm-one", "--", "--unset is now a list"]],
+    ["comments", ["item", "comments", "pm-one", "--flag style text", "--json"], ["item", "comments", "pm-one", "--", "--flag style text"]],
+    ["create", ["create", "--weird title", "--type", "Task"], undefined],
+    ["close", ["close", "pm-one", "--", "--x y"], undefined],
+    ["close", ["close", "pm-one", "--x y", "--x y"], undefined],
+  ] as const)("never drops a dash-leading %s value from the advertised replay (pm-stq61b)", (command, args, expected) => {
+    const value = args.find((token) => token.includes(" "))!;
+    const refusal = formatCommanderErrorForJson(`unknown option '${value}'`, command, "Task|Issue", 2, {
+      normalizedInvocationArgs: [...args],
+    });
+    expect(refusal.recovery?.suggested_retry_args).toEqual(expected);
+    if (expected === undefined) expect(refusal.recovery?.suggested_retry).toBeUndefined();
+    expect(refusal.next_steps).toContain(`"${value}" contains spaces, so it is a value that starts with --, not an option. Pass it after a -- separator at the end of the command, or through the command's named value flag.`);
+    expect(refusal.next_steps?.some((step) => step.includes("is not declared on any command path"))).toBe(false);
+  });
   it("preserves read intent when no command was resolved", () => {
     const refusal = formatCommanderErrorForJson("unknown option '--toon'", undefined, "Task|Issue", 2);
     expect(refusal.code).toBe("unknown_option");

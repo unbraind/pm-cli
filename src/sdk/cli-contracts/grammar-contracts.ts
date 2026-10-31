@@ -502,6 +502,7 @@ const EXPLICIT_POSITIONAL_SLOTS = new Map<
   ["beads import", [positionalSlot("file", "string", false)]],
   ["cal", [positionalSlot("view", "string", false, { polymorphic: true })]],
   ["calendar", [positionalSlot("view", "string", false, { polymorphic: true })]],
+  ["changelog corrections", [positionalSlot("action", "string", true)]],
   ["changelog export", [positionalSlot("file", "string", false)]],
   ["changelog milestone create", [positionalSlot("name", "string", true)]],
   ["claim", [OPTIONAL_ITEM_ID]],
@@ -915,7 +916,7 @@ export const PM_COMMAND_DESTINATION_CONTRACTS: readonly PmCommandDestinationCont
       "package",
       "package_owned",
       "package:pm-changelog",
-      ["changelog audit", "changelog contracts", "changelog export", "changelog generate", "changelog milestone create", "changelog upgrades"],
+      ["changelog audit", "changelog contracts", "changelog corrections", "changelog drift", "changelog export", "changelog generate", "changelog milestone create", "changelog upgrades"],
     ),
     ...destinationRows(
       "package",

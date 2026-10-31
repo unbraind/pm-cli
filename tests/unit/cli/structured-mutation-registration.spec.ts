@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as itemParseModule from "../../../src/core/item/parse.js";
 import type * as itemTransactionModule from "../../../src/sdk/item-transaction.js";
 import { parseBootstrapGlobalOptions } from "../../../src/sdk/cli-bootstrap.js";
-import { formatCommanderUsageJson } from "../../../src/cli/commander-usage.js";
+import { formatCommanderUsageJson, formatCommanderUsageMessage } from "../../../src/cli/commander-usage.js";
 import { projectLeanErrorEnvelope } from "../../../src/cli/error-guidance.js";
 import { getGlobalOptions } from "../../../src/cli/registration-helpers.js";
 import { formatOutput } from "../../../src/core/output/output.js";
@@ -752,11 +752,13 @@ describe("structured mutation command registration", () => {
         why: "Needed",
       }),
     ).toEqual({
+      // A code-specific rationale survives the lean projection (GH-1610).
       type: "usage",
       code: "bad_input",
       detail: "Retry",
       exit_code: 2,
       required: "A value",
+      why: "Needed",
     });
     const usage = JSON.parse(
       await formatCommanderUsageJson(
@@ -768,5 +770,13 @@ describe("structured mutation command registration", () => {
     ) as Record<string, unknown>;
     expect(usage).not.toHaveProperty("title");
     expect(usage.required).toEqual(expect.any(String));
+    // GH-1610: usage refusals in text honour --lean from the invocation as well.
+    const usageError = new Error("error: unknown option '--unknwon'");
+    const fullText = await formatCommanderUsageMessage(usageError, new Command(), new Map(), {}, ["list", "--unknwon"]);
+    const leanText = await formatCommanderUsageMessage(usageError, new Command(), new Map(), {}, ["list", "--unknwon", "--lean"]);
+    expect(fullText).toContain("attempted_command: pm list --unknwon");
+    expect(leanText).not.toContain("attempted_command:");
+    expect(leanText).toContain("suggested_retry: pm list");
+    expect(Buffer.byteLength(leanText, "utf8")).toBeLessThan(Buffer.byteLength(fullText, "utf8"));
   });
 });

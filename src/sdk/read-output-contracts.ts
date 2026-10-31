@@ -11,6 +11,15 @@ import {
 } from "./read-output/options.js";
 import { resolvePmHistoryOperation } from "./cli-contracts/command-aliases.js";
 import { resolveExtensionOutputCommand } from "./read-output/extension.js";
+import {
+  BEHAVIOR_PRESERVING_MIGRATION_HINTS,
+  LEGACY_FLAGS_BY_COMMAND,
+  VALUE_BEARING_INCLUDE_ALIASES,
+  flagSelector,
+  optionKey,
+  readOutputIncludeModeOptionsForSurface,
+  resolveNativeReadOutputSurface,
+} from "./read-output/surfaces.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
@@ -383,120 +392,6 @@ export const PM_READ_OUTPUT_OPTION_FLAGS: readonly string[] = Object.freeze(
 export const PM_READ_OUTPUT_COMPOSITION_OPTION_FLAGS =
   READ_OUTPUT_COMPOSITION_FLAGS;
 
-const LEGACY_FLAGS_BY_COMMAND: Readonly<
-  Partial<Record<PmReadOutputSurface, Partial<Record<PmReadOutputDimension, string[]>>>>
-> = {
-  list: {
-    include: ["--brief", "--compact", "--fields", "--full"],
-    amount: ["--after", "--limit", "--no-truncate"],
-    cost: ["--token-budget"],
-    encoding: ["--format", "--stream"],
-  },
-  context: {
-    include: ["--fields", "--section"],
-    amount: ["--after", "--depth", "--limit"],
-    cost: ["--token-budget"],
-    encoding: ["--format"],
-  },
-  search: {
-    include: ["--compact", "--fields", "--full"],
-    amount: ["--after", "--limit"],
-    cost: ["--token-budget"],
-    encoding: ["--format"],
-  },
-  get: {
-    include: ["--fields", "--full"],
-    amount: ["--depth"],
-    cost: ["--token-budget"],
-    encoding: ["--format"],
-  },
-  next: {
-    amount: ["--blocked-limit", "--limit"],
-    cost: ["--token-budget"],
-    encoding: ["--format"],
-  },
-  health: {
-    include: ["--brief", "--check-only", "--full", "--summary"],
-  },
-  deps: {
-    include: ["--collapse", "--full", "--summary"],
-    amount: ["--edge-limit", "--max-depth", "--node-limit"],
-    cost: ["--token-budget"],
-    encoding: ["--format"],
-  },
-  graph: {
-    include: ["--full", "--summary"],
-    amount: ["--after", "--limit", "--max-depth", "--max-paths"],
-  },
-  history: {
-    include: ["--compact", "--full"],
-    amount: ["--limit"],
-    encoding: ["--format"],
-  },
-  activity: {
-    include: ["--compact", "--full"],
-    amount: ["--limit", "--unbounded", "--after"],
-    encoding: ["--stream"],
-  },
-  validate: { include: ["--counts", "--full"] },
-  events: {
-    include: ["--full"],
-    amount: ["--limit"],
-    encoding: ["--follow"],
-  },
-  contracts: { include: ["--full", "--summary"] },
-  comments: { amount: ["--limit"] },
-  notes: { amount: ["--limit"] },
-  files: {
-    amount: ["--limit", "--no-truncate", "--offset"],
-  },
-  docs: {},
-  stats: {},
-  aggregate: {},
-  duplicates: { amount: ["--limit"] },
-  "package-catalog": {},
-  "package-manage": {},
-  "comments-audit": {},
-  assurance: {},
-};
-
-const VALUE_BEARING_INCLUDE_ALIASES = new Set([
-  "--collapse",
-  "--fields",
-  "--section",
-]);
-
-const BEHAVIOR_PRESERVING_MIGRATION_HINTS: Readonly<Record<string, string>> =
-  Object.freeze({
-    "--after":
-      "--after retains cursor-position semantics; use --output-limit <n> separately to bound returned rows.",
-    "--check-only":
-      "--check-only retains health side-effect semantics; --output-include does not suppress vector refresh.",
-    "--collapse":
-      "--collapse retains dependency grouping semantics; --output-include does not replace it.",
-    "--depth":
-      "--depth retains traversal or detail-depth semantics; --output-limit does not replace it.",
-    "--follow":
-      "--follow retains event-tail semantics; --output-format does not enable following.",
-    "--max-depth":
-      "--max-depth retains graph traversal-depth semantics; --output-limit does not replace it.",
-    "--max-paths":
-      "--max-paths retains graph path-search semantics; use --output-limit separately to bound returned rows.",
-    "--no-truncate":
-      "--no-truncate is a compatibility alias; prefer --output-limit unbounded --output-budget unbounded.",
-    "--offset":
-      "--offset retains positional pagination semantics; use --output-limit separately to bound returned rows.",
-    "--stream":
-      "--stream retains command streaming semantics; --output-format selects only static result encoding.",
-    "--unbounded":
-      "--unbounded is a compatibility alias; prefer --output-limit unbounded.",
-  });
-
-/** Translate a CLI flag into the underscore selector used by projection-mode contracts. */
-function flagSelector(flag: string): string {
-  return flag.slice(2).replaceAll("-", "_");
-}
-
 /** Describe a canonical replacement or preserve the distinct behavior of a legacy flag. */
 function migrationHint(flag: string, dimension: PmReadOutputDimension): string {
   const behaviorHint = BEHAVIOR_PRESERVING_MIGRATION_HINTS[flag];
@@ -579,34 +474,6 @@ export function resolveReadOutputSurface(
   const extension = resolveExtensionOutputCommand(normalizedCommand);
   if (extension !== undefined) return extension.read_output === undefined ? undefined : `extension:${extension.command}`;
   return resolveNativeReadOutputSurface(normalizedCommand, options);
-}
-
-/** Resolve native read aliases without consulting request-local extension state. */
-function resolveNativeReadOutputSurface(normalizedCommand: string, options: Record<string, unknown>): PmReadOutputSurface | undefined {
-  const packageMode =
-    normalizedCommand === "package catalog" ||
-    normalizedCommand === "packages catalog" ||
-    normalizedCommand === "package-catalog" ||
-    ((normalizedCommand === "package" ||
-      normalizedCommand === "packages" ||
-      normalizedCommand === "extension") &&
-      (options.catalog === true ||
-        options.target === "catalog" ||
-        options.action === "catalog"));
-  const root = packageMode
-    ? "package-catalog"
-    : normalizedCommand === "package manage" ||
-        normalizedCommand === "package-manage"
-      ? "package-manage"
-      : normalizedCommand.split(" ")[0]!;
-  const normalized = root.startsWith("list-")
-    ? "list"
-    : root === "ctx"
-      ? "context"
-      : root;
-  return PM_READ_OUTPUT_SURFACES.includes(normalized as (typeof PM_READ_OUTPUT_SURFACES)[number])
-    ? (normalized as PmReadOutputSurface)
-    : undefined;
 }
 
 const CANONICAL_OPTION_KEYS = [
@@ -754,19 +621,6 @@ export function readOutputIncludeModeOptions(
   return readOutputIncludeModeOptionsForSurface(surface);
 }
 
-/** Build compatibility include modes without invoking runtime registry discovery. */
-function readOutputIncludeModeOptionsForSurface(surface: PmReadOutputSurface): ReadonlyMap<string, string> {
-  return new Map(
-    (LEGACY_FLAGS_BY_COMMAND[surface]?.include ?? [])
-      .filter(
-        (flag) =>
-          !VALUE_BEARING_INCLUDE_ALIASES.has(flag) &&
-          BEHAVIOR_PRESERVING_MIGRATION_HINTS[flag] === undefined,
-      )
-      .map((flag) => [flagSelector(flag), optionKey(flag)] as const),
-  );
-}
-
 /**
  * Translate canonical projection-mode tokens into the command-local options
  * they alias, so the spelling the migration hints recommend is behaviour
@@ -857,13 +711,6 @@ export function normalizeReadOutputIncludeModeOptions(
   if (Object.hasOwn(options, "output_include")) {
     options.output_include = residual;
   }
-}
-
-/** Convert a dashed CLI flag to the camel-case key accepted by command option records. */
-function optionKey(flag: string): string {
-  return flag
-    .slice(2)
-    .replace(/-([a-z])/gu, (_, character: string) => character.toUpperCase());
 }
 
 /** Read camel-case, snake-case, and negated truncation compatibility spellings. */
@@ -1715,6 +1562,26 @@ function hasContextIntentBudgetReceipt(
   );
 }
 
+/**
+ * A `next` selection budget (`--token-budget`) bounds only the recommended and
+ * ready rows, so the complete envelope is audited under the universal ceiling
+ * whenever one is requested. An enforced intent receipt already discloses the
+ * whole-response cost and suppresses the duplicate audit (GH-1627).
+ */
+function requiresNextSelectionBudgetAudit(
+  resolved: PmResolvedReadOutputDimensions,
+  options: Record<string, unknown>,
+  result: Record<string, unknown>,
+): boolean {
+  if (resolved.command !== "next") return false;
+  if ((options.tokenBudget ?? options.token_budget) === undefined) return false;
+  return !(
+    isRecord(result.context_intent) &&
+    result.context_intent.command === "next" &&
+    result.context_intent.within_budget === true
+  );
+}
+
 /** Disclose ceilings not otherwise carried by a canonical, intent, or session control. */
 function readOutputBudgetReceiptFields(
   budget:
@@ -1802,6 +1669,7 @@ function requiresReadOutputAudit(
     (resolved.command === "context" &&
       resolved.cost?.source === "legacy" &&
       !hasContextIntentBudgetReceipt(result, resolved.cost.value)) ||
+    requiresNextSelectionBudgetAudit(resolved, options, result) ||
     options.outputRowContract === true ||
     options.output_row_contract === true ||
     resolved.canonical_options_used!.includes("--output-include") ||

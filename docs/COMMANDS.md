@@ -169,6 +169,31 @@ pm next --parent pm-epic01              # scope readiness to one epic's subtree
 pm next --ready-only --limit 3 --json   # tightest agent-loop projection
 ```
 
+`pm next` has two budgets with different scopes. `--token-budget <n>` bounds
+only the selection (`recommended` plus `ready`) and reports it under
+`truncation.ready_budget`; `filters.token_budget` echoes that request and is
+`null` when none was made. The complete response, including `decision_needed`,
+`containers`, `blocked` and `held_by_others`, is bounded by the universal
+output budget (`--output-budget`, default ceiling of the read class) and
+disclosed by the `read_output` receipt, which a selection budget now always
+triggers so the total cost and the ceiling that bound it are visible. Use
+`--token-accounting` for per-section bytes. Companion sections are not
+visibility toggles: `--include-decisions`, `--include-gates` and
+`--include-containers` move those rows into the claimable `ready` queue.
+
+The ready queue is ordered by a declared policy, disclosed as
+`filters.ranking_policy`. The default, `priority_floor`, resumes in-progress
+work first, then orders ready items by priority tier and lets the relevance
+score (recency, activity, deadlines, graph proximity) order items only within
+a tier, so an automated log that gains a comment every hour cannot outrank a
+ready P0 incident (GH-1618). `weighted` keeps the blended relevance order. Set
+it per tracker with `pm config project set context_next_ranking_policy
+weighted` (SDK callers pass `rankingPolicy`); a project's own
+`context_relevance` scorer keeps its order under either policy. When the
+policy and the score disagree, the recommendation's `reasons` say so
+(`priority floor (relevance rank N)` or `relevance over pN ready work`), and
+`--explain-ranking` still shows every item's score beside its final rank.
+
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
 Use `duplicates --status all` for a true whole-history duplicate check. The
 result echoes `filters.statuses: null` for the unrestricted corpus; named or
@@ -495,7 +520,7 @@ it does not implicitly force an ownership or lock override.
 New checkpoints use schema version 2 so older CLI versions also refuse them
 instead of applying their former whole-item restoration behavior.
 
-When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`). Unknown-command guidance ranks agent verb synonyms first, bounded edit distance second, and substring matches last; `pm log` therefore points to `history`, `comments`, and `notes`, never a `catalog` command.
+When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`). A quoted value that starts with `--` and contains spaces, such as a close reason `"--unset is now a list"`, is parsed as an unknown option. Its refusal says so, and its replay never drops the value. When only options follow the value, the replay passes it after a `--` separator, for example `pm close <id> -- "--unset is now a list"`. Otherwise the refusal explains how to pass it ([pm-stq61b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-stq61b.toon); repository-only tracker record excluded from npm). Unknown-command guidance ranks agent verb synonyms first, bounded edit distance second, and substring matches last; `pm log` therefore points to `history`, `comments`, and `notes`, never a `catalog` command.
 
 Commands addressed to one item retain their canonical positional form and also accept `--id <item-id>` consistently. For example, `pm get --id pm-a1`, `pm comments --id pm-a1 --add "..."`, and `pm test --id pm-a1 --run` are equivalent to their positional forms. Supplying both forms is a usage error. Command-scoped `pm contracts --flags-only`, completion, and help expose the same alias.
 
@@ -645,9 +670,22 @@ pm --id-only create "Probe item"             # output is only id + status
 
 For strict JSON consumers, the global `--lean` flag recursively omits null,
 undefined, empty-array, and empty-object noise while preserving meaningful
-false/zero/empty-string values. On usage failures it keeps only actionable
-error fields (`type`, `code`, `detail`, `exit_code`, examples, next steps, and
-recovery), reducing retry context without hiding the deterministic fix:
+false/zero/empty-string values. On refusals it keeps only the fields that
+change the next action: `type`, `code`, `detail`, `exit_code`, `next_steps`,
+code-specific `required`/`examples`/`why`, specific recovery
+(`suggested_retry`, `missing`, `allowed_values`, `next_best_command`) and
+typed evidence such as the holder fields below. The generic requirement, the
+`pm --help` examples and the invocation echo (`attempted_command`,
+`normalized_args`, `provided_fields`) are dropped, in text as well as JSON,
+so a lean refusal is never larger than its default rendering (GH-1610). Text
+refusals print a single-line message once, as the headline, and repeat it
+under `What happened` only when the headline is a classification.
+An `already_claimed_by` refusal carries the holder as typed fields in every
+mode: `claimed_by`, `claim_source` (`claim`, `assignment`, or `unknown`
+when history is unreadable, silent, or names a different holder) and
+`claimed_at` (the latest assignee change, or `null` when the origin is
+unknown); text output renders them as `Held by: <holder> (<source> since
+<time>)` and caps a very long holder name, which JSON keeps whole.
 
 ```bash
 pm --json --lean get pm-a1b2
@@ -661,6 +699,8 @@ Use `pm close <duplicate-id> --duplicate-of <canonical-id>` to close duplicates.
 `pm close` accepts short aliases for the common flags: `-m` (`--message`), `-r` (`--reason`), and `-d` (`--duplicate-of`). When `governance.require_close_reason` is enabled and no positional/`--reason` text is given, the close reason is derived from the next-best signal in priority order — explicit reason text, then `--duplicate-of` (`Duplicate of <id>`), then `--resolution` — so a single `pm close <id> --resolution "<summary>"` no longer hard-blocks. The resolution is still written to the item's `resolution` field.
 
 Every transition into a terminal status stamps two distinct ISO timestamps: `closed_at` records when the tracker mutation happened, while `completed_at` records when the work actually finished. They initially match, but a delayed close can supply `pm close <id> --completed-at <timestamp>` and a terminal item can be corrected through the governed `pm update <id> --completed-at <timestamp>` path. Reopening clears both fields, and `pm copy` strips both. Time-window context, release notes, and changelog bucketing prefer `completed_at`; legacy items disclose their compatibility path by falling back to `closed_at`, then `updated_at` only when neither lifecycle timestamp exists.
+
+`--unset` on `pm create`, `pm update` and `pm update many` clears scalar metadata fields by name. It is repeatable and also accepts a comma-separated list, so `--unset deadline,assignee --unset release` is the same as three separate flags. Each name is validated on its own: an unknown or empty part is refused by name before anything is written, including in `update many` dry runs. Field keys cannot contain commas, so the split is never ambiguous, and `pm schema add-field` refuses comma keys and flags ([pm-gh1633](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1633.toon); repository-only tracker record excluded from npm).
 
 `pm create --blocked-by <id>` and `pm update --blocked-by <id>` keep the scalar `blocked_by` field as the latest/primary blocker for compatibility. When the value resolves to a real item, the command also appends a `blocked_by` dependency edge so `pm deps` and reverse dependency scans see the full blocker graph. Repeating `pm update --blocked-by` with a different blocker preserves the prior blocker edge and appends the new one; repeating the same blocker is deduplicated. Use `pm update <id> --unset blocked-by` to clear the scalar and all `blocked_by` dependency edges.
 
@@ -859,6 +899,19 @@ Template-defined custom type options accept string, number, and boolean defaults
 Tracker reference: [pm-l6rz](../.agents/pm/issues/pm-l6rz.toon).
 
 Use `pm close <id> "<reason>"` instead of `pm update --status closed`.
+An update that still names the close status routes through `pm close` and
+reports `auto_routed_from_update_to_close`. When the item is already closed
+with the same reason (and the same `--completed-at`, if given), the update is
+not a transition: it keeps `closed_at`, writes no closure history, and reports
+`terminal_state_unchanged` instead, even with `--force` (GH-1628). Any other
+requested fields take the ordinary update path: `updated_at` moves and a
+history entry is written only when one of them changes a stored value, so a
+request whose every field already matches leaves the item untouched. A
+different reason is a repeat closure, which still needs `--force`. A blank
+reason while `governance.require_close_reason` is enabled goes to the close
+route, which refuses it exactly as it would on an open item. If another writer
+reopens the item before the other fields are written, the request is closed
+through `pm close` as usual.
 
 ## Lifecycle Aliases
 
@@ -996,7 +1049,7 @@ pm test <id> --run --only-last
 pm test-all --status in_progress --progress
 ```
 
-Linked-test execution injects temporary `PM_PATH` and `PM_GLOBAL_PATH` for every command and checks stored-command provenance before process creation. Direct runner binaries such as `vitest` or `node --test`, shell-wrapped equivalents, package-manager scripts, and non-Node runners are accepted consistently; prefer `node scripts/run-tests.mjs ...` when available because it also reproduces repository build, coverage, and cleanup policy. The two-token form `--add command "npm test -- parser"` (and `--add path "..."` / `--remove command "..."`) is accepted when the value is quoted into a single shell argument; it is normalized to `--add command=...` before parsing. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. Linked tests retain append order; consequently `--only-last` always selects the most recently added stored test. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
+Linked-test execution injects temporary `PM_PATH` and `PM_GLOBAL_PATH` for every command and checks stored-command provenance before process creation. Direct runner binaries such as `vitest` or `node --test`, shell-wrapped equivalents, package-manager scripts, and non-Node runners are accepted consistently; prefer `node scripts/run-tests.mjs ...` when available because it also reproduces repository build, coverage, and cleanup policy. The two-token form `--add command "npm test -- parser"` (and `--add path "..."` / `--remove command "..."`) is accepted when the value is quoted into a single shell argument; it is normalized to `--add command=...` before parsing. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. Linked tests retain append order; consequently `--only-last` always selects the most recently added stored test. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list. When a selector skips any test, the run receipt lists only the selected entries in `tests[]`. `count` still reports the full stored collection, `selection` records the selected 1-based indexes and the skipped count, and `tests_omitted: { count, restore_with: "pm test <id> --list" }` names the read that returns every stored test. The receipt no longer repeats the selection as a warning string. On a 58-test item, an `--only-last` receipt went from 8,662 to 2,212 bytes in TOON and from 18,826 to 2,695 bytes in JSON ([pm-gh1630](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1630.toon); repository-only tracker record excluded from npm). With `--lean`, a run that passed with no context mismatch and no failure category also replaces the sandbox `execution_context` with its modes, `mismatch_detected: false`, the `trusted` boolean (a passing run can be untrusted under an explicit override), the trust reason and `restore_with: "not retained; a run without --lean reports the full context"`, and omits the all-zero `failure_categories`. The hint deliberately does not say to rerun: a rerun repeats any mutating flags of the original invocation, such as `--remove-index`. That run measured 865 bytes in TOON and 1,166 in JSON. A failure, refusal, skip or context mismatch keeps the full provenance and categories ([pm-covpax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-covpax.toon); repository-only tracker record excluded from npm).
 
 Strict linked-test guards:
 

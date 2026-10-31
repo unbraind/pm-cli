@@ -2,21 +2,65 @@ id: pm-gh1630
 title: "GH-1630: bound selective linked-test receipts to the selected collection"
 description: "GitHub report https://github.com/unbraind/pm-cli/issues/1630 reproduces pm test --run --only-last printing every linked test record despite selecting one command. Keep selection and skipped-count facts while bounding default receipt collections; preserve an explicit route to full linked evidence and avoid redundant successful-selection warning prose. This is a receipt/context-budget enhancement distinct from completed selector execution and ordering work."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-29T22:37:33.033Z"
-updated_at: "2026-10-29T22:37:33.033Z"
+updated_at: "2026-10-31T13:17:49.209Z"
+closed_at: "2026-10-30T13:53:22.805Z"
+completed_at: "2026-10-30T13:53:22.805Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Cover only-last and other selectors on a multi-test item through CLI and SDK; preserve complete stored evidence and skipped counts; document the full-evidence restore path and measured receipt-token reduction.
 parent: pm-5t33or
 risk: medium
 confidence: high
-expected_result: A selected run emits selected evidence and complete selection/count metadata by default; explicit full reads restore the whole collection without weakening immutable run history.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "projectTestResult returns runSelection.selected as tests[] whenever a selector skipped a test, keeps count and selection for the full collection, adds the optional tests_omitted {count, restore_with: pm test <id> --list}, and drops the linked_test_selection warning that duplicated the selection block. Unselected runs and --list are unchanged."
+expected_result: A selector-narrowed pm test --run receipt costs in proportion to the selected tests while the full stored evidence stays restorable.
+actual_result: "58-test --only-last receipt: TOON 8662 to 2212 bytes, JSON 18826 to 2695 bytes against base. match, only-index and only-last are covered through runTest and CLI --json. --list restores all tests. Linked test suites 106/106 pass."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-p86h,related,"2026-10-29T22:37:33.033Z","harness:codex","cli:create:dep",detected
   pm-x2vx,related,"2026-10-29T22:37:33.033Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
-  "2026-10-29T22:37:33.033Z","harness:codex","Duplicate check: hybrid linked-test search plus complete keyword only-last search returned completed selector execution/order lineage but no owner for selected-receipt verbosity; live open and in-progress lists checked; current issue report not yet reproduced on this source."
+  pm-kjoudp,related,"2026-10-31T09:50:31.299Z","harness:claude-code","cli:update:dep",detected
+comments[3]:
+  - created_at: "2026-10-29T22:37:33.033Z"
+    author: "harness:codex"
+    text: "Duplicate check: hybrid linked-test search plus complete keyword only-last search returned completed selector execution/order lineage but no owner for selected-receipt verbosity; live open and in-progress lists checked; current issue report not yet reproduced on this source."
+  - created_at: "2026-10-30T13:11:14.242Z"
+    author: "harness:claude-code"
+    text: "Implementation evidence: reproduced on the pre-fix build d9c4a0bca. A 4-test item's --only-last receipt printed all 4 tests[] rows, and the selection block was repeated as warning linked_test_selection:only-last=last;selected=1;skipped=3;indexes=4. projectTestResult now returns runSelection.selected as tests[] whenever a selector skipped at least one test. count keeps the full stored total, selection keeps the 1-based indexes and skipped count, and a new optional tests_omitted {count, restore_with: 'pm test <id> --list'} names the full-collection read. Unselected runs and --list are unchanged. The redundant selection warning is removed. Its only consumer was the unit assertion that is now replaced, and empty_linked_test_selection is untouched. Measured on a 58-test fleet-shaped item, --only-last: TOON 8662 to 2212 bytes (-74%), JSON 18826 to 2695 bytes (-86%), pre-fix build vs this build on the same tracker. The SDK runTest result and CLI --json are covered in test-command.spec.ts for match, only-index and only-last, plus --list restore and the unselected run. MCP pm_test forwards through the same runTest result. SDK surface acknowledged for the optional TestResult.tests_omitted. Follow-up observation, not in scope: the remaining ~1.2 KB of a selective receipt is mostly execution_context, which repeats sandbox paths even when no context mismatch occurred."
+  - created_at: "2026-10-31T08:33:31.744Z"
+    author: "harness:claude-code"
+    text: "Review follow-up on PR #1635 (CodeRabbit full review of f86d1539e, 2026-10-31): the `tests_omitted.restore_with` command had three scope gaps.\n\n1. **Shell safety.** `--pm-path` was emitted bare or inside JSON double quotes, so a path such as `/tmp/$HOME` (or one containing backticks) would expand when copied into a shell. The command is now rendered by the shared `renderPmCommand` / `quoteCommandArg` helpers, which escape `$`, backticks, quotes and backslashes on POSIX and use CommandLineToArgvW quoting on Windows.\n2. **Extension scope.** A narrowed run under `--no-extensions` produced a restore command that re-enabled extensions. The receipt now carries `--no-extensions` when the invocation used it.\n3. **Tracker scope.** A tracker selected through `PM_PATH` has no `--path` flag, so the restore command omitted it and could read a different tracker in the next shell. `resolveLinkedTestRestoreScope` keeps the resolved root as `--pm-path` when `PM_PATH` selected it; a tracker found by discovery stays implicit.\n\n`renderTrackerPathFlag` is replaced by `renderLinkedTestRestoreCommand(itemId, scope)` plus `resolveLinkedTestRestoreScope(global, pmRoot)` in `src/sdk/test/execution-receipts.ts` (keeping `src/sdk/test/execution.ts` under the 3400-line cap). Evidence: `tests/unit/sdk/test/execution-receipts.spec.ts` (posix `$`/backtick escaping, win32 quoting, `--no-extensions`, PM_PATH vs discovery) and `tests/unit/commands/test/test-command.spec.ts`, which replays the emitted command and gets all three linked tests back.\n\nSecond review round: `docs/TESTING.md` now tells readers to copy and run the complete `tests_omitted.restore_with` command rather than a bare `pm test <item-id> --list`, which would drop `--pm-path` and `--no-extensions`. PowerShell expansion of `$(...)` and backticks inside win32 double quotes affects every rendered recovery command, not only this one, so it is tracked separately in pm-kjoudp instead of patched per call site.\n\nFourth review round: `resolveLinkedTestRestoreScope` now uses the same precedence as `resolvePmRoot`, so a blank `--path` falls through to `PM_PATH` instead of dropping the tracker from the restore command."
+    edited_at: "2026-10-31T13:17:49.209Z"
+files[3]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/test/execution.ts,project
+  tests/unit/commands/test/test-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/commands/test/test-command.spec.ts tests/unit/commands/test/test-all-command.spec.ts,project,300,"harness:claude-code","2026-10-30T13:11:12.402Z",local_mutation,feat/agent-same-command-corrections
+test_runs[1]:
+  - run_id: test-local-mvv0i9md-mki3ra
+    kind: test
+    status: passed
+    started_at: "2026-10-30T13:32:16.346Z"
+    finished_at: "2026-10-30T13:32:46.261Z"
+    recorded_at: "2026-10-30T13:32:46.261Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/commands/test/test-command.spec.ts tests/unit/commands/test/test-all-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/TESTING.md,project
+close_reason: Selective linked-test runs return only the selected tests with an explicit restore path.
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-gh1630
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/test/test-command.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

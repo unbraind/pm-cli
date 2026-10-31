@@ -5,6 +5,8 @@
  * Explicit empty summaries remain authoritative; positive receipts retain the
  * output stream that supplied evidence for a filtered linked-test selection.
  */
+import { renderPmCommand } from "../command-line.js";
+
 const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
   {
     code: "no_projects_matched_filters",
@@ -80,4 +82,52 @@ export function findLinkedTestExecutionReceipt(
     if (matched) return { code: matched.receiptCode, stream };
   }
   return undefined;
+}
+
+/** Invocation scope a narrowed `pm test` receipt must carry into its restore command. */
+export interface LinkedTestRestoreScope {
+  /** Tracker the invocation selected explicitly (`--pm-path` or `PM_PATH`), if any. */
+  trackerPath?: string;
+  /** True when the invocation suppressed extensions, so the restore command must too. */
+  noExtensions?: boolean;
+  /** Shell dialect to quote for; defaults to the current platform. */
+  platform?: NodeJS.Platform;
+}
+
+/**
+ * Derive the restore scope of an invocation. A tracker chosen through
+ * `PM_PATH` has no `--path` flag, so its resolved root is kept explicitly;
+ * a tracker found by discovery stays implicit, as the next shell finds it too.
+ */
+export function resolveLinkedTestRestoreScope(
+  global: { path?: string; noExtensions?: boolean },
+  pmRoot: string,
+): LinkedTestRestoreScope {
+  // Same precedence as resolvePmRoot: a blank --path falls through to PM_PATH.
+  const trackerPath =
+    global.path?.trim() || (process.env.PM_PATH?.trim() ? pmRoot : undefined);
+  return { trackerPath, noExtensions: global.noExtensions };
+}
+
+/**
+ * Render the command that lists every linked test of an item on the same
+ * tracker and extension scope as the narrowed invocation. Each argument is
+ * quoted for the platform shell, so a copied tracker path never expands `$`
+ * or command substitutions.
+ */
+export function renderLinkedTestRestoreCommand(
+  itemId: string,
+  scope: LinkedTestRestoreScope = {},
+): string {
+  const trackerPath = scope.trackerPath?.trim();
+  return renderPmCommand(
+    [
+      "test",
+      itemId,
+      "--list",
+      ...(scope.noExtensions === true ? ["--no-extensions"] : []),
+      ...(trackerPath ? ["--pm-path", trackerPath] : []),
+    ],
+    scope.platform,
+  );
 }

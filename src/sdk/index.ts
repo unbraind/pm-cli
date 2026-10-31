@@ -333,7 +333,11 @@ export {
   type StaleInProgressItem,
   type StaleInProgressScan,
 } from "./governance/stale-work.js";
-export { describeItemOwnershipConflict } from "./ownership-source.js";
+export {
+  describeItemOwnershipConflict,
+  resolveItemOwnershipConflict,
+  type ItemOwnershipConflict,
+} from "./ownership-source.js";
 export { discoverNearbyPmRoot } from "./tracker-root-discovery.js";
 export {
   assertInitializedTracker,
@@ -559,6 +563,12 @@ export {
   inferPmOutputBudgetClass,
   projectPmDiagnosticOutput,
   projectPmDiagnosticText,
+  PM_GENERIC_REFUSAL_GUIDANCE,
+  PM_RECOVERY_ECHO_FIELDS,
+  isGenericRefusalRequired,
+  isGenericRefusalWhy,
+  projectLeanRecoveryPayload,
+  withoutGenericRefusalExamples,
   analyzeSdkCliParameterCompleteness,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,

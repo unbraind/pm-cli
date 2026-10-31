@@ -2050,6 +2050,19 @@ contract compact and fail-safe for newly added flags. Use
 package-authored query surface. `encodeQueryCursor`, `decodeQueryCursorState`, and
 `paginateQueryRows` remain the transport-neutral continuation primitives.
 
+A flag with a closed value domain declares it in `CliFlagContract.values`. For
+example, `get` and `context` declare `--depth brief|standard|deep|full`, and
+`plan` declares `--depth brief|standard|deep`, so `pm contracts --command <c>
+--flags-only --json` shows the accepted spellings without parsing help prose.
+`resolveReadCompletenessControls(command)` combines that domain with the
+command's read-output projection modes. `resolveReadOptionRetryArgs` uses the
+result to correct a completeness spelling only into a flag the attempted
+command declares
+([pm-gh1626](../.agents/pm/issues/pm-gh1626.toon)). A flag that accepts a
+comma-separated value list declares `list: true`. `--unset` on create, update
+and update-many does, so repeated flags and comma lists reach the parser as the
+same field set ([pm-gh1633](../.agents/pm/issues/pm-gh1633.toon)).
+
 `decodeQueryCursorEnvelope`, `decodeQueryCursorState`, and
 `resolveQueryCursorStart` accept an optional final `cursorFlag` argument
 (`"--after"`, the default, or `"--cursor"`) so package-authored queries can
@@ -2350,6 +2363,13 @@ const signalRead = await store.readOrRebuild(itemsFromDerivedIndex, {
 
 const report = await scoreContextCandidates(signalRead.candidates);
 ```
+
+`pm next` applies a ranking policy after scoring: `priority_floor` (the
+default, from `context.next_ranking_policy` or the `rankingPolicy` option)
+resumes in-progress work, then orders by priority tier with relevance inside a
+tier; `weighted` keeps the blended score order. The response discloses it as
+`filters.ranking_policy`, and the recommendation reasons name the disagreement
+when the score leader differs from the recommendation (GH-1618).
 
 Use `--explain-ranking --json` on `pm context` or `pm next` to include the model,
 available signals, baseline rank, final rank, score, and per-signal

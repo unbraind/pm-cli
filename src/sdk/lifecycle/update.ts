@@ -3,6 +3,12 @@
  *
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
+import {
+  applyRepeatedTerminalStateUpdate,
+  assertRoutedCloseKeepsRequiredReason,
+  describesCurrentTerminalState,
+  readRoutedItemMetadata,
+} from "./repeated-terminal-state.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
 import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
@@ -130,6 +136,7 @@ import {
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
+  CLOSE_REASON_UNSET_ALIASES,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   parseCommandUnsetTargets,
@@ -259,7 +266,7 @@ const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
   ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   {
     canonical: "close-reason",
-    aliases: ["close_reason", "close-reason"],
+    aliases: CLOSE_REASON_UNSET_ALIASES,
     optionKey: "closeReason",
     metadataKey: "close_reason",
   },
@@ -365,10 +372,29 @@ function normalizeLegacyNoneUpdateOptions(
   );
 }
 
+/**
+ * Refuse unsupported or empty `--unset` field names before a bulk plan can
+ * skip items silently, returning the stored metadata keys they resolve to so
+ * planning checks the same fields validation accepted.
+ */
+export function assertUpdateUnsetFieldsSupported(
+  raw: readonly string[],
+  runtimeFieldRegistry: RuntimeFieldRegistry,
+  extensionFieldNames: readonly string[],
+  commands: UpdateCommandOptions["runtimeFieldCommands"] = ["update"],
+): string[] {
+  return [
+    ...parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames, commands)
+      .metadataKeys,
+  ];
+}
+
+/** Resolve `--unset` tokens; runtime fields resolve under the invoking command scope (`update` or `update_many`). */
 function parseUpdateUnsetTargets(
   raw: string[] | undefined,
   runtimeFieldRegistry?: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[] = [],
+  commands: UpdateCommandOptions["runtimeFieldCommands"] = ["update"],
 ): { metadataKeys: Set<string>; optionKeys: Set<string> } {
   return parseCommandUnsetTargets({
     raw,
@@ -384,11 +410,9 @@ function parseUpdateUnsetTargets(
       });
       const definition =
         UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
-        resolveRuntimeUnsetFieldDefinition(
-          trimmed,
-          "update",
-          runtimeFieldRegistry,
-        ) ??
+        commands
+          .map((command) => resolveRuntimeUnsetFieldDefinition(trimmed, command, runtimeFieldRegistry))
+          .find((resolved) => resolved !== undefined) ??
         (extensionFieldName
           ? { optionKey: "field", metadataKey: extensionFieldName }
           : undefined);
@@ -1224,6 +1248,7 @@ function collectProvidedUpdatePolicyOptions(
       options.unset,
       runtimeFieldRegistry,
       extensionFieldNames,
+      options.runtimeFieldCommands,
     );
     for (const optionKey of unsetTargets.optionKeys) {
       mark(optionKey, true);
@@ -1324,13 +1349,26 @@ interface UpdateMutationContext {
   pmRoot: string;
 }
 
-interface CloseRouteContext {
+/** Inputs shared by the close-status routing of an update and its repeated-terminal-state check. */
+export interface CloseRouteContext {
+  /** Normalized update options of the invocation. */
   options: UpdateCommandOptions;
+  /** Which update fields the invocation set, keyed by option name. */
   fieldFlags: Record<string, boolean>;
+  /** Runtime status registry that names the configured close status. */
   statusRegistry: RuntimeStatusRegistry;
+  /** Workflow transition warnings collected before routing. */
   workflowTransitionWarnings: readonly string[];
+  /** Global CLI options forwarded to nested commands. */
   global: GlobalOptions;
+  /** Target item id. */
   id: string;
+  /** Resolved tracker root. */
+  pmRoot: string;
+  /** Tracker settings in effect. */
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  /** Item type registry used to locate the item document. */
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
 }
 
 // `rank` is a legacy alias for `order`; keep it out of the scalar loop if the
@@ -2062,6 +2100,7 @@ async function routeCloseStatusUpdate(
   if (targetStatus !== context.statusRegistry.close_status) {
     return undefined;
   }
+  assertRoutedCloseKeepsRequiredReason(context);
 
   const otherFieldKeys = Object.entries(context.fieldFlags)
     .filter(
@@ -2072,8 +2111,24 @@ async function routeCloseStatusUpdate(
         key !== "completedAt",
     )
     .map(([key]) => key);
-  const routeWarnings: string[] = [];
-  let preChangedFields: string[] = [];
+  const currentMetadata = await readRoutedItemMetadata(context);
+  if (
+    describesCurrentTerminalState(
+      currentMetadata,
+      context.options,
+      context.statusRegistry,
+      context.settings.governance.require_close_reason,
+    )
+  ) {
+    return applyRepeatedTerminalStateUpdate(
+      context,
+      currentMetadata,
+      otherFieldKeys,
+      runUpdate,
+      (fieldUpdate) => closeRoutedItem(context, fieldUpdate),
+    );
+  }
+  let preUpdate: UpdateResult | undefined;
   if (otherFieldKeys.length > 0) {
     const preUpdateOptions = transferMutationStdinTokenPolicy(context.options, {
       ...context.options,
@@ -2081,15 +2136,16 @@ async function routeCloseStatusUpdate(
       closeReason: undefined,
       message: undefined,
     });
-    const preUpdate = await runUpdate(
-      context.id,
-      preUpdateOptions,
-      context.global,
-    );
-    preChangedFields = preUpdate.changed_fields;
-    routeWarnings.push(...preUpdate.warnings);
+    preUpdate = await runUpdate(context.id, preUpdateOptions, context.global);
   }
+  return closeRoutedItem(context, preUpdate);
+}
 
+/** Run the closure writer for a routed close status, keeping the fields and warnings an earlier field update recorded. */
+async function closeRoutedItem(
+  context: CloseRouteContext,
+  preUpdate: UpdateResult | undefined,
+): Promise<UpdateResult> {
   const closeResult = await runClose(
     context.id,
     context.options.closeReason,
@@ -2104,13 +2160,16 @@ async function routeCloseStatusUpdate(
 
   const warnings = [
     ...context.workflowTransitionWarnings,
-    ...routeWarnings,
+    ...(preUpdate?.warnings ?? []),
     ...closeResult.warnings,
     "auto_routed_from_update_to_close",
   ];
   return {
     item: closeResult.item,
-    changed_fields: [...preChangedFields, ...closeResult.changed_fields],
+    changed_fields: [
+      ...(preUpdate?.changed_fields ?? []),
+      ...closeResult.changed_fields,
+    ],
     warnings,
   };
 }
@@ -3204,6 +3263,7 @@ async function runUpdateWithContext(
     options.unset,
     runtimeFieldRegistry,
     extensionFieldNames,
+    options.runtimeFieldCommands,
   );
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
   const clearItemMetadataKeys = new Set<string>(unsetTargets.metadataKeys);
@@ -3334,6 +3394,9 @@ async function runUpdateWithContext(
     workflowTransitionWarnings,
     global,
     id,
+    pmRoot,
+    settings,
+    typeRegistry,
   });
   if (routedClose) {
     return routedClose;

@@ -1,0 +1,61 @@
+id: pm-stq61b
+title: "Unknown-option recovery drops a dash-leading prose value: the advertised replay closes, comments or creates without the user's text"
+description: "Found while closing pm-gh1633. Its close reason began with '--unset', and pm close <id> \"--unset accepts ...\" was refused as unknown option '--unset accepts ...'. Commander treats any argv token that starts with '--' as an option, even a quoted multi-word value. The generic unknown-option fallback in resolveUnknownOptionRetry then removes that token and advertises the remainder as 'Replay with suggested correction'. Reproduced on this branch in an isolated tracker:\n\n- pm close <id> \"--unset is now a list\" suggests pm close <id>, which closes with no reason.\n- pm comments <id> \"--flag style comment text\" suggests pm item comments <id>, which drops the comment.\n- pm create \"--weird title\" --type Task suggests pm create --type Task, which drops the title.\n\nThe refusal also calls the prose 'not declared on any command path' and advises a nearest option. A token containing whitespace can never be an option spelling, and pm close <id> -- \"--unset is now a list\" works today. Replaying the advertised command loses user data or performs a different mutation, which breaks the recovery contract that a suggested retry preserves intent."
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,recovery,sdk
+created_at: "2026-10-30T13:54:31.173Z"
+updated_at: "2026-10-31T01:49:01.211Z"
+closed_at: "2026-10-30T13:59:11.659Z"
+completed_at: "2026-10-30T13:59:11.659Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Never advertise a retry that drops a whitespace-bearing unknown-option token; Offer a -- separator retry only when it preserves the value and all other arguments in order; Explain in the refusal that the value starts with -- and how to pass it, without the declared-nowhere option advice; Cover close, comments and create through SDK and CLI tests, with a pre-fix negative control"
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: medium
+resolution: "A whitespace-bearing unknown option is classified as a value. Its replay passes it after a -- separator when only options follow, and otherwise advertises no retry. The refusal explains how to pass the value instead of giving declared-nowhere option advice."
+expected_result: "A dash-leading prose value is never dropped by an advertised replay; when safe, the replay passes it after a -- separator, otherwise the refusal explains how to pass it."
+actual_result: "close and comments replays preserve and store the text. create with a following --type value advertises no lossy retry. 5 new unit cases fail on the pre-fix source and pass with the fix. The CLI integration replay test, CLI unit suite 843/843 and the refusal-closure gate pass."
+component: cli
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fo8g7j,related,"2026-10-30T13:54:31.173Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1633,discovered_from,"2026-10-30T13:54:31.173Z","harness:claude-code","cli:create:dep",detected
+  pm-p316vn,related,"2026-10-30T13:54:31.173Z","harness:claude-code","cli:create:dep",detected
+  pm-8nyc,related,"2026-10-31T01:49:01.005Z","harness:claude-code","cli:update:dep",detected
+  pm-in23qu,related,"2026-10-31T01:49:01.005Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-10-30T13:54:31.173Z","harness:claude-code","Duplicate check: a semantic search for an unknown-option fallback dropping positional dash-leading text, and a keyword search for 'suggested_retry drops'. The nearest closed owners are pm-p316vn (close retry preserves named options), pm-fo8g7j (refusal identifies the actual rejected flag) and pm-8nyc/pm-in23qu (suggestion quality). None covers a whitespace-bearing token being parsed as an option and then deleted from the replay, so this is a distinct boundary."
+  "2026-10-30T13:59:10.876Z","harness:claude-code","Implementation evidence: resolveUnknownOptionRetry now treats a rejected option containing whitespace as a dash-leading value, never an option spelling. It skips the lexical drop fallback and offers a retry only when every later token is itself an option. That retry moves the value behind a -- separator and strips global bootstrap tokens from the part before it, because stripGlobalBootstrapTokens stops at --. Otherwise no retry is advertised. The refusal replaces the declared-nowhere option advice with an explanation of how to pass the value. Verified in an isolated tracker: pm close <id> \"--unset is now a list\" advertises pm close <id> -- \"--unset is now a list\", and replaying it stores that close_reason. pm comments <id> \"--flag style comment text\" replays as pm item comments <id> -- \"...\" and stores the comment. pm create \"--weird title\" --type Task gets the explanation and no lossy retry. Negative control: with only error-guidance.ts reverted, the 5 new unit cases fail (5 failed, 9 passed). With the fix, tests/unit/cli 843/843 pass, the refusal-closure gate has no findings, and ESLint passes. escape_class review_caught_late: the defect was found by this session while closing pm-gh1633, not by a user report."
+files[3]{path,scope}:
+  src/cli/error-guidance.ts,project
+  tests/integration/read-output/option-recovery.integration.spec.ts,project
+  tests/unit/cli/nonmutating-option-guidance.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts,project,240,"harness:claude-code","2026-10-30T13:58:47.822Z",local_mutation,feat/agent-same-command-corrections
+test_runs[1]:
+  - run_id: test-local-mvv1fzs2-3q68m1
+    kind: test
+    status: passed
+    started_at: "2026-10-30T13:58:48.651Z"
+    finished_at: "2026-10-30T13:58:59.810Z"
+    recorded_at: "2026-10-30T13:58:59.810Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: Dash-leading prose values are never dropped from an advertised unknown-option replay.
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  gate_id: test-coverage
+  owner: pm-stq61b
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/nonmutating-option-guidance.spec.ts tests/integration/read-output/option-recovery.integration.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs coverage
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

@@ -1,0 +1,50 @@
+id: pm-8xgg7i
+title: "pm close clears the assignee but leaves claim_principal, so closed claimed items keep an active owner"
+description: "`pm close` ended ownership only halfway. `clearCloseAssignee` in `src/sdk/lifecycle/close.ts` deleted `assignee` and left `claim_principal`, so every claimed item that was closed kept an active claim principal in its projection, and only a separate `pm release` (which since pm-bnrndo clears both fields on terminal items) removed it. CodeRabbit's review of PR #1635 found it on pm-m6ig79. The same residue was on six closed items in the tracker.\n\nFix: closure clears both `assignee` and `claim_principal` in the same recorded transition, and reports each cleared field in `changed_fields`."
+type: Issue
+status: closed
+priority: 2
+tags[3]: lifecycle,ownership,review
+created_at: "2026-10-31T09:46:45.031Z"
+updated_at: "2026-10-31T15:52:49.264Z"
+closed_at: "2026-10-31T09:47:57.457Z"
+completed_at: "2026-10-31T09:47:57.457Z"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: "pm close removes both assignee and claim_principal from a claimed item in one recorded transition and reports both in changed_fields; a regression test claims, closes and asserts neither field remains; the closed tracker items carrying a stale claim_principal are released through the CLI"
+risk: low
+confidence: high
+resolution: clearCloseAssignee in src/sdk/lifecycle/close.ts now deletes both assignee and claim_principal and reports each cleared field in changed_fields; regression test in close-command.spec.ts; stale tracker claims released through the CLI.
+expected_result: "Closing a claimed item leaves neither assignee nor claim_principal in its projection, in the same recorded transition."
+actual_result: "Before the fix the close transition removed assignee only; pm-m6ig79 and four other closed items (pm-gh1549, pm-z8qd4k, pm-3j6it6, pm-qudvto) kept a claim_principal. After the fix the claim-then-close regression test passes and fails with close.ts restored; the five items were released through pm release and no closed item carries a claim_principal."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bnrndo,related,"2026-10-31T09:46:45.031Z","harness:claude-code","cli:create:dep",detected
+  pm-m6ig79,discovered_from,"2026-10-31T09:46:45.031Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-31T15:52:49.264Z","harness:claude-code","Follow-on effect, found by hosted coverage on PR #1638: a completion transaction (close → release) no longer has a release with ownership effects of its own, because closure now clears the claim. The existing post-release-failure test therefore stopped reaching the release step's compensation in `src/sdk/item-transaction.ts`. A dedicated test now covers that path: claim, then a transaction of release followed by a failing step, then assert the assignee and claim principal are restored. The completion plan keeps its release step, which stays a harmless no-op after close.\n"
+files[1]{path,scope,note}:
+  src/sdk/lifecycle/close.ts,project,clearCloseAssignee clears assignee and claim_principal at closure
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  "node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/close-command.spec.ts -t \"claim principal\"",project,600,"harness:claude-code","2026-10-31T10:01:41.079Z",local_mutation,feat/agent-same-command-corrections
+test_runs[1]:
+  - run_id: test-local-mvw8flyx-bxf8p9
+    kind: test
+    status: passed
+    started_at: "2026-10-31T10:02:15.828Z"
+    finished_at: "2026-10-31T10:02:25.400Z"
+    recorded_at: "2026-10-31T10:02:25.400Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      "node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/close-command.spec.ts -t \"claim principal\"",schema,schema,source,local_source_ref
+close_reason: "pm close now clears claim_principal with the assignee; regression test with negative control, stale tracker claims released"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-8xgg7i
+  gate_id: tests/unit/commands/lifecycle/close-command.spec.ts clears the claim principal with the assignee so a closed claimed item keeps no owner
+  negative_control: "git stash push src/sdk/lifecycle/close.ts && node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/close-command.spec.ts -t \"claim principal\"; git stash pop (fails before the fix)"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle,node --import tsx scripts/release/static-quality-gate.mts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

@@ -739,3 +739,64 @@ export function projectPmDiagnosticText(
     },
   };
 }
+
+/**
+ * Guidance that every refusal can carry regardless of its code. Lean output
+ * omits it because it never changes the caller's next action; default output
+ * keeps it for human readers (GH-1610). Declared once here so the text and
+ * JSON lean projections agree on what counts as boilerplate.
+ */
+export const PM_GENERIC_REFUSAL_GUIDANCE = Object.freeze({
+  required: "Adjust command input or tracker state and retry.",
+  why: Object.freeze([
+    "pm enforces explicit, deterministic contracts for data and command semantics.",
+    "Commander validates CLI contracts before execution.",
+    "Unexpected runtime failures can occur from environment or extension-level issues.",
+    "Validation protects data consistency and deterministic behavior across commands.",
+    "Required options define command intent and enforce deterministic write contracts.",
+  ]),
+  examples: Object.freeze(["pm --help", "pm <command> --help"]),
+});
+
+/** True when the `What is required` text is the generic constant. */
+export function isGenericRefusalRequired(value: string | undefined): boolean {
+  return value?.trim() === PM_GENERIC_REFUSAL_GUIDANCE.required;
+}
+
+/** True when the `Why` text carries no code-specific rationale. */
+export function isGenericRefusalWhy(value: string | undefined): boolean {
+  const trimmed = value?.trim();
+  return trimmed !== undefined && PM_GENERIC_REFUSAL_GUIDANCE.why.includes(trimmed);
+}
+
+/**
+ * Drop each generic help pointer from an example list so a mixed list keeps
+ * only its code-specific entries; an all-generic list becomes empty.
+ */
+export function withoutGenericRefusalExamples(
+  values: readonly string[] | undefined,
+): string[] {
+  return (values ?? []).filter(
+    (value) => !PM_GENERIC_REFUSAL_GUIDANCE.examples.includes(value.trim()),
+  );
+}
+
+/** Recovery fields that only echo the caller's own invocation. */
+export const PM_RECOVERY_ECHO_FIELDS = Object.freeze([
+  "attempted_command",
+  "normalized_args",
+  "provided_fields",
+] as const);
+
+/**
+ * Drop the invocation echo from a recovery payload. Specific recovery such as
+ * `suggested_retry`, `missing`, `allowed_values` and `next_best_command`
+ * survives; an empty remainder is omitted entirely.
+ */
+export function projectLeanRecoveryPayload<
+  Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>,
+>(recovery: Recovery | undefined): Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined {
+  if (!recovery) return undefined;
+  const { attempted_command: _attempted, normalized_args: _args, provided_fields: _fields, ...specific } = recovery;
+  return Object.values(specific).some((value) => value !== undefined) ? specific : undefined;
+}

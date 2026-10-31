@@ -8,13 +8,29 @@
 
 ### Fixed
 
+- Successful linked-test receipts carry non-actionable execution_context and all-zero failure_categories, even under --lean ([pm-covpax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-covpax.toon))
+- Unknown-option recovery drops a dash-leading prose value: the advertised replay closes, comments or creates without the user's text ([pm-stq61b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-stq61b.toon))
+- GH-1633: accept comma-separated --unset field lists with per-field validation ([pm-gh1633](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1633.toon))
+- GH-1630: bound selective linked-test receipts to the selected collection ([pm-gh1630](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1630.toon))
+- GH-1626: offer same-command replay corrections for brief completeness spellings ([pm-gh1626](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1626.toon))
 - GH-1609: recover killed commit owners and bound lock waits with a monotonic clock ([pm-gh1609](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1609.toon))
 - GH-1624: define typed Unicode handling for extension output across JSON and TOON ([pm-gh1624](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1624.toon))
 - GH-1625: align extension-refusal Sentry capture with declared contracts and telemetry source context ([pm-gh1625](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1625.toon))
 - GH-1602: keep preflight warnings inside JSON error envelopes ([pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon))
 - Bound independent native receipt regression cases ([pm-native-index-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-native-index-proof.toon))
 - GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions ([pm-gh1558](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1558.toon))
+- pm close clears the assignee but leaves claim_principal, so closed claimed items keep an active owner ([pm-8xgg7i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8xgg7i.toon))
+- GH-1618: prevent automated comment churn from misleading next-work priority ([pm-gh1618](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1618.toon))
+- GH-1610: compact lean refusals and expose structured claim context ([pm-gh1610](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1610.toon))
+- GH-1627: bound the entire next response and compact optional TOON sections losslessly ([pm-gh1627](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1627.toon))
+- GH-1628: preserve terminal timestamps for identical forced SDK updates ([pm-gh1628](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1628.toon))
+- Pull-request CI requests 33 hosted-runner jobs per push against the account's 20-job concurrency cap, so required checks wait hours before they start ([pm-m6ig79](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m6ig79.toon))
+- Text refusals drop the specific What happened detail when an echoed argv overflows the diagnostic ceiling ([pm-4oc353](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4oc353.toon))
 - GH-1622: investigate pm-presets SDK-loading fault blocking daily release ([pm-gh1622](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1622.toon))
+
+### Security
+
+- Registry advisories GHSA-mrwp-f3q8-3g9p (follow-redirects 1.16.1, high) and GHSA-g3hv-75wg-m249 (minimatch 10.2.6, moderate) block the static gate on main and every PR ([pm-irviv0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-irviv0.toon))
 
 ## 2026.10.30 - 2026-10-30
 

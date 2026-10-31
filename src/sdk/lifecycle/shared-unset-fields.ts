@@ -23,6 +23,9 @@ export interface CommandUnsetFieldDefinition {
   metadataKey: string;
 }
 
+/** `--unset` spellings that clear `close_reason`, shared by the update parser and the routed-close governance guard. */
+export const CLOSE_REASON_UNSET_ALIASES: readonly string[] = ["close_reason", "close-reason"];
+
 /** Public contract for common unset field definitions before close reason, shared by SDK and presentation-layer consumers. */
 export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON: readonly CommandUnsetFieldDefinition[] =
   [
@@ -270,6 +273,21 @@ export type CommandUnsetTargetResolver = (
   trimmedToken: string,
 ) => RuntimeUnsetFieldDefinition | undefined;
 
+/**
+ * Expand repeated and comma-separated `--unset` values into one token per
+ * field. An entry that resolves as a whole is kept intact first, so a legacy
+ * field key registered with a comma (before schema add-field refused them)
+ * stays clearable; only unresolved entries split on commas.
+ */
+export function expandUnsetFieldTokens(
+  raw: readonly string[],
+  resolvesWhole: (entry: string) => boolean,
+): string[] {
+  return raw.flatMap((entry) =>
+    entry.includes(",") && resolvesWhole(entry) ? [entry] : entry.split(","),
+  );
+}
+
 /** Parse and validate common command `--unset` tokens while preserving command-specific field resolution. */
 export function parseCommandUnsetTargets(options: {
   readonly raw: readonly string[] | undefined;
@@ -282,10 +300,17 @@ export function parseCommandUnsetTargets(options: {
     return { metadataKeys, optionKeys };
   }
 
-  for (const entry of options.raw) {
+  const tokens = expandUnsetFieldTokens(
+    options.raw,
+    (entry) => options.resolveDefinition(entry.trim().toLowerCase()) !== undefined,
+  );
+  for (const entry of tokens) {
     const trimmed = entry.trim().toLowerCase();
     if (!trimmed) {
-      throw new PmCliError("--unset values must not be empty", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--unset values must not be empty; name each field once, for example --unset parent,release",
+        EXIT_CODE.USAGE,
+      );
     }
     if (isLegacyNoneToken(trimmed)) {
       throw new PmCliError(

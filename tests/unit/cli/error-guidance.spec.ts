@@ -10,7 +10,9 @@ import {
   formatPmCliErrorForDisplay,
   formatPmCliErrorForJson,
   formatUnknownErrorForJson,
+  projectLeanErrorEnvelope,
 } from "../../../src/cli/error-guidance.js";
+import { projectLeanRecoveryPayload } from "../../../src/sdk/cli-contracts/agent-output-contracts.js";
 
 describe("pm cli error guidance context plumbing", () => {
   it("preserves verified no-change evidence without inferring it for execution failures", () => {
@@ -174,9 +176,210 @@ describe("pm cli error guidance context plumbing", () => {
       "Run pm history <id> --verify and resolve conflicts.",
     );
     expect(text).toContain("retry_after_ms: 250");
-    expect(text.indexOf("What is required:")).toBeLessThan(
-      text.indexOf("What happened:"),
+    // A single-line message already heads the refusal, so it is not repeated
+    // under "What happened" (GH-1610); the sections keep their order.
+    expect(text).not.toContain("What happened:");
+    expect(text.indexOf("What is required:")).toBeLessThan(text.indexOf("Next steps:"));
+    expect(text.indexOf("Next steps:")).toBeLessThan(text.indexOf("Why:"));
+    const multiline = formatPmCliErrorForDisplay(
+      "History replay failed due to merge conflict markers.\nSecond line names the marker.",
+      { code: "history_merge_conflict_markers_detected" },
     );
+    expect(multiline).toContain("Error: History replay failed due to merge conflict markers.");
+    expect(multiline).toContain("What happened:");
+    expect(multiline).toContain("Second line names the marker.");
+  });
+
+  describe("lean refusals (GH-1610)", () => {
+    const claimContext = {
+      code: "already_claimed_by",
+      item_id: "pm-held",
+      claimed_by: "agent-a",
+      claimed_at: "2026-10-31T00:17:38.745Z",
+      claim_source: "claim" as const,
+      why: "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.",
+      nextSteps: [
+        "Run pm next to pick a different unclaimed item.",
+        "Re-run with --if-available to treat a held item as a no-op skip.",
+      ],
+      recovery: {
+        attempted_command: "pm claim pm-held --author agent-b --lean",
+        normalized_args: ["claim", "pm-held", "--author", "agent-b", "--lean"],
+        provided_fields: ["--author", "--lean"],
+      },
+    };
+    const claimMessage =
+      "Item pm-held is already claimed by agent-a. Use --force to take over, or --if-available to skip without failing.";
+
+    it("renders the typed holder once and drops constant boilerplate plus the invocation echo in lean text", () => {
+      const full = formatPmCliErrorForDisplay(claimMessage, claimContext);
+      const lean = formatPmCliErrorForDisplay(claimMessage, claimContext, { lean: true });
+      for (const text of [full, lean]) {
+        expect(text).toContain(`Error: ${claimMessage}`);
+        expect(text).not.toContain("What happened:");
+        expect(text).toContain("Held by: agent-a (claim since 2026-10-31T00:17:38.745Z)");
+        expect(text).toContain("Run pm next to pick a different unclaimed item.");
+        expect(text).toContain("Why:");
+      }
+      expect(full).toContain("What is required:");
+      expect(full).toContain("Examples:");
+      expect(full).toContain("attempted_command:");
+      expect(lean).not.toContain("What is required:");
+      expect(lean).not.toContain("Examples:");
+      expect(lean).not.toContain("Recovery bundle:");
+      expect(lean).not.toContain("--lean");
+      expect(Buffer.byteLength(lean, "utf8")).toBeLessThan(Buffer.byteLength(full, "utf8"));
+    });
+
+    it("keeps code-specific recovery and a specific requirement in lean text", () => {
+      const lean = formatPmCliErrorForDisplay("Unknown field 'owner' is not declared on Issue", {
+        code: "invalid_argument_value",
+        required: "Pass a declared field name.",
+        recovery: {
+          attempted_command: "pm update pm-1 --owner x --lean",
+          provided_fields: ["--owner", "--lean"],
+          suggested_retry: "pm update pm-1 --assignee x",
+          allowed_values: ["assignee", "parent"],
+        },
+      }, { lean: true });
+      expect(lean).toContain("What is required:");
+      expect(lean).toContain("Pass a declared field name.");
+      expect(lean).toContain("suggested_retry: pm update pm-1 --assignee x");
+      expect(lean).toContain("allowed_values: assignee, parent");
+      expect(lean).not.toContain("attempted_command:");
+      expect(lean).not.toContain("provided_fields:");
+    });
+
+    it("projects the lean JSON envelope to code-specific fields and typed holder evidence", () => {
+      const envelope = formatPmCliErrorForJson(claimMessage, 4, claimContext);
+      expect(envelope).toMatchObject({
+        title: claimMessage,
+        detail: claimMessage,
+        required: "Adjust command input or tracker state and retry.",
+        examples: ["pm --help", "pm <command> --help"],
+        claimed_by: "agent-a",
+        claimed_at: "2026-10-31T00:17:38.745Z",
+        claim_source: "claim",
+        item_id: "pm-held",
+      });
+      const lean = projectLeanErrorEnvelope(envelope);
+      expect(lean).toMatchObject({
+        code: "already_claimed_by",
+        exit_code: 4,
+        detail: claimMessage,
+        claimed_by: "agent-a",
+        claimed_at: "2026-10-31T00:17:38.745Z",
+        claim_source: "claim",
+      });
+      expect(lean).not.toHaveProperty("title");
+      // The claim rationale is code-specific, so lean JSON keeps it like lean text.
+      expect(lean.why).toBe(claimContext.why);
+      expect(lean).not.toHaveProperty("required");
+      expect(lean).not.toHaveProperty("examples");
+      expect(lean).not.toHaveProperty("recovery");
+      expect(lean.next_steps).toHaveLength(2);
+      const specific = projectLeanErrorEnvelope(
+        formatPmCliErrorForJson("Unknown field 'owner' is not declared on Issue", 2, {
+          code: "invalid_argument_value",
+          required: "Pass a declared field name.",
+          recovery: {
+            attempted_command: "pm update pm-1 --owner x",
+            provided_fields: ["--owner"],
+            suggested_retry: "pm update pm-1 --assignee x",
+            allowed_values: ["assignee", "parent"],
+          },
+        }),
+      );
+      expect(specific.required).toBe("Pass a declared field name.");
+      expect(specific.recovery).toEqual({
+        suggested_retry: "pm update pm-1 --assignee x",
+        allowed_values: ["assignee", "parent"],
+      });
+    });
+
+    it("drops a generic rationale and filters generic examples out of mixed lists in lean output", () => {
+      const context = {
+        code: "invalid_argument_value",
+        why: "Validation protects data consistency and deterministic behavior across commands.",
+        examples: ["pm --help", "pm update pm-1 --assignee x"],
+      };
+      const lean = projectLeanErrorEnvelope(formatPmCliErrorForJson("Bad value", 2, context));
+      expect(lean).not.toHaveProperty("why");
+      expect(lean.examples).toEqual(["pm update pm-1 --assignee x"]);
+      const text = formatPmCliErrorForDisplay("Bad value", context, { lean: true });
+      expect(text).not.toContain("Why:");
+      expect(text).toContain("pm update pm-1 --assignee x");
+      expect(text).not.toContain("pm --help");
+      expect(formatPmCliErrorForDisplay("Bad value", context)).toContain("pm --help");
+    });
+
+    it("reports a holder without a recorded time or origin as unknown, never as an explicit claim", () => {
+      const context = { code: "already_claimed_by", item_id: "pm-held", claimed_by: "agent-a" };
+      expect(formatPmCliErrorForDisplay(claimMessage, context)).toContain("Held by: agent-a (unknown)");
+      expect(formatPmCliErrorForJson(claimMessage, 4, context)).toMatchObject({
+        claimed_by: "agent-a",
+        claimed_at: null,
+        claim_source: "unknown",
+      });
+    });
+
+    it("omits a lean recovery remainder whose specific fields are all undefined", () => {
+      expect(projectLeanRecoveryPayload({ attempted_command: "pm x", suggested_retry: undefined })).toBeUndefined();
+      expect(projectLeanRecoveryPayload({ attempted_command: "pm x", suggested_retry: "pm y" })).toEqual({ suggested_retry: "pm y" });
+    });
+
+    it("caps a long holder name in text while JSON keeps it whole", () => {
+      const holder = "agent-".repeat(60);
+      const context = { code: "already_claimed_by", item_id: "pm-held", claimed_by: holder, claim_source: "claim" as const };
+      const text = formatPmCliErrorForDisplay(claimMessage, context, { lean: true });
+      expect(text).toContain(`Held by: ${holder.slice(0, 120)}... (claim)`);
+      expect(formatPmCliErrorForJson(claimMessage, 4, context).claimed_by).toBe(holder);
+    });
+
+    it("never prints a lean refusal larger than the default bounded rendering", () => {
+      // A code-specific why plus an argv echo long enough to overflow the default text ceiling.
+      // The default overflows on the echo and drops its why; lean has no echo and keeps the long why.
+      const context = {
+        code: "invalid_argument_value",
+        why: `Specific rationale for this refused value: ${"z".repeat(1500)}`,
+        recovery: { attempted_command: `pm update pm-1 --title ${"x".repeat(6000)}`, suggested_retry: "pm update pm-1 --title short" },
+      };
+      const message = "Bad value for --title";
+      const full = formatPmCliErrorForDisplay(message, context);
+      const lean = formatPmCliErrorForDisplay(message, context, { lean: true });
+      expect(Buffer.byteLength(lean, "utf8")).toBeLessThanOrEqual(Buffer.byteLength(full, "utf8"));
+    });
+
+    it("never renders a lean refusal larger than its default and shares no constant line across codes", () => {
+      const corpus: Array<[string, Parameters<typeof formatPmCliErrorForDisplay>[1]]> = [
+        [claimMessage, claimContext],
+        ["Item pm-missing not found", { code: "item_not_found", recovery: { attempted_command: "pm get pm-missing" } }],
+        ["Lock held by another process", { code: "lock_conflict", recovery: { attempted_command: "pm update pm-1 --title x", provided_fields: ["--title"] } }],
+        ["Unknown field 'owner' is not declared on Issue", { code: "invalid_argument_value", recovery: { attempted_command: "pm update pm-1 --owner x", allowed_values: ["assignee"] } }],
+        ["Boom", { code: "extension_runtime_failure", recovery: { attempted_command: "pm changelog generate", provided_fields: [] } }],
+        ["Plain failure without context", undefined],
+      ];
+      const leanLineSets: Array<Set<string>> = [];
+      for (const [message, context] of corpus) {
+        const full = formatPmCliErrorForDisplay(message, context);
+        const lean = formatPmCliErrorForDisplay(message, context, { lean: true });
+        expect(Buffer.byteLength(lean, "utf8")).toBeLessThanOrEqual(Buffer.byteLength(full, "utf8"));
+        const fullJson = formatPmCliErrorForJson(message, 2, context);
+        const leanJson = projectLeanErrorEnvelope(structuredClone(fullJson));
+        expect(JSON.stringify(leanJson).length).toBeLessThanOrEqual(JSON.stringify(fullJson).length);
+        leanLineSets.push(
+          new Set(
+            lean
+              .split("\n")
+              .map((line) => line.trim())
+              .filter((line) => line.length > 0 && !/^[A-Z][a-z ]+:$/u.test(line)),
+          ),
+        );
+      }
+      const [first, ...rest] = leanLineSets;
+      const sharedByEveryCode = [...first!].filter((line) => rest.every((set) => set.has(line)));
+      expect(sharedByEveryCode).toEqual([]);
+    });
   });
 
   it("returns deterministic item-not-found recovery examples without echoing invalid ids", () => {
@@ -451,6 +654,119 @@ describe("pm cli error guidance context plumbing", () => {
       "next_best_command: pm install --project github.com/unbraind/pm-brief",
     );
     expect(text).toContain("github.com/unbraind/pm-brief");
+  });
+
+  it("keeps the specific refusal when an oversized argv echo overflows the text ceiling", () => {
+    const detail =
+      "Strict create mode requires concrete values for --assignee; --unset cannot satisfy a required scalar option (only repeatable options accept an explicit --clear-* empty set)";
+    const attempted = `pm create --type Issue --title probe --description "${"word ".repeat(1_200)}" --unset assignee`;
+    const text = formatPmCliErrorForDisplay(detail, {
+      code: "invalid_argument_value",
+      recovery: {
+        attempted_command: attempted,
+        suggested_retry: `${attempted} --assignee "<value>"`,
+        provided_fields: ["--type", "--title", "--description", "--unset"],
+        missing: ["--assignee"],
+      },
+    });
+
+    expect(text).toContain("What happened:");
+    expect(text).toContain(detail);
+    expect(text).toContain("missing: --assignee");
+    expect(text).not.toContain("attempted_command:");
+    expect(text).toContain("rerun with --json for the full recovery envelope");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
+  it("keeps a short suggested retry when the compact recovery stage is what fits", () => {
+    const detail = "Unknown field 'owner' is not declared on Issue";
+    const attempted = `pm update pm-1 --owner "${"word ".repeat(1_200)}"`;
+    const text = formatPmCliErrorForDisplay(detail, {
+      code: "invalid_argument_value",
+      recovery: {
+        attempted_command: attempted,
+        suggested_retry: "pm update pm-1 --assignee <value>",
+        provided_fields: ["--owner"],
+        allowed_values: ["assignee", "parent", "priority", "status", "title"],
+      },
+    });
+
+    expect(text).toContain(detail);
+    expect(text).toContain("suggested_retry: pm update pm-1 --assignee <value>");
+    expect(text).toContain("allowed_values: assignee, parent, priority");
+    expect(text).not.toContain("allowed_values: assignee, parent, priority, status");
+    expect(text).not.toContain("attempted_command:");
+    expect(text).toContain("rerun with --json for the full recovery envelope");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
+  it("keeps next_best_command in the compact recovery stage and drops an echo-only bundle entirely", () => {
+    const attempted = `pm install --project "${"segment ".repeat(1_200)}"`;
+    const withNextBest = formatPmCliErrorForDisplay('npm package "pm-brief" was not found in the registry.', {
+      code: "npm_package_not_found",
+      recovery: {
+        attempted_command: attempted,
+        next_best_command: "pm install --project github.com/unbraind/pm-brief",
+      },
+    });
+    expect(withNextBest).toContain("next_best_command: pm install --project github.com/unbraind/pm-brief");
+    expect(withNextBest).not.toContain("attempted_command:");
+    expect(withNextBest).toContain("rerun with --json for the full recovery envelope");
+
+    const echoOnly = formatPmCliErrorForDisplay("Value rejected for --description", {
+      code: "invalid_argument_value",
+      recovery: { attempted_command: attempted, provided_fields: ["--project"] },
+    });
+    expect(echoOnly).toContain("Value rejected for --description");
+    expect(echoOnly).not.toContain("Recovery bundle:");
+    expect(echoOnly).toContain("rerun with --json for the full recovery envelope");
+  });
+
+  it("advertises no dash-leading value retry when a positional follows the value", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--not an option'",
+      "comment",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["comment", "pm-a1b2", "--not an option", "trailing"],
+      },
+    );
+    expect(envelope.recovery?.suggested_retry).toBeUndefined();
+    expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+    // Without the invocation argv, or when the value is not in it, there is nothing to replay.
+    for (const context of [{}, { normalizedInvocationArgs: ["comment", "pm-a1b2"] }]) {
+      const silent = formatCommanderErrorForJson("unknown option '--not an option'", "comment", "Task|Issue", 2, context);
+      expect(silent.recovery?.suggested_retry_args).toBeUndefined();
+    }
+  });
+
+  it("falls back to the full rendering when no ladder stage can fit the text ceiling", () => {
+    const detail = "Value rejected";
+    const oversizedStep = `Run pm contracts --command update ${"and inspect every declared option ".repeat(400)}`;
+    const text = formatPmCliErrorForDisplay(detail, {
+      code: "invalid_argument_value",
+      nextSteps: [oversizedStep],
+    });
+
+    // Every ladder stage still carries the oversized step, so the renderer
+    // returns the full text and the hard ceiling projects it to action-only.
+    expect(text).toContain("What is required:");
+    expect(text).toContain("Error: Value rejected");
+    expect(text).not.toContain("inspect every declared option");
+    expect(text).not.toContain("rerun with --json for the full recovery envelope");
+    expect(text).toContain("exceeded its declared 768-token ceiling");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
+  it("bounds an oversized refusal detail instead of dropping it", () => {
+    const detail = `Value rejected: ${"segment ".repeat(1_500)}`;
+    const text = formatPmCliErrorForDisplay(detail, { code: "invalid_argument_value" });
+
+    expect(text).toContain("What happened:");
+    expect(text).toContain("Value rejected: segment");
+    expect(text).toContain("...");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
   });
 
   it("surfaces nearest options and cross-command flag hints for unknown options", () => {

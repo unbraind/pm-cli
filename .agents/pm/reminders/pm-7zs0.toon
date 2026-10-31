@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[257]:
+comments[258]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -865,6 +865,9 @@ comments[257]:
   - created_at: "2026-10-30T08:48:39.145Z"
     author: "harness:codex"
     text: "October30 checkpoint: dispatcher run40999107873 at03:45UTC failed before publication on PM-CLI-3Q unexpected_fault; npm and latest GitHub release remain2026.10.28. The existing pm-gh1622 owns the blocker. Upstream PR170 handoff is now actively resumed and its runtime validation passes323 tests with100% across35 required source files; publication and installed-producer remediation are still pending. Rearmed exactly one daily reminder for2026-10-31T06:00Z; today recovery continues in the active release work."
+  - created_at: "2026-10-30T13:14:20.173Z"
+    author: "harness:claude-code"
+    text: "October 30 follow-up at 13:15 UTC: scheduled Auto Release run 41029596560 (08:54 UTC) ended cancelled after 15m13s, mid-pipeline. The workflow uses cancel-in-progress: false with a 180-minute job timeout, so this was an external cancellation, not a concurrency or timeout cut. It made no publication. Automation opened blocker issue #1632 for the earlier dispatcher failure 40999107873; it is now linked to the owner pm-gh1622, with no duplicate item. Live state: npm @unbrained/pm-cli is 2026.10.28, latest GitHub release is v2026.10.28, and there is no 2026.10.29 or 2026.10.30 cut, so no duplicate automatic cut can exist. Sentry has exactly one unresolved issue in 14 days: PM-CLI-3Q, 2 events, last seen 2026-10-29 03:11:51 UTC. Under the release gate's 14-day window it blocks every cut until it is resolved with verified pm-presets remediation; upstream PR170 is still open at 97d5d1bf4. Telemetry stack check at 13:13 UTC: all containers healthy, API synced at 13:09, queue drained, 74,676 events in 24h, newest event under one minute old. The last hour split 3,432 automation and 352 test source contexts, so test-run tagging from GH-1625 is visible in production rows."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

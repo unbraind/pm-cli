@@ -45,6 +45,7 @@ import {
   withTempPmPath,
   type TempPmContext,
 } from "../../../helpers/withTempPmPath.js";
+import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -2254,9 +2255,14 @@ describe("runTest", () => {
         selected_count: 1,
         skipped_count: 2,
       });
-      expect(matched.warnings?.[0]).toContain(
-        "linked_test_selection:match=beta",
-      );
+      // GH-1630: a narrowed run lists only what it selected and names the full-collection read.
+      expect(matched.tests.map((test) => test.command)).toEqual([
+        "node -e \"process.stdout.write('beta')\"",
+      ]);
+      // The restore command targets the invocation's own tracker when --pm-path was explicit.
+      const restoreWith = renderPmCommand(["test", id, "--list", "--pm-path", context.pmPath]);
+      expect(matched.tests_omitted).toEqual({ count: 2, restore_with: restoreWith });
+      expect(matched.warnings).toBeUndefined();
 
       const indexed = await runTest(
         id,
@@ -2264,6 +2270,7 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(indexed.run_results[0]?.stdout).toBe("alpha");
+      expect(indexed.tests).toHaveLength(1);
 
       const last = await runTest(
         id,
@@ -2271,6 +2278,28 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(last.run_results[0]?.stdout).toBe("gamma");
+      expect(last.tests_omitted?.count).toBe(2);
+
+      const restored = await runTest(id, { list: true }, { path: context.pmPath });
+      expect(restored.tests).toHaveLength(3);
+      expect(restored.tests_omitted).toBeUndefined();
+      const unselected = await runTest(id, { run: true }, { path: context.pmPath });
+      expect(unselected.tests).toHaveLength(3);
+      expect(unselected.tests_omitted).toBeUndefined();
+
+      const cli = context.runCli(["test", id, "--run", "--only-last", "--json"], { expectJson: true });
+      expect(cli.code, cli.stderr).toBe(0);
+      // The CLI selects the tracker through PM_PATH, which the restore command keeps as --pm-path.
+      expect(cli.json).toMatchObject({ count: 3, tests: [{ command: "node -e \"process.stdout.write('gamma')\"" }], tests_omitted: { count: 2, restore_with: restoreWith } });
+      const unscoped = context.runCli(["--no-extensions", "test", id, "--run", "--only-last", "--json"], { expectJson: true });
+      expect(unscoped.code, unscoped.stderr).toBe(0);
+      expect((unscoped.json as { tests_omitted: { restore_with: string } }).tests_omitted.restore_with).toBe(
+        renderPmCommand(["test", id, "--list", "--no-extensions", "--pm-path", context.pmPath]),
+      );
+      const replayed = context.runCli(["test", id, "--list", "--no-extensions", "--pm-path", context.pmPath, "--json"], { expectJson: true });
+      expect(replayed.code, replayed.stderr).toBe(0);
+      expect((replayed.json as { tests: unknown[] }).tests).toHaveLength(3);
+      expect((cli.json as { tests: unknown[] }).tests).toHaveLength(1);
     });
   });
 

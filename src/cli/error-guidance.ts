@@ -3,7 +3,7 @@
  *
  * Provides CLI runtime support for Error Guidance.
  */
-import { isReadProjectionRecoveryFlag, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
+import { describeReadCompletenessControls, isReadProjectionRecoveryFlag, resolveReadCompletenessControls, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
 import { isPmTokenBudgetRecovery } from "../sdk/errors.js";
 import {
   type PmCliErrorContext,
@@ -11,8 +11,14 @@ import {
 } from "../sdk/runtime-primitives.js";
 import { resolveRecoveryCommandName } from "../sdk/agent/command-recovery.js";
 import {
+  estimatePmOutputTokens,
+  isGenericRefusalRequired,
+  isGenericRefusalWhy,
+  projectLeanRecoveryPayload,
   projectPmDiagnosticOutput,
   projectPmDiagnosticText,
+  resolvePmDiagnosticOutputBudget,
+  withoutGenericRefusalExamples,
   type PmDiagnosticOutputReceipt,
   type PmProjectedDiagnostic,
 } from "../sdk/cli-contracts/agent-output-contracts.js";
@@ -38,6 +44,12 @@ interface GuidanceMessage {
   lease?: PmCliErrorContext["lease"];
   /** Lock generation observed at a refused lock_lost commit. */
   currentOwner?: PmCliErrorContext["current_owner"];
+  /** Principal holding the item behind an already_claimed_by refusal. */
+  claimedBy?: string;
+  /** When that holder took the item; null when history was silent. */
+  claimedAt?: string | null;
+  /** Whether the holder arrived through a claim or an assignment. */
+  claimSource?: PmCliErrorContext["claim_source"];
   code: string;
   type: string;
   title: string;
@@ -105,6 +117,12 @@ export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
   lease?: PmCliErrorContext["lease"];
   /** Lock generation observed at a refused lock_lost commit, or null when none exists. */
   current_owner?: PmCliErrorContext["current_owner"];
+  /** Principal holding the item behind an already_claimed_by refusal. */
+  claimed_by?: string;
+  /** When that holder took the item, or null when history was silent. */
+  claimed_at?: string | null;
+  /** Whether the holder arrived through an explicit claim or a metadata assignment. */
+  claim_source?: PmCliErrorContext["claim_source"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -147,11 +165,26 @@ export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
 export type ProjectedJsonErrorEnvelope =
   PmProjectedDiagnostic<JsonErrorEnvelope>;
 
-/** Compact an error envelope to fields that change the caller's next action. */
+/**
+ * Compact an error envelope to fields that change the caller's next action:
+ * the duplicated title, generic `required`/`why`/examples and the invocation
+ * echo go; code-specific rationale, examples, recovery and typed holder
+ * evidence stay (GH-1610).
+ */
 export function projectLeanErrorEnvelope(
   envelope: ProjectedJsonErrorEnvelope,
 ): ProjectedJsonErrorEnvelope {
-  const { why: _why, title: _title, ...actionable } = envelope;
+  const { title: _title, ...actionable } = envelope;
+  if (isGenericRefusalWhy(actionable.why)) delete actionable.why;
+  if (isGenericRefusalRequired(actionable.required)) {
+    delete (actionable as Partial<ProjectedJsonErrorEnvelope>).required;
+  }
+  const examples = withoutGenericRefusalExamples(actionable.examples);
+  if (examples.length > 0) actionable.examples = examples;
+  else delete actionable.examples;
+  const recovery = projectLeanRecoveryPayload(actionable.recovery);
+  if (recovery === undefined) delete actionable.recovery;
+  else actionable.recovery = recovery;
   return actionable;
 }
 
@@ -173,6 +206,12 @@ export interface ErrorClassification {
   lease?: PmCliErrorContext["lease"];
   /** Lock generation observed at a refused lock_lost commit, or null when none exists. */
   current_owner?: PmCliErrorContext["current_owner"];
+  /** Principal holding the item behind an already_claimed_by refusal. */
+  claimed_by?: string;
+  /** When that holder took the item, or null when history was silent. */
+  claimed_at?: string | null;
+  /** Whether the holder arrived through an explicit claim or a metadata assignment. */
+  claim_source?: PmCliErrorContext["claim_source"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -688,39 +727,152 @@ function renderRecoveryBundle(
   return lines;
 }
 
-/** Implements render guidance message for the public runtime surface of this module. */
-export function renderGuidanceMessage(message: GuidanceMessage): string {
-  const lines: string[] = [
-    `Error: ${message.title}`,
-    "",
-    "What is required:",
-    `  ${message.required}`,
-  ];
+/** Presentation controls for text refusals. */
+export interface RenderGuidanceOptions {
+  /** Omit constant boilerplate and the invocation echo; keep code-specific recovery (GH-1610). */
+  lean?: boolean;
+}
+
+/** Longest holder name the one-line text rendering prints; JSON keeps the full `claimed_by`. */
+const CLAIM_HOLDER_TEXT_MAX_CODE_POINTS = 120;
+
+/** Render the typed holder evidence of an already_claimed_by refusal on one line. */
+function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
+  if (message.claimedBy === undefined) return undefined;
+  const since = message.claimedAt ? ` since ${message.claimedAt}` : "";
+  const holder = Array.from(message.claimedBy);
+  const name =
+    holder.length > CLAIM_HOLDER_TEXT_MAX_CODE_POINTS
+      ? `${holder.slice(0, CLAIM_HOLDER_TEXT_MAX_CODE_POINTS).join("")}...`
+      : message.claimedBy;
+  return `Held by: ${name} (${message.claimSource ?? "unknown"}${since})`;
+}
+
+/** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */
+function renderGuidanceLead(message: GuidanceMessage, lean: boolean): string[] {
+  const lines: string[] = [`Error: ${message.title}`];
+  if (!lean || !isGenericRefusalRequired(message.required)) {
+    lines.push("", "What is required:", `  ${message.required}`);
+  }
   if (message.nextSteps && message.nextSteps.length > 0) {
     lines.push("");
     lines.push(...renderList("Next steps:", message.nextSteps));
   }
-  lines.push("", "What happened:", `  ${message.happened}`);
-  if (message.why) {
-    lines.push("", "Why:");
-    lines.push(`  ${message.why}`);
+  // The headline already carries a single-line message; repeat it only when
+  // the title is a classification that differs from what happened.
+  if (message.happened !== message.title) {
+    lines.push("", "What happened:", `  ${message.happened}`);
   }
-  if (message.examples && message.examples.length > 0) {
-    lines.push("");
-    lines.push(...renderList("Examples:", message.examples));
+  const holderLine = renderClaimHolderLine(message);
+  if (holderLine !== undefined) lines.push("", holderLine);
+  return lines;
+}
+
+/** Rationale, examples and verifier findings; lean output drops the constant rationale and generic examples. */
+function renderGuidanceExplanation(message: GuidanceMessage, lean: boolean): string[] {
+  const lines: string[] = [];
+  if (message.why && !(lean && isGenericRefusalWhy(message.why))) {
+    lines.push("", "Why:", `  ${message.why}`);
   }
-  if (message.verificationErrors && message.verificationErrors.length > 0) {
-    lines.push("");
-    lines.push(
-      ...renderList("Verification errors:", message.verificationErrors),
-    );
+  const examples = lean
+    ? withoutGenericRefusalExamples(message.examples)
+    : (message.examples ?? []);
+  if (examples.length > 0) {
+    lines.push("", ...renderList("Examples:", examples));
   }
-  const recoveryLines = renderRecoveryBundle(message.recovery);
+  const verificationErrors = message.verificationErrors ?? [];
+  if (verificationErrors.length > 0) {
+    lines.push("", ...renderList("Verification errors:", verificationErrors));
+  }
+  return lines;
+}
+
+/** Implements render guidance message for the public runtime surface of this module. */
+export function renderGuidanceMessage(
+  message: GuidanceMessage,
+  options: RenderGuidanceOptions = {},
+): string {
+  const lean = options.lean === true;
+  const lines = [
+    ...renderGuidanceLead(message, lean),
+    ...renderGuidanceExplanation(message, lean),
+  ];
+  const recoveryLines = renderRecoveryBundle(
+    lean ? projectLeanRecoveryPayload(message.recovery) : message.recovery,
+  );
   if (recoveryLines.length > 0) {
     lines.push("");
     lines.push(...recoveryLines);
   }
   return lines.join("\n");
+}
+
+const TEXT_DIAGNOSTIC_OMISSION_NOTICE =
+  "Some guidance was omitted to fit the diagnostic token ceiling; rerun with --json for the full recovery envelope.";
+const TEXT_RECOVERY_RETRY_MAX_BYTES = 400;
+const TEXT_HAPPENED_MAX_CODE_POINTS = 320;
+
+/** Keep the retry coordinates once the full bundle, which echoes the attempted argv, no longer fits. */
+function compactTextRecovery(
+  recovery: PmCliErrorRecoveryPayload | undefined,
+): PmCliErrorRecoveryPayload | undefined {
+  const normalized = normalizeRecoveryPayload(recovery);
+  if (!normalized) return undefined;
+  const compact: PmCliErrorRecoveryPayload = {};
+  if (
+    normalized.suggested_retry &&
+    Buffer.byteLength(normalized.suggested_retry, "utf8") <= TEXT_RECOVERY_RETRY_MAX_BYTES
+  ) {
+    compact.suggested_retry = normalized.suggested_retry;
+  }
+  for (const key of ["missing", "missing_required_fields", "allowed_values"] as const) {
+    const values = normalized[key];
+    if (values && values.length > 0) compact[key] = values.slice(0, 3);
+  }
+  if (normalized.next_best_command) compact.next_best_command = normalized.next_best_command;
+  return Object.keys(compact).length > 0 ? compact : undefined;
+}
+
+/**
+ * Walk the declared diagnostic ladder (explanation, collections, recovery) so
+ * the specific "What happened" line survives an oversized echo; only text that
+ * still overflows falls through to the action-only projection.
+ */
+function renderBoundedGuidanceMessage(
+  message: GuidanceMessage,
+  options: RenderGuidanceOptions = {},
+): string {
+  const full = renderGuidanceMessage(message, options);
+  const budget =
+    resolvePmDiagnosticOutputBudget("error").default_max_estimated_tokens_by_format.text;
+  const fits = (text: string): boolean =>
+    estimatePmOutputTokens(Buffer.byteLength(text, "utf8")) <= budget;
+  if (fits(full)) return full;
+  const withoutExplanation: GuidanceMessage = { ...message, why: undefined };
+  const limitedCollections: GuidanceMessage = {
+    ...withoutExplanation,
+    examples: message.examples?.slice(0, 1),
+    nextSteps: message.nextSteps?.slice(0, 1),
+    verificationErrors: message.verificationErrors?.slice(0, 3),
+  };
+  const compactRecovery: GuidanceMessage = {
+    ...limitedCollections,
+    recovery: compactTextRecovery(message.recovery),
+  };
+  const happenedCodePoints = Array.from(message.happened);
+  const boundedHappened: GuidanceMessage = {
+    ...compactRecovery,
+    examples: undefined,
+    happened:
+      happenedCodePoints.length > TEXT_HAPPENED_MAX_CODE_POINTS
+        ? `${happenedCodePoints.slice(0, TEXT_HAPPENED_MAX_CODE_POINTS).join("")}...`
+        : message.happened,
+  };
+  for (const candidate of [withoutExplanation, limitedCollections, compactRecovery, boundedHappened]) {
+    const text = `${renderGuidanceMessage(candidate, options)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
+    if (fits(text)) return text;
+  }
+  return full;
 }
 
 /** Attach item-scoped tombstone and lost-lease evidence with the item identity. */
@@ -735,6 +887,13 @@ function attachItemDiagnostics(
   if (message.lease !== undefined) {
     payload.lease = message.lease;
     payload.current_owner = message.currentOwner ?? null;
+    payload.item_id = message.itemId;
+  }
+  if (message.claimedBy !== undefined) {
+    payload.claimed_by = message.claimedBy;
+    payload.claimed_at = message.claimedAt ?? null;
+    // An origin the producer did not prove is never reported as an explicit claim.
+    payload.claim_source = message.claimSource ?? "unknown";
     payload.item_id = message.itemId;
   }
 }
@@ -1094,6 +1253,9 @@ function applyPmCliErrorContext(
     tombstone: context.tombstone,
     lease: context.lease,
     currentOwner: context.current_owner,
+    claimedBy: context.claimed_by,
+    claimedAt: context.claimed_at,
+    claimSource: context.claim_source,
     availableDependencies: context.available_dependencies,
     recovery,
   };
@@ -1726,16 +1888,30 @@ function buildUnknownOptionNextSteps(
     suggestions.length
       ? `Nearest supported options: ${suggestions.join(", ")}`
       : undefined,
+    retryCommand ? undefined : describeSameCommandCompleteness(optionName, commandName),
     proseCommands.length
       ? `${optionName} is accepted by ${proseCommands.join(", ")}${proseRemainderText}. Inspect those command contracts only if you intended a different operation.`
       : undefined,
-    candidateContext.optionScope === "declared_nowhere"
-      ? `${optionName} is not declared on any command path. Use a nearest supported option on ${commandName ?? "the attempted command"}, or inspect that command's help.`
-      : undefined,
+    isDashLeadingValue(optionName)
+      ? `"${optionName}" contains spaces, so it is a value that starts with --, not an option. Pass it after a -- separator at the end of the command, or through the command's named value flag.`
+      : candidateContext.optionScope === "declared_nowhere"
+        ? `${optionName} is not declared on any command path. Use a nearest supported option on ${commandName ?? "the attempted command"}, or inspect that command's help.`
+        : undefined,
     retryCommand
       ? `Replay with suggested correction: ${retryCommand}`
       : undefined,
   ].filter((entry): entry is string => typeof entry === "string");
+}
+
+const READ_COMPLETENESS_SPELLINGS = ["--brief", "--compact", "--standard", "--deep", "--full", "--summary", "--depth"];
+
+/** Name the completeness controls the attempted read command accepts when no equivalent spelling exists there. */
+function describeSameCommandCompleteness(optionName: string, commandName: string | undefined): string | undefined {
+  if (commandName === undefined || !READ_COMPLETENESS_SPELLINGS.includes(optionName.split("=", 1)[0]!)) return undefined;
+  const controls = resolveReadCompletenessControls(commandName);
+  return controls === undefined
+    ? undefined
+    : `Completeness controls accepted by pm ${controls.command}: ${describeReadCompletenessControls(controls)}.`;
 }
 
 /** Recover read intent before lexical fallbacks can replace or discard it. */
@@ -1746,7 +1922,24 @@ function resolveReadIntentRetry(
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } | undefined {
   const retry = resolveReadOptionRetryArgs(commandName ?? "", context.normalizedInvocationArgs ?? [], optionName);
   if (retry) return { retryCommand: renderPmCommand(retry), suggestedRetryArgs: retry };
-  return ["--full", "--depth", "--toon", ...(commandName === "activity" ? ["--since"] : [])].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
+  return [...READ_COMPLETENESS_SPELLINGS, "--toon", ...(commandName === "activity" ? ["--since"] : [])].includes(optionName.split("=", 1)[0]!) ? {} : undefined;
+}
+
+/** A rejected "option" containing whitespace is a value that starts with `--`, never an option spelling. */
+function isDashLeadingValue(optionName: string): boolean {
+  return /\s/u.test(optionName);
+}
+
+/** Pass a dash-leading value after `--`, only when every later token is an option so order and values survive. */
+function resolveDashLeadingValueRetry(
+  args: string[] | undefined,
+  optionName: string,
+): { retryCommand?: string; suggestedRetryArgs?: string[] } {
+  const index = args?.indexOf(optionName) ?? -1;
+  if (args === undefined || index < 0 || args.includes("--") || args.lastIndexOf(optionName) !== index) return {};
+  if (args.slice(index + 1).some((token) => !token.startsWith("-"))) return {};
+  const suggestedRetryArgs = [...stripGlobalBootstrapTokens(args.filter((_, position) => position !== index)), "--", optionName];
+  return { retryCommand: renderPmCommand(suggestedRetryArgs), suggestedRetryArgs };
 }
 
 /** Keep unknown-option fallbacks from dropping presentation or preview intent. */
@@ -1755,6 +1948,7 @@ function resolveUnknownOptionRetry(
   optionName: string,
   commandName: string | undefined,
 ): { retryCommand?: string; suggestedRetryArgs?: string[] } {
+  if (isDashLeadingValue(optionName)) return resolveDashLeadingValueRetry(context.normalizedInvocationArgs, optionName);
   if (
     ["--dry-run", "--check", "--check-only", "--plan", "--preview"].includes(
       optionName.split("=", 1)[0],
@@ -2218,6 +2412,7 @@ function buildCommanderErrorGuidance(
 export function formatPmCliErrorForDisplay(
   rawMessage: string,
   context?: PmCliErrorContext,
+  options: RenderGuidanceOptions = {},
 ): string {
   const guidance = buildPmCliErrorGuidance(rawMessage, context);
   if (
@@ -2232,10 +2427,27 @@ export function formatPmCliErrorForDisplay(
       "Use --json for full recovery details.",
     ].join("\n");
   }
-  return projectPmDiagnosticText(
-    renderGuidanceMessage(guidance),
-    guidance.required,
-  ).output;
+  return renderBoundedGuidanceText(guidance, options);
+}
+
+/**
+ * Render bounded refusal text. A default rendering that overflowed already
+ * dropped its rationale, so it can be shorter than a lean one that kept a
+ * code-specific why: lean output never prints more than the default.
+ */
+function renderBoundedGuidanceText(
+  guidance: GuidanceMessage,
+  options: RenderGuidanceOptions,
+): string {
+  const render = (renderOptions: RenderGuidanceOptions): string =>
+    projectPmDiagnosticText(
+      renderBoundedGuidanceMessage(guidance, renderOptions),
+      guidance.required,
+    ).output;
+  const output = render(options);
+  if (options.lean !== true) return output;
+  const fallback = render({});
+  return Buffer.byteLength(fallback, "utf8") < Buffer.byteLength(output, "utf8") ? fallback : output;
 }
 
 /** Implements classify pm cli error for the public runtime surface of this module. */
@@ -2264,6 +2476,7 @@ export function formatCommanderErrorForDisplay(
   commandName: string | undefined,
   allowedTypes: string,
   context?: CommanderGuidanceContext,
+  options: RenderGuidanceOptions = {},
 ): string {
   const guidance = buildCommanderErrorGuidance(
     rawMessage,
@@ -2271,10 +2484,7 @@ export function formatCommanderErrorForDisplay(
     allowedTypes,
     context,
   );
-  return projectPmDiagnosticText(
-    renderGuidanceMessage(guidance),
-    guidance.required,
-  ).output;
+  return renderBoundedGuidanceText(guidance, options);
 }
 
 /** Implements classify commander error for the public runtime surface of this module. */

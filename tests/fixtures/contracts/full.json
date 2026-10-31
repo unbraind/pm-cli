@@ -3525,7 +3525,13 @@
           "flag": "--format"
         },
         {
-          "flag": "--depth"
+          "flag": "--depth",
+          "values": [
+            "brief",
+            "standard",
+            "deep",
+            "full"
+          ]
         },
         {
           "cursor_semantics": "presentation",
@@ -4033,7 +4039,8 @@
           "flag": "--doc"
         },
         {
-          "flag": "--unset"
+          "flag": "--unset",
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"
@@ -4142,7 +4149,13 @@
           "flag": "--format"
         },
         {
-          "flag": "--depth"
+          "flag": "--depth",
+          "values": [
+            "brief",
+            "standard",
+            "deep",
+            "full"
+          ]
         },
         {
           "cursor_semantics": "presentation",
@@ -4958,7 +4971,13 @@
           "flag": "--token-budget"
         },
         {
-          "flag": "--depth"
+          "flag": "--depth",
+          "values": [
+            "brief",
+            "standard",
+            "deep",
+            "full"
+          ]
         },
         {
           "flag": "--full",
@@ -8888,7 +8907,12 @@
           "flag": "--validation-expected"
         },
         {
-          "flag": "--depth"
+          "flag": "--depth",
+          "values": [
+            "brief",
+            "standard",
+            "deep"
+          ]
         },
         {
           "flag": "--field"
@@ -10005,7 +10029,12 @@
       "command": "plan show",
       "flags": [
         {
-          "flag": "--depth"
+          "flag": "--depth",
+          "values": [
+            "brief",
+            "standard",
+            "deep"
+          ]
         },
         {
           "flag": "--fields",
@@ -11199,7 +11228,8 @@
           "flag": "--field"
         },
         {
-          "flag": "--unset"
+          "flag": "--unset",
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"
@@ -11668,7 +11698,8 @@
           "flag": "--type-option"
         },
         {
-          "flag": "--unset"
+          "flag": "--unset",
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"
@@ -12143,7 +12174,8 @@
           "flag": "--type-option"
         },
         {
-          "flag": "--unset"
+          "flag": "--unset",
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"
@@ -23723,6 +23755,7 @@
       "emitting_commands": [
         "*",
         "create",
+        "next",
         "task-composition",
         "update",
         "update-many"
@@ -23742,6 +23775,7 @@
         "sdk/lifecycle/task-composition.ts",
         "sdk/lifecycle/update-many.ts",
         "sdk/lifecycle/update.ts",
+        "sdk/query/next.ts",
         "sdk/runtime-input.ts",
         "sdk/runtime/mutation-admission.ts",
         "sdk/runtime/mutation-value-validation.ts",
@@ -30183,6 +30217,22 @@
         "target": "package"
       },
       {
+        "command": "changelog corrections",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
+        "command": "changelog drift",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "changelog export",
         "disposition": "package_owned",
         "noun": "package",
@@ -32435,6 +32485,22 @@
       },
       {
         "command": "changelog contracts",
+        "slots": []
+      },
+      {
+        "command": "changelog corrections",
+        "slots": [
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "changelog drift",
         "slots": []
       },
       {
@@ -35878,7 +35944,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations; each entry may also be a comma-separated field list.",
             "examples": [
               [
                 "deadline",
@@ -43202,7 +43268,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations; each entry may also be a comma-separated field list.",
             "examples": [
               [
                 "deadline",
@@ -44248,14 +44314,7 @@
           "canonical_option": "--output-budget",
           "dimension": "cost",
           "inapplicable_reason": null,
-          "legacy_aliases": [
-            {
-              "flag": "--token-budget",
-              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
-              "semantics": "replacement",
-              "visibility": "hidden_alias"
-            }
-          ]
+          "legacy_aliases": []
         },
         "encoding": {
           "applicable": true,
@@ -49197,7 +49256,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations; each entry may also be a comma-separated field list.",
             "examples": [
               [
                 "deadline",
@@ -57044,7 +57103,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations; each entry may also be a comma-separated field list.",
             "examples": [
               [
                 "deadline",
@@ -57869,7 +57928,7 @@
             "type": "string"
           },
           "unset": {
-            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations.",
+            "description": "Repeatable list of item-metadata fields to clear explicitly during create/update mutations; each entry may also be a comma-separated field list.",
             "examples": [
               [
                 "deadline",

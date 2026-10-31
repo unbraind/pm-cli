@@ -484,7 +484,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       target: "unset",
       keys: ["unset"],
       option: "--unset <field>",
-      description: "Clear scalar metadata field by name (repeatable)",
+      description: "Clear scalar fields by name (repeatable or csv)",
       repeatable: true,
     },
     {
@@ -1135,7 +1135,7 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       target: "unset",
       keys: ["unset"],
       option: "--unset <field>",
-      description: "Clear scalar metadata field by name (repeatable)",
+      description: "Clear scalar fields by name (repeatable or csv)",
       repeatable: true,
     },
   ];

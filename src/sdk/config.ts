@@ -94,6 +94,7 @@ interface ContextConfigValue {
   default_depth: string;
   activity_limit: number;
   stale_threshold_days: number;
+  next_ranking_policy: string;
   sections: Record<string, boolean>;
 }
 
@@ -964,6 +965,7 @@ const CONFIG_VALUE_READERS: Readonly<
     default_depth: settings.context.default_depth,
     activity_limit: settings.context.activity_limit,
     stale_threshold_days: settings.context.stale_threshold_days,
+    next_ranking_policy: settings.context.next_ranking_policy,
     sections: { ...settings.context.sections },
   }),
 };
@@ -1114,6 +1116,7 @@ async function applyContextConfig(
         default_depth: ctx.default_depth,
         activity_limit: ctx.activity_limit,
         stale_threshold_days: ctx.stale_threshold_days,
+        next_ranking_policy: ctx.next_ranking_policy,
         sections: { ...ctx.sections },
       },
       settings_path: target.settingsPath,

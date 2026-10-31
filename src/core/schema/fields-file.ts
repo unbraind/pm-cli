@@ -219,6 +219,11 @@ export function normalizeAddFieldInput(
   if (key.length === 0) {
     throw new Error("Field key must not be empty.");
   }
+  if (key.includes(",")) {
+    throw new Error(
+      `Field key "${key}" must not contain commas: commas separate field names in list flags such as --unset and --fields.`,
+    );
+  }
   if (BUILTIN_FIELD_KEYS.has(key)) {
     throw new Error(
       `Cannot define custom field "${key}": custom schema field "${key}" collides with built-in item metadata "${key}". Rename the custom field with a project-specific prefix. Reserved fields: ${[...BUILTIN_FIELD_KEYS].sort((left, right) => left.localeCompare(right)).join(", ")}.`,
@@ -245,6 +250,10 @@ export function normalizeAddFieldInput(
       : undefined;
   const effectiveFlag = cliFlag ?? keyToDefaultCliFlag(key);
   const cliAliases = dedupeCliTokens(raw.aliases ?? [], effectiveFlag);
+  const commaFlag = [effectiveFlag, ...cliAliases].find((flag) => flag.includes(","));
+  if (commaFlag !== undefined) {
+    throw new Error(`Field flag "${commaFlag}" must not contain commas.`);
+  }
 
   const description = raw.description?.trim();
   return {

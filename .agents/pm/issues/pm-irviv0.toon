@@ -1,0 +1,38 @@
+id: pm-irviv0
+title: "Registry advisories GHSA-mrwp-f3q8-3g9p (follow-redirects 1.16.1, high) and GHSA-g3hv-75wg-m249 (minimatch 10.2.6, moderate) block the static gate on main and every PR"
+description: "Both advisories were published on 2026-10-30 (22:59Z and 23:09Z). From the next CI run on main (00:02Z) and on PR #1635, the dependency advisory gate (scripts/release/dependency-advisories/gate.mjs, pm-eqxjzl) refused: the registry feed reported ids 1244003 and 1244012 while OSV was still clean, and the gate's catch-all message ('no feed success is inferred from unavailable evidence') hid the real reason, which was a non-empty registry id list. follow-redirects 1.16.1 is reached only through the CodSpeed benchmark plugin (@codspeed/vitest-plugin > @codspeed/core > axios); minimatch 10.2.6 only through eslint and @eslint/config-array. Both are development dependencies; neither establishes a CLI or SDK route. Repair: raise the pnpm override for follow-redirects to >=1.16.2 and add minimatch >=11.0.1 <12 (11.0.3 ships dual CJS/ESM exports, so eslint's require path keeps working); both releases satisfy pnpm's one-day minimum release age without an exclusion. Duplicate check: pm search for follow-redirects/minimatch/advisory returned only closed audit epics; the previous advisory repairs live under pm-qwoy (pm-dba47)."
+type: Issue
+status: closed
+priority: 1
+tags[3]: ci,dependencies,security
+created_at: "2026-10-31T00:55:40.330Z"
+updated_at: "2026-10-31T16:19:23.507Z"
+closed_at: "2026-10-31T00:56:39.587Z"
+completed_at: "2026-10-31T00:56:39.587Z"
+author: "harness:claude-code"
+parent: pm-qwoy
+resolution: "pnpm-workspace.yaml raises the follow-redirects override to >=1.16.2 <2.0.0 and adds minimatch >=11.0.1 <12.0.0; the lock now resolves follow-redirects 1.16.2 and minimatch 11.0.3 and nothing else changed. docs/DEVELOPMENT_DEPENDENCY_SECURITY.md records both advisories, their development-only reach and the gate's misleading catch-all message."
+expected_result: "pnpm audit and the advisory gate report zero registry and OSV ids for the locked graph; eslint and the bundle-integrity, cooldown and runtime-lock gates pass; CI Gates (static) is green again on the PR and on main."
+actual_result: "node scripts/release/dependency-advisories/gate.mjs exits 0 with both feeds complete and empty id lists after the override change; pnpm lint:eslint, check-dependency-cooldown, runtime-lock check and check-development-dependencies pass locally. The hosted Gates (static) verdict is pending the PR #1635 re-run and is recorded there."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dba47,related,"2026-10-31T01:48:59.244Z","harness:claude-code","cli:update:dep",detected
+  pm-eqxjzl,related,"2026-10-31T01:48:59.244Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-31T00:56:15.841Z","harness:claude-code","Evidence: pnpm audit --json on the pre-repair lock listed 1244003 (follow-redirects 1.16.1, path .>@codspeed/vitest-plugin>@codspeed/core>axios>follow-redirects) and 1244012 (minimatch 10.2.6, paths via @eslint/js>eslint>@eslint/config-array and eslint directly); GitHub Dependabot had no alert for either package in any state. After raising the overrides, pnpm install changed only the two entries (follow-redirects 1.16.1 -> 1.16.2, minimatch 10.2.6 -> 11.0.3; 20 insertions, 13 deletions in pnpm-lock.yaml). node scripts/release/dependency-advisories/gate.mjs exits 0 with both feeds complete and empty id lists; pnpm lint:eslint passes with minimatch 11.0.3; check-dependency-cooldown, runtime-lock check and check-development-dependencies (CodSpeed bundle integrity) all pass. Published 2026-10-25 and 2026-10-28, both releases clear pnpm's one-day minimum release age without an exclusion; Dependabot's seven-day scheduling cooldown is unaffected."
+files[2]{path,scope}:
+  pnpm-lock.yaml,project
+  pnpm-workspace.yaml,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/dependency-advisories/gate.mjs,project,"harness:claude-code","2026-10-31T00:56:15.143Z",local_mutation,feat/agent-same-command-corrections
+docs[1]{path,scope}:
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+close_reason: Registry advisories repaired via pnpm overrides
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-irviv0
+  gate_id: development-dependency-security
+  negative_control: "git worktree add ../pm-irviv0-control 1a72d089d || exit 1; (cd ../pm-irviv0-control && pnpm install --frozen-lockfile && ! pnpm quality:dependencies && node -e 'const s=require(\"node:fs\").readFileSync(\".cache/dependency-security/receipt.json\",\"utf8\");for(const [ghsa,registry] of [[\"GHSA-mrwp-f3q8-3g9p\",\"1244003\"],[\"GHSA-g3hv-75wg-m249\",\"1244012\"]])if(!s.includes(ghsa)&&!s.includes(registry)){console.error(\"missing \"+ghsa+\" / registry \"+registry);process.exit(1)}'); status=$?; git worktree remove --force ../pm-irviv0-control; exit $status"
+  local_checks[4]: pnpm install --frozen-lockfile,node scripts/release/dependency-advisories/gate.mjs,"pnpm lint:eslint","node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const eslint = createRequire(import.meta.resolve(\"eslint\")); const mm = eslint(\"minimatch/package.json\").version; assert.match(mm, /^11\\.(0\\.[1-9]\\d*|[1-9]\\d*\\.\\d+)$/u, mm); const plugin = createRequire(import.meta.resolve(\"@codspeed/vitest-plugin\")); const core = createRequire(plugin.resolve(\"@codspeed/core/package.json\")); const axios = createRequire(core.resolve(\"axios/package.json\")); const fr = axios(\"follow-redirects/package.json\").version; assert.ok(fr.localeCompare(\"1.16.2\", undefined, { numeric: true }) >= 0, fr);'"
+  hosted_checks[3]: CI / Gates (static),Security and Script Quality / Trivy,CI / Gates (coverage)
+body: ""

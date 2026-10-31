@@ -490,6 +490,54 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     });
   });
 
+  it("retries an identical closed update in a mixed batch without touching its closure clocks (GH-1628)", async () => {
+    await withTempPmPath(async (context) => {
+      const closedTarget = createSeedItem(context, "bulk-identical-closed");
+      const preClose = context.runCli(
+        ["close", closedTarget, "Closed before the batch", "--author", "bulk-seed", "--json"],
+        { expectJson: true },
+      );
+      expect(preClose.code).toBe(0);
+      const openTarget = createSeedItem(context, "bulk-identical-open");
+      const before = await readItem(context.pmPath, closedTarget);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      const mutations = [
+        {
+          op: "update" as const,
+          id: closedTarget,
+          options: {
+            title: before.title,
+            status: "closed",
+            closeReason: before.close_reason,
+            force: true,
+          },
+        },
+        { op: "update" as const, id: openTarget, options: { title: "Renamed in the batch" } },
+      ];
+      const first = await commitItemMutations({
+        pmRoot: context.pmPath,
+        transactionId: "bulk-batch-identical-closed",
+        author: "bulk-agent",
+        mutations,
+      });
+      expect(first.status).toBe("committed");
+      const retried = await commitItemMutations({
+        pmRoot: context.pmPath,
+        transactionId: "bulk-batch-identical-closed-retry",
+        author: "bulk-agent",
+        mutations,
+      });
+      expect(retried.status).toBe("committed");
+
+      const after = await readItem(context.pmPath, closedTarget);
+      expect(after.closed_at).toBe(before.closed_at);
+      expect(after.updated_at).toBe(before.updated_at);
+      expect(after.close_reason).toBe("Closed before the batch");
+      expect((await readItem(context.pmPath, openTarget)).title).toBe("Renamed in the batch");
+    });
+  });
+
   it("records evidence, closes, and releases one claimed item atomically", async () => {
     await withTempPmPath(async (context) => {
       const target = createSeedItem(context, "atomic-completion");
@@ -716,6 +764,35 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
       expect(restored.assignee).toBe(before.assignee);
       expect(restored.claim_principal).toBe(before.claim_principal);
       expect(restored.comments).toEqual(before.comments);
+    });
+  });
+
+  it("restores a released claim when a later step fails without an intervening close", async () => {
+    // Closure now clears the claim itself (pm-8xgg7i), so only a release that is not
+    // preceded by a close has ownership effects of its own to compensate.
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "compensated-release");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"]).code,
+      ).toBe(0);
+      const before = await readItem(context.pmPath, target);
+      expect(before.claim_principal).toEqual(expect.any(String));
+
+      await expect(
+        commitItemMutations({
+          pmRoot: context.pmPath,
+          transactionId: "release-compensate",
+          author: "bulk-agent",
+          mutations: [
+            { op: "release", id: target },
+            { op: "update", id: "pm-missing-after-release", options: { title: "failure" } },
+          ],
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+
+      const restored = await readItem(context.pmPath, target);
+      expect(restored.assignee).toBe(before.assignee);
+      expect(restored.claim_principal).toBe(before.claim_principal);
     });
   });
 

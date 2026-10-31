@@ -327,7 +327,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l type-option           
 complete -c pm -n '__fish_seen_subcommand_from create' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l assignee                -d 'Assignee' -r
-complete -c pm -n '__fish_seen_subcommand_from create' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l unset                   -d 'Clear scalar fields by name (repeatable or csv)' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-deps              -d 'Clear dependency entries'
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-comments          -d 'Clear comments'
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-notes             -d 'Clear notes'
@@ -373,7 +373,7 @@ complete -c pm -n '__pm_history_operation update' -l doc                     -d 
 complete -c pm -n '__pm_history_operation update' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
 complete -c pm -n '__pm_history_operation update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__pm_history_operation update' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
-complete -c pm -n '__pm_history_operation update' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__pm_history_operation update' -l unset                   -d 'Clear scalar fields by name (repeatable or csv)' -r
 complete -c pm -n '__pm_history_operation update' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
 complete -c pm -n '__pm_history_operation update' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
 complete -c pm -n '__pm_history_operation update' -l replace-files           -d 'Atomically replace linked files with provided --file values'
@@ -497,7 +497,7 @@ complete -c pm -n '__pm_history_operation update-many' -l doc                   
 complete -c pm -n '__pm_history_operation update-many' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
 complete -c pm -n '__pm_history_operation update-many' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__pm_history_operation update-many' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
-complete -c pm -n '__pm_history_operation update-many' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__pm_history_operation update-many' -l unset                   -d 'Clear scalar fields by name (repeatable or csv)' -r
 complete -c pm -n '__pm_history_operation update-many' -l clear-deps              -d 'Clear dependency entries'
 complete -c pm -n '__pm_history_operation update-many' -l clear-comments          -d 'Clear comments'
 complete -c pm -n '__pm_history_operation update-many' -l clear-notes             -d 'Clear notes'

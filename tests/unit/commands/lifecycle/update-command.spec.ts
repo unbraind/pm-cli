@@ -5,6 +5,9 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyUpdateCommand, runUpdate, type UpdateCommandOptions } from "../../../../src/cli/commands/lifecycle/update.js";
 import { runCreate } from "../../../../src/cli/commands/lifecycle/create.js";
+import { parseCommandUnsetTargets } from "../../../../src/sdk/lifecycle/shared-unset-fields.js";
+import { applyRepeatedTerminalStateUpdate } from "../../../../src/sdk/lifecycle/repeated-terminal-state.js";
+import type { CloseRouteContext } from "../../../../src/sdk/lifecycle/update.js";
 import { runGet } from "../../../../src/cli/commands/query/get.js";
 import { runDeps } from "../../../../src/cli/commands/query/deps.js";
 import { preserveMutationStdinTokenLiterals } from "../../../../src/sdk/runtime-primitives.js";
@@ -17,7 +20,7 @@ import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { locateItem, readLocatedItem } from "../../../../src/core/store/item-store.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
-import type { ItemDocument } from "../../../../src/types.js";
+import type { ItemDocument, ItemMetadata } from "../../../../src/types.js";
 import { writeItemTypeDefinitions } from "../../../helpers/pmWorkspace.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
 
@@ -182,6 +185,13 @@ describe("update command helper coverage", () => {
     expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["missing"], registry)).toThrow(
       expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
     );
+
+    const commaList = _testOnlyUpdateCommand.parseUpdateUnsetTargets(["deadline, gh-url", "external-field"], registry, ["external_field"]);
+    expect(commaList).toEqual(parsed);
+    expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["deadline,missing"], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining('field "missing"') }),
+    );
+    expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["deadline,,gh-url"], registry)).toThrow(/must not be empty/);
   });
 
   it("builds audit-scope errors with replacement examples only for matching flags", () => {
@@ -747,6 +757,26 @@ describe("runUpdate", () => {
     });
   });
 
+  it("keeps a legacy comma-bearing --unset entry whole when it resolves, and splits only unresolved entries", () => {
+    const resolveDefinition = (token: string) =>
+      token === "foo,bar" || token === "parent" || token === "release"
+        ? { optionKey: token, metadataKey: token }
+        : undefined;
+    const legacy = parseCommandUnsetTargets({
+      raw: ["foo,bar", "parent,release"],
+      resolveDefinition,
+      supportedFields: "foo,bar, parent, release",
+    });
+    expect([...legacy.metadataKeys]).toEqual(["foo,bar", "parent", "release"]);
+    expect(() =>
+      parseCommandUnsetTargets({
+        raw: ["foo,baz"],
+        resolveDefinition,
+        supportedFields: "foo,bar, parent, release",
+      }),
+    ).toThrow(/Unsupported --unset field "foo"/u);
+  });
+
   it("auto-routes pm update --status closed --close-reason to pm close (pm-12ib)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "auto-route-close");
@@ -779,6 +809,283 @@ describe("runUpdate", () => {
       expect(item.title).toBe("new title");
       expect(item.close_reason).toBe("done");
       expect(Number.isFinite(Date.parse(item.closed_at))).toBe(true);
+    });
+  });
+
+  describe("repeated terminal state updates (GH-1628)", () => {
+    async function readTerminalSnapshot(context: TempPmContext, id: string) {
+      const settings = await readSettings(context.pmPath);
+      const located = await locateItem(
+        context.pmPath,
+        id,
+        settings.id_prefix,
+        settings.item_format,
+      );
+      if (!located) {
+        throw new Error(`item ${id} not located`);
+      }
+      const bytes = await readFile(located.itemPath, "utf8");
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      expect(history.code).toBe(0);
+      const persisted = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(persisted.code).toBe(0);
+      const item = (persisted.json as { item: Record<string, unknown> }).item;
+      return {
+        bytes,
+        historyLength: (history.json as { history: unknown[] }).history.length,
+        closed_at: item.closed_at as string,
+        updated_at: item.updated_at as string,
+        close_reason: item.close_reason as string,
+        title: item.title as string,
+      };
+    }
+
+    async function createClosedTask(context: TempPmContext, title: string): Promise<string> {
+      const id = createTask(context, title);
+      const closed = await runUpdate(
+        id,
+        { status: "closed", closeReason: "done the first time" },
+        { path: context.pmPath },
+      );
+      expect(closed.warnings).toContain("auto_routed_from_update_to_close");
+      // Make a re-stamped clock observable.
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      return id;
+    }
+
+    it("keeps closure and mutation clocks when a forced update repeats the current terminal state", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "forced-repeat-closed");
+        const before = await readTerminalSnapshot(context, id);
+        const result = await runUpdate(
+          id,
+          {
+            title: before.title,
+            status: "closed",
+            closeReason: before.close_reason,
+            force: true,
+          },
+          { path: context.pmPath },
+        );
+        expect(result.changed_fields).toEqual([]);
+        expect(result.warnings).toContain("terminal_state_unchanged");
+        expect(result.warnings).not.toContain("auto_routed_from_update_to_close");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.closed_at).toBe(before.closed_at);
+        expect(after.updated_at).toBe(before.updated_at);
+        expect(after.historyLength).toBe(before.historyLength);
+        expect(after.bytes).toBe(before.bytes);
+      });
+    });
+
+    it("treats an identical terminal update without --force as a no-op instead of a refused re-closure", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "unforced-repeat-closed");
+        const before = await readTerminalSnapshot(context, id);
+        const result = await runUpdate(
+          id,
+          { status: "closed", closeReason: `  ${before.close_reason}  ` },
+          { path: context.pmPath },
+        );
+        expect(result.changed_fields).toEqual([]);
+        expect(result.warnings).toContain("terminal_state_unchanged");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.closed_at).toBe(before.closed_at);
+        expect(after.updated_at).toBe(before.updated_at);
+        expect(after.historyLength).toBe(before.historyLength);
+      });
+    });
+
+    it("applies the other fields of a repeated terminal update without re-stamping closed_at", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "repeat-closed-with-title");
+        const before = await readTerminalSnapshot(context, id);
+        const result = await runUpdate(
+          id,
+          { status: "closed", closeReason: before.close_reason, title: "renamed after closure", force: true },
+          { path: context.pmPath },
+        );
+        expect(result.changed_fields).toEqual(["title"]);
+        expect(result.warnings).toContain("terminal_state_unchanged");
+        expect(result.warnings).not.toContain("auto_routed_from_update_to_close");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.title).toBe("renamed after closure");
+        expect(after.closed_at).toBe(before.closed_at);
+        expect(after.updated_at).not.toBe(before.updated_at);
+        expect(after.historyLength).toBe(before.historyLength + 1);
+      });
+    });
+
+    it("still routes a repeat closure with a different reason through the closure writer", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "repeat-closed-new-reason");
+        const before = await readTerminalSnapshot(context, id);
+        await expect(
+          runUpdate(id, { status: "closed", closeReason: "a different reason" }, { path: context.pmPath }),
+        ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.CONFLICT });
+        const forced = await runUpdate(
+          id,
+          { status: "closed", closeReason: "a different reason", force: true },
+          { path: context.pmPath },
+        );
+        expect(forced.warnings).toContain("auto_routed_from_update_to_close");
+        expect(forced.changed_fields).toEqual(expect.arrayContaining(["close_reason"]));
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.close_reason).toBe("a different reason");
+        expect(after.historyLength).toBe(before.historyLength + 1);
+      });
+    });
+
+    it("routes a blank reason to the refusing close route only while a close reason is required", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "repeat-closed-blank-reason");
+        const before = await readTerminalSnapshot(context, id);
+        await expect(
+          runUpdate(id, { status: "closed", closeReason: "   ", force: true }, { path: context.pmPath }),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          context: expect.objectContaining({ code: "close_reason_required" }),
+        });
+        const refused = await readTerminalSnapshot(context, id);
+        expect(refused.closed_at).toBe(before.closed_at);
+        expect(refused.historyLength).toBe(before.historyLength);
+
+        const settings = await readSettings(context.pmPath);
+        settings.governance.require_close_reason = false;
+        await writeSettings(context.pmPath, settings);
+        const optional = await runUpdate(
+          id,
+          { status: "closed", closeReason: "   ", force: true },
+          { path: context.pmPath },
+        );
+        expect(optional.warnings).toContain("terminal_state_unchanged");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.closed_at).toBe(before.closed_at);
+        expect(after.updated_at).toBe(before.updated_at);
+        expect(after.historyLength).toBe(before.historyLength);
+      });
+    });
+
+    it("treats a changed completion time as a closure and its exact repeat as a no-op", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "repeat-closed-completed-at");
+        const before = await readTerminalSnapshot(context, id);
+        const completedAt = "2026-01-02T03:04:05.000Z";
+        const corrected = await runUpdate(
+          id,
+          { status: "closed", closeReason: before.close_reason, completedAt, force: true },
+          { path: context.pmPath },
+        );
+        expect(corrected.warnings).toContain("auto_routed_from_update_to_close");
+        const repeated = await runUpdate(
+          id,
+          { status: "closed", closeReason: before.close_reason, completedAt, force: true },
+          { path: context.pmPath },
+        );
+        expect(repeated.warnings).toContain("terminal_state_unchanged");
+        expect(repeated.changed_fields).toEqual([]);
+        // An equivalent spelling of the stored completion time is still a repeat, not a re-closure.
+        const settled = await readTerminalSnapshot(context, id);
+        const equivalent = await runUpdate(
+          id,
+          { status: "closed", closeReason: settled.close_reason, completedAt: "2026-01-02T03:04:05Z", force: true },
+          { path: context.pmPath },
+        );
+        expect(equivalent.warnings).toContain("terminal_state_unchanged");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.closed_at).toBe(settled.closed_at);
+        expect(after.historyLength).toBe(settled.historyLength);
+      });
+    });
+
+    it("refuses a routed close status for a missing item with the shared not-found guidance", async () => {
+      await withTempPmPath(async (context) => {
+        await expect(
+          runUpdate("pm-zzzzzz", { status: "closed", closeReason: "done" }, { path: context.pmPath }),
+        ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND });
+      });
+    });
+
+    it("hands the request to the closure writer when the item was reopened before the field write", async () => {
+      const statusRegistry = resolveRuntimeStatusRegistry();
+      const options: UpdateCommandOptions = {
+        status: "closed",
+        closeReason: "done the first time",
+        title: "renamed",
+      };
+      const reopenedItem = { id: "pm-race", status: "open", title: "renamed" };
+      const fieldUpdate = { item: reopenedItem, changed_fields: ["title"], warnings: ["field_warning"] };
+      const runFieldUpdate = vi.fn(async () => fieldUpdate);
+      const closeReopened = vi.fn(async () => ({
+        item: { ...reopenedItem, status: "closed" },
+        changed_fields: ["title", "status"],
+        warnings: ["auto_routed_from_update_to_close"],
+      }));
+      const result = await applyRepeatedTerminalStateUpdate(
+        {
+          options,
+          id: "pm-race",
+          global: {},
+          statusRegistry,
+          settings: { governance: { require_close_reason: true } },
+          workflowTransitionWarnings: [],
+        } as unknown as CloseRouteContext,
+        { id: "pm-race", status: "closed", close_reason: "done the first time" } as unknown as ItemMetadata,
+        ["title"],
+        runFieldUpdate as never,
+        closeReopened as never,
+      );
+      expect(runFieldUpdate).toHaveBeenCalledWith(
+        "pm-race",
+        expect.objectContaining({ status: undefined, closeReason: undefined, title: "renamed" }),
+        {},
+      );
+      expect(closeReopened).toHaveBeenCalledWith(fieldUpdate);
+      expect(result.warnings).not.toContain("terminal_state_unchanged");
+      expect(result.item.status).toBe("closed");
+    });
+
+    it("hands the request to the closure writer when the reason changed under the lock while the item stayed closed", async () => {
+      const statusRegistry = resolveRuntimeStatusRegistry();
+      const options: UpdateCommandOptions = { status: "closed", closeReason: "done the first time", title: "renamed" };
+      const changedItem = { id: "pm-race", status: "closed", close_reason: "a concurrent reason", title: "renamed" };
+      const fieldUpdate = { item: changedItem, changed_fields: ["title"], warnings: [] };
+      const closeReopened = vi.fn(async () => ({ item: changedItem, changed_fields: ["title"], warnings: [] }));
+      const result = await applyRepeatedTerminalStateUpdate(
+        {
+          options,
+          id: "pm-race",
+          global: {},
+          statusRegistry,
+          settings: { governance: { require_close_reason: true } },
+          workflowTransitionWarnings: [],
+        } as unknown as CloseRouteContext,
+        { id: "pm-race", status: "closed", close_reason: "done the first time" } as unknown as ItemMetadata,
+        ["title"],
+        vi.fn(async () => fieldUpdate) as never,
+        closeReopened as never,
+      );
+      expect(closeReopened).toHaveBeenCalledWith(fieldUpdate);
+      expect(result.warnings).not.toContain("terminal_state_unchanged");
+    });
+
+    it("refuses unsetting a required close reason on a closed item before any write", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "repeat-closed-unset-reason");
+        const before = await readTerminalSnapshot(context, id);
+        for (const unset of [["close-reason"], ["deadline,close_reason"]]) {
+          await expect(
+            runUpdate(id, { status: "closed", unset, title: "renamed", force: true }, { path: context.pmPath }),
+          ).rejects.toMatchObject<PmCliError>({
+            exitCode: EXIT_CODE.USAGE,
+            context: expect.objectContaining({ code: "close_reason_required" }),
+          });
+        }
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.bytes).toBe(before.bytes);
+        expect(after.close_reason).toBe(before.close_reason);
+        expect(after.historyLength).toBe(before.historyLength);
+      });
     });
   });
 

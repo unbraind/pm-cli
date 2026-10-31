@@ -16,6 +16,7 @@ import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { runWithHarnessDetectionSignals } from "../../../../src/core/shared/author.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
+import { locateItem } from "../../../../src/core/store/item-store.js";
 import {
   readSettings,
   writeSettings,
@@ -441,8 +442,13 @@ describe("runClaim/runRelease", () => {
         message: expect.stringContaining(
           "already assigned to other-author",
         ) as unknown as string,
+        // GH-1610: the holder is a typed field, not only prose.
         context: expect.objectContaining({
           code: "already_claimed_by",
+          item_id: foreign,
+          claimed_by: "other-author",
+          claim_source: "assignment",
+          claimed_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/u),
         }) as unknown as PmCliError["context"],
       });
 
@@ -471,11 +477,16 @@ describe("runClaim/runRelease", () => {
         message: expect.stringContaining(
           "already claimed by other-author",
         ) as unknown as string,
+        context: expect.objectContaining({
+          claimed_by: "other-author",
+          claim_source: "claim",
+          claimed_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/u),
+        }) as unknown as PmCliError["context"],
       });
     });
   });
 
-  it("falls back to assignment wording when ownership history is corrupt", async () => {
+  it("keeps assignment wording but reports an unknown origin when ownership history is corrupt", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {
         title: "claim-corrupt-history",
@@ -497,6 +508,35 @@ describe("runClaim/runRelease", () => {
         ) as unknown as string,
         context: expect.objectContaining({
           code: "already_claimed_by",
+          claimed_by: "other-author",
+          claim_source: "unknown",
+          claimed_at: null,
+        }) as unknown as PmCliError["context"],
+      });
+    });
+  });
+
+  it("reports an unknown origin when the newest assignee history entry set a different holder", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "claim-diverged-history",
+        status: "open",
+        assignee: "other-author",
+      });
+      // Item state now names a holder that no history entry recorded.
+      const settings = await readSettings(context.pmPath);
+      const located = await locateItem(context.pmPath, id, settings.id_prefix, settings.item_format);
+      const itemPath = located!.itemPath;
+      await writeFile(itemPath, (await readFile(itemPath, "utf8")).replace("other-author", "third-author"), "utf8");
+
+      await expect(
+        runClaim(id, false, { path: context.pmPath }),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.CONFLICT,
+        context: expect.objectContaining({
+          claimed_by: "third-author",
+          claim_source: "unknown",
+          claimed_at: null,
         }) as unknown as PmCliError["context"],
       });
     });
