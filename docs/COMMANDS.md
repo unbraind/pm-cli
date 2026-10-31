@@ -169,6 +169,18 @@ pm next --parent pm-epic01              # scope readiness to one epic's subtree
 pm next --ready-only --limit 3 --json   # tightest agent-loop projection
 ```
 
+`pm next` has two budgets with different scopes. `--token-budget <n>` bounds
+only the selection (`recommended` plus `ready`) and reports it under
+`truncation.ready_budget`; `filters.token_budget` echoes that request and is
+`null` when none was made. The complete response, including `decision_needed`,
+`containers`, `blocked` and `held_by_others`, is bounded by the universal
+output budget (`--output-budget`, default ceiling of the read class) and
+disclosed by the `read_output` receipt, which a selection budget now always
+triggers so the total cost and the ceiling that bound it are visible. Use
+`--token-accounting` for per-section bytes. Companion sections are not
+visibility toggles: `--include-decisions`, `--include-gates` and
+`--include-containers` move those rows into the claimable `ready` queue.
+
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
 Use `duplicates --status all` for a true whole-history duplicate check. The
 result echoes `filters.statuses: null` for the unrestricted corpus; named or
@@ -645,9 +657,20 @@ pm --id-only create "Probe item"             # output is only id + status
 
 For strict JSON consumers, the global `--lean` flag recursively omits null,
 undefined, empty-array, and empty-object noise while preserving meaningful
-false/zero/empty-string values. On usage failures it keeps only actionable
-error fields (`type`, `code`, `detail`, `exit_code`, examples, next steps, and
-recovery), reducing retry context without hiding the deterministic fix:
+false/zero/empty-string values. On refusals it keeps only the fields that
+change the next action: `type`, `code`, `detail`, `exit_code`, `next_steps`,
+code-specific `required`/`examples`/`why`, specific recovery
+(`suggested_retry`, `missing`, `allowed_values`, `next_best_command`) and
+typed evidence such as the holder fields below. The generic requirement, the
+`pm --help` examples and the invocation echo (`attempted_command`,
+`normalized_args`, `provided_fields`) are dropped, in text as well as JSON,
+so a lean refusal is never larger than its default rendering (GH-1610). Text
+refusals print a single-line message once, as the headline, and repeat it
+under `What happened` only when the headline is a classification.
+An `already_claimed_by` refusal carries the holder as typed fields in every
+mode: `claimed_by`, `claim_source` (`claim` or `assignment`) and
+`claimed_at` (the latest assignee change, or `null` when history is silent);
+text output renders them as `Held by: <holder> (<source> since <time>)`.
 
 ```bash
 pm --json --lean get pm-a1b2
@@ -861,6 +884,13 @@ Template-defined custom type options accept string, number, and boolean defaults
 Tracker reference: [pm-l6rz](../.agents/pm/issues/pm-l6rz.toon).
 
 Use `pm close <id> "<reason>"` instead of `pm update --status closed`.
+An update that still names the close status routes through `pm close` and
+reports `auto_routed_from_update_to_close`. When the item is already closed
+with the same reason (and the same `--completed-at`, if given), the update is
+not a transition: it keeps `closed_at` and `updated_at`, writes no history,
+applies any other requested fields, and reports `terminal_state_unchanged`
+instead, even with `--force` (GH-1628). A different reason is a repeat
+closure, which still needs `--force`.
 
 ## Lifecycle Aliases
 

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2027,
+    "covered_symbols": 2033,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2028
+    "required_symbols": 2034
   },
   "breaking_acknowledgements": [
     {
@@ -2910,6 +2910,36 @@
       ],
       "package_version": "2026.10.28",
       "reason": "pm-gh1630: TestResult gains the optional tests_omitted receipt; a selector-narrowed run now lists only its selected tests while count, selection and pm test --list keep the full collection"
+    },
+    {
+      "changes": [
+        "signature ./sdk:NextResult",
+        "signature ./sdk:PmTableCellEncoding",
+        "signature ./sdk/core:NextResult",
+        "signature ./sdk/query:NextResult",
+        "signature ./sdk/runtime:NextResult"
+      ],
+      "package_version": "2026.10.30",
+      "reason": "GH-1627 (pm-gh1627): NextResult.filters.token_budget is null unless a selection budget was requested; PmTableCellEncoding gains null_column_index and keeps column_order as a legacy decode input."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext"
+      ],
+      "package_version": "2026.10.30",
+      "reason": "GH-1610 (pm-gh1610) and GH-1628 (pm-gh1628): PmCliErrorContext gains claimed_by/claimed_at/claim_source holder evidence; the SDK exports resolveItemOwnershipConflict, ItemOwnershipConflict, the shared lean refusal boilerplate declaration (PM_GENERIC_REFUSAL_GUIDANCE, PM_RECOVERY_ECHO_FIELDS, isGenericRefusal*, projectLeanRecoveryPayload); CloseRouteContext is exported for the repeated-terminal-state module."
+    },
+    {
+      "changes": [
+        "signature ./sdk:isGenericRefusalExamples",
+        "signature ./sdk:isGenericRefusalRequired",
+        "signature ./sdk:isGenericRefusalWhy",
+        "signature ./sdk:PM_GENERIC_REFUSAL_GUIDANCE",
+        "signature ./sdk:PM_RECOVERY_ECHO_FIELDS",
+        "signature ./sdk:projectLeanRecoveryPayload"
+      ],
+      "package_version": "2026.10.30",
+      "reason": "GH-1610 (pm-gh1610): projectLeanRecoveryPayload and the other shared lean refusal helpers are now reachable from the aggregate ./sdk entrypoint as well as ./sdk/runtime and ./sdk/contracts."
     }
   ],
   "entrypoints": {
@@ -10549,6 +10579,24 @@
           "signature": "(error: unknown) => boolean | calls: (error: unknown) => boolean"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalExamples",
+          "signature": "(values: readonly string[] | undefined) => boolean | calls: (values: readonly string[] | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalRequired",
+          "signature": "(value: string | undefined) => boolean | calls: (value: string | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalWhy",
+          "signature": "(value: string | undefined) => boolean | calls: (value: string | undefined) => boolean"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "isHostOutputSuppressed",
@@ -10907,6 +10955,12 @@
           "kind": "interface",
           "name": "ItemMutationUpsertOptions",
           "signature": "export interface ItemMutationUpsertOptions { key: string; existing: readonly ItemMutationUpsertCandidate[]; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemOwnershipConflict",
+          "signature": "export interface ItemOwnershipConflict { phrase: string; holder: string; source: \"claim\" | \"assignment\"; since: string | null; }"
         },
         {
           "classification": "supported",
@@ -12016,7 +12070,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -13459,6 +13513,12 @@
           "signature": "readonly [\"off\", \"warn\", \"enforce\"]"
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_GENERIC_REFUSAL_GUIDANCE",
+          "signature": "Readonly<{ required: \"Adjust command input or tracker state and retry.\"; why: readonly string[]; examples: readonly string[]; }>"
+        },
+        {
           "classification": "supported",
           "kind": "value",
           "name": "PM_GITATTRIBUTES_END",
@@ -13831,6 +13891,12 @@
           "signature": "\".row_contract.row_keys[] as $key | getpath($key | split(\\\".\\\")) | if type == \\\"array\\\" then .[] else if type == \\\"object\\\" then to_entries[] else empty end end\""
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_RECOVERY_ECHO_FIELDS",
+          "signature": "readonly [\"attempted_command\", \"normalized_args\", \"provided_fields\"]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_RECOVERY_REFERENCE_FIELDS",
@@ -14068,7 +14134,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\"; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -15286,7 +15352,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmTableCellEncoding",
-          "signature": "export interface PmTableCellEncoding { json_columns: string[]; list_columns?: Record<string, string>; null_columns?: string[]; column_order?: string[]; absent: Array<[ number, string ]>; }"
+          "signature": "export interface PmTableCellEncoding { json_columns: string[]; list_columns?: Record<string, string>; null_columns?: string[]; null_column_index?: number[]; column_order?: string[]; absent: Array<[ number, string ]>; }"
         },
         {
           "classification": "contract_data",
@@ -15785,6 +15851,12 @@
           "kind": "function",
           "name": "projectHistoryProvenance",
           "signature": "(entry: HistoryEntry, vocabulary?: AuthorIdentityVocabulary, coordinates?: { itemId?: string; version?: number; }) => HistoryProvenanceRow | calls: (entry: HistoryEntry, vocabulary?: AuthorIdentityVocabulary, coordinates?: { itemId?: string; version?: number; }) => HistoryProvenanceRow"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "projectLeanRecoveryPayload",
+          "signature": "<Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined | calls: <Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined"
         },
         {
           "classification": "advanced_export",
@@ -17843,6 +17915,12 @@
           "kind": "interface",
           "name": "ResolveItemMutationDocumentOptions",
           "signature": "export interface ResolveItemMutationDocumentOptions { transactionId: string; idPrefix: string; runtimeFields?: readonly RuntimeFieldDefinitionResolved[]; upsert?: ItemMutationUpsertOptions; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "resolveItemOwnershipConflict",
+          "signature": "(pmRoot: string, itemId: string, assignee: string) => Promise<ItemOwnershipConflict> | calls: (pmRoot: string, itemId: string, assignee: string) => Promise<ItemOwnershipConflict>"
         },
         {
           "classification": "advanced_export",
@@ -24357,6 +24435,24 @@
         {
           "classification": "contract_data",
           "kind": "function",
+          "name": "isGenericRefusalExamples",
+          "signature": "(values: readonly string[] | undefined) => boolean | calls: (values: readonly string[] | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalRequired",
+          "signature": "(value: string | undefined) => boolean | calls: (value: string | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalWhy",
+          "signature": "(value: string | undefined) => boolean | calls: (value: string | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
           "name": "isPmExtensionCapabilityContract",
           "signature": "(value: string) => value is PmExtensionCapabilityContract | calls: (value: string) => value is PmExtensionCapabilityContract"
         },
@@ -24765,6 +24861,12 @@
         {
           "classification": "contract_data",
           "kind": "value",
+          "name": "PM_GENERIC_REFUSAL_GUIDANCE",
+          "signature": "Readonly<{ required: \"Adjust command input or tracker state and retry.\"; why: readonly string[]; examples: readonly string[]; }>"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
           "name": "PM_HISTORY_ATTESTATION_CONTRACT",
           "signature": "{ readonly format: \"pm-history-attestation\"; readonly version: 1; readonly stream_hash: \"exact_file_bytes\"; readonly rollup_hash: \"stable_json_without_workspace_digest\"; readonly ordering: \"stream_id_code_unit_ascending\"; readonly consistency: \"per_stream_snapshot_with_change_detection\"; readonly trust: \"independently_retained_bundle\"; }"
         },
@@ -24887,6 +24989,12 @@
           "kind": "value",
           "name": "PM_READ_OUTPUT_SURFACES",
           "signature": "readonly [\"list\", \"context\", \"search\", \"get\", \"next\", \"health\", \"deps\", \"graph\", \"history\", \"activity\", \"validate\", \"events\", \"contracts\", \"comments\", \"notes\", \"files\", \"docs\", \"stats\", \"aggregate\", \"duplicates\", \"package-catalog\", \"package-manage\", \"comments-audit\", \"assurance\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_RECOVERY_ECHO_FIELDS",
+          "signature": "readonly [\"attempted_command\", \"normalized_args\", \"provided_fields\"]"
         },
         {
           "classification": "contract_data",
@@ -25655,6 +25763,12 @@
           "kind": "value",
           "name": "PROFILE_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "projectLeanRecoveryPayload",
+          "signature": "<Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined | calls: <Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined"
         },
         {
           "classification": "contract_data",
@@ -26974,7 +27088,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -32590,7 +32704,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -34333,6 +34447,24 @@
           "signature": "(candidate: unknown) => PmCompleteListInspection | calls: (candidate: unknown) => PmCompleteListInspection"
         },
         {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalExamples",
+          "signature": "(values: readonly string[] | undefined) => boolean | calls: (values: readonly string[] | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalRequired",
+          "signature": "(value: string | undefined) => boolean | calls: (value: string | undefined) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isGenericRefusalWhy",
+          "signature": "(value: string | undefined) => boolean | calls: (value: string | undefined) => boolean"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "isPmCliExpectedError",
@@ -34642,7 +34774,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -34849,6 +34981,12 @@
           "signature": "readonly [\"error\", \"warning\", \"validation_summary\", \"recovery_bundle\"]"
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_GENERIC_REFUSAL_GUIDANCE",
+          "signature": "Readonly<{ required: \"Adjust command input or tracker state and retry.\"; why: readonly string[]; examples: readonly string[]; }>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "PM_GITIGNORE_END",
@@ -34871,6 +35009,12 @@
           "kind": "value",
           "name": "PM_OUTPUT_DEGRADATION_STEPS",
           "signature": "readonly [\"full\", \"compact\", \"brief\", \"summary\", \"counts\"]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "PM_RECOVERY_ECHO_FIELDS",
+          "signature": "readonly [\"attempted_command\", \"normalized_args\", \"provided_fields\"]"
         },
         {
           "classification": "supported",
@@ -35207,6 +35351,12 @@
           "kind": "interface",
           "name": "ProgressEntry",
           "signature": "export interface ProgressEntry { id: string; title: string; type: string; total: number; closed: number; open: number; in_progress: number; blocked: number; completion_pct: number; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "projectLeanRecoveryPayload",
+          "signature": "<Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined | calls: <Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined"
         },
         {
           "classification": "contract_data",
