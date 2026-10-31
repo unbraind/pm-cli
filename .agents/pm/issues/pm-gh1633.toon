@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-30T12:44:36.870Z"
-updated_at: "2026-10-31T13:17:48.107Z"
+updated_at: "2026-10-31T16:19:22.410Z"
 closed_at: "2026-10-30T13:53:30.046Z"
 completed_at: "2026-10-30T13:53:30.046Z"
 author: "harness:claude-code"
@@ -17,7 +17,7 @@ risk: low
 confidence: high
 reporter: unbraind
 severity: low
-resolution: "Declared --unset as list: true on create, update and update-many. The shared parser now expands comma lists and refuses each unknown or empty part by name. schema add-field refuses comma keys and flags, which makes the split unambiguous. update many validates --unset before planning, so an unknown field no longer reports no_effect. Help (kept within the zero-headroom token ratchet), completion, the MCP description and docs describe the list form."
+resolution: "Declared --unset as repeatable on create, update and update-many (a list declaration made bootstrap join repeated occurrences into one comma token). The shared parser expands comma lists and refuses each unknown or empty part by name; update many resolves fields under the update_many scope and plans with the validated metadata keys. schema add-field refuses comma keys and flags, which makes the split unambiguous. update many validates --unset before planning, so an unknown field no longer reports no_effect. Help (kept within the zero-headroom token ratchet), completion, the MCP description and docs describe the list form."
 expected_result: "pm create/update --unset parent,release clears both fields exactly as repeated --unset flags do, and an unknown or empty part is refused by name."
 actual_result: "create --unset parent,release succeeds where base refused 'parent,release'. update --unset deadline,assignee --unset release equals three repeated flags. update many dry run and apply clear comma lists. 'parnt' and empty parts are refused by name with no write. add-field 'foo,bar' is refused where base registered it. Linked tests, flag-lexicon gate 8/8 and the full suite pass."
 affected_version: 2026.10.28

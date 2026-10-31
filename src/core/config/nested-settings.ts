@@ -59,7 +59,7 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     kind: "string",
     choices: ["priority_floor", "weighted"],
     summary:
-      "Ready-queue order for pm next: priority_floor (resume in-progress work, then priority tiers, relevance within a tier) or weighted (blended relevance order).",
+      "Ready-queue order for pm next with the built-in scorer: priority_floor (resume in-progress work, then priority tiers, relevance within a tier) or weighted (blended relevance order). An extension context_relevance scorer keeps its own order.",
   },
   {
     key: "search_provider",

@@ -12,6 +12,7 @@ import {
   locateItem,
   normalizeStatusInput,
   readLocatedItem,
+  resolveIsoOrRelative,
   toItemRecord,
   transferMutationStdinTokenPolicy,
   type GlobalOptions,
@@ -95,9 +96,12 @@ export function describesCurrentTerminalState(
   ) {
     return false;
   }
+  // Stored completion times are canonical ISO strings from resolveIsoOrRelative;
+  // resolve the request the same way so an equivalent spelling is still a repeat.
   return (
     options.completedAt === undefined ||
-    options.completedAt === metadata.completed_at
+    resolveIsoOrRelative(options.completedAt, new Date(), "completed-at") ===
+      metadata.completed_at
   );
 }
 

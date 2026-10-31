@@ -984,6 +984,17 @@ describe("runUpdate", () => {
         );
         expect(repeated.warnings).toContain("terminal_state_unchanged");
         expect(repeated.changed_fields).toEqual([]);
+        // An equivalent spelling of the stored completion time is still a repeat, not a re-closure.
+        const settled = await readTerminalSnapshot(context, id);
+        const equivalent = await runUpdate(
+          id,
+          { status: "closed", closeReason: settled.close_reason, completedAt: "2026-01-02T03:04:05Z", force: true },
+          { path: context.pmPath },
+        );
+        expect(equivalent.warnings).toContain("terminal_state_unchanged");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.closed_at).toBe(settled.closed_at);
+        expect(after.historyLength).toBe(settled.historyLength);
       });
     });
 

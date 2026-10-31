@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-29T20:35:41.836Z"
-updated_at: "2026-10-31T08:39:03.580Z"
+updated_at: "2026-10-31T16:19:21.843Z"
 closed_at: "2026-10-31T01:51:58.329Z"
 completed_at: "2026-10-31T01:51:58.329Z"
 author: "harness:codex"
@@ -16,7 +16,7 @@ parent: pm-5t33or
 risk: medium
 confidence: medium
 resolution: "The TOON codec records omitted null columns by position (null_column_index) instead of repeating the full column list, so the compact table wins for ready and containers and every pm next section list-encodes tags. --token-budget on next is no longer a read-output cost alias, so the universal default ceiling keeps binding the complete response; requesting a selection budget audits the whole envelope (read_output with budget_source default, budget_tokens and estimated_tokens beside truncation.ready_budget) unless an enforced intent receipt already discloses it; filters.token_budget echoes the requested selection ceiling or null. SDK surface snapshot acknowledges NextResult.filters.token_budget (number|null) and PmTableCellEncoding.null_column_index; docs/COMMANDS.md and docs/AGENT_OUTPUT_ENCODINGS.md describe the two budget scopes."
-expected_result: "The complete next response discloses and obeys its effective budget, respects include controls, and preserves tags/null omission receipts without changing full SDK data."
+expected_result: Requesting a selection budget on pm next keeps the universal ceiling binding the complete response and discloses its cost; filters.token_budget is null unless requested; tags and omitted null columns stay lossless without changing full SDK data. Default runs carry no receipt and side sections keep their rows; include flags remain dispatch opt-ins.
 actual_result: "Measured on the real tracker (229 open, 112 ready): pm next --limit 5 TOON 9,148 -> 8,718 bytes, escaped-quote sequences 182 -> 76 (the remainder is the blockers object column on blocked/containers rows), null cells 30 -> 15, all four sections list-encode tags; --token-budget 640 --json now carries read_output {budget_source: default, budget_tokens: 6000, estimated_tokens: 4119, within_budget: true} and filters.token_budget 640; the default run reports token_budget null and no receipt. Include flags remain dispatch opt-ins, documented as such. Token-budget gate (32 surfaces), context-intent calibration, flag-lexicon/parity/grammar gates and the linked test run pass; negative control fails 3 of 3 new tests before the fix."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1603,related,"2026-10-29T20:35:41.836Z","harness:codex","cli:create:dep",detected
@@ -50,7 +50,7 @@ test_runs[1]:
 docs[2]{path,scope}:
   docs/AGENT_OUTPUT_ENCODINGS.md,project
   docs/COMMANDS.md,project
-close_reason: pm next discloses and obeys its budgets and encodes tags losslessly
+close_reason: "pm next audits the complete response under the universal ceiling when a selection budget is requested, and encodes tags and null columns losslessly"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
