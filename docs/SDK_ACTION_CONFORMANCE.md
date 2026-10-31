@@ -94,7 +94,9 @@ When the intent budget reduces an explicit `--limit`, as with
 `pm context --for orient --limit 10` (the 3000-token orient budget carries 3
 rows), the reduction is never silent. `context_intent.limit_override` records
 `requested`, `effective`, the `token_budget_for_requested` that would carry the
-request, and a `restore_with` retry. `filters.requested_limit` sits beside the
+request, and `restore_with`: the flag to add to (or replace in) the original
+command, so every original positional, inline filter, and option is kept. Both
+fields are omitted when no safe-integer budget can carry the request. `filters.requested_limit` sits beside the
 effective `filters.limit`, and `warnings` carries
 `limit_overridden_by_intent:--limit <requested>-><effective>`. The same applies
 to `context`, `list`, and `search` intents.
@@ -104,7 +106,9 @@ accept every optional parameter their action contract declares either flat or
 under `options`. The runtime derives the flat-to-options mapping from
 `PM_TOOL_ACTION_PARAMETER_CONTRACTS`, so a declared argument such as `for`,
 `depth`, `limit`, or `tokenBudget` is never silently ignored; nested `options`
-win when both are present.
+win when both are present. Positional operands stay top-level like `pm_get`'s
+`id`: `pm_search` reads `query` (or its declared alias `keywords`) only from the
+top-level arguments.
 
 Default intent budgets retain the ordinary page cap. Explicit budgets may
 derive larger pages; recursive compaction and resumable cursor safeguards still

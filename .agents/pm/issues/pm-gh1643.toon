@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,claim,github,refusal
 created_at: "2026-10-31T21:13:57.945Z"
-updated_at: "2026-10-31T22:31:35.818Z"
+updated_at: "2026-10-31T23:02:07.901Z"
 closed_at: "2026-10-31T22:31:19.294Z"
 completed_at: "2026-10-31T22:31:19.294Z"
 author: "harness:claude-code"
@@ -24,12 +24,14 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-fjxm,related,"2026-10-31T21:13:57.945Z","harness:claude-code","cli:create:dep",detected
   pm-gh1369,related,"2026-10-31T21:13:57.945Z","harness:claude-code","cli:create:dep",detected
   pm-ixi1,related,"2026-10-31T21:13:57.945Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-31T21:46:58.955Z","harness:claude-code","Implementation: runClaim gained an optional start that calls applyClaimStart inside the same mutateItem callback (the release --handoff pattern). It resolves the in-progress status through resolveStartTaskInProgressStatus, refuses a terminal item with terminal_state_conflict even under --force, enforces type workflows via enforceTypeWorkflowTransition, and returns start {from_status,to_status}. runClaimNext forwards start to every candidate in the race-loss walk, so --if-available and filters behave as before. CLI runClaimAction and MCP runMcpClaimAction route start with an explicit id to the unchanged two-step composition, which keeps its typed 'Remove --next and --if-available' refusal; start without an id uses the atomic path or the new requireClaimTarget in src/sdk/lifecycle/claim-target.ts (missing_required_argument / ambiguous_option_combination, attributed to claim through the catalog generator's module map). runStartTask now strips start before its claim step so explicit --start stays claim-then-update. MCP schema: the start+next exclusion is gone and start+ifAvailable is exclusive only with an id. PmClient.claimNext({start:true}) is typed. Verified in a sandbox: claim --next --start → status in_progress, changed_field_count 3, history create→claim (one event)."
-files[16]{path,scope}:
+  "2026-10-31T23:02:07.900Z","harness:claude-code","CodeRabbit review round 1 on PR #1645. (1) The compact claim receipt now keeps the start {from_status,to_status} object (mutation-projection copies plain-object start), so default CLI JSON and MCP responses show the transition. (2) Major, predates this PR: resolveStartTaskInProgressStatus ignored a configured in_progress_status. A workflow declaring in_progress_status 'working' started items into the open status. It now returns the registry's in-progress status when it differs from the open status, and otherwise keeps the in_progress alias lookup (the 'building' alias workflow still resolves). Registration tests cover both. (3) Semantic attribution after the claim commit is best-effort: a failure returns the warning claim_semantic_attribution_unrecorded instead of an error for persisted ownership (claim-attribution spec). (4) MCP claim {id, next, start} was already refused with invalid_argument_value by the explicit-start composition; a test now pins it. (5) Starting an item with an open blocker is out of scope and matches update semantics; filed as pm-urzubi."
+files[19]{path,scope}:
   scripts/release/surface-replication-sets.json,project
   sdk/public-surface.json,project
   src/cli/register-operations.ts,project
+  src/core/output/mutation-projection.ts,project
   src/sdk/cli-contracts/tool-schema.ts,project
   src/sdk/core.ts,project
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project
@@ -40,8 +42,10 @@ files[16]{path,scope}:
   src/sdk/lifecycle/task-composition.ts,project
   src/sdk/runtime-public-contracts.ts,project
   src/sdk/runtime.ts,project
+  src/sdk/start-task-status.ts,project
   tests/fixtures/contracts/full.json,project
   tests/unit/commands/register-commands.spec.ts,project
+  tests/unit/sdk/lifecycle/claim-attribution.spec.ts,project
   tests/unit/sdk/lifecycle/claim-start.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/claim-start.spec.ts tests/integration/lifecycle-composition-sdk.spec.ts tests/integration/lifecycle-receipts.spec.ts,project,"harness:claude-code","2026-10-31T21:46:33.577Z",local_mutation,fix/agent-ux-orient-claim-envelopes

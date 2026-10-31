@@ -35,7 +35,7 @@ describe("GH-1644 intent budgets never silently reduce an explicit --limit", () 
         requested: 10,
         effective: 3,
         token_budget_for_requested: 7200,
-        restore_with: "pm context --for orient --limit 10 --token-budget 7200",
+        restore_with: "--token-budget 7200",
       },
     });
     expect(result).toMatchObject({
@@ -47,20 +47,24 @@ describe("GH-1644 intent budgets never silently reduce an explicit --limit", () 
     expect(retry).not.toHaveProperty("intentRequestedLimit");
   });
 
-  it("reads the caller's limit from raw host options and quotes search positionals in the retry", () => {
-    const listed = attachContextIntentReceipt("list", { for: "triage", limit: "150" }, { items: [] });
+  it("reads the caller's limit from raw host options and restores it with a flag the original command keeps", () => {
+    const listed = attachContextIntentReceipt("list", { for: "triage", limit: "150", status: "closed", sort: "updated" }, { items: [] });
     expect(listed.context_intent?.limit_override).toMatchObject({
       requested: 150,
       effective: 100,
       token_budget_for_requested: 3200,
-      restore_with: "pm list --for triage --limit 150 --token-budget 3200",
+      restore_with: "--token-budget 3200",
     });
     expect(listed).toMatchObject({ warnings: [`${CONTEXT_INTENT_LIMIT_OVERRIDE_WARNING}:--limit 150->100`] });
     expect(listed).not.toHaveProperty("filters");
     const searched = attachContextIntentReceipt("search", { for: "discover", limit: "200" }, { query: "it's", items: [] });
-    expect(searched.context_intent?.limit_override?.restore_with).toBe(
-      `pm search 'it'"'"'s' --for discover --limit 200 --token-budget 3680`,
-    );
+    expect(searched.context_intent?.limit_override?.restore_with).toBe("--token-budget 3680");
+    const unbounded = attachContextIntentReceipt("context", { for: "orient", limit: String(Number.MAX_SAFE_INTEGER) }, {});
+    expect(unbounded.context_intent?.limit_override).toEqual({
+      flag: "--limit",
+      requested: Number.MAX_SAFE_INTEGER,
+      effective: 3,
+    });
     const honoured = attachContextIntentReceipt("context", { for: "orient", limit: "2" }, { filters: { limit: "2" } });
     expect(honoured.context_intent).not.toHaveProperty("limit_override");
     expect(honoured).not.toHaveProperty("warnings");

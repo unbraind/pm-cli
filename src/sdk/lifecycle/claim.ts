@@ -268,12 +268,14 @@ export async function runClaim(
   });
 
   if (!skipped) {
-    await recordClaimSemanticAttribution({
-      pmRoot,
-      settings,
-      principal: claimPrincipal,
-      itemId: result.item.id,
-    });
+    mutationWarnings.push(
+      ...(await recordClaimAttributionAfterCommit({
+        pmRoot,
+        settings,
+        principal: claimPrincipal,
+        itemId: result.item.id,
+      })),
+    );
   }
 
   return {
@@ -287,6 +289,21 @@ export async function runClaim(
     ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
     ...startEvidence,
   };
+}
+
+/** Stable warning when session attribution could not be recorded for a claim that already committed. */
+export const CLAIM_ATTRIBUTION_UNRECORDED_WARNING = "claim_semantic_attribution_unrecorded";
+
+/** Record semantic attribution after the claim committed; a failure becomes a warning, never an error for persisted ownership. */
+async function recordClaimAttributionAfterCommit(
+  params: Parameters<typeof recordClaimSemanticAttribution>[0],
+): Promise<string[]> {
+  try {
+    await recordClaimSemanticAttribution(params);
+    return [];
+  } catch {
+    return [CLAIM_ATTRIBUTION_UNRECORDED_WARNING];
+  }
 }
 
 /** Enforce the claim target XOR selection contract; refusals never ask for a flag the caller already passed. */

@@ -104,6 +104,7 @@ export function projectPmBriefListEnvelope(value: unknown): unknown {
     now: _now,
     omission_receipt: _omissions,
     sorting,
+    filters,
     ...rest
   } = value;
   const completed =
@@ -120,7 +121,7 @@ export function projectPmBriefListEnvelope(value: unknown): unknown {
     ...(!completed ? { total, has_more: hasMore, completeness: source } : {}),
     ...(hasMore ? { next_cursor: nextCursor } : {}),
     ...projectDefaultSorting(sorting),
-    ...compactEchoedFilters(rest.filters, rest.applied_limit),
+    ...compactEchoedFilters(filters, rest.applied_limit),
     details: "--full",
   };
 }

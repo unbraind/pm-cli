@@ -98,10 +98,10 @@ export interface PmContextIntentLimitOverride {
   requested: number;
   /** Row limit the intent budget applied. */
   effective: number;
-  /** Smallest token budget, never below the current one, whose derived ceiling carries the requested rows. */
-  token_budget_for_requested: number;
-  /** Bounded retry that keeps the requested limit under a sufficient explicit budget. */
-  restore_with: string;
+  /** Smallest token budget, never below the current one, whose derived ceiling carries the requested rows; absent when no safe integer budget can. */
+  token_budget_for_requested?: number;
+  /** Flag to add to (or replace in) the original command so it keeps the requested limit, like an omission receipt's `restore_with`. */
+  restore_with?: string;
 }
 
 /** Stable warning code emitted when an intent budget reduces an explicit row limit. */
@@ -932,7 +932,7 @@ export function attachContextIntentReceipt<
       : "The selected intent token budget constrains the effective row ceiling.";
     resultWithDiagnostics.budget_derived_limit = budgetDerivedLimit;
     discloseIntentLimitOverride(
-      { command, builtInCommand, intent: contract.intent },
+      { builtInCommand, intent: contract.intent },
       receipt,
       resultWithDiagnostics,
       options,
@@ -1058,7 +1058,6 @@ function contextIntentRecoveryPositional(
 /** Record a reduced explicit row limit in the receipt, warnings and filters, with the budget that keeps it. */
 function discloseIntentLimitOverride(
   identity: {
-    command: string;
     builtInCommand: BuiltInContextIntentCommand;
     intent: string;
   },
@@ -1081,12 +1080,17 @@ function discloseIntentLimitOverride(
     overhead + rowCost * requested,
   );
   receipt.limit_reason = `The ${receipt.token_budget}-token ${identity.intent} budget carries ${effective} rows, so it reduced the caller's --limit ${requested}.`;
+  // A flag fragment keeps every original positional, inline filter and option; an unparseable budget is not offered.
   receipt.limit_override = {
     flag: "--limit",
     requested,
     effective,
-    token_budget_for_requested: sufficientBudget,
-    restore_with: `pm ${identity.command}${contextIntentRecoveryPositional(identity.builtInCommand, result)} --for ${identity.intent} --limit ${requested} --token-budget ${sufficientBudget}`,
+    ...(Number.isSafeInteger(sufficientBudget)
+      ? {
+          token_budget_for_requested: sufficientBudget,
+          restore_with: `--token-budget ${sufficientBudget}`,
+        }
+      : {}),
   };
   const warning = `${CONTEXT_INTENT_LIMIT_OVERRIDE_WARNING}:--limit ${requested}->${effective}`;
   result.warnings = Array.isArray(result.warnings)

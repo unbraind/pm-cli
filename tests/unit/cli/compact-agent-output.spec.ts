@@ -461,6 +461,10 @@ describe("GH-1642 brief search and list envelopes", () => {
     ]) {
       expect(projectPmBriefListEnvelope({ ...value, sorting })).toMatchObject({ sorting });
     }
+    for (const filters of [{ limit: "3" }, { runtime_filters: {} }, { limit: "3", runtime_filters: {} }]) {
+      expect(projectPmBriefListEnvelope({ ...value, filters })).not.toHaveProperty("filters");
+    }
+    expect(projectPmBriefListEnvelope({ ...value, filters: { limit: "9" } })).toMatchObject({ filters: { limit: "9" } });
     const text = formatBuiltInOutput(value, "toon");
     expect(text).toContain('effective_keys: "priority asc, id asc"');
     expect(text).not.toContain('sort: "default"');

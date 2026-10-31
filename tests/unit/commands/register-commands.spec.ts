@@ -1454,6 +1454,24 @@ describe("operation command actions", () => {
     expect(resolveStartTaskInProgressStatus(registry)).toBe("open");
   });
 
+  it("starts into a configured custom in-progress status and still resolves in_progress aliases", () => {
+    const terminal = [
+      { id: "done", roles: ["terminal", "terminal_done", "default_close"] },
+      { id: "dropped", roles: ["terminal", "terminal_canceled", "default_cancel"] },
+    ];
+    const explicit = resolveRuntimeStatusRegistry({
+      statuses: [{ id: "todo", roles: ["active", "default_open"] }, { id: "working", roles: ["active"] }, ...terminal],
+      workflow: { open_status: "todo", in_progress_status: "working", close_status: "done", canceled_status: "dropped" },
+    } as never);
+    expect(resolveStartTaskInProgressStatus(explicit)).toBe("working");
+    const aliased = resolveRuntimeStatusRegistry({
+      statuses: [{ id: "queued", roles: ["active", "default_open"] }, { id: "building", aliases: ["in_progress"], roles: ["active"] }, ...terminal],
+      workflow: { open_status: "queued", close_status: "done", canceled_status: "dropped" },
+    } as never);
+    expect(aliased.in_progress_status).toBe("queued");
+    expect(resolveStartTaskInProgressStatus(aliased)).toBe("building");
+  });
+
   it("maps stats, gc, and contracts options", async () => {
     await runCli("stats", "--storage");
     expect(
